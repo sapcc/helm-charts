@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: prometheus-collector
+
+spec:
+  tls:
+     - secretName: prometheus-collector
+       hosts: [prometheus-collector.{{.Values.global.region}}.{{.Values.global.domain}}]
+  rules:
+    - host: prometheus-collector.{{.Values.global.region}}.{{.Values.global.domain}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: prometheus-collector
+            servicePort: 9090

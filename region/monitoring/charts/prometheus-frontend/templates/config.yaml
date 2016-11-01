@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-frontend
+
+data:
+  prometheus.yml: |
+    scrape_configs:
+    - job_name: 'prometheus-frontend'
+      static_configs:
+        - targets: ['localhost:9090']
+
+    - job_name: 'prometheus-collector'
+      scrape_interval: 15s
+      scrape_timeout: 10s
+
+      honor_labels: true
+      metrics_path: '/federate'
+
+      params:
+        'match[]':
+          - '{__name__=~"^aggregated:.+"}'
+          - '{__name__=~"^ad_.+"}'
+          - '{__name__=~"^apiserver_.+"}'
+          - '{__name__=~"^bind_.+"}'
+          - '{__name__=~"^blackbox_.+"}'
+          - '{__name__=~"^canary_.+"}'          
+          - '{__name__=~"^container_fs.+"}'
+          - '{__name__=~"^container_memory_.+"}'
+          - '{__name__=~"^container_network_.+"}'
+          - '{__name__=~"^container_spec_.+"}'
+          - '{__name__=~"^container_scrape_error"}'
+          - '{__name__=~"^container_start_time_seconds"}'
+          - '{__name__=~"^container_task_state"}'
+          - '{__name__=~"^datapath_.+"}'
+          - '{__name__=~"^elasticsearch_.+"}'
+          - '{__name__=~"^etcd_.+"}'
+          - '{__name__=~"^go_.+"}'
+          - '{__name__=~"^http_.+"}'
+          - '{__name__=~"^inframonitor_.+"}'
+          - '{__name__=~"^keystone_.+"}'
+          - '{__name__=~"^kube_.+"}'
+          - '{__name__=~"^kubelet_.+"}'
+          - '{__name__=~"^machine_cpu_cores"}'
+          - '{__name__=~"^machine_memory_bytes"}'
+          - '{__name__=~"^memcached.+"}'
+          - '{__name__=~"^openstack_.+"}'
+          - '{__name__=~"^pg_.+"}'
+          - '{__name__=~"^process_.+"}'
+          - '{__name__=~"^prometheus_.+"}'
+          - '{__name__=~"^rabbitmq_.+"}'
+          - '{__name__=~"^rest_client_.+"}'
+          - '{__name__=~"^scrape_duration_seconds"}'
+          - '{__name__=~"^statsd_.+"}'
+          - '{__name__=~"^swift_.+"}'
+          - '{__name__=~"^up"}'
+
+      metric_relabel_configs:
+        - action: replace
+          source_labels: [__name__]
+          target_label: __name__
+          regex: aggregated:(.+)
+          replacement: $1
+
+      static_configs:
+        - targets:
+          - 'prometheus-collector.{{ .Release.Namespace }}:9090'
+
