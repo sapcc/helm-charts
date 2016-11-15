@@ -1,0 +1,18 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: elektra
+spec:
+  tls:
+     - secretName: elektra
+       hosts: [{{ .Values.ingress.host }}]
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: elektra
+          servicePort: 80
+{{- end }}
