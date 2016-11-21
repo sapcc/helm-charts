@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: vault
+
+spec:
+  tls:
+     - secretName: vault
+       hosts: [vault.{{.Values.global.region}}.{{.Values.global.domain}}]
+  rules:
+  - host: vault.{{.Values.global.region}}.{{.Values.global.domain}}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: vault
+          servicePort: 80
