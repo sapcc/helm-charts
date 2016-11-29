@@ -9,12 +9,27 @@ data:
     aggregated:container_cpu_usage_seconds_total{} = sum(container_cpu_usage_seconds_total) by (id) keep_common
     aggregated:container_cpu_user_seconds_total{} = sum(container_cpu_user_seconds_total) by (id) keep_common
 
+  alert.rules: |
+    # Alert for any node that is unreachable for >1 hour.
+    ALERT K8SNodeDown
+      IF up{job="kubernetes-nodes"} == 0
+      FOR 1h
+      LABELS {
+        service = "k8s",
+        severity = "warning"
+      }
+      ANNOTATIONS {
+        summary = "Kubelet cannot be scraped",
+        description = "Prometheus could not scrape a {{ $labels.job }} for more than one hour",
+      }
+
   prometheus.yml: |
     rule_files:
-      - /etc/prometheus/global.rules
+      - /etc/prometheus/*.rules
 
     global:
-      scrape_timeout: 55s 
+      scrape_timeout: 55s
+      #evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
 
     scrape_configs:
       - job_name: 'kubernetes-cluster'

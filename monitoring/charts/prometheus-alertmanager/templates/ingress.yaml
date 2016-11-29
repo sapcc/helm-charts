@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: prometheus-alertmanager
+
+spec:
+  tls:
+     - secretName: prometheus-alertmanager
+       hosts: [prometheus-alertmanager.{{.Values.global.region}}.{{.Values.global.domain}}]
+  rules:
+    - host: prometheus-alertmanager.{{.Values.global.region}}.{{.Values.global.domain}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: prometheus-alertmanager
+            servicePort: 9093

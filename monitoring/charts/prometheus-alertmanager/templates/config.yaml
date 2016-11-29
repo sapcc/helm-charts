@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alertmanager
+
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+
+      route:
+        group_by: ['alertname']
+        group_wait: 10s
+        group_interval: 10s
+        repeat_interval: 1h
+        receiver: webhook_slack
+
+      receivers:
+      - name: webhook_slack
+        slack_configs:
+        - api_url: $WEBHOOK_URL
+          channel: '#prometheus-alerts'
