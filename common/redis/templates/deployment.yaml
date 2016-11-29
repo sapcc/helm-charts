@@ -17,6 +17,7 @@ spec:
       - name: {{ template "fullname" . }}
         image: "{{ .Values.image }}"
         imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
+        args: [ --requirepass, $(REDIS_PASSWORD) ]
         env:
         - name: REDIS_PASSWORD
           valueFrom:
@@ -44,7 +45,7 @@ spec:
 {{ toYaml .Values.resources | indent 10 }}
         volumeMounts:
         - name: redis-data
-          mountPath: /bitnami/redis
+          mountPath: /data
       volumes:
       - name: redis-data
       {{- if .Values.persistence.enabled }}
