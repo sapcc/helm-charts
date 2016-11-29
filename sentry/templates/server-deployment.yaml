@@ -1,0 +1,57 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  replicas: {{ .Values.serverReplicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+      annotations:
+        pod.beta.kubernetes.io/init-containers: '[
+            {
+                "name": "upgrade",
+                "image": "{{ .Values.image.repository }}:{{ .Values.image.tag }}",
+                "args": ["upgrade", "--noinput", "--lock"],
+                "env": [
+                  { "name" : "SENTRY_DB_NAME",
+                    "value" : "{{ .Values.postgresql.postgresDatabase }}" },
+                  { "name" : "SENTRY_POSTGRES_HOST",
+                    "value" : "{{ template "postgresql.fullname" . }}" },
+                  { "name": "SENTRY_DB_PASSWORD",
+                    "valueFrom" : { "secretKeyRef": {  "name": "{{ template "postgresql.fullname" . }}", "key":"postgres-password" } } },
+                  { "name" :"SENTRY_REDIS_HOST",
+                    "value" : "{{ template "redis.fullname" . }}" },
+                  { "name" : "SENTRY_REDIS_PASSWORD",
+                    "valueFrom": { "secretKeyRef": {  "name": "{{ template "redis.fullname" . }}", "key":"redis-password" } } },
+                  { "name" : "SENTRY_REDIS_PORT",
+                    "value" : "6379" },
+                  { "name" : "SENTRY_SECRET_KEY",
+                    "valueFrom": { "secretKeyRef": {  "name": "{{ template "fullname" . }}", "key":"sentry-secret-key" } } }
+                ]
+            }
+        ]'
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        args: [ run, web ]
+        #command: [tail, -f, /dev/null]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+        livenessProbe:
+          httpGet:
+            path: /_health/
+            port: {{ .Values.service.internalPort }}
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /_health/
+            port: {{ .Values.service.internalPort }}
+          timeoutSeconds: 5
+        env:
+{{ include "env-vars" . | indent  10 }}

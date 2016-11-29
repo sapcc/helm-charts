@@ -1,0 +1,49 @@
+# Default values for sentry.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+serverReplicaCount: 1
+workerReplicaCount: 1
+
+#  SENTRY_FILESTORE_DIR
+#
+#secretKey: $(docker run --rm sentry config generate-secret-key)
+#emailHost: "Sentry <root@localhost>"
+#singleOrganization: false
+#githubAppId: 
+#github_api_secret:
+#useSsl: false
+#
+#extraEnvVars:
+#  GITHUB_BASE_DOMAIN: github.example.com
+#  GITHUB_API_DOMAIN:api.github.example.com
+#
+image:
+  repository: sentry 
+  tag: 8.10.0 
+  pullPolicy: IfNotPresent
+service:
+  name: sentry
+  type: ClusterIP
+  externalPort: 80
+  internalPort: 9000 
+
+ingress:
+  enabled: false
+#  host: 
+#  tls_crt:
+#  tls_key:
+
+postgresql:
+  #postgresPassword:
+  postgresDatabase: sentry
+  persistence:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 10Gi
+
+redis:
+  # redisPassword:
+  persistence:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 10Gi
