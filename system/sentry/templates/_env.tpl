@@ -6,35 +6,39 @@
 - name: SENTRY_REDIS_HOST
   value: {{ template "redis.fullname" . }}
 - name: SENTRY_REDIS_PORT
-  value: "6379" 
+  value: "6379"
 - name: SENTRY_REDIS_PASSWORD
   valueFrom: { secretKeyRef: { name: {{ template "redis.fullname" . }}, key: redis-password } }
 - name: SENTRY_SECRET_KEY
   valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-secret-key } }
-- name: SENTRY_DB_PASSWORD 
+- name: SENTRY_DB_PASSWORD
   valueFrom: { secretKeyRef: { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
 {{- if .Values.emailHost }}
 - name: SENTRY_EMAIL_HOST
-  value: {{ .Values.emailHost | quote }} 
+  value: {{ .Values.emailHost | squote }}
+{{- end }}
+{{- if .Values.serverEmail }}
+- name: SENTRY_SERVER_EMAIL
+  value: {{ .Values.serverEmail | squote }}
 {{- end }}
 {{- if .Values.singleOrganization }}
 - name: SENTRY_SINGLE_ORGANIZATION
-  value: {{ .Values.singleOrganization | quote}} 
+  value: {{ .Values.singleOrganization | squote}}
 {{- end }}
 {{- if .Values.githubAppId }}
-- name: SENTRY_GITHUB_APP_ID
-  value: {{ .Values.githubAppId | quote}} 
+- name: GITHUB_APP_ID
+  value: {{ .Values.githubAppId | squote}}
 {{- end }}
 {{- if .Values.githubApiSecret }}
-- name: SENTRY_GITHUB_API_SECRET
+- name: GITHUB_API_SECRET
   valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: github-api-secret } }
 {{- end }}
 {{- if .Values.useSsl }}
 - name: SENTRY_USE_SSL
-  value: {{ .Values.useSsl | quote}} 
+  value: {{ .Values.useSsl | squote}}
 {{- end }}
 {{- range $key,$val := .Values.extraEnvVars }}
-- name: {{ $key | quote }}
-  value: {{ $val | quote }}
+- name: {{ $key | squote }}
+  value: {{ $val | squote }}
 {{- end }}
 {{ end }}
