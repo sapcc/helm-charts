@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: bind1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: bind1
+        component: designate
+    spec:
+      containers:
+      - name: bind1
+{{- if typeIs "float64" .Values.image_bind_tag  }}
+        image: {{.Values.image_bind}}:{{.Values.image_bind_tag | printf "%0.f" }}
+{{- else }}
+        image: {{.Values.image_bind}}:{{.Values.image_bind_tag}}
+{{- end }}
+        ports:
+          - name: dns-tcp
+            containerPort: 53
+            protocol: TCP
+          - name: dns-udp
+            containerPort: 53
+            protocol: UDP
+          - name: rndc-tcp
+            containerPort: 953
+            protocol: TCP
+        volumeMounts:
+          - name: bind1-persistent-storage
+            mountPath: /var/lib/bind
+          - name: bind-conf
+            mountPath: /etc/bind
+      - name: metric
+{{- if typeIs "float64" .Values.image_bind_tag  }}
+        image: {{.Values.image_bind_exporter}}:{{.Values.image_bind_exporter_tag | printf "%0.f" }}
+{{- else }}
+        image: {{.Values.image_bind_exporter}}:{{.Values.image_bind_exporter_tag}}
+{{- end }}
+        ports:
+          - name: metrics
+            containerPort: 9119
+      volumes:
+      - name: bind1-persistent-storage
+        persistentVolumeClaim:
+          claimName: bind1
+      - name: bind-conf
+        configMap:
+          name: bind1

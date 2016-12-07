@@ -1,0 +1,47 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: unbound2
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: unbound2
+        type: dns
+    spec:
+      containers:
+      - name: unbound2
+{{- if typeIs "float64" .Values.image_unbound_tag  }}
+        image: {{.Values.image_unbound}}:{{.Values.image_unbound_tag | printf "%0.f" }}
+{{- else }}
+        image: {{.Values.image_unbound}}:{{.Values.image_unbound_tag}}
+{{- end }}
+        securityContext:
+         privileged: true
+        ports:
+          - name: dns-tcp
+            containerPort: 53
+            protocol: TCP
+          - name: dns-udp
+            containerPort: 53
+            protocol: UDP
+        volumeMounts:
+          - name: unbound-conf
+            mountPath: /etc/unbound
+      - name: metric
+{{- if typeIs "float64" .Values.image_unbound_exporter_tag  }}
+        image: {{.Values.image_unbound_exporter}}:{{.Values.image_unbound_exporter_tag | printf "%0.f" }}
+{{- else }}
+        image: {{.Values.image_unbound_exporter}}:{{.Values.image_unbound_exporter_tag}}
+{{- end }}
+        ports:
+          - name: metrics
+            containerPort: {{.Values.port_unbound_exporter}}
+        volumeMounts:
+          - name: unbound-conf
+            mountPath: /etc/unbound
+      volumes:
+      - name: unbound-conf
+        configMap:
+          name: unbound2

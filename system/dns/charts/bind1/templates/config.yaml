@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bind1
+
+data:
+  named.conf: |
+     options {
+      directory "/var/lib/bind";
+      dnssec-validation auto;
+      auth-nxdomain no; # conform to RFC1035
+      listen-on { any; };
+      listen-on-v6 { none; };
+      allow-query { any; };
+      allow-transfer { none; };
+      allow-new-zones yes;
+      request-ixfr no;
+      allow-update { none; };
+      allow-notify { {{.Values.allow_notify}} };
+      allow-recursion { none; };
+      recursion no;
+     };
+     server {{.Values.master_server}} {
+      keys tsig-key;
+     };
+     include "/etc/bind/rndc.key";
+     include "/etc/bind/tsig.key";
+     controls {
+       inet * allow { {{.Values.rndc_allow}} } keys { "rndc-key"; };
+     };
+     statistics-channels {
+       inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
+     };
+  rndc.key: |
+    key "rndc-key" {
+        algorithm hmac-md5;
+        secret "{{.Values.rndc_key}}";
+    };
+  tsig.key: |
+    key "tsig-key" {
+        algorithm hmac-md5;
+        secret "{{.Values.tsig_key}}";
+    };

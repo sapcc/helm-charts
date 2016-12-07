@@ -1,0 +1,56 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: unbound2
+
+data:
+  unbound.conf: |
+       server:
+        interface: {{.Values.interface}}
+        port: 53
+        do-ip4: yes
+        do-ip6: no
+        do-udp: yes
+        do-tcp: yes
+        do-daemonize: no
+        access-control: 0.0.0.0/0 allow_snoop
+
+        directory: "/etc/unbound"
+        logfile: ""
+        include: /etc/unbound/hosts.conf
+
+       # Remote control config section.
+       remote-control:
+        control-enable: yes
+        server-key-file: /etc/unbound/unbound-server.key
+        server-cert-file: /etc/unbound/unbound-server.pem
+        control-key-file: /etc/unbound/unbound-control.key
+        control-cert-file: /etc/unbound/unbound-control.pem
+
+       # Stub and Forward zones
+       include: /etc/unbound/forward.conf
+
+  hosts.conf: |
+       local-zone: "168.192.in-addr.arpa." nodefault
+       local-zone: "10.in-addr.arpa." nodefault
+       local-zone: "16.172.in-addr.arpa." nodefault
+
+  forward.conf: |
+       forward-zone:
+                name: "."
+                        forward-addr: {{.Values.forward_addr1}}
+                        forward-addr: {{.Values.forward_addr2}}
+        stub-zone:
+                name: "{{.Values.stub_zone_name}}"
+                        stub-addr: {{.Values.stub_addr1}}
+                        stub-addr: {{.Values.stub_addr2}}
+                        stub-addr: {{.Values.stub_addr3}}
+                        stub-prime: "no"
+  unbound-control.key: |
+{{.Values.unbound_control_key | indent 4}}
+  unbound-control.pem: |
+{{.Values.unbound_control_pem | indent 4}}
+  unbound-server.key: |
+{{.Values.unbound_server_key | indent 4}}
+  unbound-server.pem: |
+{{.Values.unbound_server_pem | indent 4}}
