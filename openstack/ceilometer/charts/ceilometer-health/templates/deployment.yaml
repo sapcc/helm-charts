@@ -1,0 +1,113 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: ceilometer-health
+  namespace: ceilometer
+  labels:
+    system: openstack
+    component: metering
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      annotations:
+        pod.alpha.kubernetes.io/init-containers: '[
+          {
+            "name": "init",
+            "image": "hub.global.cloud.sap/monsoon/ceilometer-health:{{.Values.image_version_ceilometer_health}}",
+            "command": ["/init-container.sh"],
+            "volumeMounts": [
+              {
+                "name": "checks",
+                "mountPath": "/checks"
+              }
+            ]
+          }
+        ]'
+      labels:
+        component: ceilometer-health
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+#        - name: openstack-kube
+#          gitRepo:
+#            repository: {{.Values.cluster_configuration_repository}}
+#            revision: {{.Values.cluster_configuration_revision}}
+#        - name: cluster-config
+#          configMap:
+#            name: cluster-config
+#        - name: cluster-secret
+#          secret:
+#            secretName: cluster-secret
+        - name: ceilometer-bin
+          configMap:
+            name: ceilometer-bin
+        - name: ceilometer-etc
+          configMap:
+            name: ceilometer-etc
+        - name: checks
+          emptyDir:
+            medium: "Memory"
+      containers:
+        - name: ceilometer-health
+          image: hub.global.cloud.sap/monsoon/ceilometer-health:{{.Values.image_version_ceilometer_health}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/dumb-init
+          args:
+            - /bin/bash
+            - /ceilometer-bin/health-start
+#          command:
+#            - /bin/bash
+#          args:
+#            - -c
+#            - "while true; do sleep 1000; done"
+          volumeMounts:
+#            - mountPath: /openstack-kube
+#              name: openstack-kube
+#            - mountPath: /cluster-config
+#              name: cluster-config
+#            - mountPath: /cluster-secret
+#              name: cluster-secret
+            - mountPath: /ceilometer-bin
+              name: ceilometer-bin
+            - mountPath: /ceilometer-etc
+              name: ceilometer-etc
+            - mountPath: /checks
+              name: checks
+        - name: canary
+          image: hub.global.cloud.sap/monsoon/wildcard-exporter:v201611171311
+          ports:
+            - containerPort: 9101
+          args:
+            - -web.listen-address=0.0.0.0:9101
+            - -namespace=canary
+            - checks/canary/*
+          volumeMounts:
+            - mountPath: /checks
+              name: checks
+          env:
+            - name: SWIFT_AUTH_URL
+              value: "{{.Values.canary_swift_auth_url}}"
+            - name: SWIFT_USER
+              value: "{{.Values.canary_swift_user}}"
+            - name: SWIFT_USER_DOMAIN
+              value: "{{.Values.canary_swift_user_domain}}"
+            - name: SWIFT_PROJECT_NAME
+              value: "{{.Values.canary_swift_project_name}}"
+            - name: SWIFT_PROJECT_ID
+              value: "{{.Values.canary_swift_project_id}}"
+            - name: SWIFT_PROJECT_DOMAIN
+              value: "{{.Values.canary_swift_project_domain}}"
+            - name: SWIFT_REGION_NAME
+              value: "{{.Values.canary_swift_region_name}}"
+            - name: SWIFT_API_KEY
+              value: "{{.Values.canary_swift_api_key}}"
