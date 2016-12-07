@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ceilometer-bin
+  labels:
+    system: openstack
+    service: metering
+    component: configuration
+
+data:
+  central-start: |
+{{ .Files.Get "bin/central-start" | indent 4 }}
+  collector-start: |
+{{ .Files.Get "bin/collector-start" | indent 4 }}
+  common-start: |
+{{ .Files.Get "bin/common-start" | indent 4 }}
+  compute-start: |
+{{ .Files.Get "bin/compute-start" | indent 4 }}
+  health-start: |
+{{ .Files.Get "bin/health-start" | indent 4 }}
+  notification-start: |
+{{ .Files.Get "bin/notification-start" | indent 4 }}
+  rabbitmq-liveness: |
+{{ tuple "bin/_rabbitmq-liveness.tpl" . | include "template" | indent 4 }}
+  rabbitmq-prereq: |
+{{ tuple "bin/_rabbitmq-prereq.tpl" . | include "template" | indent 4 }}
+  rabbitmq-start: |
+{{ tuple "bin/_rabbitmq-start.tpl" . | include "template" | indent 4 }}
+  rabbitmq-stop: |
+{{ .Files.Get "bin/rabbitmq-stop" | indent 4 }}
