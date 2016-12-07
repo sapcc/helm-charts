@@ -21,7 +21,7 @@ spec:
         pod.alpha.kubernetes.io/init-containers: '[
           {
             "name": "init",
-            "image": "hub.global.cloud.sap/monsoon/ceilometer-health:{{.Values.image_version_ceilometer_health}}",
+            "image": "{{.Values.global.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}",
             "command": ["/init-container.sh"],
             "volumeMounts": [
               {
@@ -58,7 +58,7 @@ spec:
             medium: "Memory"
       containers:
         - name: ceilometer-health
-          image: hub.global.cloud.sap/monsoon/ceilometer-health:{{.Values.image_version_ceilometer_health}}
+          image: {{.Values.global.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/dumb-init
@@ -84,7 +84,7 @@ spec:
             - mountPath: /checks
               name: checks
         - name: canary
-          image: hub.global.cloud.sap/monsoon/wildcard-exporter:v201611171311
+          image: {{.Values.global.docker_repo}}/wildcard-exporter:v201611171311
           ports:
             - containerPort: 9101
           args:

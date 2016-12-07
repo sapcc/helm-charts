@@ -81,7 +81,7 @@ project_domain_name = {{.Values.keystone_service_domain}}
 #auth_type = password
 #cafile = /etc/ssl/certs/ca-certificates.crt
 # insecure is required, as the keystone middleware is hardcoded to connect to the admin port, which is ingres https, which is sni and the python code seems to have problems with sni https
-# hardcoded admin port according to rudolf: https://github.com/openstack/keystonemiddleware/blob/stable/mitaka/keystonemiddleware/auth_token/__init___py#L1056
+# hardcoded admin port according to rv: https://github.com/openstack/keystonemiddleware/blob/stable/mitaka/keystonemiddleware/auth_token/__init___py#L1056
 insecure = false
 ## use the internal interface (http in our case) when connecting to keystone to avoid https cert trouble with python/ingres/sni
 #interface = internal
