@@ -32,15 +32,22 @@ data:
       #evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
 
     scrape_configs:
-      - job_name: 'kubernetes-cluster'
+      - job_name: 'kubernetes-apiservers'
+        scheme: https
         tls_config:
           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
         kubernetes_sd_configs:
-        - api_servers:
-          - 'https://kubernetes.default'
-          in_cluster: true
-          role: apiserver
+        - role: endpoints
+
+        # Keep only the default/kubernetes service endpoints for the https port. This
+        # will add targets for each API server which Kubernetes adds an endpoint to
+        # the default/kubernetes service.
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+          action: keep
+          regex: default;kubernetes;https
 
       - job_name: 'kubernetes-nodes'
         scheme: https
@@ -48,10 +55,7 @@ data:
           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
         kubernetes_sd_configs:
-        - api_servers:
-          - 'https://kubernetes.default'
-          in_cluster: true
-          role: node
+        - role: node
 
         relabel_configs:
           - action: labelmap
@@ -75,10 +79,7 @@ data:
       # service then set this appropriately.
       - job_name: 'kubernetes-service-endpoints'
         kubernetes_sd_configs:
-        - api_servers:
-          - 'https://kubernetes.default.svc'
-          in_cluster: true
-          role: endpoint
+        - role: endpoints
 
         relabel_configs:
         - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
@@ -99,7 +100,7 @@ data:
           replacement: $1:$2
         - action: labelmap
           regex: __meta_kubernetes_service_label_(.+)
-        - source_labels: [__meta_kubernetes_service_namespace]
+        - source_labels: [__meta_kubernetes_namespace]
           action: replace
           target_label: kubernetes_namespace
         - source_labels: [__meta_kubernetes_service_name]
@@ -119,10 +120,7 @@ data:
           module: [http_2xx]
 
         kubernetes_sd_configs:
-        - api_servers:
-          - 'https://kubernetes.default.svc'
-          in_cluster: true
-          role: service
+        - role: service
 
         relabel_configs:
         - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
@@ -136,7 +134,7 @@ data:
           target_label: instance
         - action: labelmap
           regex: __meta_kubernetes_service_label_(.+)
-        - source_labels: [__meta_kubernetes_service_namespace]
+        - source_labels: [__meta_kubernetes_namespace]
           target_label: kubernetes_namespace
         - source_labels: [__meta_kubernetes_service_name]
           target_label: kubernetes_name
@@ -152,10 +150,7 @@ data:
       - job_name: 'kubernetes-pods'
 
         kubernetes_sd_configs:
-        - api_servers:
-          - 'https://kubernetes.default.svc'
-          in_cluster: true
-          role: pod
+        - role: pod
 
         relabel_configs:
         - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
@@ -172,7 +167,7 @@ data:
           target_label: __address__
         - action: labelmap
           regex: __meta_kubernetes_pod_label_(.+)
-        - source_labels: [__meta_kubernetes_pod_namespace]
+        - source_labels: [__meta_kubernetes_namespace]
           action: replace
           target_label: kubernetes_namespace
         - source_labels: [__meta_kubernetes_pod_name]
