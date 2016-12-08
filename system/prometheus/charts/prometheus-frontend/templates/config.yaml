@@ -4,7 +4,24 @@ metadata:
   name: prometheus-frontend
 
 data:
+  alert.rules: |
+    # Alert for any node that is unreachable for >1 hour.
+    ALERT K8SNodeDown
+      IF up{job="kubernetes-nodes"} == 0
+      FOR 1h
+      LABELS {
+        service = "k8s",
+        severity = "warning"
+      }
+      ANNOTATIONS {
+        summary = "Kubelet cannot be scraped",
+        description = "Prometheus could not scrape a {{ "{{$labels.job}}" }} for more than one hour",
+      }
+
   prometheus.yml: |
+    rule_files:
+      - /etc/prometheus/*.rules
+
     scrape_configs:
     - job_name: 'prometheus-frontend'
       static_configs:
