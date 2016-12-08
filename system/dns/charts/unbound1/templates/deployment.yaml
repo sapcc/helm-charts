@@ -12,11 +12,7 @@ spec:
     spec:
       containers:
       - name: unbound1
-{{- if typeIs "float64" .Values.image_unbound_tag  }}
-        image: {{.Values.image_unbound}}:{{.Values.image_unbound_tag | printf "%0.f" }}
-{{- else }}
         image: {{.Values.image_unbound}}:{{.Values.image_unbound_tag}}
-{{- end }}
         securityContext:
          privileged: true
         ports:
@@ -30,11 +26,7 @@ spec:
           - name: unbound-conf
             mountPath: /etc/unbound
       - name: metric
-{{- if typeIs "float64" .Values.image_unbound_exporter_tag  }}
-        image: {{.Values.image_unbound_exporter}}:{{.Values.image_unbound_exporter_tag | printf "%0.f" }}
-{{- else }}
         image: {{.Values.image_unbound_exporter}}:{{.Values.image_unbound_exporter_tag}}
-{{- end }}
         ports:
           - name: metrics
             containerPort: {{.Values.port_unbound_exporter}}
