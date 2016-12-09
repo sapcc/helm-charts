@@ -1,0 +1,50 @@
+apiVersion: apps/v1alpha1
+kind: PetSet
+
+metadata:
+  name: prometheus-global
+
+spec:
+  replicas: 1 
+  serviceName: prometheus-global
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        type: global
+    spec:
+      terminationGracePeriodSeconds: 300
+      containers:
+        - name: prometheus 
+          image: "{{.Values.image}}"
+          args:
+            - -config.file=/etc/prometheus/prometheus.yml
+            - -storage.local.path=/prometheus
+            - -storage.local.memory-chunks={{.Values.memory_chunks}}
+            - -storage.local.max-chunks-to-persist={{.Values.max_chunks_to_persist}}
+            - -storage.local.retention={{.Values.retention}}
+            - -web.console.libraries=/etc/prometheus/console_libraries
+            - -web.console.templates=/etc/prometheus/consoles
+          ports:
+            - name: http 
+              containerPort: 9090
+          volumeMounts:
+            - name: data
+              mountPath: /prometheus
+            - name: config
+              mountPath: /etc/prometheus
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: data 
+        - name: config
+          configMap:
+            name: prometheus-global
+  volumeClaimTemplates:
+    - metadata:
+        name: data 
+      spec:
+        accessModes: [ "ReadWriteMany" ]
+        resources:
+          requests:
+            storage: 300Gi

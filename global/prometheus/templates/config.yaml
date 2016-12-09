@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-global
+
+data:
+  prometheus.yml: |
+    rule_files:
+      - /etc/prometheus/*.rules
+
+    scrape_configs:
+    - job_name: 'prometheus-global'
+      static_configs:
+        - targets: ['localhost:9090']
+
+    - job_name: 'prometheus-regions'
+      scheme: https
+      scrape_interval: 15s
+      scrape_timeout: 10s
+
+      honor_labels: true
+      metrics_path: '/federate'
+
+      params:
+        'match[]':
+          - '{__name__=~"^blackbox_.+"}'
+          - '{__name__=~"^canary_.+"}'          
+          - '{__name__=~"^datapath_.+"}'
+          - '{__name__=~"^kube_.+"}'
+
+      metric_relabel_configs:
+        - action: replace
+          source_labels: [__address__]
+          target_label: region 
+          regex: prometheus.(.+).cloud.sap
+          replacement: $1
+
+      static_configs:
+        - targets:
+          - 'prometheus.staging.cloud.sap'
+          - 'prometheus.eu-de-1.cloud.sap'
+          - 'prometheus.ap-au-1.cloud.sap'
+
