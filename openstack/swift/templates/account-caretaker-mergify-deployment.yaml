@@ -1,0 +1,70 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: swift-account-caretaker-mergify
+  namespace: swift
+  labels:
+    system: openstack
+    component: objectstore
+
+spec:
+  revisionHistoryLimit: 5
+  # this job is not in any critical path, so 1 replica and Recreate is quite enough
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: swift-account-caretaker-mergify
+  template:
+    metadata:
+      labels:
+        component: swift-account-caretaker-mergify
+      annotations:
+        checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
+        checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" . | sha256sum }}
+    spec:
+      volumes:
+        - name: swift-bin
+          configMap:
+            name: swift-bin
+        - name: swift-etc
+          configMap:
+            name: swift-etc
+      containers:
+        - name: caretaker
+          image: {{.Values.global.docker_repo}}/ubuntu-source-swift-account-m3:{{.Values.image_version_swift_account}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - /bin/bash
+            - /swift-bin/swift-start
+            - account-caretaker-mergify
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: OS_AUTH_URL
+              value: "{{.Values.keystone_auth_url}}"
+            - name: OS_PROJECT_NAME
+              value: "swift_test"
+            - name: OS_USERNAME
+              value: "test_admin"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "cc3test"
+            - name: OS_USER_DOMAIN_NAME
+              value: "cc3test"
+            - name: OS_PASSWORD
+              value: "{{.Values.cc3test_admin_password}}"
+            - name: OS_KS_ADMIN_USERNAME
+              value: "dashboard"
+            - name: OS_KS_ADMIN_USER_DOMAIN_NAME
+              value: "Default"
+            - name: OS_KS_ADMIN_PASSWORD
+              value: "{{.Values.dashboard_service_password}}"
+          volumeMounts:
+            - mountPath: /swift-bin
+              name: swift-bin
+            - mountPath: /swift-etc
+              name: swift-etc

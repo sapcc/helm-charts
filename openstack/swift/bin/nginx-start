@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# shared initialization for all containers
+. /swift-bin/common.sh
+
+function process_config {
+    cp -f /etc/nginx/nginx.conf  /etc/nginx/nginx.conf.orig
+    cp -f /swift-etc/nginx.conf  /etc/nginx
+    cp -f /swift-etc/dhparam.pem /etc/nginx
+
+    mkdir -p /etc/nginx/ssl
+    cp -f /tls-secret/tls.crt /etc/nginx/ssl
+    cp -f /tls-secret/tls.key /etc/nginx/ssl
+}
+
+function _start_application {
+    nginx -g 'daemon off;'
+}
+
+process_config
+start_application

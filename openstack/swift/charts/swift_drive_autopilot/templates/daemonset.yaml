@@ -1,0 +1,46 @@
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: swift-drive-autopilot
+  namespace: swift
+  labels:
+    system: openstack
+    component: objectstore
+
+spec:
+  template:
+    metadata:
+      labels:
+        component: swift-drive-autopilot
+        from: daemonset
+      annotations:
+        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-storage"}]'
+    spec:
+      nodeSelector:
+        species: swift-storage
+      volumes:
+        - name: swift-etc
+          configMap:
+            name: swift-etc
+        - name: coreos
+          hostPath:
+            path: /
+      containers:
+        - name: boot
+          image: {{.Values.global.docker_repo}}/swift-drive-autopilot-m3:{{.Values.image_version}}
+          securityContext:
+            privileged: true
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - swift-drive-autopilot
+            - /swift-etc/drive-autopilot.yaml
+          # env:
+          #   - name: 'DEBUG'
+          #     value: '1'
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc
+            - mountPath: /coreos
+              name: coreos

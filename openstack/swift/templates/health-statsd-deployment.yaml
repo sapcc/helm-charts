@@ -1,0 +1,85 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: swift-health-statsd
+  namespace: swift
+  labels:
+    system: openstack
+    component: objectstore
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: swift-health-statsd
+  template:
+    metadata:
+      labels:
+        component: swift-health-statsd
+      annotations:
+        checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
+        checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+    spec:
+      volumes:
+        - name: swift-bin
+          configMap:
+            name: swift-bin
+        - name: swift-etc
+          configMap:
+            name: swift-etc
+        - name: swift-account-ring
+          configMap:
+            name: swift-account-ring
+        - name: swift-container-ring
+          configMap:
+            name: swift-container-ring
+        - name: swift-object-ring
+          configMap:
+            name: swift-object-ring
+      containers:
+        - name: collector
+          image: {{.Values.global.docker_repo}}/ubuntu-source-swift-proxy-server-m3:{{.Values.image_version_swift_proxy}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - /bin/bash
+            - /swift-bin/swift-start
+            - health-statsd
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: LOG_LEVEL
+              value: "info"
+          volumeMounts:
+            - mountPath: /swift-bin
+              name: swift-bin
+            - mountPath: /swift-etc
+              name: swift-etc
+            - mountPath: /swift-rings/account
+              name: swift-account-ring
+            - mountPath: /swift-rings/container
+              name: swift-container-ring
+            - mountPath: /swift-rings/object
+              name: swift-object-ring
+        - name: statsd
+          image: prom/statsd-exporter
+          args: [ -statsd.mapping-config=/swift-etc/statsd-exporter.conf ]
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: 9102
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc
