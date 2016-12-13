@@ -18,12 +18,29 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/ceilometer-bin-configmap: {{ include "ceilometer/templates/ceilometer-bin-configmap.yaml" . | sha256sum }}
-        checksum/ceilometer-etc-configmap: {{ include "ceilometer/templates/ceilometer-etc-configmap.yaml" . | sha256sum }}
+        checksum/ceilometer-templates-bin-_rabbitmq-start.tpl: {{ tuple "bin/_rabbitmq-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-_rabbitmq-prereq.tpl: {{ tuple "bin/_rabbitmq-prereq.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-_rabbitmq-liveness.tpl: {{ tuple "bin/_rabbitmq-liveness.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-_ceilometer.conf.tpl: {{ tuple "etc/_ceilometer.conf.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-_healthcheck.conf.tpl: {{ tuple "etc/_healthcheck.conf.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-ceilometer-bin-configmap.yaml: {{ tuple "ceilometer-bin-configmap.yaml" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_rabbitmq-stop.tpl: {{ tuple "bin-static/_rabbitmq-stop.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_notification-start.tpl: {{ tuple "bin-static/_notification-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_health-start.tpl: {{ tuple "bin-static/_health-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_compute-start.tpl: {{ tuple "bin-static/_compute-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_collector-start.tpl: {{ tuple "bin-static/_collector-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_common-start.tpl: {{ tuple "bin-static/_common-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_central-start.tpl: {{ tuple "bin-static/_central-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_event-pipeline.yaml.tpl: {{ tuple "etc-static/_event-pipeline.yaml.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_event-definitions.yaml.tpl: {{ tuple "etc-static/_event-definitions.yaml.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_api-paste.ini.tpl: {{ tuple "etc-static/_api-paste.ini.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_pipeline.yaml.tpl: {{ tuple "etc-static/_pipeline.yaml.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_policy.json.tpl: {{ tuple "etc-static/_policy.json.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-ceilometer-etc-configmap.yaml: {{ tuple "ceilometer-etc-configmap.yaml" . | include "template" | sha256sum }}
         pod.alpha.kubernetes.io/init-containers: '[
           {
             "name": "init",
-            "image": "{{.Values.global.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}",
+            "image": "{{.Values.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}",
             "command": ["/init-container.sh"],
             "volumeMounts": [
               {
@@ -60,7 +77,7 @@ spec:
             medium: "Memory"
       containers:
         - name: ceilometer-health
-          image: {{.Values.global.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}
+          image: {{.Values.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/dumb-init
@@ -86,7 +103,7 @@ spec:
             - mountPath: /checks
               name: checks
         - name: canary
-          image: {{.Values.global.docker_repo}}/wildcard-exporter:v201611171311
+          image: {{.Values.docker_repo}}/wildcard-exporter:v201611171311
           ports:
             - containerPort: 9101
           args:

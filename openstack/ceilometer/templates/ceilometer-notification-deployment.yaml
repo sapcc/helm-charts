@@ -1,0 +1,86 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: ceilometer-notification
+  namespace: ceilometer
+  labels:
+    system: openstack
+    component: metering
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      annotations:
+        checksum/ceilometer-templates-bin-_rabbitmq-start.tpl: {{ tuple "bin/_rabbitmq-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-_rabbitmq-prereq.tpl: {{ tuple "bin/_rabbitmq-prereq.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-_rabbitmq-liveness.tpl: {{ tuple "bin/_rabbitmq-liveness.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-_ceilometer.conf.tpl: {{ tuple "etc/_ceilometer.conf.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-_healthcheck.conf.tpl: {{ tuple "etc/_healthcheck.conf.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-ceilometer-bin-configmap.yaml: {{ tuple "ceilometer-bin-configmap.yaml" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_rabbitmq-stop.tpl: {{ tuple "bin-static/_rabbitmq-stop.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_notification-start.tpl: {{ tuple "bin-static/_notification-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_health-start.tpl: {{ tuple "bin-static/_health-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_compute-start.tpl: {{ tuple "bin-static/_compute-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_collector-start.tpl: {{ tuple "bin-static/_collector-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_common-start.tpl: {{ tuple "bin-static/_common-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_central-start.tpl: {{ tuple "bin-static/_central-start.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_event-pipeline.yaml.tpl: {{ tuple "etc-static/_event-pipeline.yaml.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_event-definitions.yaml.tpl: {{ tuple "etc-static/_event-definitions.yaml.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_api-paste.ini.tpl: {{ tuple "etc-static/_api-paste.ini.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_pipeline.yaml.tpl: {{ tuple "etc-static/_pipeline.yaml.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-etc-static-_policy.json.tpl: {{ tuple "etc-static/_policy.json.tpl" . | include "template" | sha256sum }}
+        checksum/ceilometer-templates-ceilometer-etc-configmap.yaml: {{ tuple "ceilometer-etc-configmap.yaml" . | include "template" | sha256sum }}
+      labels:
+        component: ceilometer-notification
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+#        - name: openstack-kube
+#          gitRepo:
+#            repository: {{.Values.cluster_configuration_repository}}
+#            revision: {{.Values.cluster_configuration_revision}}
+#        - name: cluster-config
+#          configMap:
+#            name: cluster-config
+#        - name: cluster-secret
+#          secret:
+#            secretName: cluster-secret
+        - name: ceilometer-bin
+          configMap:
+            name: ceilometer-bin
+        - name: ceilometer-etc
+          configMap:
+            name: ceilometer-etc
+      containers:
+        - name: ceilometer-notification
+          image: {{.Values.docker_repo}}/ceilometer-notification:{{.Values.image_version_ceilometer_notification}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - /bin/bash
+            - /ceilometer-bin/notification-start
+#          command:
+#            - /bin/bash
+#          args:
+#            - -c
+#            - "while true; do sleep 1000; done"
+          volumeMounts:
+#            - mountPath: /openstack-kube
+#              name: openstack-kube
+#            - mountPath: /cluster-config
+#              name: cluster-config
+#            - mountPath: /cluster-secret
+#              name: cluster-secret
+            - mountPath: /ceilometer-bin
+              name: ceilometer-bin
+            - mountPath: /ceilometer-etc
+              name: ceilometer-etc
