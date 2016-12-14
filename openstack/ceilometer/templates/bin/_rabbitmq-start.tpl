@@ -12,8 +12,6 @@ function process_config {
 
 function start_application {
 
-  echo {{.Values.ceilometer_rabbitmq_default_pass}} > /test.txt
-
   # this is required to not get a new nodename with each new containername
   export RABBITMQ_NODENAME=ceilometer-rabbitmq@ceilometer-rabbitmq
   echo "make ceilometer-rabbitmq resolve to its name even if the service is not yet connected"
