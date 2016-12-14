@@ -2,7 +2,7 @@
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
-. /container.init/common-start
+. /ceilometer-bin/common-start
 
 function process_config {
   cp /ceilometer-etc/healthcheck.conf /healthcheck.conf
