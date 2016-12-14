@@ -1,3 +1,4 @@
+{{- define "pipeline_yaml_tpl" -}}
 ---
 sources:
     - name: swift_meter_source
@@ -19,3 +20,4 @@ sinks:
       publishers:
           - notifier://
           - file:///tmp/swift-meters.log?max_bytes=10000000&backup_count=5
+{{- end -}}

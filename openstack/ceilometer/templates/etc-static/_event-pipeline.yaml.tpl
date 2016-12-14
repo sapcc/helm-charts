@@ -1,3 +1,4 @@
+{{- define "event_pipeline_yaml_tpl" -}}
 ---
 sources:
     - name: event_source
@@ -14,3 +15,4 @@ sinks:
       triggers:
       publishers:
           - notifier://
+{{- end -}}
