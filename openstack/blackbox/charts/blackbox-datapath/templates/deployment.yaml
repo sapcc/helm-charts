@@ -1,0 +1,149 @@
+# Generated from datapath-deployment.yaml.erb. Do not modify manually!
+# Edit datapath-deployment.yaml.erb and run 'make' instead.
+
+kind: Deployment 
+apiVersion: extensions/v1beta1 
+
+metadata:
+  name: healthcheck-datapath
+  namespace: monitoring
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: datapath
+    spec:
+      nodeSelector:
+        zone: farm
+      containers:
+        - name: exporter
+          image: hub.global.cloud.sap/monsoon/cc-blackbox-health-checks:v201612130827
+          ports:
+            - containerPort: 9101
+          args:
+            - -web.listen-address=0.0.0.0:9101
+            - -namespace=datapath
+            - checks/datapath/*
+          env:
+            - name: OS_AUTH_URL
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: os.auth.url } }
+            - name: OS_IDENTITY_API_VERSION
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: os.identity.api.version } }
+            - name: OS_USERNAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: os.username } }
+            - name: OS_USER_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: os.user.domain.name } }
+            - name: OS_PROJECT_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: os.project.name } }
+            - name: OS_PROJECT_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: os.project.domain.name } }
+            - name: OS_REGION_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: os.region.name } }
+            - name: SWIFT_AUTH_URL
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: swift.auth.url } }
+            - name: SWIFT_USER
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: swift.user } }
+            - name: SWIFT_USER_DOMAIN
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: swift.user.domain } }
+            - name: SWIFT_PROJECT_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: swift.project.name } }
+            - name: SWIFT_PROJECT_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: swift.project.id } }
+            - name: SWIFT_PROJECT_DOMAIN
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: swift.project.domain } }
+            - name: SWIFT_REGION_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: swift.region.name } }
+            - name: CC3_ROUTER_URL
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: cc3.router.url } }
+            - name: CC3_BILLING_URL
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: cc3.billing.url } }
+            - name: CC3_LYRA_URL
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: cc3.lyra.url } }
+            - name: CC3_ARC_URL
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: cc3.arc.url } }
+            - name: CC3_IRONIC_URL
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: cc3.ironic.url } }
+            - name: DATAPATH_SERVER_1_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.server.1.id } }
+            - name: DATAPATH_SERVER_1_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.server.1.name } }
+            - name: DATAPATH_SERVER_1_FLOATINGIP
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.server.1.floatingip } }
+            - name: DATAPATH_SERVER_1_DNS_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.server.1.dns.name } }
+            - name: DATAPATH_LBAAS_FLOATING_IP
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.lbaas.floating.ip } }
+            - name: DATAPATH_BIND1_IP
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.bind1.ip } }
+            - name: DATAPATH_BIND2_IP
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.bind2.ip } }
+            - name: DATAPATH_BIND3_IP
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.bind3.ip } }
+            - name: DATAPATH_UNBOUND1_IP
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.unbound1.ip } }
+            - name: DATAPATH_UNBOUND2_IP
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.unbound2.ip } }
+            - name: DATAPATH_HIDDEN_MASTER
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.hidden.master } }
+            - name: DATAPATH_SECRET_1_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: datapath.secret.1.id } }
+            - name: CANARY_PROJECT_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.project.id } }
+            - name: CANARY_PROJECT_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.project.name } }
+            - name: CANARY_PROJECT_DOMAIN
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.project.domain } }
+            - name: CANARY_IMAGE_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.image.id } }
+            - name: CANARY_FLAVOR_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.flavor.id } }
+            - name: CANARY_AVAILABILITY_ZONE
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.availability.zone } }
+            - name: CANARY_FIXED_NETWORK_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.fixed.network.id } }
+            - name: CANARY_FLOATIP_SERVER_1_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.floatip.server.1.id } }
+            - name: CANARY_FLOATIP_SERVER_1_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.floatip.server.1.name } }
+            - name: CANARY_FLOATIP_SERVER_1_FLOATINGIP
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.floatip.server.1.floatingip } }
+            - name: CANARY_SECGRP_SERVER_1_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.secgrp.server.1.id } }
+            - name: CANARY_SECGRP_SERVER_1_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.secgrp.server.1.name } }
+            - name: CANARY_SECGRP_SERVER_1_FLOATINGIP
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.secgrp.server.1.floatingip } }
+            - name: CANARY_SECGRP_GROUP_1_ID
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.secgrp.group.1.id } }
+            - name: CANARY_SECGRP_GROUP_1_NAME
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: canary.secgrp.group.1.name } }
+            - name: TIMEOUT
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: timeout } }
+            - name: PYTHONWARNINGS
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: pythonwarnings } }
+            - name: LOG
+              valueFrom: { configMapKeyRef: { name: healthcheck, key: log } }
+            - name: OS_PASSWORD
+              valueFrom: { secretKeyRef:    { name: healthcheck, key: os.password } }
+            - name: SWIFT_API_KEY
+              valueFrom: { secretKeyRef:    { name: healthcheck, key: swift.api.key } }
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9101
+            timeoutSeconds: 10 
+            periodSeconds: 60
+            initialDelaySeconds: 60 
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9101
+            timeoutSeconds: 5 
+            periodSeconds: 5
