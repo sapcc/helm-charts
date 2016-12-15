@@ -45,7 +45,6 @@ spec:
       containers:
         - name: collector
           image: {{.Values.global.docker_repo}}/ubuntu-source-swift-proxy-server-m3:{{.Values.image_version_swift_proxy}}
-          imagePullPolicy: IfNotPresent
           command:
             - /usr/bin/dumb-init
           args:
@@ -71,9 +70,8 @@ spec:
             - mountPath: /swift-rings/object
               name: swift-object-ring
         - name: statsd
-          image: prom/statsd-exporter
+          image: prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
           args: [ -statsd.mapping-config=/swift-etc/statsd-exporter.conf ]
-          imagePullPolicy: IfNotPresent
           ports:
             - name: statsd
               containerPort: 9125

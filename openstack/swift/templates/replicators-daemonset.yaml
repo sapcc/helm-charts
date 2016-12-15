@@ -53,7 +53,6 @@ spec:
       containers:
         - name: account
           image: {{.Values.global.docker_repo}}/ubuntu-source-swift-account-m3:{{.Values.image_version_swift_account}}
-          imagePullPolicy: IfNotPresent
           command:
             - /usr/bin/dumb-init
           args:
@@ -85,7 +84,6 @@ spec:
               name: swift-drive-state
         - name: container
           image: {{.Values.global.docker_repo}}/ubuntu-source-swift-container-m3:{{.Values.image_version_swift_container}}
-          imagePullPolicy: IfNotPresent
           command:
             - /usr/bin/dumb-init
           args:
@@ -117,7 +115,6 @@ spec:
               name: swift-drive-state
         - name: object
           image: {{.Values.global.docker_repo}}/ubuntu-source-swift-object-m3:{{.Values.image_version_swift_object}}
-          imagePullPolicy: IfNotPresent
           command:
             - /usr/bin/dumb-init
           args:
@@ -148,9 +145,8 @@ spec:
             - mountPath: /swift-drive-state
               name: swift-drive-state
         - name: statsd
-          image: prom/statsd-exporter
+          image: prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
           args: [ -statsd.mapping-config=/swift-etc/statsd-exporter.conf ]
-          imagePullPolicy: IfNotPresent
           ports:
             - name: statsd
               containerPort: 9125
