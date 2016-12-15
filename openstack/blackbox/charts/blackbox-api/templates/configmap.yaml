@@ -2,57 +2,28 @@ kind: ConfigMap
 apiVersion: v1
 
 metadata:
-  name: healthcheck
-  namespace: monitoring
+  name: blackbox-api
 
 data:
-  os.auth.url: https://identity-3.staging.cloud.sap/v3
-  os.identity.api.version: "3"
-  os.username: test_admin
-  os.user.domain.name: cc3test
-  os.project.name: admin
-  os.project.domain.name: cc3test
-  os.region.name: staging
-  swift.auth.url: https://identity-3.staging.cloud.sap/v3
-  swift.user: concourse
-  swift.user.domain: Default
-  swift.project.name: master
-  swift.project.id: 7a09c05926ec452ca7992af4aa03c31d
-  swift.project.domain: ccadmin
-  swift.region.name: staging
-  cc3.router.url: https://identity.staging.cloud.sap:5000/v3
-  cc3.billing.url: https://sapcc-billing.staging.cloud.sap:64000/services/
-  cc3.lyra.url: https://lyra.staging.cloud.sap
-  cc3.arc.url: https://arc.staging.cloud.sap
-  cc3.ironic.url: https://baremetal-3.staging.cloud.sap
-  datapath.server.1.id: 1f2ef81f-9f6d-48a8-ba1b-92da179a14be
-  datapath.server.1.name: datapath_server_1
-  datapath.server.1.floatingip: 10.44.32.210
-  datapath.server.1.dns.name: datapath-server1.cc.staging.cloud.sap
-  datapath.lbaas.floating.ip: 10.44.32.211
-  datapath.bind1.ip: 147.204.8.100
-  datapath.bind2.ip: 147.204.8.101
-  datapath.bind3.ip: 147.204.8.102
-  datapath.unbound1.ip: 10.44.11.96
-  datapath.unbound2.ip: 10.44.11.97
-  datapath.hidden.master: 10.44.11.102
-  datapath.secret.1.id: 663b9a38-d462-4e16-b5e9-84a793b10c26
-  canary.project.id: a759dcc2a2384a76b0386bb985952373
-  canary.project.name: test
-  canary.project.domain: cc3test
-  canary.image.id: ca1eceeb-e14b-43a4-be00-de2c1b9fd8dd
-  canary.flavor.id: "10"
-  canary.availability.zone: staging-rot1a
-  canary.fixed.network.id: cd0124f2-2dff-4120-bccc-b60a572d8bad
-  canary.floating.ip.pool: "Converged Cloud External"
-  canary.floatip.server.1.id: 5eaf41ed-487d-47a7-b094-8c0dca1ba872
-  canary.floatip.server.1.name: canary_floatip_1
-  canary.floatip.server.1.floatingip: 10.44.32.230
-  canary.secgrp.server.1.id: 1e4d39b9-9115-47dd-b749-8510cf9fa02e
-  canary.secgrp.server.1.name: canary_secgroup_1
-  canary.secgrp.server.1.floatingip: 10.44.32.222
-  canary.secgrp.group.1.id: 08b061d5-6251-428b-a23f-0e9f1e5144f1
-  canary.secgrp.group.1.name: canary_secgroup_1
-  timeout: "5"
-  pythonwarnings: ignore
-  log: "true"
+  os.auth.url: {{ default "" .Values.global.os_auth_url | quote }}
+  os.identity.api.version: {{ default "" .Values.global.os_identity_api_version | quote }}
+  os.username: {{ default "" .Values.global.os_username | quote }}
+  os.user.domain.name: {{ default "" .Values.global.os_user_domain_name | quote }}
+  os.project.name: {{ default "" .Values.global.os_project_name | quote }}
+  os.project.domain.name: {{ default "" .Values.global.os_project_domain_name | quote }}
+  os.region.name: {{ default .Values.global.os_region_name | quote }}
+  swift.auth.url: {{ default "" .Values.global.swift_auth_url | quote }}
+  swift.user: {{ default "" .Values.global.swift_user | quote }}
+  swift.user.domain: {{ default "" .Values.global.swift_user_domain | quote }}
+  swift.project.name: {{ default "" .Values.global.swift_project_name | quote }}
+  swift.project.id: {{ default "" .Values.global.swift_project_id | quote }}
+  swift.project.domain: {{ default "" .Values.global.swift_project_domain | quote }}
+  swift.region.name: {{ default "" .Values.global.swift_region_name | quote }}
+  router.url: {{ default "" .Values.router_url | quote }}
+  billing.url: {{ default "" .Values.billing_url | quote }}
+  lyra.url: {{ default "" .Values.lyra_url | quote }}
+  arc.url: {{ default "" .Values.arc_url | quote }}
+  ironic.url: {{ default "" .Values.ironic_url | quote}}
+  timeout: {{ default "" .Values.timeout | quote }}
+  pythonwarnings: {{ default "" .Values.pythonwarnings | quote }}
+  log: {{ default false .Values.log | quote }}
