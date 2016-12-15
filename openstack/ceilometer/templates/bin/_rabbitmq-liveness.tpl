@@ -1,3 +1,4 @@
+{{- define "rabbitmq_liveness_tpl" -}}
 #!/bin/bash
 
 # do some tasks required for all ceilometer containers
@@ -18,3 +19,4 @@ if [ "X$CHECKRESULT" = "X0" ] && [ "X$RESTARTRESULT" = "X0" ]; then
 else
   exit 1
 fi
+{{- end -}}

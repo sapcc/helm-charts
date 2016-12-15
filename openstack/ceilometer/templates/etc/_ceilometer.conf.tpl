@@ -1,3 +1,4 @@
+{{- define "ceilometer_conf_tpl" -}}
 [DEFAULT]
 debug = {{.Values.cluster_debug}}
 rpc_backend = rabbit
@@ -66,3 +67,4 @@ user_domain_name = {{.Values.keystone_service_domain}}
 project_name = {{.Values.keystone_service_project}}
 project_domain_name = {{.Values.keystone_service_domain}}
 insecure = false
+{{- end -}}

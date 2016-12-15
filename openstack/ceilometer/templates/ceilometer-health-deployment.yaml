@@ -1,0 +1,102 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: ceilometer-health
+  namespace: ceilometer
+  labels:
+    system: openstack
+    component: metering
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      annotations:
+        checksum/ceilometer-templates-ceilometer-bin-configmap.yaml: {{ include "ceilometer/templates/ceilometer-bin-configmap.yaml" . | sha256sum }}
+        checksum/ceilometer-templates-ceilometer-etc-configmap.yaml: {{ include "ceilometer/templates/ceilometer-etc-configmap.yaml" . | sha256sum }}
+        checksum/ceilometer-templates-etc-_healthcheck.conf.tpl: {{ include "healthcheck_conf_tpl" . | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_health-start.tpl: {{ include "health_start_tpl" . | sha256sum }}
+        checksum/ceilometer-templates-bin-static-_common-start.tpl: {{ include "common_start_tpl" . | sha256sum }}
+        pod.alpha.kubernetes.io/init-containers: '[
+          {
+            "name": "init",
+            "image": "{{.Values.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}",
+            "command": ["/init-container.sh"],
+            "volumeMounts": [
+              {
+                "name": "checks",
+                "mountPath": "/checks"
+              }
+            ]
+          }
+        ]'
+      labels:
+        component: ceilometer-health
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: ceilometer-bin
+          configMap:
+            name: ceilometer-bin
+        - name: ceilometer-etc
+          configMap:
+            name: ceilometer-etc
+        - name: checks
+          emptyDir:
+            medium: "Memory"
+      containers:
+        - name: ceilometer-health
+          image: {{.Values.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/dumb-init
+          args:
+            - /bin/bash
+            - /ceilometer-bin/health-start
+#          command:
+#            - /bin/bash
+#          args:
+#            - -c
+#            - "while true; do sleep 1000; done"
+          volumeMounts:
+            - mountPath: /ceilometer-bin
+              name: ceilometer-bin
+            - mountPath: /ceilometer-etc
+              name: ceilometer-etc
+            - mountPath: /checks
+              name: checks
+        - name: canary
+          image: {{.Values.docker_repo}}/wildcard-exporter:v201611171311
+          ports:
+            - containerPort: 9102
+          args:
+            - -web.listen-address=0.0.0.0:9102
+            - -namespace=canary
+            - checks/canary/*
+          volumeMounts:
+            - mountPath: /checks
+              name: checks
+          env:
+            - name: SWIFT_AUTH_URL
+              value: "{{.Values.canary_swift_auth_url}}"
+            - name: SWIFT_USER
+              value: "{{.Values.canary_swift_user}}"
+            - name: SWIFT_USER_DOMAIN
+              value: "{{.Values.canary_swift_user_domain}}"
+            - name: SWIFT_PROJECT_NAME
+              value: "{{.Values.canary_swift_project_name}}"
+            - name: SWIFT_PROJECT_ID
+              value: "{{.Values.canary_swift_project_id}}"
+            - name: SWIFT_PROJECT_DOMAIN
+              value: "{{.Values.canary_swift_project_domain}}"
+            - name: SWIFT_REGION_NAME
+              value: "{{.Values.canary_swift_region_name}}"
+            - name: SWIFT_API_KEY
+              value: "{{.Values.canary_swift_api_key}}"

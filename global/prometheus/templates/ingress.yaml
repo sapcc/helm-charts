@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: prometheus-global
+
+spec:
+  tls:
+     - secretName: prometheus-global
+       hosts: [prometheus.global.{{.Values.global.domain}}]
+  rules:
+    - host: prometheus.global.{{.Values.global.domain}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: prometheus-global
+            servicePort: 9090

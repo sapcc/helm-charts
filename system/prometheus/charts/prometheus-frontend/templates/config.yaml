@@ -4,20 +4,6 @@ metadata:
   name: prometheus-frontend
 
 data:
-  alert.rules: |
-    # Alert for any node that is unreachable for >1 hour.
-    ALERT K8SNodeDown
-      IF up{job="kubernetes-nodes"} == 0
-      FOR 1h
-      LABELS {
-        service = "k8s",
-        severity = "warning"
-      }
-      ANNOTATIONS {
-        summary = "Kubelet cannot be scraped",
-        description = "Prometheus could not scrape a {{ "{{$labels.job}}" }} for more than one hour",
-      }
-
   prometheus.yml: |
     rule_files:
       - /etc/prometheus/*.rules
@@ -39,6 +25,7 @@ data:
           - '{__name__=~"^aggregated:.+"}'
           - '{__name__=~"^ad_.+"}'
           - '{__name__=~"^apiserver_.+"}'
+          - '{__name__=~"^authenticated_user_requests"}'
           - '{__name__=~"^bind_.+"}'
           - '{__name__=~"^blackbox_.+"}'
           - '{__name__=~"^canary_.+"}'          
@@ -50,6 +37,7 @@ data:
           - '{__name__=~"^container_start_time_seconds"}'
           - '{__name__=~"^container_task_state"}'
           - '{__name__=~"^datapath_.+"}'
+          - '{__name__=~"^dnsmasq.+"}'
           - '{__name__=~"^elasticsearch_.+"}'
           - '{__name__=~"^etcd_.+"}'
           - '{__name__=~"^go_.+"}'
@@ -67,11 +55,14 @@ data:
           - '{__name__=~"^prometheus_.+"}'
           - '{__name__=~"^rabbitmq_.+"}'
           - '{__name__=~"^rest_client_.+"}'
+          - '{__name__=~"^scheduler_.+"}'
           - '{__name__=~"^scrape_duration_seconds"}'
+          - '{__name__=~"^skydns_.+"}'
           - '{__name__=~"^statsd_.+"}'
           - '{__name__=~"^swift_.+"}'
           - '{__name__=~"^unbound_.+"}'
           - '{__name__=~"^up"}'
+          - '{__name__=~"^admission|daemonset|deployment|disruption|endpoint|job|namespace|petset|replicaset|serviceaccount.+"}'
 
       metric_relabel_configs:
         - action: replace
