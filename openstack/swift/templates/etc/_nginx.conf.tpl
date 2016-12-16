@@ -49,7 +49,7 @@ http {
             # NOTE: It's imperative that the argument to proxy_pass does not
             # have a trailing slash. Swift needs to see the original request
             # URL for its domain-remap and staticweb functionalities.
-            proxy_pass        http://localhost:8080;
+            proxy_pass        http://127.0.0.1:8080;
             proxy_set_header  Host      $host;
             proxy_set_header  X-Real_IP $remote_addr;
             proxy_pass_header Date;
