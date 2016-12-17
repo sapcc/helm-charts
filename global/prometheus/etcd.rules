@@ -15,7 +15,7 @@ ALERT KubernetesEtcdDown
   }
 
 ALERT KubernetesEtcdInsufficientPeers
-  IF sum(up{job="kube-system/etcd"}) <= 2
+  IF ssum(up{job="kube-system/etcd"}) by (cluster) <= 2
   FOR 3m
   LABELS {
     service = "etcd",
@@ -29,7 +29,7 @@ ALERT KubernetesEtcdInsufficientPeers
   }
 
 ALERT KubernetesEtcdUnavailable
-  IF sum(up{job="kube-system/etcd"}) <= 1
+  IF sum(up{job="kube-system/etcd"}) by (cluster) <= 2
   FOR 3m
   LABELS {
     service = "etcd",
