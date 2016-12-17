@@ -1,0 +1,58 @@
+rule_files:
+  - ./*.rules
+
+scrape_configs:
+- job_name: 'prometheus-global'
+  static_configs:
+    - targets: ['localhost:9090']
+
+- job_name: 'prometheus-regions'
+  scheme: https
+  scrape_interval: 15s
+  scrape_timeout: 10s
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
+      - '{__name__=~"^blackbox_.+"}'
+      - '{__name__=~"^canary_.+"}'          
+      - '{__name__=~"^datapath_.+"}'
+      - '{__name__=~"^kube_.+"}'
+      - '{__name__=~"^kubelet_.+"}'
+      - '{__name__=~"up"}'
+      - '{__name__=~"^container_spec_.+"}'
+      - '{__name__=~"^container_cpu_.+"}'
+      - '{__name__=~"^container_memory_.+"}'
+      - '{__name__=~"^apiserver_.+"}'
+      - '{__name__=~"^scheduler_.+"}'
+      - '{__name__=~"^process_.+"}'
+
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region 
+      regex: prometheus.(.+).cloud.sap
+      replacement: $1
+
+    - action: replace
+      source_labels: [__address__]
+      target_label: cluster
+      regex: prometheus.(.+).cloud.sap
+      replacement: $1
+
+  static_configs:
+    - targets:
+      - 'prometheus.staging.cloud.sap'
+      - 'prometheus.eu-de-1.cloud.sap'
+      - 'prometheus.ap-au-1.cloud.sap'
+
+alerting:
+  alertmanagers:
+  - scheme: https
+    tls_config:
+      ca_file: ./ca.crt
+    static_configs:
+    - targets:
+      - "prometheus-alertmanager.staging.cloud.sap"
