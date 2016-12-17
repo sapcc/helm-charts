@@ -18,9 +18,9 @@ ALERT KubernetesEtcdInsufficientPeers
   IF sum(up{job="kube-system/etcd"}) <= 2
   FOR 3m
   LABELS {
-    service = "etcd"
-    severity = "warning"
-    context = "availability"
+    service = "etcd",
+    severity = "warning",
+    context = "availability",
     dashboard = "kubernetes-etcd"
   }
   ANNOTATIONS {
@@ -32,9 +32,9 @@ ALERT KubernetesEtcdUnavailable
   IF sum(up{job="kube-system/etcd"}) <= 1
   FOR 3m
   LABELS {
-    service = "etcd"
-    severity = "critical"
-    context = "availability"
+    service = "etcd",
+    severity = "critical",
+    context = "availability",
     dashboard = "kubernetes-etcd"
   }
   ANNOTATIONS {
@@ -50,13 +50,13 @@ ALERT KubernetesEtcdFdExhaustionClose
   IF predict_linear(instance:fd_utilization[1h], 3600 * 4) > 1
   FOR 10m
   LABELS {
-    service = "etcd"
-    severity = "warning"
-    context = "system"
+    service = "etcd",
+    severity = "warning",
+    context = "system",
     dashboard = "kubernetes-etcd"
   }
   ANNOTATIONS {
-    summary = "Etcd's file descriptors soon exhausted.
+    summary = "Etcd's file descriptors soon exhausted",
     description = "The etcd on {{ $labels.instance }} will exhaust in file descriptors soon",
   }
 
@@ -65,9 +65,9 @@ ALERT KubernetesEtcdFdExhaustionTooClose
   IF predict_linear(instance:fd_utilization[10m], 3600) > 1
   FOR 10m
   LABELS {
-    service = "etcd"
-    severity = "critical"
-    context = "system"
+    service = "etcd",
+    severity = "critical",
+    context = "system",
     dashboard = "kubernetes-etcd"
   }
   ANNOTATIONS {
@@ -82,9 +82,9 @@ ALERT KubernetesEtcdFdExhaustionTooClose
 ALERT KubernetesEtcdHighNumberOfFailedProposals
   IF increase(etcd_server_proposal_failed_total[1h]) > 5
   LABELS {
-    service = "etcd"
-    severity = "warning"
-    context = "proposals"
+    service = "etcd",
+    severity = "warning",
+    context = "proposals",
     dashboard = "kubernetes-etcd"
   }
   ANNOTATIONS {
@@ -100,9 +100,9 @@ ALERT KubernetesEtcdHighFsyncDurations
   IF etcd_wal_fsync_durations_microseconds{quantile="0.99"} / 1000000 > 0.5
   FOR 10m
   LABELS {
-    service = "etcd"
-    severity = "warning"
-    context = "filesystem"
+    service = "etcd",
+    severity = "warning",
+    context = "filesystem",
     dashboard = "kubernetes-etcd"
   }
   ANNOTATIONS {
