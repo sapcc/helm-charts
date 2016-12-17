@@ -1,0 +1,263 @@
+ALERT KubernetesKubeletDown
+  IF up{job="kube-system/kubelet"} == 0
+  FOR 15m
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "kubelet",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "A Kubelet is DOWN",
+    description = "Kublet on {{ $labels.instance }} is DOWN.",
+  }
+
+
+ALERT KubernetesKubeletManyDown
+  IF count by (cluster) (up{job="kube-system/kubelet"}) - sum by (cluster) (up{job="kube-system/kubelet"}) > 2
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "kubelet",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Many Kubelets are DOWN",
+    description = "More than 2 Kubelets are DOWN.",
+  }
+
+ALERT KubernetesKubeletScrapeMissing
+  IF count(up{job="prometheus-regions"}) by (cluster) unless count(up{job="kube-system/kubelet"}) by (cluster)
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "kubelet",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Kubelets cannot be scraped. Status unknown.",
+    description = "Kubelets failed to be scraped.",
+  }
+
+ALERT KubernetesKubeletTooManyPods
+  IF kubelet_running_pod_count > 100
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "kubelet",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Kubelet is close to pod limit",
+    description = "Kubelet {{$labels.instance}} is running {{$value}} pods, close to the limit of 110",
+  }
+
+
+ALERT KubernetesNodeNotReady
+  IF kube_node_status_ready{condition="true"} == 0
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "node",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Node status is NotReady",
+    description = "Node {{ $labels.node }} is NotReady for more than an hour",
+  }
+
+ALERT KubernetesNodeManyNotReady
+  IF count by (cluster) (kube_node_status_ready{condition="true"} == 0) > 2
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "node",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Many Nodes are NotReady",
+    description = "Many ({{ $value }}) nodes are NotReady for more than an hour.",
+  }
+
+ALERT KubernetesNodeScrapeMissing
+  IF count(up{job="prometheus-regions"}) by (cluster) unless on (cluster) up{job="endpoints",kubernetes_name="kube-state-metrics"} 
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "node",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Node status cannot be scraped",
+    description = "Node status failed to be scraped.",
+  }
+
+
+ALERT KubernetesApiServerDown
+  IF up{job="kube-system/apiserver"} == 0
+  FOR 15m
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "apiserver",
+    dashboard = "kubernetes-apiserver"
+  }
+  ANNOTATIONS {
+    summary = "An ApiServer is DOWN",
+    description = "ApiServer on {{ $labels.instance }} is DOWN.",
+  }
+
+ALERT KubernetesApiServerAllDown
+  IF count by(cluster) (up{job="kube-system/apiserver"} == 0) == count by(cluster) (up{job="kube-system/apiserver"})
+  FOR 5m
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "apiserver",
+    dashboard = "kubernetes-apiserver"
+  }
+  ANNOTATIONS {
+    summary = "API is unavailabele!!!",
+    description = "All apiservers are down. API is unavailable!",
+  }
+
+ALERT KubernetesApiServerScrapeMissing
+  IF count(up{job="prometheus-regions"}) by (cluster) unless on (cluster) up{job="kube-system/apiserver"}
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "apiserver",
+    dashboard = "kubernetes-apiserver"
+  }
+  ANNOTATIONS {
+    summary = "ApiServer cannot be scraped",
+    description = "ApiServers failed to be scraped.",
+  }
+
+ALERT KubernetesApiServerLatency
+  IF histogram_quantile(
+      0.99,
+      sum without (instance,node,resource) (apiserver_request_latencies_bucket{verb!~"CONNECT|WATCHLIST|WATCH"})
+    ) / 1e6 > 2.0
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "apiserver",
+    dashboard = "kubernetes-apiserver"
+  }
+  ANNOTATIONS {
+    summary = "Kubernetes apiserver latency is high",
+    description = "Latency for {{ $labels.verb }} is higher than 2s.",
+  }
+
+ALERT KubernetesApiServerEtcdAccessLatency
+  IF etcd_request_latencies_summary{quantile="0.99"} / 1e6 > 1.0
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "apiserver",
+    dashboard = "kubernetes-apiserver"
+  }
+  ANNOTATIONS {
+    summary = "Access to etcd is slow",
+    description = "Latency for apiserver to access etcd is higher than 1s.",
+  }
+
+
+
+ALERT KubernetesSchedulerDown
+  IF count by(cluster) (up{job="kube-system/scheduler"} == 1) == 0
+  FOR 5m
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "scheduler",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Scheduler is down",
+    description = "No scheduler is running. New pods are not being assigned to nodes!",
+  }
+
+ALERT KubernetesSchedulerScrapeMissing
+  IF count(up{job="prometheus-regions"}) by (cluster) unless on (cluster) up{job="kube-system/scheduler"}
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "scheduler",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Scheduler cannot be scraped",
+    description = "Scheduler in failed to be scraped.",
+  }
+
+ALERT KubernetesControllerManagerDown
+  IF count by(cluster) (up{job="kube-system/controller-manager"} == 1) == 0
+  FOR 5m
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "controller-manager",
+    dashboard = "kubernetes"
+
+  }
+  ANNOTATIONS {
+    summary = "Controller manager is down",
+    description = "No controller-manager is running. Deployments and replication controllers are not making progress.",
+  }
+
+ALERT KubernetesControllerManagerScrapeMissing
+  IF count(up{job="prometheus-regions"}) by (cluster) unless on (cluster) up{job="kube-system/controller-manager"}
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "controller-manager",
+    dashboard = "kubernetes"
+
+  }
+  ANNOTATIONS {
+    summary = "ControllerManager cannot be scraped",
+    description = "ControllerManager failed to be scraped.",
+  }
+
+
+
+ALERT KubernetesTooManyOpenFiles
+  IF 100*process_open_fds{job=~"kube-system/kubelet|kube-system/apiserver"} / process_max_fds > 50
+  FOR 10m
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "system",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Too many open file descriptors",
+    description = "{{ $labels.job }} on {{ $labels.instance }} is using {{ $value }}% of the available file/socket descriptors.",
+  }
+
+ALERT KubernetesTooManyOpenFiles
+  IF 100*process_open_fds{job=~"kube-system/kubelet|kube-system/apiserver"} / process_max_fds > 80
+  FOR 10m
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "system",
+    dashboard = "kubernetes"
+  }
+  ANNOTATIONS {
+    summary = "Too many open file descriptors",
+    description = "{{ $labels.job }} on {{ $labels.instance }} is using {{ $value }}% of the available file/socket descriptors.",
+  }
