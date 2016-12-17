@@ -8,15 +8,55 @@ data:
     global:
       resolve_timeout: 5m
 
+    templates: 
+      - ./*.tmpl
+
+    inhibit_rules:
+    # Mute warnings for which also a critical alert exists. Per context and
+    # cluster.
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      equal: ['context']
+
     route:
-      group_by: ['alertname']
-      group_wait: 10s
-      group_interval: 10s
-      repeat_interval: 1h
-      receiver: webhook_slack
+      group_by: ['cluster', 'alertname']
+      group_wait: 1m
+      group_interval: 15m
+      repeat_interval: 4h
+      receiver: slack
+
+      routes:
+      - receiver: 'sig-kubernetes'
+        continue: true
+        match:
+          service: k8s 
 
     receivers:
-    - name: webhook_slack
+    - name: slack
       slack_configs:
       - api_url: {{ default "MISSING" .Values.slack_webhook_url | quote }}
         channel: '#prometheus-alerts'
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+
+    - name: sig-kubernetes
+      slack_configs:
+      - api_url: {{ default "MISSING" .Values.slack_webhook_url | quote }}
+        channel: '#sig-kubernetes'
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+
+
+  {{- $files := .Files }}
+  {{ range tuple "slack.tmpl" }}
+  {{ . }}: |
+{{ $files.Get . | indent 4 }}
+  {{- end }}

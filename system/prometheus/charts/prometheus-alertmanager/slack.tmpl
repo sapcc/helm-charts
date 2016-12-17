@@ -1,0 +1,28 @@
+{{ define "slack.sapcc.title" }}{{ end }}
+{{ define "slack.sapcc.titlelink" }}{{ end }}
+{{ define "slack.sapcc.iconemoji" }}{{ end }}
+
+{{ define "slack.sapcc.pretext" }}{{ template "__severity" . }} *<https://grafana.{{ .CommonLabels.cluster }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|{{ .GroupLabels.alertname }}>* - {{ .CommonAnnotations.summary }} {{ if eq .Status "firing" }}({{ .Alerts.Firing | len }}){{ end }}{{ end }}
+
+
+{{ define "__severity" }}{{ if eq .CommonLabels.severity "warning" -}}:warning:{{- end }}{{ if eq .CommonLabels.severity "critical" -}}:fire:{{- end }} *[{{ .CommonLabels.severity | toUpper }}] [{{ .CommonLabels.cluster | toUpper }}]*{{- end }}
+
+{{ define "__firing" }}
+{{ range .Alerts.Firing }}{{ .Annotations.description }}
+{{ end }}
+{{ end }}
+
+{{ define "__resolved" }}
+{{ range .Alerts.Resolved }}{{ .Annotations.description }}\n{{ end }}
+{{ end }}
+
+{{ define "slack.sapcc.text" }}
+{{ if gt (len .Alerts.Firing) 0 -}}
+{{ template "__firing" . }}
+{{- end }}
+{{ if gt (len .Alerts.Resolved) 0 -}}
+{{ template "__resolved" . }} 
+{{- end }}
+{{- end }}
+
+
