@@ -24,7 +24,7 @@ data:
       group_by: ['cluster', 'alertname']
       group_wait: 1m
       group_interval: 15m
-      repeat_interval: 4h
+      repeat_interval: 8h
       receiver: slack-catchall 
 
       routes:
@@ -41,6 +41,7 @@ data:
     - name: slack-catchall
       slack_configs:
       - api_url: {{ default "MISSING" .Values.slack_webhook_url | quote }}
+        username: "Kubernetes Control Plane"
         channel: '#prometheus-alerts'
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -52,6 +53,7 @@ data:
     - name: slack-alerts
       slack_configs:
       - api_url: {{ default "MISSING" .Values.slack_webhook_url | quote }}
+        username: "Kubernetes Control Plane"
         channel: '#ccalerts'
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -62,6 +64,7 @@ data:
     - name: slack-kubernetes
       slack_configs:
       - api_url: {{ default "MISSING" .Values.slack_webhook_url | quote }}
+        username: "Kubernetes Control Plane"
         channel: '#sig-kubernetes'
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
