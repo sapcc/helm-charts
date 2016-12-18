@@ -1,5 +1,5 @@
 ALERT PrometheusFrontendDown
-  IF absent(up{job="prometheus-frontend"}) or up{job="prometheus-frontend"} == 0
+  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless count(up{job="prometheus-frontend"}) by (cluster)
   FOR 5m
   LABELS {
     service = "prometheus",
@@ -13,7 +13,7 @@ ALERT PrometheusFrontendDown
   }
 
 ALERT PrometheusCollectorDown
-  IF absent(up{job="prometheus-collector"}) or up{job="prometheus-collector"} == 0
+  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless count(up{job="prometheus-collector"}) by (cluster)
   FOR 5m
   LABELS {
     service = "prometheus",
@@ -50,5 +50,5 @@ ALERT PrometheusFederationRegions
   }
   ANNOTATIONS {
     summary = "Global Prometheus Federation is having trouble",
-    description = "Prometheus Global can't federate data from the region. Alerting will be unavailable!",
+    description = "Prometheus Global can't federate data from {{ $labels.cluster }}. Alerting will be unavailable!",
   }
