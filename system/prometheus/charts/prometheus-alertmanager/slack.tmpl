@@ -1,28 +1,28 @@
+{{ define "slack.sapcc.iconemoji" }}{{ end }}
 {{ define "slack.sapcc.title" }}{{ end }}
 {{ define "slack.sapcc.titlelink" }}{{ end }}
-{{ define "slack.sapcc.iconemoji" }}{{ end }}
 
-{{ define "slack.sapcc.pretext" }}{{ template "__severity" . }} *<https://grafana.{{ .CommonLabels.cluster }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|{{ .GroupLabels.alertname }}>* - {{ .CommonAnnotations.summary }} {{ if eq .Status "firing" }}({{ .Alerts.Firing | len }}){{ end }}{{ end }}
-
-
-{{ define "__severity" }}{{ if eq .CommonLabels.severity "warning" -}}:warning:{{- end }}{{ if eq .CommonLabels.severity "critical" -}}:fire:{{- end }} *[{{ .CommonLabels.severity | toUpper }}] [{{ .CommonLabels.cluster | toUpper }}]*{{- end }}
-
-{{ define "__firing" }}
-{{ range .Alerts.Firing }}{{ .Annotations.description }}
-{{ end }}
-{{ end }}
-
-{{ define "__resolved" }}
-{{ range .Alerts.Resolved }}{{ .Annotations.description }}\n{{ end }}
-{{ end }}
+{{ define "slack.sapcc.pretext" }}
+{{ if eq .Status "firing" }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
+{{ if eq .Status "resolved" }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
+  *[{{ .CommonLabels.cluster | toUpper }}]* {{ if .CommonLabels.dashboard }}*<https://grafana.{{ .CommonLabels.cluster }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }} 
+{{- end }}
 
 {{ define "slack.sapcc.text" }}
-{{ if gt (len .Alerts.Firing) 0 -}}
-{{ template "__firing" . }}
-{{- end }}
-{{ if gt (len .Alerts.Resolved) 0 -}}
-{{ template "__resolved" . }} 
-{{- end }}
-{{- end }}
-
-
+{{ if eq .Status "firing" -}}
+{{ range .Alerts.Firing -}}
+  {{ if eq .Labels.severity "warning" }}:warning: {{ end -}}
+  {{ if eq .Labels.severity "critical" }}:fire: {{ end -}} 
+  {{ .Annotations.description }}
+{{ end -}}
+{{ end -}}
+{{ if eq .Status "resolved" -}}
+{{ range .Alerts.Resolved -}}
+  :white_check_mark: {{ .Annotations.description }}
+{{ end -}}
+{{ end -}}
+{{ if .CommonLabels.dashboard }}
+*<https://grafana.{{ .CommonLabels.cluster }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|Dashboard>* {{ end -}}
+{{ if .CommonLabels.playbook }}
+*<{{ .CommonLabels.playbook }}|Playbook>* {{ end -}}
+{{ end }}
