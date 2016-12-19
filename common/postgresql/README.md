@@ -53,8 +53,8 @@ The following tables lists the configurable parameters of the PostgresSQL chart 
 | `postgresDatabase`         | Name for new database to create.           | `postgres`                                                 |
 | `persistence.enabled`      | Use a PVC to persist data                  | `true`                                                     |
 | `persistence.storageClass` | Storage class of backing PVC               | `generic`                                                  |
-| `persistence.accessMode`   | Use volume as ReadOnly or ReadWrite        | `ReadWriteOnce`                                            |
-| `persistence.size`         | Size of data volume                        | `8Gi`                                                      |
+| `persistence.accessMode`   | Use volume as ReadOnly or ReadWrite        | `ReadWriteMany`                                            |
+| `persistence.size`         | Size of data volume                        | `10Gi`                                                     |
 | `persistence.existingClaim`| Re-Use existing PVC                        |                                                            |
 | `resources`                | CPU/Memory resource requests/limits        | Memory: `256Mi`, CPU: `100m`                               |
 
