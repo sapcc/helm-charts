@@ -45,20 +45,23 @@ data:
             match_re:
               cluster: eu-de-1|ap-au-1
       - receiver: ccalerts
+        continue: true
         match_re:
           service: k8s|etcd|prometheus
           cluster: eu-de-1|ap-au-1
       - receiver: ccalerts-staging
+        continue: true
         match_re:
           service: k8s|etcd|prometheus
           cluster: staging
       {{- range tuple "staging" "eu-de-1" "ap-au-1" "na-us-1" }}
       - receiver: region_{{ . }}
+        continue: true
         match_re:
           service: k8s|etcd|prometheus
           cluster: {{ . }}
-          match:
-            severity: critical
+        match:
+          severity: critical
       {{- end }}
 
 
