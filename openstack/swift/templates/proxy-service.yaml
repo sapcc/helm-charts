@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: swift-proxy
+  namespace: swift
+  labels:
+    system: openstack
+    component: objectstore
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9102"
+
+spec:
+  selector:
+    component: swift-proxy
+  ports:
+    - name: api
+      port: {{.Values.proxy_public_port}}
+  externalIPs:
+    - {{.Values.proxy_public_ip}}
