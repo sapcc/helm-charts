@@ -1,0 +1,42 @@
+{{- if .Values.updatesProxy.storageUrl }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: arc-updates-proxy
+
+spec:
+  replicas: {{ .Values.updatesProxy.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: arc-updates-proxy
+    spec:
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: arc-updates-proxy
+      containers:
+        - name: proxy
+          image: nginx:1.11-alpine
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+          ports:
+            - name: proxy
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              # Path to probe; should be cheap, but representative of typical behavior
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          #livenessProbe:
+          #  httpGet:
+          #    # Path to probe; should be cheap, but representative of typical behavior
+          #    path: /
+          #    port: 80
+          #  initialDelaySeconds: 60
+          #  timeoutSeconds: 1
+{{- end }}
