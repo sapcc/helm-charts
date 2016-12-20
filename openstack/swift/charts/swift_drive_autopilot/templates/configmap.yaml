@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: swift-drive-autopilot
+  labels:
+    system: openstack
+    service: objectstore
+    component: configuration
+
+data:
+  config.yaml: |
+    chroot: /coreos
+
+    drives:
+      - {{.Values.drive_glob}}
+
+    # the Swift user and group is UID/GID 1000 in the Kolla containers
+    chown:
+      user: "1000"
+      group: "1000"
+
+    {{ if .Values.encryption_key -}}
+    keys:
+      - secret: {{.Values.encryption_key}}
+    {{ end }}
+
+    {{- if .Values.drive_count -}}
+    {{ $cnt := int .Values.drive_count }}
+    swift-id-pool: {{ range $idx := until $cnt }}
+      - swift-{{ $idx | add1 | printf "%02d" -}}
+    {{ end -}}
+    {{- end -}}
