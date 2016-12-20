@@ -25,55 +25,48 @@ data:
       group_wait: 1m
       group_interval: 5m
       repeat_interval: 8h
-      receiver: slack-catchall 
+      receiver: kubernetes-info 
 
       routes:
-      - receiver: 'slack-alerts'
+      - receiver: kubernetes-info
         continue: true
         match_re:
           service: k8s|etcd|prometheus
         routes:
-        - receiver: 'slack-kubernetes'
+        - receiver: 'kubernetes-warning'
+          match:
+            severity: warning 
+        - receiver: 'kubernetes-critical'
+          continue: true
           match:
             severity: critical
+          routes: 
+          - receiver: kubernetes
+            match_re:
+              cluster: eu-de-1|ap-au-1
+      - receiver: ccalerts
+        match_re:
+          service: k8s|etcd|prometheus
+          cluster: eu-de-1|ap-au-1
+      - receiver: ccalerts-staging
+        match_re:
+          service: k8s|etcd|prometheus
+          cluster: staging
 
     receivers:
-    - name: slack-catchall
+    {{- range tuple "kubernetes" "kubernetes-info" "kubernetes-warning" "kubernetes-critical" "ccalerts" "ccalerts-staging" }}
+    - name: {{ . }}
       slack_configs:
-      - api_url: {{ default "MISSING" .Values.slack_webhook_url | quote }}
+      - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
         username: "Kubernetes Control Plane"
-        channel: '#prometheus-alerts'
+        channel: "#{{ . }}"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
         pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         send_resolved: true 
-
-
-    - name: slack-alerts
-      slack_configs:
-      - api_url: {{ default "MISSING" .Values.slack_webhook_url | quote }}
-        username: "Kubernetes Control Plane"
-        channel: '#ccalerts'
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true 
-
-    - name: slack-kubernetes
-      slack_configs:
-      - api_url: {{ default "MISSING" .Values.slack_webhook_url | quote }}
-        username: "Kubernetes Control Plane"
-        channel: '#sig-kubernetes'
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true 
+    {{- end }}
 
   {{- $files := .Files }}
   {{ range tuple "slack.tmpl" }}
