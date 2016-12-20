@@ -52,9 +52,19 @@ data:
         match_re:
           service: k8s|etcd|prometheus
           cluster: staging
+      {{- range tuple "staging" "eu-de-1" "ap-au-1" "na-us-1" }}
+      - receiver: region_{{ . }}
+        match_re:
+          service: k8s|etcd|prometheus
+          cluster: {{ . }}
+          match:
+            severity: critical
+      {{- end }}
+
+
 
     receivers:
-    {{- range tuple "kubernetes" "kubernetes-info" "kubernetes-warning" "kubernetes-critical" "ccalerts" "ccalerts-staging" }}
+    {{- range tuple "kubernetes" "kubernetes-info" "kubernetes-warning" "kubernetes-critical" "ccalerts" "ccalerts-staging" "region_staging" "region_eu-de-1" "region_ap-au-1" "region_na-us-1" }}
     - name: {{ . }}
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
