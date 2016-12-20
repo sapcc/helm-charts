@@ -1,0 +1,52 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: arc-pki
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+
+spec:
+  replicas: {{ .Values.pkiReplicaCount }} 
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: arc-pki
+    spec:
+      volumes:
+        - name: secrets
+          secret:
+            secretName: arc
+      containers:
+        - name: pki
+          image: {{ .Values.pkiImage.repository }}:{{ .Values.pkiImage.tag }}
+          env:
+            - name: LISTEN
+              value: 0.0.0.0:{{ .Values.pkiService.internalPort }}
+            - name: DBUSER
+              value: postgres
+            - name: DBHOST
+              value: {{ template "postgresql.fullname" . }}
+            - name: DBPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "postgresql.fullname" . }}
+                  key: postgres-password
+            - name: CA_CERT
+              value: /secrets/ca.cert
+            - name: CA_KEY
+              value: /secrets/ca.key
+            - name: ARC_ENV
+              value: production
+          ports:
+            - name: pki
+              containerPort: 80
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
