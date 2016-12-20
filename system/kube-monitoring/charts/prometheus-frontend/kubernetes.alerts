@@ -14,7 +14,7 @@ ALERT KubernetesKubeletDown
 
 
 ALERT KubernetesKubeletManyDown
-  IF count by (cluster) (up{job="kube-system/kubelet"}) - sum by (cluster) (up{job="kube-system/kubelet"}) > 2
+  IF count(up{job="kube-system/kubelet"}) - sum(up{job="kube-system/kubelet"}) > 2
   FOR 1h
   LABELS {
     service = "k8s",
@@ -28,7 +28,7 @@ ALERT KubernetesKubeletManyDown
   }
 
 ALERT KubernetesKubeletScrapeMissing
-  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless count(up{job="kube-system/kubelet"}) by (cluster)
+  IF absent(up{job="kube-system/kubelet"})
   FOR 1h
   LABELS {
     service = "k8s",
@@ -71,7 +71,7 @@ ALERT KubernetesNodeNotReady
   }
 
 ALERT KubernetesNodeManyNotReady
-  IF count by (cluster) (kube_node_status_ready{condition="true"} == 0) > 2
+  IF count(kube_node_status_ready{condition="true"} == 0) > 2
   FOR 1h
   LABELS {
     service = "k8s",
@@ -85,7 +85,7 @@ ALERT KubernetesNodeManyNotReady
   }
 
 ALERT KubernetesNodeScrapeMissing
-  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless on (cluster) up{job="endpoints",kubernetes_name="kube-state-metrics"} 
+  IF absent(up{job="endpoints",kubernetes_name="kube-state-metrics"})
   FOR 1h
   LABELS {
     service = "k8s",
@@ -114,7 +114,7 @@ ALERT KubernetesApiServerDown
   }
 
 ALERT KubernetesApiServerAllDown
-  IF count by(cluster) (up{job="kube-system/apiserver"} == 0) == count by(cluster) (up{job="kube-system/apiserver"})
+  IF count(up{job="kube-system/apiserver"} == 0) == count(up{job="kube-system/apiserver"})
   FOR 5m
   LABELS {
     service = "k8s",
@@ -128,7 +128,7 @@ ALERT KubernetesApiServerAllDown
   }
 
 ALERT KubernetesApiServerScrapeMissing
-  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless on (cluster) up{job="kube-system/apiserver"}
+  IF absent(up{job="kube-system/apiserver"})
   FOR 1h
   LABELS {
     service = "k8s",
@@ -175,7 +175,7 @@ ALERT KubernetesApiServerEtcdAccessLatency
 
 
 ALERT KubernetesSchedulerDown
-  IF count by(cluster) (up{job="kube-system/scheduler"} == 1) == 0
+  IF count(up{job="kube-system/scheduler"} == 1) == 0
   FOR 5m
   LABELS {
     service = "k8s",
@@ -189,7 +189,7 @@ ALERT KubernetesSchedulerDown
   }
 
 ALERT KubernetesSchedulerScrapeMissing
-  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless on (cluster) up{job="kube-system/scheduler"}
+  IF absent(up{job="kube-system/scheduler"})
   FOR 1h
   LABELS {
     service = "k8s",
@@ -203,7 +203,7 @@ ALERT KubernetesSchedulerScrapeMissing
   }
 
 ALERT KubernetesControllerManagerDown
-  IF count by(cluster) (up{job="kube-system/controller-manager"} == 1) == 0
+  IF count(up{job="kube-system/controller-manager"} == 1) == 0
   FOR 5m
   LABELS {
     service = "k8s",
@@ -218,7 +218,7 @@ ALERT KubernetesControllerManagerDown
   }
 
 ALERT KubernetesControllerManagerScrapeMissing
-  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless on (cluster) up{job="kube-system/controller-manager"}
+  IF absent(up{job="kube-system/controller-manager"})
   FOR 1h
   LABELS {
     service = "k8s",
