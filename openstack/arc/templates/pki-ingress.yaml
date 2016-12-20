@@ -1,4 +1,4 @@
-{{- if .Values.pkiIngress.enabled }}
+{{- if .Values.pki.ingress.enabled }}
 kind: Secret
 apiVersion: v1
 
@@ -7,8 +7,8 @@ metadata:
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 data:
-  tls.crt: {{ .Values.pkiIngress.tls_crt | b64enc }}
-  tls.key: {{ .Values.pkiIngress.tls_key | b64enc }}
+  tls.crt: {{ .Values.pki.ingress.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.pki.ingress.tlsKey | b64enc }}
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -17,17 +17,17 @@ metadata:
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
-  {{- if .Values.pkiIngress.tls_crt }}
+  {{- if .Values.pki.ingress.tlsCertificate }}
   tls:
      - secretName: arc-pki-ingress
-       hosts: [{{ .Values.pkiIngress.host }}]
+       hosts: [{{ .Values.pki.ingress.host }}]
   {{- end }}
   rules:
-  - host: {{ .Values.pkiIngress.host }}
+  - host: {{ .Values.pki.ingress.host }}
     http:
       paths:
       - path: /
         backend:
           serviceName: arc-pki
-          servicePort: {{ .Values.pkiService.externalPort }}
+          servicePort: {{ .Values.pki.service.externalPort }}
 {{- end }}

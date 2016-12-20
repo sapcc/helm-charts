@@ -1,4 +1,4 @@
-{{- if .Values.apiIngress.enabled }}
+{{- if .Values.api.ingress.enabled }}
 kind: Secret
 apiVersion: v1
 
@@ -7,8 +7,8 @@ metadata:
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 data:
-  tls.crt: {{ .Values.apiIngress.tls_crt | b64enc }}
-  tls.key: {{ .Values.apiIngress.tls_key | b64enc }}
+  tls.crt: {{ .Values.api.ingress.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.api.ingress.tlsKey | b64enc }}
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -17,17 +17,17 @@ metadata:
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
-  {{- if .Values.apiIngress.tls_crt }}
+  {{- if .Values.api.ingress.tlsCertificate }}
   tls:
      - secretName: arc-api-ingress
-       hosts: [{{ .Values.apiIngress.host }}]
+       hosts: [{{ .Values.api.ingress.host }}]
   {{- end }}
   rules:
-  - host: {{ .Values.apiIngress.host }}
+  - host: {{ .Values.api.ingress.host }}
     http:
       paths:
       - path: /
         backend:
           serviceName: arc-api
-          servicePort: {{ .Values.apiService.externalPort }}
+          servicePort: {{ .Values.api.service.externalPort }}
 {{- end }}

@@ -7,7 +7,7 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 
 spec:
-  replicas: {{ .Values.apiReplicaCount }}
+  replicas: {{ .Values.api.replicaCount }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -23,26 +23,26 @@ spec:
           emptyDir: {}
       containers:
         - name: api
-          image: {{ .Values.apiImage.repository }}:{{ .Values.apiImage.tag }}
-          imagePullPolicy: {{ .Values.apiImage.pullPolicy }}
+          image: {{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
           ports:
             - name: api
-              containerPort: {{ .Values.apiService.internalPort }}
+              containerPort: {{ .Values.api.service.internalPort }}
           readinessProbe:
             httpGet:
               path: /readiness
-              port: {{ .Values.apiService.internalPort }}
+              port: {{ .Values.api.service.internalPort }}
             initialDelaySeconds: 5
             timeoutSeconds: 1
           livenessProbe:
             httpGet:
               path: /healthcheck
-              port: {{ .Values.apiService.internalPort }}
+              port: {{ .Values.api.service.internalPort }}
             initialDelaySeconds: 20
             timeoutSeconds: 5
           env:
             - name: ARC_LISTEN
-              value: 0.0.0.0:{{ .Values.apiService.internalPort }}
+              value: 0.0.0.0:{{ .Values.api.service.internalPort }}
             - name: ARC_ENV
               value: production
             - name: ARC_ENDPOINT
