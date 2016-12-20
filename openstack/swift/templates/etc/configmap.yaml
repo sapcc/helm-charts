@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: swift-etc
+  labels:
+    system: openstack
+    service: objectstore
+    component: configuration
+
+data:
+  # nginx
+  dhparam.pem: |
+{{ tuple "_dhparam.pem.tpl" . | include "template" | indent 4 }}
+  nginx.conf: |
+{{ tuple "_nginx.conf.tpl" . | include "template" | indent 4 }}
+
+  # rsync
+  rsyncd.conf: |
+{{ tuple "_rsyncd.conf.tpl" . | include "template" | indent 4 }}
+
+  # Swift
+  account-server.conf: |
+{{ tuple "_account-server.conf.tpl" . | include "template" | indent 4 }}
+  container-reconciler.conf: |
+{{ tuple "_container-reconciler.conf.tpl" . | include "template" | indent 4 }}
+  container-server.conf: |
+{{ tuple "_container-server.conf.tpl" . | include "template" | indent 4 }}
+  dispersion.conf: |
+{{ tuple "_dispersion.conf.tpl" . | include "template" | indent 4 }}
+  internal-client.conf: |
+{{ tuple "_internal-client.conf.tpl" . | include "template" | indent 4 }}
+  object-expirer.conf: |
+{{ tuple "_object-expirer.conf.tpl" . | include "template" | indent 4 }}
+  object-server.conf: |
+{{ tuple "_object-server.conf.tpl" . | include "template" | indent 4 }}
+  proxy-server.conf: |
+{{ tuple "_proxy-server.conf.tpl" . | include "template" | indent 4 }}
+  swift.conf: |
+{{ tuple "_swift.conf.tpl" . | include "template" | indent 4 }}
+
+  # swift-drive-autopilot
+  drive-autopilot.yaml: |
+{{ tuple "_drive-autopilot.yaml.tpl" . | include "template" | indent 4 }}
+
+  # prometheus
+  statsd-exporter.conf: |
+{{ tuple "_statsd-exporter.conf.tpl" . | include "template" | indent 4 }}

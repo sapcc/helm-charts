@@ -1,0 +1,54 @@
+ALERT PrometheusFrontendDown
+  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless count(up{job="prometheus-frontend"}) by (cluster)
+  FOR 5m
+  LABELS {
+    service = "prometheus",
+    severity = "critical",
+    context = "availability",
+    dashboard = "prometheus?var-instance=frontend"
+  }
+  ANNOTATIONS {
+    summary = "Prometheus Frontend is DOWN",
+    description = "Prometheus Frontend is DOWN. Alerting and dashboards are unavailable",
+  }
+
+ALERT PrometheusCollectorDown
+  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless count(up{job="prometheus-collector"}) by (cluster)
+  FOR 5m
+  LABELS {
+    service = "prometheus",
+    severity = "critical",
+    context = "availability",
+    dashboard = "prometheus?var-instance=collector"
+  }
+  ANNOTATIONS {
+    summary = "Prometheus Collector is DOWN",
+    description = "Prometheus Collector is DOWN. Alerting and dashboards are currently based on outdated data",
+  }
+
+ALERT PrometheusFederationCollector
+  IF absent(up{job="prometheus-collector-federation"}) or up{job="prometheus-collector-federation"} == 0
+  FOR 5m
+  LABELS {
+    service = "prometheus",
+    severity = "warning",
+    context = "availability",
+    dashboard = "prometheus?var-instance=frontend"
+  }
+  ANNOTATIONS {
+    summary = "Prometheus Frontend Federation is DOWN",
+    description = "Prometheus Frontend can't federate data from the Collector. Data will be stale",
+  }
+
+ALERT PrometheusFederationRegions
+  IF absent(up{job="prometheus-regions-federation"}) or up{job="prometheus-regions-federation"} == 0
+  FOR 5m
+  LABELS {
+    service = "prometheus",
+    severity = "critical",
+    context = "availability-global",
+  }
+  ANNOTATIONS {
+    summary = "Global Prometheus Federation is having trouble",
+    description = "Prometheus Global can't federate data from {{ $labels.cluster }}. Alerting will be unavailable!",
+  }

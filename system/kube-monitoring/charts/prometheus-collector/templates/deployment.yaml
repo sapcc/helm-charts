@@ -1,17 +1,20 @@
-apiVersion: apps/v1alpha1
-kind: PetSet
+apiVersion: extensions/v1beta1
+kind: Deployment
 
 metadata:
-  name: prometheus-global
+  name: prometheus-collector 
 
 spec:
   replicas: 1 
-  serviceName: prometheus-global
+  selector:
+    matchLabels:
+      app: prometheus
+      type: collector
   template:
     metadata:
       labels:
         app: prometheus
-        type: global
+        type: collector
     spec:
       terminationGracePeriodSeconds: 300
       containers:
@@ -35,16 +38,9 @@ spec:
               mountPath: /etc/prometheus
       volumes:
         - name: data
-          persistentVolumeClaim:
-            claimName: data 
+          emptyDir: 
+            medium: Memory
         - name: config
           configMap:
-            name: prometheus-global
-  volumeClaimTemplates:
-    - metadata:
-        name: data 
-      spec:
-        accessModes: [ "ReadWriteMany" ]
-        resources:
-          requests:
-            storage: 300Gi
+            name: prometheus-collector
+

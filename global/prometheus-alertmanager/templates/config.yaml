@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alertmanager
+
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+
+    templates: 
+      - ./*.tmpl
+
+    inhibit_rules:
+    # Mute warnings for which also a critical alert exists. Per context and
+    # cluster.
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      equal: ['context']
+
+    route:
+      group_by: ['cluster', 'alertname']
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 8h
+      receiver: kubernetes-info 
+
+      routes:
+      - receiver: kubernetes-info
+        continue: true
+        match_re:
+          service: k8s|etcd|prometheus
+        routes:
+        - receiver: 'kubernetes-warning'
+          match:
+            severity: warning 
+        - receiver: 'kubernetes-critical'
+          continue: true
+          match:
+            severity: critical
+          routes: 
+          - receiver: kubernetes
+            match_re:
+              cluster: eu-de-1|ap-au-1
+      - receiver: ccalerts
+        match_re:
+          service: k8s|etcd|prometheus
+          cluster: eu-de-1|ap-au-1
+      - receiver: ccalerts-staging
+        match_re:
+          service: k8s|etcd|prometheus
+          cluster: staging
+
+    receivers:
+    {{- range tuple "kubernetes" "kubernetes-info" "kubernetes-warning" "kubernetes-critical" "ccalerts" "ccalerts-staging" }}
+    - name: {{ . }}
+      slack_configs:
+      - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
+        username: "Kubernetes Control Plane"
+        channel: "#{{ . }}"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        send_resolved: true 
+    {{- end }}
+
+  {{- $files := .Files }}
+  {{ range tuple "slack.tmpl" }}
+  {{ . }}: |
+{{ $files.Get . | indent 4 }}
+  {{- end }}
