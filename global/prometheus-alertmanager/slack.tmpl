@@ -6,12 +6,13 @@
 {{ define "slack.sapcc.text" }}
 {{ if eq .Status "firing" }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
 {{ if eq .Status "resolved" }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
-  *[{{ .CommonLabels.cluster | toUpper }}]* {{ if .CommonLabels.dashboard }}*<https://grafana.{{ .CommonLabels.cluster }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }} 
+  *[{{ .CommonLabels.cluster | toUpper }}]* {{ if .CommonLabels.dashboard }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }} 
+
 {{ if eq .Status "firing" -}}
 {{ range .Alerts.Firing -}}
   {{ if eq .Labels.severity "warning" }}:warning: {{ end -}}
   {{ if eq .Labels.severity "critical" }}:fire: {{ end -}} 
-  {{ .Annotations.description }}
+  {{ .Annotations.description }} (<{{ .GeneratorURL }}|Graph>)
 {{ end -}}
 {{ end -}}
 {{ if eq .Status "resolved" -}}
@@ -19,8 +20,7 @@
   :white_check_mark: {{ .Annotations.description }}
 {{ end -}}
 {{ end -}}
-{{ if .CommonLabels.dashboard }}
-*<https://grafana.{{ .CommonLabels.cluster }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|Dashboard>* {{ end -}}
-{{ if .CommonLabels.playbook }}
-*<{{ .CommonLabels.playbook }}|Playbook>* {{ end -}}
+
+{{ if .CommonLabels.dashboard }}*<https://grafana.{{ .CommonLabels.cluster }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|Grafana>* {{ end -}}
+{{ if .CommonLabels.playbook }}*<{{ .CommonLabels.playbook }}|Playbook>* {{ end -}}
 {{ end }}
