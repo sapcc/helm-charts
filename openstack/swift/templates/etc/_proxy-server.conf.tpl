@@ -19,7 +19,7 @@ log_level = INFO
 {{- end }}
 
 [pipeline:main]
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap statsd bulk tempurl ratelimit authtoken keystone staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 # pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap statsd container_sync bulk tempurl ratelimit authtoken keystone staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
@@ -144,13 +144,13 @@ use = egg:swift#container_quotas
 [filter:account-quotas]
 use = egg:swift#account_quotas
 
-[filter:statsd]
-use = egg:ops-middleware#statsd
-statsd_host = localhost
-statsd_port = 9125
-statsd_replace = swift
-
-[filter:sentry]
-use = egg:ops-middleware#sentry
-dsn = {{.Values.sentry_dsn}}
-level = ERROR
+# [filter:statsd]
+# use = egg:ops-middleware#statsd
+# statsd_host = localhost
+# statsd_port = 9125
+# statsd_replace = swift
+#
+# [filter:sentry]
+# use = egg:ops-middleware#sentry
+# dsn = {{.Values.sentry_dsn}}
+# level = ERROR
