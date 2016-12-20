@@ -55,6 +55,19 @@ ALERT KubernetesKubeletTooManyPods
     description = "Kubelet {{$labels.instance}} is running {{$value}} pods, close to the limit of 250",
   }
 
+ALERT KubernetesKubeletFull
+  IF kubelet_running_pod_count >= 250
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "kubelet",
+    dashboard = "kubernetes-node?var-server={{$labels.instance}}"
+  }
+  ANNOTATIONS {
+    summary = "Kubelet is full",
+    description = "Kubelet {{$labels.instance}} is running {{$value}} pods. That's too much!",
+  }
 
 ALERT KubernetesNodeNotReady
   IF kube_node_status_ready{condition="true"} == 0
@@ -84,6 +97,21 @@ ALERT KubernetesNodeManyNotReady
     description = "Many ({{ $value }}) nodes are NotReady for more than an hour.",
   }
 
+ALERT KubernetesNodeNotReady
+  IF changes(kube_node_status_ready{condition="true"}[15m]) > 2
+  FOR 15m
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "node",
+    dashboard = "kubernetes-node?var-server={{$labels.node}}"
+  }
+  ANNOTATIONS {
+    summary = "Node Readyness is flapping",
+    description = "Node {{ $labels.node }} is flapping between Ready and NotReady",
+  }
+
+
 ALERT KubernetesNodeScrapeMissing
   IF absent(up{job="endpoints",kubernetes_name="kube-state-metrics"})
   FOR 1h
@@ -98,6 +126,34 @@ ALERT KubernetesNodeScrapeMissing
     description = "Node status failed to be scraped.",
   }
 
+ALERT KubernetesPodRestartingTooMuch
+  IF rate(kube_pod_container_status_restarts[5m]) > 0
+  FOR 1h
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "pod",
+    dashboard = "kubernetes-node?var-server={{$labels.node}}"
+  }
+  ANNOTATIONS {
+    summary = "Pod is in a restart loop",
+    description = "Pod {{$labels.namespace}}/{{$label.name}} restarting too much.",
+  }
+
+
+ALERT KubernetesDockerHangs
+  IF sum(rate(kubelet_docker_operations[5m])) by (instance) == 0
+  FOR 15m
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "docker",
+    dashboard = "kubernetes-node?var-server={{$labels.node}}"
+  }
+  ANNOTATIONS {
+    summary = "Docker hangs!",
+    description = "Docker on {{ $labels.node }} is hanging",
+  }
 
 ALERT KubernetesApiServerDown
   IF up{job="kube-system/apiserver"} == 0
@@ -231,6 +287,8 @@ ALERT KubernetesControllerManagerScrapeMissing
     summary = "ControllerManager cannot be scraped",
     description = "ControllerManager failed to be scraped.",
   }
+
+
 
 
 
