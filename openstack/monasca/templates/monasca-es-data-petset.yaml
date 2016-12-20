@@ -1,0 +1,141 @@
+apiVersion: apps/v1alpha1
+kind: PetSet
+metadata:
+  name: es-data
+  namespace: monasca
+  labels:
+    system: openstack
+    service: monitoring
+    component: es-data
+  annotations:
+    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+
+spec:
+  serviceName: "es-data"
+  replicas: {{.Values.monasca_elasticsearch_data_replicas}}
+  template:
+    metadata:
+      labels:
+        component: es-data
+      annotations:
+        checksum/monasca.etc.log: checksums#monasca-etc-log-configmap.yaml#
+        checksum/monasca.bin: checksums#monasca-bin-configmap.yaml#
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: openstack-kube
+          gitRepo:
+            repository: {{.Values.cluster_configuration_repository}}
+            revision: {{.Values.cluster_configuration_revision}}
+        - name: monasca-bin
+          configMap:
+            name: monasca-bin
+        - name: monasca-etc-log
+          configMap:
+            name: monasca-etc-log
+        - name: monasca-etc-base
+          configMap:
+            name: monasca-etc-base
+      containers:
+        - name: monasca-es
+          image: {{.Values.docker_repo}}/monasca-elasticsearch:{{.Values.image_version_monasca_elasticsearch}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - elasticsearch-start
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+          volumeMounts:
+            - mountPath: /data
+              name: es
+            - mountPath: /openstack-kube
+              name: openstack-kube
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /monasca-etc-log
+              name: monasca-etc-log
+#          lifecycle:
+#            preStop:
+#              exec:
+#                command: ["bashi, /container.init/elasticsearch_stop"]
+#          livenessProbe:
+#            exec:
+#              command:
+#              - /openstack-kube/openstack-kube/scripts/monasca-elasticsearch_health
+#            timeoutSeconds: 30
+#            initialDelaySeconds: 120
+          env:
+            - name: KUBERNETES_CA_CERTIFICATE_FILE
+              value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: "CLUSTER_NAME"
+              value: "monascaelasticsearch"
+            - name: NODE_MASTER
+              value: "false"
+            - name: HTTP_ENABLE
+              value: "true"
+          ports:
+            - name: transport
+              containerPort: {{.Values.monasca_elasticsearch_port_cluster}}
+              protocol: TCP
+#            - name: dummymasterport
+#              hostPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
+#              containerPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
+        - name: monasca-agent-forwarder
+          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - agent-forwarder-start
+          env:
+            - name: MONASCA_AGENT_SERVICE_DEFAULT
+              value: "monitoring"
+            - name: MONASCA_AGENT_COMPONENT_DEFAULT
+              value: "elasticsearch-data"
+          ports:
+            - containerPort: {{.Values.monasca_agent_port_forwarder}}
+              name: forwarder
+          volumeMounts:
+            - mountPath: /openstack-kube
+              name: openstack-kube
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+        - name: monasca-agent-collector
+          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - agent-collector-start
+          env:
+            - name: MONASCA_AGENT_CHECKS
+              value: "elastic"
+          volumeMounts:
+            - mountPath: /openstack-kube
+              name: openstack-kube
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+  volumeClaimTemplates:
+  - metadata:
+      name: es
+      namespace: monasca
+#      annotations:
+#        volume.alpha.kubernetes.io/storage-class: anything
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 1000Gi

@@ -1,0 +1,125 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: monasca-storm-thresh
+  namespace: monasca
+  labels:
+    system: openstack
+    service: monitoring
+  annotations:
+    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: monasca-storm-thresh
+      annotations:
+        checksum/monasca.etc.base: checksums#monasca-etc-base-configmap.yaml#
+        checksum/monasca.etc.storm.thresh: checksums#monasca-etc-storm-thresh-configmap.yaml#
+        checksum/monasca.bin: checksums#monasca-bin-configmap.yaml#
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: openstack-kube
+          gitRepo:
+            repository: {{.Values.cluster_configuration_repository}}
+            revision: {{.Values.cluster_configuration_revision}}
+        - name: monasca-bin
+          configMap:
+            name: monasca-bin
+        - name: monasca-etc-base
+          configMap:
+            name: monasca-etc-base
+        - name: monasca-etc-storm-thresh
+          configMap:
+            name: monasca-etc-storm-thresh
+      containers:
+        - name: monasca-storm-nimbus
+          image: {{.Values.docker_repo}}/monasca-storm-thresh:{{.Values.image_version_monasca_storm_thresh}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - storm-nimbus-start
+          ports:
+            - name: stormthresh
+              containerPort: {{.Values.monasca_storm_port_public}}
+            - name: strmthrshadmin
+              containerPort: {{.Values.monasca_storm_port_admin}}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - nc -z localhost 6627
+            timeoutSeconds: 5
+            initialDelaySeconds: 60
+          volumeMounts:
+            - mountPath: /openstack-kube
+              name: openstack-kube
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+            - mountPath: /monasca-etc-storm-thresh
+              name: monasca-etc-storm-thresh
+        - name: monasca-storm-supervisor
+          image: {{.Values.docker_repo}}/monasca-storm-thresh:{{.Values.image_version_monasca_storm_thresh}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - storm-supervisor-start
+          volumeMounts:
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+            - mountPath: /monasca-etc-storm-thresh
+              name: monasca-etc-storm-thresh
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /openstack-kube
+              name: openstack-kube
+        - name: monasca-agent-forwarder
+          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - agent-forwarder-start
+          env:
+            - name: MONASCA_AGENT_SERVICE_DEFAULT
+              value: "monitoring"
+            - name: MONASCA_AGENT_COMPONENT_DEFAULT
+              value: "monasca-thresh"
+          ports:
+            - containerPort: {{.Values.monasca_agent_port_forwarder}}
+              name: forwarder
+          volumeMounts:
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /openstack-kube
+              name: openstack-kube
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+        - name: monasca-agent-statsd
+          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - agent-statsd-start
+          volumeMounts:
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+            - mountPath: /openstack-kube
+              name: openstack-kube

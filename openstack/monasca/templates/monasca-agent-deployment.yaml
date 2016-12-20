@@ -1,0 +1,93 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: monasca-agent
+  namespace: monasca
+  labels:
+    system: openstack
+    service: monitoring
+  annotations:
+    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      name: monasca-agent
+      labels:
+        component: monasca-agent
+      annotations:
+        checksum/monasca.etc.base: checksums#monasca-etc-base-configmap.yaml#
+        checksum/monasca.bin: checksums#monasca-bin-configmap.yaml#
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: openstack-kube
+          gitRepo:
+            repository: {{.Values.cluster_configuration_repository}}
+            revision: {{.Values.cluster_configuration_revision}}
+        - name: monasca-bin
+          configMap:
+            name: monasca-bin
+        - name: monasca-etc-base
+          configMap:
+            name: monasca-etc-base
+      containers:
+        - name: monasca-agent-forwarder
+          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - agent-forwarder-start
+          ports:
+            - containerPort: {{.Values.monasca_agent_port_forwarder}}
+              name: forwarder
+          volumeMounts:
+            - mountPath: /openstack-kube
+              name: openstack-kube
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+        - name: monasca-agent-collector
+          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - agent-collector-start
+          env:
+            - name: MONASCA_AGENT_CHECKS
+              value: "prometheus zk kafka_consumer mysql influxdb"
+          volumeMounts:
+            - mountPath: /openstack-kube
+              name: openstack-kube
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+#        - name: monasca-agent-statsd
+#          image: {{.Values.docker_repo}}/monasca-agent:latest
+#          imagePullPolicy: IfNotPresent
+#          command:
+#            - /openstack-kube/openstack-kube/scripts/_container_init
+#          args:
+#            - agent-statsd-start
+#          ports:
+#            - containerPort: {{.Values.monasca_agent_port_statsd}}
+#              hostPort: {{.Values.monasca_agent_port_statsd}}
+#              name: statsd
+#              protocol: UDP
+#          volumeMounts:
+#            - mountPath: /monasca-bin
+#              name: monasca-bin
+#            - mountPath: /monasca-etc-base
+#              name: monasca-etc-base

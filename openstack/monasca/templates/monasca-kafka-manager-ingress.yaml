@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: monasca-kafka-manager
+  namespace: monasca
+
+spec:
+  tls:
+     - secretName: "tls-{{.Values.monasca_kafka_manager_endpoint_host_public | replace "." "-" }}"
+       hosts: [{{.Values.monasca_kafka_manager_endpoint_host_public}}]
+  rules:
+    - host: {{.Values.monasca_kafka_manager_endpoint_host_public}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: monasca-kafka-manager
+            servicePort: {{.Values.monasca_kafka_manager_endpoint_port_internal}}
+

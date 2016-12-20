@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: monasca-kibana
+  namespace: monasca
+
+spec:
+  tls:
+     - secretName: "tls-{{.Values.monasca_kibana_endpoint_host_public | replace "." "-" }}"
+       hosts: [{{.Values.monasca_kibana_endpoint_host_public}}]
+  rules:
+    - host: {{.Values.monasca_kibana_endpoint_host_public}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: monasca-kibana
+            servicePort: {{.Values.monasca_kibana_port_public}}

@@ -1,0 +1,113 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: monasca-health
+  namespace: monasca
+  labels:
+    system: openstack
+    service: monitoring
+    component: monasca-health
+  annotations:
+    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      annotations:
+        checksum/monasca.etc.base: checksums#monasca-etc-log-configmap.yaml#
+        checksum/monasca.bin: checksums#monasca-bin-configmap.yaml#
+        pod.alpha.kubernetes.io/init-containers: '[
+          {
+            "name": "init",
+            "image": "{{.Values.docker_repo}}/monasca-health:{{.Values.image_version_monasca_health}}",
+            "imagePullPolicy": "IfNotPresent",
+            "command": ["/init-container.sh"],
+            "volumeMounts": [
+              {
+                "name": "checks",
+                "mountPath": "/checks"
+              }
+            ]
+          }
+        ]'
+      labels:
+        component: monasca-health
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: openstack-kube
+          gitRepo:
+            repository: {{.Values.cluster_configuration_repository}}
+            revision: {{.Values.cluster_configuration_revision}}
+        - name: monasca-bin
+          configMap:
+            name: monasca-bin
+        - name: monasca-etc-base
+          configMap:
+            name: monasca-etc-base
+        - name: checks
+          emptyDir:
+            medium: "Memory"
+      containers:
+        - name: monasca-health
+          image: {{.Values.docker_repo}}/monasca-health:{{.Values.image_version_monasca_health}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/dumb-init
+          args:
+            - /bin/bash
+            - /container.init/health-start
+#          command:
+#            - /openstack-kube/openstack-kube/scripts/_container_init
+#          args:
+#            - health-start
+#          command:
+#            - /bin/bash
+#          args:
+#            - -c
+#            - "while true; do sleep 10000; done"
+          volumeMounts:
+            - mountPath: /openstack-kube
+              name: openstack-kube
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+            - mountPath: /checks
+              name: checks
+        - name: canary
+          image: {{.Values.docker_repo}}/wildcard-exporter:v201611171311
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9102
+          args:
+            - -web.listen-address=0.0.0.0:9102
+            - -namespace=canary
+            - checks/canary/*
+          volumeMounts:
+            - mountPath: /checks
+              name: checks
+          env:
+            - name: SWIFT_AUTH_URL
+              value: "{{.Values.canary_swift_auth_url}}"
+            - name: SWIFT_USER
+              value: "{{.Values.canary_swift_user}}"
+            - name: SWIFT_USER_DOMAIN
+              value: "{{.Values.canary_swift_user_domain}}"
+            - name: SWIFT_PROJECT_NAME
+              value: "{{.Values.canary_swift_project_name}}"
+            - name: SWIFT_PROJECT_ID
+              value: "{{.Values.canary_swift_project_id}}"
+            - name: SWIFT_PROJECT_DOMAIN
+              value: "{{.Values.canary_swift_project_domain}}"
+            - name: SWIFT_REGION_NAME
+              value: "{{.Values.canary_swift_region_name}}"
+            - name: SWIFT_API_KEY
+              value: "{{.Values.canary_swift_api_key}}"

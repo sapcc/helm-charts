@@ -1,0 +1,43 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: monasca-logstash-transformer
+  namespace: monasca
+  labels:
+    system: openstack
+    service: monitoring
+  annotations:
+    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: monasca-logstash-transformer
+      annotations:
+        checksum/monasca.etc.log: checksums#monasca-etc-log-configmap.yaml#
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: monasca-etc-log
+          configMap:
+            name: monasca-etc-log
+      containers:
+        - name: monasca-logstash-transformer
+          image: {{.Values.docker_repo}}/monasca-logstash:{{.Values.image_version_monasca_logstash}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /logstash/bin/logstash
+          args:
+            - -f
+            - /monasca-etc-log/logstash-transformer-monasca-log-transformer.conf
+          volumeMounts:
+            - name: monasca-etc-log
+              mountPath: /monasca-etc-log

@@ -1,0 +1,106 @@
+apiVersion: apps/v1alpha1
+kind: PetSet
+metadata:
+  name: kafka
+  namespace: monasca
+  labels:
+    system: openstack
+    service: monitoring
+    component: kafka
+  annotations:
+    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+
+spec:
+  serviceName: "kafka"
+  replicas: {{.Values.monasca_kafka_endpoints}} 
+  template:
+    metadata:
+      labels:
+        component: kafka
+      annotations:
+        checksum/monasca.etc.log: checksums#monasca-etc-log-configmap.yaml#
+        checksum/monasca.etc.base: checksums#monasca-etc-base-configmap.yaml#
+        checksum/monasca.etc.common: checksums#monasca-etc-common-configmap.yaml#
+        checksum/monasca.bin: checksums#monasca-bin-configmap.yaml#
+        pod.alpha.kubernetes.io/initialized: "true"        
+    spec:
+      nodeSelector:
+        zone: farm
+      terminationGracePeriodSeconds: 120
+      volumes:
+        - name: openstack-kube
+          gitRepo:
+            repository: {{.Values.cluster_configuration_repository}}
+            revision: {{.Values.cluster_configuration_revision}}
+        - name: monasca-bin 
+          configMap:
+            name: monasca-bin
+        - name: monasca-etc-base
+          configMap:
+            name: monasca-etc-base
+        - name: monasca-etc-common
+          configMap:
+            name: monasca-etc-common
+        - name: monasca-etc-log
+          configMap:
+            name: monasca-etc-log
+      containers:
+        - name: kafka
+          image: {{.Values.docker_repo}}/monasca-kafka-cluster:{{.Values.image_version_monasca_kafka}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - kafka-cluster-start
+          ports:
+            - name: kafkacluster
+              containerPort: {{.Values.monasca_kafka_port_internal}}
+          volumeMounts:
+            - name: datadir
+              mountPath: /var/opt/kafka
+            - mountPath: /openstack-kube
+              name: openstack-kube
+            - mountPath: /container.init
+              name: monasca-bin
+            - mountPath: /monasca-etc-base
+              name: monasca-etc-base
+            - mountPath: /monasca-etc-common
+              name: monasca-etc-common
+            - mountPath: /monasca-etc-log
+              name: monasca-etc-log
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - /opt/kafka/current/bin/kafka-server-stop.sh
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - kafkacat -Lq -b localhost:{{.Values.monasca_kafka_port_internal}} -t healthcheck
+            timeoutSeconds: 5
+            initialDelaySeconds: 900
+            periodSeconds: 60
+          readinessProbe:
+            exec:
+              command:
+                - nc
+                - -z
+                - localhost
+                - '{{.Values.monasca_kafka_port_internal}}'
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+            # keep this number low, otherwise peer discovery will no work
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+      namespace: monasca
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 50Gi
+

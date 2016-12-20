@@ -1,0 +1,140 @@
+apiVersion: apps/v1alpha1
+kind: PetSet
+metadata:
+  name: mysql
+  namespace: monasca
+  labels:
+    system: openstack
+    service: monitoring
+    component: mysql
+  annotations:
+    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+
+spec:
+  serviceName: "mysql"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: mysql
+      annotations:
+        checksum/monasca.etc.base: checksums#monasca-etc-base-configmap.yaml#
+        checksum/monasca.bin: checksums#monasca-bin-configmap.yaml#
+        pod.alpha.kubernetes.io/init-containers: '[
+            {
+                "name": "init",
+                "image": "{{.Values.docker_repo}}/monasca-mysql:{{.Values.image_version_monasca_mysql}}",
+                "imagePullPolicy": "IfNotPresent",
+                "command": ["/openstack-kube/openstack-kube/scripts/_container_init"],
+                "args": ["mysql-init"],
+                "volumeMounts": [
+                    {
+                        "name": "datadir",
+                        "mountPath": "/var/lib/mysql"
+                    },
+
+                    {
+                        "name": "openstack-kube",
+                        "mountPath": "/openstack-kube"
+                    },
+                    {
+                        "name": "monasca-bin",
+                        "mountPath": "/container.init"
+                    },
+                    {
+                        "name": "monasca-etc-base",
+                        "mountPath": "/monasca-etc-base"
+                    },
+                    {
+                        "name": "logdir",
+                        "mountPath": "/var/log/mysql"
+                    }
+                ]
+            }
+        ]'
+    spec:
+      nodeSelector:
+        zone: farm
+      terminationGracePeriodSeconds: 600
+      volumes:
+        - name: openstack-kube
+          gitRepo:
+            repository: {{.Values.cluster_configuration_repository}}
+            revision: {{.Values.cluster_configuration_revision}}
+        - name: monasca-bin
+          configMap:
+            name: monasca-bin
+        - name: monasca-etc-base
+          configMap:
+            name: monasca-etc-base
+        - name: logdir
+          emptyDir: {}
+      containers:
+        - name: mysql
+          image: {{.Values.docker_repo}}/monasca-mysql:{{.Values.image_version_monasca_mysql}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - chpst
+          args:
+            - -L
+            - /var/lib/mysql/container.lock
+            - mysqld_safe
+            - --defaults-extra-file=/monasca-etc-base/mysql-mysql.cnf
+            - --init-file=/monasca-etc-base/mysql-mon-customizing.sql
+          ports:
+            - name: mysql
+              containerPort: {{.Values.monasca_mysql_port_internal}}
+          volumeMounts:
+            - name: datadir
+              mountPath: /var/lib/mysql
+            - name: openstack-kube
+              mountPath: /openstack-kube
+            - name: monasca-bin
+              mountPath: /container.init
+            - name: monasca-etc-base
+              mountPath: /monasca-etc-base
+            - name: logdir
+              mountPath: /var/log/mysql
+          lifecycle:
+            preStop:
+              exec:
+                command: 
+                  - /bin/bash
+                  - /container.init/mysql-stop
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - /container.init/mysql-liveness
+            timeoutSeconds: 30
+            initialDelaySeconds: 120
+        - name: fluent
+          image: {{.Values.docker_repo}}/monasca-fluent:{{.Values.image_version_monasca_fluent}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/fluentd
+          args:
+            - --use-v1-config
+            - -c
+            - /monasca-etc-base/mysql-fluent.conf
+          volumeMounts:
+            - name: openstack-kube
+              mountPath: /openstack-kube
+            - name: monasca-bin
+              mountPath: /container.init
+            - name: monasca-etc-base
+              mountPath: /monasca-etc-base
+            - name: logdir
+              mountPath: /var/log/mysql
+          env:
+            - name: NODE_TYPE
+              value: "mysql"
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+      namespace: monasca
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 10Gi
