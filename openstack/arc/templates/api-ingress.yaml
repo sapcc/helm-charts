@@ -1,0 +1,33 @@
+{{- if .Values.apiIngress.enabled }}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: arc-api-ingress
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+data:
+  tls.crt: {{ .Values.apiIngress.tls_crt | b64enc }}
+  tls.key: {{ .Values.apiIngress.tls_key | b64enc }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: arc-api
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  {{- if .Values.apiIngress.tls_crt }}
+  tls:
+     - secretName: arc-api-ingress
+       hosts: [{{ .Values.apiIngress.host }}]
+  {{- end }}
+  rules:
+  - host: {{ .Values.apiIngress.host }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: arc-api
+          servicePort: {{ .Values.apiService.externalPort }}
+{{- end }}
