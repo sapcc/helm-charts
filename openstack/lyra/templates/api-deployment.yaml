@@ -1,0 +1,44 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+
+spec:
+  replicas: {{ .Values.apiReplicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-api
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPollicy }}
+          env:
+            - name: PORT
+              value: "{{.Values.service.internalPort}}"
+{{ include "env.vars" . | indent 12 }}
+          ports:
+            - name: automation
+              containerPort: {{.Values.service.internalPort}}
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{.Values.service.internalPort}}
+            timeoutSeconds: 60
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{.Values.service.internalPort}}
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+

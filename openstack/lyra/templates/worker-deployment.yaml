@@ -1,0 +1,33 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: {{ .Release.Name }}-worker
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+
+spec:
+  replicas: {{ .Values.workerReplicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        app: {{.Release.Name}}-worker
+    spec:
+      containers:
+        - name: worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPollicy }}
+          args: [ que, ./config/environment.rb ]
+          env:
+            - name: QUE_QUEUE
+              value: default
+            - name: QUE_WORKER_COUNT
+              value: "10"
+{{ include "env.vars" . | indent 12 }}
+          #TODO: liveness checks
+          #TODO: adjust grace period

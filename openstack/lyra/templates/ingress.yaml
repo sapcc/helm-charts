@@ -1,0 +1,23 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  {{- if .Values.ingress.tlsCertificate }}
+  tls:
+     - secretName: {{ .Release.Name }}
+       hosts: [{{ .Values.ingress.host }}]
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ .Release.Name }}
+          servicePort: {{ .Values.service.externalPort }}
+{{- end }}
+
