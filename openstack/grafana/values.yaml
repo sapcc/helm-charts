@@ -1,0 +1,87 @@
+# Default values for grafana.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+cluster:
+  configuration:
+    repository: https://github.wdf.sap.corp/monsoon/openstack-kube.git
+    revision: master
+  content:
+    repository: https://github.wdf.sap.corp/monsoon/monasca-content
+    revision: master
+image:
+  repository: "@/cc/secrets"
+  tag: "@/cc/secrets"
+  pullPolicy: IfNotPresent
+  version: "@/cc/secrets"
+namespace: '@/cc/secrets'
+service:
+  name: monasca-grafana
+  type: ClusterIP
+#  externalPort: 3000
+  internalPort: 3000
+#resources:
+#  limits:
+#    cpu: 100m
+#    memory: 128Mi
+#  requests:
+#    cpu: 100m
+#    memory: 128Mi
+postgres:
+  persistence:
+    enabled: true
+  user: postgres
+  password: '@/cc/secrets'
+persistence:
+  enabled: false
+ingress:
+  enabled: false
+service:
+  externalPort: 3000
+keystone:
+  api:
+    endpoint:
+      internal:
+        protocol: '@/cc/secrets'
+        host: '@/cc/secrets'
+        port: '@/cc/secrets'
+monasca:
+  elasticsearch:
+    admin:
+      user: 'admin'
+      password: '@/cc/secrets'
+    master_project_id: '@/cc/secrets'
+  admin:
+    project:
+      domain:
+        name: '@/cc/secrets'
+  grafana:
+    admin:
+      user: 'grafana_admin'
+      password: '@/cc/secrets'
+    local:
+      user: 'local'
+      password: '@/cc/secrets'
+    db:
+      type: 'postgres'
+      host: 'postgres.monasca'
+      ssl_mode: disable
+    role:
+      viewer: 'monasca-viewer'
+      admin: 'monasca-user'
+    aes:
+      key: '@/cc/secrets'
+    port:
+      public: '3000'
+    endpoint:
+      port:
+        public: '3000'
+      host:
+        public: '@/cc/secrets'
+    # wipe & load are overridden to False for staging
+    wipe:
+      datasources: 'True'
+      dashboards: 'True'
+    load:
+      datasources: 'True'
+      dashboards: 'True'

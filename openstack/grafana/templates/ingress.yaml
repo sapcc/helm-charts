@@ -1,0 +1,20 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: monasca-grafana
+
+spec:
+  tls:
+     - secretName: "tls-{{.Values.monasca.grafana.endpoint.host.public | replace "." "-"}}"
+       hosts: ["{{.Values.monasca.grafana.endpoint.host.public}}"]
+  rules:
+    - host: "{{.Values.monasca.grafana.endpoint.host.public}}"
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: monasca-grafana
+            servicePort: {{.Values.monasca.grafana.endpoint.port.public}}
+{{- end }}

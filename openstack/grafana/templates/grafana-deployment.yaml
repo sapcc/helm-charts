@@ -1,0 +1,79 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: monasca-grafana
+  labels:
+    system: openstack
+    service: monitoring
+    component: grafana
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: grafana
+      annotations:
+        checksum/grafana.etc: {{ include "grafana/templates/grafana-etc-configmap.yaml" . | sha256sum }}
+        checksum/monasca.bin: {{ include "grafana/templates/grafana-bin-configmap.yaml" . | sha256sum }}
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: openstack-kube
+          gitRepo:
+            repository: {{.Values.cluster.configuration.repository}}
+            revision: {{.Values.cluster.configuration.revision}}
+        - name: monasca-content
+          gitRepo:
+            repository: {{.Values.cluster.content.repository}}
+            revision: {{.Values.cluster.content.revision}}
+        - name: grafana-bin
+          configMap:
+            name: grafana-bin
+        - name: grafana-etc
+          configMap:
+            name: grafana-etc
+        - name: datadir
+          emptyDir: {}
+      containers:
+        - name: "monasca-grafana"
+          image: "{{.Values.image.repository}}:{{.Values.image.version}}"
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          command:
+            - /openstack-kube/openstack-kube/scripts/_container_init
+          args:
+            - grafana-start
+#          command:
+#            - /bin/bash
+#          args:
+#            - -c
+#            - "while true; do sleep 1000; done"
+          ports:
+            - name: nodejs
+              containerPort: 3000
+          volumeMounts:
+            - name: datadir
+              mountPath: /var/lib/grafana
+              readOnly: false
+            - mountPath: /monasca-content
+              name: monasca-content
+            - mountPath: /container.init
+              name: grafana-bin
+            - mountPath: /grafana-etc
+              name: grafana-etc
+            - mountPath: /openstack-kube
+              name: openstack-kube
+
+{{- if .Values.persistence.enabled }}
+#  volumeClaimTemplates:
+#  - metadata:
+#      name: datadir
+#      annotations:
+#        volume.alpha.kubernetes.io/storage-class: anything
+#    spec:
+#      accessModes: [ "ReadWriteMany" ]
+#      resources:
+#        requests:
+#          storage: 1Gi
+{{- end }}

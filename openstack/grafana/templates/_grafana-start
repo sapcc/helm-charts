@@ -1,0 +1,54 @@
+{{- define "grafana_start" }}
+#!/bin/bash
+
+# set some env variables from the openstack env properly based on env
+. /container.init/common-start
+
+function process_config {
+
+  cp /grafana-etc/monasca-grafana.ini /opt/grafana/monasca-grafana.ini
+
+}
+
+function start_application {
+  # Set cluster region
+  export CLUSTER_REGION={{.Values.global.region}}
+  # Set Grafana admin/local username & password
+  export GF_SECURITY_ADMIN_USER={{.Values.monasca.grafana.admin.user}}
+  export GF_SECURITY_ADMIN_PASSWORD={{.Values.monasca.grafana.admin.password}}
+  export MONASCA_GRAFANA_LOCAL_USER={{.Values.monasca.grafana.local.user}}
+  export MONASCA_GRAFANA_LOCAL_PASSWORD={{.Values.monasca.grafana.local.password}}
+  # Set flags for wiping/loading datasources & dashboards
+  export MONASCA_GRAFANA_WIPE_DATASOURCES={{.Values.monasca.grafana.wipe.datasources}}
+  export MONASCA_GRAFANA_LOAD_DATASOURCES={{.Values.monasca.grafana.load.datasources}}
+  export MONASCA_GRAFANA_WIPE_DASHBOARDS={{.Values.monasca.grafana.wipe.dashboards}}
+  export MONASCA_GRAFANA_LOAD_DASHBOARDS={{.Values.monasca.grafana.load.dashboards}}
+  # Set elasticsearch user and password required for elasticsearch datasource
+  export MONASCA_ELASTICSEARCH_USER={{.Values.monasca.elasticsearch.admin.user}}
+  export MONASCA_ELASTICSEARCH_PASSWORD={{.Values.monasca.elasticsearch.admin.password}}
+  export MONASCA_ELASTICSEARCH_MASTER_PROJECT_ID={{.Values.monasca.elasticsearch.master_project_id}}
+  # setup the datasources and dashboards if the setup script exists
+  # wait a moment until grafana is up and write to stdout and logfile in parallel
+  if [ -x /opt/grafana/datasources-dashboards.sh ]; then
+    (while netstat -lnt | awk '$4 ~ /:{{.Values.monasca.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; /opt/grafana/datasources-dashboards.sh ) 2>&1 | tee /opt/grafana/datasources-dashboards.log &
+  fi
+
+  if [ -f /var/lib/grafana/grafana.db ]; then
+    echo "creating a backup of the grafana db at /var/lib/grafana/backup/grafana.db.`date +%Y%m%d%H%M%S`"
+    mkdir -p /var/lib/grafana/backup
+    cp /var/lib/grafana/grafana.db /var/lib/grafana/backup/grafana.db.`date +%Y%m%d%H%M%S`
+    # keep only the last 20 backups to avoid the disk running over
+    for i in `ls -tr /var/lib/grafana/backup/* | head -n -20`; do rm $i; done
+  fi
+
+  cd /opt/grafana
+  # strange log config to get no file logging according to https://github.com/grafana/grafana/issues/5018
+  echo "Starting Grafana with lock /var/lib/grafana/.lock"
+  exec chpst -L /var/lib/grafana/container.lock ./grafana -config monasca-grafana.ini cfg:default.log.mode=console
+
+}
+
+process_config
+
+start_application
+{{- end }}
