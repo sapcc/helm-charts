@@ -1,0 +1,57 @@
+skydns_skydns_dns_error_count_total_irate = irate(skydns_skydns_dns_error_count_total[5m])
+
+ALERT KubernetesDNSErrorSpike
+  IF sum(irate(skydns_skydns_dns_error_count_total[5m])) by (system,cause) > sum(avg_over_time(skydns_skydns_dns_error_count_total_irate[4h])) by (system, cause) * 4 + 100
+  FOR 1h 
+  LABELS {
+    service = "dns",
+    severity = "critical",
+    context = "errors",
+    dashboard = "kubernetes-dns"
+  }
+  ANNOTATIONS {
+    summary = "Unusual high kube-dns errors",
+    description = "Unusually many errors in {{ $labels.system }}/{{ $labels.cause }}",
+  }
+
+ALERT KubernetesDNSDown
+  IF up{job="kube-system/dns"} == 0
+  FOR 15m
+  LABELS {
+    service = "dns",
+    severity = "warning",
+    context = "availability",
+    dashboard = "kubernetes-health"
+  }
+  ANNOTATIONS {
+    summary = "An kube-dns is DOWN",
+    description = "Kube-dns on {{ $labels.instance }} is DOWN.",
+  }
+
+ALERT KubernetesDNSAllDown
+  IF count(up{job="kube-system/dns"} == 0) == count(up{job="kube-system/dns"})
+  FOR 5m
+  LABELS {
+    service = "dns",
+    severity = "critical",
+    context = "availability",
+    dashboard = "kubernetes-health"
+  }
+  ANNOTATIONS {
+    summary = "Kube-DNS is unavailabele!!!",
+    description = "All kube-dns servers are down. Cluster internal DNS is unavailable!",
+  }
+
+ALERT KubernetesDNSScrapeMissing
+  IF absent(up{job="kube-system/dns"})
+  FOR 1h
+  LABELS {
+    service = "dns",
+    severity = "critical",
+    context = "availability",
+    dashboard = "kubernetes-health"
+  }
+  ANNOTATIONS {
+    summary = "Kube-dns cannot be scraped",
+    description = "Kube-dns failed to be scraped.",
+  }
