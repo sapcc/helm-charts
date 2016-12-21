@@ -1,0 +1,54 @@
+kind: PetSet
+apiVersion: apps/v1alpha1
+
+metadata:
+  name: grafana-postgres
+  labels:
+    system: openstack
+    service: monitoring
+    component: grafana
+spec:
+  serviceName: "grafana-postgres"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: grafana-postgres
+        component: grafana-postgres
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      nodeSelector:
+        zone: farm
+{{- if not .Values.persistence.enabled }}
+      volumes:
+        - name: storage
+          emptyDir: {}
+{{- end }}
+      containers:
+        - name: postgres
+          image: hub.global.cloud.sap/monsoon/postgres:9.5
+          env:
+            - name: PGDATA
+              value: /postgresql/data
+            - name: POSTGRES_DB
+              value: grafana
+            - name: POSTGRES_PASSWORD
+              value: {{.Values.postgres.password}}
+          ports:
+            - name: postgres
+              containerPort: 5432
+          volumeMounts:
+            - name: storage
+              mountPath: /postgresql
+
+{{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 10Gi
+{{- end }}
