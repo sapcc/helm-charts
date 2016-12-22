@@ -17,6 +17,7 @@ spec:
             {
                 "name": "remove-lost-found",
                 "image": "busybox:1.25.0",
+                "imagePullPolicy": {{ default "IfNotPresent" .Values.imagePullPolicy | quote }},
                 "command": ["rm", "-fr", "/var/lib/postgresql/data/pgdata/lost+found"],
                 "volumeMounts": [
                     {
@@ -68,7 +69,7 @@ spec:
           mountPath: /var/lib/postgresql/data/pgdata
 {{- if .Values.metrics.enabled }}
       - name: metrics 
-        image: "{{ .Values.metrics.image }}"
+        image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
         imagePullPolicy: {{ default "" .Values.metrics.imagePullPolicy | quote }}
         env:
         - name: DATA_SOURCE_NAME
