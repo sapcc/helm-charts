@@ -1,0 +1,61 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.remoteIP }}
+        command:
+          - sh
+          - -exc
+          - |
+            echo -e "\n{{ .Values.remoteIP }} {{.Values.remoteURL | trimPrefix "https://" | trimPrefix "http://"}}" >> /etc/hosts
+            exec /entrypoint.sh /etc/docker/registry/config.yml
+{{- end }}
+        env:
+          - name: REGISTRY_PROXY_REMOTEURL
+            value: {{ .Values.remoteURL }}
+{{- if .Values.tlsCertificate }}
+          - name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: /conf/tls.crt
+          - name: REGISTRY_HTTP_TLS_KEY
+            value: /conf/tls.key
+{{- end }}
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+        readinessProbe:
+          httpGet:
+            path: /
+            scheme: {{ if .Values.tlsCertificate }}HTTPS{{ else }}HTTP{{ end }}
+            port: {{ .Values.service.internalPort }}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/registry
+{{- if .Values.tlsCertificate }}
+        - name: secrets
+          mountPath: /conf
+{{- end }}
+      volumes:
+{{- if .Values.tlsCertificate }}
+        - name: secrets
+          secret:
+            secretName: {{ template "fullname" . }}
+{{- end }}
+        - name: data
+        {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ template "fullname" . }}
+        {{- else }}
+          emptyDir: {}
+        {{- end -}}
