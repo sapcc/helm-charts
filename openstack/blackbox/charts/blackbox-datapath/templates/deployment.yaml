@@ -18,6 +18,10 @@ spec:
     spec:
       nodeSelector:
         zone: farm
+      volumes:
+        - name: blackbox-datapath
+          persistentVolumeClaim:
+            claimName: blackbox-datapath
       containers:
         - name: exporter
           image: {{.Values.global.imageName}}:{{.Values.global.imageVersion}}
@@ -27,6 +31,10 @@ spec:
             - -web.listen-address=0.0.0.0:9101
             - -namespace=datapath
             - checks/datapath/*
+          volumeMounts:
+            - name: blackbox-datapath
+              mountPath: /results
+              readOnly: false
           env:
             - name: OS_AUTH_URL
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: os.auth.url } }
@@ -78,14 +86,14 @@ spec:
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: unbound2.ip } }
             - name: DATAPATH_HIDDEN_MASTER
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: hidden.master } }
-            - name: DATAPATH_SECRET_1_ID
-              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: secret.1.id } }
             - name: TIMEOUT
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: timeout } }
             - name: PYTHONWARNINGS
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: pythonwarnings } }
             - name: LOG
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: log } }
+            - name: GRACE_PERIOD
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: graceperiod } }
             - name: OS_PASSWORD
               valueFrom: { secretKeyRef:    { name: blackbox-datapath, key: os.password } }
             - name: SWIFT_API_KEY
@@ -103,3 +111,90 @@ spec:
               port: 9101
             timeoutSeconds: 5 
             periodSeconds: 5
+        - name: checker
+          image: {{.Values.global.imageName}}:{{.Values.global.imageVersion}}
+          command: ["/bin/sh", "-c"]
+          args: ["./scripts/run.sh checks/datapath"]
+          volumeMounts:
+            - name: blackbox-datapath
+              mountPath: /results
+              readOnly: false
+          env:
+            - name: OS_AUTH_URL
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: os.auth.url } }
+            - name: OS_IDENTITY_API_VERSION
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: os.identity.api.version } }
+            - name: OS_USERNAME
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: os.username } }
+            - name: OS_USER_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: os.user.domain.name } }
+            - name: OS_PROJECT_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: os.project.name } }
+            - name: OS_PROJECT_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: os.project.domain.name } }
+            - name: OS_REGION_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: os.region.name } }
+            - name: SWIFT_AUTH_URL
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: swift.auth.url } }
+            - name: SWIFT_USER
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: swift.user } }
+            - name: SWIFT_USER_DOMAIN
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: swift.user.domain } }
+            - name: SWIFT_PROJECT_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: swift.project.name } }
+            - name: SWIFT_PROJECT_ID
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: swift.project.id } }
+            - name: SWIFT_PROJECT_DOMAIN
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: swift.project.domain } }
+            - name: SWIFT_REGION_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: swift.region.name } }
+            - name: DATAPATH_SERVER_1_ID
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: server.1.id } }
+            - name: DATAPATH_SERVER_1_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: server.1.name } }
+            - name: DATAPATH_SERVER_1_FLOATINGIP
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: server.1.floatingip } }
+            - name: DATAPATH_SERVER_1_DNS_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: server.1.dns.name } }
+            - name: DATAPATH_LBAAS_FLOATING_IP
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: lbaas.floating.ip } }
+            - name: DATAPATH_BIND1_IP
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: bind1.ip } }
+            - name: DATAPATH_BIND2_IP
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: bind2.ip } }
+            - name: DATAPATH_BIND3_IP
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: bind3.ip } }
+            - name: DATAPATH_UNBOUND1_IP
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: unbound1.ip } }
+            - name: DATAPATH_UNBOUND2_IP
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: unbound2.ip } }
+            - name: DATAPATH_HIDDEN_MASTER
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: hidden.master } }
+            - name: TIMEOUT
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: timeout } }
+            - name: PYTHONWARNINGS
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: pythonwarnings } }
+            - name: LOG
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: log } }
+            - name: GRACE_PERIOD
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: graceperiod } }
+            - name: OS_PASSWORD
+              valueFrom: { secretKeyRef:    { name: blackbox-datapath, key: os.password } }
+            - name: SWIFT_API_KEY
+              valueFrom: { secretKeyRef:    { name: blackbox-datapath, key: swift.api.key } }
+          livenessProbe:
+            exec:
+              command:
+              - find
+              - scripts/run.sh
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - find
+              - wildcard-exporter
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15

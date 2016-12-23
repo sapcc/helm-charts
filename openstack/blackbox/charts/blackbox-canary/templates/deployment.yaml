@@ -100,6 +100,8 @@ spec:
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: pythonwarnings } }
             - name: LOG
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: log } }
+            - name: GRACE_PERIOD
+              valueFrom: { configMapKeyRef: { name: blackbox-canary, key: graceperiod } }
             - name: OS_PASSWORD
               valueFrom: { secretKeyRef:    { name: blackbox-canary, key: os.password } }
             - name: SWIFT_API_KEY
@@ -117,10 +119,10 @@ spec:
               port: 9101
             timeoutSeconds: 5 
             periodSeconds: 5
-        - name: reporter
+        - name: checker
           image: {{.Values.global.imageName}}:{{.Values.global.imageVersion}}
           command: ["/bin/sh", "-c"]
-          args: ["./scripts/run.sh checks/helper"]
+          args: ["./scripts/run.sh checks/canary"]
           volumeMounts:
             - name: blackbox-canary
               mountPath: /results
@@ -168,6 +170,10 @@ spec:
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: availability.zone } }
             - name: CANARY_FIXED_NETWORK_ID
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: fixed.network.id } }
+            - name: CANARY_FLOATIP_NETWORK_ID
+              valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.network.id } }
+            - name: CANARY_FLOATIP_SUBNET_ID
+              valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.subnet.id } }
             - name: CANARY_FLOATIP_SERVER_1_ID
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.id } }
             - name: CANARY_FLOATIP_SERVER_1_NAME
@@ -190,6 +196,8 @@ spec:
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: pythonwarnings } }
             - name: LOG
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: log } }
+            - name: GRACE_PERIOD
+              valueFrom: { configMapKeyRef: { name: blackbox-canary, key: graceperiod } }
             - name: OS_PASSWORD
               valueFrom: { secretKeyRef:    { name: blackbox-canary, key: os.password } }
             - name: SWIFT_API_KEY
