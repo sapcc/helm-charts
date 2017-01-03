@@ -11,4 +11,9 @@ export OS_CACERT=/etc/ssl/certs/ca-certificates.crt
 export HANA_METRICS_URL={{.Values.ceilometer_target}}
 export HANA_METRICS_USERNAME={{.Values.ceilometer_target_username}}
 export HANA_METRICS_PASSWORD={{.Values.ceilometer_target_password}}
+export SWIFT_FILE_SIZE={{.Values.ceilometer_health_swift_file_size}}
+export SWIFT_FILE_LOOPS={{.Values.ceilometer_health_swift_file_loops}}
+export SWIFT_FILE_WAIT={{.Values.ceilometer_health_swift_file_wait}}
+export HANA_CHECK_LOOPS={{.Values.ceilometer_health_hana_check_loops}}
+export HANA_CHECK_WAIT={{.Values.ceilometer_health_hana_check_wait}}
 {{- end -}}
