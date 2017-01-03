@@ -36,16 +36,21 @@ data:
        local-zone: "16.172.in-addr.arpa." nodefault
 
   forward.conf: |
+       {{ range $forward := .Values.forward_zones }}
        forward-zone:
-                name: "."
-                        forward-addr: {{.Values.forward_addr1}}
-                        forward-addr: {{.Values.forward_addr2}}
-        stub-zone:
-                name: "{{.Values.stub_zone_name}}"
-                        stub-addr: {{.Values.stub_addr1}}
-                        stub-addr: {{.Values.stub_addr2}}
-                        stub-addr: {{.Values.stub_addr3}}
-                        stub-prime: "no"
+                name: "{{ $forward.forward_zone_name}}"
+                  {{- range $faddr := $forward.forward_addresses}}
+                        forward-addr: {{ $faddr.forward_addr}}
+                  {{- end}}
+       {{ end}}
+       {{ range $stub := .Values.stub_zones }}
+       stub-zone:
+                name: "{{ $stub.stub_zone_name}}"
+                  {{- range $addr := $stub.stub_addresses}}
+                        stub-addr: {{ $addr.stub_addr}}
+                  {{- end}}
+       {{ end}}
+
   unbound-control.key: |
 {{.Values.unbound_control_key | indent 4}}
   unbound-control.pem: |
