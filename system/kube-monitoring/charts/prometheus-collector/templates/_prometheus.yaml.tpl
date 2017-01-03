@@ -1,3 +1,4 @@
+{{- define "prometheus_yaml" -}}
 rule_files:
   - ./*.rules
 
@@ -236,3 +237,7 @@ scrape_configs:
 - job_name: 'prometheus-collector'
   static_configs:
     - targets: ['localhost:9090']
+
+{{ .Values.additional_scrape_configs }}
+
+{{- end -}}
