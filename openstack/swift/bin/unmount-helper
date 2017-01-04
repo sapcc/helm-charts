@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -euo pipefail
+# no `set -e` (see below)
+set -uo pipefail
 
 # This script waits for messages from swift-drive-autopilot about broken
 # devices and unmounts them in the local mount namespace. The autopilot writes
@@ -21,9 +22,10 @@ MARKER_FILE="$1"
 while true; do
     sleep 10
     find /swift-drive-state/unmount-propagation -mindepth 1 -maxdepth 1 -type l -newer "${MARKER_FILE}" -printf '%f\n' | while read NAME; do
+        # this explicitly runs without `set -e` so that a failing umount does
+        # not kill the unmount-helper completely
         if mount | grep -q "/srv/node/${NAME}"; then
             umount "/srv/node/${NAME}"
         fi
-        rmdir "/srv/node/${NAME}"
     done
 done
