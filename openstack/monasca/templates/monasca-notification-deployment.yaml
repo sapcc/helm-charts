@@ -11,7 +11,7 @@ metadata:
     kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
 
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -45,10 +45,15 @@ spec:
         - name: monasca-notification
           image: {{.Values.docker_repo}}/monasca-notification:{{.Values.image_version_monasca_notification}}
           imagePullPolicy: IfNotPresent
+#          command:
+#            - /openstack-kube/openstack-kube/scripts/_container_init
+#          args:
+#            - notification-start
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /bin/bash
           args:
-            - notification-start
+            - -c
+            - "while true; do sleep 10000; done"
           volumeMounts:
             - mountPath: /monasca-etc-base
               name: monasca-etc-base

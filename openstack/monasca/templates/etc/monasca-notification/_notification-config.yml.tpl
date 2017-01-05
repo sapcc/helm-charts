@@ -10,6 +10,7 @@ kafka:
     periodic:
         60: {{.Values.monasca_topics_notifications_periodic_60}}
 
+}}`}}
 mysql:
     host: {{.Values.monasca_mysql_endpoint_host_internal}}
     user: notification
@@ -47,11 +48,11 @@ notification_types:
                     "mrkdwn": true,
                     "attachments": [
                         {
-                            "fallback": "{% raw %}{{alarm_description}}{% endraw %}",
-                            "color": "{% raw %}{{ {'ALARM': '#d60000', 'OK': '#36a64f', 'UNDETERMINED': '#fff000'}[state] }}{% endraw %}",
-                            "title": "{% raw %}{{ {'ALARM': '*Alarm triggered*', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }} for {{alarm_name}}{% endraw %} in {{.Values.cluster_region}}",
-                            "title_link": "https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={% raw %}{{alarm_id}}{% endraw %}",
-                            "text": "{% raw %}{% if state == 'ALARM' %}:bomb:{{alarm_description}}\n{{message}}{% elif state == 'OK' %}:white_check_mark: Resolved: {{alarm_description}}{% else %}:grey_question:{{alarm_description}}{% endif %}{% endraw %}",
+                            "fallback": "{% raw %}{{`{{alarm_description}}`}}{% endraw %}",
+                            "color": "{% raw %}{{`{{ {'ALARM': '#d60000', 'OK': '#36a64f', 'UNDETERMINED': '#fff000'}[state] }}`}}{% endraw %}",
+                            "title": "{% raw %}{{`{{ {'ALARM': '*Alarm triggered*', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }}`}} for {{`{{alarm_name}}`}}{% endraw %} in {{.Values.cluster_region}}",
+                            "title_link": "https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={% raw %}{{`{{alarm_id}}`}}{% endraw %}",
+                            "text": "{% raw %}{% if state == 'ALARM' %}:bomb:{{`{{alarm_description}}`}}\n{{`{{message}}`}}{% elif state == 'OK' %}:white_check_mark: Resolved: {{`{{alarm_description}}`}}{% else %}:grey_question:{{`{{alarm_description}}`}}{% endif %}{% endraw %}",
                             {% if state == 'ALARM' %}
                             "fields": [
                                 {
@@ -61,7 +62,7 @@ notification_types:
                                 },
                                 {
                                     "title": "Severity",
-                                    "value": {% raw %}"{{severity}}"{% endraw %},
+                                    "value": {% raw %}"{{`{{severity}}`}}"{% endraw %},
                                     "short": true
                                 }
                             ],

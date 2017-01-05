@@ -82,21 +82,21 @@ innodb_status_output    = 1
 # Be aware that this log type is a performance killer.
 # As of 5.1 you can enable the log at runtime!
 general_log_file        = /var/log/mysql/mysql.log
-{% if cluster_config['monasca.api.loglevel'] == 'DEBUG' %}
+{{if eq .Values.monasca_api_loglevel "DEBUG" }}
 general_log             = 1
-{% else %}
+{{else}}
 general_log             = 0
-{% endif %}
+{{end}}
 
 #
 # Error log - should be very few entries.
 #
 log_error               = /var/log/mysql/error.log
-{% if cluster_config['monasca.api.loglevel'] != 'ERROR' %}
+{{if ne .Values.monasca_api_loglevel "ERROR" }}
 log_warnings            = 1
-{% else %}
+{{else}}
 log_warnings            = 0
-{% endif %}
+{{end}}
 
 #
 # Here you can see queries with especially long duration
