@@ -39,6 +39,38 @@ notification_types:
         ca_certs: "/etc/ssl/certs/ca-certificates.crt"
         insecure: False
 #        proxy: {{.Values.cluster_proxy_https}}
+        template:
+            text: |
+                {
+                    "username": "Monasca ({{.Values.cluster_region}})",
+                    "icon_url": "https://upload.wikimedia.org/wikipedia/en/8/85/Big_Brother_UK_5_logo.png",
+                    "mrkdwn": true,
+                    "attachments": [
+                        {
+                            "fallback": "{% raw %}{{alarm_description}}{% endraw %}",
+                            "color": "{% raw %}{{ {'ALARM': '#d60000', 'OK': '#36a64f', 'UNDETERMINED': '#fff000'}[state] }}{% endraw %}",
+                            "title": "{% raw %}{{ {'ALARM': '*Alarm triggered*', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }} for {{alarm_name}}{% endraw %} in {{.Values.cluster_region}}",
+                            "title_link": "https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={% raw %}{{alarm_id}}{% endraw %}",
+                            "text": "{% raw %}{% if state == 'ALARM' %}:bomb:{{alarm_description}}\n{{message}}{% elif state == 'OK' %}:white_check_mark: Resolved: {{alarm_description}}{% else %}:grey_question:{{alarm_description}}{% endif %}{% endraw %}",
+                            {% if state == 'ALARM' %}
+                            "fields": [
+                                {
+                                    "title": "Region",
+                                    "value": "{{.Values.cluster_region}}",
+                                    "short": true
+                                },
+                                {
+                                    "title": "Severity",
+                                    "value": {% raw %}"{{severity}}"{% endraw %},
+                                    "short": true
+                                }
+                            ],
+                            {% endif %}
+                            "mrkdwn_in": ["text", "title", "fallback"]
+                        }
+                    ]
+                }
+            mime_type: application/json
 
 processors:
     alarm:
@@ -85,5 +117,5 @@ logging: # Used in logging.dictConfig
     root:
         handlers:
             - console
-        level: {{.Values.monasca_notification_loglevel}} 
+        level: {{.Values.monasca_notification_loglevel}}
 {{ end }}

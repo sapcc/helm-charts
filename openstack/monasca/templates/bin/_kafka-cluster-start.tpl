@@ -14,6 +14,8 @@ function process_config {
   export HOSTNUM=$(hostname|sed 's/[^0-9]*//g') 
   export MONASCA_KAFKA_ENDPOINT_ID=$(($HOSTNUM + 1))
 
+#  export KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=${HOSTNAME} -Djava.net.preferIPv4Stack=true"
+#  export JMX_PORT=${JMX_PORT:-9999}
 
   MONASCA_KAFKA_SERVER_VAR="$(hostname).kafka"
   # substitute injected ENV
