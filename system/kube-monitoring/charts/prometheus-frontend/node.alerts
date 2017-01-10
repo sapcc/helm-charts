@@ -1,0 +1,46 @@
+### General node health ###
+
+ALERT NodeHighCpuUsage
+  IF avg by(instance)(irate(node_cpu{mode="idle"}[5m])) < 0.2
+  FOR 3m
+  LABELS {
+    service   = "node",
+    severity  = "warning",
+    context   = "availability",
+    dashboard = "kubernetes-node?var-server={{$labels.instance}}"
+  }
+  ANNOTATIONS {
+    summary = "High load on node",
+    description = "The node {{ $labels.instance }} has more than 80% CPU load.",
+  }
+
+### Network health ###
+
+ALERT NodeHighNumberOfOpenConnections
+  IF node_netstat_Tcp_CurrEstab{instance!~"master.*"} > 1000
+  FOR 3m
+  LABELS {
+    service = "node",
+    severity = "warning",
+    context = "availability",
+    dashboard = "kubernetes-node?var-server={{$labels.instance}}"
+  }
+  ANNOTATIONS {
+    summary = "High number of open TCP connections",
+    description = "The node {{ $labels.instance }} has more than 1000 active TCP connections.",
+  }
+
+# master nodes get a bit more headspace for all the open connections to the kube-proxy
+ALERT NodeHighNumberOfOpenConnections
+  IF node_netstat_Tcp_CurrEstab{instance=~"master.*"} > 1500
+  FOR 3m
+  LABELS {
+    service = "node",
+    severity = "warning",
+    context = "availability",
+    dashboard = "kubernetes-node?var-server={{$labels.instance}}"
+  }
+  ANNOTATIONS {
+    summary = "High number of open TCP connections",
+    description = "The master node {{ $labels.instance }} has more than 1500 active TCP connections.",
+  }
