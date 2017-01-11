@@ -1,4 +1,3 @@
-{{- define "rabbitmq_prereq_tpl" -}}
 #!/bin/bash
 
 # unset all proxy settings
@@ -25,4 +24,3 @@ if [ "$MYRABBITMQISRUNNING" = "false" ]; then
   echo "Startup failed - ceilometer-rabbitmq not available"
   exit 1
 fi
-{{- end -}}

@@ -1,4 +1,3 @@
-{{- define "event_definitions_yaml_tpl" -}}
 ---
 - event_type: compute.instance.*
   traits: &instance_traits
@@ -490,4 +489,3 @@
     audit_period_ending:
       type: datetime
       fields: payload.audit_period_ending
-{{- end -}}

@@ -1,4 +1,3 @@
-{{- define "healthcheck_conf_tpl" -}}
 export OS_REGION_NAME={{.Values.cluster_region}}
 export OS_USER_DOMAIN_NAME=cc3test
 export OS_PROJECT_NAME=billing_test
@@ -16,4 +15,3 @@ export SWIFT_FILE_LOOPS={{.Values.ceilometer_health_swift_file_loops}}
 export SWIFT_FILE_WAIT={{.Values.ceilometer_health_swift_file_wait}}
 export HANA_CHECK_LOOPS={{.Values.ceilometer_health_hana_check_loops}}
 export HANA_CHECK_WAIT={{.Values.ceilometer_health_hana_check_wait}}
-{{- end -}}
