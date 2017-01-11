@@ -1,4 +1,3 @@
-{{- define "monasca_storm_thresh_thresh_config_yml_tpl" -}}
 metricSpoutThreads: 2
 metricSpoutTasks: 2
 numWorkerProcesses: 2
@@ -478,4 +477,3 @@ database:
 
 
   maxSize: 41
-{{ end }}

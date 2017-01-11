@@ -1,4 +1,3 @@
-{{- define "monasca_kibana_kibana_yml_tpl" -}}
 # Kibana is served by a back end server. This controls which port to use.
 # server.port: 5601
 
@@ -78,4 +77,3 @@ elasticsearch.requestTimeout: 60000
 
 # Set this to true to log all events, including system usage information and all requests.
 # logging.verbose: false
-{{ end }}

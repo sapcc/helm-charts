@@ -1,4 +1,3 @@
-{{- define "monasca_kafka_cluster_zookeeper_properties_tpl" -}}
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -19,4 +18,3 @@ dataDir=/tmp/zookeeper
 clientPort={{.Values.monasca_zookeeper_port_internal}}
 # disable the per-ip limit on the number of connections since this is a non-production config
 maxClientCnxns=0
-{{ end }}

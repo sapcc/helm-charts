@@ -1,4 +1,3 @@
-{{- define "monasca_fluent_fluent_conf_tpl" -}}
 # This Fluentd configuration file enables the collection of log files
 # that can be specified at the time of its creation in an environment
 # variable, assuming that the config_generator.sh script runs to generate
@@ -120,4 +119,3 @@
    reload_connections true
    reload_on_failure true
  </match>
-{{ end }}

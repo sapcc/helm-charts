@@ -1,4 +1,3 @@
-{{- define "monasca_logstash_persister_monasca_log_persister_conf_tpl" -}}
 input {
   
   kafka {
@@ -73,4 +72,3 @@ output {
         flush_size => 500
     }
 }
-{{ end }}

@@ -1,4 +1,3 @@
-{{- define "monasca_log_api_log_api_config_ini_tpl" -}}
 [DEFAULT]
 name = monasca_log_api
 
@@ -31,4 +30,3 @@ host = 0.0.0.0
 port = {{.Values.monasca_log_api_port_internal}}
 workers = 4
 proc_name = monasca_log_api
-{{ end }}

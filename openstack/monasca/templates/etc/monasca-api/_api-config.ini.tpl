@@ -1,4 +1,3 @@
-{{- define "monasca_api_api_config_ini_tpl" -}}
 [DEFAULT]
 name = monasca_api
 
@@ -37,4 +36,3 @@ proc_name = monasca_api
 level = DEBUG
 handlers =
 qualname = sqlalchemy.engine
-{{ end }}

@@ -1,4 +1,3 @@
-{{- define "monasca_kafka_cluster_consumer_properties_tpl" -}}
 # Licensed to the Apache Software Foundation (ASF) under one or more.properties  
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -28,4 +27,3 @@ group.id=test-consumer-group
 
 #consumer timeout
 #consumer.timeout.ms=5000
-{{ end }}

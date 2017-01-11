@@ -1,4 +1,3 @@
-{{- define "agent_forwarder_start_tpl" -}}
 #!/bin/bash
 
 # common initialization
@@ -18,4 +17,3 @@ function start_application {
 process_config
 
 start_application
-{{ end }}

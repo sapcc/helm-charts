@@ -1,4 +1,3 @@
-{{- define "monasca_mysql_mysql_cnf_tpl" -}}
 #
 # The MySQL database server configuration file.
 #
@@ -149,4 +148,3 @@ key_buffer		= 16M
 #   The files must end with '.cnf', otherwise they'll be ignored.
 #
 !includedir /etc/mysql/conf.d/
-{{ end }}

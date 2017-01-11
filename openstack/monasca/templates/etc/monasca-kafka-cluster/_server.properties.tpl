@@ -1,4 +1,3 @@
-{{- define "monasca_kafka_cluster_server_properties_tpl" -}}
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -125,4 +124,3 @@ zookeeper.connect=zk:{{.Values.monasca_zookeeper_port_internal}}
 
 # Timeout in ms for connecting to zookeeper
 zookeeper.connection.timeout.ms=6000
-{{ end }}

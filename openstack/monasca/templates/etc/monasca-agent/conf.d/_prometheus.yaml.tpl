@@ -1,4 +1,3 @@
-{{- define "monasca_agent_conf_d_prometheus_yaml_tpl" -}}
 init_config:
 
 instances:
@@ -90,4 +89,3 @@ instances:
                    kubernetes.cgroup.path:
                        source_key: 'id'
                        regex: '(/system.slice/.*)'
-{{ end }}

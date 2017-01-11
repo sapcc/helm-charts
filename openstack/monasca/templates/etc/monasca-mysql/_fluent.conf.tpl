@@ -1,4 +1,3 @@
-{{- define "monasca_mysql_fluent_conf_tpl" -}}
 <source>
   @type tail
   path /var/log/mysql/mysql.log,/var/log/mysql/mysql-slow.log,/var/log/mysql/error.log
@@ -10,4 +9,3 @@
 <match mysql>
   @type stdout
 </match>
-{{ end }}

@@ -1,4 +1,3 @@
-{{- define "monasca_kafka_cluster_log4j_properties_tpl" -}}
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -67,4 +66,3 @@ log4j.additivity.kafka.log.LogCleaner=false
 log4j.logger.state.change.logger=WARN, stdout
 log4j.additivity.state.change.logger=false
 
-{{ end }}

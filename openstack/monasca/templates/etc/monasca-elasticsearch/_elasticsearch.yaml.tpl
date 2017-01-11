@@ -1,4 +1,3 @@
-{{- define "monasca_elasticsearch_elasticsearch_yaml_tpl" -}}
 cluster.name: {{.Values.monasca_elasticsearch_cluster_name}}
 
 cloud:
@@ -52,4 +51,3 @@ readonlyrest:
     - name: Admin
       type: allow
       auth_key: {{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}}
-{{ end }}

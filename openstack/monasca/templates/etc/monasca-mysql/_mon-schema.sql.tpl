@@ -1,4 +1,3 @@
-{{- define "monasca_mysql_mon_schema_sql_tpl" -}}
 CREATE DATABASE IF NOT EXISTS `mon` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `mon`;
 
@@ -214,4 +213,3 @@ GRANT ALL ON mon.* TO 'thresh'@'localhost' IDENTIFIED BY '{{.Values.monasca_mysq
 
 /* grant access to local agent user */
 GRANT USAGE ON *.* TO 'mon-agent'@'localhost' WITH GRANT OPTION;
-{{ end }}

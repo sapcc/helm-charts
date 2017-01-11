@@ -1,4 +1,3 @@
-{{- define "monasca_log_api_log_api_config_conf_tpl" -}}
 [DEFAULT]
 {{if eq .Values.monasca_log_api_loglevel "DEBUG" }}
 general_log             = 1
@@ -54,4 +53,3 @@ logs = monasca_log_api.reference.v2.logs:Logs
 logs_v3 = monasca_log_api.reference.v3.logs:Logs
 versions = monasca_log_api.reference.versions:Versions
 healthchecks = monasca_log_api.reference.healthchecks:HealthChecks
-{{ end }}

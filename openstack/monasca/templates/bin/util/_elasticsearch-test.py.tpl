@@ -1,4 +1,3 @@
-{{- define "util_elasticsearch_test_py_tpl" -}}
 #!/usr/bin/env python
 from elasticsearch import Elasticsearch, RequestsHttpConnection, NotFoundError, ConnectionError
 from elasticsearch_dsl import Search
@@ -117,4 +116,3 @@ def searchLoop():
 
 storeMetric()
 searchLoop()
-{{ end }}

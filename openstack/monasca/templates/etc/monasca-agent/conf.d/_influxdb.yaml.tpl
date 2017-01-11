@@ -1,4 +1,3 @@
-{{- define "monasca_agent_conf_d_influxdb_yaml_tpl" -}}
 init_config:
 
 instances:
@@ -24,4 +23,3 @@ instances:
        - fields_create
        - write_req
        - points_write_ok
-{{ end }}

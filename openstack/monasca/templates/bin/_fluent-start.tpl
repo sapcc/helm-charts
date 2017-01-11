@@ -1,4 +1,3 @@
-{{- define "fluent_start_tpl" -}}
 #!/bin/bash
 
 . /container.init/common-start
@@ -20,4 +19,3 @@ function start_application {
 process_config
 
 start_application
-{{ end }}

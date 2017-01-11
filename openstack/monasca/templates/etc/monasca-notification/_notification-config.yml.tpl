@@ -1,4 +1,3 @@
-{{- define "monasca_notification_notification_config_yml_tpl" -}}
 kafka:
     url: kafka:{{.Values.monasca_kafka_port_internal}}
     group: notification
@@ -118,4 +117,3 @@ logging: # Used in logging.dictConfig
         handlers:
             - console
         level: {{.Values.monasca_notification_loglevel}}
-{{ end }}

@@ -1,4 +1,3 @@
-{{- define "common_sh_tpl" -}}
 #!/usr/bin/env bash
 
 function prepare_environment {
@@ -62,4 +61,3 @@ CLUSTER_CONFIG_PATH=/openstack-kube/openstack-kube/etc
 export MY_IP=$(ip route get 1 | awk '{print $NF;exit}')
 
 prepare_environment
-{{ end }}

@@ -1,4 +1,3 @@
-{{- define "monasca_api_api_config_conf_tpl" -}}
 [DEFAULT]
 # Show debugging output in logs (sets DEBUG log level output)
 {{if eq .Values.monasca_api_loglevel "DEBUG" }}
@@ -166,4 +165,3 @@ insecure = false
 token_cache_time = 900
 memcached_servers = 127.0.0.1:11211
 
-{{ end }}

@@ -1,4 +1,3 @@
-{{- define "mysql_init_tpl" -}}
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
@@ -65,4 +64,3 @@ process_config
 start_application
 
 diagnose_application
-{{ end }}

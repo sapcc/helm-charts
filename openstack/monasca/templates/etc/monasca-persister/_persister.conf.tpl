@@ -1,4 +1,3 @@
-{{- define "monasca_persister_persister_conf_tpl" -}}
 [DEFAULT]
 # Show debugging output in logs (sets DEBUG log level output)
 {{if eq .Values.monasca_persister_loglevel "DEBUG" }}
@@ -62,4 +61,3 @@ ip_address = {{.Values.monasca_influxdb_endpoint_host_internal}}
 port = {{.Values.monasca_influxdb_port_internal}}
 user = mon_persister
 password = {{.Values.monasca_influxdb_monpersister_password}}
-{{ end }}

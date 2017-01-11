@@ -1,4 +1,3 @@
-{{- define "influxdb_setup_tpl" -}}
 #!/bin/bash
 
 API_URL="http://localhost:{{.Values.monasca_influxdb_port_internal}}"
@@ -51,4 +50,3 @@ fi
 # successful
 echo "Monasca environment successfully prepared"
 date --utc > ${MONASCA_INFLUXDB_PREP_FILE}
-{{ end }}
