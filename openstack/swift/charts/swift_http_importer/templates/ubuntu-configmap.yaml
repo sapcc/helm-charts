@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: swift-http-import-ubuntu
+  labels:
+    system: openstack
+    service: objectstore
+    component: configuration
+
+data:
+  config.yaml: |
+    swift:
+      auth_url: {{.Values.auth_url}}
+      user_name: {{.Values.user_name}}
+      user_domain_name: {{.Values.user_domain_name}}
+      project_name: {{.Values.project_name}}
+      project_domain_name: {{.Values.project_domain_name}}
+      password: {{.Values.password}}
+
+    jobs:
+      {{- range $index, $job := .Values.jobs}}
+      - from: {{$job.source}}
+        to:   {{$job.target}}
+      {{- end}}

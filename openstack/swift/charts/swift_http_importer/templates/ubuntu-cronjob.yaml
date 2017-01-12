@@ -1,0 +1,31 @@
+apiVersion: batch/v2alpha1
+kind: ScheduledJob
+metadata:
+  name: swift-http-import-ubuntu
+  namespace: swift
+  labels:
+    system: openstack
+    component: objectstore
+spec:
+  schedule: "* 10 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: swift-http-import-ubuntu
+          containers:
+          - name: repo-ubuntu
+            restartPolicy: OnFailure
+            image: {{.Values.global.docker_repo}}/swift-http-import:{{.Values.image_version}}
+            args:
+              - /etc/http-import/config.yaml
+            # env:
+            #   - name: 'DEBUG'
+            #     value: '1'
+            volumeMounts:
+              - mountPath: /etc/http-import
+                name: config
