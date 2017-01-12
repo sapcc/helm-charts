@@ -31,10 +31,10 @@ notification_types:
         from_addr: noreply+monasca-{{.Values.cluster_region}}@sap.corp
 
     webhook:
-        timeout: 5
+        timeout: 60
 
     slack:
-        timeout: 5
+        timeout: 60
         ca_certs: "/etc/ssl/certs/ca-certificates.crt"
         insecure: False
 #        proxy: {{.Values.cluster_proxy_https}}
