@@ -1,11 +1,12 @@
+{{- range $repo, $jobs := .Values.jobs }}
 apiVersion: batch/v2alpha1
 kind: ScheduledJob
 metadata:
-  name: swift-http-import-ubuntu
+  name: swift-http-import-{{$repo}}
   namespace: swift
   labels:
     system: openstack
-    component: objectstore
+    component: repo
 spec:
   schedule: "* 10 * * *"
   concurrencyPolicy: Forbid
@@ -16,11 +17,11 @@ spec:
           volumes:
             - name: config
               configMap:
-                name: swift-http-import-ubuntu
+                name: swift-http-import-{{$repo}}
           containers:
           - name: repo-ubuntu
             restartPolicy: OnFailure
-            image: {{.Values.global.docker_repo}}/swift-http-import:{{.Values.image_version}}
+            image: {{$.Values.global.docker_repo}}/swift-http-import:{{$.Values.image_version}}
             args:
               - /etc/http-import/config.yaml
             # env:
@@ -29,3 +30,6 @@ spec:
             volumeMounts:
               - mountPath: /etc/http-import
                 name: config
+
+---
+{{end}}

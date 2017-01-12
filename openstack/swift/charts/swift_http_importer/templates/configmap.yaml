@@ -1,0 +1,28 @@
+{{- range $repo, $jobs := .Values.jobs }}
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: swift-http-import-{{$repo}}
+  labels:
+    system: openstack
+    component: repo
+
+data:
+  config.yaml: |
+    swift:
+      auth_url: {{$.Values.auth_url}}
+      user_name: {{$.Values.user_name}}
+      user_domain_name: {{$.Values.user_domain_name}}
+      project_name: {{$.Values.project_name}}
+      project_domain_name: {{$.Values.project_domain_name}}
+      password: {{$.Values.password}}
+
+    jobs:
+      {{- range $index, $job := $jobs}}
+      - from: {{$job.source}}
+        to:   {{$job.target}}
+      {{- end}}
+
+---
+{{end}}
