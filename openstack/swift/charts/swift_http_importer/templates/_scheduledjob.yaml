@@ -1,4 +1,4 @@
-{{- range $repo, $jobs := .Values.jobs }}
+{{- range $repo, $config := .Values.repos }}
 apiVersion: batch/v2alpha1
 kind: ScheduledJob
 metadata:
@@ -8,7 +8,7 @@ metadata:
     system: openstack
     component: repo
 spec:
-  schedule: "* 10 * * *"
+  schedule: "* {{$config.run_hour}} * * *"
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
