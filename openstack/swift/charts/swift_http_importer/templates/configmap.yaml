@@ -1,15 +1,15 @@
-{{- range $repo, $config := .Values.repos }}
 apiVersion: v1
 kind: ConfigMap
 
 metadata:
-  name: swift-http-import-{{$repo}}
+  name: swift-http-import
   labels:
     system: openstack
     component: repo
 
 data:
-  config.yaml: |
+{{- range $repo, $config := .Values.repos }}
+  {{$repo}}.yaml: |
     swift:
       auth_url: {{$.Values.auth_url}}
       user_name: {{$.Values.user_name}}
@@ -25,5 +25,4 @@ data:
         to:   {{$job.target}}
       {{- end}}
 
----
 {{end}}
