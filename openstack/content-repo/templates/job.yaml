@@ -1,0 +1,31 @@
+{{- range $repo, $config := .Values.repos }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: content-repo-import-{{$repo}}
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: config
+          configMap:
+            name: swift-http-import
+      containers:
+      - name: swift-http-import
+        image: {{$.Values.global.docker_repo}}/swift-http-import:{{$.Values.image_version}}
+        args:
+          - /etc/http-import/{{$repo}}.yaml
+        # env:
+        #   - name: 'DEBUG'
+        #     value: '1'
+        volumeMounts:
+          - mountPath: /etc/http-import
+            name: config
+
+---
+{{end}}
