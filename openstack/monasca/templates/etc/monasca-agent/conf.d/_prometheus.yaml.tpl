@@ -60,6 +60,27 @@ instances:
              gauges: [ 'monasca_(health.*)_gauge' ]
              dimensions:
                  service: service
+         swift.cluster:
+             gauges:
+                 - 'swift_cluster_(drives_audit_errors)_gauge'
+                 - 'swift_cluster_(drives_unmounted)_gauge'
+                 - 'swift_cluster_(md5_ring_not_matched)_gauge'
+                 - 'swift_cluster_(storage_used_percent)_gauge'
+                 - 'swift_cluster_(storage_used_percent_by_disk)_gauge'
+             dimensions:
+                 storage_ip: storage_ip
+                 disk: disk
+         swift.dispersion:
+             gauges:
+                 - 'swift_(dispersion_container_overlapping)_gauge'
+                 - 'swift_(dispersion_object_overlapping)_gauge'
+         swift.proxy:
+             gauges: [ 'swift_proxy_(firstbyte_timer)' ]
+             dimensions:
+                 policy:   { regex: 'all' }
+                 quantile: quantile
+                 status:   status
+                 type:     type
 
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
