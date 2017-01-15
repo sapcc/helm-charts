@@ -1,4 +1,3 @@
-{{- define "monasca_storm_thresh_worker_xml_tpl" -}}
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,4 +39,3 @@
     </Logger>
 </loggers>
 </configuration>
-{{ end }}

@@ -18,8 +18,8 @@ spec:
       labels:
         component: mysql
       annotations:
-        checksum/monasca.etc.base: checksums#monasca-etc-base-configmap.yaml#
-        checksum/monasca.bin: checksums#monasca-bin-configmap.yaml#
+        checksum/monasca-templates-monasca-etc-base.yaml: {{ include "monasca/templates/monasca-etc-base-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-bin.yaml: {{ include "monasca/templates/monasca-bin-configmap.yaml" . | sha256sum }}
         pod.alpha.kubernetes.io/init-containers: '[
             {
                 "name": "init",
@@ -81,6 +81,11 @@ spec:
             - mysqld_safe
             - --defaults-extra-file=/monasca-etc-base/mysql-mysql.cnf
             - --init-file=/monasca-etc-base/mysql-mon-customizing.sql
+#          command:
+#            - /bin/bash
+#          args:
+#            - -c
+#            - "while true; do sleep 10000; done"
           ports:
             - name: mysql
               containerPort: {{.Values.monasca_mysql_port_internal}}

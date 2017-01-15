@@ -1,11 +1,10 @@
-{{- define "monasca_api_api_config_conf_tpl" -}}
 [DEFAULT]
 # Show debugging output in logs (sets DEBUG log level output)
-{% if cluster_config['monasca.api.loglevel'] == 'DEBUG' %}
-debug = true
-{% else %}
-debug = false
-{% endif %}
+{{if eq .Values.monasca_api_loglevel "DEBUG" }}
+general_log             = 1
+{{else}}
+general_log             = 0
+{{end}}
 
 # Identifies the region that the Monasca API is running in.
 region = {{.Values.cluster_region}}
@@ -152,7 +151,7 @@ url = "mysql+pymysql://monapi:{{.Values.monasca_mysql_monapi_password}}@{{.Value
 
 [keystone_authtoken]
 auth_uri = {{.Values.keystone_api_endpoint_protocol_internal}}://{{.Values.keystone_api_endpoint_host_internal}}:{{.Values.keystone_api_port_internal}}
-auth_url = {{.Values.keystone_api_endpoint_protocol_admin}}://{{.Values.keystone_api_endpoint_host_admin}}:{{.Values.keystone.api.port.admin}}/v3
+auth_url = {{.Values.keystone_api_endpoint_protocol_admin}}://{{.Values.keystone_api_endpoint_host_admin}}:{{.Values.keystone_api_port_admin}}/v3
 auth_type = v3password
 username = {{.Values.monasca_api_username}}
 password = {{.Values.monasca_api_password}}
@@ -166,4 +165,3 @@ insecure = false
 token_cache_time = 900
 memcached_servers = 127.0.0.1:11211
 
-{{ end }}

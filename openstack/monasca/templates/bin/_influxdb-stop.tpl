@@ -1,4 +1,3 @@
-{{- define "influxdb_stop_tpl" -}}
 #!/bin/bash
 
 echo "Safely shutting down InfluxDB" > /var/opt/influxdb/prestop.output
@@ -28,4 +27,3 @@ done
 #CONFIG_FILE="/monasca-etc-base/influxdb-influxdb.conf"
 #MONASCA_INFLUXDB_COMMAND='/usr/bin/influxd'
 #$MONASCA_INFLUXDB_COMMAND stop -config=${CONFIG_FILE}
-{{ end }}

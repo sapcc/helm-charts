@@ -185,3 +185,8 @@ storage_ip="$1.$2.$3.$4"
 swift_cluster.objects_updater_sweep_time.from.*.*.*.*
 name="swift_cluster_objects_updater_sweep_time"
 storage_ip="$1.$2.$3.$4"
+
+swift_cluster.storage_used_percent.disk.*.from.*.*.*.*
+name="swift_cluster_storage_used_percent_by_disk"
+disk="$1"
+storage_ip="$2.$3.$4.$5"

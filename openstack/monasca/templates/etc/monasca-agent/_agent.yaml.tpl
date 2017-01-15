@@ -1,4 +1,3 @@
-{{- define "monasca_agent_agent_yaml_tpl" -}}
 Api:
   # To configure Keystone correctly, a project-scoped token must be acquired.
   # To accomplish this, the configuration must be set up with one of the
@@ -124,4 +123,3 @@ Logging:
   # syslog_host:
   # syslog_port:
 
-{{ end }}

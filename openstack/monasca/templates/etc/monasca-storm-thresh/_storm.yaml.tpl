@@ -1,4 +1,3 @@
-{{- define "monasca_storm_thresh_storm_yaml_tpl" -}}
 ### base
 java.library.path: "/usr/local/lib:/opt/local/lib:/usr/lib"
 storm.local.dir: "/var/storm"
@@ -55,4 +54,3 @@ transactional.zookeeper.root: /storm-transactional
 ### topology.* configs are for specific executing storms
 topology.acker.executors: 1
 topology.debug: False
-{{ end }}

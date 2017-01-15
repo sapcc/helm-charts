@@ -1,4 +1,3 @@
-{{- define "util_storm_delete_topics_tpl" -}}
 . /container.init/common-start
 echo "DELETE ALL KAFKA TOPICS"
 echo "------------------------------------------------------------------------------"
@@ -9,4 +8,3 @@ for topic in $TOPICS; do
   /opt/kafka/current/bin/kafka-topics.sh --delete --topic $topic --zookeeper ${MONASCA_ZOOKEEPER_ENDPOINTS_URI_LIST} 
 done
 echo "done"
-{{ end }}

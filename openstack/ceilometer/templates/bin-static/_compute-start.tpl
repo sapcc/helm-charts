@@ -1,4 +1,3 @@
-{{- define "compute_start_tpl" -}}
 #!/usr/bin/env bash
 
 # do some tasks required for all ceilometer containers
@@ -23,4 +22,3 @@ function start_application {
 process_config
 
 start_application
-{{- end -}}

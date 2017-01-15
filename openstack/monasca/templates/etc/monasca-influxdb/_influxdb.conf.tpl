@@ -1,4 +1,3 @@
-{{- define "monasca_influxdb_influxdb_conf_tpl" -}}
 # Welcome to the InfluxDB configuration file.
 
 # If hostname (on the OS) doesn't return a name that can be resolved by the other
@@ -72,4 +71,3 @@ hostname = "localhost"
   enabled = true 
   store-database = "_internal"
   store-interval = "1m"
-{{ end }}

@@ -1,4 +1,3 @@
-{{- define "common_start_tpl" -}}
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
@@ -24,4 +23,3 @@ export KUBE_NODE_IP=$(jq -r ".status.hostIP" < /pod.json)
 
 # enable this once statsd is available locally
 #export STATSD_HOST=$KUBE_NODE_IP
-{{ end }}

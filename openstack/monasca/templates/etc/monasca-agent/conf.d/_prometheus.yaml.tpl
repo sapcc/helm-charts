@@ -1,9 +1,8 @@
-{{- define "monasca_agent_conf_d_prometheus_yaml_tpl" -}}
 init_config:
 
 instances:
  - name: Prometheus
-   url: '{{.Value.monasca_agent_config_prometheus.url}}/federate'
+   url: '{{.Values.monasca_agent_config_prometheus_url}}/federate'
    timeout: 30
    mapping:
       match_labels:
@@ -11,30 +10,40 @@ instances:
       dimensions:
          resource: resource
       groups:
-         dns.bind:
-             gauges: [ 'bind_(up)' ]
-             rates: [ 'bind_(incoming_queries)_total', 'bind_(responses)_total' ]
+         dns:
+             gauges: [ 'bind_up' ]
+             rates: [ '(bind_incoming_queries)_total', '(bind_responses)_total' ]
              dimensions:
-                 dns.bind_server: kubernetes_name
+                 bind_server: kubernetes_name
+                 result: result
          datapath:
              gauges: [ 'datapath_(status)' ]
              dimensions:
-                 service: script
+                 test: script
          blackbox:
              gauges: [ 'blackbox_(status)' ]
              dimensions:
-                 service: script
+                 test: script
          canary:
              gauges: [ 'canary_(status)' ]
              dimensions:
                  test: script
-                 service: service
+         prometheus:
+             gauges: [ 'up' ]
+             dimensions:
+                 instance: instance
+                 component: component
          activedirectory:
              gauges: [ 'ad_(.*_status)' ]
          kubernetes:
-             gauges: [ 'kube_(node_status_ready)', 'kube_(node_status_out_of_disk)' ]
+             gauges: [ 'kube_(node_status_ready)', 'kube_(node_status_out_of_disk)', 'node_filesystem_free' ]
              dimensions:
                  node: node
+                 node: instance
+                 mountpoint: mountpoint
+                 fstype:
+                     source_key: fstype
+                     regex: '(xfs|ext4)'
                  condition: condition
          openstack.api:
              rates: [ 'openstack_(responses)_by_api_counter', 'openstack_(requests)_total_counter' ]
@@ -44,7 +53,6 @@ instances:
                  component: kubernetes_name
                  method: method
                  api: api
-                 method: method
                  le: le
                  quantile: quantile
                  status: status
@@ -52,6 +60,27 @@ instances:
              gauges: [ 'monasca_(health.*)_gauge' ]
              dimensions:
                  service: service
+         swift.cluster:
+             gauges:
+                 - 'swift_cluster_(drives_audit_errors)_gauge'
+                 - 'swift_cluster_(drives_unmounted)_gauge'
+                 - 'swift_cluster_(md5_ring_not_matched)_gauge'
+                 - 'swift_cluster_(storage_used_percent)_gauge'
+                 - 'swift_cluster_(storage_used_percent_by_disk)_gauge'
+             dimensions:
+                 storage_ip: storage_ip
+                 disk: disk
+         swift.dispersion:
+             gauges:
+                 - 'swift_(dispersion_container_overlapping)_gauge'
+                 - 'swift_(dispersion_object_overlapping)_gauge'
+         swift.proxy:
+             gauges: [ 'swift_proxy_(firstbyte_timer)' ]
+             dimensions:
+                 policy:   { regex: 'all' }
+                 quantile: quantile
+                 status:   status
+                 type:     type
 
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
@@ -81,4 +110,3 @@ instances:
                    kubernetes.cgroup.path:
                        source_key: 'id'
                        regex: '(/system.slice/.*)'
-{{ end }}

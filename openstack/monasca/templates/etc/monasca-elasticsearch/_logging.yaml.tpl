@@ -1,4 +1,3 @@
-{{- define "monasca_elasticsearch_logging_yaml_tpl" -}}
 # you can override this using by setting a system property, for example -Des.logger.level=DEBUG
 es.logger.level: {{.Values.monasca_elasticsearch_loglevel}}
 rootLogger: ${es.logger.level}, console
@@ -24,4 +23,3 @@ appender:
     layout:
       type: consolePattern
       conversionPattern: "[%d{ISO8601}][%-5p][%-25c] %m%n"
-{{ end }}

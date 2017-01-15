@@ -1,4 +1,3 @@
-{{- define "kibana_start_tpl" -}}
 #!/bin/bash
 
 set -e
@@ -40,4 +39,3 @@ function start_application {
 process_config
 
 start_application
-{{ end }}

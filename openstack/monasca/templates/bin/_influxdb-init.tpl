@@ -1,4 +1,3 @@
-{{- define "influxdb_init_tpl" -}}
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
@@ -26,4 +25,3 @@ function process_config {
 
 process_config
 
-{{ end }}

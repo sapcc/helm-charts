@@ -1,4 +1,3 @@
-{{- define "monasca_notification_notification_config_yml_tpl" -}}
 kafka:
     url: kafka:{{.Values.monasca_kafka_port_internal}}
     group: notification
@@ -32,13 +31,45 @@ notification_types:
         from_addr: noreply+monasca-{{.Values.cluster_region}}@sap.corp
 
     webhook:
-        timeout: 5
+        timeout: 60
 
     slack:
-        timeout: 5
+        timeout: 60
         ca_certs: "/etc/ssl/certs/ca-certificates.crt"
         insecure: False
 #        proxy: {{.Values.cluster_proxy_https}}
+        template:
+            text: |
+                {
+                    "username": "Monasca ({{.Values.cluster_region}})",
+                    "icon_url": "https://upload.wikimedia.org/wikipedia/en/8/85/Big_Brother_UK_5_logo.png",
+                    "mrkdwn": true,
+                    "attachments": [
+                        {
+                            "fallback": "{{`{{alarm_description}}`}}",
+                            "color": "{{`{{ {'ALARM': '#d60000', 'OK': '#36a64f', 'UNDETERMINED': '#fff000'}[state] }}`}}",
+                            "title": "{{`{{ {'ALARM': '*Alarm triggered*', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }}`}} for {{`{{alarm_name}}`}} in {{.Values.cluster_region}}",
+                            "title_link": "https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={{`{{alarm_id}}`}}",
+                            "text": "{% if state == 'ALARM' %}:bomb:{{`{{alarm_description}}`}}\n{{`{{message}}`}}{% elif state == 'OK' %}:white_check_mark: Resolved: {{`{{alarm_description}}`}}{% else %}:grey_question:{{`{{alarm_description}}`}}{% endif %}",
+                            {% if state == 'ALARM' %}
+                            "fields": [
+                                {
+                                    "title": "Region",
+                                    "value": "{{.Values.cluster_region}}",
+                                    "short": true
+                                },
+                                {
+                                    "title": "Severity",
+                                    "value": "{{`{{severity}}`}}",
+                                    "short": true
+                                }
+                            ],
+                            {% endif %}
+                            "mrkdwn_in": ["text", "title", "fallback"]
+                        }
+                    ]
+                }
+            mime_type: application/json
 
 processors:
     alarm:
@@ -85,5 +116,4 @@ logging: # Used in logging.dictConfig
     root:
         handlers:
             - console
-        level: {{.Values.monasca_notification_loglevel}} 
-{{ end }}
+        level: {{.Values.monasca_notification_loglevel}}

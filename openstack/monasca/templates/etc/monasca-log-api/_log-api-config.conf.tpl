@@ -1,10 +1,9 @@
-{{- define "monasca_log_api_log_api_config_conf_tpl" -}}
 [DEFAULT]
-{% if cluster_config['monasca.log-api.loglevel'] == 'DEBUG' %}
-debug = true
-{% else %}
-debug = false
-{% endif %}
+{{if eq .Values.monasca_log_api_loglevel "DEBUG" }}
+general_log             = 1
+{{else}}
+general_log             = 0
+{{end}}
 
 [service]
 region = {{.Values.cluster_region}}
@@ -54,4 +53,3 @@ logs = monasca_log_api.reference.v2.logs:Logs
 logs_v3 = monasca_log_api.reference.v3.logs:Logs
 versions = monasca_log_api.reference.versions:Versions
 healthchecks = monasca_log_api.reference.healthchecks:HealthChecks
-{{ end }}

@@ -1,4 +1,3 @@
-{{- define "monasca_logstash_metrics_monasca_log_metrics_conf_tpl" -}}
 input {
     kafka {
         zk_connect => "zk:{{.Values.monasca_zookeeper_port_internal}}"
@@ -62,4 +61,3 @@ output {
         compression_type => "none"
     }
 }
-{{ end }}

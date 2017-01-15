@@ -1,11 +1,10 @@
-{{- define "monasca_persister_persister_conf_tpl" -}}
 [DEFAULT]
 # Show debugging output in logs (sets DEBUG log level output)
-{% if cluster_config['monasca.persister.loglevel'] == 'DEBUG' %}
-debug = true
-{% else %}
-debug = false
-{% endif %}
+{{if eq .Values.monasca_persister_loglevel "DEBUG" }}
+general_log             = 1
+{{else}}
+general_log             = 0
+{{end}}
 
 [repositories]
 # The driver to use for the metrics repository
@@ -62,4 +61,3 @@ ip_address = {{.Values.monasca_influxdb_endpoint_host_internal}}
 port = {{.Values.monasca_influxdb_port_internal}}
 user = mon_persister
 password = {{.Values.monasca_influxdb_monpersister_password}}
-{{ end }}

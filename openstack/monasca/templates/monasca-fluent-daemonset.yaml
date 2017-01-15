@@ -12,8 +12,8 @@ spec:
       labels:
         component: monasca-fluent
       annotations:
-        checksum/monasca.etc.log: checksums#monasca-etc-log-configmap.yaml#
-        checksum/monasca.bin: checksums#monasca-bin-configmap.yaml#
+        checksum/monasca-templates-monasca.etc.log.yaml: {{ include "monasca/templates/monasca-etc-log-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca.bin.yaml: {{ include "monasca/templates/monasca-bin-configmap.yaml" . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
     spec:
       volumes:
@@ -45,13 +45,6 @@ spec:
 #            limits:
 #              cpu: 1000m
 #              memory: 2000Mi
-          env:
-            - name: FLUENTD_ARGS
-              value: -q
-            - name: ELASTICSEARCH_HOST
-              value: "monasca-elasticsearch-client"
-            - name: NODE_TYPE
-              value: "fluent"
           volumeMounts:
             - mountPath: /openstack-kube
               name: openstack-kube

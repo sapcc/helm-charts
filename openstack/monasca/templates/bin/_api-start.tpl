@@ -1,4 +1,3 @@
-{{- define "api_start_tpl" -}}
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
@@ -19,4 +18,3 @@ function start_application {
 process_config
 
 start_application
-{{ end }}

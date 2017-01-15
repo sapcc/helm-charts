@@ -1,4 +1,3 @@
-{{- define "mysql_stop_tpl" -}}
 #!/bin/bash
 
 echo "Safely shutting down MySQL/MariaDB"
@@ -8,4 +7,3 @@ echo "* creating SQL dump of 'mon' DB in $filename"
 mysqldump mon --lock-tables --verbose > $filename 
 echo "* invoking stop command on MySQL/MariaDB"
 /etc/init.d/mysql stop
-{{ end }}

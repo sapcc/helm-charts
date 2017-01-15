@@ -11,7 +11,7 @@ metadata:
     kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
 
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -22,8 +22,8 @@ spec:
       labels:
         component: monasca-notification
       annotations:
-        checksum/monasca.etc.base: checksums#monasca-etc-base-configmap.yaml#
-        checksum/monasca.bin: checksums#monasca-bin-configmap.yaml#
+        checksum/monasca-templates-monasca-etc-base.yaml: {{ include "monasca/templates/monasca-etc-base-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-bin.yaml: {{ include "monasca/templates/monasca-bin-configmap.yaml" . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
@@ -49,6 +49,11 @@ spec:
             - /openstack-kube/openstack-kube/scripts/_container_init
           args:
             - notification-start
+#          command:
+#            - /bin/bash
+#          args:
+#            - -c
+#            - "while true; do sleep 10000; done"
           volumeMounts:
             - mountPath: /monasca-etc-base
               name: monasca-etc-base

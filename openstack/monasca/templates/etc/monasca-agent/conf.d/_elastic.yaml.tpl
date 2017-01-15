@@ -1,4 +1,3 @@
-{{- define "monasca_agent_conf_d_elastic_yaml_tpl" -}}
 init_config:
 
 instances:
@@ -9,4 +8,3 @@ instances:
     dimensions:
       service: monitoring
       component: elasticsearch
-{{ end }}

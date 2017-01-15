@@ -1,4 +1,3 @@
-{{- define "monasca_logstash_transformer_monasca_log_transformer_conf_tpl" -}}
 input {
     kafka {
         zk_connect => "zk:{{.Values.monasca_zookeeper_port_internal}}"
@@ -72,4 +71,3 @@ output {
         topic_id => "transformed-log"
     }
 }
-{{ end }}

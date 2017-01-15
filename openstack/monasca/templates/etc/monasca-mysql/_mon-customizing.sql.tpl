@@ -1,4 +1,3 @@
-{{- define "monasca_mysql_mon_customizing_sql_tpl" -}}
 USE `mon`;
 
 SET foreign_key_checks = 1;
@@ -23,4 +22,3 @@ COMMIT;
 CREATE OR REPLACE VIEW mon.v_leftovers AS select * from metric_definition_dimensions LEFT JOIN alarm_metric ON alarm_metric.metric_definition_dimensions_id = metric_definition_dimensions.id where alarm_metric.metric_definition_dimensions_id IS NULL;
 
 CREATE OR REPLACE VIEW mon.v_monrows AS SELECT table_name, table_rows FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'mon';
-{{ end }}
