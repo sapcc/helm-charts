@@ -1,0 +1,29 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: ntp-exporter
+spec:
+  template:
+    metadata:
+      name: ntp-exporter
+      labels:
+        app: ntp-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+    spec:
+      containers:
+        - name:  ntp-exporter
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          args:
+            - "-ntp.server={{ .Values.ntp.server }}"
+          ports:
+            - name: metrics
+              containerPort: 9100
+          resources:
+            requests:
+              memory: 10Mi
+              cpu: 10m
+            limits:
+              memory: 20Mi
+              cpu: 20m
