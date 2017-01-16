@@ -60,7 +60,7 @@ Main:
     service: {service}
     component: {component}
     kubernetes.container_name: {kube_container_name}
-    kubernetes.pod_name: {kube_pod_name}
+  #    kubernetes.pod_name: {kube_pod_name}
 
   # Set the threshold for accepting points to allow anything
   # with recent_point_threshold seconds
