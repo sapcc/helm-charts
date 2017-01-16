@@ -14,6 +14,20 @@ ALERT NodeHighCpuUsage
     description = "The node {{ $labels.instance }} has more than 80% CPU load.",
   }
 
+ALERT NodeClockDrift
+  IF abs(ntp_drift_seconds) > 0.3
+  FOR 3m
+  LABELS {
+    service = "node",
+    severity = "critical",
+    context = "availability",
+    dashboard = "kubernetes-node?var-server={{$labels.instance}}"
+  }
+  ANNOTATIONS {
+    summary = "High NTP drift",
+    description = "The clock on node {{ $labels.instance }} is more than 300ms apart from its NTP server. This can cause service degradation in Swift.",
+  }
+
 ### Network health ###
 
 ALERT NodeHighNumberOfOpenConnections
