@@ -37,9 +37,9 @@ Api:
   # the number of messages sent to the API by setting the backlog_send_rate to a lower number.
 
   # Maximum number of messages to buffer when unable to communicate with the monasca-api
-  max_buffer_size: 1000
+  max_buffer_size: 50000
   # Maximum number of messages to send at one time when communication with the monasca-api is restored
-  backlog_send_rate: 1000
+  backlog_send_rate: 5000
 
   # Publish extra metrics to the API by adding this number of 'amplifier' dimensions.
   # For load testing purposes only; set to 0 for production use.
@@ -69,6 +69,13 @@ Main:
 
   # time to wait between collection runs
   check_freq: 60
+
+  # Number of Collector Threads to run
+  num_collector_threads: 4
+
+  # Maximum number of collection cycles where all of the threads in the pool are
+  # still running plugins before the collector will exit
+  pool_full_max_retries: 4
 
   # Threshold value for warning on collection time of each check (in seconds)
   sub_collection_warn: 6

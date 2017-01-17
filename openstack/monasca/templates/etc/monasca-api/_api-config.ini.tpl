@@ -33,6 +33,6 @@ workers = 4
 proc_name = monasca_api
 
 [logger_sqlalchemy]
-level = DEBUG
+level = INFO
 handlers =
 qualname = sqlalchemy.engine
