@@ -19,8 +19,9 @@ spec:
         app: arc-api
     spec:
       volumes:
-        - name: api-transport-credentials
-          emptyDir: {}
+        - name: secrets
+          secret:
+            secretName: arc
       containers:
         - name: api
           image: {{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}
@@ -47,12 +48,10 @@ spec:
               value: production
             - name: ARC_ENDPOINT
               value: tls://mosquitto:8883
-            - name: ARC_TLS_CA_CERT
-              value: /etc/api/transport_CA.crt
-            - name: ARC_TLS_CLIENT_CERT
-              value: /etc/api/transport.crt
-            - name: ARC_TLS_CLIENT_KEY
-              value: /etc/api/transport.key
+            - name: ARC_PKI_CA_CERT
+              value: /secrets/ca.crt
+            - name: ARC_PKI_CA_KEY
+              value: /secrets/ca.key
             - name: ARC_LOG_LEVEL
               value: {{ .Values.logLevel }}
             - name: COMMON_NAME # use pod name as common name
@@ -66,7 +65,8 @@ spec:
             - name: ARC_KEYSTONE_ENDPOINT
               value: {{ .Values.keystoneEndpoint }}
           volumeMounts:
-            - name: api-transport-credentials
-              mountPath: /etc/api
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
 
 
