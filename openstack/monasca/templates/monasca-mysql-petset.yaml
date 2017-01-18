@@ -18,15 +18,15 @@ spec:
       labels:
         component: mysql
       annotations:
-        checksum/monasca-templates-monasca-etc-base.yaml
-        checksum/monasca-templates-monasca-bin.yaml
+        checksum/monasca-templates-monasca-etc-base.yaml: "dummy"
+        checksum/monasca-templates-monasca-bin.yaml: "dummy"
         pod.alpha.kubernetes.io/init-containers: '[
             {
                 "name": "init",
                 "image": "{{.Values.docker_repo}}/monasca-mysql:{{.Values.image_version_monasca_mysql}}",
                 "imagePullPolicy": "IfNotPresent",
                 "command": ["/usr/local/bin/dumb-init"],
-                "args": ["/mysql-init"],
+                "args": ["/bin/bash","/monasca-bin/mysql-init"],
                 "volumeMounts": [
                     {
                         "name": "datadir",

@@ -15,17 +15,16 @@ spec:
       labels:
         component: zk
       annotations:
-        checksum/monasca-templates-monasca-etc-base.yaml
-        checksum/monasca-templates-monasca-bin.yaml
+        checksum/monasca-templates-monasca-etc-base.yaml: "dummy"
+        checksum/monasca-templates-monasca-bin.yaml: "dummy"
         pod.alpha.kubernetes.io/initialized: "true"
         pod.alpha.kubernetes.io/init-containers: '[
             {
-                "name": "bootstrap",
+                "name": "init",
                 "image": "{{.Values.docker_repo}}/monasca-zookeeper-cluster:{{.Values.image_version_monasca_zookeeper}}",
                 "imagePullPolicy": "IfNotPresent",
                 "command": ["/usr/local/bin/dumb-init"],
-                "args": ["/peer-finder"],
-                "args": ["-on-start=\"/on-start.sh\"", "-service=zk", "-domain={{.Values.monasca_cluster}}"],
+                "args": ["/peer-finder","-on-start=\"/on-start.sh\"","-service=zk","-domain={{.Values.monasca_cluster}}"],
                 "env": [
                   {
                       "name": "POD_NAMESPACE",
