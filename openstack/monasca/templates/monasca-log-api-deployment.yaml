@@ -27,10 +27,6 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: openstack-kube
-          gitRepo:
-            repository: {{.Values.cluster_configuration_repository}}
-            revision: {{.Values.cluster_configuration_revision}}
         - name: monasca-bin
           configMap:
             name: monasca-bin
@@ -45,9 +41,12 @@ spec:
           image: {{.Values.docker_repo}}/monasca-log-api:{{.Values.image_version_monasca_log_api}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - log-api-start
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/log-api-start"
           readinessProbe:
             exec:
               command:
@@ -58,9 +57,7 @@ spec:
             - name: logapi
               containerPort: {{.Values.monasca_log_api_port_public}}
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-log
               name: monasca-etc-log
@@ -70,16 +67,19 @@ spec:
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
+          args:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/agent-forwarder-start"
           args:
             - agent-forwarder-start
           ports:
             - containerPort: {{.Values.monasca_agent_port_forwarder}}
               name: forwarder
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-base
               name: monasca-etc-base
@@ -87,18 +87,18 @@ spec:
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - agent-statsd-start
+            - /usr/local/bin/kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/agent-statsd-start"
             - name: MONASCA_AGENT_SERVICE_DEFAULT
               value: "monitoring"
             - name: MONASCA_AGENT_COMPONENT_DEFAULT
               value: "monasca-log-api"
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-base
               name: monasca-etc-base

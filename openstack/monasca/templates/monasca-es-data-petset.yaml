@@ -18,17 +18,13 @@ spec:
       labels:
         component: es-data
       annotations:
-        checksum/monasca-templates-monasca-etc-log.yaml: {{ include "monasca/templates/monasca-etc-log-configmap.yaml" . | sha256sum }}
-        checksum/monasca-templates-monasca-bin.yaml: {{ include "monasca/templates/monasca-bin-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-etc-log.yaml
+        checksum/monasca-templates-monasca-bin.yaml
         pod.alpha.kubernetes.io/initialized: "true"
     spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: openstack-kube
-          gitRepo:
-            repository: {{.Values.cluster_configuration_repository}}
-            revision: {{.Values.cluster_configuration_revision}}
         - name: monasca-bin
           configMap:
             name: monasca-bin
@@ -43,33 +39,12 @@ spec:
           image: {{.Values.docker_repo}}/monasca-elasticsearch:{{.Values.image_version_monasca_elasticsearch}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - elasticsearch-start
-          securityContext:
-            capabilities:
-              add:
-                - IPC_LOCK
-          volumeMounts:
-            - mountPath: /data
-              name: es
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
-              name: monasca-bin
-            - mountPath: /monasca-etc-log
-              name: monasca-etc-log
-#          lifecycle:
-#            preStop:
-#              exec:
-#                command: ["bashi, /container.init/elasticsearch_stop"]
-#          livenessProbe:
-#            exec:
-#              command:
-#              - /openstack-kube/openstack-kube/scripts/monasca-elasticsearch_health
-#            timeoutSeconds: 30
-#            initialDelaySeconds: 120
+            - /usr/local/bin/kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/elasticsearch-start"
             - name: KUBERNETES_CA_CERTIFICATE_FILE
               value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
             - name: NAMESPACE
@@ -82,6 +57,27 @@ spec:
               value: "false"
             - name: HTTP_ENABLE
               value: "true"
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+          volumeMounts:
+            - mountPath: /data
+              name: es
+            - mountPath: /monasca-bin
+              name: monasca-bin
+            - mountPath: /monasca-etc-log
+              name: monasca-etc-log
+#          lifecycle:
+#            preStop:
+#              exec:
+#                command: ["bashi, /monasca-bin/elasticsearch_stop"]
+#          livenessProbe:
+#            exec:
+#              command:
+#              - /monasca-bin/monasca-elasticsearch_health
+#            timeoutSeconds: 30
+#            initialDelaySeconds: 120
           ports:
             - name: transport
               containerPort: {{.Values.monasca_elasticsearch_port_cluster}}
@@ -93,10 +89,12 @@ spec:
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - agent-forwarder-start
+            - /usr/local/bin/kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/agent-forwarder-start"
             - name: MONASCA_AGENT_SERVICE_DEFAULT
               value: "monitoring"
             - name: MONASCA_AGENT_COMPONENT_DEFAULT
@@ -105,9 +103,7 @@ spec:
             - containerPort: {{.Values.monasca_agent_port_forwarder}}
               name: forwarder
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-base
               name: monasca-etc-base
@@ -115,16 +111,16 @@ spec:
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - agent-collector-start
+            - /usr/local/bin/kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/agent-collector-start"
             - name: MONASCA_AGENT_CHECKS
               value: "elastic"
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-base
               name: monasca-etc-base

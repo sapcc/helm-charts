@@ -28,7 +28,8 @@ spec:
             "name": "init",
             "image": "{{.Values.docker_repo}}/monasca-wall-e:{{.Values.image_version_monasca_wall_e}}",
             "imagePullPolicy": "IfNotPresent",
-            "command": ["/init-container.sh"],
+            "command": ["/usr/local/bin/dumb-init"],
+            "args": ["/init-container.sh"],
             "volumeMounts": [
               {
                 "name": "checks",
@@ -41,10 +42,6 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: openstack-kube
-          gitRepo:
-            repository: {{.Values.cluster_configuration_repository}}
-            revision: {{.Values.cluster_configuration_revision}}
         - name: monasca-bin
           configMap:
             name: monasca-bin
@@ -63,13 +60,14 @@ spec:
           image: {{.Values.docker_repo}}/monasca-wall-e:{{.Values.image_version_monasca_wall_e}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - wall-e-start
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/wall-e-start"
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-log
               name: monasca-etc-log
@@ -77,15 +75,6 @@ spec:
               name: monasca-content
             - mountPath: /checks
               name: checks
-#        - name: statsd
-#          image: prom/statsd-exporter
-#          imagePullPolicy: IfNotPresent
-#          ports:
-#            - name: statsd
-#              containerPort: 9125
-#              protocol: UDP
-#            - name: metrics
-#              containerPort: {{.Values.monasca_port_metrics}}
         - name: canary
           image: {{.Values.docker_repo}}/wildcard-exporter:v201611171311
           imagePullPolicy: IfNotPresent
@@ -98,14 +87,6 @@ spec:
           volumeMounts:
             - mountPath: /checks
               name: checks
-#      - name: monasca-es-admin
-#        image: {{.Values.docker_repo}}/monasca-elasticsearch:latest
-#        imagePullPolicy: IfNotPresent
-#        command:
-#          - /bin/bash
-#        args:
-#          - -c
-#          - "while true; do sleep 10000; done"
           env:
             - name: SWIFT_AUTH_URL
               value: "{{.Values.canary_swift_auth_url}}"
@@ -123,3 +104,11 @@ spec:
               value: "{{.Values.canary_swift_region_name}}"
             - name: SWIFT_API_KEY
               value: "{{.Values.canary_swift_api_key}}"
+#        - name: monasca-es-admin
+#          image: {{.Values.docker_repo}}/monasca-elasticsearch:latest
+#          imagePullPolicy: IfNotPresent
+#          command:
+#            - /bin/bash
+#          args:
+#            - -c
+#            - "while true; do sleep 10000; done"

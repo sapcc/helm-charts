@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # common initialization
-. /container.init/agent-start
+. /monasca-bin/agent-start
 
 function process_config {
   process_config_common

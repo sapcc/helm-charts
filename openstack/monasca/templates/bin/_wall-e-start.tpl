@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
-. /container.init/common-start
+. /monasca-bin/common-start
 
 function process_config {
 
@@ -46,9 +46,9 @@ function start_application {
       --output=http://{{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}}@{{.Values.monasca_elasticsearch_endpoint_host_internal}}:{{.Values.monasca_elasticsearch_port_internal}}/.kibana \
       --type=data
   
-  cat <(crontab -l) <(echo "0 6 * * * . /container.init/wall-e-retention.sh > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
-  cat <(crontab -l) <(echo "* * * * * /usr/bin/python2.7 /container.init/elasticsearch-test.py > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
-  cat <(crontab -l) <(echo "0 7 * * * . /container.init/mysql-delete-alarm-definition.sh  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  cat <(crontab -l) <(echo "0 6 * * * . /monasca-bin/wall-e-retention.sh > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  cat <(crontab -l) <(echo "* * * * * /usr/bin/python2.7 /monasca-bin/elasticsearch-test.py > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  cat <(crontab -l) <(echo "0 7 * * * . /monasca-bin/mysql-delete-alarm-definition.sh  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
 
   exec cron -f 
 

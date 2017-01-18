@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
-. /container.init/common-start
+. /monasca-bin/common-start
 
 # for now this is the same procedure for all agent processes
 function process_config_common {

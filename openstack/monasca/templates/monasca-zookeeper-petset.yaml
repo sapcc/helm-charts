@@ -15,15 +15,16 @@ spec:
       labels:
         component: zk
       annotations:
-        checksum/monasca-templates-monasca-etc-base.yaml: {{ include "monasca/templates/monasca-etc-log-configmap.yaml" . | sha256sum }}
-        checksum/monasca-templates-monasca-bin.yaml: {{ include "monasca/templates/monasca-bin-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-etc-base.yaml
+        checksum/monasca-templates-monasca-bin.yaml
         pod.alpha.kubernetes.io/initialized: "true"
         pod.alpha.kubernetes.io/init-containers: '[
             {
                 "name": "bootstrap",
                 "image": "{{.Values.docker_repo}}/monasca-zookeeper-cluster:{{.Values.image_version_monasca_zookeeper}}",
                 "imagePullPolicy": "IfNotPresent",
-                "command": ["/peer-finder"],
+                "command": ["/usr/local/bin/dumb-init"],
+                "args": ["/peer-finder"],
                 "args": ["-on-start=\"/on-start.sh\"", "-service=zk", "-domain={{.Values.monasca_cluster}}"],
                 "env": [
                   {
@@ -63,11 +64,12 @@ spec:
           - containerPort: {{.Values.monasca_zookeeper_port_internal}}
             name: client
           command:
-            - /opt/zookeeper/bin/zkServer.sh
+            - /usr/local/bin/dumb-init
           args:
-            - --config
-            - /conf-dir
-            - start-foreground
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/opt/zookeeper/bin/zkServer.sh --config /conf-dir start-foreground"
           livenessProbe:
             exec:
               command:

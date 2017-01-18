@@ -18,28 +18,23 @@ spec:
       labels:
         component: mysql
       annotations:
-        checksum/monasca-templates-monasca-etc-base.yaml: {{ include "monasca/templates/monasca-etc-base-configmap.yaml" . | sha256sum }}
-        checksum/monasca-templates-monasca-bin.yaml: {{ include "monasca/templates/monasca-bin-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-etc-base.yaml
+        checksum/monasca-templates-monasca-bin.yaml
         pod.alpha.kubernetes.io/init-containers: '[
             {
                 "name": "init",
                 "image": "{{.Values.docker_repo}}/monasca-mysql:{{.Values.image_version_monasca_mysql}}",
                 "imagePullPolicy": "IfNotPresent",
-                "command": ["/openstack-kube/openstack-kube/scripts/_container_init"],
-                "args": ["mysql-init"],
+                "command": ["/usr/local/bin/dumb-init"],
+                "args": ["/mysql-init"],
                 "volumeMounts": [
                     {
                         "name": "datadir",
                         "mountPath": "/var/lib/mysql"
                     },
-
-                    {
-                        "name": "openstack-kube",
-                        "mountPath": "/openstack-kube"
-                    },
                     {
                         "name": "monasca-bin",
-                        "mountPath": "/container.init"
+                        "mountPath": "/monasca-bin"
                     },
                     {
                         "name": "monasca-etc-base",
@@ -57,10 +52,6 @@ spec:
         zone: farm
       terminationGracePeriodSeconds: 600
       volumes:
-        - name: openstack-kube
-          gitRepo:
-            repository: {{.Values.cluster_configuration_repository}}
-            revision: {{.Values.cluster_configuration_revision}}
         - name: monasca-bin
           configMap:
             name: monasca-bin
@@ -74,13 +65,12 @@ spec:
           image: {{.Values.docker_repo}}/monasca-mysql:{{.Values.image_version_monasca_mysql}}
           imagePullPolicy: IfNotPresent
           command:
-            - chpst
+            - /usr/local/bin/dumb-init
           args:
-            - -L
-            - /var/lib/mysql/container.lock
-            - mysqld_safe
-            - --defaults-extra-file=/monasca-etc-base/mysql-mysql.cnf
-            - --init-file=/monasca-etc-base/mysql-mon-customizing.sql
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "chpst -L /var/lib/mysql/container.lock mysqld_safe --defaults-extra-file=/monasca-etc-base/mysql-mysql.cnf --init-file=/monasca-etc-base/mysql-mon-customizing.sql"
 #          command:
 #            - /bin/bash
 #          args:
@@ -92,10 +82,8 @@ spec:
           volumeMounts:
             - name: datadir
               mountPath: /var/lib/mysql
-            - name: openstack-kube
-              mountPath: /openstack-kube
             - name: monasca-bin
-              mountPath: /container.init
+              mountPath: /monasca-bin
             - name: monasca-etc-base
               mountPath: /monasca-etc-base
             - name: logdir
@@ -105,35 +93,33 @@ spec:
               exec:
                 command: 
                   - /bin/bash
-                  - /container.init/mysql-stop
+                  - /monasca-bin/mysql-stop
           livenessProbe:
             exec:
               command:
                 - /bin/bash
-                - /container.init/mysql-liveness
+                - /monasca-bin/mysql-liveness
             timeoutSeconds: 30
             initialDelaySeconds: 120
         - name: fluent
           image: {{.Values.docker_repo}}/monasca-fluent:{{.Values.image_version_monasca_fluent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /usr/local/bin/fluentd
+            - /usr/local/bin/dumb-init
           args:
-            - --use-v1-config
-            - -c
-            - /monasca-etc-base/mysql-fluent.conf
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/usr/local/bin/fluentd --use-v1-config -c /monasca-etc-base/mysql-fluent.conf"
+            - name: NODE_TYPE
+              value: "mysql"
           volumeMounts:
-            - name: openstack-kube
-              mountPath: /openstack-kube
             - name: monasca-bin
-              mountPath: /container.init
+              mountPath: /monasca-bin
             - name: monasca-etc-base
               mountPath: /monasca-etc-base
             - name: logdir
               mountPath: /var/log/mysql
-          env:
-            - name: NODE_TYPE
-              value: "mysql"
   volumeClaimTemplates:
   - metadata:
       name: datadir

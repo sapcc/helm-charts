@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
-. /container.init/common.sh
-chmod +x /container.init/*
+. /monasca-bin/common.sh
+chmod +x /monasca-bin/*
 
 # on Ubuntu, python does not recognize the system certificate bundle
 export OS_CACERT=/etc/ssl/certs/ca-certificates.crt

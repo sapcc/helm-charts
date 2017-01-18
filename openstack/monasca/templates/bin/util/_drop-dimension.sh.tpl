@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. /container.init/common-start
+. /monasca-bin/common-start
 
 if [ "$1" = "" ]; then
   echo "No dimension given"

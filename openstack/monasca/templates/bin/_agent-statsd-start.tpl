@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # common initialization
-. /container.init/agent-start
+. /monasca-bin/agent-start
 
 function process_config {
   process_config_common
@@ -9,7 +9,7 @@ function process_config {
 
 function start_application {
   # wait for forwarder to come up
-  . /container.init/agent-forwarder-prereq
+  . /monasca-bin/agent-forwarder-prereq
 
   start_application_common
 

@@ -34,10 +34,12 @@ spec:
           image: {{.Values.docker_repo}}/monasca-logstash:{{.Values.image_version_monasca_logstash}}
           imagePullPolicy: IfNotPresent
           command:
-            - /logstash/bin/logstash
+            - /usr/local/bin/dumb-init
           args:
-            - -f
-            - /monasca-etc-log/logstash-metrics-monasca-log-metrics.conf
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/logstash/bin/logstash -f /monasca-etc-log/logstash-metrics-monasca-log-metrics.conf"
           volumeMounts:
             - name: monasca-etc-log
               mountPath: /monasca-etc-log

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. /container.init/common-start
+. /monasca-bin/common-start
 
 function process_config {
 

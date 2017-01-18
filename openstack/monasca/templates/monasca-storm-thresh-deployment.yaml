@@ -28,10 +28,6 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: openstack-kube
-          gitRepo:
-            repository: {{.Values.cluster_configuration_repository}}
-            revision: {{.Values.cluster_configuration_revision}}
         - name: monasca-bin
           configMap:
             name: monasca-bin
@@ -46,9 +42,12 @@ spec:
           image: {{.Values.docker_repo}}/monasca-storm-thresh:{{.Values.image_version_monasca_storm_thresh}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - storm-nimbus-start
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/storm-nimbus-start"
           ports:
             - name: stormthresh
               containerPort: {{.Values.monasca_storm_port_public}}
@@ -63,9 +62,7 @@ spec:
             timeoutSeconds: 5
             initialDelaySeconds: 60
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-base
               name: monasca-etc-base
@@ -75,26 +72,29 @@ spec:
           image: {{.Values.docker_repo}}/monasca-storm-thresh:{{.Values.image_version_monasca_storm_thresh}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - storm-supervisor-start
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/storm-supervisor-start"
           volumeMounts:
             - mountPath: /monasca-etc-base
               name: monasca-etc-base
             - mountPath: /monasca-etc-storm-thresh
               name: monasca-etc-storm-thresh
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /openstack-kube
-              name: openstack-kube
         - name: monasca-agent-forwarder
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - agent-forwarder-start
+            - /usr/local/bin/kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/agent-forwarder-start"
             - name: MONASCA_AGENT_SERVICE_DEFAULT
               value: "monitoring"
             - name: MONASCA_AGENT_COMPONENT_DEFAULT
@@ -103,23 +103,22 @@ spec:
             - containerPort: {{.Values.monasca_agent_port_forwarder}}
               name: forwarder
           volumeMounts:
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /openstack-kube
-              name: openstack-kube
             - mountPath: /monasca-etc-base
               name: monasca-etc-base
         - name: monasca-agent-statsd
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - agent-statsd-start
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/agent-statsd-start"
           volumeMounts:
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-base
               name: monasca-etc-base
-            - mountPath: /openstack-kube
-              name: openstack-kube
