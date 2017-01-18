@@ -16,8 +16,10 @@ spec:
         from: daemonset
       annotations:
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-storage"}]'
+        {{- if .Values.enable_statsd }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9102"
+        {{- end }}
     spec:
       # replicators need to discover their own IP, and it needs to match the
       # node IP in the ring file (this extra permission is why the replicators
