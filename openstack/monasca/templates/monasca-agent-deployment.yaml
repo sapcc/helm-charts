@@ -46,6 +46,10 @@ spec:
           env:
             - name: COMMAND
               value: "/bin/bash /monasca-bin/agent-forwarder-start"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
               value: "monasca-api"
           ports:
@@ -66,6 +70,16 @@ spec:
           env:
             - name: COMMAND
               value: "/bin/bash /monasca-bin/agent-collector-start"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_CONTAINER
+              value: "monasca-agent-forwarder"
             - name: MONASCA_AGENT_CHECKS
               value: "prometheus zk kafka_consumer mysql influxdb"
           volumeMounts:
