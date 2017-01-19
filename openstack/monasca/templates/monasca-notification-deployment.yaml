@@ -48,6 +48,10 @@ spec:
           env:
             - name: COMMAND
               value: "/bin/bash /monasca-bin/notification-start"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
               value: "kafka,mysql"
 #          command:
@@ -70,6 +74,12 @@ spec:
           env:
             - name: COMMAND
               value: "/bin/bash /monasca-bin/agent-forwarder-start"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "monasca-api"
           ports:
             - containerPort: {{.Values.monasca_agent_port_forwarder}}
               name: forwarder
@@ -88,6 +98,16 @@ spec:
           env:
             - name: COMMAND
               value: "/bin/bash /monasca-bin/agent-statsd-start"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_CONTAINER
+              value: "monasca-agent-forwarder"
           volumeMounts:
             - mountPath: /monasca-bin
               name: monasca-bin
