@@ -3,7 +3,7 @@ init_config:
 instances:
  - name: Prometheus
    url: '{{.Values.monasca_agent_config_prometheus_url}}/federate'
-   timeout: 30
+   timeout: 45
    mapping:
       match_labels:
 
@@ -84,7 +84,7 @@ instances:
 
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
-   timeout: 30
+   timeout: 45
    match_labels:
        kubernetes_namespace:
         - monsoon3
