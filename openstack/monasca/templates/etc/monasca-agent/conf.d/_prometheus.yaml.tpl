@@ -77,7 +77,7 @@ instances:
          swift.proxy:
              gauges: [ 'swift_proxy_(firstbyte_timer)' ]
              dimensions:
-                 policy:   { regex: '(all)' }
+                 policy:   { regex: 'all' }
                  quantile: quantile
                  status:   status
                  type:     type
