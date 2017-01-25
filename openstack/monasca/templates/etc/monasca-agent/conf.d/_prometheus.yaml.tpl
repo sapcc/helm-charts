@@ -72,8 +72,8 @@ instances:
                  disk: disk
          swift.dispersion:
              gauges:
-                 - 'swift_(dispersion_container_overlapping)_gauge'
-                 - 'swift_(dispersion_object_overlapping)_gauge'
+                 - 'swift_dispersion_(container_overlapping)_gauge'
+                 - 'swift_dispersion_(object_overlapping)_gauge'
          swift.proxy:
              gauges: [ 'swift_proxy_(firstbyte_timer)' ]
              dimensions:

@@ -11,10 +11,7 @@ instances:
       consumer_groups:
         persister:
           - alarm-state-transitions
-        persister:
           - metrics
-        logstash-persister:
-          - transformed-log
         notification:
           - alarm-notifications
           - retry-notifications
@@ -23,10 +20,9 @@ instances:
         thresh:
           - metrics
           - events
-        logstash-metrics:
-          - transformed-log
         logstash-persister:
+          - transformed-log
+        logstash-metrics:
           - transformed-log
         logstash-transformer:
           - log
-

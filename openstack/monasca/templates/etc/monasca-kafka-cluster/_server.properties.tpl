@@ -22,6 +22,7 @@ broker.id=MONASCA_KAFKA_ENDPOINT_ID
 ############################# Enable handling of topics (maintenance) ##################
 delete.topic.enable={{.Values.monasca_kafka_delete_topics_enabled}}
 auto.create.topics.enable=true
+default.replication.factor={{.Values.monasca_kafka_replication_factor}}
 
 ############################# Socket Server Settings #############################
 
@@ -64,7 +65,7 @@ log.dirs=/var/opt/kafka/datalogs
 # The default number of log partitions per topic. More partitions allow greater
 # parallelism for consumption, but this will also result in more files across
 # the brokers.
-num.partitions=12
+num.partitions={{.Values.monasca_kafka_partitions}}
 
 # The number of threads per data directory to be used for log recovery at startup and flushing at shutdown.
 # This value is recommended to be increased for installations with data dirs located in RAID array.
