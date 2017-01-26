@@ -17,6 +17,7 @@ instances:
              dimensions:
                  bind_server: kubernetes_name
                  type: type
+                 result: result
                  instance: instance
          datapath:
              gauges: [ 'datapath_(status)' ]
