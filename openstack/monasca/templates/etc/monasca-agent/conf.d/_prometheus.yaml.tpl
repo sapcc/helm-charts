@@ -15,7 +15,8 @@ instances:
              rates: [ '(bind_incoming_queries)_total', '(bind_responses)_total' ]
              dimensions:
                  bind_server: kubernetes_name
-                 result: result
+                 type: type
+                 instance:instance
          datapath:
              gauges: [ 'datapath_(status)' ]
              dimensions:
