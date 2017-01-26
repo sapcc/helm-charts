@@ -16,7 +16,7 @@ instances:
              dimensions:
                  bind_server: kubernetes_name
                  type: type
-                 instance:instance
+                 instance: instance
          datapath:
              gauges: [ 'datapath_(status)' ]
              dimensions:
@@ -52,7 +52,7 @@ instances:
              dimensions:
                  service: component
                  component: kubernetes_name
-                 instance:instance
+                 instance: instance
                  method: method
                  api: api
                  le: le
