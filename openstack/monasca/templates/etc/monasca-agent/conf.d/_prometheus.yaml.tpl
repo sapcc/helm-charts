@@ -51,6 +51,7 @@ instances:
              dimensions:
                  service: component
                  component: kubernetes_name
+                 instance:instance
                  method: method
                  api: api
                  le: le
