@@ -4,6 +4,7 @@ instances:
  - name: Prometheus
    url: '{{.Values.monasca_agent_config_prometheus_url}}/federate'
    timeout: 45
+   collect_response_time: True
    mapping:
       match_labels:
 
@@ -15,7 +16,9 @@ instances:
              rates: [ '(bind_incoming_queries)_total', '(bind_responses)_total' ]
              dimensions:
                  bind_server: kubernetes_name
+                 type: type
                  result: result
+                 instance: instance
          datapath:
              gauges: [ 'datapath_(status)' ]
              dimensions:
@@ -51,6 +54,7 @@ instances:
              dimensions:
                  service: component
                  component: kubernetes_name
+                 instance: instance
                  method: method
                  api: api
                  le: le
@@ -85,6 +89,7 @@ instances:
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
    timeout: 45
+   collect_response_time: True
    match_labels:
        kubernetes_namespace:
         - monsoon3

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
-. /container.init/common-start
+. /monasca-bin/common-start
 
 function process_config {
   export CONFIG_FILE="/monasca-etc-base/influxdb-influxdb.conf"
@@ -15,7 +15,7 @@ function process_config {
     $MONASCA_INFLUXDB_COMMAND -config=${CONFIG_FILE} &
     sleep 10
     # initialize InfluxDB (this will create the prep.file) 
-    /bin/bash /container.init/influxdb-setup
+    /bin/bash /monasca-bin/influxdb-setup
     echo "-------------------------------------------------------------"
     echo "Shutting down InfluxDB to restart with enabled authentication"
     echo "-------------------------------------------------------------"

@@ -28,10 +28,6 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: openstack-kube
-          gitRepo:
-            repository: {{.Values.cluster_configuration_repository}}
-            revision: {{.Values.cluster_configuration_revision}}
         - name: monasca-bin
           configMap:
             name: monasca-bin
@@ -50,17 +46,18 @@ spec:
           image: {{.Values.docker_repo}}/monasca-elasticsearch:{{.Values.image_version_monasca_elasticsearch}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - elasticsearch-start
-          volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
-              name: monasca-bin
-            - mountPath: /monasca-etc-log
-              name: monasca-etc-log
+            - /usr/local/bin/kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/elasticsearch-start"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "es-data"
             - name: KUBERNETES_CA_CERTIFICATE_FILE
               value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
             - name: NODE_MASTER
@@ -69,6 +66,11 @@ spec:
               value: "false"
             - name: HTTP_ENABLE
               value: "true"
+          volumeMounts:
+            - mountPath: /monasca-bin
+              name: monasca-bin
+            - mountPath: /monasca-etc-log
+              name: monasca-etc-log
           ports:
             - containerPort: {{.Values.monasca_elasticsearch_port_cluster}}
               name: transport
@@ -83,10 +85,18 @@ spec:
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - agent-forwarder-start
+            - /usr/local/bin/kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/agent-forwarder-start"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "monasca-api"
             - name: MONASCA_AGENT_SERVICE_DEFAULT
               value: "monitoring"
             - name: MONASCA_AGENT_COMPONENT_DEFAULT
@@ -95,9 +105,7 @@ spec:
             - containerPort: {{.Values.monasca_agent_port_forwarder}}
               name: forwarder
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-base
               name: monasca-etc-base
@@ -105,17 +113,26 @@ spec:
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - agent-collector-start
+            - /usr/local/bin/kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/agent-collector-start"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_CONTAINER
+              value: "monasca-agent-forwarder"
             - name: MONASCA_AGENT_CHECKS
               value: "elastic"
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-base
               name: monasca-etc-base
-

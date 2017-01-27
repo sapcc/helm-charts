@@ -1,4 +1,4 @@
-. /container.init/common-start
+. /monasca-bin/common-start
 echo "DELETE ALL KAFKA TOPICS"
 echo "------------------------------------------------------------------------------"
 echo "Press Ctrl-C to stop within 10 secs"

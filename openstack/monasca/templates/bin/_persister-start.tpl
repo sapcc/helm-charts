@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # set some env variables from the openstack env properly based on env
-. /container.init/common-start
+. /monasca-bin/common-start
 
 # get the persister config file and replace with the secrets inside of it
 function process_config {

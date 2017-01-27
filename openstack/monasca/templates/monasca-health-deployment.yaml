@@ -27,7 +27,8 @@ spec:
             "name": "init",
             "image": "{{.Values.docker_repo}}/monasca-health:{{.Values.image_version_monasca_health}}",
             "imagePullPolicy": "IfNotPresent",
-            "command": ["/init-container.sh"],
+            "command": ["/usr/local/bin/dumb-init"],
+            "args": ["/init-container.sh"],
             "volumeMounts": [
               {
                 "name": "checks",
@@ -42,10 +43,6 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: openstack-kube
-          gitRepo:
-            repository: {{.Values.cluster_configuration_repository}}
-            revision: {{.Values.cluster_configuration_revision}}
         - name: monasca-bin
           configMap:
             name: monasca-bin
@@ -62,21 +59,21 @@ spec:
           command:
             - /usr/local/bin/dumb-init
           args:
-            - /bin/bash
-            - /container.init/health-start
-#          command:
-#            - /openstack-kube/openstack-kube/scripts/_container_init
-#          args:
-#            - health-start
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/health-start"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
 #          command:
 #            - /bin/bash
 #          args:
 #            - -c
 #            - "while true; do sleep 10000; done"
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
-            - mountPath: /container.init
+            - mountPath: /monasca-bin
               name: monasca-bin
             - mountPath: /monasca-etc-base
               name: monasca-etc-base

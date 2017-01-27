@@ -17,6 +17,9 @@ logger:
   # discovery
   #discovery: TRACE
 
+  plugin.readonlyrest.acl.blocks.rules.impl: INFO
+  plugin.readonlyrest.acl: OFF
+
 appender:
   console:
     type: console

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. /container.init/common-start 
+. /monasca-bin/common-start 
 
 echo "Start storm UI"
 /opt/storm/current/bin/storm ui

@@ -17,10 +17,6 @@ spec:
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
     spec:
       volumes:
-        - name: openstack-kube
-          gitRepo:
-            repository: {{.Values.cluster_configuration_repository}}
-            revision: {{.Values.cluster_configuration_revision}}
         - name: monasca-bin
           configMap:
             name: monasca-bin
@@ -38,18 +34,25 @@ spec:
           image: {{.Values.docker_repo}}/monasca-fluent:{{.Values.image_version_monasca_fluent}}
           imagePullPolicy: IfNotPresent
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /usr/local/bin/dumb-init
           args:
-            - fluent-start
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /monasca-bin/fluent-start"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "es-client"
           resources:
 #            limits:
 #              cpu: 1000m
 #              memory: 2000Mi
           volumeMounts:
-            - mountPath: /openstack-kube
-              name: openstack-kube
             - name: monasca-bin
-              mountPath: /container.init
+              mountPath: /monasca-bin
             - name: monasca-etc-log
               mountPath: /monasca-etc-log
             - name: varlog
