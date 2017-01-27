@@ -1,3 +1,4 @@
+{{- if .Values.enable_caretaker }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -62,8 +63,13 @@ spec:
               value: "Default"
             - name: OS_KS_ADMIN_PASSWORD
               value: "{{.Values.dashboard_service_password}}"
+            {{- if .Values.caretaker_ks_scrape_auth_url }}
+            - name: OS_KS_SCRAPE_AUTH_URL
+              value: "{{.Values.caretaker_ks_scrape_auth_url}}"
+            {{- end }}
           volumeMounts:
             - mountPath: /swift-bin
               name: swift-bin
             - mountPath: /swift-etc
               name: swift-etc
+{{- end }}
