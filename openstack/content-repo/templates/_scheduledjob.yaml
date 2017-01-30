@@ -19,17 +19,25 @@ spec:
             - name: config
               configMap:
                 name: swift-http-import
+            - name: secret
+              secret:
+                secretName: swift-http-import
+                optional: true
           containers:
           - name: swift-http-import
             image: {{$.Values.global.docker_repo}}/swift-http-import:{{$.Values.image_version}}
             args:
-              - /etc/http-import/{{$repo}}.yaml
-            # env:
-            #   - name: 'DEBUG'
-            #     value: '1'
+              - /etc/http-import/config/{{$repo}}.yaml
+            {{- if $.Values.debug}}
+            env:
+              - name: 'DEBUG'
+                value: '1'
+            {{- end}}
             volumeMounts:
-              - mountPath: /etc/http-import
+              - mountPath: /etc/http-import/config
                 name: config
+              - mountPath: /etc/http-import/secret
+                name: secret
 
 ---
 {{end}}
