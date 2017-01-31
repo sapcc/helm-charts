@@ -1,34 +1,38 @@
 {{- if .Values.updatesProxy.storageUrl }}
-{{- range $channel := .Values.updatesProxy.channels }}
+{{- range $ing := .Values.updatesProxy.ingress }}
+{{- $name := index $ing.hosts 0 }}
 ---
 kind: Secret
 apiVersion: v1
 
 metadata:
-  name: ingress-{{ $channel.name | replace "." "-" }}
+  name: ingress-{{ $name | replace "." "-" }}
   labels:
     chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
 data:
-  tls.crt: {{ $channel.tlsCertificate | b64enc }}
-  tls.key: {{ $channel.tlsKey | b64enc }}
+  tls.crt: {{ $ing.tlsCertificate | b64enc }}
+  tls.key: {{ $ing.tlsKey | b64enc }}
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: ingress-{{ $channel.name | replace "." "-" }}
+  name: ingress-{{ $name | replace "." "-" }}
   labels:
     chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
 spec:
   tls:
-     - secretName: ingress-{{ $channel.name | replace "." "-" }}
-       hosts: [{{ $channel.name }}]
+     - secretName: ingress-{{ $name | replace "." "-" }}
+       hosts:
+{{ toYaml $ing.hosts | indent 10}}
   rules:
-  - host: {{ $channel.name }}
+{{- range $host := $ing.hosts }}
+  - host: {{ $host }}
     http:
       paths:
       - path: /
         backend:
           serviceName: arc-updates-proxy
-          servicePort: 80 
+          servicePort: 80
+{{- end }}
 {{- end }}
 {{- end }}
