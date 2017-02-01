@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# set some env variables from the openstack env properly based on env
-. /monasca-bin/common.sh
-chmod +x /monasca-bin/*
-
 function process_config {
   cp /monasca-etc-log/elasticsearch-elasticsearch.yaml /elasticsearch/config/elasticsearch.yaml
   cp /monasca-etc-log/elasticsearch-logging.yaml /elasticsearch/config/logging.yaml
