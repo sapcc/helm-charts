@@ -27,5 +27,8 @@ data:
     {{ end }}
 
     swift-id-pool: {{ range $idx := until 99 }}
-      - swift-{{ $idx | add1 | printf "%02d" -}}
+      - swift-{{ printf "%02d" (add1 $idx) }}
+      {{- if eq 0 (mod (add1 $idx) $.Values.one_spare_disk_every) }}
+      - spare
+      {{- end -}}
     {{ end -}}
