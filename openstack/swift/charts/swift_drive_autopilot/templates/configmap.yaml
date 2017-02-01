@@ -13,7 +13,8 @@ data:
     chroot: /coreos
 
     drives:
-      - {{.Values.drive_glob}}
+      - /dev/sd[a-z]
+      - /dev/sd[a-z][a-z]
 
     # the Swift user and group is UID/GID 1000 in the Kolla containers
     chown:
@@ -25,9 +26,6 @@ data:
       - secret: {{.Values.encryption_key}}
     {{ end }}
 
-    {{- if .Values.drive_count -}}
-    {{ $cnt := int .Values.drive_count }}
-    swift-id-pool: {{ range $idx := until $cnt }}
+    swift-id-pool: {{ range $idx := until 99 }}
       - swift-{{ $idx | add1 | printf "%02d" -}}
     {{ end -}}
-    {{- end -}}
