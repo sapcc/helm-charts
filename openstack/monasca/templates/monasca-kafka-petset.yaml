@@ -18,10 +18,8 @@ spec:
       labels:
         component: kafka
       annotations:
-        checksum/monasca-templates-monasca-etc-log.yaml: "dummy"
-        checksum/monasca-templates-monasca-etc-base.yaml: "dummy"
-        checksum/monasca-templates-monasca-etc-common.yaml: "dummy"
-        checksum/monasca-templates-monasca-kafka-bin.yaml: "dummy"
+        checksum/monasca-templates-monasca-kafka-etc-configmap.yaml: "dummy"
+        checksum/monasca-templates-monasca-kafka-bin-configmap.yaml: "dummy"
         pod.alpha.kubernetes.io/initialized: "true"        
     spec:
       nodeSelector:
@@ -31,15 +29,9 @@ spec:
         - name: monasca-bin 
           configMap:
             name: monasca-kafka-bin
-        - name: monasca-etc-base
+        - name: monasca-etc
           configMap:
-            name: monasca-etc-base
-        - name: monasca-etc-common
-          configMap:
-            name: monasca-etc-common
-        - name: monasca-etc-log
-          configMap:
-            name: monasca-etc-log
+            name: monasca-kafka-etc
       containers:
         - name: kafka
           image: {{.Values.docker_repo}}/monasca-kafka-cluster:{{.Values.image_version_monasca_kafka}}
@@ -65,12 +57,8 @@ spec:
               mountPath: /var/opt/kafka
             - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /monasca-etc-base
-              name: monasca-etc-base
-            - mountPath: /monasca-etc-common
-              name: monasca-etc-common
-            - mountPath: /monasca-etc-log
-              name: monasca-etc-log
+            - mountPath: /monasca-etc
+              name: monasca-etc
           lifecycle:
             preStop:
               exec:

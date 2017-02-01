@@ -22,8 +22,8 @@ spec:
       labels:
         component: elasticsearch-master
       annotations:
-        checksum/monasca-templates-monasca-etc-log.yaml: {{ include "monasca/templates/monasca-etc-log-configmap.yaml" . | sha256sum }}
-        checksum/monasca-templates-monasca-es-bin.yaml: {{ include "monasca/templates/monasca-es-bin-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-es-etc-configmap.yaml: {{ include "monasca/templates/monasca-es-etc-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-es-bin-configmap.yaml: {{ include "monasca/templates/monasca-es-bin-configmap.yaml" . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
@@ -31,12 +31,9 @@ spec:
         - name: monasca-bin
           configMap:
             name: monasca-es-bin
-        - name: monasca-etc-log
+        - name: monasca-etc
           configMap:
-            name: monasca-etc-log
-        - name: monasca-etc-base
-          configMap:
-            name: monasca-etc-base
+            name: monasca-es-etc
       containers:
       - name: es-master
         securityContext:
@@ -67,8 +64,8 @@ spec:
         volumeMounts:
           - mountPath: /monasca-bin
             name: monasca-bin
-          - mountPath: /monasca-etc-log
-            name: monasca-etc-log
+          - mountPath: /monasca-etc
+            name: monasca-etc
         ports:
           - containerPort: {{.Values.monasca_elasticsearch_port_cluster}}
             name: transport
@@ -102,8 +99,8 @@ spec:
         volumeMounts:
           - mountPath: /monasca-bin
             name: monasca-bin
-          - mountPath: /monasca-etc-base
-            name: monasca-etc-base
+          - mountPath: /monasca-etc
+            name: monasca-etc
       - name: monasca-agent-collector
         image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
         imagePullPolicy: IfNotPresent
@@ -129,5 +126,5 @@ spec:
         volumeMounts:
           - mountPath: /monasca-bin
             name: monasca-bin
-          - mountPath: /monasca-etc-base
-            name: monasca-etc-base
+          - mountPath: /monasca-etc
+            name: monasca-etc

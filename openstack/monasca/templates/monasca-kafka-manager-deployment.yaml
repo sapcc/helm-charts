@@ -21,8 +21,8 @@ spec:
       labels:
         component: monasca-kafka-manager
       annotations:
-        checksum/monasca-templates-monasca-etc-log.yaml: {{ include "monasca/templates/monasca-etc-log-configmap.yaml" . | sha256sum }}
-        checksum/monasca-templates-monasca-kafka-manager-bin.yaml: {{ include "monasca/templates/monasca-kafka-manager-bin-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-kafka-manager-etc-configmap.yaml: {{ include "monasca/templates/monasca-kafka-manager-etc-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-kafka-manager-bin-configmap.yaml: {{ include "monasca/templates/monasca-kafka-manager-bin-configmap.yaml" . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
@@ -30,9 +30,9 @@ spec:
         - name: monasca-bin
           configMap:
             name: monasca-kafka-manager-bin
-        - name: monasca-etc-common
+        - name: monasca-etc
           configMap:
-            name: monasca-etc-common
+            name: monasca-kafka-manager-etc
       containers:
         - name: monasca-kafka-manager
           image: {{.Values.docker_repo}}/monasca-kafka-manager:{{.Values.image_version_monasca_kafka_manager}}
@@ -53,5 +53,5 @@ spec:
           volumeMounts:
             - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /monasca-etc-common
-              name: monasca-etc-common
+            - mountPath: /monasca-etc
+              name: monasca-etc

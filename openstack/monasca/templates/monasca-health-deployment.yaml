@@ -20,8 +20,8 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/monasca-templates-monasca-etc-base.yaml: {{ include "monasca/templates/monasca-etc-log-configmap.yaml" . | sha256sum }}
-        checksum/monasca-templates-monasca-health-bin.yaml: {{ include "monasca/templates/monasca-health-bin-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-health-etc-configmap.yaml: {{ include "monasca/templates/monasca-health-etc-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-health-bin-configmap.yaml: {{ include "monasca/templates/monasca-health-bin-configmap.yaml" . | sha256sum }}
         pod.alpha.kubernetes.io/init-containers: '[
           {
             "name": "init",
@@ -46,9 +46,9 @@ spec:
         - name: monasca-bin
           configMap:
             name: monasca-health-bin
-        - name: monasca-etc-base
+        - name: monasca-etc
           configMap:
-            name: monasca-etc-base
+            name: monasca-health-etc
         - name: checks
           emptyDir:
             medium: "Memory"
@@ -75,8 +75,8 @@ spec:
           volumeMounts:
             - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /monasca-etc-base
-              name: monasca-etc-base
+            - mountPath: /monasca-etc
+              name: monasca-etc
             - mountPath: /checks
               name: checks
         - name: canary

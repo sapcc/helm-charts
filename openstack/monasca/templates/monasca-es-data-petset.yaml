@@ -18,8 +18,8 @@ spec:
       labels:
         component: es-data
       annotations:
-        checksum/monasca-templates-monasca-etc-log.yaml: "dummy"
-        checksum/monasca-templates-monasca-es-bin.yaml: "dummy"
+        checksum/monasca-templates-monasca-es-etc-configmap.yaml: "dummy"
+        checksum/monasca-templates-monasca-es-bin-configmap.yaml: "dummy"
         pod.alpha.kubernetes.io/initialized: "true"
     spec:
       nodeSelector:
@@ -28,12 +28,9 @@ spec:
         - name: monasca-bin
           configMap:
             name: monasca-es-bin
-        - name: monasca-etc-log
+        - name: monasca-etc
           configMap:
-            name: monasca-etc-log
-        - name: monasca-etc-base
-          configMap:
-            name: monasca-etc-base
+            name: monasca-es-etc
       containers:
         - name: monasca-es
           image: {{.Values.docker_repo}}/monasca-elasticsearch:{{.Values.image_version_monasca_elasticsearch}}
@@ -72,8 +69,8 @@ spec:
               name: es
             - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /monasca-etc-log
-              name: monasca-etc-log
+            - mountPath: /monasca-etc
+              name: monasca-etc
 #          lifecycle:
 #            preStop:
 #              exec:
@@ -117,8 +114,8 @@ spec:
           volumeMounts:
             - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /monasca-etc-base
-              name: monasca-etc-base
+            - mountPath: /monasca-etc
+              name: monasca-etc
         - name: monasca-agent-collector
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
@@ -144,8 +141,8 @@ spec:
           volumeMounts:
             - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /monasca-etc-base
-              name: monasca-etc-base
+            - mountPath: /monasca-etc
+              name: monasca-etc
   volumeClaimTemplates:
   - metadata:
       name: es
