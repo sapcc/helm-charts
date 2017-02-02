@@ -9,29 +9,7 @@ metadata:
     component: influxdb
   annotations:
     kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
-    pod.alpha.kubernetes.io/init-containers: '[
-        {
-            "name": "init",
-            "image": "{{.Values.docker_repo}}/monasca-influxdb:{{.Values.image_version_monasca_influxdb}}",
-            "imagePullPolicy": "IfNotPresent",
-            "command": ["/usr/local/bin/dumb-init"],
-            "args": ["/bin/bash","/monasca-bin/influxdb-init"],
-            "volumeMounts": [
-                {
-                    "name": "datadir",
-                    "mountPath": "/var/opt/influxdb"
-                },
-                {
-                    "name": "monasca-bin",
-                    "mountPath": "/monasca-bin"
-                },
-                {
-                    "name": "monasca-etc",
-                    "mountPath": "/monasca-etc"
-                }
-            ]
-        }
-    ]'
+
 spec:
   serviceName: "influxdb"
   replicas: 1
@@ -42,6 +20,29 @@ spec:
       annotations:
         checksum/monasca-templates-monasca-influxdb-etc-configmap.yaml: {{ include "monasca/templates/monasca-influxdb-etc-configmap.yaml" . | sha256sum }}
         checksum/monasca-templates-monasca-influxdb-bin-configmap.yaml: {{ include "monasca/templates/monasca-influxdb-bin-configmap.yaml" . | sha256sum }}
+        pod.alpha.kubernetes.io/init-containers: '[
+            {
+                "name": "init",
+                "image": "{{.Values.docker_repo}}/monasca-influxdb:{{.Values.image_version_monasca_influxdb}}",
+                "imagePullPolicy": "IfNotPresent",
+                "command": ["/usr/local/bin/dumb-init"],
+                "args": ["/bin/bash","/monasca-bin/influxdb-init"],
+                "volumeMounts": [
+                    {
+                        "name": "datadir",
+                        "mountPath": "/var/opt/influxdb"
+                    },
+                    {
+                        "name": "monasca-bin",
+                        "mountPath": "/monasca-bin"
+                    },
+                    {
+                        "name": "monasca-etc",
+                        "mountPath": "/monasca-etc"
+                    }
+                ]
+            }
+        ]'
     spec:
       nodeSelector:
         zone: farm
