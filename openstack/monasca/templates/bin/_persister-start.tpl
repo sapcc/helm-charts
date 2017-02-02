@@ -7,7 +7,7 @@
 function process_config {
   mkdir -p /etc/monasca
 
-  cp /monasca-etc-base/persister-persister.conf /etc/monasca/persister.conf
+  cp /monasca-etc/persister-persister.conf /etc/monasca/persister.conf
 
   # use Kubernetes IDs for some attributes
   sed "s,KAFKA_CONSUMER_ID,${KUBE_POD_NAME},g" -i /etc/monasca/persister.conf

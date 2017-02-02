@@ -4,7 +4,7 @@
 
 function process_config {
 
-  cp /monasca-etc-log/fluent-fluent.conf /etc/fluent/fluent.conf
+  cp /monasca-etc/fluent-fluent.conf /etc/fluent/fluent.conf
   echo $KUBERNETES_SERVICE_HOST
   sed -i "s|KUBERNETES_SERVICE_HOST|$KUBERNETES_SERVICE_HOST|g" /etc/fluent/fluent.conf
 }

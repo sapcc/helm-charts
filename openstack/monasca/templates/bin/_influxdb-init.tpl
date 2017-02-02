@@ -4,7 +4,7 @@
 . /monasca-bin/common-start
 
 function process_config {
-  export CONFIG_FILE="/monasca-etc-base/influxdb-influxdb.conf"
+  export CONFIG_FILE="/monasca-etc/influxdb-influxdb.conf"
   export MONASCA_INFLUXDB_PREP_FILE="/var/opt/influxdb/cfg-influxdb.tstamp"
   MONASCA_INFLUXDB_COMMAND='/usr/bin/influxd'
 

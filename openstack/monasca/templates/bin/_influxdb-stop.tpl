@@ -24,6 +24,6 @@ done
 
 # stop InfluxDB (since it ignores SIGTERM)
 # TODO (below does not work anymore)
-#CONFIG_FILE="/monasca-etc-base/influxdb-influxdb.conf"
+#CONFIG_FILE="/monasca-etc/influxdb-influxdb.conf"
 #MONASCA_INFLUXDB_COMMAND='/usr/bin/influxd'
 #$MONASCA_INFLUXDB_COMMAND stop -config=${CONFIG_FILE}

@@ -5,10 +5,10 @@
 
 function process_config {
   # use defaults if no specific node configuration available
-  cp /monasca-etc-common/kafka-cluster-consumer.properties /opt/kafka/current/config/consumer.properties
-  cp /monasca-etc-common/kafka-cluster-server.properties /opt/kafka/current/config/server.properties
-  cp /monasca-etc-common/kafka-cluster-zookeeper.properties /opt/kafka/current/config/zookeeper.properties
-  cp /monasca-etc-common/kafka-cluster-log4j.properties /opt/kafka/current/config/log4j.properties
+  cp /monasca-etc/kafka-cluster-consumer.properties /opt/kafka/current/config/consumer.properties
+  cp /monasca-etc/kafka-cluster-server.properties /opt/kafka/current/config/server.properties
+  cp /monasca-etc/kafka-cluster-zookeeper.properties /opt/kafka/current/config/zookeeper.properties
+  cp /monasca-etc/kafka-cluster-log4j.properties /opt/kafka/current/config/log4j.properties
 
   export HOSTNUM=$(hostname|sed 's/[^0-9]*//g') 
   export MONASCA_KAFKA_ENDPOINT_ID=$(($HOSTNUM + 1))

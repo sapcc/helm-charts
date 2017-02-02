@@ -4,7 +4,7 @@
 . /monasca-bin/common-start
 
 function process_config {
-  cp /monasca-etc-base/health-healthcheck.conf /healthcheck.conf
+  cp /monasca-etc/health-healthcheck.conf /healthcheck.conf
 }
 
 function start_application {
