@@ -1,108 +1,76 @@
-kind: Deployment
 apiVersion: extensions/v1beta1
-
+kind: Deployment
 metadata:
-  name: postgres-{{.Values.name}}
+  name: {{ template "fullname" . }}
   labels:
-    system: openstack
-    type: database
-    component: {{.Values.name}}
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
 spec:
   revisionHistoryLimit: 5
-  replicas: 1
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      name: postgres-{{.Values.name}}
   template:
     metadata:
       labels:
-        name: postgres-{{.Values.name}}
+        app: {{ template "fullname" . }}
     spec:
-      hostPID: false
-      volumes:
-        - name: postgres-persistent-storage
-          persistentVolumeClaim:
-            claimName: {{ default (printf "postgres-%s" .Values.name) .Values.persistence.nameOverride }}
-        - name: postgres-etc
-          configMap:
-            name: postgres-etc-{{.Values.name}}
-        - name: container-init
-          configMap:
-            name: postgres-bin-{{.Values.name}}
       containers:
-        - name: postgres
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            exec:
-              command:
-              - pg_isready
-              - -h
-              - localhost
-              - -p
-              - "{{.Values.port_private}}"
-              - -U
-              - postgres
-            initialDelaySeconds: 20
-            timeoutSeconds: 5
-          env:
-            - name: PGDATA
-              value: /postgresql-data/data/
-            - name: POSTGRES_USER
-              value: {{.Values.user}}
-            - name: POSTGRES_PASSWORD
-              value: {{.Values.password}}
-          ports:
-            - name: postgres
-              containerPort: {{.Values.port_private}}
-          volumeMounts:
-            - name: postgres-persistent-storage
-              mountPath: /postgresql-data
-            - name: postgres-etc
-              mountPath: /postgresql-conf
-            - name: container-init
-              mountPath: /container-init
-{{- if .Values.backup.enabled }}
-        - image: {{.Values.backup.repository}}:{{.Values.backup.image_version}}
-          name: backup
-          env:
-            - name: MY_POD_NAME
-              value: postgres-backup-{{.Values.name}}
-            - name: MY_POD_NAMESPACE
-              value: {{.Release.Namespace}}
-            - name: OS_AUTH_URL
-              value: {{.Values.backup.os_auth_url}}
-            - name: OS_AUTH_VERSION
-              value: {{.Values.backup.os_auth_version | quote}}
-            - name: OS_IDENTITY_API_VERSION
-              value: {{.Values.backup.os_identity_api_version | quote}}
-            - name: OS_USERNAME
-              value: {{.Values.backup.os_username}}
-            - name: OS_USER_DOMAIN_NAME
-              value: {{.Values.backup.os_user_domain}}
-            - name: OS_PROJECT_NAME
-              value: {{.Values.backup.os_project_name}}
-            - name: OS_PROJECT_DOMAIN_NAME
-              value: {{.Values.backup.os_project_domain}}
-            - name: OS_REGION_NAME
-              value: {{.Values.backup.os_region_name}}
-            - name: OS_PASSWORD
-              value: {{.Values.backup.os_password | quote}}
-            - name: BACKUP_PGSQL_FULL
-              value: {{.Values.backup.interval_full | quote}}
-            - name: BACKUP_PGSQL_INCR
-              value: {{.Values.backup.interval_incr | quote}}
-{{- end }}
+      - name: {{ template "fullname" . }}
+        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
+        env:
+        - name: POSTGRES_USER
+          value: {{ default "postgres" .Values.postgresUser | quote }}
+          # Required for pg_isready in the health probes.
+        - name: PGUSER
+          value: {{ default "postgres" .Values.postgresUser | quote }}
+        - name: POSTGRES_DB
+          value: {{ default "" .Values.postgresDatabase | quote }}
+        - name: PGDATA
+          value: /postgresql/data
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "fullname" . }}
+              key: postgres-password
+        ports:
+        - name: postgresql
+          containerPort: 5432
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+          initialDelaySeconds: 60
+          timeoutSeconds: 3
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+          initialDelaySeconds: 60
+          timeoutSeconds: 3
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        volumeMounts:
+        - name: data
+          mountPath: /postgresql
+{{- if .Values.metrics.enabled }}
+      - name: metrics 
+        image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
+        imagePullPolicy: {{ default "" .Values.metrics.imagePullPolicy | quote }}
+        env:
+        - name: DATA_SOURCE_NAME
+          value: postgresql://postgres@localhost:5432?sslmode=disable
+        ports:
         - name: metrics
-          image: wrouesnel/postgres_exporter
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: POSTGRES_PASSWORD
-              value: {{.Values.password}}
-            - name: DATA_SOURCE_NAME
-              value: "postgresql://{{.Values.user}}:{{.Values.password}}@localhost:{{.Values.port_private}}/{{.Values.name}}?sslmode=disable"
-          ports:
-            - name: metrics
-              containerPort: {{.Values.port_metrics}}
+          containerPort: 9187
+        resources:
+{{ toYaml .Values.metrics.resources | indent 10 }}
+{{- end }}
+      volumes:
+      - name: data
+      {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "fullname" . }}{{- end }}
+      {{- else }}
+        emptyDir: {}
+      {{- end -}}
