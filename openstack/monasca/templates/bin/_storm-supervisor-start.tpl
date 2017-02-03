@@ -5,9 +5,9 @@
 
 function process_config {
   #  get the config monasca-thesh config file and replace with the secrets inside of it
-  cp /monasca-etc-storm-thresh/storm-thresh-storm.yaml /opt/storm/current/conf/storm.yaml
-  cp -f /monasca-etc-storm-thresh/storm-thresh-worker.xml /opt/storm/current/log4j2/worker.xml
-  cp -f /monasca-etc-storm-thresh/storm-thresh-cluster.xml /opt/storm/current/log4j2/cluster.xml
+  cp /monasca-etc/storm-thresh-storm.yaml /opt/storm/current/conf/storm.yaml
+  cp -f /monasca-etc/storm-thresh-worker.xml /opt/storm/current/log4j2/worker.xml
+  cp -f /monasca-etc/storm-thresh-cluster.xml /opt/storm/current/log4j2/cluster.xml
 
 
 }

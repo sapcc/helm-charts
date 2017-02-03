@@ -1,12 +1,8 @@
 #!/bin/bash
 
-# set some env variables from the openstack env properly based on env
-. /monasca-bin/common.sh
-chmod +x /monasca-bin/*
-
 function process_config {
-  cp /monasca-etc-log/elasticsearch-elasticsearch.yaml /elasticsearch/config/elasticsearch.yaml
-  cp /monasca-etc-log/elasticsearch-logging.yaml /elasticsearch/config/logging.yaml
+  cp /monasca-etc/elasticsearch-elasticsearch.yaml /elasticsearch/config/elasticsearch.yaml
+  cp /monasca-etc/elasticsearch-logging.yaml /elasticsearch/config/logging.yaml
 }
 
 function start_application {
@@ -34,7 +30,7 @@ function start_application {
   fi
 
   # enable resync (again, it is disabled by the stop script)
-  (sleep 180; curl -u {{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}} -XPUT localhost:{{.Values.monasca_elasticsearch_port_internal}}/_cluster/settings -d '{"transient": { "cluster.routing.allocation.enable": "all" } }' && curl -u {{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}} -XPUT 'http://localhost:{{.Values.monasca_elasticsearch_port_internal}}/_template/logstash' -d "@/monasca-etc-log/es-data-logstash.schema.json") &
+  (sleep 180; curl -u {{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}} -XPUT localhost:{{.Values.monasca_elasticsearch_port_internal}}/_cluster/settings -d '{"transient": { "cluster.routing.allocation.enable": "all" } }' && curl -u {{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}} -XPUT 'http://localhost:{{.Values.monasca_elasticsearch_port_internal}}/_template/logstash' -d "@/monasca-etc/es-data-logstash.schema.json") &
 
   # run
   echo "Starting ElasticSearch with lock /data/container.lock"

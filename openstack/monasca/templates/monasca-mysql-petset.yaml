@@ -18,8 +18,8 @@ spec:
       labels:
         component: mysql
       annotations:
-        checksum/monasca-templates-monasca-etc-base.yaml: "dummy"
-        checksum/monasca-templates-monasca-bin.yaml: "dummy"
+        checksum/monasca-templates-monasca-mysql-etc-configmap.yaml: "dummy"
+        checksum/monasca-templates-monasca-mysql-bin-configmap.yaml: "dummy"
         pod.alpha.kubernetes.io/init-containers: '[
             {
                 "name": "init",
@@ -37,8 +37,8 @@ spec:
                         "mountPath": "/monasca-bin"
                     },
                     {
-                        "name": "monasca-etc-base",
-                        "mountPath": "/monasca-etc-base"
+                        "name": "monasca-etc",
+                        "mountPath": "/monasca-etc"
                     },
                     {
                         "name": "logdir",
@@ -54,10 +54,10 @@ spec:
       volumes:
         - name: monasca-bin
           configMap:
-            name: monasca-bin
-        - name: monasca-etc-base
+            name: monasca-mysql-bin
+        - name: monasca-etc
           configMap:
-            name: monasca-etc-base
+            name: monasca-mysql-etc
         - name: logdir
           emptyDir: {}
       containers:
@@ -70,7 +70,7 @@ spec:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "chpst -L /var/lib/mysql/container.lock mysqld_safe --defaults-extra-file=/monasca-etc-base/mysql-mysql.cnf --init-file=/monasca-etc-base/mysql-mon-customizing.sql --skip-syslog --log-error=/var/log/mysql/mysql-error.log"
+              value: "chpst -L /var/lib/mysql/container.lock mysqld_safe --defaults-extra-file=/monasca-etc/mysql-mysql.cnf --init-file=/monasca-etc/mysql-mon-customizing.sql --skip-syslog --log-error=/var/log/mysql/mysql-error.log"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -88,8 +88,8 @@ spec:
               mountPath: /var/lib/mysql
             - name: monasca-bin
               mountPath: /monasca-bin
-            - name: monasca-etc-base
-              mountPath: /monasca-etc-base
+            - name: monasca-etc
+              mountPath: /monasca-etc
             - name: logdir
               mountPath: /var/log/mysql
           lifecycle:
@@ -114,14 +114,14 @@ spec:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/usr/local/bin/fluentd --use-v1-config -c /monasca-etc-base/mysql-fluent.conf"
+              value: "/usr/local/bin/fluentd --use-v1-config -c /monasca-etc/mysql-fluent.conf"
             - name: NODE_TYPE
               value: "mysql"
           volumeMounts:
             - name: monasca-bin
               mountPath: /monasca-bin
-            - name: monasca-etc-base
-              mountPath: /monasca-etc-base
+            - name: monasca-etc
+              mountPath: /monasca-etc
             - name: logdir
               mountPath: /var/log/mysql
   volumeClaimTemplates:

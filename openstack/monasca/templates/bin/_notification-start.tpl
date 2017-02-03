@@ -4,7 +4,7 @@
 . /monasca-bin/common-start
 
 function process_config {
-  cp /monasca-etc-base/notification-notification-config.yml /etc/monasca/notification-config.yml
+  cp /monasca-etc/notification-notification-config.yml /etc/monasca/notification-config.yml
 
   # use Kubernetes IDs for some attributes
   sed "s,KAFKA_CONSUMER_ID,${KUBE_POD_NAME},g" -i /etc/monasca/notification-config.yml

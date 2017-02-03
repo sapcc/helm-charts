@@ -7,7 +7,7 @@
 function process_config_common {
   # copy our template
   mkdir -p /etc/monasca/agent/conf.d
-  cp /monasca-etc-base/agent-agent.yaml /etc/monasca/agent/agent.yaml
+  cp /monasca-etc/agent-agent.yaml /etc/monasca/agent/agent.yaml
 
   # replace placeholders with actual values
   sed "s|{args.ca_file}|${OS_CACERT}|" -i /etc/monasca/agent/agent.yaml

@@ -6,7 +6,7 @@
 
 function process_config {
   # use defaults if no specific node configuration available
-  cp -f /monasca-etc-common/kafka-manager-application.conf /opt/kafka-manager-$VERSION/conf/application.conf
+  cp -f /monasca-etc/kafka-manager-application.conf /opt/kafka-manager-$VERSION/conf/application.conf
 
 }
 

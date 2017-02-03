@@ -9,7 +9,7 @@ function process_config {
   # copy plugin configs
   for config in $MONASCA_AGENT_CHECKS; do
     config_filename=$(echo $config | tr '_' '-')
-    cp /monasca-etc-base/agent-conf.d-${config_filename}.yaml /etc/monasca/agent/conf.d/$config.yaml
+    cp /monasca-etc/agent-conf.d-${config_filename}.yaml /etc/monasca/agent/conf.d/$config.yaml
   done
 }
 

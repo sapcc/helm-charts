@@ -6,7 +6,7 @@
 function process_config {
   # flag to mark successful preparation of schema and users (in persistent area)
   export MONASCA_MYSQL_PREP_FILE="/var/lib/mysql/cfg-mysql.tstamp"
-  export EXT_CONFIG_FILE="/monasca-etc-base/mysql-mysql.cnf"
+  export EXT_CONFIG_FILE="/monasca-etc/mysql-mysql.cnf"
 }
 
 function start_application {
@@ -24,7 +24,7 @@ function start_application {
     # initialize database
     chpst -L /var/lib/mysql/container.lock mysqld_safe --defaults-extra-file=${EXT_CONFIG_FILE} &
     sleep 10
-    mysql --user=root < /monasca-etc-base/mysql-mon-schema.sql
+    mysql --user=root < /monasca-etc/mysql-mon-schema.sql
     echo "-------------------------------------------------------------"
     echo "Shutting down MySQL to restart with new schema and users"
     echo "-------------------------------------------------------------"

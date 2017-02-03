@@ -6,8 +6,8 @@
 function process_config {
 
   mkdir -p /etc/monasca
-  cp /monasca-etc-base/api-api-config.conf  /etc/monasca/api-config.conf
-  cp /monasca-etc-base/api-api-config.ini  /etc/monasca/api-config.ini
+  cp /monasca-etc/api-api-config.conf  /etc/monasca/api-config.conf
+  cp /monasca-etc/api-api-config.ini  /etc/monasca/api-config.ini
 }
 
 function start_application {

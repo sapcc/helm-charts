@@ -10,7 +10,7 @@ function process_config {
   export KIBANA_VERSION=$(cat /KIBANA_VERSION.env)
   export KIBANA_CONF_FILE="/opt/kibana-${KIBANA_VERSION}-linux-x64/config/kibana.yml"
 
-  cp /monasca-etc-log/kibana-kibana.yml ${KIBANA_CONF_FILE}
+  cp /monasca-etc/kibana-kibana.yml ${KIBANA_CONF_FILE}
 
 }
 

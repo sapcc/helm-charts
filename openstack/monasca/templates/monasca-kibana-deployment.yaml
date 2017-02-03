@@ -19,18 +19,18 @@ spec:
       labels:
         component: monasca-kibana
       annotations:
-        checksum/monasca-templates-monasca-etc-log.yaml: {{ include "monasca/templates/monasca-etc-log-configmap.yaml" . | sha256sum }}
-        checksum/monasca-templates-monasca-bin.yaml: {{ include "monasca/templates/monasca-bin-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-kibana-etc-configmap.yaml: {{ include "monasca/templates/monasca-kibana-etc-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-kibana-bin-configmap.yaml: {{ include "monasca/templates/monasca-kibana-bin-configmap.yaml" . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
       volumes:
         - name: monasca-bin
           configMap:
-            name: monasca-bin
-        - name: monasca-etc-log
+            name: monasca-kibana-bin
+        - name: monasca-etc
           configMap:
-            name: monasca-etc-log
+            name: monasca-kibana-etc
       containers:
         - name: monasca-kibana
           image: {{.Values.docker_repo}}/monasca-kibana:{{.Values.image_version_monasca_kibana}}
@@ -54,5 +54,5 @@ spec:
           volumeMounts:
             - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /monasca-etc-log
-              name: monasca-etc-log
+            - mountPath: /monasca-etc
+              name: monasca-etc

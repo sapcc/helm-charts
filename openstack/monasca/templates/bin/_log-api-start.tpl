@@ -6,8 +6,8 @@
 function process_config {
 
   mkdir -p /etc/monasca
-  cp /monasca-etc-log/log-api-log-api-config.conf  /etc/monasca/log-api-config.conf
-  cp /monasca-etc-log/log-api-log-api-config.ini  /etc/monasca/log-api-config.ini
+  cp /monasca-etc/log-api-log-api-config.conf  /etc/monasca/log-api-config.conf
+  cp /monasca-etc/log-api-log-api-config.ini  /etc/monasca/log-api-config.ini
 
   sed "s,KAFKA_CONSUMER_ID,${KUBE_POD_NAME},g" -i /etc/monasca/log-api-config.conf
 }

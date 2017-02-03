@@ -21,14 +21,14 @@ spec:
       labels:
         component: monasca-logstash-persister
       annotations:
-        checksum/monasca-templates-monasca-etc-log.yaml: {{ include "monasca/templates/monasca-etc-log-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-logstash-etc-configmap.yaml: {{ include "monasca/templates/monasca-logstash-etc-configmap.yaml" . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: monasca-etc-log
+        - name: monasca-etc
           configMap:
-            name: monasca-etc-log
+            name: monasca-logstash-etc
       containers:
         - name: monasca-logstash-persister
           image: {{.Values.docker_repo}}/monasca-logstash:{{.Values.image_version_monasca_logstash}}
@@ -39,7 +39,7 @@ spec:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/logstash/bin/logstash -f /monasca-etc-log/logstash-persister-monasca-log-persister.conf"
+              value: "/logstash/bin/logstash -f /monasca-etc/logstash-persister-monasca-log-persister.conf"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -47,5 +47,5 @@ spec:
             - name: DEPENDENCY_SERVICE
               value: "kafka,es-client"
           volumeMounts:
-            - name: monasca-etc-log
-              mountPath: /monasca-etc-log
+            - name: monasca-etc
+              mountPath: /monasca-etc

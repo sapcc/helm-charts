@@ -21,18 +21,18 @@ spec:
       labels:
         component: monasca-persister
       annotations:
-        checksum/monasca-templates-monasca-etc-base.yaml: {{ include "monasca/templates/monasca-etc-base-configmap.yaml" . | sha256sum }}
-        checksum/monasca-templates-monasca-bin.yaml: {{ include "monasca/templates/monasca-bin-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-persister-etc-configmap.yaml: {{ include "monasca/templates/monasca-persister-etc-configmap.yaml" . | sha256sum }}
+        checksum/monasca-templates-monasca-persister-bin-configmap.yaml: {{ include "monasca/templates/monasca-persister-bin-configmap.yaml" . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
       volumes:
         - name: monasca-bin
           configMap:
-            name: monasca-bin
-        - name: monasca-etc-base
+            name: monasca-persister-bin
+        - name: monasca-etc
           configMap:
-            name: monasca-etc-base
+            name: monasca-persister-etc
       containers:
         - name: monasca-persister
           image: {{.Values.docker_repo}}/monasca-persister:{{.Values.image_version_monasca_persister}}
@@ -51,8 +51,8 @@ spec:
             - name: DEPENDENCY_SERVICE
               value: "influxdb,kafka"
           volumeMounts:
-            - mountPath: /monasca-etc-base
-              name: monasca-etc-base
+            - mountPath: /monasca-etc
+              name: monasca-etc
             - mountPath: /monasca-bin
               name: monasca-bin
         - name: monasca-agent-forwarder
@@ -77,8 +77,8 @@ spec:
           volumeMounts:
             - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /monasca-etc-base
-              name: monasca-etc-base
+            - mountPath: /monasca-etc
+              name: monasca-etc
         - name: monasca-agent-statsd
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
@@ -102,5 +102,5 @@ spec:
           volumeMounts:
             - mountPath: /monasca-bin
               name: monasca-bin
-            - mountPath: /monasca-etc-base
-              name: monasca-etc-base
+            - mountPath: /monasca-etc
+              name: monasca-etc
