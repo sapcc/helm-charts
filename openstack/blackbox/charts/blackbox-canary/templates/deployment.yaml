@@ -6,6 +6,7 @@ metadata:
 
 spec:
   replicas: {{.Values.global.replicaCount}}
+  revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -22,6 +23,13 @@ spec:
         - name: blackbox-canary
           persistentVolumeClaim:
             claimName: blackbox-canary
+        - name: blackbox-jump-key
+          secret:
+            secretName: blackbox-canary
+            items:
+              - key: jump.key
+                path: authorized-keys.health
+                mode: 0600
       containers:
         - name: exporter
           image: {{.Values.global.imageName}}:{{.Values.global.imageVersion}}
@@ -82,8 +90,6 @@ spec:
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.id } }
             - name: CANARY_FLOATIP_SERVER_1_NAME
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.name } }
-            - name: CANARY_FLOATIP_SERVER_1_FLOATINGIP
-              valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.floatingip } }
             - name: CANARY_SECGRP_SERVER_1_ID
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: secgrp.server.1.id } }
             - name: CANARY_SECGRP_SERVER_1_NAME
@@ -135,6 +141,9 @@ spec:
             - name: blackbox-canary
               mountPath: /results
               readOnly: false
+            - name: blackbox-jump-key
+              mountPath: /keys
+              readOnly: true
           env:
             - name: OS_AUTH_URL
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: os.auth.url } }
@@ -164,6 +173,10 @@ spec:
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: swift.project.domain } }
             - name: SWIFT_REGION_NAME
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: swift.region.name } }
+            - name: JUMP_URL
+              valueFrom: { configMapKeyRef: { name: blackbox-canary, key: jump.url } }
+            - name: JUMP_USER
+              valueFrom: { configMapKeyRef: { name: blackbox-canary, key: jump.user } }
             - name: CANARY_PROJECT_ID
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: project.id } }
             - name: CANARY_PROJECT_NAME
@@ -186,8 +199,6 @@ spec:
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.id } }
             - name: CANARY_FLOATIP_SERVER_1_NAME
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.name } }
-            - name: CANARY_FLOATIP_SERVER_1_FLOATINGIP
-              valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.floatingip } }
             - name: CANARY_SECGRP_SERVER_1_ID
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: secgrp.server.1.id } }
             - name: CANARY_SECGRP_SERVER_1_NAME
@@ -285,8 +296,6 @@ spec:
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.id } }
             - name: CANARY_FLOATIP_SERVER_1_NAME
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.name } }
-            - name: CANARY_FLOATIP_SERVER_1_FLOATINGIP
-              valueFrom: { configMapKeyRef: { name: blackbox-canary, key: floatip.server.1.floatingip } }
             - name: CANARY_SECGRP_SERVER_1_ID
               valueFrom: { configMapKeyRef: { name: blackbox-canary, key: secgrp.server.1.id } }
             - name: CANARY_SECGRP_SERVER_1_NAME

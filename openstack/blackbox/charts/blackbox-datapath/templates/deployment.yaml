@@ -6,6 +6,7 @@ metadata:
 
 spec:
   replicas: {{.Values.global.replicaCount}}
+  revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -22,6 +23,13 @@ spec:
         - name: blackbox-datapath
           persistentVolumeClaim:
             claimName: blackbox-datapath
+        - name: blackbox-jump-key
+          secret:
+            secretName: blackbox-datapath
+            items:
+              - key: jump.key
+                path: authorized-keys.health
+                mode: 0600
       containers:
         - name: exporter
           image: {{.Values.global.imageName}}:{{.Values.global.imageVersion}}
@@ -123,6 +131,9 @@ spec:
             - name: blackbox-datapath
               mountPath: /results
               readOnly: false
+            - name: blackbox-jump-key
+              mountPath: /keys
+              readOnly: true
           env:
             - name: OS_AUTH_URL
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: os.auth.url } }
@@ -152,6 +163,10 @@ spec:
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: swift.project.domain } }
             - name: SWIFT_REGION_NAME
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: swift.region.name } }
+            - name: JUMP_URL
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: jump.url } }
+            - name: JUMP_USER
+              valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: jump.user } }
             - name: DATAPATH_SERVER_1_ID
               valueFrom: { configMapKeyRef: { name: blackbox-datapath, key: server.1.id } }
             - name: DATAPATH_SERVER_1_NAME
