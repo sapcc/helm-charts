@@ -3,7 +3,12 @@ input {
         zk_connect => "zk:{{.Values.monasca_zookeeper_port_internal}}"
         topic_id => "log"
         group_id => "logstash-transformer"
-    }
+        consumer_restart_on_error => true
+        consumer_threads => 12
+        consumer_restart_sleep_ms => 1000
+        rebalance_max_retries => 50
+        rebalance_backoff_ms => 5000
+        }
 }
 
 filter {
@@ -69,5 +74,10 @@ output {
     kafka {
         bootstrap_servers => "kafka:{{.Values.monasca_kafka_port_internal}}"
         topic_id => "transformed-log"
-    }
+        consumer_restart_on_error => true
+        consumer_threads => 12
+        consumer_restart_sleep_ms => 1000
+        rebalance_max_retries => 50
+        rebalance_backoff_ms => 5000
+        }
 }
