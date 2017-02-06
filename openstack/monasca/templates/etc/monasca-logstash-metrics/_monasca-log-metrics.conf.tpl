@@ -1,10 +1,15 @@
 input {
     kafka {
-        zk_connect => "zk:{{.Values.monasca_zookeeper_port_internal}}"
+        zk_connect => "zoo-0.zk:{{.Values.monasca_zookeeper_port_internal}},zoo-1.zk:{{.Values.monasca_zookeeper_port_internal}},zoo-2.zk:{{.Values.monasca_zookeeper_port_internal}}"
         topic_id => "transformed-log"
         group_id => "logstash-metrics"
         consumer_id => "monasca_log_metrics"
         consumer_threads => "4"
+        consumer_restart_on_error => true
+        consumer_threads => 12
+        consumer_restart_sleep_ms => 1000
+        rebalance_max_retries => 50
+        rebalance_backoff_ms => 5000
     }
 }
 
@@ -55,9 +60,12 @@ filter {
 
 output {
     kafka {
-        bootstrap_servers => "kafka:{{.Values.monasca_kafka_port_internal}}"
+        bootstrap_servers => "kafka-0.kafka:{{.Values.monasca_kafka_port_internal}},kafka-1.kafka:{{.Values.monasca_kafka_port_internal}},kafka-2.kafka:{{.Values.monasca_kafka_port_internal}}"
         topic_id => "metrics"
         client_id => "monasca_log_metrics"
         compression_type => "none"
+        reconnect_backoff_ms => 1000
+        retries => 10
+        retry_backoff_ms => 1000
     }
 }
