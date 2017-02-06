@@ -5,7 +5,7 @@ RUBY := ruby
 
 .PHONY: all clean
 
-GENERATED_JSON_FILES = $(patsubst %.json.erb, %.json, $(wildcard *.json.erb))
+GENERATED_JSON_FILES = $(patsubst %.yaml.erb, %.yaml, $(wildcard *.yaml.erb))
 
 
 all: $(GENERATED_JSON_FILES)
