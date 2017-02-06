@@ -8,6 +8,14 @@ metadata:
     component: content-repo
 
 data:
+  # prometheus
+  statsd-exporter.conf: |
+    repo.*.last_run.*
+    name="repo_sync_last_run"
+    repo="$1"
+    kind="$2"
+
+  # repo configs
 {{- range $repo, $config := .Values.repos }}
   {{$repo}}.yaml: |
     swift:
@@ -17,10 +25,15 @@ data:
       project_name: {{$.Values.project_name}}
       project_domain_name: {{$.Values.project_domain_name}}
       password: {{$.Values.password}}
-    {{- if $config.transfer_workers}}
+
+    statsd:
+      hostname: {{$.Values.statsd_hostname}}
+      port:     9125
+      prefix:   repo.{{$repo}}
+    {{if $config.transfer_workers}}
     workers:
       transfer: {{$config.transfer_workers}}
-    {{- end}}
+    {{end}}
     jobs:
       {{- range $index, $job := $config.jobs}}
       - from: {{$job.source}}
