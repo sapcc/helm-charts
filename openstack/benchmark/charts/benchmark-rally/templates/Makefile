@@ -13,7 +13,7 @@ all: $(GENERATED_JSON_FILES)
 clean:
 	rm -f $(GENERATED_JSON_FILES)
 
-%.json: %.json.erb vars.rb Makefile
+%.yaml: %.yaml.erb vars.rb Makefile
 	@echo "# Generated from $<. Do not modify manually!" > $@
 	@echo "# Edit $< and run 'make' instead." >> $@
 	@echo >> $@
