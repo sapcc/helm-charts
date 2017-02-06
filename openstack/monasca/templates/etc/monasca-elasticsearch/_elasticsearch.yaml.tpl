@@ -39,7 +39,7 @@ readonlyrest:
 
     - name: Monsoon (read only, but can create dashboards)
       type: allow
-      kibana_access: ro+
+      kibana_access: ro
       auth_key: monsoon:monsoon
 
     - name: data
