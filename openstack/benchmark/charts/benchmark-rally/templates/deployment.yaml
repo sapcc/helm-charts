@@ -1,0 +1,130 @@
+kind: Deployment
+apiVersion: extensions/v1beta1 
+
+metadata:
+  name: benchmark-rally
+
+spec:
+  replicas: {{.Values.replicaCount}}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: benchmark-rally
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: benchmark-rally
+          persistentVolumeClaim:
+            claimName: benchmark-rally
+      containers:
+        - name: runtime
+          image: {{.Values.imageName}}:{{.Values.imageVersion}}
+          command: ["/bin/sh", "-c"]
+          args: ["./scripts/alive.sh"]
+          volumeMounts:
+            - name: benchmark-rally
+              mountPath: /reports
+              readOnly: false
+          env:
+            - name: OS_AUTH_URL
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.auth.url } }
+            - name: OS_IDENTITY_API_VERSION
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.identity.api.version } }
+            - name: OS_REGION_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.region.name } }
+            - name: OS_USERNAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.admin.user.name } }
+            - name: OS_USER_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.user.domain.name } }
+            - name: OS_PROJECT_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.project.name } }
+            - name: OS_PROJECT_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.project.domain.name } }
+            - name: RALLY_TEST_USERNAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.test.user.name } }
+            - name: RALLY_FLAVOR_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.flavor.name } }
+            - name: RALLY_IMAGE_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.image.name } }
+            - name: RALLY_FIXED_NETWORK_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.fixed.network.name } }
+            - name: RALLY_FIXED_NETWORK_ID
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.fixed.network.id } }
+            - name: RALLY_FLOAT_NETWORK_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.float.network.name } }
+            - name: RALLY_FLOAT_NETWORK_ID
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.float.network.id } }
+            - name: RALLY_AVAILABILITY_ZONE
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.availability.zone } }
+            - name: RALLY_RUNNER_TIMES
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.runner.times } }
+            - name: RALLY_RUNNER_CONCURRENCY
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.runner.concurrency } }
+            - name: OS_PASSWORD
+              valueFrom: { secretKeyRef:    { name: benchmark-rally, key: rally.admin.user.password } }
+            - name: RALLY_TEST_PASSWORD
+              valueFrom: { secretKeyRef:    { name: benchmark-rally, key: rally.test.user.password } }
+          livenessProbe:
+            exec:
+              command:
+              - find
+              - scripts/execute.sh
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - rally
+              - version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+        - name: purger
+          image: {{.Values.imageName}}:{{.Values.imageVersion}}
+          command: ["/bin/sh", "-c"]
+          args: ["./scripts/purge.sh 30m"]
+          volumeMounts:
+            - name: benchmark-rally
+              mountPath: /reports
+              readOnly: false
+          env:
+            - name: OS_AUTH_URL
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.auth.url } }
+            - name: OS_IDENTITY_API_VERSION
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.identity.api.version } }
+            - name: OS_REGION_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.region.name } }
+            - name: OS_USERNAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: rally.admin.user.name } }
+            - name: OS_USER_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.user.domain.name } }
+            - name: OS_PROJECT_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.project.name } }
+            - name: OS_PROJECT_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: benchmark-rally, key: os.project.domain.name } }
+            - name: OS_PASSWORD
+              valueFrom: { secretKeyRef:    { name: benchmark-rally, key: rally.admin.user.password } }
+          livenessProbe:
+            exec:
+              command:
+              - find
+              - scripts/purge.sh
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - rally
+              - version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
