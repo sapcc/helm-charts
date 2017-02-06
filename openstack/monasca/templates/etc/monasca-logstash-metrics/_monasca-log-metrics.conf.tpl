@@ -4,7 +4,7 @@ input {
         topic_id => "transformed-log"
         group_id => "logstash-metrics"
         consumer_id => "monasca_log_metrics"
-        consumer_threads => "4"
+        consumer_threads => 4
         consumer_restart_on_error => true
         consumer_threads => 12
         consumer_restart_sleep_ms => 1000
