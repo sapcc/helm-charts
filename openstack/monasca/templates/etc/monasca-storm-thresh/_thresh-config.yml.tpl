@@ -385,7 +385,7 @@ metricSpoutConfig:
     numThreads: 4
     groupId: thresh
     zookeeperConnect: zk:{{.Values.monasca_zookeeper_port_internal}}
-    consumerId: {{.Values.kafka_consumer_id}}
+    consumerId: KAFKA_CONSUMER_ID
     socketTimeoutMs: 30000
     socketReceiveBufferBytes : 65536
     fetchMessageMaxBytes: 1048576
@@ -413,7 +413,7 @@ eventSpoutConfig:
     numThreads: 4
     groupId: thresh
     zookeeperConnect: zk:{{.Values.monasca_zookeeper_port_internal}}
-    consumerId: {{.Values.kafka_consumer_id}}
+    consumerId: KAFKA_CONSUMER_ID
     socketTimeoutMs: 30000
     socketReceiveBufferBytes : 65536
     fetchMessageMaxBytes: 1048576
@@ -453,7 +453,7 @@ kafkaProducerConfig:
   queueEnqueueTimeoutMs: -1
   batchNumMessages: 200
   sendBufferBytes: 102400
-  clientId: {{.Values.kafka_client_id}}
+  clientId: monasca-thresh
 sporadicMetricNamespaces:
   - foo
 

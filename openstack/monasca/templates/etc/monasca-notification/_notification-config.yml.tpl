@@ -2,6 +2,7 @@ kafka:
     url: kafka:{{.Values.monasca_kafka_port_internal}}
     group: notification
     consumer_id: KAFKA_CONSUMER_ID
+    client_id: monasca-notification
     alarm_topic: alarm-state-transitions
     notification_topic: alarm-notifications
     notification_retry_topic: retry-notifications

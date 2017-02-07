@@ -10,6 +10,7 @@ function process_config {
   cp -f /monasca-etc/storm-thresh-cluster.xml /opt/storm/current/log4j2/cluster.xml
   cp -f /monasca-etc/storm-thresh-worker.xml /opt/storm/current/log4j2/worker.xml
 
+  sed "s,KAFKA_CONSUMER_ID,${KUBE_POD_NAME},g" -i /etc/monasca/thresh-config.yml
 }
 
 function start_application {
