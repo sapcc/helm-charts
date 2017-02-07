@@ -90,10 +90,10 @@ auth_url = {{.Values.keystone_auth_url}}
 insecure = false
 cache = swift.cache
 region_name = {{.Values.global.region}}
-user_domain_name = Default
+user_domain_name = {{.Values.swift_service_user_domain}}
 username = {{.Values.swift_service_user}}
 password = {{.Values.swift_service_password}}
-project_domain_name = Default
+project_domain_name = {{.Values.swift_service_project_domain}}
 project_name = {{.Values.swift_service_project}}
 {{ if .Values.debug -}}
 set log_level = DEBUG
