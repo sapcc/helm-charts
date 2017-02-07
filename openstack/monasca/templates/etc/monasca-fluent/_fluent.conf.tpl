@@ -118,4 +118,7 @@
    request_timeout 45s
    reload_connections true
    reload_on_failure true
+   request_timeout 15s
+   resurrect_after 120
+   reconnect_on_error true
  </match>
