@@ -4,8 +4,8 @@ metadata:
   name: domain-cc3test-seed
 spec:
 #  requires:
-#    - keystone-{{.Values.openstack.global.region}}-seed
-#    - neutron-{{.Values.openstack.global.region}}-seed
+#    - keystone-{{.Values.os_region_name}}-seed
+#    - neutron-{{.Values.os_region_name}}-seed
 
   domains:
   - name: cc3test
@@ -23,22 +23,22 @@ spec:
     users:
     - name: rally_admin
       description: Rally Administrator
-      password: '{{.Values.openstack.global.cc3test_rally_admin_password}}'
+      password: '{{.Values.cc3test_rally_admin_password}}'
     <%- $i = 1; until $i > @rally_number_test_user do -%>
     - name: rally_user_<%= $i %>
       description: CC-Test Rally User
-      password: '{{.Values.openstack.global.cc3test_rally_user_password}}'
+      password: '{{.Values.cc3test_rally_user_password}}'
       <%- $i += 1 -%>
     <%- end -%>
     - name: test_admin
       description: CC-Test Administrator
-      password: '{{.Values.openstack.global.cc3test_admin_password}}'
+      password: '{{.Values.cc3test_admin_password}}'
     - name: test_member
       description: CC-Test Member
-      password: '{{.Values.openstack.global.cc3test_member_password}}'
+      password: '{{.Values.cc3test_member_password}}'
     - name: test_user
-        description: CC-Test User
-        password: '{{.Values.openstack.global.cc3test_user_password}}'
+      description: CC-Test User
+      password: '{{.Values.cc3test_user_password}}'
     groups:
     - name: Administrators
       description: 'Test Administrators'
@@ -90,10 +90,10 @@ spec:
         tls_req_cert: allow
         query_scope: sub
         use_dumb_member: false
-        url: '{{.Values.openstack.keystone.ad_ldap_url}}'
-        user: '{{.Values.openstack.keystone.ad_ldap_user}}'
-        password: '{{.Values.openstack.keystone.ad_ldap_password}}'
-        suffix: '{{.Values.openstack.keystone.ad_ldap_suffix}}'
+        url: '{{.Values.ad_ldap_url}}'
+        user: '{{.Values.ad_ldap_user}}'
+        password: '{{.Values.ad_ldap_password}}'
+        suffix: '{{.Values.ad_ldap_suffix}}'
         user_objectclass: user
         user_id_attribute: cn
         user_name_attribute: sAMAccountName
@@ -107,7 +107,7 @@ spec:
         user_allow_create: True
         user_allow_delete: True
         user_allow_update: True
-        user_tree_dn: OU=Identities,OU=Testing,{{.Values.openstack.keystone.ad_ldap_suffix}}
+        user_tree_dn: OU=Identities,OU=Testing,{{.Values.ad_ldap_suffix}}
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
@@ -116,7 +116,7 @@ spec:
         group_allow_create: True
         group_allow_delete: True
         group_allow_update: True
-        group_tree_dn: OU=CCTEST,OU=OSDomains,OU=Testing,{{.Values.openstack.keystone.ad_ldap_suffix}}
+        group_tree_dn: OU=CCTEST,OU=OSDomains,OU=Testing,{{.Values.ad_ldap_suffix}}
         use_pool: true
         pool_size: 10
         pool_connection_lifetime: 60

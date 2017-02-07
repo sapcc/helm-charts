@@ -1,1 +1,1 @@
-@rally_number_test_user = 10
+@rally_number_test_user = 12
