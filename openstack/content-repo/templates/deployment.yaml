@@ -1,0 +1,40 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: content-repo-statsd
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: content-repo-statsd
+  template:
+    metadata:
+      labels:
+        component: content-repo-statsd
+    spec:
+      volumes:
+      - name: config
+        configMap:
+          name: swift-http-import
+      containers:
+      - name: statsd
+        image: prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
+        args: [ -statsd.mapping-config=/etc/http-import/config/statsd-exporter.conf ]
+        ports:
+          - name: statsd
+            containerPort: 9125
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+        volumeMounts:
+          - mountPath: /etc/http-import/config
+            name: config
