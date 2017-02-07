@@ -1,6 +1,6 @@
 input {
     kafka {
-        zk_connect => "zoo-0.zk:{{.Values.monasca_zookeeper_port_internal}},zoo-1.zk:{{.Values.monasca_zookeeper_port_internal}},zoo-2.zk:{{.Values.monasca_zookeeper_port_internal}}"
+        zk_connect => "zk:{{.Values.monasca_zookeeper_port_internal}}"
         topic_id => "log"
         group_id => "logstash-transformer"
         consumer_restart_on_error => true
@@ -72,7 +72,7 @@ filter {
 
 output {
     kafka {
-        bootstrap_servers => "kafka-0.kafka:{{.Values.monasca_kafka_port_internal}},kafka-1.kafka:{{.Values.monasca_kafka_port_internal}},kafka-2.kafka:{{.Values.monasca_kafka_port_internal}}"
+        bootstrap_servers => "kafka:{{.Values.monasca_kafka_port_internal}}"
         topic_id => "transformed-log"
         reconnect_backoff_ms => 1000
         retries => 10

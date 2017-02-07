@@ -1,7 +1,7 @@
 input {
   
   kafka {
-    zk_connect => "zoo-0.zk:{{.Values.monasca_zookeeper_port_internal}},zoo-1.zk:{{.Values.monasca_zookeeper_port_internal}},zoo-2.zk:{{.Values.monasca_zookeeper_port_internal}}"
+    zk_connect => "zk:{{.Values.monasca_zookeeper_port_internal}}"
     topic_id => "transformed-log"
     group_id => "logstash-persister"
     consumer_restart_on_error => true
