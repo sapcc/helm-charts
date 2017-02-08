@@ -11,7 +11,7 @@ function process_config_common {
 
   # replace placeholders with actual values
   sed "s|{args.ca_file}|${OS_CACERT}|" -i /etc/monasca/agent/agent.yaml
-  sed "s|{hostname}|$KUBE_NODE_IP|" -i /etc/monasca/agent/agent.yaml
+  sed "s|{hostname}|$KUBE_NODE_NAME|" -i /etc/monasca/agent/agent.yaml
   if [ ! -z $KUBE_CONTAINER_NAME ]; then
     sed "s|{kube_container_name}|$KUBE_CONTAINER_NAME|" -i /etc/monasca/agent/agent.yaml
   else

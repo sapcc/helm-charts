@@ -11,3 +11,4 @@ export KUBE_POD_NAME=$HOSTNAME
 curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/api/v1/namespaces/$KUBE_NAMESPACE/pods/$KUBE_POD_NAME > /pod.json
 export KUBE_POD_UID=$(jq -r ".metadata.uid" < /pod.json)
 export KUBE_NODE_IP=$(jq -r ".status.hostIP" < /pod.json)
+export KUBE_NODE_NAME=$(jq -r ".spec.nodeName" < /pod.json)
