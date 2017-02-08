@@ -9,6 +9,9 @@ instances:
       match_labels:
 
       dimensions:
+         hostname:
+           source_key: instance
+           regex: '(.*?):?[0-9]*$'
          resource: resource
       groups:
          dns:
@@ -18,7 +21,6 @@ instances:
                  bind_server: kubernetes_name
                  type: type
                  result: result
-                 instance: instance
          datapath:
              gauges: [ 'datapath_(status)' ]
              dimensions:
@@ -34,7 +36,6 @@ instances:
          prometheus:
              gauges: [ 'up' ]
              dimensions:
-                 instance: instance
                  component: component
          activedirectory:
              gauges: [ 'ad_(.*_status)' ]
@@ -42,7 +43,6 @@ instances:
              gauges: [ 'kube_(node_status_ready)', 'kube_(node_status_out_of_disk)', 'node_filesystem_free' ]
              dimensions:
                  node: node
-                 node: instance
                  mountpoint: mountpoint
                  fstype:
                      source_key: fstype
@@ -54,7 +54,6 @@ instances:
              dimensions:
                  service: component
                  component: kubernetes_name
-                 instance: instance
                  method: method
                  api: api
                  le: le
@@ -85,7 +84,6 @@ instances:
                  quantile: quantile
                  status:   status
                  type:     type
-                 hostname: instance
 
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
