@@ -13,6 +13,7 @@ instances:
            source_key: instance
            regex: '(.*?):?[0-9]*$'
          resource: resource
+         quantile: quantile
       groups:
          dns:
              gauges: [ 'bind_up' ]
@@ -40,24 +41,29 @@ instances:
          activedirectory:
              gauges: [ 'ad_(.*_status)' ]
          kubernetes:
-             gauges: [ 'kube_(node_status_ready)', 'kube_(node_status_out_of_disk)', 'node_filesystem_free' ]
+             gauges: [ 'kube_(node_status_ready)', 'kube_(node_status_out_of_disk)', 'node_filesystem_free', 'kube_(pod_status_phase)', 'kube_(pod_status_ready)' ]
+             rates: [ 'kube_(pod_container_status_restarts)' ]
              dimensions:
-                 node: node
+                 container: container
+                 namespace: namespace
+                 pod: pod
+                 phase: phase
+                 hostname: node
                  mountpoint: mountpoint
                  fstype:
                      source_key: fstype
                      regex: '(xfs|ext4)'
-                 condition: condition
+                 condition: true
          openstack.api:
              rates: [ 'openstack_(responses)_by_api_counter', 'openstack_(requests)_total_counter' ]
              gauges: [ 'openstack_(latency)_by_api_timer' ]
              dimensions:
                  service: component
                  component: kubernetes_name
+                 namespace: kubernetes_namespace
                  method: method
                  api: api
                  le: le
-                 quantile: quantile
                  status: status
          monasca:
              gauges: [ 'monasca_(health.*)_gauge' ]
@@ -81,7 +87,6 @@ instances:
              gauges: [ 'swift_proxy_(firstbyte_timer)' ]
              dimensions:
                  policy:   { regex: 'all' }
-                 quantile: quantile
                  status:   status
                  type:     type
 
@@ -91,26 +96,21 @@ instances:
    collect_response_time: True
    match_labels:
        kubernetes_namespace:
-        - monsoon3
         - monasca
         - ceilometer
-        - keystone
-        - swift
-        - elektra
-        - lyra
    mapping:
        dimensions:
            resource: resource
-           kubernetes.namespace: kubernetes_namespace
-           kubernetes.pod_name: kubernetes_pod_name
+           namespace: kubernetes_namespace
+           pod: kubernetes_pod_name
            hostname: kubernetes_io_hostname
        groups:
            kubernetes:
                gauges: [ '(container_start_time_sec)onds', 'container_memory_usage_bytes' ]
                rates: [ '(container_cpu_usage_sec)onds_total', '(container_network.*_packages)_total' ]
                dimensions:
-                   kubernetes.container_name: kubernetes_container_name
-                   kubernetes.zone: zone
-                   kubernetes.cgroup.path:
+                   container: kubernetes_container_name
+                   zone: zone
+                   cgroup_path:
                        source_key: 'id'
                        regex: '(/system.slice/.*)'
