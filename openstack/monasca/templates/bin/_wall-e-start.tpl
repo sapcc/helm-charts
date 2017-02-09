@@ -24,9 +24,6 @@ function start_application {
   sed "s,MONASCA_ELASTICSEARCH_MASTER_PROJECT_ID,${MONASCA_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /dashboard.json
   
 
-  #set logstash schema on every startup
-  curl -u {{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}} -XPUT "http://{{.Values.monasca_elasticsearch_endpoint_host_internal}}:{{.Values.monasca_elasticsearch_port_internal}}/_template/logstash" -d "@/monasca-content/monasca-content/elasticsearch/logstash.json"
-
   curl -u {{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}} -XPUT "http://{{.Values.monasca_elasticsearch_endpoint_host_internal}}:{{.Values.monasca_elasticsearch_port_internal}}/_cluster/settings" -d '{"transient": { "discovery.zen.minimum_master_nodes": 2 }}'
 
   curl -u {{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}} -XPUT "http://{{.Values.monasca_elasticsearch_endpoint_host_internal}}:{{.Values.monasca_elasticsearch_port_internal}}/_template/{{.Values.monasca_elasticsearch_master_project_id}}" -d "@/monasca-content/monasca-content/elasticsearch/{{.Values.monasca_elasticsearch_master_project_id}}.json"

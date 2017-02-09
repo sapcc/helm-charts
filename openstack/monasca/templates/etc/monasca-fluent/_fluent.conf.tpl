@@ -104,6 +104,8 @@
    port {{.Values.monasca_elasticsearch_port_internal}}
    user {{.Values.monasca_elasticsearch_data_user}}
    password {{.Values.monasca_elasticsearch_data_password}}
+   template_name "logstash"
+   template_file "/monasca-etc/logstash.json"
    time_as_integer false
    @log_level info
    buffer_type "memory"
