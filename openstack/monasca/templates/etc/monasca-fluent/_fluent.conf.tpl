@@ -100,6 +100,8 @@
 
 <match **>
    @type elasticsearch
+   host {{.Values.monasca_elasticsearch_endpoint_host_internal}}
+   port {{.Values.monasca_elasticsearch_port_internal}}
    user {{.Values.monasca_elasticsearch_data_user}}
    password {{.Values.monasca_elasticsearch_data_password}}
    time_as_integer false
@@ -107,18 +109,16 @@
    buffer_type "memory"
    buffer_chunk_limit 96m
    buffer_queue_limit 256
-   flush_interval 10s
+   flush_interval 5s
    retry_wait 5s
    include_tag_key true
-   host {{.Values.monasca_elasticsearch_endpoint_host_internal}}
-   port {{.Values.monasca_elasticsearch_port_internal}}
    logstash_format true
-   max_retry_wait 10s
+   max_retry_wait 30s
    disable_retry_limit
-   request_timeout 45s
+   request_timeout 5s
    reload_connections true
    reload_on_failure true
-   request_timeout 15s
    resurrect_after 120
    reconnect_on_error true
+   num_threads 8
  </match>
