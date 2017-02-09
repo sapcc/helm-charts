@@ -26,6 +26,20 @@ spec:
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - /etc/unbound/healthz
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - /etc/unbound/healthz
+          initialDelaySeconds: 5
+          periodSeconds: 5
       - name: metric
         image: {{.Values.image_unbound_exporter}}:{{ .Values.image_unbound_exporter_tag}}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
