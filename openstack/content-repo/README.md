@@ -12,9 +12,10 @@ See https://github.com/sapcc/swift-http-import
 
 ## Deactivated features
 
-Currently the default rollout method is via Jobs. If your kubernetes cluster supports ScheduledJobs you can enable that deploy option via:
+If your kubernetes cluster supports ScheduledJobs you can enable that via specifying a schedule:
 
-```
-mv templates/_scheduledJob.yaml templates/scheduledJob.yaml
-mv templates/job.yaml templates/_job.yaml
+```yaml
+repos:
+  ubuntu:
+    schedule: "* */4 * * *"
 ```
