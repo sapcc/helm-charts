@@ -1,4 +1,47 @@
 {{- range $repo, $config := .Values.repos }}
+{{- if $config.schedule }}
+apiVersion: batch/v2alpha1
+kind: ScheduledJob
+metadata:
+  name: content-repo-import-{{$repo}}
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+spec:
+  schedule: {{$config.schedule}}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: config
+              configMap:
+                name: swift-http-import
+            - name: secret
+              secret:
+                secretName: swift-http-import
+                optional: true
+          containers:
+          - name: swift-http-import
+            image: {{$.Values.global.docker_repo}}/swift-http-import:{{$.Values.image_version}}
+            args:
+              - /etc/http-import/config/{{$repo}}.yaml
+            {{- if $.Values.debug}}
+            env:
+              - name: 'DEBUG'
+                value: '1'
+            {{- end}}
+            volumeMounts:
+              - mountPath: /etc/http-import/config
+                name: config
+              - mountPath: /etc/http-import/secret
+                name: secret
+
+---
+{{- else}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -36,4 +79,5 @@ spec:
             name: secret
 
 ---
+{{end}}
 {{end}}
