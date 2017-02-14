@@ -1,0 +1,31 @@
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: swift-workers
+  namespace: swift
+  labels:
+    system: openstack
+    component: objectstore
+
+spec:
+  template:
+    metadata:
+      labels:
+        component: swift-workers
+        from: daemonset
+        restart: directly
+      annotations: {{ include "swift_daemonset_annotations" . | indent 8 }}
+    spec:
+      nodeSelector:
+        species: swift-storage
+      volumes: {{ include "swift_daemonset_volumes" . | indent 8 }}
+      containers:
+        {{- tuple "account"   "account-auditor"   . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "account"   "account-reaper"    . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "container" "container-auditor" . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "container" "container-updater" . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "object"    "object-auditor"    . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "object"    "object-updater"    . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "object"    "recon-cron"        . | include "swift_standard_container" | indent 8 }}
+        {{- include "swift_statsd_exporter_container" . | indent 8 }}
