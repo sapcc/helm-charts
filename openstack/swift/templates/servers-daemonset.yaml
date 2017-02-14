@@ -2,7 +2,7 @@ kind: DaemonSet
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: swift-container
+  name: swift-servers
   namespace: swift
   labels:
     system: openstack
@@ -12,19 +12,28 @@ spec:
   template:
     metadata:
       labels:
-        component: swift-container
+        component: swift-servers
         from: daemonset
+        restart: carefully
       annotations: {{ include "swift_daemonset_annotations" . | indent 8 }}
     spec:
       nodeSelector:
         species: swift-storage
       volumes: {{ include "swift_daemonset_volumes" . | indent 8 }}
       containers:
-        {{- tuple "container" "server"  "container-server"  . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "object"    "object-server"    . | include "swift_standard_container" | indent 8 }}
+          ports:
+            - name: swift-object
+              hostPort: 6000
+              containerPort: 6000
+        {{- tuple "container" "container-server" . | include "swift_standard_container" | indent 8 }}
           ports:
             - name: swift-container
               hostPort: 6001
               containerPort: 6001
-        {{- tuple "container" "auditor" "container-auditor" . | include "swift_standard_container" | indent 8 }}
-        {{- tuple "container" "updater" "container-updater" . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "account"   "account-server"   . | include "swift_standard_container" | indent 8 }}
+          ports:
+            - name: swift-account
+              hostPort: 6002
+              containerPort: 6002
         {{- include "swift_statsd_exporter_container" . | indent 8 }}

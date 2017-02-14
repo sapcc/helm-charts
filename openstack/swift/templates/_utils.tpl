@@ -46,10 +46,9 @@ prometheus.io/port: "9102"
 {{- /**********************************************************************************/ -}}
 {{- define "swift_standard_container" -}}
 {{- $image   := index . 0 -}}
-{{- $name    := index . 1 -}}
-{{- $service := index . 2 -}}
-{{- $context := index . 3 }}
-- name: {{ $name }}
+{{- $service := index . 1 -}}
+{{- $context := index . 2 }}
+- name: {{ $service }}
   image: {{$context.Values.global.docker_repo}}/ubuntu-source-swift-{{ $image }}-m3:{{ printf "image_version_swift_%s" $image | index $context.Values }}
   command:
     - /usr/bin/dumb-init
