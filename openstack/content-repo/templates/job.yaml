@@ -12,33 +12,7 @@ spec:
   schedule: {{$config.schedule}}
   concurrencyPolicy: Forbid
   jobTemplate:
-    spec:
-      template:
-        spec:
-          restartPolicy: OnFailure
-          volumes:
-            - name: config
-              configMap:
-                name: swift-http-import
-            - name: secret
-              secret:
-                secretName: swift-http-import
-                optional: true
-          containers:
-          - name: swift-http-import
-            image: {{$.Values.global.docker_repo}}/swift-http-import:{{$.Values.image_version}}
-            args:
-              - /etc/http-import/config/{{$repo}}.yaml
-            {{- if $.Values.debug}}
-            env:
-              - name: 'DEBUG'
-                value: '1'
-            {{- end}}
-            volumeMounts:
-              - mountPath: /etc/http-import/config
-                name: config
-              - mountPath: /etc/http-import/secret
-                name: secret
+    {{- tuple $repo $.Values | include "job_spec" | indent 4 }}
 
 ---
 {{- else}}
@@ -50,33 +24,7 @@ metadata:
   labels:
     system: openstack
     component: content-repo
-spec:
-  template:
-    spec:
-      restartPolicy: OnFailure
-      volumes:
-        - name: config
-          configMap:
-            name: swift-http-import
-        - name: secret
-          secret:
-            secretName: swift-http-import
-            optional: true
-      containers:
-      - name: swift-http-import
-        image: {{$.Values.global.docker_repo}}/swift-http-import:{{$.Values.image_version}}
-        args:
-          - /etc/http-import/config/{{$repo}}.yaml
-        {{- if $.Values.debug}}
-        env:
-          - name: 'DEBUG'
-            value: '1'
-        {{- end}}
-        volumeMounts:
-          - mountPath: /etc/http-import/config
-            name: config
-          - mountPath: /etc/http-import/secret
-            name: secret
+    {{- tuple $repo $.Values | include "job_spec" }}
 
 ---
 {{end}}
