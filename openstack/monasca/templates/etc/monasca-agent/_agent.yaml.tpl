@@ -64,8 +64,8 @@ Main:
 
   # Set the threshold for accepting points to allow anything
   # with recent_point_threshold seconds
-  # Defaults to 30 seconds if no value is provided
-  #recent_point_threshold: 30
+  # Defaults to 3600 seconds if no value is provided
+  #recent_point_threshold: 0
 
   # time to wait between collection runs
   check_freq: 60

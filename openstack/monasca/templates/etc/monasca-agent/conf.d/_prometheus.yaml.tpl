@@ -31,7 +31,7 @@ instances:
              dimensions:
                  test: script
          canary:
-             gauges: [ 'canary_(status)' ]
+             gauges: [ 'canary_(status)', 'canary_(off_status)' ]
              dimensions:
                  test: script
          prometheus:
