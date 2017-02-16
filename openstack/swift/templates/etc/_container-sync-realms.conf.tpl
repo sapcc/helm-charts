@@ -1,8 +1,13 @@
+{{- define "container-sync-realms.conf" -}}
+{{- $cluster := index . 0 -}}
+{{- $context := index . 1 -}}
 [DEFAULT]
 mtime_check_interval = 300
 
 [self_sync]
-key = {{.Values.selfsync_key}}
-key2 = {{.Values.selfsync_key}}
-cluster_{{.Values.global.region}}-1 = https://{{ include "swift_endpoint_host" . }}/v1
-cluster_{{.Values.global.region}}-2 = https://{{ include "swift_endpoint_host" . }}/v1
+# TODO Do we need the self sync still
+key = {{$cluster.selfsync_key}}
+key2 = {{$cluster.selfsync_key}}
+cluster_{{$context.global.region}}-1 = https://{{- tuple $cluster $context | include "swift_endpoint_host" }}/v1
+cluster_{{$context.global.region}}-2 = https://{{- tuple $cluster $context | include "swift_endpoint_host" }}/v1
+{{end}}
