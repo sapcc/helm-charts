@@ -1,3 +1,6 @@
+{{- define "nginx.conf" -}}
+{{- $cluster := index . 0 -}}
+{{- $context := index . 1 -}}
 # this is based on the default nginx.conf from the default docker hub nginx container
 
 user  nginx;
@@ -31,7 +34,7 @@ http {
 
     server {
         listen 443 default_server;
-        server_name {{ include "swift_endpoint_host" . }};
+        server_name {{tuple $cluster $context | include "swift_endpoint_host"}};
         ssl on;
 
         ssl_certificate     /etc/nginx/ssl/tls.crt;
@@ -62,3 +65,4 @@ http {
         }
     }
 }
+{{end}}
