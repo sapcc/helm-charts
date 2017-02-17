@@ -2,7 +2,7 @@
 name = monasca_log_api
 
 [pipeline:main]
-pipeline = statsd auth roles sentry api
+pipeline = statsd request_id auth roles sentry api
 
 [app:api]
 paste.app_factory = monasca_log_api.server:launch
@@ -12,6 +12,9 @@ paste.filter_factory = monasca_log_api.healthcheck.keystone_protocol:filter_fact
 
 [filter:roles]
 paste.filter_factory = monasca_log_api.middleware.role_middleware:RoleMiddleware.factory
+
+[filter:request_id]
+paste.filter_factory = oslo_middleware.request_id:RequestId.factory
 
 [filter:statsd]
 use = egg:ops-middleware#statsd
