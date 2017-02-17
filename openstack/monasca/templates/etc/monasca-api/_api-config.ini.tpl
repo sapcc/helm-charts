@@ -3,7 +3,7 @@ name = monasca_api
 
 [pipeline:main]
 # Add validator in the pipeline so the metrics messages can be validated.
-pipeline = statsd auth keystonecontext sentry api
+pipeline = statsd request_id auth sentry api
 
 [app:api]
 paste.app_factory = monasca_api.api.server:launch
@@ -11,8 +11,8 @@ paste.app_factory = monasca_api.api.server:launch
 [filter:auth]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 
-[filter:keystonecontext]
-paste.filter_factory = monasca_api.middleware.keystone_context_filter:filter_factory
+[filter:request_id]
+paste.filter_factory = oslo_middleware.request_id:RequestId.factory
 
 [filter:statsd]
 use = egg:ops-middleware#statsd
