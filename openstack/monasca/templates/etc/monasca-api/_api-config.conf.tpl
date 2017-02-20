@@ -26,11 +26,10 @@ dimension_values = monasca_api.v2.reference.metrics:DimensionValues
 dimension_names = monasca_api.v2.reference.metrics:DimensionNames
 notification_method_types = monasca_api.v2.reference.notificationstype:NotificationsType
 
-# no yet available
-#[monitoring]
-#statsd_host = localhost
-#statsd_port = 8125
-#statsd_buffer = 50
+[monitoring]
+statsd_host = 127.0.0.1
+statsd_port = 8125
+statsd_buffer = 50
 
 [security]
 # The roles that are allowed full access to the API.
@@ -52,9 +51,7 @@ driver = monasca_api.common.messaging.kafka_publisher:KafkaPublisher
 
 [repositories]
 # The driver to use for the metrics repository
-# Switches depending on backend database in use. Influxdb or Cassandra.
 metrics_driver = monasca_api.common.repositories.influxdb.metrics_repository:MetricsRepository
-#metrics_driver = monasca_api.common.repositories.cassandra.metrics_repository:MetricsRepository
 
 # The driver to use for the alarm definitions repository
 alarm_definitions_driver = monasca_api.common.repositories.sqla.alarm_definitions_repository:AlarmDefinitionsRepository
@@ -67,7 +64,6 @@ notifications_driver = monasca_api.common.repositories.sqla.notifications_reposi
 
 # The driver to use for the notification  method type repository
 notification_method_type_driver = monasca_api.common.repositories.sqla.notification_method_type_repository:NotificationMethodTypeRepository
-
 
 [dispatcher]
 driver = v2_reference
@@ -120,12 +116,6 @@ password = {{.Values.monasca_influxdb_monapi_password}}
 # The name of the InfluxDB database to use.
 database_name = mon
 
-[cassandra]
-# Only needed if Cassandra database is used for backend.
-# Comma separated list of Cassandra node IP addresses. No spaces.
-cluster_ip_addresses: 192.168.10.6
-keyspace: monasca
-
 # Below is configuration for database.
 # The order of reading configuration for database is:
 # 1) [mysql] section
@@ -139,13 +129,6 @@ keyspace: monasca
 #    port = 3306
 #    database = mon
 #    query = ""
-
-#[mysql]
-#database_name = mon
-#hostname = {{.Values.monasca_mysql_endpoint_host_internal}}
-#username = monapi
-#password = {{.Values.monasca_mysql_monapi_password}}
-
 [database]
 url = "mysql+pymysql://monapi:{{.Values.monasca_mysql_monapi_password}}@{{.Values.monasca_mysql_endpoint_host_internal}}:{{.Values.monasca_mysql_port_internal}}/mon"
 
@@ -164,4 +147,3 @@ keyfile =
 insecure = false
 token_cache_time = 900
 memcached_servers = 127.0.0.1:11211
-
