@@ -41,7 +41,33 @@ spec:
           volumeMounts:
             - name: storage
               mountPath: /postgresql
-
+{{- if .Values.backup.enabled }}
+        - image: {{.Values.postgres.backup.repository}}:{{.Values.postgres.backup.image_version}}
+          name: backup
+          env:
+            - name: MY_POD_NAME
+              value: postgres-backup-{{.Values.name}}
+            - name: MY_POD_NAMESPACE
+              value: {{.Release.Namespace}}
+            - name: OS_AUTH_URL
+              value: {{.Values.postgres.backup.os_auth_url}}
+            - name: OS_AUTH_VERSION
+              value: {{.Values.postgres.backup.os_auth_version | quote}}
+            - name: OS_USERNAME
+              value: {{.Values.postgres.backup.os_username}}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{.Values.postgres.backup.os_user_domain}}
+            - name: OS_PROJECT_NAME
+              value: {{.Values.postgres.backup.os_project_name}}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{.Values.postgres.backup.os_project_domain}}
+            - name: OS_REGION_NAME
+              value: {{.Values.postgres.backup.os_region_name}}
+            - name: OS_PASSWORD
+              value: {{.Values.postgres.backup.os_password | quote}}
+            - name: BACKUP_PGSQL_FULL
+              value: {{.Values.postgres.backup.interval_full | quote}}
+{{- end }}
 {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
