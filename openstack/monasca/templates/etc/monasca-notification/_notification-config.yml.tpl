@@ -31,7 +31,8 @@ notification_types:
         timeout: 60
         from_addr: noreply+monasca-{{.Values.cluster_region}}@sap.corp
         template:
-            subject: "{{`{{ {'ALARM': '*Alarm triggered*', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }} for {{alarm_name}}`}}"
+            subject: "{{`{{ {'ALARM': 'ALARM TRIGGERED', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }} for {{alarm_name}}`}}"
+            mime_type: text/html
             text: |
                 <table style="height: 108px;" width="805" cellspacing="10pt">
                 <tbody>
@@ -61,7 +62,6 @@ notification_types:
                 </tr>
                 </tbody>
                 </table>
-        mime_type: text/html
     webhook:
         timeout: 5
 
