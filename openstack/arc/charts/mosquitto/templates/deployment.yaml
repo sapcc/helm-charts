@@ -31,3 +31,10 @@ spec:
           - name: mosquitto-secret
             mountPath: /mosquitto
             readOnly: true
+{{- if .Values.metrics.enabled }}
+      - name: metrics
+        image: "{{ .Values.metrics.image.repository }}:{{ .Values.metrics.image.tag }}"
+        imagePullPolicy: {{ .Values.metrics.image.pullPolicy }}
+        ports:
+        - containerPort: {{.Values.metrics.port}}
+{{ end }}

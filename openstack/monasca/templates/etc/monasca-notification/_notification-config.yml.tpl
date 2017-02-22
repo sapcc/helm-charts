@@ -30,7 +30,38 @@ notification_types:
         password:
         timeout: 60
         from_addr: noreply+monasca-{{.Values.cluster_region}}@sap.corp
-
+        template:
+            subject: "{{`{{ {'ALARM': '*Alarm triggered*', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }} for {{alarm_name}}`}}"
+            text: |
+                <table style="height: 108px;" width="805" cellspacing="10pt">
+                <tbody>
+                <tr>
+                <td><img src="https://upload.wikimedia.org/wikipedia/en/8/85/Big_Brother_UK_5_logo.png" alt="" width="64" height="50" /></td>
+                <td><h1>Converged Cloud Monitoring Notification</h1></td>
+                <td><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/640px-SAP_2011_logo.svg.png" alt="SAP Logo" width="98" height="50" /></td>
+                </tr>
+                </tbody>
+                </table>
+                <h2>Alarm <a href="https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={{`{{alarm_id}}`}}">{{`{{alarm_name}}`}}</a> changed to status <span style="color: #ff0000;">{{`{{status}}`}}</span></h2>
+                <p>{{`{{alarm_description}}`}}</p>
+                <p>Additional Information:</p>
+                <table>
+                <tbody>
+                <tr>
+                <td style="text-align: left;"><strong>Status</strong></td>
+                <td>{{`{{_state}}`}}</td>
+                <td><strong>Previous State</strong></td>
+                <td>{{`{{_old_state}}`}}</td>
+                </tr>
+                <tr>
+                <td style="text-align: left;"><strong>Severity</strong></td>
+                <td>{{`{{_severity}}`}}</td>
+                <td><strong>Timestamp</strong></td>
+                <td>{{`{{_timestamp}}`}}</td>
+                </tr>
+                </tbody>
+                </table>
+        mime_type: text/html
     webhook:
         timeout: 5
 

@@ -16,6 +16,11 @@ spec:
     metadata:
       labels:
         name: elektra
+      #We scrape the request metrics via annotion on the elektra service
+      #This annotation is for the puma metrics exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9235"
     spec:
       containers:
         - name: rails
@@ -78,3 +83,10 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
+        - name: puma-metrics
+          image: sapcc/puma-exporter:0.1.0
+          ports:
+            - name: metrics
+              containerPort: 9235
+
+
