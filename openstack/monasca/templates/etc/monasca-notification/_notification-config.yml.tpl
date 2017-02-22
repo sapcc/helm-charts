@@ -42,7 +42,7 @@ notification_types:
                 </tr>
                 </tbody>
                 </table>
-                <h2>Alarm <a href="https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={{&#96;{{alarm_id}}&#96;}}">{{`alarm_name`}}</a>&nbsp;changed to status<span style="color: #ff0000;"> {{`status&acute;}}</span></h2>
+                <h2>Alarm <a href="https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={{`{{alarm_id}}`}}">{{`{{alarm_name}}`}}</a> changed to status <span style="color: #ff0000;">{{`{{status}}`}}</span></h2>
                 <p>{{`{{alarm_description}}`}}</p>
                 <p>Additional Information:</p>
                 <table>
