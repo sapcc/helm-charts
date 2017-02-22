@@ -25,7 +25,11 @@ spec:
             claimName: blackbox-api
       containers:
         - name: exporter
-          image: {{.Values.global.imageName}}:{{.Values.global.imageVersion}}
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+{{- end }}
           ports:
             - containerPort: 9101
           args:
@@ -103,7 +107,11 @@ spec:
             timeoutSeconds: 5 
             periodSeconds: 5
         - name: checker
-          image: {{.Values.global.imageName}}:{{.Values.global.imageVersion}}
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+{{- end }}
           command: ["/bin/sh", "-c"]
           args: ["./scripts/run.sh checks/api"]
           volumeMounts:
