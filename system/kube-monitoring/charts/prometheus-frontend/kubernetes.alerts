@@ -74,9 +74,12 @@ ALERT KubernetesNodeNotReady
   FOR 1h
   LABELS {
     service = "k8s",
-    severity = "warning",
+    severity = "critical",
     context = "node",
-    dashboard = "kubernetes-node?var-server={{$labels.node}}"
+    dashboard = "kubernetes-node?var-server={{$labels.node}}",
+    {{ if .Values.ops_docu_url -}}
+        playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_not_ready.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Node status is NotReady",
@@ -131,7 +134,7 @@ ALERT KubernetesPodRestartingTooMuch
   FOR 4h
   LABELS {
     service = "k8s",
-    severity = "warning",
+    severity = "info",
     context = "pod",
   }
   ANNOTATIONS {
