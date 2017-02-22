@@ -50,15 +50,15 @@ notification_types:
                 <tbody>
                 <tr>
                 <td style="text-align: left;"><strong>Status</strong></td>
-                <td>{{`{{_state}}`}}</td>
+                <td>{{`{{state}}`}}</td>
                 <td><strong>Previous State</strong></td>
-                <td>{{`{{_old_state}}`}}</td>
+                <td>{{`{{old_state}}`}}</td>
                 </tr>
                 <tr>
                 <td style="text-align: left;"><strong>Severity</strong></td>
-                <td>{{`{{_severity}}`}}</td>
+                <td>{{`{{severity}}`}}</td>
                 <td><strong>Timestamp</strong></td>
-                <td>{{`{{_timestamp}}`}}</td>
+                <td>{{`{{timestamp}}`}}</td>
                 </tr>
                 </tbody>
                 </table>
