@@ -34,6 +34,16 @@ metrics:
   image: wrouesnel/postgres_exporter
   imageTag: v0.1.1
   imagePullPolicy: IfNotPresent
+  customMetrics:
+    pg_database:
+      query: "SELECT d.datname AS name, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+      metrics:
+        - name:
+            usage: "LABEL"
+            description: "Name of the database"
+        - size:
+            usage: "GAUGE"
+            description: "Size of the database in bytes"
   resources:
     requests:
       memory: 256Mi
