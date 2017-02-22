@@ -25,7 +25,11 @@ spec:
             claimName: benchmark-rally
       containers:
         - name: runtime
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
           image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+{{- end }}
           command: ["/bin/bash", "-c"]
           args: ["./scripts/keep_alive.sh"]
           volumeMounts:
@@ -98,7 +102,11 @@ spec:
             periodSeconds: 15
             initialDelaySeconds: 15
         - name: purger
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
           image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+{{- end }}
           command: ["/bin/bash", "-c"]
           args: ["./scripts/purge_reports.sh 30"]
           volumeMounts:

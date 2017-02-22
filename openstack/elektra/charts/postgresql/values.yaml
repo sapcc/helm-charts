@@ -34,6 +34,16 @@ metrics:
   image: wrouesnel/postgres_exporter
   imageTag: v0.1.1
   imagePullPolicy: IfNotPresent
+  customMetrics:
+    pg_database:
+      query: "SELECT d.datname AS name, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+      metrics:
+        - name:
+            usage: "LABEL"
+            description: "Name of the database"
+        - size:
+            usage: "GAUGE"
+            description: "Size of the database in bytes"
   resources:
     requests:
       memory: 256Mi
@@ -47,14 +57,13 @@ resources:
     memory: 256Mi
     cpu: 100m
 
-## Backup for postgres
 backup:
   enabled: false
   repository: sapcc/backup-tools
-  image_version: v0.4.6
-  interval_full: 3 hours
+  image_version: v0.4.7
+  interval_full: "3 hours"
   os_auth_url: DEFINED-IN-REGION-SECRETS
-  os_auth_version: DEFINED-IN-REGION-SECRETS
+  os_auth_version: "3"
   os_username: DEFINED-IN-REGION-SECRETS
   os_user_domain: DEFINED-IN-REGION-SECRETS
   os_project_name: DEFINED-IN-REGION-SECRETS
