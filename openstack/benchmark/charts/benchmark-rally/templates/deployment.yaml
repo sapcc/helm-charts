@@ -5,7 +5,7 @@ metadata:
   name: benchmark-rally
 
 spec:
-  replicas: {{.Values.replicaCount}}
+  replicas: {{.Values.global.replicaCount}}
   revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate
@@ -25,7 +25,7 @@ spec:
             claimName: benchmark-rally
       containers:
         - name: runtime
-          image: {{.Values.imageName}}:{{.Values.imageVersion}}
+          image: {{.Values.global.imageName}}:{{.Values.global.imageVersion}}
           command: ["/bin/bash", "-c"]
           args: ["./scripts/keep_alive.sh"]
           volumeMounts:
@@ -98,7 +98,7 @@ spec:
             periodSeconds: 15
             initialDelaySeconds: 15
         - name: purger
-          image: {{.Values.imageName}}:{{.Values.imageVersion}}
+          image: {{.Values.global.imageName}}:{{.Values.global.imageVersion}}
           command: ["/bin/bash", "-c"]
           args: ["./scripts/purge_reports.sh 30"]
           volumeMounts:
