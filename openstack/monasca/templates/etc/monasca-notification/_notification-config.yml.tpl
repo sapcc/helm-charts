@@ -58,7 +58,7 @@ notification_types:
                 <td style="text-align: left;"><strong>Severity</strong></td>
                 <td>{{`{{severity}}`}}</td>
                 <td><strong>Timestamp</strong></td>
-                <td>{{`{{timestamp}}`}}</td>
+                <td>{{`{{alarm_timestamp}}`}}</td>
                 </tr>
                 </tbody>
                 </table>
