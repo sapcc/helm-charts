@@ -90,6 +90,13 @@ spec:
         ports:
         - name: metrics
           containerPort: 9187
+        {{- if .Values.metrics.customMetrics }}
+        args: ["-extend.query-path", "/conf/custom-metrics.yaml"]
+        volumeMounts:
+          - name: custom-metrics
+            mountPath: /conf
+            readOnly: true
+        {{- end }}
         resources:
 {{ toYaml .Values.metrics.resources | indent 10 }}
 {{- end }}
@@ -100,4 +107,12 @@ spec:
           claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "fullname" . }}{{- end }}
       {{- else }}
         emptyDir: {}
-      {{- end -}}
+      {{- end }}
+      {{- if and .Values.metrics.enabled .Values.metrics.customMetrics }}
+      - name: custom-metrics
+        secret:
+          secretName: {{ template "fullname" . }}
+          items:
+            - key: custom-metrics.yaml
+              path: custom-metrics.yaml
+      {{- end }}
