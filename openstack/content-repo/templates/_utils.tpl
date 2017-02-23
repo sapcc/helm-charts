@@ -13,7 +13,6 @@ spec:
         - name: secret
           secret:
             secretName: swift-http-import
-            optional: true
       containers:
       - name: swift-http-import
         image: {{$values.global.docker_repo}}/swift-http-import:{{$values.image_version}}
