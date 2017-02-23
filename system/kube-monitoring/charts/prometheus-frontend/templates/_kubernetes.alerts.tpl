@@ -9,7 +9,7 @@ ALERT KubernetesKubeletDown
   }
   ANNOTATIONS {
     summary = "A Kubelet is DOWN",
-    description = "Kublet on {{ $labels.instance }} is DOWN.",
+    description = "Kublet on {{`{{$labels.instance}}`}} is DOWN.",
   }
 
 
@@ -48,11 +48,11 @@ ALERT KubernetesKubeletTooManyPods
     service = "k8s",
     severity = "warning",
     context = "kubelet",
-    dashboard = "kubernetes-node?var-server={{$labels.instance}}"
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
     summary = "Kubelet is close to pod limit",
-    description = "Kubelet {{$labels.instance}} is running {{$value}} pods, close to the limit of 250",
+    description = "Kubelet {{`{{$labels.instance}}`}} is running {{`{{$value}}`}} pods, close to the limit of 250",
   }
 
 ALERT KubernetesKubeletFull
@@ -62,11 +62,11 @@ ALERT KubernetesKubeletFull
     service = "k8s",
     severity = "critical",
     context = "kubelet",
-    dashboard = "kubernetes-node?var-server={{$labels.instance}}"
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
     summary = "Kubelet is full",
-    description = "Kubelet {{$labels.instance}} is running {{$value}} pods. That's too much!",
+    description = "Kubelet {{`{{$labels.instance}}`}} is running {{`{{$value}}`}} pods. That's too much!",
   }
 
 ALERT KubernetesNodeNotReady
@@ -76,14 +76,14 @@ ALERT KubernetesNodeNotReady
     service = "k8s",
     severity = "critical",
     context = "node",
-    dashboard = "kubernetes-node?var-server={{$labels.node}}",
+    dashboard = "kubernetes-node?var-server={{`{{$labels.node}}`}}",
     {{ if .Values.ops_docu_url -}}
         playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_not_ready.html",
     {{- end }}
   }
   ANNOTATIONS {
     summary = "Node status is NotReady",
-    description = "Node {{ $labels.node }} is NotReady for more than an hour",
+    description = "Node {{`{{$labels.node}}`}} is NotReady for more than an hour",
   }
 
 ALERT KubernetesNodeManyNotReady
@@ -97,7 +97,7 @@ ALERT KubernetesNodeManyNotReady
   }
   ANNOTATIONS {
     summary = "Many Nodes are NotReady",
-    description = "Many ({{ $value }}) nodes are NotReady for more than an hour.",
+    description = "Many ({{`{{$value}}`}}) nodes are NotReady for more than an hour.",
   }
 
 ALERT KubernetesNodeNotReady
@@ -107,11 +107,11 @@ ALERT KubernetesNodeNotReady
     service = "k8s",
     severity = "warning",
     context = "node",
-    dashboard = "kubernetes-node?var-server={{$labels.node}}"
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
     summary = "Node Readyness is flapping",
-    description = "Node {{ $labels.node }} is flapping between Ready and NotReady",
+    description = "Node {{`{{$labels.node}}`}} is flapping between Ready and NotReady",
   }
 
 
@@ -139,7 +139,7 @@ ALERT KubernetesPodRestartingTooMuch
   }
   ANNOTATIONS {
     summary = "Pod is in a restart loop",
-    description = "Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting constantly",
+    description = "Pod {{`{{$labels.namespace}}`}}/{{`{{$labels.pod}}`}} is restarting constantly",
   }
 
 
@@ -150,11 +150,11 @@ ALERT KubernetesDockerHangs
     service = "k8s",
     severity = "warning",
     context = "docker",
-    dashboard = "kubernetes-node?var-server={{$labels.node}}"
+    dashboard = "kubernetes-node?var-server={{`{{$labels.node}}`}}"
   }
   ANNOTATIONS {
     summary = "Docker hangs!",
-    description = "Docker on {{ $labels.node }} is hanging",
+    description = "Docker on {{`{{$labels.node}}`}} is hanging",
   }
 
 ALERT KubernetesApiServerDown
@@ -164,11 +164,11 @@ ALERT KubernetesApiServerDown
     service = "k8s",
     severity = "warning",
     context = "apiserver",
-    dashboard = "kubernetes-kubelet?var-node={{$labels.instance}}"
+    dashboard = "kubernetes-kubelet?var-node={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
     summary = "An ApiServer is DOWN",
-    description = "ApiServer on {{ $labels.instance }} is DOWN.",
+    description = "ApiServer on {{`{{$labels.instance}}`}} is DOWN.",
   }
 
 ALERT KubernetesApiServerAllDown
@@ -213,7 +213,7 @@ ALERT KubernetesApiServerLatency
   }
   ANNOTATIONS {
     summary = "Kubernetes apiserver latency is high",
-    description = "Latency for {{ $labels.verb }} is higher than 2s.",
+    description = "Latency for {{`{{$labels.verb}}`}} is higher than 2s.",
   }
 
 ALERT KubernetesApiServerEtcdAccessLatency
@@ -301,11 +301,11 @@ ALERT KubernetesTooManyOpenFiles
     service = "k8s",
     severity = "warning",
     context = "system",
-    dashboard = "kubernetes-node?var-server={{$labels.instance}}"
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
     summary = "Too many open file descriptors",
-    description = "{{ $labels.job }} on {{ $labels.instance }} is using {{ $value }}% of the available file/socket descriptors.",
+    description = "{{`{{$labels.job}}`}} on {{`{{$labels.instance}}`}} is using {{`{{$value}}`}}% of the available file/socket descriptors.",
   }
 
 ALERT KubernetesTooManyOpenFiles
@@ -315,9 +315,9 @@ ALERT KubernetesTooManyOpenFiles
     service = "k8s",
     severity = "critical",
     context = "system",
-    dashboard = "kubernetes-node?var-server={{$labels.instance}}"
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
     summary = "Too many open file descriptors",
-    description = "{{ $labels.job }} on {{ $labels.instance }} is using {{ $value }}% of the available file/socket descriptors.",
+    description = "{{`{{$labels.job}}`}} on {{`{{$labels.instance}}`}} is using {{`{{$value}}`}}% of the available file/socket descriptors.",
   }

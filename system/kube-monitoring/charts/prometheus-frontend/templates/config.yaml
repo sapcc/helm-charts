@@ -5,13 +5,16 @@ metadata:
 
 data:
   {{- $files := .Files }}
-  {{ range tuple "ca.crt" "etcd.alerts" "kubernetes.alerts" "dns.alerts" "cluster.rules" "aggregation.rules" }}
+  {{ range tuple "ca.crt" "etcd.alerts" "dns.alerts" "cluster.rules" "aggregation.rules" }}
   {{ . }}: |
 {{ $files.Get . | indent 4 }}
   {{- end }}
   # node.alerts has template syntax in it that needs to be interpolated
   node.alerts: |
 {{ include "kube-monitoring/charts/prometheus-frontend/templates/_node.alerts.tpl" . | indent 4 }}
+  # kubernetes.alerts has template syntax in it that needs to be interpolated
+  kubernetes.alerts: |
+{{ include "kube-monitoring/charts/prometheus-frontend/templates/_kubernetes.alerts.tpl" . | indent 4 }}
 
   prometheus.yaml: |
     rule_files:
