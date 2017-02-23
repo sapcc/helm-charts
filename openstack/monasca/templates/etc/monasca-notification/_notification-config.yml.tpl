@@ -82,10 +82,7 @@ notification_types:
                             "color": "{{`{{ {'ALARM': '#d60000', 'OK': '#36a64f', 'UNDETERMINED': '#fff000'}[state] }}`}}",
                             "title": "{{`{{ {'ALARM': '*Alarm triggered*', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }} for {{alarm_name}}`}} in {{.Values.cluster_region}}",
                             "title_link": "https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={{`{{alarm_id}}`}}",
-                            "text": "{{`{% if state == 'ALARM' %}:bomb:{{alarm_description}}{% elif state == 'OK' %}:white_check_mark: Resolved: {{alarm_description}}{% else %}:grey_question:{{alarm_description}}{% endif %}`}}",
-                            {{`{% if state == 'ALARM' %}
-                            *Severity*: {{severity}}
-                            {% endif %}`}}
+                            "text": "{{`{% if state == 'ALARM' %}:bomb:{{alarm_description}}{% elif state == 'OK' %}:white_check_mark: Resolved: {{alarm_description}}{% else %}:grey_question:{{alarm_description}}{% endif %}`}}\n{{`{% if state == 'ALARM' %}*Severity*: {{severity}}{% endif %}`}}
                             "mrkdwn_in": ["text", "title", "fallback"]
                         }
                     ]
