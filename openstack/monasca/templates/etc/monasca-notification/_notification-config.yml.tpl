@@ -45,8 +45,8 @@ notification_types:
                 </table>
                 <h2>Alarm <a href="https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={{`{{alarm_id}}`}}">{{`{{alarm_name}}`}}</a> changed to status <span style="color: {{`{{ {'ALARM': '#d60000', 'OK': '#36a64f', 'UNDETERMINED': '#fff000'}[state] }}`}};"><b>{{`{{state}}`}}</b></span></h2>
                 <p>{{`{{alarm_description}}`}}</p>
-                <p>Additional Information:</p>
-                <table>
+                <p><h2>Additional Information:</h2></p>
+                <table cellspacing="10pt">
                 <tbody>
                 <tr>
                 <td style="text-align: left;"><strong>Status</strong></td>
@@ -58,7 +58,7 @@ notification_types:
                 <td style="text-align: left;"><strong>Severity</strong></td>
                 <td>{{`{{severity}}`}}</td>
                 <td><strong>Timestamp</strong></td>
-                <td>{{`{{alarm_timestamp}}`}}</td>
+                <td>{{`{{alarm_timestamp_utc}}`}}</td>
                 </tr>
                 </tbody>
                 </table>
@@ -80,9 +80,9 @@ notification_types:
                         {
                             "fallback": "{{`{{alarm_description}}`}}",
                             "color": "{{`{{ {'ALARM': '#d60000', 'OK': '#36a64f', 'UNDETERMINED': '#fff000'}[state] }}`}}",
-                            "title": "{{`{{ {'ALARM': '*Alarm triggered*', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }} for {{alarm_name}}`}} in {{.Values.cluster_region}}",
+                            "title": "{{`{{ {'ALARM': '*Alarm triggered*', 'OK': 'Alarm cleared', 'UNDETERMINED':'Missing alarm data'}[state] }} for {{alarm_name}}`}} in {{.Values.cluster_region}} at {{`{{alarm_timestamp_utc}}`}}",
                             "title_link": "https://dashboard.{{.Values.cluster_region}}.cloud.sap/ccadmin/master/monitoring/alarms?overlay={{`{{alarm_id}}`}}",
-                            "text": "{{`{% if state == 'ALARM' %}:bomb:{{alarm_description}}{% elif state == 'OK' %}:white_check_mark: Resolved: {{alarm_description}}{% else %}:grey_question:{{alarm_description}}{% endif %}`}}\n{{`{% if state == 'ALARM' %}*Severity*: {{severity}}{% endif %}`}}
+                            "text": "{{`{% if state == 'ALARM' %}:bomb:{{alarm_description}}{% elif state == 'OK' %}:white_check_mark: Resolved: {{alarm_description}}{% else %}:grey_question:{{alarm_description}}{% endif %}`}}\n{{`{% if state == 'ALARM' %}*Severity*: {{severity}}{% endif %}`}}",
                             "mrkdwn_in": ["text", "title", "fallback"]
                         }
                     ]
