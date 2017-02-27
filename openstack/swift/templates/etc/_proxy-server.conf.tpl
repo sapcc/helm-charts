@@ -1,3 +1,7 @@
+{{- define "proxy-server.conf" -}}
+{{- $cluster := index . 0 -}}
+{{- $context := index . 1 -}}
+{{- $release := index . 2 -}}
 [DEFAULT]
 bind_port = 8080
 # NOTE: value for prod, was 4 in staging before
@@ -12,7 +16,7 @@ log_statsd_port = 9125
 log_statsd_default_sample_rate = 1.0
 log_statsd_sample_rate_factor = 1.0
 log_statsd_metric_prefix = swift
-{{ if .Values.debug -}}
+{{ if $context.debug -}}
 log_level = DEBUG
 {{- else -}}
 log_level = INFO
@@ -31,7 +35,7 @@ node_timeout = 60
 recoverable_node_timeout = 10
 conn_timeout = 0.5
 sorting_method = shuffle
-{{ if .Values.debug -}}
+{{ if $context.debug -}}
 set log_level = DEBUG
 {{- end }}
 
@@ -41,7 +45,7 @@ disable_path = /etc/swift/healthcheck/proxy.disabled
 
 [filter:cache]
 use = egg:swift#memcache
-memcache_servers = memcached.{{.Release.Namespace}}.svc:11211
+memcache_servers = memcached.{{$release.Namespace}}.svc:11211
 memcache_max_connections = 10
 
 [filter:catch_errors]
@@ -74,7 +78,7 @@ is_admin = false
 cache = swift.cache
 reseller_admin_role = swiftreseller
 default_domain_id = default
-{{ if .Values.debug -}}
+{{ if $context.debug -}}
 set log_level = DEBUG
 {{- end }}
 allow_overrides = true
@@ -85,17 +89,17 @@ delay_auth_decision = true
 include_service_catalog = false
 auth_plugin = v3password
 auth_version = 3
-auth_uri = {{.Values.keystone_auth_uri}}
-auth_url = {{.Values.keystone_auth_url}}
+auth_uri = {{$cluster.keystone_auth_uri}}
+auth_url = {{$cluster.keystone_auth_url}}
 insecure = false
 cache = swift.cache
-region_name = {{.Values.global.region}}
-user_domain_name = {{.Values.swift_service_user_domain}}
-username = {{.Values.swift_service_user}}
-password = {{.Values.swift_service_password}}
-project_domain_name = {{.Values.swift_service_project_domain}}
-project_name = {{.Values.swift_service_project}}
-{{ if .Values.debug -}}
+region_name = {{$context.global.region}}
+user_domain_name = {{$cluster.swift_service_user_domain}}
+username = {{$cluster.swift_service_user}}
+password = {{$cluster.swift_service_password}}
+project_domain_name = {{$cluster.swift_service_project_domain}}
+project_name = {{$cluster.swift_service_project}}
+{{ if $context.debug -}}
 set log_level = DEBUG
 {{- end }}
 
@@ -113,14 +117,14 @@ container_listing_ratelimit_100 = 100
 [filter:cname_lookup]
 use = egg:swift#cname_lookup
 lookup_depth = 2
-storage_domain = {{.Values.cname_lookup_storage_domain}}
-storage_host = {{.Values.cname_lookup_storage_host}}
+storage_domain = {{$cluster.cname_lookup_storage_domain}}
+storage_host = {{$cluster.cname_lookup_storage_host}}
 
 [filter:domain_remap]
 use = egg:swift#domain_remap
 path_root = v1
 reseller_prefixes = AUTH
-storage_domain = {{ include "swift_endpoint_host" . }}
+storage_domain = {{tuple $cluster $context | include "swift_endpoint_host"}}
 
 [filter:versioned_writes]
 use = egg:swift#versioned_writes
@@ -152,5 +156,6 @@ use = egg:swift#account_quotas
 #
 # [filter:sentry]
 # use = egg:ops-middleware#sentry
-# dsn = {{.Values.sentry_dsn}}
+# dsn = {{$cluster.sentry_dsn}}
 # level = ERROR
+{{end}}

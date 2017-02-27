@@ -1,40 +1,45 @@
+{{- range $index, $cluster := .Values.clusters }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: swift-proxy
+  name: swift-proxy-{{$cluster.name}}
   namespace: swift
   labels:
     system: openstack
     component: objectstore
-
+    os-cluster: {{$cluster.name}}
 spec:
   revisionHistoryLimit: 5
-  replicas: 2
+  replicas: {{$cluster.replicas}}
   strategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      component: swift-proxy
+      component: swift-proxy-{{$cluster.name}}
   template:
     metadata:
       labels:
-        component: swift-proxy
+        component: swift-proxy-{{$cluster.name}}
       annotations:
         #TODO checksum for rings - when we go to HELM
         checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
+        checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" . | sha256sum }}
         checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" . | sha256sum }}
     spec:
       volumes:
         - name: tls-secret
           secret:
-            secretName: tls-swift
+            secretName: tls-swift-{{$cluster.name}}
         - name: swift-bin
           configMap:
             name: swift-bin
         - name: swift-etc
           configMap:
             name: swift-etc
+        - name: swift-etc-cluster
+          configMap:
+            name: swift-etc-{{$cluster.name}}
         - name: swift-account-ring
           configMap:
             name: swift-account-ring
@@ -46,7 +51,7 @@ spec:
             name: swift-object-ring
       containers:
         - name: proxy
-          image: {{.Values.global.docker_repo}}/ubuntu-source-swift-proxy-server-m3:{{.Values.image_version_swift_proxy}}
+          image: {{$.Values.global.docker_repo}}/ubuntu-source-swift-proxy-server-m3:{{$.Values.image_version_swift_proxy}}
           command:
             - /usr/bin/dumb-init
           args:
@@ -61,6 +66,8 @@ spec:
               name: swift-bin
             - mountPath: /swift-etc
               name: swift-etc
+            - mountPath: /swift-etc-cluster
+              name: swift-etc-cluster
             - mountPath: /swift-rings/account
               name: swift-account-ring
             - mountPath: /swift-rings/container
@@ -68,7 +75,7 @@ spec:
             - mountPath: /swift-rings/object
               name: swift-object-ring
         - name: nginx
-          image: nginx:{{.Values.image_version_auxiliary_nginx}}
+          image: nginx:{{$.Values.image_version_auxiliary_nginx}}
           command:
             - /bin/sh
           args:
@@ -78,21 +85,23 @@ spec:
               name: swift-bin
             - mountPath: /swift-etc
               name: swift-etc
+            - mountPath: /swift-etc-cluster
+              name: swift-etc-cluster
             - mountPath: /tls-secret
               name: tls-secret
           livenessProbe:
             httpGet:
               path: /healthcheck
-              port: {{.Values.proxy_public_port}}
+              port: {{$cluster.proxy_public_port}}
               scheme: HTTPS
               httpHeaders:
                 - name: Host
-                  value: {{ include "swift_endpoint_host" . }}
+                  value: {{tuple $cluster $.Values | include "swift_endpoint_host"}}
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 10
         - name: collector
-          image: {{.Values.global.docker_repo}}/ubuntu-source-swift-proxy-server-m3:{{.Values.image_version_swift_proxy}}
+          image: {{$.Values.global.docker_repo}}/ubuntu-source-swift-proxy-server-m3:{{$.Values.image_version_swift_proxy}}
           command:
             - /usr/bin/dumb-init
           args:
@@ -120,7 +129,7 @@ spec:
             - mountPath: /swift-rings/object
               name: swift-object-ring
         - name: statsd
-          image: prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
+          image: prom/statsd-exporter:{{$.Values.image_version_auxiliary_statsd_exporter}}
           args: [ -statsd.mapping-config=/swift-etc/statsd-exporter.conf ]
           ports:
             - name: statsd
@@ -131,3 +140,5 @@ spec:
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc
+---
+{{end}}

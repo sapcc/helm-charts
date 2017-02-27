@@ -34,7 +34,12 @@ mkdir -p /etc/swift
 function get_swift_configs {
     # copy configuration files as stated in arg list
     for file in swift.conf "$@"; do
-        cp /swift-etc/${file} /etc/swift
+        src=/swift-etc
+        if [ -r /swift-etc-cluster/${file} ]; then
+          # Cluster specific one have precedence
+          src=/swift-etc-cluster
+        fi
+        cp ${src}/${file} /etc/swift
         chown swift:swift /etc/swift/${file}
     done
 

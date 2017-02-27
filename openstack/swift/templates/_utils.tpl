@@ -1,9 +1,7 @@
 {{- define "swift_endpoint_host" -}}
-    {{- if .Values.proxy_host -}}
-        {{.Values.proxy_host}}
-    {{- else -}}
-        objectstore.{{.Values.global.region}}.{{.Values.global.domain}}
-    {{- end -}}
+{{- $cluster := index . 0 -}}
+{{- $context := index . 1 -}}
+{{$cluster.endpoint_host}}.{{$context.global.region}}.{{$context.global.domain}}
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}

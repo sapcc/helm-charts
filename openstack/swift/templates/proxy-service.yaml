@@ -1,22 +1,25 @@
+{{- range $index, $cluster := .Values.clusters }}
 kind: Service
 apiVersion: v1
 metadata:
-  name: swift-proxy
+  name: swift-proxy-{{$cluster.name}}
   namespace: swift
   labels:
     system: openstack
     component: objectstore
-{{ if .Values.enable_statsd }}
+    os-cluster: {{$cluster.name}}
+{{ if $.Values.enable_statsd }}
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9102"
 {{ end }}
-
 spec:
   selector:
-    component: swift-proxy
+    component: swift-proxy-{{$cluster.name}}
   ports:
     - name: api
-      port: {{.Values.proxy_public_port}}
+      port: {{$cluster.proxy_public_port}}
   externalIPs:
-    - {{.Values.proxy_public_ip}}
+    - {{$cluster.proxy_public_ip}}
+---
+{{end}}

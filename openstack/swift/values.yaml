@@ -21,27 +21,28 @@ image_version_auxiliary_statsd_exporter: '0.3.0'
 # shared secrets and credentials
 hash_path_prefix: DEFINED_IN_REGION_CHART
 hash_path_suffix: DEFINED_IN_REGION_CHART
-keystone_auth_uri: DEFINED_IN_REGION_CHART
-keystone_auth_url: DEFINED_IN_REGION_CHART
-swift_service_user: swift
-swift_service_user_domain: Default
-swift_service_project: service
-swift_service_project_domain: Default
-swift_service_password: DEFINED_IN_REGION_CHART
 
-# account-caretaker only
-dashboard_service_password: DEFINED_IN_REGION_CHART
-
-# account-caretaker and health-statsd only
-cc3test_admin_password: DEFINED_IN_REGION_CHART
-
-# proxy only
-proxy_public_ip: DEFINED_IN_REGION_CHART
-proxy_public_port: DEFINED_IN_REGION_CHART
-proxy_host: "" # default value: "objectstore.{{Values.global.region}}.{{Values.global.domain}}"
-cname_lookup_storage_domain: DEFINED_IN_REGION_CHART
-cname_lookup_storage_host: DEFINED_IN_REGION_CHART
-sentry_dsn: DEFINED_IN_REGION_CHART
+# If the swift cluster is shared across multiple openstack clusters, one can
+# start multiple proxy deployments connecting to the different keystone backends
+clusters:
+  - name: DEFINED_IN_REGION_CHART
+    endpoint_host: DEFINED_IN_REGION_CHART
+    proxy_public_ip: DEFINED_IN_REGION_CHART
+    proxy_public_port: DEFINED_IN_REGION_CHART
+    keystone_auth_uri: DEFINED_IN_REGION_CHART
+    keystone_auth_url: DEFINED_IN_REGION_CHART
+    swift_service_user: swift
+    swift_service_user_domain: Default
+    swift_service_project: service
+    swift_service_project_domain: Default
+    swift_service_password: DEFINED_IN_REGION_CHART
+    cname_lookup_storage_domain: DEFINED_IN_REGION_CHART
+    cname_lookup_storage_host: DEFINED_IN_REGION_CHART
+    sentry_dsn: DEFINED_IN_REGION_CHART
+    replicas: 2
+    # TLS certificates (TODO: same reasoning as for rings; figure out a better way)
+    tls_key: "" # DEFINED_IN_REGION_CHART
+    tls_crt: "" # DEFINED_IN_REGION_CHART
 
 # rings (TODO: having the rings in here is insane, but --values is currently
 # the only way to supply region-specific data; figure out a better way)
@@ -49,16 +50,20 @@ account_ring_base64: DEFINED_IN_REGION_CHART
 container_ring_base64: DEFINED_IN_REGION_CHART
 object_ring_base64: DEFINED_IN_REGION_CHART
 
-# TLS certificates (TODO: same reasoning as above; figure out a better way)
-tls_key: "" # DEFINED_IN_REGION_CHART
-tls_crt: "" # DEFINED_IN_REGION_CHART
-
 # temporarily required to avoid mixing of statsd metrics from multiple clusters
 # in the same region (TODO: remove when legacy systems have been migrated)
 enable_statsd: true
 
+# health check only
+dispersion_auth_url: DEFINED_IN_REGION_CHART
+
+# account-caretaker and health-statsd only
+cc3test_admin_password: DEFINED_IN_REGION_CHART
+
 # Deploy swift-account-caretaker
 enable_caretaker: true
+# account-caretaker only
+dashboard_service_password: DEFINED_IN_REGION_CHART
 # Auth url used for caretaker if different than in swift env
 caretaker_ks_auth_url: ""
 # Auth URL for scraping domains and urls
