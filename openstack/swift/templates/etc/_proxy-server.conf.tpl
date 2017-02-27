@@ -23,7 +23,7 @@ log_level = INFO
 {{- end }}
 
 [pipeline:main]
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 # pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap statsd container_sync bulk tempurl ratelimit authtoken keystone staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
@@ -102,6 +102,9 @@ project_name = {{$cluster.swift_service_project}}
 {{ if $context.debug -}}
 set log_level = DEBUG
 {{- end }}
+
+[filter:sysmeta-domain-override]
+use = egg:sapcc-swift-addons#sysmeta_domain_override
 
 [filter:ratelimit]
 use = egg:swift#ratelimit
