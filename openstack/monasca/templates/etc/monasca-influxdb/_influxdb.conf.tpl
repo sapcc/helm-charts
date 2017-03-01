@@ -1,29 +1,12 @@
 # Welcome to the InfluxDB configuration file.
 
-<<<<<<< HEAD
 reporting-disabled = false
-=======
-# If hostname (on the OS) doesn't return a name that can be resolved by the other
-# systems in the cluster, you'll have to set the hostname to an IP or something
-# that can be resolved here.
-# hostname = ""
-bind-address = ":8088"
-reporting-disabled = true
-hostname = "localhost"
->>>>>>> cleanup influxdb 0.10.3 config
 
 [meta]
   bind-address = ":8088"
   dir = "/var/lib/influxdb/meta"
   retention-autocreate = true
-<<<<<<< HEAD
   logging-enabled = true
-=======
-  # Monasca: disabled
-  logging-enabled = false
-  pprof-enabled = false
-  lease-duration = "1m0s"
->>>>>>> cleanup influxdb 0.10.3 config
 
 [data]
   dir = "/var/lib/influxdb/data"
@@ -32,7 +15,6 @@ hostname = "localhost"
   query-log-enabled = false
   cache-max-memory-size = 1073741824
   cache-snapshot-memory-size = 26214400
-<<<<<<< HEAD
   cache-snapshot-write-cold-duration = "10m0s"
   compact-full-write-cold-duration = "4h0m0s"
   max-series-per-database = 1000000
@@ -47,16 +29,6 @@ hostname = "localhost"
   max-select-point = 0
   max-select-series = 0
   max-select-buckets = 0
-=======
-  cache-snapshot-write-cold-duration = "1h0m0s"
-  compact-full-write-cold-duration = "24h0m0s"
-  max-points-per-block = 0
-  data-logging-enabled = false
-
-[cluster]
-  shard-writer-timeout = "10s"
-  write-timeout = "5s"
->>>>>>> cleanup influxdb 0.10.3 config
 
 [retention]
   enabled = true
@@ -67,13 +39,9 @@ hostname = "localhost"
   check-interval = "10m0s"
   advance-period = "30m0s"
 
-[authentication]
-  enabled = true
-
 [admin]
   # Monasca: enable to permit database setup
   enabled = true
-<<<<<<< HEAD
   bind-address = ":{{.Values.monasca_influxdb_port_admin}}"
   https-enabled = false
   https-certificate = "/etc/ssl/influxdb.pem"
@@ -91,15 +59,6 @@ hostname = "localhost"
   ca-certs = ""
   write-concurrency = 40
   write-buffer-size = 1000
-=======
-  port = {{.Values.monasca_influxdb_port_admin}}
-  https_enabled = false
->>>>>>> cleanup influxdb 0.10.3 config
-
-[monitoring]
-  enabled = true
-  store-database = "_internal"
-  store-interval = "1m"
 
 [http]
   enabled = true
@@ -120,7 +79,6 @@ hostname = "localhost"
   unix-socket-enabled = false
   bind-socket = "/var/run/influxdb.sock"
 
-<<<<<<< HEAD
 [[graphite]]
   enabled = false
   bind-address = ":2003"
@@ -176,16 +134,3 @@ hostname = "localhost"
   log-enabled = false
   enabled = true
   run-interval = "1s"
-=======
-[logging]
-  # logging level can be one of "debug", "info", "warn" or "error"
-  level  = "{{.Values.monasca_influxdb_loglevel}}"
-  file   = "stdout"         # Monsoon: log to stdout for Docker
-  write-tracing = false      # If true, enables detailed logging of the write system (NOT USABLE FOR PRODUCTION).
-  http-access = false        # If true, logs each HTTP access to the system.
-  raft-tracing = false
-
-# permit backup (used for updates of nodes)
-[snapshot]
-  enabled = true # Disabled by default if not set.
->>>>>>> cleanup influxdb 0.10.3 config
