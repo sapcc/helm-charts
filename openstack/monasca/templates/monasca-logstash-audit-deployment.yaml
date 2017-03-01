@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: monasca-logstash-persister
+  name: monasca-logstash-audit
   namespace: monasca
   labels:
     system: openstack
@@ -19,7 +19,7 @@ spec:
   template:
     metadata:
       labels:
-        component: monasca-logstash-persister
+        component: monasca-logstash-audit
       annotations:
         checksum/monasca-templates-monasca-logstash-etc-configmap.yaml: {{ include "monasca/templates/monasca-logstash-etc-configmap.yaml" . | sha256sum }}
     spec:
@@ -30,7 +30,7 @@ spec:
           configMap:
             name: monasca-logstash-etc
       containers:
-        - name: monasca-logstash-persister
+        - name: monasca-logstash-audit
           image: {{.Values.docker_repo}}/monasca-logstash:{{.Values.image_version_monasca_logstash}}
           imagePullPolicy: IfNotPresent
           command:
@@ -39,7 +39,7 @@ spec:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/logstash/bin/logstash -f /monasca-etc/logstash-persister-monasca-log-persister.conf --path.settings /monasca-etc"
+              value: "/logstash/bin/logstash -f /monasca-etc/logstash-audit-monasca-log-audit.conf"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:

@@ -8,7 +8,7 @@ set -e
 function process_config {
 
   export KIBANA_VERSION=$(cat /KIBANA_VERSION.env)
-  export KIBANA_CONF_FILE="/opt/kibana-${KIBANA_VERSION}-linux-x64/config/kibana.yml"
+  export KIBANA_CONF_FILE="/opt/kibana/config/kibana.yml"
 
   cp /monasca-etc/kibana-kibana.yml ${KIBANA_CONF_FILE}
 
@@ -24,15 +24,9 @@ function start_application {
       sed -i "s;^kibana_index:.*;kibana_index: ${KIBANA_INDEX};" "${KIBANA_CONF_FILE}"
   fi
 
-  #wget https://github.com/FujitsuEnablingSoftwareTechnologyGmbH/fts-keystone/archive/master.zip -O /tmp/master.zip && unzip /tmp/master.zip -d /opt/kibana-${KIBANA_VERSION}-linux-x64/installedPlugins/
-  #wget https://github.com/hmalphettes/kibana-auth-plugin/archive/master.zip -O /tmp/master.zip && unzip /tmp/master.zip -d /opt/kibana-${KIBANA_VERSION}-linux-x64/installedPlugins/
-
-  #npm i hapi-auth-cookie
-
-  #export LOCAL_AUTH_LOGINS=kibana:kibana
 
   echo "Starting Kibana"
-  exec /opt/kibana-${KIBANA_VERSION}-linux-x64/bin/kibana
+  exec /opt/kibana/bin/kibana
 
 }
 
