@@ -1,9 +1,9 @@
 # Welcome to the InfluxDB configuration file.
 
 reporting-disabled = false
-bind-address = ":8088"
 
 [meta]
+  bind-address = ":8088"
   dir = "/var/lib/influxdb/meta"
   retention-autocreate = true
   logging-enabled = true
@@ -31,7 +31,7 @@ bind-address = ":8088"
   max-select-buckets = 0
 
 [retention]
-  enabled = tue
+  enabled = true
   check-inteval = "30m0s"
 
 [shard-precreation]
@@ -42,7 +42,7 @@ bind-address = ":8088"
 [admin]
   # Monasca: enable to permit database setup
   enabled = true
-  bind-address = ":{{.Values.monasca_influxdb_port_internal}}"
+  bind-address = ":{{.Values.monasca_influxdb_port_admin}}"
   https-enabled = false
   https-certificate = "/etc/ssl/influxdb.pem"
 

@@ -30,7 +30,7 @@ spec:
                 "volumeMounts": [
                     {
                         "name": "datadir",
-                        "mountPath": "/var/opt/influxdb"
+                        "mountPath": "/var/lib/influxdb"
                     },
                     {
                         "name": "monasca-bin",
@@ -64,7 +64,7 @@ spec:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "chpst -L /var/opt/influxdb/container.lock /usr/bin/influxd -config=/monasca-etc/influxdb-influxdb.conf"
+              value: "chpst -L /var/lib/influxdb/container.lock /usr/bin/influxd -config=/monasca-etc/influxdb-influxdb.conf"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -76,7 +76,7 @@ spec:
               containerPort: {{.Values.monasca_influxdb_port_admin}}
           volumeMounts:
             - name: datadir
-              mountPath: /var/opt/influxdb
+              mountPath: /var/lib/influxdb
             - name: monasca-bin
               mountPath: /monasca-bin
             - name: monasca-etc
