@@ -8,22 +8,11 @@ bind-address = ":8088"
 reporting-disabled = true
 hostname = "localhost"
 
-[authentication]
-  enabled = true
-
-
-[logging]
-  # logging level can be one of "debug", "info", "warn" or "error"
-  level  = "{{.Values.monasca_influxdb_loglevel}}"
-  file   = "stdout"         # Monsoon: log to stdout for Docker
-  write-tracing = false      # If true, enables detailed logging of the write system (NOT USABLE FOR PRODUCTION).
-  http-access = false        # If true, logs each HTTP access to the system.
-  raft-tracing = false
-
 [meta]
   dir = "/var/opt/influxdb/meta"
   retention-autocreate = true
-  logging-enabled =true
+  # Monasca: disabled
+  logging-enabled = false
   pprof-enabled = false
   lease-duration = "1m0s"
 
@@ -40,10 +29,6 @@ hostname = "localhost"
   max-points-per-block = 0
   data-logging-enabled = false
 
-# permit backup (used for updates of nodes)
-[snapshot]
-  enabled = true # Disabled by default if not set.
-
 [cluster]
   shard-writer-timeout = "10s"
   write-timeout = "5s"
@@ -52,10 +37,18 @@ hostname = "localhost"
   enabled = true
   check-interval = "30m0s"
 
+[authentication]
+  enabled = true
+
 [admin]
   enabled = true
-  port = 8083
+  port = {{.Values.monasca_influxdb_port_admin}}
   https_enabled = false
+
+[monitoring]
+  enabled = true
+  store-database = "_internal"
+  store-interval = "1m"
 
 [http]
   enabled = true
@@ -67,7 +60,14 @@ hostname = "localhost"
   https-enabled = false
   max-row-limit = 10000
 
-[monitoring]
-  enabled = true 
-  store-database = "_internal"
-  store-interval = "1m"
+[logging]
+  # logging level can be one of "debug", "info", "warn" or "error"
+  level  = "{{.Values.monasca_influxdb_loglevel}}"
+  file   = "stdout"         # Monsoon: log to stdout for Docker
+  write-tracing = false      # If true, enables detailed logging of the write system (NOT USABLE FOR PRODUCTION).
+  http-access = false        # If true, logs each HTTP access to the system.
+  raft-tracing = false
+
+# permit backup (used for updates of nodes)
+[snapshot]
+  enabled = true # Disabled by default if not set.
