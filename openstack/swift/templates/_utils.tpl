@@ -14,6 +14,19 @@ prometheus.io/port: "9102"
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
+{{- define "swift_conf_annotations" }}
+checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
+checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" . | sha256sum }}
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_ring_annotations" }}
+checksum/account.ring: {{ include "swift/templates/account-ring.yaml" . | sha256sum }}
+checksum/container.ring: {{ include "swift/templates/container-ring.yaml" . | sha256sum }}
+checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256sum }}
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_volumes" }}
 - name: swift-bin
   configMap:
