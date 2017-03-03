@@ -17,5 +17,5 @@ sinks:
     - name: swift_meter_sink
       transformers:
       publishers:
-          - notifier://
+          - {{.Values.ceilometer_target | replace "://" "://_user_:_pass_@" | replace "_user_" .Values.ceilometer_target_username | replace "_pass_" .Values.ceilometer_target_password | replace "://:@" "://" }}?timeout={{.Values.ceilometer_timeout}}&verify_ssl={{.Values.ceilometer_verify_ssl}}{{if ne .Values.ceilometer_target_clientcert "" }}&clientcert={{.Values.ceilometer_target_clientcert}}{{if ne .Values.ceilometer_target_clientkey "" }}&clientkey={{.Values.ceilometer_target_clientkey}}{{end}}{{end}}
           - file:///tmp/swift-meters.log?max_bytes=10000000&backup_count=5
