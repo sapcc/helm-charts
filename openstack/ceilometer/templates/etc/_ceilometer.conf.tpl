@@ -4,7 +4,7 @@ rpc_backend = rabbit
 auth_strategy = keystone
 meter_dispatchers = http
 event_dispatchers = http
-default.log.levels = amqp=DEBUG,amqplib=DEBUG,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=DEBUG,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=DEBUG,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=DEBUG,oslo.cache=INFO,dogpile.core.dogpile=INFO,keystoneclient=WARN,ceilometer.agent.manager=DEBUG,kafka=DEBUG,kafka.conn=DEBUG,kafka.client=DEBUG
+default.log.levels = amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=DEBUG,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=DEBUG,oslo.cache=INFO,dogpile.core.dogpile=INFO,keystoneclient=WARN,ceilometer.agent.manager=DEBUG,kafka=DEBUG,kafka.conn=DEBUG,kafka.client=DEBUG,ceilometer.publisher=DEBUG
 
 #[dispatcher_http]
 #target = {{.Values.ceilometer_target}}
@@ -40,7 +40,7 @@ project_domain_name = {{.Values.keystone_service_domain}}
 
 [notification]
 store_events = True
-#messaging_urls = rabbit://{{.Values.ceilometer_rabbitmq_default_user}}:{{.Values.ceilometer_rabbitmq_default_pass}}@ceilometer-rabbitmq:5672/
+messaging_urls = rabbit://{{.Values.ceilometer_rabbitmq_default_user}}:{{.Values.ceilometer_rabbitmq_default_pass}}@ceilometer-rabbitmq:5672/
 messaging_urls = rabbit://{{.Values.rabbitmq_default_user}}:{{.Values.rabbitmq_default_pass}}@{{.Values.rabbitmq_host}}:5672/
 
 [oslo_messaging_rabbit]
