@@ -33,7 +33,7 @@ http {
     types_hash_max_size 2048;
 
     server {
-        listen 443 default_server;
+        listen 443 default_server ssl http2;
         server_name {{tuple $cluster $context | include "swift_endpoint_host"}};
         ssl on;
 

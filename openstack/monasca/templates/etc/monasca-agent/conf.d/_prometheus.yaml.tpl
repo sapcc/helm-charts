@@ -15,6 +15,11 @@ instances:
          resource: resource
          quantile: quantile
       groups:
+         # each group has a unique set of dimensions and a prefix equal to the group name
+         # Prometheus labels are mapped using group-specific dimensions
+         # using statements in the form <monasca-dimension>:<prometheus-label>
+         # regular expressions can be used for the gauges/rates to mark which part of the name should be used
+         # (bind_responses)_total maps the Prometheus name bind_responses_total to a Monasca metric bind_responses
          dns:
              gauges: [ 'bind_up' ]
              rates: [ '(bind_incoming_queries)_total', '(bind_responses)_total' ]
@@ -38,6 +43,11 @@ instances:
              gauges: [ 'up' ]
              dimensions:
                  component: component
+         puma:
+             gauge: [ 'puma_(request_backlog)' ]
+             dimensions:
+                 service: kubernetes_namespace
+                 pod: kubernetes_pod_name
          activedirectory:
              gauges: [ 'ad_(.*_status)' ]
          kubernetes:

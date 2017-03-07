@@ -4,29 +4,25 @@ rpc_backend = rabbit
 auth_strategy = keystone
 meter_dispatchers = http
 event_dispatchers = http
-default.log.levels = amqp=DEBUG,amqplib=DEBUG,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=DEBUG,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=DEBUG,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=DEBUG,oslo.cache=INFO,dogpile.core.dogpile=INFO,keystoneclient=WARN,ceilometer.agent.manager=DEBUG,kafka=DEBUG,kafka.conn=DEBUG,kafka.client=DEBUG
+default.log.levels = amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=DEBUG,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=DEBUG,oslo.cache=INFO,dogpile.core.dogpile=INFO,keystoneclient=WARN,ceilometer.agent.manager=DEBUG,kafka=DEBUG,kafka.conn=DEBUG,kafka.client=DEBUG,ceilometer.publisher=DEBUG
 
-[dispatcher_http]
-#target=https://apache-https/
-target = {{.Values.ceilometer_target}}
-target_username = {{.Values.ceilometer_target_username}}
-target_password = {{.Values.ceilometer_target_password}}
-target_clientcert = {{.Values.ceilometer_target_clientcert}}
-target_clientkey = {{.Values.ceilometer_target_clientkey}}
-#event_target = https://apache-https/
-event_target = {{.Values.ceilometer_event_target}}
-event_target_username = {{.Values.ceilometer_event_target_username}}
-event_target_password = {{.Values.ceilometer_event_target_password}}
-event_target_clientcert = {{.Values.ceilometer_event_target_clientcert}}
-event_target_clientkey = {{.Values.ceilometer_event_target_clientkey}}
-#verify_ssl = True
-verify_ssl = {{.Values.ceilometer_verify_ssl}}
-#timeout = 10
-timeout = {{.Values.ceilometer_timeout}}
+#[dispatcher_http]
+#target = {{.Values.ceilometer_target}}
+#target_username = {{.Values.ceilometer_target_username}}
+#target_password = {{.Values.ceilometer_target_password}}
+#target_clientcert = {{.Values.ceilometer_target_clientcert}}
+#target_clientkey = {{.Values.ceilometer_target_clientkey}}
+#event_target = {{.Values.ceilometer_event_target}}
+#event_target_username = {{.Values.ceilometer_event_target_username}}
+#event_target_password = {{.Values.ceilometer_event_target_password}}
+#event_target_clientcert = {{.Values.ceilometer_event_target_clientcert}}
+#event_target_clientkey = {{.Values.ceilometer_event_target_clientkey}}
+#verify_ssl = {{.Values.ceilometer_verify_ssl}}
+#timeout = {{.Values.ceilometer_timeout}}
 
-[collector]
-requeue_sample_on_dispatcher_error = True
-requeue_event_on_dispatcher_error = True
+#[collector]
+#requeue_sample_on_dispatcher_error = True
+#requeue_event_on_dispatcher_error = True
 
 [oslo_messaging_rabbit]
 rabbit_userid = {{.Values.rabbitmq_default_user}}
