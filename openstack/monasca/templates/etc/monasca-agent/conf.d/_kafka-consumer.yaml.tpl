@@ -13,7 +13,6 @@ instances:
           - alarm-state-transitions
           - metrics
         notification:
-          - alarm-notifications
           - retry-notifications
           - alarm-state-transitions
           - {{.Values.monasca_topics_notifications_periodic_60}}
