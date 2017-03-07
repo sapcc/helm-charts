@@ -1,3 +1,7 @@
+# increase from default 30 sec. to compensate lagging prometheus metrics (reported with original timestamps)
+alarmDelay: 60
+
+# TODO scale this up
 metricSpoutThreads: 2
 metricSpoutTasks: 2
 numWorkerProcesses: 2
