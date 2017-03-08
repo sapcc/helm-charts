@@ -15,7 +15,14 @@ project_domain_name = {{.Values.keystone_service_domain}}
 
 [notification]
 store_events = True
+messaging_urls = rabbit://{{.Values.ceilometer_rabbitmq_default_user}}:{{.Values.ceilometer_rabbitmq_default_pass}}@ceilometer-rabbitmq:5672/
 messaging_urls = rabbit://{{.Values.rabbitmq_default_user}}:{{.Values.rabbitmq_default_pass}}@{{.Values.rabbitmq_host}}:5672/
+
+[oslo_messaging_rabbit]
+# this varible is called rabbitmq and not rabbit like the other two, as the hostname will be built on kubernetes from the component name, which is rabbitmq and not rabbit
+rabbit_host = ceilometer-rabbitmq
+rabbit_userid = {{.Values.ceilometer_rabbitmq_default_user}}
+rabbit_password = {{.Values.ceilometer_rabbitmq_default_pass}}
 
 [publisher]
 telemetry_secret = {{.Values.ceilometer_telemetry_secret}}
