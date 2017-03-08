@@ -90,10 +90,40 @@ spec:
           livenessProbe:
             httpGet:
               path: /debug/vars
-              port: influxdb 
+              port: influxdb
             timeoutSeconds: 30
             initialDelaySeconds: 300
-
+{{- if .Values.backup_enabled }}
+        - image: {{.Values.backup_repository}}:{{.Values.backup_image_version}}
+          name: backup
+          env:
+            - name: MY_POD_NAME
+              value: influxdb-backup-{{.Values.name}}
+            - name: MY_POD_NAMESPACE
+              value: {{.Release.Namespace}}
+            - name: OS_AUTH_URL
+              value: {{.Values.backup_os_auth_url}}
+            - name: OS_AUTH_VERSION
+              value: {{.Values.backup_os_auth_version | quote}}
+            - name: OS_IDENTITY_API_VERSION
+              value: {{.Values.backup_os_identity_api_version | quote}}
+            - name: OS_USERNAME
+              value: {{.Values.backup_os_username}}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{.Values.backup_os_user_domain}}
+            - name: OS_PROJECT_NAME
+              value: {{.Values.backup_os_project_name}}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{.Values.backup_os_project_domain}}
+            - name: OS_REGION_NAME
+              value: {{.Values.backup_os_region_name}}
+            - name: OS_PASSWORD
+              value: {{.Values.backup_os_password | quote}}
+            - name: BACKUP_INFLUXDB_FULL
+              value: {{.Values.backup_influxdb_interval_full | quote}}
+            - name: BACKUP_INFLUXDB_INCR
+              value: {{.Values.backup_influxdb_interval_incr | quote}}
+{{- end }}
   volumeClaimTemplates:
   - metadata:
       name: datadir
