@@ -1,7 +1,7 @@
 input {
   kafka {
         bootstrap_servers => "kafka:{{.Values.monasca_kafka_port_internal}}"
-        topics => ["transformed-log"]
+        topics => ["log"]
         group_id => "logstash-persister"
         client_id => "monasca_log_persister"
         consumer_threads => 12
