@@ -7,15 +7,16 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    component: memcached
 {{- if .Values.metrics.enabled }}
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "{{default 9187 .Values.metrics.port }}"
+    prometheus.io/port: "{{.Values.metrics.port}}"
 {{- end }}
 spec:
   ports:
-  - name: postgresql
-    port: 5432
-    targetPort: postgresql
+  - name: memcache
+    port: {{ default "11211" .Values.memcached.port }}
+    targetPort: memcache
   selector:
     app: {{ template "fullname" . }}

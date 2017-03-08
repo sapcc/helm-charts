@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-etc
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: postgres
+data:
+  postgresql.conf: |
+{{ tuple "etc/_postgresql.conf.tpl" . | include "template" | indent 4 }}
+  pg-hba.conf: |
+{{ tuple "etc/_pg_hba.conf.tpl" . | include "template" | indent 4 }}

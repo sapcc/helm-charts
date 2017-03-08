@@ -1,0 +1,71 @@
+{{- if .Values.services.public.ingress.enabled }}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: tls-{{.Values.services.public.host | replace "." "-" }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+data:
+  tls.crt: {{ .Values.services.public.ingress.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.services.public.ingress.tlsKey | b64enc }}
+---
+{{- end }}
+{{- if .Values.services.admin.ingress.enabled }}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: tls-{{.Values.services.admin.host | replace "." "-" }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+data:
+  tls.crt: {{ .Values.services.admin.ingress.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.services.admin.ingress.tlsKey | b64enc }}
+---
+{{- end }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: keystone-api
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    component: keystone
+    type: api
+spec:
+  tls:
+  {{- if .Values.services.public.ingress.tlsCertificate }}
+     - secretName: tls-{{.Values.services.public.host | replace "." "-" }}
+       hosts: [{{ .Values.services.public.host }}]
+  {{- end }}
+  {{- if .Values.services.admin.ingress.tlsCertificate }}
+     - secretName: tls-{{.Values.services.admin.host | replace "." "-" }}
+       hosts: [{{ .Values.services.admin.host }}]
+  {{- end }}
+
+  rules:
+    - host: {{.Values.services.public.host}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: keystone-api
+            servicePort: 5000
+    - host: {{.Values.services.admin.host}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: keystone-api
+            servicePort: 35357

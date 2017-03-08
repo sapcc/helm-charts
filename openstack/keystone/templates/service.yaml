@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keystone-api
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: api
+{{- if .Values.metrics.enabled }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{.Values.metrics.port}}"
+{{- end }}
+spec:
+  selector:
+    app: {{ template "fullname" . }}
+  type: {{ default "ClusterIP" .Values.services.type }}
+  ports:
+    - name: public
+      protocol: "TCP"
+      port: 5000
+    - name: admin
+      protocol: "TCP"
+      port: 35357
+{{- if .Values.services.externalip }}
+  externalIPs: [
+    {{ .Values.services.externalip | quote }}
+    ]
+{{- end }}

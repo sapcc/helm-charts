@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keystone-bootstrap-job
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+          imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+          command:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "bash /scripts/bootstrap"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: {{ .Release.Name }}-postgresql
+            - name: DEPENDENCY_JOBS
+              value: keystone-migration-job
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/keystone/keystone.conf
+              subPath: keystone.conf
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: conf
+          configMap:
+            name: keystone-etc
+        - name: scripts
+          configMap:
+            name: keystone-bin
