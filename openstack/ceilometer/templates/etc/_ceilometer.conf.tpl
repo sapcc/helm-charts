@@ -2,14 +2,7 @@
 debug = {{.Values.cluster_debug}}
 rpc_backend = rabbit
 auth_strategy = keystone
-meter_dispatchers = http
-event_dispatchers = http
 default.log.levels = amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=DEBUG,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=DEBUG,oslo.cache=INFO,dogpile.core.dogpile=INFO,keystoneclient=WARN,ceilometer.agent.manager=DEBUG,kafka=DEBUG,kafka.conn=DEBUG,kafka.client=DEBUG,ceilometer.publisher=DEBUG
-
-[oslo_messaging_rabbit]
-rabbit_userid = {{.Values.rabbitmq_default_user}}
-rabbit_password = {{.Values.rabbitmq_default_pass}}
-rabbit_host = {{.Values.rabbitmq_host}}
 
 [keystone_authtoken]
 auth_url = {{.Values.keystone_api_endpoint_protocol_internal}}://{{.Values.keystone_api_endpoint_host_internal}}:{{.Values.keystone_api_port_internal}}/v3
@@ -22,14 +15,7 @@ project_domain_name = {{.Values.keystone_service_domain}}
 
 [notification]
 store_events = True
-messaging_urls = rabbit://{{.Values.ceilometer_rabbitmq_default_user}}:{{.Values.ceilometer_rabbitmq_default_pass}}@ceilometer-rabbitmq:5672/
 messaging_urls = rabbit://{{.Values.rabbitmq_default_user}}:{{.Values.rabbitmq_default_pass}}@{{.Values.rabbitmq_host}}:5672/
-
-[oslo_messaging_rabbit]
-# this varible is called rabbitmq and not rabbit like the other two, as the hostname will be built on kubernetes from the component name, which is rabbitmq and not rabbit
-rabbit_host = ceilometer-rabbitmq
-rabbit_userid = {{.Values.ceilometer_rabbitmq_default_user}}
-rabbit_password = {{.Values.ceilometer_rabbitmq_default_pass}}
 
 [publisher]
 telemetry_secret = {{.Values.ceilometer_telemetry_secret}}
