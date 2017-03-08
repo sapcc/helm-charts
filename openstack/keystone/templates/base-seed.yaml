@@ -1,0 +1,86 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: keystone-base-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: seed
+spec:
+  roles:
+  - admin
+  - member
+  - service
+
+  regions:
+  - id: ap
+    description: Asia/Pacific
+  - id: ap-au-1
+    description: Australia - Sydney
+    parent_region_id: ap
+  - id: ap-cn-1
+    description: China - Shanghai
+    parent_region_id: ap
+  - id: eu
+    description: Europe
+  - id: eu-de-1
+    description: Germany - Rot
+    parent_region_id: eu
+  - id: na
+    description: North America
+  - id: na-us-1
+    description: USA - Sterling
+    parent_region_id: na
+  - id: staging
+    description: Staging
+    parent_region_id: eu
+
+  services:
+  - name: keystone
+    type: identity
+    description: Openstack Identity
+
+  domains:
+  - name: Default
+    id: default
+    description: Openstack Internal Domain
+    enabled: true
+    users:
+    - name: admin
+      description: Openstack Cloud Administrator
+      enabled: true
+      roles:
+      - domain: Default
+        role: admin
+      - project: admin
+        role: admin
+      - project: service
+        role: admin
+
+    groups:
+    - name: administrators
+      description: Administrators
+      roles:
+      - domain: Default
+        role: admin
+      - project: admin
+        role: admin
+      - project: service
+        role: admin
+      users:
+      - admin
+    - name: members
+      description: Members
+      roles:
+      - domain: Default
+        role: member
+    projects:
+    - name: admin
+      description: Administrator Project
+    - name: service
+      description: Services Project
+{{- end }}

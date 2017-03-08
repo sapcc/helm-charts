@@ -106,7 +106,7 @@
 {{ if .Values.cloud_admin_project }}
     "blacklist_projects": "'{{.Values.cloud_admin_project}}':%(target.project.id)s",
 {{- else }}
-    "blacklist_projects": "false",
+    "blacklist_projects": "",
 {{- end }}
     "identity:check_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants",
     "identity:list_grants": "rule:cloud_admin or rule:domain_admin_for_list_grants or rule:project_admin_for_list_grants",
