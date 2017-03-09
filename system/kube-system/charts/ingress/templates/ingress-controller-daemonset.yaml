@@ -13,10 +13,12 @@ spec:
             prometheus.io/scrape: "true"
             prometheus.io/port: "9091"
     spec:
+      nodeSelector:
+        zone: farm
       terminationGracePeriodSeconds: 60
       containers:
-        image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}"
-        imagePullPolicy: {{ default "" .Values.controller.image.pullPolicy | quote }} 
+      - image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}"
+        imagePullPolicy: {{ default "" .Values.controller.image.pullPolicy | quote }}
         name: nginx-ingress-lb
         livenessProbe:
           httpGet:
@@ -44,7 +46,7 @@ spec:
             containerPort: 80
           - name: https
             containerPort: 443
-          - name: request_metrics
+          - name: request-metrics
             containerPort: 9091
           - name: metrics
             containerPort: 10254
