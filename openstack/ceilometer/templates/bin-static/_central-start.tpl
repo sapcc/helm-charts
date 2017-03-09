@@ -3,9 +3,6 @@
 # do some tasks required for all ceilometer containers
 . /ceilometer-bin/common-start
 
-# check if the ceilometer-rabbitmq is already around
-. /ceilometer-bin/rabbitmq-prereq
-
 function process_config {
   cp /ceilometer-etc/api-paste.ini /etc/ceilometer/api_paste.ini
   cp /ceilometer-etc/ceilometer.conf /etc/ceilometer
