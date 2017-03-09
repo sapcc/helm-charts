@@ -8,13 +8,18 @@ spec:
   template:
     metadata:
       labels:
-        app: ingress-controller 
+        app: ingress-controller
+      annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "9101"
     spec:
+      nodeSelector:
+        zone: farm
       terminationGracePeriodSeconds: 60
       containers:
-      - image: gcr.io/google_containers/nginx-ingress-controller:0.8.3
+      - image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}"
+        imagePullPolicy: {{ default "" .Values.controller.image.pullPolicy | quote }}
         name: nginx-ingress-lb
-        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /healthz
@@ -41,7 +46,11 @@ spec:
             containerPort: 80
           - name: https
             containerPort: 443
+          - name: request-metrics
+            containerPort: 9101
+          - name: metrics
+            containerPort: 10254
         args:
         - /nginx-ingress-controller
         - --default-backend-service={{.Release.Namespace}}/ingress-default-backend
-        - --nginx-configmap={{.Release.Namespace}}/ingress-controller-configmap
+        - --configmap={{.Release.Namespace}}/ingress-controller-configmap
