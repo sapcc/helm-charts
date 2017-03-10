@@ -1,0 +1,34 @@
+{{- if .Values.enabled }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: backup-replication
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: backup-replication
+    spec:
+      volumes:
+        - name: replica-config
+          configMap:
+            name: backup-replica-config
+      containers:
+        - name: backup-replication
+          image: {{.Values.repository}}:{{.Values.image_version}}
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: replica-config
+              mountPath: /backup/env/
+          env:
+            - name: MY_POD_NAME
+              value: {{ template "fullname" . }}
+            - name: MY_POD_NAMESPACE
+              value: {{.Release.Namespace}}
+            - name: BACKUP_EXPIRATION_INTERVAL
+              value: {{.Values.backup_expiration_interval}}
+{{- end }}
