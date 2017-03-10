@@ -1,16 +1,28 @@
 input {
   kafka {
         bootstrap_servers => "kafka:{{.Values.monasca_kafka_port_internal}}"
-        topics => ["log"]
+        topics => ["transformed_log"]
         group_id => "logstash-persister"
         client_id => "monasca_log_persister"
         consumer_threads => 12
+        codec => json
   }
 }
 
 filter {
 
-    json {
+    date {
+        match => ["[log][timestamp]", "UNIX"]
+        target => "@timestamp"
+    }
+
+    grok {
+        match => {
+            "[@timestamp]" => "^(?<index_date>\d{4}-\d{2}-\d{2})"
+        }
+    }
+
+   json {
       source => "message"
     }
 
@@ -26,21 +38,9 @@ filter {
     }
 
     date {
-        match => ["[log][timestamp]", "UNIX"]
-        target => "@timestamp"
-    }
-
-    date {
         match => ["creation_time", "UNIX"]
         target => "creation_time"
     }
-
-    grok {
-        match => {
-            "[@timestamp]" => "^(?<index_date>\d{4}-\d{2}-\d{2})"
-        }
-    }
-
 
     mutate {
         add_field => { tenant => "%{[meta][tenantId]}"
@@ -48,7 +48,7 @@ filter {
         }
         replace => { message => "%{[log][message]}"
         }
-       remove_field => [ "[log][message]", "creation_time", "meta", "log" ]
+       remove_field => [ "log", "meta", "index_date", "tags", "@version" ]
     }
 }
 
