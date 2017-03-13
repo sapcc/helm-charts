@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: monasca-es-manager
+  namespace: monasca
+
+spec:
+  tls:
+     - secretName: monasca-es-manager
+       hosts: [{{.Values.monasca_elasticsearch_manager_endpoint_host_public}}]
+  rules:
+    - host: {{.Values.monasca_elasticsearch_manager_endpoint_host_public}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: es-manager
+            servicePort: {{.Values.monasca_elasticsearch_manager_port_public}}
