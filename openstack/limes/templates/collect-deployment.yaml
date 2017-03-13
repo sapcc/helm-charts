@@ -1,0 +1,48 @@
+{{ range $cluster_id, $config := .Values.limes.clusters }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: limes-collect-{{$cluster_id}}
+  labels:
+    app: limes-collect
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Replace
+  selector:
+    matchLabels:
+      name: limes-collect-{{$cluster_id}}
+  template:
+    metadata:
+      labels:
+        name: limes-collect-{{$cluster_id}}
+        app: limes-collect
+      annotations:
+        checksum: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: limes
+      containers:
+        - name: collect
+          image: {{$.Values.limes.image}}:{{$.Values.limes.image_tag}}
+          imagePullPolicy: {{$.Values.limes.image_pull_policy}}
+          command:
+            - /usr/bin/limes-collect
+          args:
+            - /etc/limes/limes.yaml
+            - {{$cluster_id}}
+          env:
+            - name: LIMES_DEBUG
+              value: 0
+            - name: LIMES_DEBUG_SQL
+              value: 0
+          volumeMounts:
+            - mountPath: /etc/limes
+              name: config
+---
+{{end}}
