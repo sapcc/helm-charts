@@ -53,7 +53,8 @@ filter {
                     event.set('log_level', log_level.capitalize)
                 end
             else
-                event.set('log_level', 'Unknown')
+                event.set('log_level', 'INFO')
+#                event.set('log_level', 'Unknown')
             end
         "
     }
