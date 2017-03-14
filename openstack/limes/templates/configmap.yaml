@@ -7,7 +7,7 @@ metadata:
 data:
   limes.yaml: |
     database:
-      location: "postgres://postgres:{{.Values.postgresql.postgresPassword}}@postgres.{{.Release.Namespace}}.svc/limes?sslmode=prefer"
+      location: "postgres://postgres:{{.Values.postgresql.postgresPassword}}@limes-postgresql.{{.Release.Namespace}}.svc/limes?sslmode=disable"
       migrations: /usr/share/limes/migrations
 
     clusters:
@@ -29,6 +29,5 @@ data:
   migrate.sh: |
     #!/bin/sh
     set -euo pipefail
-    env PGPASSWORD='{{.Values.postgresql.postgresPassword}}' psql -U postgres -h postgres.{{.Release.Namespace}}.svc -c 'CREATE DATABASE IF NOT EXISTS limes;'
     limes-migrate /etc/limes/limes.yaml
     exec tail -f /dev/null
