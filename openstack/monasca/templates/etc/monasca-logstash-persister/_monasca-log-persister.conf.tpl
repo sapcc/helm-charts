@@ -48,7 +48,7 @@ filter {
         }
         replace => { message => "%{[log][message]}"
         }
-       remove_field => [ "log", "meta", "index_date", "tags", "@version" ]
+       remove_field => [ "log", "meta", "tags", "@version" ]
     }
 }
 
