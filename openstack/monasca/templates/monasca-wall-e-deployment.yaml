@@ -51,6 +51,9 @@ spec:
         - name: checks
           emptyDir:
             medium: "Memory"
+        - name: monasca-etc
+          configMap:
+            name: monasca-wall-e-etc
       containers:
         - name: monasca-wall-e
           image: {{.Values.docker_repo}}/monasca-wall-e:{{.Values.image_version_monasca_wall_e}}
@@ -73,6 +76,8 @@ spec:
               name: monasca-content
             - mountPath: /checks
               name: checks
+            - mountPath: /monasca-etc
+              name: monasca-etc
         - name: canary
           image: {{.Values.docker_repo}}/wildcard-exporter:v201611171311
           imagePullPolicy: IfNotPresent
@@ -102,11 +107,3 @@ spec:
               value: "{{.Values.canary_swift_region_name}}"
             - name: SWIFT_API_KEY
               value: "{{.Values.canary_swift_api_key}}"
-#        - name: monasca-es-admin
-#          image: {{.Values.docker_repo}}/monasca-elasticsearch:latest
-#          imagePullPolicy: IfNotPresent
-#          command:
-#            - /bin/bash
-#          args:
-#            - -c
-#            - "while true; do sleep 10000; done"
