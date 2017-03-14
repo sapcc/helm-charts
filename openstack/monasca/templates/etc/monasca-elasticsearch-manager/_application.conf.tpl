@@ -20,7 +20,7 @@ auth = {
   type: basic
     settings: {
       username = "{{.Values.monasca_elasticsearch_admin_user}}"
-      password = "{{.Values.monasca_elasticsearch_password_user}}"
+      password = "{{.Values.monasca_elasticsearch_admin_password}}"
     }
 }
 
@@ -31,7 +31,7 @@ hosts = [
     name = "Secured Cluster"
     auth = {
       username = "{{.Values.monasca_elasticsearch_admin_user}}"
-      password = "{{.Values.monasca_elasticsearch_password_user}}"
+      password = "{{.Values.monasca_elasticsearch_admin_password}}"
     }
   }
 ]
