@@ -1,28 +1,14 @@
 # Secret will be used to sign session cookies, CSRF tokens and for other encryption utilities.
 # It is highly recommended to change this value before running cerebro in production.
-secret = "{{.Values.monasca_elasticsearch_manager_secret}}"
+play.crypto.secret="{{.Values.monasca_elasticsearch_manager_secret}}"
 
-# Application base path
-basePath = "/"
 
-# Defaults to RUNNING_PID at the root directory of the app.
-# To avoid creating a PID file set this value to /dev/null
-#pidfile.path = "/var/run/cerebro.pid"
+# The application languages
+# ~~~~~
+play.i18n.langs=["en"]
 
-# Rest request history max size per user
-rest.history.size = 50 // defaults to 50 if not specified
-
-# Path of local database file
-data.path = "./cerebro.db"
-
-# Authentication
-auth = {
-  type: basic
-    settings: {
-      username = "{{.Values.monasca_elasticsearch_admin_user}}"
-      password = "{{.Values.monasca_elasticsearch_admin_password}}"
-    }
-}
+play.modules.enabled += "controllers.auth.Module"
+play.modules.enabled += "elastic.ElasticModule"
 
 # A list of known hosts
 hosts = [
@@ -35,3 +21,20 @@ hosts = [
     }
   }
 ]
+
+# Authentication
+auth = {
+  type: basic
+    settings: {
+      username = "{{.Values.monasca_elasticsearch_admin_user}}"
+      password = "{{.Values.monasca_elasticsearch_admin_password}}"
+    }
+}
+
+rest.history.size: 50 // defaults to 50 if not specified
+data.path: "./cerebro.db"
+
+slick.dbs.default.driver="slick.driver.SQLiteDriver$"
+slick.dbs.default.db.driver=org.sqlite.JDBC
+slick.dbs.default.db.url="jdbc:sqlite:"${data.path}
+play.evolutions.db.default.autoApply = true
