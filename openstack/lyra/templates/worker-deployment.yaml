@@ -18,12 +18,18 @@ spec:
     metadata:
       labels:
         app: {{.Release.Name}}-worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
     spec:
       containers:
         - name: worker
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPollicy }}
-          args: [ que, ./config/environment.rb ]
+          args: [ que, ./config/environment-with-metrics.rb ]
+          ports:
+            - name: metrics
+              containerPort: 9100
           env:
             - name: QUE_QUEUE
               value: default
