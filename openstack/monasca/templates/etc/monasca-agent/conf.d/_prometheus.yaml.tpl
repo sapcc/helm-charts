@@ -39,6 +39,11 @@ instances:
              gauges: [ 'canary_(status)', 'canary_(off_status)' ]
              dimensions:
                  test: script
+         pg:
+             gauge: [ 'pg_(database_size_gauge_average)', 'pg_(database_size)' ]
+             dimensions:
+                 service: kubernetes_namespace
+                 database: name
          prometheus:
              gauges: [ 'up' ]
              dimensions:

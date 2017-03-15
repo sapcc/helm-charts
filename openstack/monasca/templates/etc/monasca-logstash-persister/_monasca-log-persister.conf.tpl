@@ -1,7 +1,7 @@
 input {
   kafka {
         bootstrap_servers => "kafka:{{.Values.monasca_kafka_port_internal}}"
-        topics => ["transformed_log"]
+        topics => ["transformed-log"]
         group_id => "logstash-persister"
         client_id => "monasca_log_persister"
         consumer_threads => 12
@@ -48,7 +48,7 @@ filter {
         }
         replace => { message => "%{[log][message]}"
         }
-       remove_field => [ "log", "meta", "index_date", "tags", "@version" ]
+       remove_field => [ "log", "meta", "tags", "@version" ]
     }
 }
 
