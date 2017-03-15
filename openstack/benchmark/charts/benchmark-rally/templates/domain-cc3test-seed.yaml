@@ -24,12 +24,14 @@ spec:
     - name: rally_admin
       description: Rally Administrator
       password: '{{.Values.cc3test_rally_admin_password}}'
-    <%- $i = 1; until $i > @rally_number_test_user do -%>
-    - name: rally_user_<%= $i %>
+    {{/* we need to define this here as a variable, as the range seems to redefine . */}}
+    {{ $values := .Values }}
+    {{/* this creates a loop from 1 to rally_number_test_user - see https://godoc.org/github.com/Masterminds/sprig */}}
+    {{ range $i, $iterator :=  untilStep 1 (int (add1 .Values.rally_number_test_user)) 1 }}
+    - name: rally_user_{{ $iterator }}
       description: CC-Test Rally User
-      password: '{{.Values.cc3test_rally_user_password}}'
-      <%- $i += 1 -%>
-    <%- end -%>
+      password: '{{ $values.cc3test_rally_user_password }}'
+    {{ end }}
     - name: test_admin
       description: CC-Test Administrator
       password: '{{.Values.cc3test_admin_password}}'
@@ -72,10 +74,12 @@ spec:
       description: 'Test Members'
       users:
         - test_member
-        <%- $i = 1; until $i > @rally_number_test_user do -%>
-        - rally_user_<%= $i %>
-            <%- $i += 1 -%>
-        <%- end -%>
+        {{/* we need to define this here as a variable, as the range seems to redefine . */}}
+        {{ $values := .Values }}
+        {{/* this creates a loop from 1 to rally_number_test_user - see https://godoc.org/github.com/Masterminds/sprig */}}
+        {{ range $i, $iterator :=  untilStep 1 (int (add1 .Values.rally_number_test_user)) 1 }}
+        - rally_user_{{ $iterator }}
+        {{ end }}
       roles:
       - domain: cc3test
         role: member
