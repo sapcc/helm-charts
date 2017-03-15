@@ -40,10 +40,10 @@ instances:
              dimensions:
                  test: script
          pg:
-             gauge: [ 'pg_(database_size_gauge_average)', 'pg_(pg_database_size)' ]
+             gauge: [ 'pg_(database_size_gauge_average)', 'pg_(database_size)' ]
              dimensions:
                  service: kubernetes_namespace
-                 name: name
+                 database: name
          prometheus:
              gauges: [ 'up' ]
              dimensions:
