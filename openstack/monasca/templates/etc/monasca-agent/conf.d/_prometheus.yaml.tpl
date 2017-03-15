@@ -48,6 +48,11 @@ instances:
              dimensions:
                  service: kubernetes_namespace
                  pod: kubernetes_pod_name
+         postgres:
+             gauge: [ 'pg_(database_size_gauge_average)', 'pg_(database_size)' ]
+             dimensions:
+                 service: kubernetes_namespace
+                 database: name
          activedirectory:
              gauges: [ 'ad_(.*_status)' ]
          kubernetes:
