@@ -44,10 +44,15 @@ instances:
              dimensions:
                  component: component
          puma:
-             gauge: [ 'puma_(request_backlog)' ]
+             gauges: [ 'puma_(request_backlog)' ]
              dimensions:
                  service: kubernetes_namespace
                  pod: kubernetes_pod_name
+         postgres:
+             gauges: [ 'pg_(database_size_gauge_average)', 'pg_(database_size)' ]
+             dimensions:
+                 service: kubernetes_namespace
+                 database: datname
          activedirectory:
              gauges: [ 'ad_(.*_status)' ]
          kubernetes:

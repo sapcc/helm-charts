@@ -5,10 +5,16 @@ metadata:
   name: limes
 
 data:
+  policy.json: |
+{{ .Files.Get "files/policy.json" | indent 4 }}
   limes.yaml: |
     database:
       location: "postgres://postgres:{{.Values.postgresql.postgresPassword}}@limes-postgresql.{{.Release.Namespace}}.svc/limes?sslmode=disable"
       migrations: /usr/share/limes/migrations
+
+    api:
+      listen: :8080
+      policy: /etc/limes/policy.json
 
     clusters:
       {{- range $cluster_id, $config := .Values.limes.clusters }}
@@ -20,6 +26,9 @@ data:
         project_domain_name: {{ quote $config.project_domain_name }}
         password:            {{ quote $config.password }}
         region_name:         {{ quote $config.region_name }}
+        {{- if $config.catalog_url }}
+        catalog_url:         {{ quote $config.catalog_url }}
+        {{- end }}
         services:
           {{- range $service := $config.services }}
           - type: {{ $service.type }}
