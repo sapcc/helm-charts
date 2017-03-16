@@ -35,7 +35,7 @@ node_timeout = 60
 recoverable_node_timeout = 10
 conn_timeout = 0.5
 sorting_method = shuffle
-{{ if $context.debug -}}
+{{- if $context.debug }}
 set log_level = DEBUG
 {{- end }}
 
@@ -78,7 +78,7 @@ is_admin = false
 cache = swift.cache
 reseller_admin_role = swiftreseller
 default_domain_id = default
-{{ if $context.debug -}}
+{{- if $context.debug }}
 set log_level = DEBUG
 {{- end }}
 allow_overrides = true
@@ -92,6 +92,9 @@ auth_version = 3
 auth_uri = {{$cluster.keystone_auth_uri}}
 auth_url = {{$cluster.keystone_auth_url}}
 insecure = false
+{{- if $cluster.keystone_interface }}
+interface = {{$cluster.keystone_interface}}
+{{- end }}
 cache = swift.cache
 region_name = {{$context.global.region}}
 user_domain_name = {{$cluster.swift_service_user_domain}}
@@ -99,7 +102,7 @@ username = {{$cluster.swift_service_user}}
 password = {{$cluster.swift_service_password}}
 project_domain_name = {{$cluster.swift_service_project_domain}}
 project_name = {{$cluster.swift_service_project}}
-{{ if $context.debug -}}
+{{- if $context.debug }}
 set log_level = DEBUG
 {{- end }}
 
