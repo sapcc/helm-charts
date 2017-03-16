@@ -5,7 +5,7 @@ metadata:
   name: limes
 
 data:
-  policy:json: |
+  policy.json: |
 {{ .Files.Get "files/policy.json" | indent 4 }}
   limes.yaml: |
     database:
@@ -26,6 +26,9 @@ data:
         project_domain_name: {{ quote $config.project_domain_name }}
         password:            {{ quote $config.password }}
         region_name:         {{ quote $config.region_name }}
+        {{- if $config.catalog_url }}
+        catalog_url:         {{ quote $config.catalog_url }}
+        {{- end }}
         services:
           {{- range $service := $config.services }}
           - type: {{ $service.type }}
