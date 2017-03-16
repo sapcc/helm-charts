@@ -1,0 +1,61 @@
+{{ range $cluster_id, $config := .Values.limes.clusters }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: limes-api-{{$cluster_id}}
+  labels:
+    app: limes-api
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: limes-api-{{$cluster_id}}
+  template:
+    metadata:
+      labels:
+        name: limes-api-{{$cluster_id}}
+        app: limes-api
+      annotations:
+        checksum: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: limes
+      containers:
+        - name: collect
+          image: {{$.Values.limes.image}}:{{$.Values.limes.image_tag}}
+          imagePullPolicy: {{$.Values.limes.image_pull_policy}}
+          command:
+            - /usr/bin/limes-serve
+          args:
+            - /etc/limes/limes.yaml
+            - {{$cluster_id}}
+          env:
+            - name: LIMES_DEBUG
+              value: '0'
+            - name: LIMES_DEBUG_SQL
+              value: '0'
+          volumeMounts:
+            - mountPath: /etc/limes
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+---
+{{end}}
