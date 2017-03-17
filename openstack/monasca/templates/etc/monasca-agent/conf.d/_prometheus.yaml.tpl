@@ -22,7 +22,7 @@ instances:
          # (bind_responses)_total maps the Prometheus name bind_responses_total to a Monasca metric bind_responses
          dns:
              gauges: [ 'bind_up' ]
-             rates: [ '(bind_incoming_queries)_total', '(bind_responses)_total' ]
+             counters: [ '(bind_incoming_queries)_total', '(bind_responses)_total' ]
              dimensions:
                  bind_server: kubernetes_name
                  type: type
@@ -39,6 +39,11 @@ instances:
              gauges: [ 'canary_(status)', 'canary_(off_status)' ]
              dimensions:
                  test: script
+         postgres:
+             gauges: [ 'pg_(database_size_gauge_average)', 'pg_(database_size)' ]
+             dimensions:
+                 service: kubernetes_namespace
+                 database: datname
          prometheus:
              gauges: [ 'up' ]
              dimensions:
@@ -48,16 +53,11 @@ instances:
              dimensions:
                  service: kubernetes_namespace
                  pod: kubernetes_pod_name
-         postgres:
-             gauges: [ 'pg_(database_size_gauge_average)', 'pg_(database_size)' ]
-             dimensions:
-                 service: kubernetes_namespace
-                 database: datname
          activedirectory:
              gauges: [ 'ad_(.*_status)' ]
          kubernetes:
              gauges: [ 'kube_(node_status_ready)', 'kube_(node_status_out_of_disk)', 'node_filesystem_free', 'kube_(pod_status_phase)', 'kube_(pod_status_ready)' ]
-             rates: [ 'kube_(pod_container_status_restarts)' ]
+             counters: [ 'kube_(pod_container_status_restarts)' ]
              dimensions:
                  container: container
                  namespace: namespace
@@ -70,7 +70,7 @@ instances:
                      regex: '(xfs|ext4)'
                  condition: true
          openstack.api:
-             rates: [ 'openstack_(responses)_by_api_counter', 'openstack_(requests)_total_counter' ]
+             counters: [ 'openstack_(responses)_by_api_counter', 'openstack_(requests)_total_counter' ]
              gauges: [ 'openstack_(latency)_by_api_timer' ]
              dimensions:
                  service: component
@@ -122,7 +122,7 @@ instances:
        groups:
            kubernetes:
                gauges: [ '(container_start_time_sec)onds', 'container_memory_usage_bytes' ]
-               rates: [ '(container_cpu_usage_sec)onds_total', '(container_network.*_packages)_total' ]
+               counters: [ '(container_cpu_usage_sec)onds_total', '(container_network.*_packages)_total' ]
                dimensions:
                    container: kubernetes_container_name
                    zone: zone
