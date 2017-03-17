@@ -1,4 +1,4 @@
-status = error
+status = warn
 
 # log action execution errors for easier debugging
 logger.action.name = org.elasticsearch.action

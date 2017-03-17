@@ -34,6 +34,432 @@
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 </filter>
 
+<filter kubernetes.var.log.containers.es**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.keystone** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:process} ?(\[req-)?(%{REQUESTID:requestid})
+    custom_pattern_path /monasca-etc/pattern
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.nginx**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NOTSPACE:request_time}
+    custom_pattern_path /monasca-etc/pattern
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.elektra**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern \[%{NOTSPACE:request}\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:timestamp}
+    grok_pattern \[%{NOTSPACE:request}\] %{WORD} %{NUMBER:response}
+    grok_pattern \[%{NOTSPACE:request}\]
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.concourse-web**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel} \| %{NOTSPACE:process}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.postgres**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.content-repo**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NOTSPACE:loglevel}\:
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.ingress-controller**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+      grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
+      custom_pattern_path /monasca-etc/pattern
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.monasca-notification**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp} (?: %{NOTSPACE:loglevel}|\| %{WORD:loglevel})? (?: %{NOTSPACE:process}|\| %{NOTSPACE:process})?
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.monasca-persister** kubernetes.var.log.containers.monasca-agent** kubernetes.var.log.containers.monasca-api** kubernetes.var.log.containers.monasca-log-api** kubernetes.var.log.containers.ceilometer-central** kubernetes.var.log.containers.ceilometer-notification**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD} \| %{NOTSPACE} \| %{NOTSPACE} %{NUMBER:events}
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process} \| %{NOTSPACE} \| %{GREEDYDATA}: flushed %{NUMBER:events}
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.monasca-fluent**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \+0000 \[%{WORD:loglevel}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.monasca-storm-thresh**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NOTSPACE:process} \[%{WORD:loglevel}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.blackbox**>
+ @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern time=%{QS} level=%{WORD:loglevel}
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.elektra-postgresql**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern time=%{QS} level=%{WORD:loglevel}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.arc-api**>
+  @type record_transformer
+  <record>
+    process "arc-api"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.arc-updates-proxy**>
+  @type record_transformer
+  <record>
+    process "arc-proxy"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.swift-proxy**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{COMBINEDAPACHELOG}
+   time_format "%d/%b/%Y:%H:%M:%S %z"
+    custom_pattern_path /monasca-etc/pattern
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.swift-proxy-ksr**>
+  @type record_transformer
+  <record>
+    process "swift-proxy-ksr"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.swift-proxy-cluster-3**>
+  @type record_transformer
+  <record>
+    process "swift-proxy-cluster-3"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.swift-object-expirer**>
+@type record_transformer
+<record>
+  process "swift-object-expirer"
+</record>
+</filter>
+
+<filter kubernetes.var.log.containers.elektra**>
+  @type record_transformer
+  <record>
+    process "elektra"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.elektra-postgresql**>
+  @type record_transformer
+  <record>
+    process "elektra-postgresql"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.prometheus-frontend**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern time=%{QS} level=%{WORD:loglevel}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.content-repo**>
+  @type record_transformer
+  <record>
+    process "swift-http-import"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.designate-api**>
+  @type record_transformer
+  <record>
+    process "designate-api"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.nginx**>
+  @type record_transformer
+  <record>
+    process "nginx"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.monasca-persister**>
+  @type record_transformer
+  <record>
+    process "monasca-persister"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.ingress-controller**>
+  @type record_transformer
+  <record>
+    process "ingress-controller"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.postgres-keystone**>
+  @type record_transformer
+  <record>
+    process "postgres-keystone"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.postgres-glance**>
+  @type record_transformer
+  <record>
+    process "postgres-glance"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.postgres-neutron**>
+  @type record_transformer
+  <record>
+    process "postgres-neutron"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.neutron-server**>
+  @type record_transformer
+  <record>
+    process "neutron-server"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.nova-scheduler**>
+  @type record_transformer
+  <record>
+    process "nova-scheduler"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.postgres-nova**>
+  @type record_transformer
+  <record>
+    process "postgres-nova"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.postgres-barbican**>
+  @type record_transformer
+  <record>
+    process "postgres-barbican"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.nova-compute**>
+  @type record_transformer
+  <record>
+    process "nova-compute"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.concourse-web**>
+  @type record_transformer
+  <record>
+    process "concourse-web"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.unbound1**>
+  @type record_transformer
+  <record>
+    process "unbound1"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.arc-postgresql**>
+  @type record_transformer
+  <record>
+    process "arc-postgresql"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.lyra-api**>
+  @type record_transformer
+  <record>
+    process "lyra-api"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.concourse-postgresql**>
+  @type record_transformer
+  <record>
+    process "concourse-postgresql"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.monasca-fluent**>
+  @type record_transformer
+  <record>
+    process "monasca-fluent"
+  </record>
+</filter>
+
+
+<filter kubernetes.var.log.containers.blackbox-datapath**>
+  @type record_transformer
+  <record>
+    process "blackbox-datapath"
+  </record>
+</filter>
+<filter kubernetes.var.log.containers.es-client**>
+  @type record_transformer
+  <record>
+    process "es-client"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.es-master**>
+  @type record_transformer
+  <record>
+    process "es-master"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.es-data**>
+  @type record_transformer
+  <record>
+    process "es-data"
+  </record>
+</filter>
+
+#<filter kubernetes.var.log.containers.postgres**>
+#  @type record_transformer
+#  enable_ruby
+#  <record>
+#    loglevel ${record["message".upcase]}
+#  </record>
+#</filter>
+
+#<filter kubernetes.var.log.containers.arc**>
+#  @type record_transformer
+#  enable_ruby
+#  <record>
+#    loglevel ${record["message".upcase]}
+#  </record>
+#</filter>
+
+#<filter kubernetes.var.log.containers.prometheus-frontend**>
+#  @type record_transformer
+#  enable_ruby
+#  <record>
+#    loglevel ${record["message".upcase]}
+#  </record>
+#</filter>
+
+#<filter kubernetes.var.log.containers.blackbox**>
+#  @type record_transformer
+#  enable_ruby
+#  <record>
+#    loglevel ${record["message".upcase]}
+#  </record>
+#</filter>
+
+#<filter kubernetes.var.log.containers.monasca-fluent**>
+#  @type record_transformer
+#  enable_ruby
+#  <record>
+#    loglevel ${record["message".upcase]}
+#  </record>
+#</filter>
+
+<filter kubernetes.**>
+  @type record_modifier
+    remove_keys message,stream
+</filter>
+
 <match **>
    @type elasticsearch
    host {{.Values.monasca_elasticsearch_endpoint_host_internal}}
@@ -45,18 +471,20 @@
    time_as_integer false
    @log_level info
    buffer_type "memory"
-   buffer_chunk_limit 96m
-   buffer_queue_limit 256
-   flush_interval 5s
-   retry_wait 5s
+   buffer_chunk_limit 48m
+   buffer_queue_limit 128
+   buffer_queue_full_action exception
+   slow_flush_log_threshold 40.0
+   flush_interval 1s
+   retry_wait 2s
    include_tag_key true
    logstash_format true
-   max_retry_wait 30s
+   max_retry_wait 5s
    disable_retry_limit
-   request_timeout 5s
+   request_timeout 60s
    reload_connections true
    reload_on_failure true
    resurrect_after 120
    reconnect_on_error true
-   num_threads 8
+   num_threads 2
  </match>
