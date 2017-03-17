@@ -14,6 +14,7 @@ path:
   logs: /data/log
 
 network.host: 0.0.0.0
+transport.host: 0.0.0.0
 http.enabled: ${HTTP_ENABLE}
 http.max_content_length: 500mb
 
