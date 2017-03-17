@@ -471,20 +471,20 @@
    time_as_integer false
    @log_level info
    buffer_type "memory"
-   buffer_chunk_limit 48m
-   buffer_queue_limit 128
+   buffer_chunk_limit 96m
+   buffer_queue_limit 256
    buffer_queue_full_action exception
    slow_flush_log_threshold 40.0
-   flush_interval 1s
+   flush_interval 3s
    retry_wait 2s
    include_tag_key true
    logstash_format true
-   max_retry_wait 5s
+   max_retry_wait 10s
    disable_retry_limit
    request_timeout 60s
    reload_connections true
    reload_on_failure true
    resurrect_after 120
    reconnect_on_error true
-   num_threads 2
+   num_threads 8
  </match>
