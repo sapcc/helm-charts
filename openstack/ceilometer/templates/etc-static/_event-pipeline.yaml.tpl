@@ -60,4 +60,4 @@ sinks:
       transformers:
       triggers:
       publishers:
-          - kafka://{{.Values.monasca_kafka_hostname}}:{{.Values.monasca_kafka_port_internal}}?topic=audit_cadf
+          - kafka://{{.Values.monasca_kafka_hostname}}:{{.Values.monasca_kafka_port_internal}}?topic=events-cadf
