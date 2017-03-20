@@ -22,6 +22,21 @@ spec:
       annotations:
         checksum/monasca-templates-monasca-es-etc-configmap.yaml: "dummy"
         checksum/monasca-templates-monasca-es-bin-configmap.yaml: "dummy"
+#        scheduler.alpha.kubernetes.io/affinity:  >
+#          {
+#          "podAntiAffinity": {
+#            "requiredDuringSchedulingIgnoredDuringExecution": [{
+#              "labelSelector": {
+#                "matchExpressions": [{
+#                  "key": "role",
+#                  "operator": "In",
+#                  "values": ["data"]
+#                }]
+#              },
+#              "topologyKey": "kubernetes.io/hostname"
+#            }]
+#          }
+#        }
         pod.alpha.kubernetes.io/initialized: "true"
         pod.beta.kubernetes.io/init-containers: '[
           {
@@ -99,9 +114,9 @@ spec:
             - name: transport
               containerPort: {{.Values.monasca_elasticsearch_port_cluster}}
               protocol: TCP
-#            - name: dummymasterport
-#              hostPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
-#              containerPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
+            - name: dummymasterport
+              hostPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
+              containerPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
         - name: monasca-agent-forwarder
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
