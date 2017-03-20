@@ -1,12 +1,12 @@
 ---
 sources:
-    - name: billing_source
+    - name: event_source
       events:
           - "objectstore.http.request"
           - "identity.user.*"
           - "identity.project.*"
       sinks:
-          - billing_sink
+          - event_sink
     - name: audit_source
       events:
           - "identity.user.*"
@@ -55,4 +55,9 @@ sinks:
       transformers:
       triggers:
       publishers:
-          - kafka://{{.Values.monasca_kafka_hostname}}:{{.Values.monasca_kafka_port_internal}}?topic=events-cadf
+          - notifier://
+    - name: audit_sink
+      transformers:
+      triggers:
+      publishers:
+          - kafka://{{.Values.monasca_kafka_hostname}}:{{.Values.monasca_kafka_port_internal}}?topic=audit_cadf
