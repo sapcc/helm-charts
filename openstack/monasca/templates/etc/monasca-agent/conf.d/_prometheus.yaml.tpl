@@ -39,12 +39,17 @@ instances:
              gauges: [ 'canary_(status)', 'canary_(off_status)' ]
              dimensions:
                  test: script
+         postgres:
+             gauges: [ 'pg_(database_size_gauge_average)', 'pg_(database_size)' ]
+             dimensions:
+                 service: kubernetes_namespace
+                 database: name
          prometheus:
              gauges: [ 'up' ]
              dimensions:
                  component: component
          puma:
-             gauge: [ 'puma_(request_backlog)' ]
+             counters: [ 'puma_(request_backlog)' ]
              dimensions:
                  service: kubernetes_namespace
                  pod: kubernetes_pod_name
