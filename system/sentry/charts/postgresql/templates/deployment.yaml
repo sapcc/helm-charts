@@ -8,28 +8,15 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
+  revisionHistoryLimit: 5
   template:
     metadata:
       labels:
         app: {{ template "fullname" . }}
-      annotations:
-        pod.beta.kubernetes.io/init-containers: '[
-            {
-                "name": "remove-lost-found",
-                "image": "busybox:1.25.0",
-                "command": ["rm", "-fr", "/var/lib/postgresql/data/pgdata/lost+found"],
-                "volumeMounts": [
-                    {
-                        "name": "data",
-                        "mountPath": "/var/lib/postgresql/data/pgdata"
-                    }
-                ]
-            }
-        ]'
     spec:
       containers:
       - name: {{ template "fullname" . }}
-        image: "{{.Values.image}}:{{ .Values.imageTag }}"
+        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
         imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
         env:
         - name: POSTGRES_USER
@@ -40,38 +27,50 @@ spec:
         - name: POSTGRES_DB
           value: {{ default "" .Values.postgresDatabase | quote }}
         - name: PGDATA
-          value: /var/lib/postgresql/data/pgdata
+          value: /postgresql/data
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ template "fullname" . }}
               key: postgres-password
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         ports:
         - name: postgresql
           containerPort: 5432
         livenessProbe:
           exec:
             command:
-            - pg_isready
-          initialDelaySeconds: 60
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP
+          initialDelaySeconds: 120
           timeoutSeconds: 3
+          failureThreshold: 6
+        # We use the POD_IP to not have the pod become ready during the inital database setup
+        # where the docker image briefly starts the db  for creating the user,
+        # running custom setup scripts etc.
         readinessProbe:
           exec:
             command:
-            - pg_isready
-          initialDelaySeconds: 60
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP
+          initialDelaySeconds: 5
           timeoutSeconds: 3
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         volumeMounts:
         - name: data
-          mountPath: /var/lib/postgresql/data/pgdata
+          mountPath: /postgresql
 {{- if .Values.backup.enabled }}
       - image: {{.Values.backup.repository}}:{{.Values.backup.image_version}}
         name: backup
         env:
           - name: MY_POD_NAME
-            value: postgres-backup-{{.Values.name}}
+            value: {{ template "fullname" . }}
           - name: MY_POD_NAMESPACE
             value: {{.Release.Namespace}}
           - name: OS_AUTH_URL
@@ -95,7 +94,7 @@ spec:
 {{- end }}
 {{- if .Values.metrics.enabled }}
       - name: metrics
-        image: "{{ .Values.metrics.image }}"
+        image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
         imagePullPolicy: {{ default "" .Values.metrics.imagePullPolicy | quote }}
         env:
         - name: DATA_SOURCE_NAME
@@ -103,6 +102,13 @@ spec:
         ports:
         - name: metrics
           containerPort: 9187
+        {{- if .Values.metrics.customMetrics }}
+        args: ["-extend.query-path", "/conf/custom-metrics.yaml"]
+        volumeMounts:
+          - name: custom-metrics
+            mountPath: /conf
+            readOnly: true
+        {{- end }}
         resources:
 {{ toYaml .Values.metrics.resources | indent 10 }}
 {{- end }}
@@ -110,7 +116,15 @@ spec:
       - name: data
       {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "fullname" . }}
+          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "fullname" . }}{{- end }}
       {{- else }}
         emptyDir: {}
-      {{- end -}}
+      {{- end }}
+      {{- if and .Values.metrics.enabled .Values.metrics.customMetrics }}
+      - name: custom-metrics
+        secret:
+          secretName: {{ template "fullname" . }}
+          items:
+            - key: custom-metrics.yaml
+              path: custom-metrics.yaml
+      {{- end }}
