@@ -45,24 +45,35 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.keystone** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron**>
+<filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.keystone** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:process} ?(\[req-)?(%{REQUESTID:requestid})
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:process} (\[)?(req-)?(%{REQUESTID:requestid})
     custom_pattern_path /monasca-etc/pattern
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.nginx**>
+<filter kubernetes.var.log.containers.unbound**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NOTSPACE:request_time}
+    grok_pattern \[%{DATA:timestamp}\] %{NOTSPACE:process} %{WORD:loglevel}
+  </parse>
+</filter>
+
+
+<filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.nginx** kubernetes.var.log.containers.horizon**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}\"?( )?(%{NOTSPACE:request_time})
     custom_pattern_path /monasca-etc/pattern
   </parse>
 </filter>
@@ -89,13 +100,24 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.postgres**>
+<filter kubernetes.var.log.containers.mysql**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \+0000 %{WORD:process}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.postgres** kubernetes.var.log.containers.ad-healthcheck** kubernetes.var.log.containers.elektra-postgresql** kubernetes.var.log.containers.trident** kubernetes.var.log.containers.prometheus-frontend** kubernetes.var.log.containers.blackbox**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
     grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel}
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
   </parse>
 </filter>
 
@@ -130,7 +152,7 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.monasca-persister** kubernetes.var.log.containers.monasca-agent** kubernetes.var.log.containers.monasca-api** kubernetes.var.log.containers.monasca-log-api** kubernetes.var.log.containers.ceilometer-central** kubernetes.var.log.containers.ceilometer-notification**>
+<filter kubernetes.var.log.containers.monasca-persister** kubernetes.var.log.containers.monasca-agent** kubernetes.var.log.containers.monasca-api** kubernetes.var.log.containers.monasca-log-api** kubernetes.var.log.containers.ceilometer-notification**>
   @type parser
   key_name log
   reserve_data true
@@ -162,26 +184,23 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.blackbox**>
- @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern time=%{QS} level=%{WORD:loglevel}
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
-  </parse>
-</filter>
-
-<filter kubernetes.var.log.containers.elektra-postgresql**>
+<filter kubernetes.var.log.containers.influxdb**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
-    grok_pattern time=%{QS} level=%{WORD:loglevel}
+    grok_pattern \[%{WORD:loglevel}\] %{TIMESTAMP_ISO8601:timestamp}
   </parse>
 </filter>
+
+<match kubernetes.var.log.containers.influxdb**>
+  @type rewrite_tag_filter
+  rewriterule1 loglevel ^I$ INFO
+  rewriterule2 loglevel ^W$ WARN
+  rewriterule3 loglevel ^E$ ERROR
+  rewriterule4 loglevel ^D$ DEBUG
+  </match>
 
 <filter kubernetes.var.log.containers.arc-api**>
   @type record_transformer
@@ -242,16 +261,6 @@
   <record>
     process "elektra-postgresql"
   </record>
-</filter>
-
-<filter kubernetes.var.log.containers.prometheus-frontend**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern time=%{QS} level=%{WORD:loglevel}
-  </parse>
 </filter>
 
 <filter kubernetes.var.log.containers.content-repo**>
@@ -370,6 +379,27 @@
   @type record_transformer
   <record>
     process "lyra-api"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.lyra-worker**>
+  @type record_transformer
+  <record>
+    process "lyra-worker"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.vcenter-operator**>
+  @type record_transformer
+  <record>
+    process "vcenter-operator"
+  </record>
+</filter>
+
+<filter kubernetes.var.log.containers.monasca-wall-e**>
+  @type record_transformer
+  <record>
+    process "monasca-wall-e"
   </record>
 </filter>
 
