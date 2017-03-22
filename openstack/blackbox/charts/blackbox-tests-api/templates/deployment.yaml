@@ -1,0 +1,88 @@
+kind: Deployment
+apiVersion: extensions/v1beta1 
+
+metadata:
+  name: blackbox-tests-api
+
+spec:
+  replicas: {{.Values.global.replicaCount}}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: blackbox-tests-api
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: blackbox-tests-api
+          persistentVolumeClaim:
+            claimName: blackbox-tests-api
+      containers:
+        - name: pytest
+{{- if typeIs "float64" .Values.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.image.repository}}:{{.Values.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.image.repository}}:{{.Values.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - "--timeout 10"
+            - "tests/test_api.py"
+          volumeMounts:
+            - name: blackbox-tests-api
+              mountPath: /opt/reports
+              readOnly: false
+          env:
+            - name: OS_AUTH_URL
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.auth.url } }
+            - name: OS_IDENTITY_API_VERSION
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.identity.api.version } }
+            - name: OS_USERNAME
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.username } }
+            - name: OS_USER_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.user.domain.name } }
+            - name: OS_PROJECT_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.project.name } }
+            - name: OS_PROJECT_DOMAIN_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.project.domain.name } }
+            - name: OS_REGION_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.region.name } }
+            - name: CCLOUD_API_BILLING_URL
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: billing.url } }
+            - name: CCLOUD_API_LYRA_URL
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: lyra.url } }
+            - name: CCLOUD_API_ARC_URL
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: arc.url } }
+            - name: CCLOUD_API_IRONIC_URL
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: ironic.url } }
+            - name: CCLOUD_API_SECRET_ID
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: secret.id } }
+            - name: CCLOUD_SENTRY_DSN
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: sentry.dsn } }
+            - name: SLEEP
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: sleep } }
+            - name: OS_PASSWORD
+              valueFrom: { secretKeyRef:    { name: blackbox-tests-api, key: os.password } }
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
