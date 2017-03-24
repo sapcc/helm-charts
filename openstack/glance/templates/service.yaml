@@ -1,13 +1,14 @@
-apiVersion: v1
 kind: Service
+apiVersion: v1
+
 metadata:
-  name: keystone
+  name: glance
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: keystone
+    component: glance
     type: api
 {{- if .Values.metrics.enabled }}
   annotations:
@@ -17,16 +18,11 @@ metadata:
 spec:
   selector:
     app: {{ template "fullname" . }}
-  type: {{ default "ClusterIP" .Values.services.type }}
+  type: {{ default "ClusterIP" .Values.services.type | quote }}
   ports:
     - name: public
-      protocol: "TCP"
-      port: {{ default "5000" .Values.services.public.port }}
-      targetPort: 5000
-    - name: admin
-      protocol: "TCP"
-      port: {{ default "35357" .Values.services.admin.port }}
-      targetPort: 35357
+      port: {{ default "9292" .Values.services.api.port }}
+      targetPort: 9292
 {{- if .Values.services.externalip }}
   externalIPs: [
     {{ .Values.services.externalip | quote }}

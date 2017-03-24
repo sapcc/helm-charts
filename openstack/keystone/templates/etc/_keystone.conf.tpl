@@ -28,7 +28,7 @@ key_repository = /fernet-keys
 max_active_keys = {{ .Values.fernet.max_active_keys | default 3 }}
 
 [database]
-connection = postgresql://{{ .Values.postgresql.keystoneUser }}:{{ .Values.postgresql.keystonePassword }}@{{include "db_host" .}}:5432/{{.Values.postgresql.postgresDatabase}}
+connection = postgresql://{{ .Values.postgresql.dbUser }}:{{ .Values.postgresql.dbPassword }}@{{include "db_host" .}}:5432/{{.Values.postgresql.postgresDatabase}}
 
 [identity]
 default_domain_id = default

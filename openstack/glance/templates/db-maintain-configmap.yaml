@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: keystone-db-maintain
+  name: glance-db-maintain
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: keystone
+    component: glance
 data:
   db-maintain.sh: |
     #!/usr/bin/env bash
@@ -19,8 +19,6 @@ data:
 
     export PGUSER=postgres
     psql <<- EOSQL
-        ALTER ROLE {{ .Values.postgresql.keystoneUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.keystonePassword }}';
+        ALTER ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.dbPassword }}';
         ALTER ROLE {{ .Values.postgresql.postgresUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.postgresPassword }}';
     EOSQL
-
-

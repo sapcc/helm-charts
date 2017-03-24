@@ -1,41 +1,39 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: keystone-migration-job
+  name: glance-migration-job
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: keystone
+    component: glance
 spec:
   template:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: keystone-migration
-          image: "{{ .Values.keystone.image }}:{{ .Values.keystone.imageTag }}"
-          imagePullPolicy: {{ default "IfNotPresent" .Values.keystone.imagePullPolicy | quote }}
+        - name: glance-migration
+          image: "{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
+          imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "bash /scripts/db-sync"
+              value: "bash /container.init/db-migrate"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
               value: {{ .Release.Name }}-postgresql
           volumeMounts:
-            - name: conf
-              mountPath: /etc/keystone/keystone.conf
-              subPath: keystone.conf
-              readOnly: true
-            - mountPath: /scripts
-              name: scripts
+            - mountPath: /glance-etc
+              name: glance-etc
+            - mountPath: /container.init
+              name: glance-bin
       volumes:
-        - name: conf
+        - name: glance-etc
           configMap:
-            name: keystone-etc
-        - name: scripts
+            name: glance-etc
+        - name: glance-bin
           configMap:
-            name: keystone-bin
+            name: glance-bin

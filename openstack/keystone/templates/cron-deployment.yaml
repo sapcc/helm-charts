@@ -1,0 +1,95 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: keystone-cron
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: operations
+spec:
+  replicas: 1
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}-cron
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}-cron
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/etc-configmap.conf: {{ include (print $.Chart.Name "/templates/etc-configmap.yaml") . | sha256sum }}
+        checksum/bin-configmap.conf: {{ include (print $.Chart.Name "/templates/bin-configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: operations
+          image: "{{ .Values.operations.image }}:{{ .Values.operations.imageTag }}"
+          imagePullPolicy: {{ .Values.operations.imagePullPolicy | default "IfNotPresent" | quote }}
+          command:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "bash /scripts/cron"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: keystone-migration-job,keystone-bootstrap-job
+            - name: DEPENDENCY_SERVICE
+              value: {{ .Release.Name }}-postgresql
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              value: {{ .Values.sentry.dsn | quote}}
+            {{- end }}
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/keystone/keystone.conf
+              subPath: keystone.conf
+            - name: paste
+              mountPath: /etc/keystone/keystone-paste.ini
+              subPath: paste.ini
+            - name: policy
+              mountPath: /etc/keystone/policy.json
+              subPath: policy.json
+              readOnly: true
+            - name: wsgi
+              mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
+              subPath: wsgi-keystone.conf
+              readOnly: true
+            - name: fernet
+              mountPath: /fernet-keys
+              readOnly: true
+            - name: scripts
+              mountPath: /scripts
+          {{- if .Values.operations.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.operations.resources.limits.cpu | quote }}
+              memory: {{ .Values.operations.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.operations.resources.requests.cpu | quote }}
+              memory: {{ .Values.operations.resources.requests.memory | quote }}
+          {{- end }}
+      volumes:
+        - name: conf
+          configMap:
+            name: keystone-etc
+        - name: paste
+          configMap:
+            name: keystone-etc
+        - name: policy
+          configMap:
+            name: keystone-etc
+        - name: wsgi
+          configMap:
+            name: keystone-etc
+        - name: fernet
+          secret:
+            secretName: keystone-fernet
+        - name: scripts
+          configMap:
+            name: keystone-bin

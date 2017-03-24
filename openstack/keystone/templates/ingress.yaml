@@ -1,4 +1,5 @@
-{{- if .Values.services.public.ingress.enabled }}
+{{- if .Values.services.ingress.enabled }}
+{{- if .Values.services.public.tlsCertificate}}
 kind: Secret
 apiVersion: v1
 
@@ -12,11 +13,11 @@ metadata:
     component: keystone
     type: config
 data:
-  tls.crt: {{ .Values.services.public.ingress.tlsCertificate | b64enc }}
-  tls.key: {{ .Values.services.public.ingress.tlsKey | b64enc }}
+  tls.crt: {{ .Values.services.public.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.services.public.tlsKey | b64enc }}
 ---
 {{- end }}
-{{- if .Values.services.admin.ingress.enabled }}
+{{- if .Values.services.admin.tlsCertificate}}
 kind: Secret
 apiVersion: v1
 
@@ -30,26 +31,33 @@ metadata:
     component: keystone
     type: config
 data:
-  tls.crt: {{ .Values.services.admin.ingress.tlsCertificate | b64enc }}
-  tls.key: {{ .Values.services.admin.ingress.tlsKey | b64enc }}
+  tls.crt: {{ .Values.services.admin.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.services.admin.tlsKey | b64enc }}
 ---
 {{- end }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: keystone-api
+  name: keystone
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     component: keystone
     type: api
+  annotations:
+    {{- if .Values.services.ingress.limitRps }}
+    ingress.kubernetes.io/limit-rps: {{ .Values.services.ingress.limitRps | quote }}
+    {{- end }}
+    {{- if .Values.services.ingress.limitConnections }}
+    ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
+    {{- end }}
 spec:
   tls:
-  {{- if .Values.services.public.ingress.tlsCertificate }}
+  {{- if .Values.services.public.tlsCertificate }}
      - secretName: tls-{{.Values.services.public.host | replace "." "-" }}
        hosts: [{{ .Values.services.public.host }}]
   {{- end }}
-  {{- if .Values.services.admin.ingress.tlsCertificate }}
+  {{- if .Values.services.admin.tlsCertificate }}
      - secretName: tls-{{.Values.services.admin.host | replace "." "-" }}
        hosts: [{{ .Values.services.admin.host }}]
   {{- end }}
@@ -60,12 +68,13 @@ spec:
         paths:
         - path: /
           backend:
-            serviceName: keystone-api
-            servicePort: 5000
+            serviceName: keystone
+            servicePort: {{ .Values.services.public.port default "5000" }}
     - host: {{.Values.services.admin.host}}
       http:
         paths:
         - path: /
           backend:
-            serviceName: keystone-api
-            servicePort: 35357
+            serviceName: keystone
+            servicePort: {{ .Values.services.admin.port default "35357" }}
+{{- end }}

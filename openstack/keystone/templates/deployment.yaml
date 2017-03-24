@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: keystone-api
+  name: keystone
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -33,8 +33,8 @@ spec:
     spec:
       containers:
         - name: keystone
-          image: "{{ .Values.image }}:{{ .Values.imageTag }}"
-          imagePullPolicy: {{ .Values.imagePullPolicy | default "IfNotPresent" | quote }}
+          image: "{{ .Values.keystone.image }}:{{ .Values.keystone.imageTag }}"
+          imagePullPolicy: {{ .Values.keystone.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /usr/local/bin/kubernetes-entrypoint
           env:
@@ -80,33 +80,33 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 15
           volumeMounts:
-            - name: conf
-              mountPath: /etc/keystone/keystone.conf
+            - mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
-            - name: paste
-              mountPath: /etc/keystone/keystone-paste.ini
+              name: keystone-etc
+            - mountPath: /etc/keystone/keystone-paste.ini
               subPath: paste.ini
-            - name: policy
-              mountPath: /etc/keystone/policy.json
+              name: keystone-etc
+            - mountPath: /etc/keystone/policy.json
               subPath: policy.json
               readOnly: true
-            - name: wsgi
-              mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
+              name: keystone-etc
+            - mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
               subPath: wsgi-keystone.conf
               readOnly: true
-            - name: fernet
-              mountPath: /fernet-keys
+              name: keystone-etc
+            - mountPath: /fernet-keys
               readOnly: true
-            - name: scripts
-              mountPath: /scripts
-          {{- if .Values.resources.enabled }}
+              name: fernet
+            - mountPath: /scripts
+              name: keystone-bin
+          {{- if .Values.keystone.resources.enabled }}
           resources:
             limits:
-              cpu: {{ .Values.resources.limits.cpu | quote }}
-              memory: {{ .Values.resources.limits.memory | quote }}
+              cpu: {{ .Values.keystone.resources.limits.cpu | quote }}
+              memory: {{ .Values.keystone.resources.limits.memory | quote }}
             requests:
-              cpu: {{ .Values.resources.requests.cpu | quote }}
-              memory: {{ .Values.resources.requests.memory | quote }}
+              cpu: {{ .Values.keystone.resources.requests.cpu | quote }}
+              memory: {{ .Values.keystone.resources.requests.memory | quote }}
           {{- end }}
         {{- if .Values.metrics.enabled }}
         - name: statsd
@@ -129,21 +129,12 @@ spec:
           {{- end }}
         {{- end }}
       volumes:
-        - name: conf
-          configMap:
-            name: keystone-etc
-        - name: paste
-          configMap:
-            name: keystone-etc
-        - name: policy
-          configMap:
-            name: keystone-etc
-        - name: wsgi
+        - name: keystone-etc
           configMap:
             name: keystone-etc
         - name: fernet
           secret:
             secretName: keystone-fernet
-        - name: scripts
+        - name: keystone-bin
           configMap:
             name: keystone-bin

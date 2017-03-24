@@ -3,10 +3,10 @@
 export http_proxy=
 export all_proxy=
 
-{{- if .Values.os_auth_url }}
-URL_BASE={{ .Values.os_auth_url }}
+{{- if .Values.keystone.authUrl }}
+URL_BASE={{ .Values.keystone.authUrl }}
 {{- else }}
-URL_BASE=http://keystone-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:5000
+URL_BASE=http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:5000
 {{- end }}
 
 echo "Waiting for the keystone-api ${URL_BASE} to become available.."
@@ -29,28 +29,28 @@ fi
 
 export OS_AUTH_URL=${URL_BASE}/v3
 export OS_AUTH_TYPE=v3password
-export OS_USERNAME={{ .Values.os_username }}
-export OS_PASSWORD={{ .Values.os_password }}
-{{- if .Values.os_user_domain_id }}
-export OS_USER_DOMAIN_ID={{ .Values.os_user_domain_id }}
+export OS_USERNAME={{ .Values.keystone.username }}
+export OS_PASSWORD={{ .Values.keystone.password }}
+{{- if .Values.keystone.userDomainId }}
+export OS_USER_DOMAIN_ID={{ .Values.keystone.userDomainId }}
 {{- end }}
-{{- if .Values.os_user_domain_name }}
-export OS_USER_DOMAIN_NAME={{ .Values.os_user_domain_name }}
+{{- if .Values.keystone.userDomainName }}
+export OS_USER_DOMAIN_NAME={{ .Values.keystone.userDomainName }}
 {{- end }}
-{{- if .Values.os_project_name }}
-export OS_PROJECT_NAME={{ .Values.os_project_name }}
+{{- if .Values.keystone.projectName }}
+export OS_PROJECT_NAME={{ .Values.keystone.projectName }}
 {{- end }}
-{{- if .Values.os_project_domain_id }}
-export OS_PROJECT_DOMAIN_ID={{ .Values.os_project_domain_id }}
+{{- if .Values.keystone.projectDomainId }}
+export OS_PROJECT_DOMAIN_ID={{ .Values.keystone.projectDomainId }}
 {{- end }}
-{{- if .Values.os_project_domain_name }}
-export OS_PROJECT_DOMAIN_NAME={{ .Values.os_project_domain_name }}
+{{- if .Values.keystone.projectDomainName }}
+export OS_PROJECT_DOMAIN_NAME={{ .Values.keystone.projectDomainName }}
 {{- end }}
-{{- if .Values.os_domain_name }}
-export OS_DOMAIN_NAME={{ .Values.os_domain_name }}
+{{- if .Values.keystone.domainName }}
+export OS_DOMAIN_NAME={{ .Values.keystone.domainName }}
 {{- end }}
-{{- if .Values.os_domain_id }}
-export OS_DOMAIN_ID={{ .Values.os_domain_id }}
+{{- if .Values.keystone.domainId }}
+export OS_DOMAIN_ID={{ .Values.keystone.domainId }}
 {{- end }}
 export OS_REGION={{.Values.region}}
 {{- if .Values.sentry.enabled }}
