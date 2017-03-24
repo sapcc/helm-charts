@@ -92,8 +92,9 @@ auth_version = 3
 auth_uri = {{$cluster.keystone_auth_uri}}
 auth_url = {{$cluster.keystone_auth_url}}
 insecure = false
-{{- if $cluster.keystone_interface }}
-interface = {{$cluster.keystone_interface}}
+{{- /* TODO: Workaround - need to be removed */ -}}
+{{- if $cluster.endpoint_override }}
+endpoint_override = {{$cluster.endpoint_override}}
 {{- end }}
 cache = swift.cache
 region_name = {{$context.global.region}}
