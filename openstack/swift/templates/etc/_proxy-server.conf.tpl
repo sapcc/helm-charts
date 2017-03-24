@@ -124,7 +124,6 @@ container_listing_ratelimit_100 = 100
 use = egg:swift#cname_lookup
 lookup_depth = 2
 storage_domain = {{$cluster.cname_lookup_storage_domain}}
-storage_host = {{$cluster.cname_lookup_storage_host}}
 
 [filter:domain_remap]
 use = egg:swift#domain_remap

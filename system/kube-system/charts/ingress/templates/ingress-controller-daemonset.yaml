@@ -13,8 +13,10 @@ spec:
             prometheus.io/scrape: "true"
             prometheus.io/port: "9101"
     spec:
+{{- if .Values.controller.nodeSelector }}
       nodeSelector:
-        zone: farm
+{{ toYaml .Values.controller.nodeSelector | indent 8 }}
+{{- end }}
       terminationGracePeriodSeconds: 60
       containers:
       - image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}"

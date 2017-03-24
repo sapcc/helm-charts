@@ -1,0 +1,78 @@
+kind: Deployment
+apiVersion: extensions/v1beta1 
+
+metadata:
+  name: blackbox-tests-datapath
+
+spec:
+  replicas: {{.Values.global.replicaCount}}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: blackbox-tests-datapath
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: blackbox-tests-datapath
+          persistentVolumeClaim:
+            claimName: blackbox-tests-datapath
+      containers:
+        - name: pytest
+{{- if typeIs "float64" .Values.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.image.repository}}:{{.Values.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.image.repository}}:{{.Values.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - "--timeout 10"
+            - "tests/test_datapath.py"
+          volumeMounts:
+            - name: blackbox-tests-datapath
+              mountPath: /opt/reports
+              readOnly: false
+          env:
+            - name: CCLOUD_DATAPATH_SERVER_FLOAT_IPS
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: server.floating.ips } }
+            - name: CCLOUD_DATAPATH_SERVER_DNS_NAMES
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: server.dns.names } }
+            - name: CCLOUD_DATAPATH_LBAAS_FLOAT_IP
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: lbaas.floating.ips } }
+            - name: CCLOUD_DATAPATH_BIND_IPS
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: bind.ips } }
+            - name: CCLOUD_DATAPATH_UNBOUND_IPS
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: unbound.ips } }
+            - name: CCLOUD_DATAPATH_HIDDEN_MASTER
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: hidden.master } }
+            - name: CCLOUD_DATAPATH_REGIONAL_PTR
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: regional.ptr } }
+            - name: OS_REGION_NAME
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: os.region.name } }
+            - name: CCLOUD_SENTRY_DSN
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: sentry.dsn } }
+            - name: SLEEP
+              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: sleep } }
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
