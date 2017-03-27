@@ -1,0 +1,64 @@
+# Default values for horizon.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+tld: cloud.sap
+region: local
+
+horizon:
+  image: "hub.global.cloud.sap/monsoon/ubuntu-source-horizon"
+  imageTag: "20170109111826"
+
+  ## Specify a imagePullPolicy
+  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # imagePullPolicy:
+
+  secretKey: Hx8H0128lzP8dQ9Ffvs3e
+
+  sslEnabled: False
+
+  debug: False
+
+  resources:
+    enabled: false
+    limits:
+      memory: 128Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 500m
+
+
+services:
+  type: ClusterIP
+#  externalip: "192.168.1.100"
+
+  ingress:
+    enabled: false
+    # see https://github.com/kubernetes/ingress/blob/74d57c950282484885a74c92d3413110e3b95c69/controllers/nginx/configuration.md#rate-limiting
+  # limitRps: 100
+  # limitConnections: 100
+
+  horizon:
+    scheme: http
+    host: horizon.local.cloud.sap
+    port: 8080
+    #tlsCertificate:
+    #tlsKey:
+
+memcached:
+  port: 11211
+
+keystone:
+  host: http://identity.cluster.cloud.sap
+# authUrl: http://identity.cluster.cloud.sap/v3
+
+replicas: 1
+
+upgrades:
+  revisionHistory: 3
+  podReplacementStrategy: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 3

@@ -1,0 +1,24 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: horizon
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: horizon
+spec:
+  selector:
+    app: {{ template "fullname" . }}
+  type: {{ default "ClusterIP" .Values.services.type | quote }}
+  ports:
+    - name: http
+      port: {{ default "8080" .Values.services.horizon.port }}
+      targetPort: 8080
+{{- if .Values.services.externalip }}
+  externalIPs: [
+    {{ .Values.services.externalip | quote }}
+    ]
+{{- end }}
