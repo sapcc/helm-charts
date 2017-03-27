@@ -37,29 +37,37 @@ spec:
             - "tests/test_datapath.py"
           volumeMounts:
             - name: blackbox-tests-datapath
-              mountPath: /opt/reports
+              mountPath: /opt/logs
               readOnly: false
           env:
             - name: CCLOUD_DATAPATH_SERVER_FLOAT_IPS
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: server.floating.ips } }
+              value: {{ .Values.server_floating_ips | quote }}
             - name: CCLOUD_DATAPATH_SERVER_DNS_NAMES
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: server.dns.names } }
+              value: {{ .Values.server_dns_names | quote }}
             - name: CCLOUD_DATAPATH_LBAAS_FLOAT_IP
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: lbaas.floating.ips } }
+              value: {{ .Values.lbaas_floating_ips | quote }}
             - name: CCLOUD_DATAPATH_BIND_IPS
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: bind.ips } }
+              value: {{ .Values.bind_ips | quote }}
             - name: CCLOUD_DATAPATH_UNBOUND_IPS
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: unbound.ips } }
+              value: {{ .Values.unbound_ips | quote }}
             - name: CCLOUD_DATAPATH_HIDDEN_MASTER
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: hidden.master } }
+              value: {{ .Values.hidden_master | quote }}
             - name: CCLOUD_DATAPATH_REGIONAL_PTR
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: regional.ptr } }
+              value: {{ .Values.regional_ptr | quote }}
             - name: OS_REGION_NAME
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: os.region.name } }
+              value: {{ .Values.global.openstack.region_name | quote }}
             - name: CCLOUD_SENTRY_DSN
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: sentry.dsn } }
+              value: {{ .Values.global.sentry.dsn | quote }}
+            - name: STATSD_HOST
+              value: "localhost"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: "blackbox-datapath"
+            - name: CCLOUD_STATSD_PORT
+              value: {{ .Values.global.port_statsd | quote }}
             - name: SLEEP
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-datapath, key: sleep } }
+              value: {{ .Values.sleep | quote }}
           livenessProbe:
             exec:
               command:
@@ -76,3 +84,13 @@ spec:
             timeoutSeconds: 5
             periodSeconds: 15
             initialDelaySeconds: 15
+
+        - name: statsd
+          image: prom/statsd-exporter:master
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.port_metrics}}

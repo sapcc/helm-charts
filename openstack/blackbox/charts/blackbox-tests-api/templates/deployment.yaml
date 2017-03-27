@@ -37,37 +37,45 @@ spec:
             - "tests/test_api.py"
           volumeMounts:
             - name: blackbox-tests-api
-              mountPath: /opt/reports
+              mountPath: /opt/logs
               readOnly: false
           env:
             - name: OS_AUTH_URL
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.auth.url } }
+              value: {{ .Values.global.openstack.auth_url | quote }}
             - name: OS_IDENTITY_API_VERSION
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.identity.api.version } }
+              value: {{ .Values.global.openstack.identity_api_version | quote }}
             - name: OS_USERNAME
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.username } }
+              value: {{ .Values.global.openstack.username | quote }}
             - name: OS_USER_DOMAIN_NAME
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.user.domain.name } }
+              value: {{ .Values.global.openstack.user_domain_name | quote }}
             - name: OS_PROJECT_NAME
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.project.name } }
+              value: {{ .Values.global.openstack.project_name | quote }}
             - name: OS_PROJECT_DOMAIN_NAME
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.project.domain.name } }
+              value: {{ .Values.global.openstack.project_domain_name | quote }}
             - name: OS_REGION_NAME
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: os.region.name } }
+              value: {{ .Values.global.openstack.region_name | quote }}
             - name: CCLOUD_API_BILLING_URL
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: billing.url } }
+              value: {{ .Values.billing_url | quote }}
             - name: CCLOUD_API_LYRA_URL
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: lyra.url } }
+              value: {{ .Values.lyra_url | quote }}
             - name: CCLOUD_API_ARC_URL
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: arc.url } }
+              value: {{ .Values.arc_url | quote }}
             - name: CCLOUD_API_IRONIC_URL
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: ironic.url } }
+              value: {{ .Values.ironic_url | quote }}
             - name: CCLOUD_API_SECRET_ID
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: secret.id } }
+              value: {{ .Values.secret_id | quote }}
             - name: CCLOUD_SENTRY_DSN
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: sentry.dsn } }
+              value: {{ .Values.global.sentry.dsn | quote }}
+            - name: STATSD_HOST
+              value: "localhost"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: "blackbox-api"
+            - name: CCLOUD_STATSD_PORT
+              value: {{ .Values.global.port_statsd | quote }}
             - name: SLEEP
-              valueFrom: { configMapKeyRef: { name: blackbox-tests-api, key: sleep } }
+              value: {{ .Values.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom: { secretKeyRef:    { name: blackbox-tests-api, key: os.password } }
           livenessProbe:
@@ -86,3 +94,13 @@ spec:
             timeoutSeconds: 5
             periodSeconds: 15
             initialDelaySeconds: 15
+
+        - name: statsd
+          image: prom/statsd-exporter:master
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.port_metrics}}
