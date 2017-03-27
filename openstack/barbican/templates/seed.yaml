@@ -2,25 +2,27 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: glance-seed
+  name: barbican-seed
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: glance
+    component: barbican
     type: seed
 spec:
   requires:
   - keystone-seed
 
   roles:
-  - cloud_image_admin
+  - keymanager_viewer
+  - keymanager_admin
+  - cloud_keymanager_admin
 
   services:
-  - name: glance
-    type: image
-    description: Openstack Image
+  - name: barbican
+    type: key-manager
+    description: Openstack Key Management
     endpoints:
     - interface: admin
       region: {{ .Values.region | quote }}
@@ -30,8 +32,7 @@ spec:
       url: '{{ .Values.services.api.scheme }}://{{ .Values.services.api.host }}:{{ .Values.services.api.port }}'
     - interface: internal
       region: {{ .Values.region | quote }}
-      url: 'http://glance.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:{{ .Values.services.api.port }}'
-
+      url: 'http://barbican.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:{{ .Values.services.api.port }}'
 
   domains:
   - name: Default
@@ -39,20 +40,21 @@ spec:
     - name: admin
       roles:
       - domain: Default
-        role: cloud_image_admin
+        role: cloud_keymanager_admin
       - project: admin
-        role: cloud_image_admin
-    - name: glance
-      description: 'Glance Service'
+        role: cloud_keymanager_admin
+    - name: barbican
+      description: 'Barbican Service'
       password: {{.Values.keystone.password | quote }}
       roles:
       - project: service
         role: service
+
     groups:
     - name: administrators
       roles:
       - domain: Default
-        role: cloud_image_admin
+        role: cloud_keymanager_admin
       - project: admin
-        role: cloud_image_admin
+        role: cloud_keymanager_admin
 {{- end }}
