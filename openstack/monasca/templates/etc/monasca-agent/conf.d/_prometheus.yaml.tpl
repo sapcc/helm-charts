@@ -104,7 +104,7 @@ instances:
                  policy:   { regex: 'all' }
                  status:   status
                  type:     type
-         openstack.compute:
+         nova:
              gauges: [ 'openstack_compute_(.*)_gauge' ]
              dimensions:
                  component: kubernetes_name
