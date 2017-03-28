@@ -104,6 +104,12 @@ instances:
                  policy:   { regex: 'all' }
                  status:   status
                  type:     type
+         openstack.compute:
+             gauges: [ 'openstack_compute_(.*)_gauge' ]
+             dimensions:
+                 component: kubernetes_name
+                 hostname:  host
+                 service:   component
 
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
