@@ -1,0 +1,64 @@
+{{- if .Release.IsUpgrade }}
+# TODO: this should go into the openstack/neutron chart
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: neutron-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: neutron
+    type: seed
+spec:
+  requires:
+  - keystone-seed
+
+  roles:
+  - network_admin
+  - cloud_network_admin
+
+  services:
+  - name: neutron
+    type: network
+    description: Openstack Networking
+
+  domains:
+  - name: Default
+    roles:
+    - user: admin
+      role: cloud_network_admin
+    - group: administrators
+      role: cloud_network_admin
+    projects:
+    - name: admin
+      roles:
+      - user: admin
+        role: cloud_network_admin
+      - group: administrators
+        role: cloud_network_admin
+    - name: l3admin
+      description: Cisco L3 Admin Project
+    users:
+    - name: neutron
+      description: 'Neutron Service'
+      password: {{ .Values.neutronServicePassword | quote }}
+      roles:
+      - project: service
+        role: service
+      - project: service
+        role: admin
+      - project: service
+        role: cloud_network_admin
+      - project: l3admin
+        role: admin
+      - project: l3admin
+        role: cloud_network_admin
+      - project: service
+        role: cloud_compute_admin
+      - project: l3admin
+        role: cloud_compute_admin
+      - project: service
+        role: cloud_keymanager_admin
+{{- end }}

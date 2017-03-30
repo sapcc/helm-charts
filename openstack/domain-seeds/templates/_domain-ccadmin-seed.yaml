@@ -1,0 +1,198 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: domain-ccadmin-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: openstack
+    type: seed
+spec:
+  requires:
+    - keystone-seed
+#    - monasca-seed
+#    - swift-seed
+    - neutron-seed
+    - domain-default-seed
+
+  domains:
+  - name: ccadmin
+    description: 'Converged Cloud Administration'
+    roles:
+    - user: dashboard@Default
+      role: admin
+
+    projects:
+    - name: cloud_admin
+      description: 'Cloud Administrator Project'
+      roles:
+      - user: admin@Default
+        role: admin
+      - user: dashboard@Default
+        role: admin
+      - user: dashboard@Default
+        role: cloud_network_admin
+#      - user: dashboard@Default
+#        role: cloud_compute_admin
+#      - user: dashboard@Default
+#        role: cloud_volume_admin
+#      - user: dashboard@Default
+#        role: cloud_keymanager_admin
+#      - user: dashboard@Default
+#        role: cloud_dns_admin
+    - name: admin
+      description: 'Domain Administrator Project'
+    - name: master
+      description: 'Container Project'
+      roles:
+#      - user: automation@Default
+#        role: swiftoperator
+#      - user: concourse@Default
+#        role: swiftoperator
+#      - user: concourse@Default
+#        role: monasca-user
+#      - user: db_backup@Default
+#        role: swiftoperator
+#      - user: docker_registry@Default
+#        role: swiftoperator
+#      - user: glance@Default
+#        role: swiftoperator
+#      - user: image-build@Default
+#        role: swiftoperator
+#      - user: image-build@Default
+#        role: cloud_image_admin
+#      - user: monasca_agent@Default
+#        role: monasca-agent
+      - user: quay@Default
+        role: member
+    - name: ccadmin-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the ccadmin domain'
+    - name: ccadmin-shared-infra
+      description: 'Home of private networks, backup networks and routers for the ccadmin domain'
+
+    groups:
+    - name: CCADMIN_DOMAIN_MEMBERS
+      roles:
+      - domain: ccadmin
+        role: member
+    - name: CCADMIN_DOMAIN_ADMINS
+      roles:
+      - domain: ccadmin
+        role: admin
+      - domain: ccadmin
+        role: member
+        project_roles:
+      - project: admin
+        role: admin
+      - project: master
+        role: admin
+      - project: master
+        role: member
+#      - project: master
+#        role: monasca-user
+#      - project: master
+#        role: swiftreseller
+    - name: CCADMIN_CLOUD_ADMINS
+      roles:
+      - domain: ccadmin
+        role: admin
+      - domain: ccadmin
+        role: member
+      - domain: Default
+        role: admin
+        project_roles:
+      - project: admin
+        role: admin
+      - project: master
+        role: admin
+      - project: master
+        role: member
+#      - project: master
+#        role: cloud_image_admin
+#      - project: master
+#        role: cloud_dns_admin
+#      - project: master
+#        role: monasca-user
+#      - project: master
+#        role: swiftreseller
+      - project: cloud_admin
+        role: admin
+      - project: cloud_admin
+        role: cloud_network_admin
+#      - project: cloud_admin
+#        role: cloud_dns_admin
+#      - project: cloud_admin
+#        role: cloud_image_admin
+#      - project: cloud_admin
+#        role: cloud_compute_admin
+#      - project: cloud_admin
+#        role: cloud_volume_admin
+#      - project: cloud_admin
+#        role: cloud_keymanager_admin
+    - name: CCADMIN_MONITORING_USERS
+      roles:
+      - project: master
+        role: monasca-viewer
+    - name: CCADMIN_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: ccadmin-net-infra
+        role: admin
+      - project: ccadmin-net-infra
+        role: network_admin
+      - project: ccadmin-net-infra
+        role: cloud_network_admin
+      - project: ccadmin-shared-infra
+        role: admin
+      - project: ccadmin-shared-infra
+        role: network_admin
+
+    config:
+      identity:
+        driver: cc_ad
+      ldap:
+        page_size: 1000
+        use_tls: false
+        tls_req_cert: allow
+        url: {{ .Values.ldapUrl | quote }}
+        user: {{ .Values.ldapUser | quote }}
+        password: {{ .Values.ldapPassword | quote }}
+        suffix: {{ .Values.ldapSuffix | quote }}
+        query_scope: sub
+        use_dumb_member: false
+        user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
+        user_objectclass: user
+        user_id_attribute: cn
+        user_name_attribute: name
+        user_mail_attribute: mail
+        user_pass_attribute: userPassword
+        user_description_attribute: displayName
+        user_enabled_attribute: userAccountControl
+        user_enabled_mask: 2
+        user_enabled_default: 512
+        user_attribute_ignore: default_project_id
+        user_allow_create: False
+        user_allow_delete: False
+        user_allow_update: False
+        user_filter: (|(memberOf=CN=CCADMIN_DOMAIN_USERS,OU=CCADMIN,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
+        group_objectclass: group
+        group_id_attribute: cn
+        group_name_attribute: name
+        group_desc_attribute: description
+        group_member_attribute: member
+        group_allow_create: False
+        group_allow_delete: False
+        group_allow_update: False
+        group_tree_dn: OU=CCADMIN,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        use_pool: true
+        pool_size: 10
+        pool_connection_lifetime: 60
+        use_auth_pool: true
+        auth_pool_size: 100
+        auth_pool_connection_lifetime: 60
+      cc_ad:
+        enable_ews_auth: True
+        mirror_ews_passwords: True
+{{- end }}

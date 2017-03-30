@@ -1,0 +1,62 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: domain-default-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: openstack
+    type: seed
+spec:
+  requires:
+    - keystone-seed
+    - nova-seed
+    - neutron-seed
+#    - swift-seed
+
+  domains:
+  - name: Default
+    users:
+    - name: dashboard
+      description: 'Dashboard Service'
+      password: {{ .Values.dashboardServicePassword | quote }}
+      roles:
+      - project: service
+        role: service
+      - project: service
+        role: swiftreseller
+    - name: db_backup
+      description: 'Database Backup User'
+      password: {{ .Values.dbBackupServicePassword | quote }}
+    - name: concourse
+      description: 'Concourse Service User'
+      password: {{ .Values.concourseServicePassword | quote }}
+    - name: docker_registry
+      description: 'Docker Registry Service User'
+      password: {{ .Values.dockerRegistryServicePassword | quote }}
+    - name: image-build
+      description: 'Image building'
+      password: {{ .Values.imageBuildServicePassword | quote }}
+    - name: quay
+      description: 'Quay Service User'
+      password: {{ .Values.quayServicePassword | quote }}
+    - name: s4hana
+      description: 'S/4 HANA Service'
+      password: {{ .Values.s4hanaServicePassword | quote }}
+      roles:
+      - project: service
+        role: service
+    groups:
+    - name: administrators
+      description: 'Administrators'
+      users:
+      - admin
+      roles:
+      - project: admin
+        role: admin
+      - domain: Default
+        role: admin
+{{- end }}
