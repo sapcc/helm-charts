@@ -1,0 +1,50 @@
+{{- if .Values.rally_seeding_enabled }}
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: benchmark-rally-seed
+spec:
+  requires:
+    - keystone-seed
+    - neutron-seed
+    - domain-cc3test-seed
+
+  domains:
+  - name: cc3test
+    users:
+    - name: rally_admin
+      description: Rally Administrator
+      password: '{{.Values.cc3test_rally_admin_password}}'
+    {{/* we need to define this here as a variable, as the range seems to redefine . */}}
+    {{ $values := .Values }}
+    {{/* this creates a loop from 1 to rally_number_test_user - see https://godoc.org/github.com/Masterminds/sprig */}}
+    {{ range $i, $iterator :=  untilStep 1 (int (add1 .Values.rally_number_test_user)) 1 }}
+    - name: rally_user_{{ $iterator }}
+      description: CC-Test Rally User
+      password: '{{ $values.cc3test_rally_user_password }}'
+    {{ end }}
+    groups:
+    - name: Administrators
+      users:
+      - rally_admin
+      roles:
+      - project: rally
+        role: admin
+      - project: rally
+        role: member
+      - project: rally
+        role: network_admin
+    - name: Members
+      users:
+        {{/* we need to define this here as a variable, as the range seems to redefine . */}}
+        {{ $values := .Values }}
+        {{/* this creates a loop from 1 to rally_number_test_user - see https://godoc.org/github.com/Masterminds/sprig */}}
+        {{ range $i, $iterator :=  untilStep 1 (int (add1 .Values.rally_number_test_user)) 1 }}
+        - rally_user_{{ $iterator }}
+        {{ end }}
+      roles:
+      - project: rally
+        role: member
+{{- end }}
+{{- end }}
