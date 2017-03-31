@@ -6,6 +6,13 @@ instances:
    timeout: 45
    collect_response_time: True
    mapping:
+      # see https://github.com/sapcc/monasca-agent/blob/master/docs/Customizations.md#dynamiccheckhelper-class for
+      # help on filter and mapping rules below
+      # The following dimensions have a predefined-meaning and should be used properly
+      #   service: the service name (e.g. "compute", "dns", "monitoring", "object-store", "kubernetes", "elektra")
+      #   component: the technical component of the service (e.g. "Postgres", "nova-api", ...)
+      #  
+      # Use `monasca --insecure dimension-name-list` to discover existing names and try to match existing names first.
       match_labels:
 
       dimensions:
@@ -15,11 +22,6 @@ instances:
          resource: resource
          quantile: quantile
       groups:
-         # each group has a unique set of dimensions and a prefix equal to the group name
-         # Prometheus labels are mapped using group-specific dimensions
-         # using statements in the form <monasca-dimension>:<prometheus-label>
-         # regular expressions can be used for the gauges/rates to mark which part of the name should be used
-         # (bind_responses)_total maps the Prometheus name bind_responses_total to a Monasca metric bind_responses
          dns:
              gauges: [ 'bind_up' ]
              rates: [ '(bind_incoming_queries)_total', '(bind_responses)_total' ]
@@ -110,7 +112,8 @@ instances:
                  hostname:  host
                  service: service
                  hypervisor_type: hypervisor_type
-
+                 vm_state: vm_state
+                 project_id: project_id        # NOT: __project_id__ !!
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
    timeout: 45
