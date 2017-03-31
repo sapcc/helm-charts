@@ -10,13 +10,6 @@ spec:
     spec:
       containers:
       - name: node-problem-detector
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 10256
-            scheme: HTTP
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
         command:
         - /node-problem-detector
         - --logtostderr
@@ -48,6 +41,9 @@ spec:
         - name: config
           mountPath: /config
           readOnly: true
+        ports:
+          - name: healthz
+            containerPort: 10256
       volumes:
       - name: log
         # Config `log` to your system log directory
