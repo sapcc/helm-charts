@@ -9,30 +9,43 @@ input {
 }
 
 filter {
-    date {
-        match => ["[log][timestamp]", "UNIX"]
-        target => "@timestamp"
-    }
+  mutate {
+    gsub => [
+      "message", "\", [0-9], \"", " = ",
+      "message", "\], \[", ",",
+      "message", "\]\]", "]",
+      "message", "\[\[", "["
+    ]
+  }
 
-    date {
-        match => ["creation_time", "UNIX"]
-        target => "creation_time"
-    }
 
-    grok {
-        match => {
-            "[@timestamp]" => "^(?<index_date>\d{4}-\d{2}-\d{2})"
-            add_tag => [ "timestamp_added" ]
-        }
-    }
+  json {
+    source => "message"
+  }
+
+  kv {
+    source => "traits"
+    remove_field => "traits"
+  }
 }
 
 output {
+  if ([tenant_id]) {
     elasticsearch {
-        index => "audit-%{index_date}"
+        index => "audit-%{tenant_id}-%{index_date}"
         hosts => ["{{.Values.monasca_elasticsearch_endpoint_host_internal}}:{{.Values.monasca_elasticsearch_port_internal}}"]
         user => "{{.Values.monasca_elasticsearch_audit_user}}"
         password => "{{.Values.monasca_elasticsearch_audit_password}}"
         flush_size => 500
     }
+  }
+    else {
+    elasticsearch {
+        index => "audit-default-%{index_date}"
+        hosts => ["{{.Values.monasca_elasticsearch_endpoint_host_internal}}:{{.Values.monasca_elasticsearch_port_internal}}"]
+        user => "{{.Values.monasca_elasticsearch_audit_user}}"
+        password => "{{.Values.monasca_elasticsearch_audit_password}}"
+        flush_size => 500
+    }
+  }
 }
