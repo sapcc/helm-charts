@@ -107,9 +107,9 @@ instances:
          nova:
              gauges: [ 'openstack_compute_(.*)_gauge' ]
              dimensions:
-                 component: kubernetes_name
                  hostname:  host
-                 service: hypervisor_type
+                 service: service
+                 hypervisor_type: hypervisor_type
 
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
