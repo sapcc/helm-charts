@@ -15,4 +15,4 @@ echo "Press Ctr-C to cancel within 10 secs ..."
 
 sleep 10
 squote="'"
-/usr/bin/influx -username mon_api -password {{.Values.monasca_influxdb_monapi_password}} -database mon -execute "show measurements with measurement =~ ${metric}" | tail -n +4 | xargs -I %arg% /usr/bin/influx -username mon_api -password {{.Values.monasca_influxdb_monapi_password}} -database mon -execute "drop series from \"%arg%\" where _tenant_id = {squote}${tenant_id}${squote}"
+/usr/bin/influx -username mon_api -password {{.Values.monasca_influxdb_monapi_password}} -database mon -execute "show measurements with measurement =~ /${metric}/" | tail -n +4 | xargs -I %arg% /usr/bin/influx -username mon_api -password {{.Values.monasca_influxdb_monapi_password}} -database mon -execute "drop series from \"%arg%\" where _tenant_id = {squote}${tenant_id}${squote}"
