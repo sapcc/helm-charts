@@ -6,7 +6,8 @@ metadata:
   labels:
     system: openstack
     service: monitoring
-    component: elasticsearch-master
+    component: elasticsearch
+    role: master
   annotations:
     kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
 
@@ -20,10 +21,22 @@ spec:
   template:
     metadata:
       labels:
-        component: elasticsearch-master
+        component: elasticsearch
+        role: master
       annotations:
         checksum/monasca-templates-monasca-es-etc-configmap.yaml: {{ include "monasca/templates/monasca-es-etc-configmap.yaml" . | sha256sum }}
         checksum/monasca-templates-monasca-es-bin-configmap.yaml: {{ include "monasca/templates/monasca-es-bin-configmap.yaml" . | sha256sum }}
+        pod.beta.kubernetes.io/init-containers: '[
+          {
+          "name": "sysctl",
+            "image": "busybox",
+            "imagePullPolicy": "IfNotPresent",
+            "command": ["sysctl", "-w", "vm.max_map_count=262144"],
+            "securityContext": {
+              "privileged": true
+            }
+          }
+        ]'
     spec:
       nodeSelector:
         zone: farm
@@ -40,6 +53,7 @@ spec:
           capabilities:
             add:
               - IPC_LOCK
+              - SYS_RESOURCE
         image: {{.Values.docker_repo}}/monasca-elasticsearch:{{.Values.image_version_monasca_elasticsearch}}
         imagePullPolicy: IfNotPresent
         command:
@@ -58,6 +72,8 @@ spec:
           - name: NODE_MASTER
             value: "true"
           - name: NODE_DATA
+            value: "false"
+          - name: NODE_INGEST
             value: "false"
           - name: HTTP_ENABLE
             value: "true"

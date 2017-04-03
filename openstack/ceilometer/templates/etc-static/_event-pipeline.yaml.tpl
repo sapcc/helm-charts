@@ -1,12 +1,12 @@
 ---
 sources:
-    - name: billing_source
+    - name: event_source
       events:
           - "objectstore.http.request"
           - "identity.user.*"
           - "identity.project.*"
       sinks:
-          - billing_sink
+          - event_sink
     - name: audit_source
       events:
           - "identity.user.*"
@@ -51,6 +51,11 @@ sinks:
       triggers:
       publishers:
           - {{.Values.ceilometer_event_target | replace "://" "://_user_:_pass_@" | replace "_user_" .Values.ceilometer_event_target_username | replace "_pass_" .Values.ceilometer_event_target_password | replace "://:@" "://" }}?timeout={{.Values.ceilometer_timeout}}&verify_ssl={{.Values.ceilometer_verify_ssl}}{{if ne .Values.ceilometer_event_target_clientcert "" }}&clientcert={{.Values.ceilometer_event_target_clientcert}}{{if ne .Values.ceilometer_event_target_clientkey "" }}&clientkey={{.Values.ceilometer_event_target_clientkey}}{{end}}{{end}}
+    - name: audit_sink
+      transformers:
+      triggers:
+      publishers:
+          - notifier://
     - name: audit_sink
       transformers:
       triggers:

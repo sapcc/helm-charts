@@ -1,19 +1,17 @@
 input {
     kafka {
-        zk_connect => "zk:{{.Values.monasca_zookeeper_port_internal}}"
-        topic_id => "log"
+        bootstrap_servers => "kafka:{{.Values.monasca_kafka_port_internal}}"
+        topics => ["log"]
         group_id => "logstash-transformer"
-        consumer_restart_on_error => true
+        client_id => "monasca_log_transformer"
         consumer_threads => 12
-        consumer_restart_sleep_ms => 1000
-        rebalance_max_retries => 50
-        rebalance_backoff_ms => 5000
         }
 }
 
 filter {
+
     ruby {
-      code => "event['message_tmp'] = event['log']['message'][0..49]"
+      code => "event.set('message_tmp', event.get('[log][message][0..49]'))"
     }
     grok {
         match => {
@@ -45,17 +43,18 @@ filter {
             }
         "
         code => "
-            if event['log_level']
+            if event.get('log_level')
                 # keep original value
-                log_level = event['log_level'].downcase
+                event.set('log_level', event.get('[log_level]').downcase)
                 if LOG_LEVELS_MAP.has_key?(log_level)
-                    event['log_level_original'] = event['log_level']
-                    event['log_level'] = LOG_LEVELS_MAP[log_level]
+                    event.set('log_level_original', event.get('[log_level]'))
+                    event.set('log_level', LOG_LEVELS_MAP[log_level])
                 else
-                    event['log_level'] = log_level.capitalize
+                    event.set('log_level', log_level.capitalize)
                 end
             else
-                event['log_level'] = 'Unknown'
+                event.set('log_level', 'INFO')
+#                event.set('log_level', 'Unknown')
             end
         "
     }
@@ -66,7 +65,7 @@ filter {
         }
 
         # remove temporary fields
-        remove_field => ["log_level", "message_tmp"]
+        remove_field => ["message_tmp"]
     }
 }
 
@@ -77,5 +76,6 @@ output {
         reconnect_backoff_ms => 1000
         retries => 10
         retry_backoff_ms => 1000
+        codec => json
         }
 }

@@ -12,18 +12,13 @@ node:
 path:
   data: /data/data
   logs: /data/log
-  plugins: /elasticsearch/plugins
-  work: /data/work
-
-
-security.manager.enabled: false
 
 network.host: 0.0.0.0
+transport.host: 0.0.0.0
 http.enabled: ${HTTP_ENABLE}
 http.max_content_length: 500mb
 
-discovery:
-    type: kubernetes
+discovery.zen.hosts_provider: kubernetes
 
 discovery.zen.minimum_master_nodes: 2
 
@@ -32,28 +27,22 @@ readonlyrest:
     response_if_req_forbidden: <h1>Forbidden</h1>    
     access_control_rules:
 
-    - name: Monsoon (read only, but can create dashboards)
-      type: allow
-      kibana_access: ro
-      auth_key: {{.Values.monasca_elasticsearch_monsoon_user}}:{{.Values.monasca_elasticsearch_monsoon_password}}
-
     - name: data
       type: allow
-      actions: ["indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","indices:data/write/bulk"]
-      indices: ["logstash-*", "<no-index>"]
+      actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+      indices: ["logstash-*",]
       auth_key: {{.Values.monasca_elasticsearch_data_user}}:{{.Values.monasca_elasticsearch_data_password}}
 
     - name: audit
       type: allow
-      actions: ["indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","indices:data/write/bulk"]
-      indices: ["audit-*", "<no-index>"]
+      actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+      indices: ["audit-*",]
       auth_key: {{.Values.monasca_elasticsearch_audit_user}}:{{.Values.monasca_elasticsearch_audit_password}}
  
-    - name: test
+    - name: Monsoon (read only, but can create dashboards)
       type: allow
-      actions: ["indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","indices:data/write/bulk"]
-      indices: ["testing-*", "<no-index>"]
-      auth_key: {{.Values.monasca_elasticsearch_test_user}}:{{.Values.monasca_elasticsearch_test_password}}
+      kibana_access: ro
+      indices: [".kibana", ".kibana-devnull", "logstash-*"]
 
     - name: Admin
       type: allow
