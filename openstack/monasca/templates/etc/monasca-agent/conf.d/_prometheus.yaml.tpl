@@ -42,7 +42,7 @@ instances:
              dimensions:
                  test: script
          postgres:
-             gauges: [ 'pg_(database_size_gauge_average)', 'pg_(database_size)' ]
+             gauges: [ 'pg_(database_size_bytes_gauge_average)', 'pg_(database_size_bytes)' ]
              dimensions:
                  service: kubernetes_namespace
                  database: name
