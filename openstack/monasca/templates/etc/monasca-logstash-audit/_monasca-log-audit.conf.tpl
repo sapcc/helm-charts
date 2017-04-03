@@ -32,7 +32,7 @@ filter {
 output {
   if ([tenant_id]) {
     elasticsearch {
-        index => "audit-%{tenant_id}-%{index_date}"
+        index => "audit-%{tenant_id}-%{+YYYY.MM.dd}"
         hosts => ["{{.Values.monasca_elasticsearch_endpoint_host_internal}}:{{.Values.monasca_elasticsearch_port_internal}}"]
         user => "{{.Values.monasca_elasticsearch_audit_user}}"
         password => "{{.Values.monasca_elasticsearch_audit_password}}"
@@ -41,7 +41,7 @@ output {
   }
     else {
     elasticsearch {
-        index => "audit-default-%{index_date}"
+        index => "audit-default-%{+YYYY.MM.dd}"
         hosts => ["{{.Values.monasca_elasticsearch_endpoint_host_internal}}:{{.Values.monasca_elasticsearch_port_internal}}"]
         user => "{{.Values.monasca_elasticsearch_audit_user}}"
         password => "{{.Values.monasca_elasticsearch_audit_password}}"
