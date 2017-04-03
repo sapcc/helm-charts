@@ -2,7 +2,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: domain-monsoon3-seed
+  name: domain-cc3test-seed
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -13,52 +13,53 @@ metadata:
 spec:
   requires:
     - keystone-seed
-    - neutron-seed
-    - domain-default-seed
 
   domains:
-  - name: monsoon3
-    description: 'Monsoon Converged Cloud Domain'
+  - name: cc3test
+    description: 'Converged Cloud Testing'
+    projects:
+    - name: admin
+      description: 'CC-Test Administrators Project'
+    - name: test
+      description: 'Test Project'
     roles:
     - user: dashboard@Default
       role: admin
-
-    projects:
-    - name: admin
-      description: 'Monsoon 3 Administrators Project'
-    - name: monsoon3-net-infra
-      description: 'Home of address-scopes, subnetpools, external networks, subnets for the monsoon3 domain'
-    - name: monsoon3-shared-infra
-      description: 'Home of private networks, backup networks and routers for the monsoon3 domain'
-
+    users:
+    - name: test_admin
+      description: CC-Test Administrator
+      password: {{ .Values.cc3testAdminPassword | quote }}
+    - name: test_member
+      description: CC-Test Member
+      password: {{ .Values.cc3testMemberPassword | quote }}
+    - name: test_user
+      description: CC-Test User
+      password: {{ .Values.cc3testUserPassword | quote }}
     groups:
-    - name: MONSOON3_DOMAIN_ADMINS
+    - name: Administrators
+      description: 'Test Administrators'
+      users:
+      - test_admin
       roles:
-      - domain: monsoon3
+      - domain: cc3test
         role: admin
-      - domain: monsoon3
+      - domain: cc3test
         role: member
       - project: admin
         role: admin
-    - name: MONSOON3_DOMAIN_MEMBERS
-      roles:
-      - domain: monsoon3
+      - project: admin
         role: member
-    - name: MONSOON3_TECHNICAL_USERS
-      description: 'Workaround for technical users that should come from CAM'
-    - name: MONSOON3_DOMAIN_NETWORK_ADMINS
+      - project: test
+        role: admin
+      - project: test
+        role: member
+    - name: Members
+      description: 'Test Members'
+      users:
+        - test_member
       roles:
-      - project: monsoon3-net-infra
-        role: admin
-      - project: monsoon3-net-infra
-        role: network_admin
-      - project: monsoon3-net-infra
-        role: cloud_network_admin
-      - project: monsoon3-shared-infra
-        role: admin
-      - project: monsoon3-shared-infra
-        role: network_admin
-
+      - domain: cc3test
+        role: member
     config:
       identity:
         driver: cc_ad
@@ -66,14 +67,12 @@ spec:
         page_size: 1000
         use_tls: false
         tls_req_cert: allow
+        query_scope: sub
+        use_dumb_member: false
         url: {{ .Values.ldapUrl | quote }}
         user: {{ .Values.ldapUser | quote }}
         password: {{ .Values.ldapPassword | quote }}
         suffix: {{ .Values.ldapSuffix | quote }}
-        query_scope: sub
-        use_dumb_member: false
-
-        user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
         user_objectclass: user
         user_id_attribute: cn
         user_name_attribute: sAMAccountName
@@ -85,34 +84,27 @@ spec:
         user_enabled_default: 512
         user_attribute_ignore: default_project_id
         user_allow_create: True
-        user_allow_delete: False
+        user_allow_delete: True
         user_allow_update: True
-
-        group_tree_dn: OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        user_tree_dn: OU=Identities,OU=Testing,{{ .Values.ldapSuffix }}
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
         group_desc_attribute: description
         group_member_attribute: member
         group_allow_create: True
-        group_allow_delete: False
+        group_allow_delete: True
         group_allow_update: True
-
+        group_tree_dn: OU=CCTEST,OU=OSDomains,OU=Testing,{{ .Values.ldapSuffix }}
         use_pool: true
         pool_size: 10
         pool_connection_lifetime: 60
         use_auth_pool: true
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
-
       cc_ad:
-        enable_ews_auth: True
-        mirror_ews_passwords: True
-        enable_lazy_user_creation: True
-        cam_api_enabled: True
-        cam_url: {{ .Values.camApiUrl | quote }}
-        cam_username: {{ .Values.camUser | quote }}
-        cam_password: {{ .Values.camPassword | quote }}
-        cam_profile: 'CC Monsoon 3 Users'
-        cam_group: MONSOON3_DOMAIN_USERS
+        enable_ews_auth: False
+        mirror_ews_passwords: false
+        enable_lazy_user_creation: false
+        cam_api_enabled: false
 {{- end }}

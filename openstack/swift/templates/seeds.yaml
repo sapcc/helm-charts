@@ -1,0 +1,79 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: swift-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: objectstore
+    type: seed
+spec:
+  requires:
+  - keystone-seed
+  - domain-default-seed
+  - domain-cc3test-seed
+
+  roles:
+  - swiftoperator
+  - swiftreseller
+
+  services:
+  - name: swift
+    type: object-store
+    description: Openstack Object Store
+    endpoints:
+    - interface: admin
+      region: '{{.Values.openstack.global.region}}'
+      url: '{{.Values.openstack.global.swift_endpoint_protocol}}://{{include "swift_endpoint_host" .}}:{{.Values.openstack.global.swift_api_port_public}}/v1'
+    - interface: internal
+      region: '{{.Values.openstack.global.region}}'
+      url: '{{.Values.openstack.global.swift_endpoint_protocol}}://{{include "swift_endpoint_host" .}}:{{.Values.openstack.global.swift_api_port_public}}/v1/AUTH_%(tenant_id)s'
+    - interface: public
+      region: '{{.Values.openstack.global.region}}'
+      url: '{{.Values.openstack.global.swift_endpoint_protocol}}://{{include "swift_endpoint_host" .}}:{{.Values.openstack.global.swift_api_port_public}}/v1/AUTH_%(tenant_id)s'
+
+  domains:
+  - name: Default
+    users:
+    - name: admin
+      roles:
+      - domain: Default
+        role: swiftreseller
+      - project: admin
+        role: swiftreseller
+    - name: swift
+      description: 'Swift Service'
+      password: '{{.Values.openstack.global.swift_service_password}}'
+      roles:
+      - project: service
+        role: service
+
+    groups:
+    - name: administrators
+      roles:
+      - domain: Default
+        role: swiftreseller
+      - project: admin
+        role: swiftreseller
+
+  - name: cc3test
+    projects:
+    - name: swift_test
+      description: 'swift test - mini_test'
+    - name: swift_dispersion
+      description: 'dispersion of objectes and containers'
+    groups:
+    - name: Administrators
+      roles:
+      - project: swift_test
+        role: admin
+      - project: swift_test
+        role: member
+      - project: swift_dispersion
+        role: admin
+      - project: swift_dispersion
+        role: member
+{{- end }}

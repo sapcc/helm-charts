@@ -2,7 +2,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: domain-bn-seed
+  name: domain-s4-seed
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -13,47 +13,48 @@ metadata:
 spec:
   requires:
     - keystone-seed
-    - neutron-seed
     - domain-default-seed
 
   domains:
-  - name: bn
-    description: Business Networks
+  - name: s4
+    description: S/4HANA
     roles:
     - user: dashboard@Default
       role: admin
 
     projects:
     - name: admin
-      description: 'BN Administrators Project'
-    - name: bn-net-infra
-      description: 'Home of address-scopes, subnetpools, external networks, subnets for the bn domain'
-    - name: bn-shared-infra
-      description: 'Home of private networks, backup networks and routers for the bn domain'
+      description: 'S/4HANA Administrators Project'
+    - name: s4-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the S4 domain'
+    - name: s4-shared-infra
+      description: 'Home of private networks, backup networks and routers for the s4 domain'
 
     groups:
-    - name: BN_DOMAIN_MEMBERS
+    - name: S4_DOMAIN_MEMBERS
       roles:
-      - domain: bn
+      - domain: s4
         role: member
-    - name: BN_DOMAIN_ADMINS
+    - name: S4_DOMAIN_ADMINS
       roles:
-      - domain: bn
+      - domain: s4
+        role: member
+      - domain: s4
         role: admin
       - project: admin
+        role: member
+      - project: admin
         role: admin
-    - name: BN_DOMAIN_NETWORK_ADMINS
+    - name: S4_DOMAIN_NETWORK_ADMINS
       roles:
-      - project: bn-net-infra
+      - project: s4-net-infra
         role: admin
-      - project: bn-net-infra
-        role: network_admin
-      - project: bn-net-infra
-        role: cloud_network_admin
-      - project: bn-shared-infra
+      - project: s4-shared-infra
         role: admin
-      - project: bn-shared-infra
-        role: network_admin
+    - name: S4_DOMAIN_RESOURCE_ADMINS
+      roles:
+      - domain: s4
+        role: admin
 
     config:
       identity:
@@ -82,7 +83,7 @@ spec:
         user_allow_create: False
         user_allow_delete: False
         user_allow_update: False
-        user_filter: (|(memberOf=CN=BN_DOMAIN_USERS,OU=BN,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
+        user_filter: (|(memberOf=CN=S4_DOMAIN_USERS,OU=S4,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
@@ -91,7 +92,7 @@ spec:
         group_allow_create: False
         group_allow_delete: False
         group_allow_update: False
-        group_tree_dn: OU=BN,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        group_tree_dn: OU=S4,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
         use_pool: true
         pool_size: 10
         pool_connection_lifetime: 60
@@ -99,5 +100,5 @@ spec:
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
       cc_ad:
-        enable_ews_auth: False
+        enable_ews_auth: True
 {{- end }}

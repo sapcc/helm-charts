@@ -2,7 +2,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: domain-cc3test-seed
+  name: domain-hec-seed
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -13,58 +13,49 @@ metadata:
 spec:
   requires:
     - keystone-seed
-    - neutron-seed
+    - domain-default-seed
 
   domains:
-  - name: cc3test
-    description: 'Converged Cloud Testing'
-    projects:
-    - name: admin
-      description: 'CC-Test Administrators Project'
-    - name: test
-      description: 'Test Project'
+  - name: hec
+    description: HANA Enterprise Cloud
     roles:
     - user: dashboard@Default
       role: admin
-    users:
-    - name: test_admin
-      description: CC-Test Administrator
-      password: {{ .Values.cc3testAdminPassword | quote }}
-    - name: test_member
-      description: CC-Test Member
-      password: {{ .Values.cc3testMemberPassword | quote }}
-    - name: test_user
-      description: CC-Test User
-      password: {{ .Values.cc3testUserPassword | quote }}
+
+    projects:
+    - name: admin
+      description: 'HEC Administrators Project'
+    - name: hec-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the hec domain'
+    - name: hec-shared-infra
+      description: 'Home of private networks, backup networks and routers for the hec domain'
+
     groups:
-    - name: Administrators
-      description: 'Test Administrators'
-      users:
-      - test_admin
+    - name: HEC_DOMAIN_MEMBERS
       roles:
-      - domain: cc3test
-        role: admin
-      - domain: cc3test
-        role: network_admin
-      - project: admin
-        role: network_admin
-      - project: admin
-        role: admin
-      - project: admin
+      - domain: hec
         role: member
-      - project: test
-        role: admin
-      - project: test
-        role: member
-      - project: test
-        role: network_admin
-    - name: Members
-      description: 'Test Members'
-      users:
-        - test_member
+    - name: HEC_DOMAIN_ADMINS
       roles:
-      - domain: cc3test
+      - domain: hec
+        role: admin
+      - domain: hec
         role: member
+      - project: admin
+        role: admin
+      - project: admin
+        role: member
+    - name: HEC_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: hec-net-infra
+        role: admin
+      - project: hec-shared-infra
+        role: admin
+    - name: HEC_DOMAIN_RESOURCE_ADMINS
+      roles:
+      - domain: hec
+        role: admin
+
     config:
       identity:
         driver: cc_ad
@@ -72,15 +63,16 @@ spec:
         page_size: 1000
         use_tls: false
         tls_req_cert: allow
-        query_scope: sub
-        use_dumb_member: false
         url: {{ .Values.ldapUrl | quote }}
         user: {{ .Values.ldapUser | quote }}
         password: {{ .Values.ldapPassword | quote }}
         suffix: {{ .Values.ldapSuffix | quote }}
+        query_scope: sub
+        use_dumb_member: false
+        user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
         user_objectclass: user
         user_id_attribute: cn
-        user_name_attribute: sAMAccountName
+        user_name_attribute: name
         user_mail_attribute: mail
         user_pass_attribute: userPassword
         user_description_attribute: displayName
@@ -88,19 +80,19 @@ spec:
         user_enabled_mask: 2
         user_enabled_default: 512
         user_attribute_ignore: default_project_id
-        user_allow_create: True
-        user_allow_delete: True
-        user_allow_update: True
-        user_tree_dn: OU=Identities,OU=Testing,{{ .Values.ldapSuffix }}
+        user_allow_create: False
+        user_allow_delete: False
+        user_allow_update: False
+        user_filter: (|(memberOf=CN=HEC_DOMAIN_USERS,OU=HEC,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
         group_desc_attribute: description
         group_member_attribute: member
-        group_allow_create: True
-        group_allow_delete: True
-        group_allow_update: True
-        group_tree_dn: OU=CCTEST,OU=OSDomains,OU=Testing,{{ .Values.ldapSuffix }}
+        group_allow_create: False
+        group_allow_delete: False
+        group_allow_update: False
+        group_tree_dn: OU=HEC,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
         use_pool: true
         pool_size: 10
         pool_connection_lifetime: 60
@@ -109,7 +101,4 @@ spec:
         auth_pool_connection_lifetime: 60
       cc_ad:
         enable_ews_auth: False
-        mirror_ews_passwords: false
-        enable_lazy_user_creation: false
-        cam_api_enabled: false
 {{- end }}

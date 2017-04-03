@@ -2,7 +2,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: domain-hcm-seed
+  name: domain-monsoon3-seed
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -13,46 +13,50 @@ metadata:
 spec:
   requires:
     - keystone-seed
-    - neutron-seed
     - domain-default-seed
 
   domains:
-  - name: hcm
-    description: HCM
+  - name: monsoon3
+    description: 'Monsoon Converged Cloud Domain'
     roles:
     - user: dashboard@Default
       role: admin
+
     projects:
     - name: admin
-      description: 'HCM Administrators Project'
-    - name: hcm-net-infra
-      description: 'Home of address-scopes, subnetpools, external networks, subnets for the hcm domain'
-    - name: hcm-shared-infra
-      description: 'Home of private networks, backup networks and routers for the hcm domain'
+      description: 'Monsoon 3 Administrators Project'
+    - name: monsoon3-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the monsoon3 domain'
+    - name: monsoon3-shared-infra
+      description: 'Home of private networks, backup networks and routers for the monsoon3 domain'
 
     groups:
-    - name: HCM_DOMAIN_MEMBERS
+    - name: MONSOON3_DOMAIN_ADMINS
       roles:
-      - domain: hcm
-        role: member
-    - name: HCM_DOMAIN_ADMINS
-      roles:
-      - domain: hcm
+      - domain: monsoon3
         role: admin
+      - domain: monsoon3
+        role: member
       - project: admin
         role: admin
-    - name: HCM_DOMAIN_NETWORK_ADMINS
+      - project: admin
+        role: member
+    - name: MONSOON3_DOMAIN_MEMBERS
       roles:
-      - project: hcm-net-infra
+      - domain: monsoon3
+        role: member
+    - name: MONSOON3_TECHNICAL_USERS
+      description: 'Workaround for technical users that should come from CAM'
+    - name: MONSOON3_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: monsoon3-net-infra
         role: admin
-      - project: hcm-net-infra
-        role: network_admin
-      - project: hcm-net-infra
-        role: cloud_network_admin
-      - project: hcm-shared-infra
+      - project: monsoon3-shared-infra
         role: admin
-      - project: hcm-shared-infra
-        role: network_admin
+    - name: MONSOON3_DOMAIN_RESOURCE_ADMINS
+      roles:
+      - domain: monsoon3
+        role: admin
 
     config:
       identity:
@@ -67,10 +71,11 @@ spec:
         suffix: {{ .Values.ldapSuffix | quote }}
         query_scope: sub
         use_dumb_member: false
+
         user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
         user_objectclass: user
         user_id_attribute: cn
-        user_name_attribute: name
+        user_name_attribute: sAMAccountName
         user_mail_attribute: mail
         user_pass_attribute: userPassword
         user_description_attribute: displayName
@@ -78,25 +83,35 @@ spec:
         user_enabled_mask: 2
         user_enabled_default: 512
         user_attribute_ignore: default_project_id
-        user_allow_create: False
+        user_allow_create: True
         user_allow_delete: False
-        user_allow_update: False
-        user_filter: (|(memberOf=CN=HCM_DOMAIN_USERS,OU=HCM,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
+        user_allow_update: True
+
+        group_tree_dn: OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
         group_desc_attribute: description
         group_member_attribute: member
-        group_allow_create: False
+        group_allow_create: True
         group_allow_delete: False
-        group_allow_update: False
-        group_tree_dn: OU=HCM,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        group_allow_update: True
+
         use_pool: true
         pool_size: 10
         pool_connection_lifetime: 60
         use_auth_pool: true
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
+
       cc_ad:
-        enable_ews_auth: False
+        enable_ews_auth: True
+        mirror_ews_passwords: True
+        enable_lazy_user_creation: True
+        cam_api_enabled: True
+        cam_url: {{ .Values.camApiUrl | quote }}
+        cam_username: {{ .Values.camUser | quote }}
+        cam_password: {{ .Values.camPassword | quote }}
+        cam_profile: 'CC Monsoon 3 Users'
+        cam_group: MONSOON3_DOMAIN_USERS
 {{- end }}

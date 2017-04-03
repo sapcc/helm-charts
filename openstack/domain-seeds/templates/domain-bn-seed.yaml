@@ -2,7 +2,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: domain-hcp03-seed
+  name: domain-bn-seed
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -13,47 +13,48 @@ metadata:
 spec:
   requires:
     - keystone-seed
-    - neutron-seed
     - domain-default-seed
 
   domains:
-  - name: hcp03
-    description: HCP03
+  - name: bn
+    description: Business Networks
     roles:
     - user: dashboard@Default
       role: admin
 
     projects:
     - name: admin
-      description: 'HCP03 Administrators Project'
-    - name: hcp03-net-infra
-      description: 'Home of address-scopes, subnetpools, external networks, subnets for the hcp03 domain'
-    - name: hcp03-shared-infra
-      description: 'Home of private networks, backup networks and routers for the hcp03 domain'
+      description: 'BN Administrators Project'
+    - name: bn-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the bn domain'
+    - name: bn-shared-infra
+      description: 'Home of private networks, backup networks and routers for the bn domain'
 
     groups:
-    - name: HCP03_DOMAIN_MEMBERS
+    - name: BN_DOMAIN_MEMBERS
       roles:
-      - domain: hcp03
+      - domain: bn
         role: member
-    - name: HCP03_DOMAIN_ADMINS
+    - name: BN_DOMAIN_ADMINS
       roles:
-      - domain: hcp03
+      - domain: bn
         role: admin
+      - domain: bn
+        role: member
       - project: admin
         role: admin
-    - name: HCP03_DOMAIN_NETWORK_ADMINS
+      - project: admin
+        role: member
+    - name: BN_DOMAIN_NETWORK_ADMINS
       roles:
-      - project: hcp03-net-infra
+      - project: bn-net-infra
         role: admin
-      - project: hcp03-net-infra
-        role: network_admin
-      - project: hcp03-net-infra
-        role: cloud_network_admin
-      - project: hcp03-shared-infra
+      - project: bn-shared-infra
         role: admin
-      - project: hcp03-shared-infra
-        role: network_admin
+    - name: BN_DOMAIN_RESOURCE_ADMINS
+      roles:
+      - domain: bn
+        role: admin
 
     config:
       identity:
@@ -82,7 +83,7 @@ spec:
         user_allow_create: False
         user_allow_delete: False
         user_allow_update: False
-        user_filter: (|(memberOf=CN=HCP03_DOMAIN_USERS,OU=HCP03,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
+        user_filter: (|(memberOf=CN=BN_DOMAIN_USERS,OU=BN,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
@@ -91,7 +92,7 @@ spec:
         group_allow_create: False
         group_allow_delete: False
         group_allow_update: False
-        group_tree_dn: OU=HCP03,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        group_tree_dn: OU=BN,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
         use_pool: true
         pool_size: 10
         pool_connection_lifetime: 60

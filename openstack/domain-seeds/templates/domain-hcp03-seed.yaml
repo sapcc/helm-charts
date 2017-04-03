@@ -2,7 +2,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: domain-hec-seed
+  name: domain-hcp03-seed
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -13,47 +13,48 @@ metadata:
 spec:
   requires:
     - keystone-seed
-    - neutron-seed
     - domain-default-seed
 
   domains:
-  - name: hec
-    description: HANA Enterprise Cloud
+  - name: hcp03
+    description: HCP03
     roles:
     - user: dashboard@Default
       role: admin
 
     projects:
     - name: admin
-      description: 'HEC Administrators Project'
-    - name: hec-net-infra
-      description: 'Home of address-scopes, subnetpools, external networks, subnets for the hec domain'
-    - name: hec-shared-infra
-      description: 'Home of private networks, backup networks and routers for the hec domain'
+      description: 'HCP03 Administrators Project'
+    - name: hcp03-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the hcp03 domain'
+    - name: hcp03-shared-infra
+      description: 'Home of private networks, backup networks and routers for the hcp03 domain'
 
     groups:
-    - name: HEC_DOMAIN_MEMBERS
+    - name: HCP03_DOMAIN_MEMBERS
       roles:
-      - domain: hec
+      - domain: hcp03
         role: member
-    - name: HEC_DOMAIN_ADMINS
+    - name: HCP03_DOMAIN_ADMINS
       roles:
-      - domain: hec
+      - domain: hcp03
         role: admin
+      - domain: hcp03
+        role: member
       - project: admin
         role: admin
-    - name: HEC_DOMAIN_NETWORK_ADMINS
+      - project: admin
+        role: member
+    - name: HCP03_DOMAIN_NETWORK_ADMINS
       roles:
-      - project: hec-net-infra
+      - project: hcp03-net-infra
         role: admin
-      - project: hec-net-infra
-        role: network_admin
-      - project: hec-net-infra
-        role: cloud_network_admin
-      - project: hec-shared-infra
+      - project: hcp03-shared-infra
         role: admin
-      - project: hec-shared-infra
-        role: network_admin
+    - name: HCP03_DOMAIN_RESOURCE_ADMINS
+      roles:
+      - domain: hcp03
+        role: admin
 
     config:
       identity:
@@ -82,7 +83,7 @@ spec:
         user_allow_create: False
         user_allow_delete: False
         user_allow_update: False
-        user_filter: (|(memberOf=CN=HEC_DOMAIN_USERS,OU=HEC,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
+        user_filter: (|(memberOf=CN=HCP03_DOMAIN_USERS,OU=HCP03,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
@@ -91,7 +92,7 @@ spec:
         group_allow_create: False
         group_allow_delete: False
         group_allow_update: False
-        group_tree_dn: OU=HEC,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        group_tree_dn: OU=HCP03,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
         use_pool: true
         pool_size: 10
         pool_connection_lifetime: 60
