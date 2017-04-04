@@ -12,9 +12,11 @@ metadata:
     type: seed
 spec:
   requires:
-  - keystone-seed
-  - domain-default-seed
-  - domain-cc3test-seed
+  #- monsoon3/keystone-seed                 # uncomment once keystone is deployed via its own helm-charts chart
+  #- monsoon3/glance-seed                   # uncomment once glance is deployed via its own helm-charts chart
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-cc3test-seed
 
   roles:
   - swiftoperator
@@ -50,7 +52,6 @@ spec:
       roles:
       - project: service
         role: service
-
     groups:
     - name: administrators
       roles:
@@ -58,6 +59,30 @@ spec:
         role: swiftreseller
       - project: admin
         role: swiftreseller
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      roles:
+      - group: CCADMIN_CLOUD_ADMINS
+        role: swiftreseller
+    - name: master
+      roles:
+      - group: CCADMIN_CLOUD_ADMINS
+        role: swiftreseller
+      - group: CCADMIN_DOMAIN_ADMINS
+        role: swiftreseller
+      - user: db_backup@Default
+        role: swiftoperator
+      - user: docker_registry@Default
+        role: swiftoperator
+      - user: glance@Default
+        role: swiftoperator
+      - user: image_build@Default
+        role: swiftoperator
+      - user: quay@Default
+        role: swiftoperator
+
 
   - name: cc3test
     projects:
