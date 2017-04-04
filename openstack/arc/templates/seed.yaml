@@ -1,0 +1,26 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: arc-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: arc
+    type: seed
+spec:
+  requires:
+  #- monsoon3/keystone-seed                 # uncomment once keystone is deployed via its own helm-charts chart
+  #- swift/swift-seed
+
+services:
+  - name: Arc
+    type: arc
+    description: 'Arc remote execution service'
+    endpoints:
+    - interface: public
+      region: '{{.Values.openstack.global.region}}'
+      url: '{{.Values.openstack.global.arc_api_endpoint_protocol_public}}://{{include "arc_api_endpoint_host_public" .}}:{{.Values.openstack.global.lyra_api_port_public}}'
+{{ - end }}
