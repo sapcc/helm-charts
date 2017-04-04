@@ -11,7 +11,7 @@ instances:
       # The following dimensions have a predefined-meaning and should be used properly
       #   service: the service name (e.g. "compute", "dns", "monitoring", "object-store", "kubernetes", "elektra")
       #   component: the technical component of the service (e.g. "Postgres", "nova-api", ...)
-      #  
+      #
       # Use `monasca --insecure dimension-name-list` to discover existing names and try to match existing names first.
       match_labels:
 
@@ -100,12 +100,19 @@ instances:
              gauges:
                  - 'swift_dispersion_(container_overlapping)_gauge'
                  - 'swift_dispersion_(object_overlapping)_gauge'
+         swift.healthcheck:
+             gauges:
+                 - 'swift_health_statsd_(exit_code)_gauge'
          swift.proxy:
              gauges: [ 'swift_proxy_(firstbyte_timer)' ]
              dimensions:
-                 policy:   { regex: 'all' }
-                 status:   status
-                 type:     type
+                 policy:     { regex: 'all' }
+                 status:     status
+                 type:       type
+                 os_cluster: os_cluster
+         swift.object:
+             gauges:
+                 - 'swift_object_server_(async_pendings)_counter'
          nova:
              gauges: [ 'openstack_compute_(.*)_gauge' ]
              dimensions:
