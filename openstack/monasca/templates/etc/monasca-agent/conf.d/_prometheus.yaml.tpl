@@ -128,6 +128,9 @@ instances:
         - monasca
         - ceilometer
         - lyra
+        - limes
+        - arc
+        - elektra
    mapping:
 # taking the dimensions out for now, as they are empty
 #       dimensions:
