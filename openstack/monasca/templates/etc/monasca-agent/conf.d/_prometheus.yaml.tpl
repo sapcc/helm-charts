@@ -1,3 +1,11 @@
+#
+# IMPORTANT: please be aware, that below there are two sections: one for the prometheus collector
+#            and another one for the prometheus frontend - make sure you enter your metric conversion
+#            config to the proper section
+# IMPORTANT: please keep in mind that each instance section below might contain a match_label re-
+#            striction and make sure, that everything you add is properly matched in there
+#
+
 init_config:
 
 instances:
@@ -119,6 +127,7 @@ instances:
        kubernetes_namespace:
         - monasca
         - ceilometer
+        - lyra
    mapping:
 # taking the dimensions out for now, as they are empty
 #       dimensions:
