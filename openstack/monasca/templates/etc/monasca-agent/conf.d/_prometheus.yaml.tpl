@@ -41,21 +41,10 @@ instances:
              gauges: [ 'canary_(status)', 'canary_(off_status)' ]
              dimensions:
                  test: script
-         postgres:
-             gauges: [ 'pg_(database_size_bytes)' ]
-             dimensions:
-                 service: kubernetes_namespace
-                 database: datname
-                 region: cluster
          prometheus:
              gauges: [ 'up' ]
              dimensions:
                  component: component
-         puma:
-             counters: [ 'puma_(request_backlog)' ]
-             dimensions:
-                 service: kubernetes_namespace
-                 pod: kubernetes_pod_name
          activedirectory:
              gauges: [ 'ad_(.*_status)' ]
          kubernetes:
@@ -131,18 +120,33 @@ instances:
         - monasca
         - ceilometer
    mapping:
-       dimensions:
-           resource: resource
-           namespace: kubernetes_namespace
-           pod: kubernetes_pod_name
-           hostname: kubernetes_io_hostname
+# taking the dimensions out for now, as they are empty
+#       dimensions:
        groups:
            kubernetes:
                gauges: [ '(container_start_time_sec)onds', 'container_memory_usage_bytes' ]
                rates: [ '(container_cpu_usage_sec)onds_total', '(container_network.*_packages)_total' ]
                dimensions:
+# those four dimensions are moved here from the global section - are they really required?
+                   resource: resource
+                   namespace: kubernetes_namespace
+                   pod: kubernetes_pod_name
+                   hostname: kubernetes_io_hostname
+# end of moved section
                    container: kubernetes_container_name
                    zone: zone
                    cgroup_path:
                        source_key: 'id'
                        regex: '(/system.slice/.*)'
+           postgres:
+               gauges: [ 'pg_(database_size_bytes)' ]
+               dimensions:
+                   service: kubernetes_namespace
+                   database: datname
+                   region: region
+           puma:
+               counters: [ 'puma_(request_backlog)' ]
+               dimensions:
+                   service: kubernetes_namespace
+                   pod: kubernetes_pod_name
+                   region: region
