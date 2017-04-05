@@ -1,13 +1,17 @@
 {{- if .Release.IsUpgrade }}
+{{- range $index, $cluster := .Values.clusters }}
+{{- if $cluster.seed }}
+# If more than one cluster has seed = true, that should fail with having
+# multiple seeds with the same name - wrong configured
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
   name: swift-seed
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app: {{ tuple $.Release $.Chart $.Values | include "fullname" }}
+    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
     component: objectstore
     type: seed
 spec:
@@ -28,14 +32,14 @@ spec:
     description: Openstack Object Store
     endpoints:
     - interface: admin
-      region: '{{.Values.openstack.global.region}}'
-      url: '{{.Values.openstack.global.swift_endpoint_protocol}}://{{include "swift_endpoint_host" .}}:{{.Values.openstack.global.swift_api_port_public}}/v1'
+      region: '{{ $.Values.global.region }}'
+      url: 'https://{{ tuple $cluster $.Values | include "swift_endpoint_host" }}:{{ $cluster.proxy_public_port }}/v1'
     - interface: internal
-      region: '{{.Values.openstack.global.region}}'
-      url: '{{.Values.openstack.global.swift_endpoint_protocol}}://{{include "swift_endpoint_host" .}}:{{.Values.openstack.global.swift_api_port_public}}/v1/AUTH_%(tenant_id)s'
+      region: '{{ $.Values.global.region }}'
+      url: 'https://{{ tuple $cluster $.Values | include "swift_endpoint_host" }}:{{ $cluster.proxy_public_port }}/v1/AUTH_%(tenant_id)s'
     - interface: public
-      region: '{{.Values.openstack.global.region}}'
-      url: '{{.Values.openstack.global.swift_endpoint_protocol}}://{{include "swift_endpoint_host" .}}:{{.Values.openstack.global.swift_api_port_public}}/v1/AUTH_%(tenant_id)s'
+      region: '{{ $.Values.global.region }}'
+      url: 'https://{{ tuple $cluster $.Values | include "swift_endpoint_host" }}:{{ $cluster.proxy_public_port }}/v1/AUTH_%(tenant_id)s'
 
   domains:
   - name: Default
@@ -48,7 +52,7 @@ spec:
         role: swiftreseller
     - name: swift
       description: 'Swift Service'
-      password: '{{.Values.openstack.global.swift_service_password}}'
+      password: '{{ $cluster.swift_service_password}}'
       roles:
       - project: service
         role: service
@@ -83,7 +87,6 @@ spec:
       - user: quay@Default
         role: swiftoperator
 
-
   - name: cc3test
     projects:
     - name: swift_test
@@ -101,4 +104,6 @@ spec:
         role: admin
       - project: swift_dispersion
         role: member
+{{- end }}
+{{- end }}
 {{- end }}
