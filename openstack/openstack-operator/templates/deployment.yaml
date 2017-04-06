@@ -30,7 +30,12 @@ spec:
     spec:
       containers:
         - name: operator
-          image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+{{- if typeIs "float64" .Values.imageTag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{ .Values.image }}:{{ .Values.imageTag | printf "%0.f" }}
+{{- else }}
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+{{- end }}
+
           imagePullPolicy: {{ .Values.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /usr/local/bin/kubernetes-entrypoint
