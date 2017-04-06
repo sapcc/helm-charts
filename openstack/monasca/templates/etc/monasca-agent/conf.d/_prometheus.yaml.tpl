@@ -1,3 +1,11 @@
+#
+# IMPORTANT: please be aware, that below there are two sections: one for the prometheus collector
+#            and another one for the prometheus frontend - make sure you enter your metric conversion
+#            config to the proper section
+# IMPORTANT: please keep in mind that each instance section below might contain a match_label re-
+#            striction and make sure, that everything you add is properly matched in there
+#
+
 init_config:
 
 instances:
@@ -6,6 +14,13 @@ instances:
    timeout: 45
    collect_response_time: True
    mapping:
+      # see https://github.com/sapcc/monasca-agent/blob/master/docs/Customizations.md#dynamiccheckhelper-class for
+      # help on filter and mapping rules below
+      # The following dimensions have a predefined-meaning and should be used properly
+      #   service: the service name (e.g. "compute", "dns", "monitoring", "object-store", "kubernetes", "elektra")
+      #   component: the technical component of the service (e.g. "Postgres", "nova-api", ...)
+      #
+      # Use `monasca --insecure dimension-name-list` to discover existing names and try to match existing names first.
       match_labels:
 
       dimensions:
@@ -83,13 +98,27 @@ instances:
              gauges:
                  - 'swift_dispersion_(container_overlapping)_gauge'
                  - 'swift_dispersion_(object_overlapping)_gauge'
+         swift.healthcheck:
+             gauges:
+                 - 'swift_health_statsd_(exit_code)_gauge'
          swift.proxy:
              gauges: [ 'swift_proxy_(firstbyte_timer)' ]
              dimensions:
-                 policy:   { regex: 'all' }
-                 status:   status
-                 type:     type
-
+                 policy:     { regex: 'all' }
+                 status:     status
+                 type:       type
+                 os_cluster: os_cluster
+         swift.object:
+             gauges:
+                 - 'swift_object_server_(async_pendings)_counter'
+         nova:
+             gauges: [ 'openstack_compute_(.*)_gauge' ]
+             dimensions:
+                 hostname:  host
+                 service: service
+                 hypervisor_type: hypervisor_type
+                 vm_state: vm_state
+                 project_id: project_id        # NOT: __project_id__ !!
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
    timeout: 45
@@ -98,19 +127,38 @@ instances:
        kubernetes_namespace:
         - monasca
         - ceilometer
+        - lyra
+        - limes
+        - arc
+        - elektra
    mapping:
-       dimensions:
-           resource: resource
-           namespace: kubernetes_namespace
-           pod: kubernetes_pod_name
-           hostname: kubernetes_io_hostname
+# taking the dimensions out for now, as they are empty
+#       dimensions:
        groups:
            kubernetes:
                gauges: [ '(container_start_time_sec)onds', 'container_memory_usage_bytes' ]
                rates: [ '(container_cpu_usage_sec)onds_total', '(container_network.*_packages)_total' ]
                dimensions:
+# those four dimensions are moved here from the global section - are they really required?
+                   resource: resource
+                   namespace: kubernetes_namespace
+                   pod: kubernetes_pod_name
+                   hostname: kubernetes_io_hostname
+# end of moved section
                    container: kubernetes_container_name
                    zone: zone
                    cgroup_path:
                        source_key: 'id'
                        regex: '(/system.slice/.*)'
+           postgres:
+               gauges: [ 'pg_(database_size_bytes)' ]
+               dimensions:
+                   service: kubernetes_namespace
+                   database: datname
+                   region: region
+           puma:
+               counters: [ 'puma_(request_backlog)' ]
+               dimensions:
+                   service: kubernetes_namespace
+                   pod: kubernetes_pod_name
+                   region: region

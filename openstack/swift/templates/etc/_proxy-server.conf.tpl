@@ -35,7 +35,7 @@ node_timeout = 60
 recoverable_node_timeout = 10
 conn_timeout = 0.5
 sorting_method = shuffle
-{{ if $context.debug -}}
+{{- if $context.debug }}
 set log_level = DEBUG
 {{- end }}
 
@@ -78,7 +78,7 @@ is_admin = false
 cache = swift.cache
 reseller_admin_role = swiftreseller
 default_domain_id = default
-{{ if $context.debug -}}
+{{- if $context.debug }}
 set log_level = DEBUG
 {{- end }}
 allow_overrides = true
@@ -92,6 +92,10 @@ auth_version = 3
 auth_uri = {{$cluster.keystone_auth_uri}}
 auth_url = {{$cluster.keystone_auth_url}}
 insecure = false
+{{- /* TODO: Workaround - need to be removed */ -}}
+{{- if $cluster.endpoint_override }}
+endpoint_override = {{$cluster.endpoint_override}}
+{{- end }}
 cache = swift.cache
 region_name = {{$context.global.region}}
 user_domain_name = {{$cluster.swift_service_user_domain}}
@@ -99,7 +103,7 @@ username = {{$cluster.swift_service_user}}
 password = {{$cluster.swift_service_password}}
 project_domain_name = {{$cluster.swift_service_project_domain}}
 project_name = {{$cluster.swift_service_project}}
-{{ if $context.debug -}}
+{{- if $context.debug }}
 set log_level = DEBUG
 {{- end }}
 
@@ -121,7 +125,6 @@ container_listing_ratelimit_100 = 100
 use = egg:swift#cname_lookup
 lookup_depth = 2
 storage_domain = {{$cluster.cname_lookup_storage_domain}}
-storage_host = {{$cluster.cname_lookup_storage_host}}
 
 [filter:domain_remap]
 use = egg:swift#domain_remap

@@ -1,5 +1,6 @@
-metricSpoutThreads: 2
-metricSpoutTasks: 2
+alarmDelay: 60
+metricSpoutThreads: 8
+metricSpoutTasks: 8
 numWorkerProcesses: 2
 
 # TODO: the metric names are too long and impossible to understand

@@ -1,0 +1,24 @@
+{{ range $cluster_id, $config := .Values.limes.certs }}
+kind: Ingress
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: limes-api-{{$cluster_id}}
+  labels:
+    app: limes-api
+
+spec:
+  tls:
+    - secretName: limes-api-{{$cluster_id}}
+      hosts: [ {{ $config.domain }} ]
+  rules:
+    - host: {{ $config.domain }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: limes-api-{{$cluster_id}}
+              servicePort: 80
+
+---
+{{end}}

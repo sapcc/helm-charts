@@ -16,17 +16,19 @@ scrape_configs:
 
   params:
     'match[]':
+      - '{__name__=~"^ALERTS$"}'
       - '{__name__=~"^blackbox_.+"}'
-      - '{__name__=~"^canary_.+"}'          
+      - '{__name__=~"^canary_.+"}'
       - '{__name__=~"^datapath_.+"}'
       - '{__name__=~"^kube_.+"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^swift_cluster_storage_used_percent_gauge_average$"}'
+      - '{__name__=~"^pg_database_size_bytes_gauge_average$"}'
 
   relabel_configs:
     - action: replace
       source_labels: [__address__]
-      target_label: region 
+      target_label: region
       regex: prometheus.(.+).cloud.sap
       replacement: $1
 
@@ -40,6 +42,7 @@ scrape_configs:
     - targets:
       - 'prometheus.staging.cloud.sap'
       - 'prometheus.eu-de-1.cloud.sap'
+      - 'prometheus.eu-nl-1.cloud.sap'
       - 'prometheus.ap-au-1.cloud.sap'
 
 alerting:

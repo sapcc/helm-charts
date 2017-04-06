@@ -33,7 +33,11 @@ http {
     types_hash_max_size 2048;
 
     server {
-        listen 443 default_server;
+        # TODO http/2 support
+        # This could not be enabled as there were issues with high latency connections
+        # and large file downloads
+        #listen 443 default_server ssl http2;
+        listen 443 default_server ssl;
         server_name {{tuple $cluster $context | include "swift_endpoint_host"}};
         ssl on;
 

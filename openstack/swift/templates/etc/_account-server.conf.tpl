@@ -27,17 +27,23 @@ pipeline = healthcheck recon account-server
 use = egg:swift#account
 
 [account-replicator]
+# If the account is reaped after deletiom, means no conatiners belong to that
+# account anymore, the account db is removed and the account may be recreated.
+# Before the response to a deleted account will be 401 - Gone
+# Default 7 days - we use 1 day
+reclaim_age = 86400
 
 [account-auditor]
 
 [account-reaper]
-delay_reaping = 900
-
+# Delay before the reaper will start cleaning out containers of the deleted
+# account
+# Default 0 - we use 7 days
+delay_reaping = 604800
 
 [filter:healthcheck]
 use = egg:swift#healthcheck
 disable_path = /etc/swift/healthcheck/account.disabled
-
 
 [filter:recon]
 use = egg:swift#recon

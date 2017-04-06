@@ -30,7 +30,7 @@ spec:
                 "volumeMounts": [
                     {
                         "name": "datadir",
-                        "mountPath": "/var/opt/influxdb"
+                        "mountPath": "/var/lib/influxdb"
                     },
                     {
                         "name": "monasca-bin",
@@ -64,7 +64,7 @@ spec:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "chpst -L /var/opt/influxdb/container.lock /usr/bin/influxd -config=/monasca-etc/influxdb-influxdb.conf"
+              value: "chpst -L /var/lib/influxdb/container.lock /usr/bin/influxd -config=/monasca-etc/influxdb-influxdb.conf"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -76,24 +76,50 @@ spec:
               containerPort: {{.Values.monasca_influxdb_port_admin}}
           volumeMounts:
             - name: datadir
-              mountPath: /var/opt/influxdb
+              mountPath: /var/lib/influxdb
             - name: monasca-bin
               mountPath: /monasca-bin
             - name: monasca-etc
               mountPath: /monasca-etc
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                  - bash
-                  - /monasca-bin/influxdb-stop
           livenessProbe:
             httpGet:
               path: /debug/vars
-              port: influxdb 
+              port: influxdb
             timeoutSeconds: 30
             initialDelaySeconds: 300
-
+{{- if .Values.backup.enabled }}
+        - image: {{.Values.backup.repository}}:{{.Values.backup.image_version}}
+          name: backup
+          env:
+            - name: MY_POD_NAME
+              value: influxdb-backup-monasca
+            - name: MY_POD_NAMESPACE
+              value: {{.Release.Namespace}}
+            - name: OS_AUTH_URL
+              value: {{.Values.backup.os_auth_url}}
+            - name: OS_AUTH_VERSION
+              value: "3"
+            - name: OS_IDENTITY_API_VERSION
+              value: "3"
+            - name: OS_USERNAME
+              value: {{.Values.backup.os_username}}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{.Values.backup.os_user_domain}}
+            - name: OS_PROJECT_NAME
+              value: {{.Values.backup.os_project_name}}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{.Values.backup.os_project_domain}}
+            - name: OS_REGION_NAME
+              value: {{.Values.backup.os_region_name}}
+            - name: OS_PASSWORD
+              value: {{.Values.backup.os_password | quote}}
+            - name: INFLUXDB_ROOT_PASSWORD
+              value: {{.Values.monasca_influxdb_root_password | quote}}
+            - name: BACKUP_INFLUXDB_FULL
+              value: {{.Values.backup.influxdb_interval_full | quote}}
+            - name: BACKUP_INFLUXDB_INCR
+              value: {{.Values.backup.influxdb_interval_incr | quote}}
+{{- end }}
   volumeClaimTemplates:
   - metadata:
       name: datadir

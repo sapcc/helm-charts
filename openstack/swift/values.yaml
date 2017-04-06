@@ -26,6 +26,7 @@ hash_path_suffix: DEFINED_IN_REGION_CHART
 # start multiple proxy deployments connecting to the different keystone backends
 clusters:
   - name: DEFINED_IN_REGION_CHART
+    # Only one cluster should seed its endpoints to keystone
     seed: DEFINED_IN_REGION_CHART
     endpoint_host: DEFINED_IN_REGION_CHART
     proxy_public_ip: DEFINED_IN_REGION_CHART
@@ -57,15 +58,23 @@ enable_statsd: true
 
 # health check only
 dispersion_auth_url: DEFINED_IN_REGION_CHART
-
-# account-caretaker and health-statsd only
 cc3test_admin_password: DEFINED_IN_REGION_CHART
 
 # Deploy swift-account-caretaker
-enable_caretaker: true
-# account-caretaker only
-dashboard_service_password: DEFINED_IN_REGION_CHART
-# Auth url used for caretaker if different than in swift env
-caretaker_ks_auth_url: ""
-# Auth URL for scraping domains and urls
-caretaker_ks_scrape_auth_url: ""
+swift_account_caretaker:
+  enable: true
+  common:
+    os_auth_url: DEFINED_IN_REGION_CHART
+    os_user_domain_name: DEFINED_IN_REGION_CHART
+    os_username: DEFINED_IN_REGION_CHART
+    os_password: DEFINED_IN_REGION_CHART
+    os_project_domain_name: DEFINED_IN_REGION_CHART
+    os_project_name: DEFINED_IN_REGION_CHART
+  verify:
+    - cluster_name: DEFINED_IN_REGION_CHART
+      os_auth_url: DEFINED_IN_REGION_CHART
+      os_user_domain_name: DEFINED_IN_REGION_CHART
+      os_username: DEFINED_IN_REGION_CHART
+      os_password: DEFINED_IN_REGION_CHART
+      os_project_domain_name: DEFINED_IN_REGION_CHART
+      os_project_name: DEFINED_IN_REGION_CHART

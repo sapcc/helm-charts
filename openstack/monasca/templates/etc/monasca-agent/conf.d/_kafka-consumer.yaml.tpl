@@ -13,16 +13,15 @@ instances:
           - alarm-state-transitions
           - metrics
         notification:
-          - alarm-notifications
           - retry-notifications
           - alarm-state-transitions
           - {{.Values.monasca_topics_notifications_periodic_60}}
         thresh:
           - metrics
           - events
-        logstash-persister:
-          - transformed-log
-        logstash-metrics:
-          - transformed-log
-        logstash-transformer:
-          - log
+#        logstash-persister:
+#          - transformed-log
+#        logstash-metrics:
+#          - transformed-log
+#        logstash-transformer:
+#          - log

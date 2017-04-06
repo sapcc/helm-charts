@@ -49,20 +49,32 @@ spec:
             secretKeyRef:
               name: {{ template "fullname" . }}
               key: postgres-password
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         ports:
         - name: postgresql
           containerPort: 5432
         livenessProbe:
           exec:
             command:
-            - pg_isready
-          initialDelaySeconds: 60
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP
+          initialDelaySeconds: 120
           timeoutSeconds: 3
+          failureThreshold: 6
+        # We use the POD_IP to not have the pod become ready during the inital database setup
+        # where the docker image briefly starts the db  for creating the user,
+        # running custom setup scripts etc.
         readinessProbe:
           exec:
             command:
-            - pg_isready
-          initialDelaySeconds: 60
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP
+          initialDelaySeconds: 5
           timeoutSeconds: 3
         {{- if .Values.resources.enabled }}
         resources:
@@ -99,7 +111,7 @@ spec:
           - name: OS_AUTH_URL
             value: {{.Values.backup.os_auth_url | quote}}
           - name: OS_AUTH_VERSION
-            value: {{.Values.backup.os_auth_version | quote}}
+            value: "3"
           - name: OS_USERNAME
             value: {{.Values.backup.os_username | quote}}
           - name: OS_USER_DOMAIN_NAME

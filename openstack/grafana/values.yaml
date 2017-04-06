@@ -11,7 +11,6 @@ cluster:
     revision: master
 image:
   repository: "@/cc/secrets"
-  tag: "@/cc/secrets"
   pullPolicy: IfNotPresent
   version: "@/cc/secrets"
 namespace: '@/cc/secrets'
@@ -34,15 +33,15 @@ postgres:
   password: '@/cc/secrets'
   backup:
     enabled: false
-    repository: sapcc/backup-tools
-    image_version: v0.4.6
-    interval_full: 3 hours
+    repository: DEFINED-IN-REGION-SECRETS
+    image_version: 'v0.5.7'
+    name: DEFINED-IN-REGION-SECRETS
+    interval_full: 1 hours
     os_auth_url: DEFINED-IN-REGION-SECRETS
-    os_auth_version: DEFINED-IN-REGION-SECRETS
-    os_username: DEFINED-IN-REGION-SECRETS
-    os_user_domain: DEFINED-IN-REGION-SECRETS
-    os_project_name: DEFINED-IN-REGION-SECRETS
-    os_project_domain: DEFINED-IN-REGION-SECRETS
+    os_username: db_backup
+    os_user_domain: Default
+    os_project_name: master
+    os_project_domain: ccadmin
     os_region_name: DEFINED-IN-REGION-SECRETS
     os_password: DEFINED-IN-REGION-SECRETS
 persistence:
@@ -60,6 +59,8 @@ keystone:
         port: '@/cc/secrets'
 monasca:
   elasticsearch:
+    # version may be overridden to 5 in some landscapes
+    version: 5
     admin:
       user: 'admin'
       password: '@/cc/secrets'
@@ -69,6 +70,7 @@ monasca:
       domain:
         name: '@/cc/secrets'
   grafana:
+    log_level: 'Info'
     admin:
       user: 'grafana_admin'
       password: '@/cc/secrets'

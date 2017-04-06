@@ -6,7 +6,8 @@ metadata:
   labels:
     system: openstack
     service: monitoring
-    component: es-data
+    component: elasticsearch
+    role: data
   annotations:
     kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
 
@@ -16,11 +17,38 @@ spec:
   template:
     metadata:
       labels:
-        component: es-data
+        component: elasticsearch
+        role: data
       annotations:
         checksum/monasca-templates-monasca-es-etc-configmap.yaml: "dummy"
         checksum/monasca-templates-monasca-es-bin-configmap.yaml: "dummy"
+#        scheduler.alpha.kubernetes.io/affinity:  >
+#          {
+#          "podAntiAffinity": {
+#            "requiredDuringSchedulingIgnoredDuringExecution": [{
+#              "labelSelector": {
+#                "matchExpressions": [{
+#                  "key": "role",
+#                  "operator": "In",
+#                  "values": ["data"]
+#                }]
+#              },
+#              "topologyKey": "kubernetes.io/hostname"
+#            }]
+#          }
+#        }
         pod.alpha.kubernetes.io/initialized: "true"
+        pod.beta.kubernetes.io/init-containers: '[
+          {
+          "name": "sysctl",
+            "image": "busybox",
+            "imagePullPolicy": "IfNotPresent",
+            "command": ["sysctl", "-w", "vm.max_map_count=262144"],
+            "securityContext": {
+              "privileged": true
+            }
+          }
+        ]'
     spec:
       nodeSelector:
         zone: farm
@@ -46,8 +74,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              value: "es-master"
             - name: KUBERNETES_CA_CERTIFICATE_FILE
               value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
             - name: NAMESPACE
@@ -58,12 +84,15 @@ spec:
               value: "monascaelasticsearch"
             - name: NODE_MASTER
               value: "false"
+            - name: NODE_INGEST
+              value: "false"
             - name: HTTP_ENABLE
               value: "true"
           securityContext:
             capabilities:
               add:
                 - IPC_LOCK
+                - SYS_RESOURCE
           volumeMounts:
             - mountPath: /data
               name: es
@@ -85,9 +114,9 @@ spec:
             - name: transport
               containerPort: {{.Values.monasca_elasticsearch_port_cluster}}
               protocol: TCP
-#            - name: dummymasterport
-#              hostPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
-#              containerPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
+            - name: dummymasterport
+              hostPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
+              containerPort: {{.Values.monasca_elasticsearch_data_dummy_port}}
         - name: monasca-agent-forwarder
           image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
           imagePullPolicy: IfNotPresent
@@ -102,8 +131,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              value: "monasca-api"
             - name: MONASCA_AGENT_SERVICE_DEFAULT
               value: "monitoring"
             - name: MONASCA_AGENT_COMPONENT_DEFAULT
@@ -153,4 +180,4 @@ spec:
       accessModes: [ "ReadWriteMany" ]
       resources:
         requests:
-          storage: 1000Gi
+          storage: {{.Values.monasca_elasticsearch_data_volumesize}}

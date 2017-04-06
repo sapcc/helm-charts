@@ -1,4 +1,4 @@
-{{- if .Values.enable_caretaker }}
+{{- if .Values.swift_account_caretaker.enable }}
 kind: DaemonSet
 apiVersion: extensions/v1beta1
 
@@ -18,18 +18,20 @@ spec:
         restart: directly
       annotations:
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-storage"}]'
+        checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" . | sha256sum }}
+        checksum/caretaker.etc: {{ include "swift/templates/caretaker-configmap.yaml" . | sha256sum }}
     spec:
       # Run daemonset in Hostnetwork to get the real hostname
       hostNetwork: true
       nodeSelector:
         species: swift-storage
       volumes:
+        - name: caretaker-etc
+          configMap:
+            name: swift-account-caretaker
         - name: swift-bin
           configMap:
             name: swift-bin
-        - name: swift-etc
-          configMap:
-            name: swift-etc
         - name: swift-drives
           hostPath:
             path: /srv/node
@@ -51,23 +53,11 @@ spec:
           env:
             - name: DEBUG_CONTAINER
               value: "false"
-            - name: OS_AUTH_URL
-              value: "{{.Values.caretaker_ks_auth_url}}"
-            - name: OS_PROJECT_NAME
-              value: "swift_test"
-            - name: OS_USERNAME
-              value: "test_admin"
-            - name: OS_PROJECT_DOMAIN_NAME
-              value: "cc3test"
-            - name: OS_USER_DOMAIN_NAME
-              value: "cc3test"
-            - name: OS_PASSWORD
-              value: "{{.Values.cc3test_admin_password}}"
           volumeMounts:
+            - mountPath: /caretaker-etc
+              name: caretaker-etc
             - mountPath: /swift-bin
               name: swift-bin
-            - mountPath: /swift-etc
-              name: swift-etc
             - mountPath: /srv/node
               name: swift-drives
             - mountPath: /swift-drive-state

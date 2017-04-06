@@ -1,4 +1,4 @@
-{{- if .Values.enable_caretaker }}
+{{- if .Values.swift_account_caretaker.enable }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -23,16 +23,16 @@ spec:
       labels:
         component: swift-account-caretaker-mergify
       annotations:
-        checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
         checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" . | sha256sum }}
+        checksum/caretaker.etc: {{ include "swift/templates/caretaker-configmap.yaml" . | sha256sum }}
     spec:
       volumes:
+        - name: caretaker-etc
+          configMap:
+            name: swift-account-caretaker
         - name: swift-bin
           configMap:
             name: swift-bin
-        - name: swift-etc
-          configMap:
-            name: swift-etc
       containers:
         - name: caretaker
           image: {{.Values.global.docker_repo}}/ubuntu-source-swift-account-m3:{{.Values.image_version_swift_account}}
@@ -45,31 +45,9 @@ spec:
           env:
             - name: DEBUG_CONTAINER
               value: "false"
-            - name: OS_AUTH_URL
-              value: "{{.Values.caretaker_ks_auth_url}}"
-            - name: OS_PROJECT_NAME
-              value: "swift_test"
-            - name: OS_USERNAME
-              value: "test_admin"
-            - name: OS_PROJECT_DOMAIN_NAME
-              value: "cc3test"
-            - name: OS_USER_DOMAIN_NAME
-              value: "cc3test"
-            - name: OS_PASSWORD
-              value: "{{.Values.cc3test_admin_password}}"
-            - name: OS_KS_ADMIN_USERNAME
-              value: "dashboard"
-            - name: OS_KS_ADMIN_USER_DOMAIN_NAME
-              value: "Default"
-            - name: OS_KS_ADMIN_PASSWORD
-              value: "{{.Values.dashboard_service_password}}"
-            {{- if .Values.caretaker_ks_scrape_auth_url }}
-            - name: OS_KS_SCRAPE_AUTH_URL
-              value: "{{.Values.caretaker_ks_scrape_auth_url}}"
-            {{- end }}
           volumeMounts:
+            - mountPath: /caretaker-etc
+              name: caretaker-etc
             - mountPath: /swift-bin
               name: swift-bin
-            - mountPath: /swift-etc
-              name: swift-etc
 {{- end }}

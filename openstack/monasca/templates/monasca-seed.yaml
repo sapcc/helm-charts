@@ -1,0 +1,101 @@
+{{- if .Values.monasca_seeding_enabled }}
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: monasca-seed
+  labels:
+    component: monitoring
+spec:
+  requires:
+#    - keystone-seed
+    - monsoon3/domain-cc3test-seed
+    - monsoon3/domain-ccadmin-seed
+
+  roles:
+  - monasca-agent
+  - monasca-user
+  - monasca-viewer
+  - monitoring-delegate
+
+  services:
+  - name: monasca
+    type: monitoring
+    description: Openstack Monitoring
+    endpoints:
+    - interface: admin
+      region: '{{.Values.cluster_region}}'
+      url: '{{.Values.monasca_api_endpoint_protocol_admin}}://{{.Values.monasca_api_endpoint_host_admin}}:{{.Values.monasca_api_port_admin}}/v2.0'
+    - interface: public
+      region: '{{.Values.cluster_region}}'
+      url: '{{.Values.monasca_api_endpoint_protocol_public}}://{{.Values.monasca_api_endpoint_host_public}}:{{.Values.monasca_api_port_public}}/v2.0'
+    - interface: internal
+      region: '{{.Values.cluster_region}}'
+      url: '{{.Values.monasca_api_endpoint_protocol_internal}}://{{.Values.monasca_api_endpoint_host_internal}}:{{.Values.monasca_api_port_internal}}/v2.0'
+
+  domains:
+  - name: Default
+    users:
+    - name: monasca
+      description: 'Monasca API User'
+      password: '{{.Values.monasca_api_password}}'
+      roles:
+      - project: service
+        role: service
+    - name: monasca_agent
+      description: 'Monasca Agent User'
+      password: '{{.Values.monasca_agent_password}}'
+
+  - name: ccadmin
+    projects:
+    - name: master
+      roles:
+      - user: monasca_agent@Default
+        role: monasca-agent
+      - user: concourse@Default
+        role: monasca-user
+      - group: CCADMIN_CLOUD_ADMINS
+        role: monasca-user
+      - group: CCADMIN_DOMAIN_ADMINS
+        role: monasca-user
+      - group: CCADMIN_MONITORING_USERS
+        role: monasca-viewer
+
+  - name: cc3test
+    projects:
+    - name: monitoring_test
+      description: 'project for used for testing the monitoring service'
+    users:
+    - name: test_monasca_agent
+      description: user employed by the Monasca Agents installed during the tests
+      password: '{{.Values.cc3test_monasca_agent_password}}'
+      roles:
+      - project: monitoring_test
+        role: monasca-agent
+    - name: test_monasca_user
+      description: user for calling the Monasca API during the tests
+      password: '{{.Values.cc3test_monasca_user_password}}'
+      roles:
+      - project: monitoring_test
+        role: monasca-user
+    - name: test_monasca_viewer
+      description: user for calling the Monasca API during the readonly tests
+      password: '{{.Values.cc3test_monasca_viewer_password}}'
+      roles:
+      - project: monitoring_test
+        role: monasca-viewer
+    groups:
+    - name: Administrators
+      roles:
+      - project: admin
+        role: monasca-user
+      - project: admin
+        role: monasca-agent
+      - project: test
+        role: monasca-user
+      - project: test
+        role: monasca-agent
+      - project: monitoring_test
+        role: admin
+{{- end }}
+{{- end }}

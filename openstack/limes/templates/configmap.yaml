@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: limes
+
+data:
+  policy.json: |
+{{ .Files.Get "files/policy.json" | indent 4 }}
+  limes.yaml: |
+    database:
+      location: "postgres://postgres:{{.Values.postgresql.postgresPassword}}@limes-postgresql.{{.Release.Namespace}}.svc/limes?sslmode=disable"
+      migrations: /usr/share/limes/migrations
+
+    api:
+      listen: :80
+      policy: /etc/limes/policy.json
+
+    collector:
+      metrics: :8080
+      data_metrics: true
+
+    clusters:
+      {{- range $cluster_id, $config := .Values.limes.clusters }}
+      {{ $cluster_id }}:
+        auth_url:            {{ quote $config.auth_url }}
+        user_name:           {{ quote $config.user_name }}
+        user_domain_name:    {{ quote $config.user_domain_name }}
+        project_name:        {{ quote $config.project_name }}
+        project_domain_name: {{ quote $config.project_domain_name }}
+        password:            {{ quote $config.password }}
+        region_name:         {{ quote $config.region_name }}
+        {{- if $config.catalog_url }}
+        catalog_url:         {{ quote $config.catalog_url }}
+        {{- end }}
+        services:
+          {{- range $service := $config.services }}
+          - type: {{ $service.type }}
+            shared: {{ $service.shared | default false }}
+          {{- end }}
+      {{- end }}
+  migrate.sh: |
+    #!/bin/sh
+    set -euo pipefail
+    limes migrate /etc/limes/limes.yaml
+    exec tail -f /dev/null

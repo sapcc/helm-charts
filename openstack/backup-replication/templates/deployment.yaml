@@ -1,0 +1,32 @@
+{{- if .Values.enabled }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: backup-replication
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: backup-replication
+    spec:
+      volumes:
+        - name: replica-config
+          configMap:
+            name: backup-replica-config
+      containers:
+        - name: backup-replication
+          image: {{.Values.repository}}:{{.Values.image_version}}
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: replica-config
+              mountPath: /backup/env/
+          env:
+            - name: BACKUP_EXPIRATION_AFTER
+              value: {{.Values.backup_expire_after | quote }}
+            - name: BACKUP_CRONJOB
+              value: {{.Values.backup_replication_cronjob | quote }}
+{{- end }}

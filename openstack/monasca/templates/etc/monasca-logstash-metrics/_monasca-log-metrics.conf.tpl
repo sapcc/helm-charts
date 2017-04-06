@@ -1,14 +1,10 @@
 input {
     kafka {
-        zk_connect => "zk:{{.Values.monasca_zookeeper_port_internal}}"
-        topic_id => "transformed-log"
+        bootstrap_servers => "kafka:{{.Values.monasca_kafka_port_internal}}"
+        topics => ["transformed-log"]
         group_id => "logstash-metrics"
-        consumer_id => "monasca_log_metrics"
-        consumer_restart_on_error => true
+        client_id => "monasca_log_metrics"
         consumer_threads => 12
-        consumer_restart_sleep_ms => 1000
-        rebalance_max_retries => 50
-        rebalance_backoff_ms => 5000
     }
 }
 
@@ -20,8 +16,8 @@ filter {
   } else {
     ruby {
       code => "
-        log_level = event['log']['level'].downcase
-        event['log']['level'] = log_level
+        log_level = event.get('[log][level]').downcase
+        event.set('[log][level]', log_level)
       "
     }
   }
@@ -33,7 +29,7 @@ filter {
 
   ruby {
     code => "
-      log_level = event['log']['level'].downcase
+      event.set('log_level', event.get('[log][level]').downcase)
       log_ts = Time.now.to_f * 1000.0
 
       # metric name
@@ -44,10 +40,10 @@ filter {
       metric['name'] = metric_name
       metric['timestamp'] = log_ts
       metric['value'] = 1
-      metric['dimensions'] = event['log']['dimensions']
+      events.set(metric['dimensions'], event.get('[log][dimensions]'))
       metric['value_meta'] = {}
 
-      event['metric'] = metric.to_hash
+      event.set('[metric]', metric.to_hash)
     "
   }
 

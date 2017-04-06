@@ -1,0 +1,51 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: limes-seed
+
+spec:
+  # requires:
+  #   - keystone-{{.Values.global.region}}-seed
+
+  domains:
+    - name: Default
+      description: 'Openstack Internal Domain'
+      users:
+        - name: limes
+          description: Limes Service
+          password: '{{.Values.limes.clusters.ccloud.password}}'
+          roles:
+            - project: service
+              role:    service
+            # permission to enumerate all projects and domains
+            - project: cloud_admin@ccadmin
+              role:    admin
+            # permission to manage all services' quotas
+            - project: cloud_admin@ccadmin
+              role:    cloud_network_admin
+            - project: cloud_admin@ccadmin
+              role:    cloud_compute_admin
+            - project: cloud_admin@ccadmin
+              role:    cloud_volume_admin
+            - project: cloud_admin@ccadmin
+              role:    cloud_sharedfilesystem_admin
+            - project: cloud_admin@ccadmin
+              role:    cloud_keymanager_admin
+            - project: cloud_admin@ccadmin
+              role:    cloud_dns_admin
+            - project: cloud_admin@ccadmin
+              role:    swiftreseller
+            # permission to extract approved quotas from Elektra during transition phase
+            - project: cloud_admin@ccadmin
+              role:    cloud_resource_admin
+
+  services:
+    - name:        limes
+      type:        resources
+      description: 'Hierarchical quota/usage tracking'
+      enabled:     true
+      endpoints:
+        - region:    '{{.Values.global.region}}'
+          interface: public
+          enabled:   true
+          url:       '{{.Values.limes.clusters.ccloud.catalog_url}}'

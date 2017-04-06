@@ -1,0 +1,57 @@
+{{ range $cluster_id, $config := .Values.limes.clusters }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: limes-collect-{{$cluster_id}}
+  labels:
+    app: limes-collect
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: limes-collect-{{$cluster_id}}
+  template:
+    metadata:
+      labels:
+        name: limes-collect-{{$cluster_id}}
+        app: limes-collect
+      annotations:
+        checksum: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: limes
+      containers:
+        - name: collect
+          image: {{$.Values.limes.image}}:{{$.Values.limes.image_tag}}
+          imagePullPolicy: {{$.Values.limes.image_pull_policy}}
+          args:
+            - collect
+            - /etc/limes/limes.yaml
+            - {{$cluster_id}}
+          env:
+            - name: LIMES_DEBUG
+              value: '0'
+            - name: LIMES_DEBUG_SQL
+              value: '0'
+              # TODO remove this when Elektra starts pulling quota data
+              # directly from Limes (this flag makes sure that Elektra and
+              # Limes don't fight over the backend quota)
+            - name: LIMES_NO_AUTO_QUOTA_ALIGNMENT
+              value: '1'
+          volumeMounts:
+            - mountPath: /etc/limes
+              name: config
+          ports:
+            - name: metrics
+              containerPort: 8080
+---
+{{end}}

@@ -1,11 +1,11 @@
 skydns_skydns_dns_error_count_total_irate = irate(skydns_skydns_dns_error_count_total[5m])
 
 ALERT KubernetesDNSErrorSpike
-  IF sum(irate(skydns_skydns_dns_error_count_total[5m])) > sum(avg_over_time(skydns_skydns_dns_error_count_total_irate[12h] offset 12h)) * 4 + 100
+  IF sum(irate(skydns_skydns_dns_error_count_total[5m])) by (cluster) > sum(avg_over_time(skydns_skydns_dns_error_count_total_irate[12h] offset 12h)) by (cluster) * 4 + 100
   FOR 15m
   LABELS {
     service = "dns",
-    severity = "critical",
+    severity = "info",
     context = "errors",
     dashboard = "kubernetes-dns"
   }
@@ -47,7 +47,7 @@ ALERT KubernetesDNSScrapeMissing
   FOR 1h
   LABELS {
     service = "dns",
-    severity = "critical",
+    severity = "warning",
     context = "availability",
     dashboard = "kubernetes-health"
   }

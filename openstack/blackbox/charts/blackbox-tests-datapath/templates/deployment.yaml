@@ -1,0 +1,96 @@
+kind: Deployment
+apiVersion: extensions/v1beta1 
+
+metadata:
+  name: blackbox-tests-datapath
+
+spec:
+  replicas: {{.Values.global.replicaCount}}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: blackbox-tests-datapath
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: blackbox-tests-datapath
+          persistentVolumeClaim:
+            claimName: blackbox-tests-datapath
+      containers:
+        - name: pytest
+{{- if typeIs "float64" .Values.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.image.repository}}:{{.Values.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.image.repository}}:{{.Values.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - "--timeout 10"
+            - "tests/test_datapath.py"
+          volumeMounts:
+            - name: blackbox-tests-datapath
+              mountPath: /opt/logs
+              readOnly: false
+          env:
+            - name: CCLOUD_DATAPATH_SERVER_FLOAT_IPS
+              value: {{ .Values.server_floating_ips | quote }}
+            - name: CCLOUD_DATAPATH_SERVER_DNS_NAMES
+              value: {{ .Values.server_dns_names | quote }}
+            - name: CCLOUD_DATAPATH_LBAAS_FLOAT_IP
+              value: {{ .Values.lbaas_floating_ips | quote }}
+            - name: CCLOUD_DATAPATH_BIND_IPS
+              value: {{ .Values.bind_ips | quote }}
+            - name: CCLOUD_DATAPATH_UNBOUND_IPS
+              value: {{ .Values.unbound_ips | quote }}
+            - name: CCLOUD_DATAPATH_HIDDEN_MASTER
+              value: {{ .Values.hidden_master | quote }}
+            - name: CCLOUD_DATAPATH_REGIONAL_PTR
+              value: {{ .Values.regional_ptr | quote }}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.openstack.region_name | quote }}
+            - name: CCLOUD_SENTRY_DSN
+              value: {{ .Values.global.sentry.dsn | quote }}
+            - name: STATSD_HOST
+              value: "localhost"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: "blackbox-datapath"
+            - name: CCLOUD_STATSD_PORT
+              value: {{ .Values.global.port_statsd | quote }}
+            - name: SLEEP
+              value: {{ .Values.sleep | quote }}
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
+        - name: statsd
+          image: prom/statsd-exporter:master
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.port_metrics}}

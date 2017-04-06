@@ -68,12 +68,12 @@ metrics:
   customMetrics:
     enabled: false
     pg_database:
-      query: "SELECT d.datname AS name, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
       metrics:
-        - name:
+        - datname:
             usage: "LABEL"
             description: "Name of the database"
-        - size:
+        - size_bytes:
             usage: "GAUGE"
             description: "Size of the database in bytes"
   resources:
@@ -87,15 +87,13 @@ metrics:
 
 backup:
   enabled: false
-  image: "sapcc/backup-tools"
-  imageTag: "v0.4.7.1"
-  imagePullPolicy: IfNotPresent
-  interval_full: "3 hours"
+  repository: sapcc/backup-tools
+  image_version: v0.5.7
+  interval_full: 1 hours
   os_auth_url: DEFINED-IN-REGION-SECRETS
-  os_auth_version: "3"
-  os_username: DEFINED-IN-REGION-SECRETS
-  os_user_domain: DEFINED-IN-REGION-SECRETS
-  os_project_name: DEFINED-IN-REGION-SECRETS
-  os_project_domain: DEFINED-IN-REGION-SECRETS
   os_region_name: DEFINED-IN-REGION-SECRETS
   os_password: DEFINED-IN-REGION-SECRETS
+  os_username: db_backup
+  os_user_domain: Default
+  os_project_name: master
+  os_project_domain: ccadmin
