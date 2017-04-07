@@ -26,16 +26,18 @@ spec:
             - name: DEPENDENCY_SERVICE
               value: {{ .Release.Name }}-postgresql
           volumeMounts:
-            - name: conf
-              mountPath: /etc/keystone/keystone.conf
+            - mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
-              readOnly: true
+              name: keystone-etc
+            - mountPath: /etc/keystone/logging.conf
+              subPath: logging.conf
+              name: keystone-etc
             - mountPath: /scripts
-              name: scripts
+              name: keystone-bin
       volumes:
-        - name: conf
+        - name: keystone-etc
           configMap:
             name: keystone-etc
-        - name: scripts
+        - name: keystone-bin
           configMap:
             name: keystone-bin

@@ -38,8 +38,11 @@ use = egg:keystone#json_body
 use = egg:oslo.middleware#cors
 oslo_config_project = keystone
 
+[filter:http_proxy_to_wsgi]
+use = egg:oslo.middleware#http_proxy_to_wsgi
+
 [filter:healthcheck]
-paste.filter_factory = oslo_middleware:Healthcheck.factory
+use = egg:oslo.middleware#healthcheck
 backends = disable_by_file
 disable_by_file_path = /etc/keystone/healthcheck_disable
 
@@ -70,17 +73,17 @@ use = egg:keystone#admin_service
 [pipeline:public_api]
 # The last item in this pipeline must be public_service or an equivalent
 # application. It cannot be a filter.
-pipeline = cors healthcheck sizelimit url_normalize request_id {{ if .Values.metrics.enabled }}statsd{{ end }} build_auth_context token_auth json_body ec2_extension {{ if .Values.sentry.enabled }}sentry{{ end }} public_service
+pipeline = healthcheck cors sizelimit http_proxy_to_wsgi url_normalize request_id {{ if .Values.metrics.enabled }}statsd{{ end }} build_auth_context token_auth json_body ec2_extension {{ if .Values.sentry.enabled }}sentry{{ end }} public_service
 
 [pipeline:admin_api]
 # The last item in this pipeline must be admin_service or an equivalent
 # application. It cannot be a filter.
-pipeline = cors healthcheck sizelimit url_normalize request_id {{ if .Values.metrics.enabled }}statsd{{ end }} build_auth_context token_auth json_body ec2_extension s3_extension {{ if .Values.sentry.enabled }}sentry{{ end }} admin_service
+pipeline = healthcheck cors sizelimit http_proxy_to_wsgi url_normalize request_id {{ if .Values.metrics.enabled }}statsd{{ end }} build_auth_context token_auth json_body ec2_extension s3_extension {{ if .Values.sentry.enabled }}sentry{{ end }} admin_service
 
 [pipeline:api_v3]
 # The last item in this pipeline must be service_v3 or an equivalent
 # application. It cannot be a filter.
-pipeline = cors healthcheck sizelimit url_normalize request_id {{ if .Values.metrics.enabled }}statsd{{ end }} build_auth_context token_auth json_body ec2_extension_v3 s3_extension {{ if .Values.sentry.enabled }}sentry{{ end }} service_v3
+pipeline = healthcheck cors sizelimit http_proxy_to_wsgi url_normalize request_id {{ if .Values.metrics.enabled }}statsd{{ end }} build_auth_context token_auth json_body ec2_extension_v3 s3_extension {{ if .Values.sentry.enabled }}sentry{{ end }} service_v3
 
 [app:public_version_service]
 use = egg:keystone#public_version_service
@@ -89,10 +92,10 @@ use = egg:keystone#public_version_service
 use = egg:keystone#admin_version_service
 
 [pipeline:public_version_api]
-pipeline = cors healthcheck sizelimit url_normalize cc_ad public_version_service
+pipeline = healthcheck cors sizelimit url_normalize cc_ad public_version_service
 
 [pipeline:admin_version_api]
-pipeline = cors healthcheck sizelimit url_normalize cc_ad admin_version_service
+pipeline = healthcheck cors sizelimit url_normalize cc_ad admin_version_service
 
 {{- if .Values.metrics.enabled }}
 [app:statsd_exporter_service]

@@ -46,25 +46,14 @@ spec:
               value: {{ .Values.sentry.dsn | quote}}
             {{- end }}
           volumeMounts:
-            - name: conf
-              mountPath: /etc/keystone/keystone.conf
+            - mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
-            - name: paste
-              mountPath: /etc/keystone/keystone-paste.ini
-              subPath: paste.ini
-            - name: policy
-              mountPath: /etc/keystone/policy.json
-              subPath: policy.json
-              readOnly: true
-            - name: wsgi
-              mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
-              subPath: wsgi-keystone.conf
-              readOnly: true
-            - name: fernet
-              mountPath: /fernet-keys
-              readOnly: true
-            - name: scripts
-              mountPath: /scripts
+              name: keystone-etc
+            - mountPath: /etc/keystone/logging.conf
+              subPath: logging.conf
+              name: keystone-etc
+            - mountPath: /scripts
+              name: keystone-bin
           {{- if .Values.operations.resources.enabled }}
           resources:
             limits:
@@ -75,21 +64,13 @@ spec:
               memory: {{ .Values.operations.resources.requests.memory | quote }}
           {{- end }}
       volumes:
-        - name: conf
-          configMap:
-            name: keystone-etc
-        - name: paste
-          configMap:
-            name: keystone-etc
-        - name: policy
-          configMap:
-            name: keystone-etc
-        - name: wsgi
+        - name: keystone-etc
           configMap:
             name: keystone-etc
         - name: fernet
           secret:
             secretName: keystone-fernet
-        - name: scripts
+            defaultMode: 0755
+        - name: keystone-bin
           configMap:
             name: keystone-bin
