@@ -1,4 +1,3 @@
-{{- if .Release.IsUpgrade }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -13,15 +12,9 @@ metadata:
 spec:
   requires:
   #- monsoon3/keystone-seed                 # uncomment once keystone is deployed via its own helm-charts chart
-  #- swift/swift-seed
+  - swift/swift-seed
   - monsoon3/domain-default-seed
-  - monsoon3/domain-bn-seed
   - monsoon3/domain-ccadmin-seed
-  - monsoon3/domain-hcp03-seed
-  - monsoon3/domain-hcm-seed
-  - monsoon3/domain-hec-seed
-  - monsoon3/domain-monsoon3-seed
-  - monsoon3/domain-s4-seed
 
 services:
   - name: Lyra
@@ -35,7 +28,7 @@ services:
 domains:
   - name: Default
     users:
-    - name: {{ default "dashboard" .Values.auth.userID | quote }}
+    - name: {{ default "automation" .Values.auth.userID | quote }}
       description: 'Automation Service'
       password: {{ .Values.auth.password | quote }}
       roles:
@@ -43,4 +36,3 @@ domains:
         role: service
       - project: master@ccadmin
         role: swiftoperator
-{{ - end }}
