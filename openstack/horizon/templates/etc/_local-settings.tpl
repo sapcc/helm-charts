@@ -158,11 +158,11 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 #]
 
 
-OPENSTACK_HOST = "{{ .Values.keystone.host }}"
+OPENSTACK_HOST = {{ .Values.keystone.host | quote }}
 {{- if .Values.keystone.authUrl }}
-OPENSTACK_KEYSTONE_URL = "{{.Values.keystone.authUrl }}"
+OPENSTACK_KEYSTONE_URL = {{.Values.keystone.authUrl | quote }}
 {{- else }}
-OPENSTACK_KEYSTONE_URL = "http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:5000"
+OPENSTACK_KEYSTONE_URL = {{include "keystone_url" . | quote}}
 {{- end }}
 OPENSTACK_KEYSTONE_DEFAULT_ROLE = "member"
 

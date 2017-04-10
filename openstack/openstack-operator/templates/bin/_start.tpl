@@ -6,7 +6,7 @@ export all_proxy=
 {{- if .Values.keystone.authUrl }}
 URL_BASE={{ .Values.keystone.authUrl }}
 {{- else }}
-URL_BASE=http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:5000
+URL_BASE={{include "keystone_url" .}}
 {{- end }}
 
 #echo "Waiting for the keystone-api ${URL_BASE} to become available.."

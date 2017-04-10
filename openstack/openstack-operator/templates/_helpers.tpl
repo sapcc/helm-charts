@@ -23,3 +23,5 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- $wtf := printf "%s%s" ($context.Template.Name | trimSuffix $last) $template -}}
 {{ include $wtf $context }}
 {{- end -}}
+
+{{define "keystone_url"}}http://keystone.{{default .Release.Namespace .Values.keystone.namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:5000{{end}}

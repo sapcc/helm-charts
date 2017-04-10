@@ -45,12 +45,12 @@ sql_connection = postgresql://{{ .Values.postgresql.dbUser }}:{{ .Values.postgre
 {{- if .Values.keystone.authUri }}
 auth_uri = {{.Values.keystone.authUri }}
 {{- else }}
-auth_uri = http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:5000
+auth_uri = {{include "keystone_url" .}}
 {{- end }}
 {{- if .Values.keystone.authUrl }}
 auth_url = {{.Values.keystone.authUrl }}
 {{- else }}
-auth_url = http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:5000/v3
+auth_url = {{include "keystone_url" .}}/v3
 {{- end }}
 auth_type = v3password
 username = {{ .Values.keystone.username | default "glance" | quote}}

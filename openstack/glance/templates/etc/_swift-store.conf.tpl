@@ -4,7 +4,7 @@ auth_version = 3
 {{- if .Values.keystone.auth_url }}
 auth_address  = {{ .Values.keystone.auth_url }}
 {{- else }}
-auth_address  = http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:5000/v3
+auth_address  = {{ include "keystone_url" . }}/v3
 {{- end }}
 
 user =  {{ .Values.store.swift.projectName }}:{{ .Values.store.swift.username }}
