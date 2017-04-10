@@ -7,7 +7,6 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: postgres
   annotations:
     checksum/secrets: {{ include (print $.Chart.Name "/templates/secrets.yaml") . | sha256sum }}
     checksum/etc: {{ include (print $.Chart.Name "/templates/etc-configmap.yaml") . | sha256sum }}
@@ -29,7 +28,6 @@ spec:
       labels:
         app: {{ template "fullname" . }}
     spec:
-      hostPID: false
       containers:
       - name: {{ template "fullname" . }}
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
