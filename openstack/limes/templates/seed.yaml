@@ -13,9 +13,15 @@ spec:
 #  - openstack/barbican-seed  # uncomment once barbican brings its own seed
 #  - openstack/designate-seed  # uncomment once designate brings its own seed
   - swift/swift-seed
-  - monsoon3/default-domain-seed
-  - monsoon3/ccadmin-domain-seed
+  - monsoon3/bn-domain-seed
   - monsoon3/cc3test-domain-seed
+  - monsoon3/ccadmin-domain-seed
+  - monsoon3/default-domain-seed
+  - monsoon3/hcm-domain-seed
+  - monsoon3/hcp03-domain-seed
+  - monsoon3/hec-domain-seed
+  - monsoon3/monsoon3-domain-seed
+  - monsoon3/s4-domain-seed
 
   roles:
     - cloud_resource_admin
@@ -42,6 +48,19 @@ spec:
           roles:
             - project: service
               role:    service
+        - name: admin
+          roles:
+          - domain: Default
+            role: cloud_resource_admin
+          - project: admin
+            role: cloud_resource_admin
+      groups:
+      - name: Administrators
+        roles:
+          - domain: Default
+            role: cloud_resource_admin
+          - project: admin
+            role: cloud_resource_admin
 
     - name: ccadmin
       projects:
@@ -68,6 +87,22 @@ spec:
           # permission to extract approved quotas from Elektra during transition phase
           - user: limes@Default
             role: cloud_resource_admin
+      groups:
+      - name: CCADMIN_CLOUD_ADMINS:
+        roles:
+        - project: cloud_admin
+          role: cloud_resource_admin
+      - name: CCADMIN_DOMAIN_RESOURCE_ADMINS:
+        roles:
+        - domain: ccadmin
+          role: resource_admin
+
+    - name: bn
+      groups:
+      - name: BN_DOMAIN_RESOURCE_ADMINS
+        roles:
+        - domain: bn
+          role: resource_admin
 
     - name: cc3test
       groups:
@@ -76,5 +111,37 @@ spec:
         - domain: cc3test
           role: resource_admin
 
+    - name: hcm
+      groups:
+      - name: HCM_DOMAIN_RESOURCE_ADMINS
+        roles:
+        - domain: hcm
+          role: resource_admin
 
+    - name: hcp03
+      groups:
+      - name: HCP03_DOMAIN_RESOURCE_ADMINS
+        roles:
+        - domain: hcp03
+          role: resource_admin
 
+    - name: hec
+      groups:
+      - name: HEC_DOMAIN_RESOURCE_ADMINS
+        roles:
+        - domain: hec
+          role: resource_admin
+
+    - name: monsoon3
+      groups:
+      - name: MONSOON3_DOMAIN_RESOURCE_ADMINS
+        roles:
+        - domain: monsoon3
+          role: resource_admin
+
+    - name: s4
+      groups:
+      - name: S4_DOMAIN_RESOURCE_ADMINS
+        roles:
+        - domain: s4
+          role: resource_admin
