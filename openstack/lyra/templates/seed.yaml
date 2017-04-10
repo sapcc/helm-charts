@@ -7,8 +7,6 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: lyra
-    type: seed
 spec:
   requires:
   #- monsoon3/keystone-seed                 # uncomment once keystone is deployed via its own helm-charts chart
@@ -19,20 +17,20 @@ spec:
 services:
   - name: Lyra
     type: automation
-    description: 'Lyra automation service'
+    description: "Lyra automation service"
     endpoints:
     - interface: public
-      region: '{{.Values.openstack.global.region}}'
-      url: '{{.Values.openstack.global.lyra_api_endpoint_protocol_public}}://{{include "lyra_api_endpoint_host_public" .}}:{{.Values.openstack.global.lyra_api_port_public}}'
+      region: "{{.Values.region}}"
+      url: "https://lyra.{{.Values.region}}.cloud.sap"
 
 domains:
   - name: Default
     users:
-    - name: {{ default "automation" .Values.auth.userID | quote }}
-      description: 'Automation Service'
-      password: {{ .Values.auth.password | quote }}
+    - name: {{ .Values.auth.userID | quote }}
+      description: "Automation Service"
+      password: {{ .Values.auth.swift.password | quote }}
       roles:
       - project: service
         role: service
-      - project: master@ccadmin
+      - project: {{ .Values.auth.swift.projectName }}@{{ .Values.auth.swift.projectDomainName }}
         role: swiftoperator

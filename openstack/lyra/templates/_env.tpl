@@ -10,9 +10,9 @@
 - name: MONSOON_OPENSTACK_AUTH_API_DOMAIN
   value: {{ .Values.auth.userDomainName }}
 - name: MONSOON_SWIFT_USERNAME
-  value: {{ .Values.auth.swift.username }}
-- name: MONSOON_SWIFT_USER_DOMAIN_ID
-  value: {{ .Values.auth.swift.userDomainId}}
+  value: {{ .Values.auth.userID }}
+- name: MONSOON_SWIFT_USER_DOMAIN_NAME
+  value: {{ .Values.auth.userDomainName }}
 - name: MONSOON_SWIFT_PROJECT_NAME
   value: {{ .Values.auth.swift.projectName }}
 - name: MONSOON_SWIFT_PROJECT_DOMAIN_NAME
@@ -24,7 +24,7 @@
 - name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.password } }
 - name: MONSOON_SWIFT_PASSWORD
-  valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.swift.password } }
+  valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.password } }
 - name: MONSOON_SWIFT_TEMP_URL_KEY
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.swift.tempURLKey } }
 {{- if .Values.sentryDSN }}
