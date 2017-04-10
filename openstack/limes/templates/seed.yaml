@@ -4,40 +4,23 @@ metadata:
   name: limes-seed
 
 spec:
-  # requires:
-  #   - keystone-{{.Values.global.region}}-seed
+  requires:
+#  - openstack/keystone-seed  # uncomment once keystone brings its own seed
+#  - openstack/neutron-seed  # uncomment once neutron brings its own seed
+#  - openstack/nova-seed  # uncomment once nova brings its own seed
+#  - openstack/cinder-seed  # uncomment once cinder brings its own seed
+#  - openstack/manilla-seed  # uncomment once manilla brings its own seed
+#  - openstack/barbican-seed  # uncomment once barbican brings its own seed
+#  - openstack/designate-seed  # uncomment once designate brings its own seed
+  - swift/swift-seed
+  - monsoon3/default-domain-seed
+  - monsoon3/ccadmin-domain-seed
+  - monsoon3/cc3test-domain-seed
 
-  domains:
-    - name: Default
-      description: 'Openstack Internal Domain'
-      users:
-        - name: limes
-          description: Limes Service
-          password: '{{.Values.limes.clusters.ccloud.password}}'
-          roles:
-            - project: service
-              role:    service
-            # permission to enumerate all projects and domains
-            - project: cloud_admin@ccadmin
-              role:    admin
-            # permission to manage all services' quotas
-            - project: cloud_admin@ccadmin
-              role:    cloud_network_admin
-            - project: cloud_admin@ccadmin
-              role:    cloud_compute_admin
-            - project: cloud_admin@ccadmin
-              role:    cloud_volume_admin
-            - project: cloud_admin@ccadmin
-              role:    cloud_sharedfilesystem_admin
-            - project: cloud_admin@ccadmin
-              role:    cloud_keymanager_admin
-            - project: cloud_admin@ccadmin
-              role:    cloud_dns_admin
-            - project: cloud_admin@ccadmin
-              role:    swiftreseller
-            # permission to extract approved quotas from Elektra during transition phase
-            - project: cloud_admin@ccadmin
-              role:    cloud_resource_admin
+  roles:
+    - cloud_resource_admin
+    - resource_admin
+    - resource_viewer
 
   services:
     - name:        limes
@@ -49,3 +32,49 @@ spec:
           interface: public
           enabled:   true
           url:       '{{.Values.limes.clusters.ccloud.catalog_url}}'
+
+  domains:
+    - name: Default
+      users:
+        - name: limes
+          description: Limes Service
+          password: '{{.Values.limes.clusters.ccloud.password}}'
+          roles:
+            - project: service
+              role:    service
+
+    - name: ccadmin
+      project:
+      - name: cloud_admin
+        roles:
+          # permission to enumerate all projects and domains
+          - user: limes@Default
+            role: admin
+          # permission to manage all services' quotas
+          - user: limes@Default
+            role: cloud_network_admin
+          - user: limes@Default
+            role: cloud_compute_admin
+          - user: limes@Default
+            role: cloud_volume_admin
+          - user: limes@Default
+            role: cloud_sharedfilesystem_admin
+          - user: limes@Default
+            role: cloud_keymanager_admin
+          - user: limes@Default
+            role: cloud_dns_admin
+          - user: limes@Default
+            role:  swiftreseller
+          # permission to extract approved quotas from Elektra during transition phase
+          - user: limes@Default
+            role: cloud_resource_admin
+
+    - name: cc3test
+      groups:
+      - name: Administrators
+        roles:
+        - domain: cc3test
+          role: resource_admin
+
+
+
