@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: "{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
+          image: "{{ default "hub.global.cloud.sap" .Values.repository }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
           imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
           livenessProbe:
             httpGet:
@@ -87,7 +87,7 @@ spec:
             - mountPath: /scripts
               name: glance-bin
         - name: registry
-          image: "{{ .Values.registry.image }}:{{ .Values.registry.imageTag }}"
+          image: "{{ default "hub.global.cloud.sap" .Values.repository }}/{{ .Values.registry.image }}:{{ .Values.registry.imageTag }}"
           imagePullPolicy: {{ .Values.registry.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /usr/local/bin/kubernetes-entrypoint
