@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: memcached
+{{- if .Values.metrics.enabled }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{.Values.metrics.port}}"
+{{- end }}
+spec:
+  ports:
+  - name: memcache
+    port: {{ default "11211" .Values.memcached.port }}
+    targetPort: memcache
+  selector:
+    app: {{ template "fullname" . }}

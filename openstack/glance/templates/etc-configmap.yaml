@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glance-etc
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: glance
+    type: config
+data:
+  glance-api.conf: |
+{{ tuple "etc/_glance-api.conf.tpl" . | include "template" | indent 4 }}
+  glance-api-paste.ini: |
+{{ tuple "etc/_glance-api-paste.ini.tpl" . | include "template" | indent 4 }}
+  glance-registry.conf: |
+{{ tuple "etc/_glance-registry.conf.tpl" . | include "template" | indent 4 }}
+  policy.json: |
+{{ tuple "etc/_glance-policy.json.tpl" . | include "template" | indent 4 }}
+  logging.conf: |
+{{ tuple "etc/_logging.conf.tpl" . | include "template" | indent 4 }}
+{{- if .Values.store.swift.enabled }}
+  swift-store.conf: |
+{{ tuple "etc/_swift-store.conf.tpl" . | include "template" | indent 4 }}
+{{- end }}

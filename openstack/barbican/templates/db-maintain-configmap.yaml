@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: barbican-db-maintain
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: barbican
+data:
+  db-maintain.sh: |
+    #!/usr/bin/env bash
+
+    data_dir=/postgresql/data
+
+    cp /postgresql-conf/postgresql.conf  $data_dir/postgresql.conf
+    cp /postgresql-conf/pg-hba.conf  $data_dir/pg_hba.conf
+
+    export PGUSER=postgres
+    psql <<- EOSQL
+        ALTER ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.dbPassword }}';
+        ALTER ROLE {{ .Values.postgresql.postgresUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.postgresPassword }}';
+    EOSQL
+
+
+

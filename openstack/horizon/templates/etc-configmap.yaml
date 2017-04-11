@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: horizon-etc
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: horizon
+data:
+  local-settings: |
+{{ tuple "etc/_local-settings.tpl" . | include "template" | indent 4 }}
+  keystone-policy.json: |
+{{ tuple "etc/_horizon-keystone-policy.json.tpl" . | include "template" | indent 4 }}
+  nova-policy.json: |
+{{ tuple "etc/_horizon-nova-policy.json.tpl" . | include "template" | indent 4 }}
+  horizon.conf: |
+{{ tuple "etc/_horizon.conf.tpl" . | include "template" | indent 4 }}

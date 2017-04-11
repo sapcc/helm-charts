@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keystone-bin
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+data:
+  db-sync: |
+{{ tuple "bin/_db-sync.tpl" . | include "template" | indent 4 }}
+  bootstrap: |
+{{ tuple "bin/_bootstrap.tpl" . | include "template" | indent 4 }}
+  start: |
+{{ tuple "bin/_start.tpl" . | include "template" | indent 4 }}
+  repair_assignments: |
+{{ tuple "bin/_repair_assignments.tpl" . | include "template" | indent 4 }}
+  cron: |
+{{ tuple "bin/_cron.tpl" . | include "template" | indent 4 }}

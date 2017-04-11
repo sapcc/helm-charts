@@ -6,7 +6,7 @@ export all_proxy=
 {{- if .Values.keystone.authUrl }}
 URL_BASE={{ .Values.keystone.authUrl }}
 {{- else }}
-URL_BASE=http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.region}}.{{.Values.tld}}:5000
+URL_BASE={{include "keystone_url" .}}
 {{- end }}
 
 #echo "Waiting for the keystone-api ${URL_BASE} to become available.."
@@ -51,7 +51,7 @@ export OS_DOMAIN_NAME={{ .Values.keystone.domainName }}
 {{- if .Values.keystone.domainId }}
 export OS_DOMAIN_ID={{ .Values.keystone.domainId }}
 {{- end }}
-export OS_REGION={{.Values.region}}
+export OS_REGION={{.Values.global.region}}
 {{- if .Values.sentry.enabled }}
 export SENTRY_DSN={{ .Values.sentry.dsn | quote}}
 {{- end }}

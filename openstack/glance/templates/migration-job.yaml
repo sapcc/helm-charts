@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: glance-migration-job
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: glance
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/templates/etc-configmap.yaml") . | sha256sum }}
+        checksum/bin-configmap.conf: {{ include (print $.Template.BasePath "/templates/bin-configmap.yaml") . | sha256sum }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: glance-migration
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}
+          imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+          command:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "bash /container.init/db-migrate"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: {{ .Release.Name }}-postgresql
+          volumeMounts:
+            - mountPath: /glance-etc
+              name: glance-etc
+            - mountPath: /container.init
+              name: glance-bin
+      volumes:
+        - name: glance-etc
+          configMap:
+            name: glance-etc
+        - name: glance-bin
+          configMap:
+            name: glance-bin

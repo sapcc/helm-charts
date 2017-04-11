@@ -31,9 +31,9 @@ spec:
       containers:
         - name: operator
 {{- if typeIs "float64" .Values.imageTag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
-          image: {{ .Values.image }}:{{ .Values.imageTag | printf "%0.f" }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.imageTag | printf "%0.f" }}
 {{- else }}
-          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.imageTag }}
 {{- end }}
 
           imagePullPolicy: {{ .Values.imagePullPolicy | default "IfNotPresent" | quote }}

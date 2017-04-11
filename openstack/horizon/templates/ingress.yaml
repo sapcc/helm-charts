@@ -1,0 +1,51 @@
+{{- if .Values.services.ingress.enabled }}
+{{- if .Values.services.horizon.tlsCertificate}}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: tls-{{.Values.services.horizon.host | replace "." "-" }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: horizon
+data:
+  tls.crt: {{ .Values.services.horizon.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.services.horizon.tlsKey | b64enc }}
+---
+{{- end }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: horizon
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: glance
+  annotations:
+    {{- if .Values.services.ingress.limitRps }}
+    ingress.kubernetes.io/limit-rps: {{ .Values.services.ingress.limitRps | quote }}
+    {{- end }}
+    {{- if .Values.services.ingress.limitConnections }}
+    ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
+    {{- end }}
+spec:
+  tls:
+  {{- if .Values.services.horizon.tlsCertificate }}
+     - secretName: tls-{{.Values.services.horizon.host | replace "." "-" }}
+       hosts: [{{ .Values.services.horizon.host }}]
+  {{- end }}
+  rules:
+    - host: {{ .Values.services.horizon.host }}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: horizon
+            servicePort: {{ default "8080" .Values.services.horizon.port }}
+{{- end }}

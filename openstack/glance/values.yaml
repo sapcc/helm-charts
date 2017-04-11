@@ -1,0 +1,159 @@
+# Default values for glance.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  tld: cloud.sap
+  region: local
+# imageRegistry: hub.global.cloud.sap
+# specify the k8s keystone namespace if it differs from the current chart
+  #keystoneNamespace: keystone
+
+store:
+  stores: 'file, swift'
+  default: file
+
+  file:
+    enabled: true
+    persistence:
+      enabled: false
+    # accessMode: ReadWriteMany
+    # size: 10Gi
+    # Re-use existing (unmanged) PVC
+    # existingClaim: glance-pvclaim
+
+  swift:
+    enabled: false
+    username: glance
+    password: secret
+    userDomainId: default
+  # userDomainName: Default
+    projectName: default
+    projectDomainId: default
+  # projectDomainName: Default
+
+    multi_tenant: true
+
+
+api:
+  image: "monsoon/ubuntu-source-glance-api-m3"
+  imageTag: "20170323083759"
+
+  ## Specify a imagePullPolicy
+  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # imagePullPolicy:
+
+  debug: False
+
+  resources:
+    enabled: false
+    limits:
+      memory: 128Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 500m
+
+
+registry:
+  image: "monsoon/ubuntu-source-glance-registry"
+  imageTag: "20170313124007"
+
+  ## Specify a imagePullPolicy
+  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # imagePullPolicy:
+
+  debug: False
+
+  resources:
+    enabled: false
+    limits:
+      memory: 128Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 500m
+
+
+services:
+  type: ClusterIP
+#  externalip: "192.168.1.100"
+
+  ingress:
+    enabled: false
+    # see https://github.com/kubernetes/ingress/blob/74d57c950282484885a74c92d3413110e3b95c69/controllers/nginx/configuration.md#rate-limiting
+  # limitRps: 100
+  # limitConnections: 100
+
+  api:
+    scheme: http
+    host: glance.local.cloud.sap
+    port: 9292
+    #tlsCertificate:
+    #tlsKey:
+
+memcached:
+  port: 11211
+
+keystone:
+# specify the k8s keystone namespace if diffrent from glance
+# namespace: keystone
+# authUrl: http://identity.cluster.cloud.sap/v3
+  identityApiVersion: 3
+  username: glance
+  password: secret
+  userDomainId: default
+# userDomainName: Default
+  projectName: service
+  projectDomainId: default
+# projectDomainName: Default
+
+replicas: 1
+
+upgrades:
+  revisionHistory: 3
+  podReplacementStrategy: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 3
+
+metrics:
+  enabled: false
+  port: "9102"
+  image: prom/statsd-exporter
+  imageTag: master
+  prefix: openstack
+  resources:
+    enabled: true
+    limits:
+      memory: 128Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 500m
+
+sentry:
+  enabled: false
+# dsn: put-your-sentry-dsn-here
+
+postgresql:
+  postgresDatabase: glance
+  postgresUser: postgres
+  postgresPassword: secret
+
+  dbUser: glance
+  dbPassword: anotherSecret
+
+  dbInit: glance-db-init
+  dbMaintain: glance-db-maintain
+
+  persistence:
+    enabled: false
+    existingClaim: db-glance-pvclaim
+
+  backup:
+    enabled: false
+    interval_full: '3 hours'

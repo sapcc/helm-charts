@@ -1,0 +1,95 @@
+# Default values for barbican.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  tld: cloud.sap
+  region: local
+# imageRegistry: hub.global.cloud.sap
+# specify the k8s keystone namespace if it differs from the current chart
+  #keystoneNamespace: keystone
+
+api:
+  image: "monsoon/ubuntu-source-barbican-m3"
+  imageTag: "20161230140550"
+
+  ## Specify a imagePullPolicy
+  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # imagePullPolicy:
+
+  crypto_kek: OTFmWERNNWhzYzQ4UDg5NzZERkdxWTVqa2w3eWNFdGY=
+
+  debug: False
+
+  resources:
+    enabled: false
+    limits:
+      memory: 128Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 500m
+
+
+services:
+  type: ClusterIP
+#  externalip: "192.168.1.100"
+
+  ingress:
+    enabled: false
+    # see https://github.com/kubernetes/ingress/blob/74d57c950282484885a74c92d3413110e3b95c69/controllers/nginx/configuration.md#rate-limiting
+  # limitRps: 100
+  # limitConnections: 100
+
+  api:
+    scheme: http
+    host: barbican.local.cloud.sap
+    port: 9311
+    #tlsCertificate:
+    #tlsKey:
+
+memcached:
+  port: 11211
+
+keystone:
+# authUrl: http://identity.cluster.cloud.sap/v3
+  identityApiVersion: 3
+  username: barbican
+  password: secret
+  userDomainId: default
+# userDomainName: Default
+  projectName: service
+  projectDomainId: default
+# projectDomainName: Default
+
+replicas: 1
+
+upgrades:
+  revisionHistory: 3
+  podReplacementStrategy: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 3
+
+sentry:
+  enabled: false
+# dsn: put-your-sentry-dsn-here
+
+postgresql:
+  postgresDatabase: barbican
+  postgresUser: postgres
+  postgresPassword: secret
+
+  dbUser: barbican
+  dbPassword: anotherSecret
+
+  dbInit: barbican-db-init
+  dbMaintain: barbican-db-maintain
+
+  persistence:
+    enabled: false
+    existingClaim: db-barbican-pvclaim
+
+  backup:
+    enabled: false
