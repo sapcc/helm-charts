@@ -290,10 +290,6 @@ ALERT KubernetesControllerManagerScrapeMissing
     description = "ControllerManager failed to be scraped.",
   }
 
-
-
-
-
 ALERT KubernetesTooManyOpenFiles
   IF 100*process_open_fds{job=~"kube-system/kubelet|kube-system/apiserver"} / process_max_fds > 50
   FOR 10m
@@ -320,4 +316,30 @@ ALERT KubernetesTooManyOpenFiles
   ANNOTATIONS {
     summary = "Too many open file descriptors",
     description = "{{`{{$labels.job}}`}} on {{`{{$labels.instance}}`}} is using {{`{{$value}}`}}% of the available file/socket descriptors.",
+  }
+
+ALERT HighNumberOfGoRoutines
+  IF go_goroutines{job="kube-system/kubelet"} > avg_over_time(go_goroutines{job="kube-system/kubelet"}[12h] offset 12h) * 2
+  FOR 5m
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "kubelet"
+  }
+  ANNOTATIONS {
+    summary = "High number of Go routines",
+    description = "Kublet on {{`{{$labels.instance}}`}} might be unresponsive due to a high number of go routines.",
+  }
+
+ALERT PredictHighNumberOfGoRoutines
+  IF abs(predict_linear(go_goroutines{job="kube-system/kubelet"}[1h], 2*3600)) > avg_over_time(go_goroutines{job="kube-system/kubelet"}[12h] offset 12h) * 2
+  FOR 5m
+  LABELS {
+    service = "k8s",
+    severity = "warning",
+    context = "kubelet"
+  }
+  ANNOTATIONS {
+    summary = "Predicting high number of Go routines",
+    description = "Kublet on {{`{{$labels.instance}}`}} might become unresponsive due to a high number of go routines within 2 hours.",
   }
