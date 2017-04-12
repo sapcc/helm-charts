@@ -343,16 +343,3 @@ ALERT PredictHighNumberOfGoRoutines
     summary = "Predicting high number of Go routines",
     description = "Kublet on {{`{{$labels.instance}}`}} might become unresponsive due to a high number of go routines within 2 hours.",
   }
-
-ALERT KernelDeadlock
-  IF kube_node_status_kernel_deadlock{condition="true"} == 1
-  FOR 5m
-  LABELS {
-    service = "k8s",
-    severity = "critical",
-    context = "node"
-  }
-  ANNOTATIONS {
-    summary = "Node kernel deadlock",
-    description = "Permanent kernel deadlock on {{`{{$labels.node}}`}}. Please reboot.",
-  }
