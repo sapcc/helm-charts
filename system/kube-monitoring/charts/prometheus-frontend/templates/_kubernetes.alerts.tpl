@@ -350,7 +350,7 @@ ALERT KernelDeadlock
   LABELS {
     service = "k8s",
     severity = "critical",
-    context = "kubelet"
+    context = "node"
   }
   ANNOTATIONS {
     summary = "Node kernel deadlock",
