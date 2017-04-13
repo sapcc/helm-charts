@@ -7,6 +7,7 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    component: database
   annotations:
     checksum/secrets: {{ include (print $.Template.BasePath  "/templates/secrets.yaml") . | sha256sum }}
     checksum/etc: {{ include (print $.Template.BasePath  "/templates/etc-configmap.yaml") . | sha256sum }}
@@ -167,7 +168,7 @@ spec:
       - name: data
       {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "fullname" . }}{{- end }}
+          claimName: {{ .Values.persistence.existingClaim | default (include "fullname" .) }}
       {{- else }}
         emptyDir: {}
       {{- end }}

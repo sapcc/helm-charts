@@ -38,7 +38,7 @@ hba_cidr: 0.0.0.0/0
 
 ## Persist data to a persitent volume
 persistence:
-  enabled: true
+  enabled: false
   accessMode: ReadWriteMany
   size: 10Gi
   # Re-use existing (unmanged) PVC
@@ -65,12 +65,11 @@ resources:
 metrics:
   enabled: false
   image: "wrouesnel/postgres_exporter"
-  imageTag: v0.1.1
+  imageTag: v0.1.3
   imagePullPolicy: IfNotPresent
 
   port: 9187
   customMetrics:
-    enabled: false
     pg_database:
       query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
       metrics:
