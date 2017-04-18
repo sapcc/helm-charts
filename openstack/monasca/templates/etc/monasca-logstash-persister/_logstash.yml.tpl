@@ -152,7 +152,7 @@ config.reload.interval: 10
 #   * debug
 #   * trace
 #
-log.level: debug
+log.level: warn
 # path.logs:
 #
 # ------------ Other Settings --------------
