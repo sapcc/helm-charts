@@ -319,7 +319,7 @@ ALERT KubernetesTooManyOpenFiles
   }
 
 ALERT HighNumberOfGoRoutines
-  IF go_goroutines{job="kube-system/kubelet"} > avg_over_time(go_goroutines{job="kube-system/kubelet"}[12h] offset 12h) * 2
+  IF go_goroutines{job="kube-system/kubelet"} > avg_over_time(go_goroutines{job="kube-system/kubelet"}[3d] offset 3d) * 2
   FOR 5m
   LABELS {
     service = "k8s",
@@ -332,7 +332,7 @@ ALERT HighNumberOfGoRoutines
   }
 
 ALERT PredictHighNumberOfGoRoutines
-  IF abs(predict_linear(go_goroutines{job="kube-system/kubelet"}[1h], 2*3600)) > avg_over_time(go_goroutines{job="kube-system/kubelet"}[12h] offset 12h) * 2
+  IF abs(predict_linear(go_goroutines{job="kube-system/kubelet"}[1h], 2*3600)) > avg_over_time(go_goroutines{job="kube-system/kubelet"}[3d] offset 3d) * 2
   FOR 5m
   LABELS {
     service = "k8s",
