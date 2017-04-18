@@ -49,10 +49,6 @@ instances:
              gauges: [ 'canary_(status)', 'canary_(off_status)' ]
              dimensions:
                  test: script
-         blackbox.healthcheck:
-             gauges: [ 'blackbox_(.*_status)_gauge' ]
-             dimensions:
-                 test: check
          prometheus:
              gauges: [ 'up' ]
              dimensions:
@@ -165,4 +161,9 @@ instances:
                dimensions:
                    service: kubernetes_namespace
                    pod: kubernetes_pod_name
+                   region: region
+           blackbox.healthcheck:
+               gauges: [ 'blackbox_(.*_status)_gauge' ]
+               dimensions:
+                   test: check
                    region: region
