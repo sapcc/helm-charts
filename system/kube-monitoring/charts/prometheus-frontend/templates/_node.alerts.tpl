@@ -35,6 +35,9 @@ ALERT NodeKernelDeadlock
     service = "k8s",
     severity = "critical",
     context = "availability"
+    {{ if .Values.ops_docu_url -}}
+    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_safe_rebooting.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Node kernel has deadlock",
