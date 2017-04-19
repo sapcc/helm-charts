@@ -131,6 +131,7 @@ instances:
         - limes
         - arc
         - elektra
+        - blackbox
    mapping:
 # taking the dimensions out for now, as they are empty
 #       dimensions:
