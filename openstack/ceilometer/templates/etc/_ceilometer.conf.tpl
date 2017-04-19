@@ -17,6 +17,11 @@ user_domain_name = {{.Values.keystone_service_domain}}
 project_name = {{.Values.keystone_service_project}}
 project_domain_name = {{.Values.keystone_service_domain}}
 
+[event]
+definitions_cfg_file = event_definitions.yaml
+drop_unmatched_notifications = False
+store_raw = info
+
 [notification]
 store_events = True
 # Notifications from ceilometer-central polling
