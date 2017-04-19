@@ -23,19 +23,19 @@ spec:
 #        checksum/ceilometer-templates-etc-_healthcheck.conf.tpl: {{ include "ceilometer/templates/etc/_healthcheck.conf.tpl" . | sha256sum }}
 #        checksum/ceilometer-templates-bin-static-_health-start.tpl: {{ include "ceilometer/templates/bin-static/_health-start.tpl" . | sha256sum }}
 #        checksum/ceilometer-templates-bin-static-_common-start.tpl: {{ include "ceilometer/templates/bin-static/_common-start.tpl" . | sha256sum }}
-        pod.alpha.kubernetes.io/init-containers: '[
-          {
-            "name": "init",
-            "image": "{{.Values.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}",
-            "command": ["/init-container.sh"],
-            "volumeMounts": [
-              {
-                "name": "checks",
-                "mountPath": "/checks"
-              }
-            ]
-          }
-        ]'
+#        pod.alpha.kubernetes.io/init-containers: '[
+#          {
+#            "name": "init",
+#            "image": "{{.Values.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}",
+#            "command": ["/init-container.sh"],
+#            "volumeMounts": [
+#              {
+#                "name": "checks",
+#                "mountPath": "/checks"
+#              }
+#            ]
+#          }
+#        ]'
       labels:
         component: ceilometer-health
     spec:
@@ -48,9 +48,9 @@ spec:
         - name: ceilometer-etc
           configMap:
             name: ceilometer-etc
-        - name: checks
-          emptyDir:
-            medium: "Memory"
+#        - name: checks
+#          emptyDir:
+#            medium: "Memory"
       containers:
         - name: ceilometer-health
           image: {{.Values.docker_repo}}/ceilometer-health:{{.Values.image_version_ceilometer_health}}
@@ -70,33 +70,33 @@ spec:
               name: ceilometer-bin
             - mountPath: /ceilometer-etc
               name: ceilometer-etc
-            - mountPath: /checks
-              name: checks
-        - name: canary
-          image: {{.Values.docker_repo}}/wildcard-exporter:v201611171311
-          ports:
-            - containerPort: 9102
-          args:
-            - -web.listen-address=0.0.0.0:9102
-            - -namespace=canary_off
-            - checks/canary/*
-          volumeMounts:
-            - mountPath: /checks
-              name: checks
-          env:
-            - name: SWIFT_AUTH_URL
-              value: "{{.Values.canary_swift_auth_url}}"
-            - name: SWIFT_USER
-              value: "{{.Values.canary_swift_user}}"
-            - name: SWIFT_USER_DOMAIN
-              value: "{{.Values.canary_swift_user_domain}}"
-            - name: SWIFT_PROJECT_NAME
-              value: "{{.Values.canary_swift_project_name}}"
-            - name: SWIFT_PROJECT_ID
-              value: "{{.Values.canary_swift_project_id}}"
-            - name: SWIFT_PROJECT_DOMAIN
-              value: "{{.Values.canary_swift_project_domain}}"
-            - name: SWIFT_REGION_NAME
-              value: "{{.Values.canary_swift_region_name}}"
-            - name: SWIFT_API_KEY
-              value: "{{.Values.canary_swift_api_key}}"
+#            - mountPath: /checks
+#              name: checks
+#        - name: canary
+#          image: {{.Values.docker_repo}}/wildcard-exporter:v201611171311
+#          ports:
+#            - containerPort: 9102
+#          args:
+#            - -web.listen-address=0.0.0.0:9102
+#            - -namespace=canary_off
+#            - checks/canary/*
+#          volumeMounts:
+#            - mountPath: /checks
+#              name: checks
+#          env:
+#            - name: SWIFT_AUTH_URL
+#              value: "{{.Values.canary_swift_auth_url}}"
+#            - name: SWIFT_USER
+#              value: "{{.Values.canary_swift_user}}"
+#            - name: SWIFT_USER_DOMAIN
+#              value: "{{.Values.canary_swift_user_domain}}"
+#            - name: SWIFT_PROJECT_NAME
+#              value: "{{.Values.canary_swift_project_name}}"
+#            - name: SWIFT_PROJECT_ID
+#              value: "{{.Values.canary_swift_project_id}}"
+#            - name: SWIFT_PROJECT_DOMAIN
+#              value: "{{.Values.canary_swift_project_domain}}"
+#            - name: SWIFT_REGION_NAME
+#              value: "{{.Values.canary_swift_region_name}}"
+#            - name: SWIFT_API_KEY
+#              value: "{{.Values.canary_swift_api_key}}"
