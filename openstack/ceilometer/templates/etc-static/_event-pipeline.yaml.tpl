@@ -56,3 +56,4 @@ sinks:
       triggers:
       publishers:
           - kafka://{{.Values.monasca_kafka_hostname}}:{{.Values.monasca_kafka_port_internal}}?topic=events-cadf
+#          - notifier://

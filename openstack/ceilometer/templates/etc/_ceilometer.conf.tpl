@@ -1,12 +1,18 @@
 [DEFAULT]
 debug = {{.Values.cluster_debug}}
 auth_strategy = keystone
-default.log.levels = amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=DEBUG,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=DEBUG,oslo.cache=INFO,dogpile.core.dogpile=INFO,keystoneclient=WARN,swiftclient=INFO
+default_log_levels = amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=DEBUG,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=DEBUG,oslo.cache=INFO,dogpile.core.dogpile=INFO,keystoneclient=WARN,swiftclient=INFO
+#,ceilometer.publisher=DEBUG,ceilometer.publisher.http=DEBUG,ceilometer.publisher.kafka_broker=DEBUG,ceilometer.publisher.messaging=DEBUG,oslo.messaging=INFO
 
-[oslo_messaging_notifications]
-transport_url = kafka://{{.Values.monasca_kafka_hostname}}:{{.Values.monasca_kafka_port_internal}}
-
-[oslo_messaging_kafka]
+# oslo_messaging and publisher_notifier sections are only used with the notifier:// publisher
+# [oslo_messaging_notifications]
+# driver = messaging
+# transport_url = kafka://{{.Values.monasca_kafka_hostname}}:{{.Values.monasca_kafka_port_internal}}
+#
+# [publisher_notifier]
+# # The topic that ceilometer uses for event notifications. (string value)
+# # the actual kafka topic will be "events-cadf.sample" if the notifier:// publisher is used
+# event_topic = events-cadf
 
 [keystone_authtoken]
 auth_url = {{.Values.keystone_api_endpoint_protocol_internal}}://{{.Values.keystone_api_endpoint_host_internal}}:{{.Values.keystone_api_port_internal}}/v3
