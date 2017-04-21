@@ -41,7 +41,7 @@ ALERT NodeKernelDeadlock
   }
   ANNOTATIONS {
     summary = "Node kernel has deadlock",
-    description = "Permanent kernel deadlock on {{`{{$labels.node}}`}}. Please reboot.",
+    description = "Permanent kernel deadlock on {{`{{$labels.node}}`}}. Please drain and reboot node.",
   }
 
 ### Network health ###
