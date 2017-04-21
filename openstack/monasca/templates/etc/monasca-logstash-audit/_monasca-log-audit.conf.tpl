@@ -27,6 +27,10 @@ filter {
     source => "traits"
     remove_field => "traits"
   }
+
+  if ![tenant_id] and "" in [project] {
+    mutate { add_field => { "tenant_id" => "%{[project]}" } }
+  }
 }
 
 output {
