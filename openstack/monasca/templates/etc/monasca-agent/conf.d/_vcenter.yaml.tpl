@@ -1,4 +1,6 @@
 init_config:
+  check_frequency: 300
+  collect_period: 300
 
 instances:
 - name: {{ .Values.monasca_agent_vcenter_cluster_a_cluster }}
