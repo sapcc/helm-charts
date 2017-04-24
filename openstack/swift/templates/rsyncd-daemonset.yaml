@@ -16,9 +16,10 @@ spec:
         from: daemonset
         restart: directly
       annotations:
-        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-storage"}]'
+        {{- include "swift_daemonset_annotations" . | indent 8 }}
         {{- include "swift_conf_annotations" . | indent 8 }}
     spec:
+      hostNetwork: true
       nodeSelector:
         species: swift-storage
       volumes:
