@@ -61,7 +61,7 @@ The following tables lists the configurable parameters of the Concourse chart an
 | ----------------------- | ----------------------------------    | ---------------------------------------------------------- |
 | `image` | Concourse image | `concourse/concourse` |
 | `imageTag` | Concourse image version | `2.6.0` |
-| `imagePullPolicy` |Concourse image pull policy | `Always` |
+| `imagePullPolicy` |Concourse image pull policy |  `Always` if `imageTag` is `latest`, else `IfNotPresent` |
 | `concourse.username` | Concourse Basic Authentication Username | `concourse` |
 | `concourse.password` | Concourse Basic Authentication Password | `concourse` |
 | `concourse.hostKey` | Concourse Host Private Key | *See [#ssh-keys](#ssh-keys)* |
@@ -157,9 +157,6 @@ concourse:
   ##
   sessionSigningKey: |-
     < Insert the contents of your concourse-keys/session_signing_key file >
-
-  sessionSigningKeyPub: |-
-    < Insert the contents of your concourse-keys/session_signing_key.pub file >
 
   ## Concourse Worker Keys.
   ## ref: https://concourse.ci/binaries.html#generating-keys
