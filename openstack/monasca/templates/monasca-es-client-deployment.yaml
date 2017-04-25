@@ -26,17 +26,6 @@ spec:
       annotations:
         checksum/monasca-templates-monasca-es-etc-configmap.yaml: {{ include "monasca/templates/monasca-es-etc-configmap.yaml" . | sha256sum }}
         checksum/monasca-templates-monasca-es-bin-configmap.yaml: {{ include "monasca/templates/monasca-es-bin-configmap.yaml" . | sha256sum }}
-        pod.beta.kubernetes.io/init-containers: '[
-          {
-          "name": "sysctl",
-            "image": "busybox",
-            "imagePullPolicy": "IfNotPresent",
-            "command": ["sysctl", "-w", "vm.max_map_count=262144"],
-            "securityContext": {
-              "privileged": true
-            }
-          }
-        ]'
     spec:
       nodeSelector:
         zone: farm
