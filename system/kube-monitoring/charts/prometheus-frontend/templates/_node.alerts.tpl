@@ -34,7 +34,7 @@ ALERT NodeKernelDeadlock
   LABELS {
     service = "k8s",
     severity = "critical",
-    context = "availability"
+    context = "availability",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_safe_rebooting.html",
     {{- end }}
