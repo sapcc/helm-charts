@@ -119,11 +119,6 @@ instances:
                  hypervisor_type: hypervisor_type
                  vm_state: vm_state
                  project_id: project_id        # NOT: __project_id__ !!
-         limes:
-             counters: [ 'limes_(failed_scrapes)' ]
-             dimensions:
-                 cluster: cluster
-                 service: service
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
    timeout: 45
@@ -173,3 +168,8 @@ instances:
                dimensions:
                    test: check
                    region: region
+          limes:
+              gauges: [ 'limes_(failed_scrapes)_rate' ]
+              dimensions:
+                  cluster: cluster
+                  service: service
