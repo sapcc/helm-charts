@@ -46,6 +46,7 @@ function start_application {
   cat <(crontab -l) <(echo "0 6 * * * /usr/local/bin/curator --config /monasca-etc/monasca-wall-e-curator.yml  /monasca-etc/monasca-wall-e-delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
   cat <(crontab -l) <(echo "* * * * * /usr/bin/python2.7 /monasca-bin/elasticsearch-test.py > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
   cat <(crontab -l) <(echo "0 7 * * * . /monasca-bin/mysql-delete-alarm-definition.sh  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  cat <(crontab -l) <(echo "0 3 * * * . /monasca-bin/create-kibana-audit-indexes.sh  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
 
   exec cron -f 
 

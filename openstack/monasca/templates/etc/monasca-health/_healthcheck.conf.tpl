@@ -28,5 +28,7 @@ export WEBHOOK_HOSTNAME={{.Values.monasca_health_webhook_hostname}}
 export LISTEN_PORT={{.Values.monasca_health_listen_port}}
 # slack channel to send the alerts to
 export SLACK_CHANNEL={{.Values.monasca_health_slack_channel}}
+# slack channel to send the realerts to
+export SLACK_REALERT_CHANNEL={{.Values.monasca_health_slack_realert_channel}}
 # slack incoming webhook to use for sending stuff to slack
 export SLACK_INCOMING_WEBHOOK={{.Values.monasca_health_slack_incoming_webhook}}
