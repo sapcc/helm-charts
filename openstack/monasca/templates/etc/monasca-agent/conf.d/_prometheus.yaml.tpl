@@ -132,6 +132,7 @@ instances:
         - arc
         - elektra
         - blackbox
+        - monsoon3
    mapping:
 # taking the dimensions out for now, as they are empty
 #       dimensions:
@@ -173,3 +174,12 @@ instances:
                dimensions:
                    cluster: cluster
                    service: service
+           compute:
+               gauges: [ 'openstack_compute_(instances)_gauge', 'openstack_compute_(nodes_free_ram_mb)_gauge', 'openstack_compute_(nodes_free_ram_mb)_gauge', 'openstack_compute_(nodes_local_gb)_gauge', 'openstack_compute_(nodes_memory_mb)_gauge', 'openstack_compute_(nodes_running_vms)_gauge', 'openstack_compute_(nodes_vcpus)_gauge', 'openstack_compute_(nodes_vcpus_used)_gauge' ]
+               dimensions:
+                   region: region
+                   tenant_id: project_id
+                   vm_state: vm_state
+                   hostname: host
+                   hypervisor_type: hypervisor_type
+
