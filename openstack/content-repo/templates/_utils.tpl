@@ -29,3 +29,17 @@ spec:
           - mountPath: /etc/http-import/secret
             name: secret
 {{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- /* Switch to inbuild coalesce until all regions updated to helm v.2.3.0 */ -}}
+{{- define "my_coalesce" -}}
+{{- $first  := index . 0 -}}
+{{- $second := index . 1 -}}
+{{- if $first -}}
+{{ $first }}
+{{- else if $second -}}
+{{ $second }}
+{{- else -}}
+''
+{{- end -}}
+{{- end -}}
