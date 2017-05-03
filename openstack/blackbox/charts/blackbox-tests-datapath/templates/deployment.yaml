@@ -23,6 +23,13 @@ spec:
         - name: blackbox-tests-datapath
           persistentVolumeClaim:
             claimName: blackbox-tests-datapath
+        - name: blackbox-jump-key
+          secret:
+            secretName: blackbox-tests-datapath
+            items:
+              - key: jump.key
+                path: authorized_keys.health
+                mode: 0600
       containers:
         - name: pytest
 {{- if typeIs "float64" .Values.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
@@ -33,30 +40,44 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "--timeout 10"
+            - "-n 4"
+            - "--timeout 15"
+            - "--disable-pytest-warnings"
+            - "-r fExXpP"
             - "tests/test_datapath.py"
           volumeMounts:
             - name: blackbox-tests-datapath
               mountPath: /opt/logs
               readOnly: false
+            - name: blackbox-jump-key
+              mountPath: /opt/keys
+              readOnly: true
           env:
-            - name: CCLOUD_DATAPATH_SERVER_FLOAT_IPS
+            - name: JUMP_URL
+              value: {{ .Values.global.jump.url | quote }}
+            - name: JUMP_USER
+              value: {{ .Values.global.jump.user | quote }}
+            - name: DATAPATH_SERVER_FLOAT_IPS
               value: {{ .Values.server_floating_ips | quote }}
-            - name: CCLOUD_DATAPATH_SERVER_DNS_NAMES
+            - name: DATAPATH_SERVER_DNS_NAMES
               value: {{ .Values.server_dns_names | quote }}
-            - name: CCLOUD_DATAPATH_LBAAS_FLOAT_IP
+            - name: DATAPATH_JUMP_SERVER_NAMES
+              value: {{ .Values.jump_server_names | quote }}
+            - name: DATAPATH_LBAAS_FLOAT_IP
               value: {{ .Values.lbaas_floating_ips | quote }}
-            - name: CCLOUD_DATAPATH_BIND_IPS
+            - name: DATAPATH_BIND_IPS
               value: {{ .Values.bind_ips | quote }}
-            - name: CCLOUD_DATAPATH_UNBOUND_IPS
+            - name: DATAPATH_UNBOUND_IPS
               value: {{ .Values.unbound_ips | quote }}
-            - name: CCLOUD_DATAPATH_HIDDEN_MASTER
+            - name: DATAPATH_HIDDEN_MASTER
               value: {{ .Values.hidden_master | quote }}
-            - name: CCLOUD_DATAPATH_REGIONAL_PTR
+            - name: DATAPATH_REGIONAL_PTR
               value: {{ .Values.regional_ptr | quote }}
+            - name: DATAPATH_TSIG_KEY
+              value: {{ .Values.tsig_key | quote }}
             - name: OS_REGION_NAME
               value: {{ .Values.global.openstack.region_name | quote }}
-            - name: CCLOUD_SENTRY_DSN
+            - name: SENTRY_DSN
               value: {{ .Values.global.sentry.dsn | quote }}
             - name: STATSD_HOST
               value: "localhost"
@@ -64,10 +85,8 @@ spec:
               value: "9125"
             - name: STATSD_PREFIX
               value: "blackbox-datapath"
-            - name: CCLOUD_STATSD_PORT
-              value: {{ .Values.global.port_statsd | quote }}
-            - name: SLEEP
-              value: {{ .Values.sleep | quote }}
+            - name: SLEEP_ITERATE
+              value: {{ .Values.sleep.iterate | quote }}
           livenessProbe:
             exec:
               command:

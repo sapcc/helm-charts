@@ -1,0 +1,18 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: blackbox-tests-canary
+  annotations:
+    "prometheus.io/scrape": "true"
+    "prometheus.io/port": "{{.Values.global.port_metrics}}"
+
+spec:
+  selector:
+    name: blackbox-tests-canary
+  ports:
+  - name: metrics
+    port: {{ .Values.global.port_metrics }}
+  - name: statsd
+    port: 9125
+    protocol: UDP

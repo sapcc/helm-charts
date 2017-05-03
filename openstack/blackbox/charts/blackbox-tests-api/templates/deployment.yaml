@@ -33,7 +33,10 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "--timeout 10"
+            - "-n 4"
+            - "--timeout 15"
+            - "--disable-pytest-warnings"
+            - "-r fExXpP"
             - "tests/test_api.py"
           volumeMounts:
             - name: blackbox-tests-api
@@ -54,17 +57,21 @@ spec:
               value: {{ .Values.global.openstack.project_domain_name | quote }}
             - name: OS_REGION_NAME
               value: {{ .Values.global.openstack.region_name | quote }}
-            - name: CCLOUD_API_BILLING_URL
+            - name: API_BILLING_URL
               value: {{ .Values.billing_url | quote }}
-            - name: CCLOUD_API_LYRA_URL
+            - name: API_LYRA_URL
               value: {{ .Values.lyra_url | quote }}
-            - name: CCLOUD_API_ARC_URL
+            - name: API_ARC_URL
               value: {{ .Values.arc_url | quote }}
-            - name: CCLOUD_API_IRONIC_URL
+            - name: API_IRONIC_URL
               value: {{ .Values.ironic_url | quote }}
-            - name: CCLOUD_API_SECRET_ID
+            - name: API_SECRET_ID
               value: {{ .Values.secret_id | quote }}
-            - name: CCLOUD_SENTRY_DSN
+            - name: API_LIMES_URL
+              value: {{ .Values.limes_url | quote }}
+            - name: API_ELEKTRA_URL
+              value: {{ .Values.elektra_url | quote }}
+            - name: SENTRY_DSN
               value: {{ .Values.global.sentry.dsn | quote }}
             - name: STATSD_HOST
               value: "localhost"
@@ -72,10 +79,8 @@ spec:
               value: "9125"
             - name: STATSD_PREFIX
               value: "blackbox-api"
-            - name: CCLOUD_STATSD_PORT
-              value: {{ .Values.global.port_statsd | quote }}
-            - name: SLEEP
-              value: {{ .Values.sleep | quote }}
+            - name: SLEEP_ITERATE
+              value: {{ .Values.sleep.iterate | quote }}
             - name: OS_PASSWORD
               valueFrom: { secretKeyRef:    { name: blackbox-tests-api, key: os.password } }
           livenessProbe:
