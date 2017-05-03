@@ -5,9 +5,6 @@ log file = /dev/stdout
 pid file = /var/log/swift/rsyncd.pid
 # TODO: set the replication IP here (or pass on cmdline with --address)
 address = 0.0.0.0
-# rsyncd is not running as root and thus cannot bind the standard port 873;
-# bind on 8873 instead and map to the standard port in the daemonset.yaml
-port = 8873
 
 # /etc/rsyncd: configuration file for rsync daemon mode
 
@@ -50,4 +47,3 @@ max connections = 30
 path = /srv/node
 read only = false
 lock file = /var/lock/object.lock
-

@@ -19,10 +19,12 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_annotations" }}
 scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-storage"}]'
-{{- if .Values.enable_statsd }}
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_prometheus_annotations" }}
 prometheus.io/scrape: "true"
 prometheus.io/port: "9102"
-{{- end }}
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}

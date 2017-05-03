@@ -127,17 +127,7 @@ spec:
               name: swift-container-ring
             - mountPath: /swift-rings/object
               name: swift-object-ring
-        - name: statsd
-          image: prom/statsd-exporter:{{$.Values.image_version_auxiliary_statsd_exporter}}
-          args: [ -statsd.mapping-config=/swift-etc/statsd-exporter.conf ]
-          ports:
-            - name: statsd
-              containerPort: 9125
-              protocol: UDP
-            - name: metrics
-              containerPort: 9102
-          volumeMounts:
-            - mountPath: /swift-etc
-              name: swift-etc
+        {{- include "swift_statsd_exporter_container" $ | indent 8 }}
+
 ---
 {{end}}

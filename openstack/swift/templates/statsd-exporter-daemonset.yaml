@@ -1,0 +1,31 @@
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: swift-statsd-exporter
+  namespace: swift
+  labels:
+    system: openstack
+    component: objectstore
+
+spec:
+  template:
+    metadata:
+      labels:
+        component: swift-statsd-exporter
+        from: daemonset
+        restart: directly
+      annotations:
+        {{- include "swift_daemonset_annotations" . | indent 8 }}
+        {{- include "swift_prometheus_annotations" . | indent 8 }}
+        checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
+    spec:
+      hostNetwork: true
+      nodeSelector:
+        species: swift-storage
+      volumes:
+        - name: swift-etc
+          configMap:
+            name: swift-etc
+      containers:
+        {{- include "swift_statsd_exporter_container" . | indent 8 }}
