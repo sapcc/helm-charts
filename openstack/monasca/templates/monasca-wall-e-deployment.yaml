@@ -22,21 +22,6 @@ spec:
         component:  monasca-wall-e
       annotations:
         checksum/monasca-templates-monasca-wall-e-bin-configmap.yaml: {{ include "monasca/templates/monasca-wall-e-bin-configmap.yaml" . | sha256sum }}
-        pod.alpha.kubernetes.io/init-containers: '[
-          {
-            "name": "init",
-            "image": "{{.Values.docker_repo}}/monasca-wall-e:{{.Values.image_version_monasca_wall_e}}",
-            "imagePullPolicy": "IfNotPresent",
-            "command": ["/usr/local/bin/dumb-init"],
-            "args": ["/init-container.sh"],
-            "volumeMounts": [
-              {
-                "name": "checks",
-                "mountPath": "/checks"
-              }
-            ]
-          }
-        ]'
     spec:
       nodeSelector:
         zone: farm
@@ -48,9 +33,9 @@ spec:
           gitRepo:
             repository: {{.Values.monasca_content_url}}
             revision: master
-        - name: checks
-          emptyDir:
-            medium: "Memory"
+        - name: monasca-etc
+          configMap:
+            name: monasca-wall-e-etc
       containers:
         - name: monasca-wall-e
           image: {{.Values.docker_repo}}/monasca-wall-e:{{.Values.image_version_monasca_wall_e}}
@@ -71,42 +56,5 @@ spec:
               name: monasca-bin
             - mountPath: /monasca-content
               name: monasca-content
-            - mountPath: /checks
-              name: checks
-        - name: canary
-          image: {{.Values.docker_repo}}/wildcard-exporter:v201611171311
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 9102
-          args:
-            - -web.listen-address=0.0.0.0:9102
-            - -namespace=canary
-            - checks/canary/*
-          volumeMounts:
-            - mountPath: /checks
-              name: checks
-          env:
-            - name: SWIFT_AUTH_URL
-              value: "{{.Values.canary_swift_auth_url}}"
-            - name: SWIFT_USER
-              value: "{{.Values.canary_swift_user}}"
-            - name: SWIFT_USER_DOMAIN
-              value: "{{.Values.canary_swift_user_domain}}"
-            - name: SWIFT_PROJECT_NAME
-              value: "{{.Values.canary_swift_project_name}}"
-            - name: SWIFT_PROJECT_ID
-              value: "{{.Values.canary_swift_project_id}}"
-            - name: SWIFT_PROJECT_DOMAIN
-              value: "{{.Values.canary_swift_project_domain}}"
-            - name: SWIFT_REGION_NAME
-              value: "{{.Values.canary_swift_region_name}}"
-            - name: SWIFT_API_KEY
-              value: "{{.Values.canary_swift_api_key}}"
-#        - name: monasca-es-admin
-#          image: {{.Values.docker_repo}}/monasca-elasticsearch:latest
-#          imagePullPolicy: IfNotPresent
-#          command:
-#            - /bin/bash
-#          args:
-#            - -c
-#            - "while true; do sleep 10000; done"
+            - mountPath: /monasca-etc
+              name: monasca-etc

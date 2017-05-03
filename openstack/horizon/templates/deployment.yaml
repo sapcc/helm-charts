@@ -1,0 +1,68 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: horizon
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: horizon
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/templates/etc-configmap.yaml") . | sha256sum }}
+        checksum/bin-configmap.conf: {{ include (print $.Template.BasePath "/templates/bin-configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: horizon
+          image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.horizon.image }}:{{ .Values.horizon.imageTag }}"
+          imagePullPolicy: {{ .Values.horizon.imagePullPolicy | default "IfNotPresent" | quote }}
+          command:
+            - bash
+          args:
+            - /container.init/horizon-start
+          {{- if .Values.horizon.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.horizon.resources.limits.cpu | quote }}
+              memory: {{ .Values.horizon.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.horizon.resources.requests.cpu | quote }}
+              memory: {{ .Values.horizon.resources.requests.memory | quote }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - mountPath: /horizon-etc
+              name: horizon-etc
+            - mountPath: /container.init
+              name: horizon-bin
+      volumes:
+        - name: horizon-etc
+          configMap:
+            name: horizon-etc
+        - name: horizon-bin
+          configMap:
+            name: horizon-bin
+            defaultMode: 0755
+
+

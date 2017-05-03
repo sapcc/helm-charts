@@ -7,17 +7,32 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    component: database
+  annotations:
+    checksum/secrets: {{ include (print $.Template.BasePath  "/templates/secrets.yaml") . | sha256sum }}
+    checksum/etc: {{ include (print $.Template.BasePath  "/templates/etc-configmap.yaml") . | sha256sum }}
 spec:
-  revisionHistoryLimit: 5
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
   template:
     metadata:
       labels:
         app: {{ template "fullname" . }}
     spec:
       containers:
-      - name: {{ template "fullname" . }}
+      - name: postgres
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
-        imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         env:
         - name: POSTGRES_USER
           value: {{ default "postgres" .Values.postgresUser | quote }}
@@ -60,13 +75,32 @@ spec:
             - exec pg_isready --host $POD_IP
           initialDelaySeconds: 5
           timeoutSeconds: 3
+        {{- if .Values.resources.enabled }}
         resources:
-{{ toYaml .Values.resources | indent 10 }}
+          limits:
+            cpu: {{ .Values.resources.limits.cpu | quote }}
+            memory: {{ .Values.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.resources.requests.cpu | quote }}
+            memory: {{ .Values.resources.requests.memory | quote }}
+        {{- end }}
         volumeMounts:
         - name: data
           mountPath: /postgresql
+        - name: postgres-etc
+          mountPath: /postgresql-conf
+{{- if .Values.dbInit }}
+        - name: db-init
+          mountPath: /docker-entrypoint-initdb.d
+{{- end }}
+{{- if .Values.dbMaintain }}
+        - name: db-maintain
+          mountPath: /docker-entrypoint-maintaindb.d
+{{- end }}
+
 {{- if .Values.backup.enabled }}
-      - image: {{.Values.backup.repository}}:{{.Values.backup.image_version}}
+      - image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{ .Values.backup.image }}:{{ .Values.backup.imageTag }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.backup.imagePullPolicy | quote }}
         name: backup
         env:
           - name: MY_POD_NAME
@@ -74,7 +108,11 @@ spec:
           - name: MY_POD_NAMESPACE
             value: {{.Release.Namespace}}
           - name: OS_AUTH_URL
-            value: {{.Values.backup.os_auth_url}}
+{{- if .Values.backup.os_auth_url }}
+            value: {{ .Values.backup.os_auth_url }}
+{{- else }}
+            value: {{ include "keystone_url" . }}
+{{- end }}
           - name: OS_AUTH_VERSION
             value: "3"
           - name: OS_USERNAME
@@ -86,7 +124,11 @@ spec:
           - name: OS_PROJECT_DOMAIN_NAME
             value: {{.Values.backup.os_project_domain}}
           - name: OS_REGION_NAME
-            value: {{.Values.backup.os_region_name}}
+{{- if .Values.backup.os_region_name }}
+            value: {{ .Values.backup.os_region_name }}
+{{ else }}
+            value: {{ .Values.global.region }}
+{{- end }}
           - name: OS_PASSWORD
             value: {{.Values.backup.os_password | quote}}
           - name: BACKUP_PGSQL_FULL
@@ -95,13 +137,13 @@ spec:
 {{- if .Values.metrics.enabled }}
       - name: metrics
         image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
-        imagePullPolicy: {{ default "" .Values.metrics.imagePullPolicy | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
         env:
         - name: DATA_SOURCE_NAME
-          value: postgresql://postgres@localhost:5432?sslmode=disable
+          value: postgresql://{{ default "postgres" .Values.postgresUser }}@localhost:5432?sslmode=disable
         ports:
         - name: metrics
-          containerPort: 9187
+          containerPort: {{ default 9187 .Values.metrics.port }}
         {{- if .Values.metrics.customMetrics }}
         args: ["-extend.query-path", "/conf/custom-metrics.yaml"]
         volumeMounts:
@@ -109,14 +151,24 @@ spec:
             mountPath: /conf
             readOnly: true
         {{- end }}
+        {{- if .Values.metrics.resources.enabled }}
         resources:
-{{ toYaml .Values.metrics.resources | indent 10 }}
+          limits:
+            cpu: {{ .Values.metrics.resources.limits.cpu | quote }}
+            memory: {{ .Values.metrics.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.metrics.resources.requests.cpu | quote }}
+            memory: {{ .Values.metrics.resources.requests.memory | quote }}
+        {{- end }}
 {{- end }}
       volumes:
+      - name: postgres-etc
+        configMap:
+          name: {{ template "fullname" . }}-etc
       - name: data
       {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "fullname" . }}{{- end }}
+          claimName: {{ .Values.persistence.existingClaim | default (include "fullname" .) }}
       {{- else }}
         emptyDir: {}
       {{- end }}
@@ -128,3 +180,13 @@ spec:
             - key: custom-metrics.yaml
               path: custom-metrics.yaml
       {{- end }}
+{{- if .Values.dbInit }}
+      - name: db-init
+        configMap:
+          name: {{ .Values.dbInit }}
+{{- end }}
+{{- if .Values.dbMaintain }}
+      - name: db-maintain
+        configMap:
+          name: {{ .Values.dbMaintain }}
+{{- end }}

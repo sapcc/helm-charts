@@ -1,0 +1,53 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: elektra-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: elektra
+    type: seed
+spec:
+  requires:
+  #- monsoon3/keystone-seed                 # uncomment once keystone is deployed via its own helm-charts chart
+  - swift/swift-seed
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-bn-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-hcp03-seed
+  - monsoon3/domain-hcm-seed
+  - monsoon3/domain-hec-seed
+  - monsoon3/domain-monsoon3-seed
+  - monsoon3/domain-s4-seed
+
+domains:
+  - name: Default
+    users:
+    - name: {{ default "dashboard" .Values.monsoon_openstack_auth_api_userid | quote }}
+      description: 'Dashboard Service'
+      password: {{ .Values.monsoon_openstack_auth_api_password | quote }}
+      roles:
+      - project: service
+        role: service
+      - project: service
+        role: swiftreseller
+      - project: cloud_admin@ccadmin
+        role: admin
+      - domain: Default
+        role: admin
+      - domain: ccadmin
+        role: admin
+      - domain: bn
+        role: admin
+      - domain: hcp03
+        role: admin
+      - domain: hcm
+        role: admin
+      - domain: hec
+        role: admin
+      - domain: monsoon3
+        role: admin
+      - domain: s4
+        role: admin

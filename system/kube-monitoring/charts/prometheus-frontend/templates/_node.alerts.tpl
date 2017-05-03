@@ -28,6 +28,22 @@ ALERT NodeClockDrift
     description = "The clock on node {{`{{ $labels.instance }}`}} is more than 300ms apart from its NTP server. This can cause service degradation in Swift.",
   }
 
+ALERT NodeKernelDeadlock
+  IF kube_node_status_kernel_deadlock{condition="true"} == 1
+  FOR 5m
+  LABELS {
+    service = "k8s",
+    severity = "critical",
+    context = "availability",
+    {{ if .Values.ops_docu_url -}}
+    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_safe_rebooting.html",
+    {{- end }}
+  }
+  ANNOTATIONS {
+    summary = "Node kernel has deadlock",
+    description = "Permanent kernel deadlock on {{`{{$labels.node}}`}}. Please drain and reboot node.",
+  }
+
 ### Network health ###
 
 ALERT NodeHighNumberOfOpenConnections

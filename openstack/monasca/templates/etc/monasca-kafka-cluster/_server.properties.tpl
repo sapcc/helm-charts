@@ -100,7 +100,7 @@ log.retention.hours=6
 
 # A size-based retention policy for logs. Segments are pruned from the log as long as the remaining
 # segments don't drop below log.retention.bytes.
-# keep max. 44 GiB
+# Max.: keep max. 44 GiB (disk capacity - buffer)
 log.retention.bytes=47244640256
 
 # The maximum size of a log segment file. When this size is reached a new log segment will be created.

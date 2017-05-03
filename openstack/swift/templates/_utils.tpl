@@ -4,13 +4,27 @@
 {{$cluster.endpoint_host}}.{{$context.global.region}}.{{$context.global.domain}}
 {{- end -}}
 
+{{/*
+Create a default fully qualified app name.
+We truncate at 24 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+*/}}
+{{- define "fullname" -}}
+{{- $release := index . 0 -}}
+{{- $chart := index . 1 -}}
+{{- $values := index . 2 -}}
+{{- $name := default $chart.Name $values.nameOverride -}}
+{{- printf "%s-%s" $release.Name $name | trunc 24 -}}
+{{- end -}}
+
 {{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_annotations" }}
 scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-storage"}]'
-{{- if .Values.enable_statsd }}
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_prometheus_annotations" }}
 prometheus.io/scrape: "true"
 prometheus.io/port: "9102"
-{{- end }}
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}

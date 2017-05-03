@@ -7,10 +7,11 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    component: database
 {{- if .Values.metrics.enabled }}
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "9187"
+    prometheus.io/port: "{{default 9187 .Values.metrics.port }}"
 {{- end }}
 spec:
   ports:

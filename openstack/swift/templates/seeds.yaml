@@ -1,0 +1,107 @@
+{{- range $index, $cluster := .Values.clusters }}
+{{- if $cluster.seed }}
+# If more than one cluster has seed = true, that should fail with having
+# multiple seeds with the same name - wrong configured
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: swift-seed
+  labels:
+    app: {{ tuple $.Release $.Chart $.Values | include "fullname" }}
+    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+    component: objectstore
+    type: seed
+spec:
+  requires:
+  #- monsoon3/keystone-seed                 # uncomment once keystone is deployed via its own helm-charts chart
+  #- monsoon3/glance-seed                   # uncomment once glance is deployed via its own helm-charts chart
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-cc3test-seed
+
+  roles:
+  - swiftoperator
+  - swiftreseller
+
+  services:
+  - name: swift
+    type: object-store
+    description: Openstack Object Store
+    endpoints:
+    - interface: admin
+      region: '{{ $.Values.global.region }}'
+      url: 'https://{{ tuple $cluster $.Values | include "swift_endpoint_host" }}:{{ $cluster.proxy_public_port }}/v1'
+    - interface: internal
+      region: '{{ $.Values.global.region }}'
+      url: 'https://{{ tuple $cluster $.Values | include "swift_endpoint_host" }}:{{ $cluster.proxy_public_port }}/v1/AUTH_%(tenant_id)s'
+    - interface: public
+      region: '{{ $.Values.global.region }}'
+      url: 'https://{{ tuple $cluster $.Values | include "swift_endpoint_host" }}:{{ $cluster.proxy_public_port }}/v1/AUTH_%(tenant_id)s'
+
+  domains:
+  - name: Default
+    users:
+    - name: admin
+      roles:
+      - domain: Default
+        role: swiftreseller
+      - project: admin
+        role: swiftreseller
+    - name: swift
+      description: 'Swift Service'
+      password: '{{ $cluster.swift_service_password }}'
+      roles:
+      - project: service
+        role: service
+    groups:
+    - name: administrators
+      roles:
+      - domain: Default
+        role: swiftreseller
+      - project: admin
+        role: swiftreseller
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      roles:
+      - group: CCADMIN_CLOUD_ADMINS
+        role: swiftreseller
+    - name: master
+      roles:
+      - group: CCADMIN_CLOUD_ADMINS
+        role: swiftreseller
+      - group: CCADMIN_DOMAIN_ADMINS
+        role: swiftreseller
+      - user: db_backup@Default
+        role: swiftoperator
+      - user: docker_registry@Default
+        role: swiftoperator
+      - user: glance@Default
+        role: swiftoperator
+      - user: image-build@Default
+        role: swiftoperator
+      - user: quay@Default
+        role: swiftoperator
+
+  - name: cc3test
+    projects:
+    - name: swift_test
+      description: 'swift test - mini_test'
+    - name: swift_dispersion
+      description: 'dispersion of objectes and containers'
+    groups:
+    - name: Administrators
+      roles:
+      - project: swift_test
+        role: admin
+      - project: swift_test
+        role: member
+      - project: swift_dispersion
+        role: admin
+      - project: swift_dispersion
+        role: member
+{{- end }}
+{{- end }}

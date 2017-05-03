@@ -1,0 +1,144 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: keystone
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: api
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/templates/etc-configmap.yaml") . | sha256sum }}
+        checksum/bin-configmap.conf: {{ include (print $.Template.BasePath "/templates/bin-configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: keystone
+          image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.keystone.image }}:{{ .Values.keystone.imageTag }}"
+          imagePullPolicy: {{ .Values.keystone.imagePullPolicy | default "IfNotPresent" | quote }}
+          command:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "bash /scripts/start"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: keystone-migration-job,keystone-bootstrap-job
+            - name: DEPENDENCY_SERVICE
+              value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              value: {{ .Values.sentry.dsn | quote}}
+            {{- end }}
+            {{- if .Values.metrics.enabled }}
+            - name: STATSD_HOST
+              value: "127.0.0.1"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: {{ .Values.metrics.prefix | default "openstack" | quote }}
+            {{- end }}
+          ports:
+            - name: public
+              containerPort: 5000
+            - name: admin
+              containerPort: 35357
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - apachectl
+                  - -k
+                  - graceful-stop
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 5000
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
+          volumeMounts:
+            - mountPath: /etc/keystone/keystone.conf
+              subPath: keystone.conf
+              name: keystone-etc
+            - mountPath: /etc/keystone/keystone-paste.ini
+              subPath: paste.ini
+              name: keystone-etc
+            - mountPath: /etc/keystone/policy.json
+              subPath: policy.json
+              readOnly: true
+              name: keystone-etc
+            - mountPath: /etc/keystone/logging.conf
+              subPath: logging.conf
+              name: keystone-etc
+            - mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
+              subPath: wsgi-keystone.conf
+              readOnly: true
+              name: keystone-etc
+            - mountPath: /fernet-keys
+              readOnly: true
+              name: fernet
+            - mountPath: /scripts
+              name: keystone-bin
+          {{- if .Values.keystone.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.keystone.resources.limits.cpu | quote }}
+              memory: {{ .Values.keystone.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.keystone.resources.requests.cpu | quote }}
+              memory: {{ .Values.keystone.resources.requests.memory | quote }}
+          {{- end }}
+        {{- if .Values.metrics.enabled }}
+        - name: statsd
+          image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
+          imagePullPolicy: {{ .Values.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+          {{- if .Values.metrics.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.metrics.resources.limits.cpu | quote }}
+              memory: {{ .Values.metrics.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.metrics.resources.requests.cpu | quote }}
+              memory: {{ .Values.metrics.resources.requests.memory | quote }}
+          {{- end }}
+        {{- end }}
+      volumes:
+        - name: keystone-etc
+          configMap:
+            name: keystone-etc
+        - name: fernet
+          secret:
+            secretName: keystone-fernet
+            defaultMode: 0755
+        - name: keystone-bin
+          configMap:
+            name: keystone-bin

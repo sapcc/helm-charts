@@ -37,7 +37,7 @@ spec:
             name: monasca-agent-etc
       containers:
         - name: monasca-agent-forwarder
-          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
+          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent_standalone}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/dumb-init
@@ -61,7 +61,7 @@ spec:
             - mountPath: /monasca-etc
               name: monasca-etc
         - name: monasca-agent-collector
-          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}
+          image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent_standalone}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/dumb-init
@@ -81,7 +81,7 @@ spec:
             - name: DEPENDENCY_CONTAINER
               value: "monasca-agent-forwarder"
             - name: MONASCA_AGENT_CHECKS
-              value: "prometheus zk kafka_consumer mysql influxdb"
+              value: "prometheus zk kafka_consumer mysql influxdb vcenter"
           volumeMounts:
             - mountPath: /monasca-bin
               name: monasca-bin

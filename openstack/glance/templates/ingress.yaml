@@ -1,0 +1,54 @@
+{{- if .Values.services.ingress.enabled }}
+{{- if .Values.services.api.tlsCertificate}}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: tls-{{.Values.services.api.host | replace "." "-" }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: glance
+    type: config
+data:
+  tls.crt: {{ .Values.services.api.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.services.api.tlsKey | b64enc }}
+---
+{{- end }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: glance
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: glance
+    type: api
+  annotations:
+    {{- if .Values.services.ingress.limitRps }}
+    ingress.kubernetes.io/limit-rps: {{ .Values.services.ingress.limitRps | quote }}
+    {{- end }}
+    {{- if .Values.services.ingress.limitConnections }}
+    ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
+    {{- end }}
+spec:
+  tls:
+  {{- if .Values.services.api.tlsCertificate }}
+     - secretName: tls-{{.Values.services.api.host | replace "." "-" }}
+       hosts: [{{ .Values.services.api.host }}]
+  {{- end }}
+
+  rules:
+    - host: {{.Values.services.api.host}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: glance
+            servicePort: {{ default "9292" .Values.services.api.port }}
+{{- end }}

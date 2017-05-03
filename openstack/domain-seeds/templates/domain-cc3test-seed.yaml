@@ -1,0 +1,109 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: domain-cc3test-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  # uncomment once keystone brings its own seed
+  # - {{/* default .Release.Namespace .Values.global.keystoneNamespace */}}/keystone-seed
+
+  domains:
+  - name: cc3test
+    description: 'Converged Cloud Testing'
+
+    projects:
+    - name: admin
+      description: 'CC-Test Administrators Project'
+    - name: test
+      description: 'Test Project'
+
+    users:
+    - name: test_admin
+      description: CC-Test Administrator
+      password: {{ .Values.cc3testAdminPassword | quote }}
+    - name: test_member
+      description: CC-Test Member
+      password: {{ .Values.cc3testMemberPassword | quote }}
+    - name: test_user
+      description: CC-Test User
+      password: {{ .Values.cc3testUserPassword | quote }}
+
+    groups:
+    - name: Administrators
+      description: 'Test Administrators'
+      users:
+      - test_admin
+      roles:
+      - domain: cc3test
+        role: admin
+      - domain: cc3test
+        role: member
+      - project: admin
+        role: admin
+      - project: admin
+        role: member
+      - project: test
+        role: admin
+      - project: test
+        role: member
+    - name: Members
+      description: 'Test Members'
+      users:
+        - test_member
+      roles:
+      - domain: cc3test
+        role: member
+
+    config:
+      identity:
+        driver: cc_ad
+      ldap:
+        page_size: 1000
+        use_tls: false
+        tls_req_cert: allow
+        query_scope: sub
+        use_dumb_member: false
+        url: {{ .Values.ldapUrl | quote }}
+        user: {{ .Values.ldapUser | quote }}
+        password: {{ .Values.ldapPassword | quote }}
+        suffix: {{ .Values.ldapSuffix | quote }}
+        user_objectclass: user
+        user_id_attribute: cn
+        user_name_attribute: sAMAccountName
+        user_mail_attribute: mail
+        user_pass_attribute: userPassword
+        user_description_attribute: displayName
+        user_enabled_attribute: userAccountControl
+        user_enabled_mask: 2
+        user_enabled_default: 512
+        user_attribute_ignore: default_project_id
+        user_allow_create: True
+        user_allow_delete: True
+        user_allow_update: True
+        user_tree_dn: OU=Identities,OU=Testing,{{ .Values.ldapSuffix }}
+        group_objectclass: group
+        group_id_attribute: cn
+        group_name_attribute: name
+        group_desc_attribute: description
+        group_member_attribute: member
+        group_allow_create: True
+        group_allow_delete: True
+        group_allow_update: True
+        group_tree_dn: OU=CCTEST,OU=OSDomains,OU=Testing,{{ .Values.ldapSuffix }}
+        use_pool: true
+        pool_size: 10
+        pool_connection_lifetime: 60
+        use_auth_pool: true
+        auth_pool_size: 100
+        auth_pool_connection_lifetime: 60
+      cc_ad:
+        enable_ews_auth: False
+        mirror_ews_passwords: false
+        enable_lazy_user_creation: false
+        cam_api_enabled: false
+

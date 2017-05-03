@@ -1,0 +1,52 @@
+# Default values for openstack-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  tld: cloud.sap
+  region: cluster
+# imageRegistry: hub.global.cloud.sap
+# specify the k8s keystone namespace if it differs from the current chart
+#  keystoneNamespace: keystone
+
+image: "monsoon/openstack-operator"
+imageTag: "201704060908"
+
+## Specify a imagePullPolicy
+## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+##
+# imagePullPolicy:
+
+keystone:
+  #authUrl: http://identity.cluster.cloud.sap/v3
+  identityApiVersion: 3
+  username: admin
+  #password: secret
+  userDomainId: default
+  #projectName: admin
+  #projectDomainId: default
+  domainId: default
+
+resources:
+  enabled: false
+  limits:
+    memory: 128Mi
+    cpu: 500m
+  requests:
+    memory: 128Mi
+    cpu: 500m
+
+replicas: 1
+
+upgrades:
+  revisionHistory: 3
+  podReplacementStrategy: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 3
+
+sentry:
+  enabled: false
+# dsn: put-your-sentry-dsn-here
+

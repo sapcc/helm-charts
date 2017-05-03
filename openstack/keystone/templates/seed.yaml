@@ -1,0 +1,115 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: keystone-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  roles:
+  - admin
+  - member
+  - service
+
+  regions:
+  - id: ap
+    description: 'Asia/Pacific'
+  - id: ap-ae-1
+    description: 'UAE - Dubai'
+    parent_region_id: ap
+  - id: ap-au-1
+    description: 'Australia - Sydney'
+    parent_region_id: ap
+  - id: ap-cn-1
+    description: 'China - Shanghai'
+    parent_region_id: ap
+  - id: ap-jp-1
+    description: 'Japan - Tokyo'
+    parent_region_id: ap
+  - id: ap-jp-2
+    description: 'Japan - Osaka'
+    parent_region_id: ap
+  - id: eu
+    description: 'Europe'
+  - id: eu-de-1
+    description: 'Germany - Rot'
+    parent_region_id: eu
+  - id: eu-nl-1
+    description: 'Netherlands - Amsterdam'
+    parent_region_id: eu
+  - id: eu-ru-1
+    description: 'Russia - Moscow'
+    parent_region_id: eu
+  - id: na
+    description: 'North America'
+  - id: na-us-1
+    description: 'USA - Sterling VA'
+    parent_region_id: na
+  - id: na-us-2
+    description: 'USA - Santa Clara CA'
+    parent_region_id: na
+  - id: na-us-3
+    description: 'USA - Chandler AZ'
+    parent_region_id: na
+  - id: na-ca-1
+    description: 'Canada - Toronto'
+    parent_region_id: na
+  - id: la
+    description: 'Latin America'
+  - id: staging
+    description: 'Staging'
+    parent_region_id: eu
+  - id: qa
+    description: 'QA'
+    parent_region_id: eu
+  - id: local
+    description: 'Local Development'
+
+  services:
+  - name: keystone
+    type: identity
+    description: Openstack Identity
+
+  domains:
+  - name: Default
+    id: default
+    description: Openstack Internal Domain
+    enabled: true
+    users:
+    - name: admin
+      description: Openstack Cloud Administrator
+      enabled: true
+      roles:
+      - domain: Default
+        role: admin
+      - project: admin
+        role: admin
+      - project: service
+        role: admin
+
+    groups:
+    - name: administrators
+      description: Administrators
+      roles:
+      - domain: Default
+        role: admin
+      - project: admin
+        role: admin
+      - project: service
+        role: admin
+      users:
+      - admin
+    - name: members
+      description: Members
+      roles:
+      - domain: Default
+        role: member
+    projects:
+    - name: admin
+      description: Administrator Project
+    - name: service
+      description: Services Project
+{{- end }}

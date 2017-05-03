@@ -1,8 +1,8 @@
 # Kibana is served by a back end server. This controls which port to use.
-# server.port: 5601
+server.port: 5601
 
 # The host to bind the server to.
-# server.host: "0.0.0.0"
+server.host: "0.0.0.0"
 
 # If you are running kibana behind a proxy, and want to mount it at a path,
 # specify that path here. The basePath can't end in a slash.

@@ -1,0 +1,80 @@
+{{- if .Values.services.ingress.enabled }}
+{{- if .Values.services.public.tlsCertificate}}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: tls-{{.Values.services.public.host | replace "." "-" }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+data:
+  tls.crt: {{ .Values.services.public.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.services.public.tlsKey | b64enc }}
+---
+{{- end }}
+{{- if .Values.services.admin.tlsCertificate}}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: tls-{{.Values.services.admin.host | replace "." "-" }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+data:
+  tls.crt: {{ .Values.services.admin.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.services.admin.tlsKey | b64enc }}
+---
+{{- end }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: keystone
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    component: keystone
+    type: api
+  annotations:
+    {{- if .Values.services.ingress.limitRps }}
+    ingress.kubernetes.io/limit-rps: {{ .Values.services.ingress.limitRps | quote }}
+    {{- end }}
+    {{- if .Values.services.ingress.limitConnections }}
+    ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
+    {{- end }}
+spec:
+  tls:
+  {{- if .Values.services.public.tlsCertificate }}
+     - secretName: tls-{{.Values.services.public.host | replace "." "-" }}
+       hosts: [{{ .Values.services.public.host }}]
+  {{- end }}
+  {{- if .Values.services.admin.tlsCertificate }}
+     - secretName: tls-{{.Values.services.admin.host | replace "." "-" }}
+       hosts: [{{ .Values.services.admin.host }}]
+  {{- end }}
+
+  rules:
+    - host: {{.Values.services.public.host}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: keystone
+            servicePort: {{ default "5000"  .Values.services.public.port }}
+    - host: {{.Values.services.admin.host}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: keystone
+            servicePort: {{ default "35357" .Values.services.admin.port }}
+{{- end }}

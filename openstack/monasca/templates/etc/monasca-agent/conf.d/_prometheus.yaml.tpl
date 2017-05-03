@@ -1,3 +1,11 @@
+#
+# IMPORTANT: please be aware, that below there are two sections: one for the prometheus collector
+#            and another one for the prometheus frontend - make sure you enter your metric conversion
+#            config to the proper section
+# IMPORTANT: please keep in mind that each instance section below might contain a match_label re-
+#            striction and make sure, that everything you add is properly matched in there
+#
+
 init_config:
 
 instances:
@@ -6,6 +14,13 @@ instances:
    timeout: 45
    collect_response_time: True
    mapping:
+      # see https://github.com/sapcc/monasca-agent/blob/master/docs/Customizations.md#dynamiccheckhelper-class for
+      # help on filter and mapping rules below
+      # The following dimensions have a predefined-meaning and should be used properly
+      #   service: the service name (e.g. "compute", "dns", "monitoring", "object-store", "kubernetes", "elektra")
+      #   component: the technical component of the service (e.g. "Postgres", "nova-api", ...)
+      #
+      # Use `monasca --insecure dimension-name-list` to discover existing names and try to match existing names first.
       match_labels:
 
       dimensions:
@@ -15,14 +30,9 @@ instances:
          resource: resource
          quantile: quantile
       groups:
-         # each group has a unique set of dimensions and a prefix equal to the group name
-         # Prometheus labels are mapped using group-specific dimensions
-         # using statements in the form <monasca-dimension>:<prometheus-label>
-         # regular expressions can be used for the gauges/rates to mark which part of the name should be used
-         # (bind_responses)_total maps the Prometheus name bind_responses_total to a Monasca metric bind_responses
          dns:
              gauges: [ 'bind_up' ]
-             counters: [ '(bind_incoming_queries)_total', '(bind_responses)_total' ]
+             rates: [ '(bind_incoming_queries)_total', '(bind_responses)_total' ]
              dimensions:
                  bind_server: kubernetes_name
                  type: type
@@ -39,25 +49,15 @@ instances:
              gauges: [ 'canary_(status)', 'canary_(off_status)' ]
              dimensions:
                  test: script
-         postgres:
-             gauges: [ 'pg_(database_size_gauge_average)', 'pg_(database_size)' ]
-             dimensions:
-                 service: kubernetes_namespace
-                 database: datname
          prometheus:
              gauges: [ 'up' ]
              dimensions:
                  component: component
-         puma:
-             gauges: [ 'puma_(request_backlog)' ]
-             dimensions:
-                 service: kubernetes_namespace
-                 pod: kubernetes_pod_name
          activedirectory:
              gauges: [ 'ad_(.*_status)' ]
          kubernetes:
              gauges: [ 'kube_(node_status_ready)', 'kube_(node_status_out_of_disk)', 'node_filesystem_free', 'kube_(pod_status_phase)', 'kube_(pod_status_ready)' ]
-             counters: [ 'kube_(pod_container_status_restarts)' ]
+             rates: [ 'kube_(pod_container_status_restarts)' ]
              dimensions:
                  container: container
                  namespace: namespace
@@ -70,7 +70,7 @@ instances:
                      regex: '(xfs|ext4)'
                  condition: true
          openstack.api:
-             counters: [ 'openstack_(responses)_by_api_counter', 'openstack_(requests)_total_counter' ]
+             rates: [ 'openstack_(responses)_by_api_counter', 'openstack_(requests)_total_counter' ]
              gauges: [ 'openstack_(latency)_by_api_timer' ]
              dimensions:
                  service: component
@@ -98,13 +98,27 @@ instances:
              gauges:
                  - 'swift_dispersion_(container_overlapping)_gauge'
                  - 'swift_dispersion_(object_overlapping)_gauge'
+         swift.healthcheck:
+             gauges:
+                 - 'swift_health_statsd_(exit_code)_gauge'
          swift.proxy:
              gauges: [ 'swift_proxy_(firstbyte_timer)' ]
              dimensions:
-                 policy:   { regex: 'all' }
-                 status:   status
-                 type:     type
-
+                 policy:     { regex: 'all' }
+                 status:     status
+                 type:       type
+                 os_cluster: os_cluster
+         swift.object:
+             gauges:
+                 - 'swift_object_server_(async_pendings)_counter'
+         nova:
+             gauges: [ 'openstack_compute_(.*)_gauge' ]
+             dimensions:
+                 hostname:  host
+                 service: service
+#                 hypervisor_type: hypervisor_type
+                 vm_state: vm_state
+                 project_id: project_id        # NOT: __project_id__ !!
  - name: Prometheus-Aggregated
    url: '{{.Values.monasca_agent_config_prometheus_aggr_url}}/federate'
    timeout: 45
@@ -113,19 +127,50 @@ instances:
        kubernetes_namespace:
         - monasca
         - ceilometer
+        - lyra
+        - limes
+        - arc
+        - elektra
+        - blackbox
+        - monsoon3
    mapping:
-       dimensions:
-           resource: resource
-           namespace: kubernetes_namespace
-           pod: kubernetes_pod_name
-           hostname: kubernetes_io_hostname
+# taking the dimensions out for now, as they are empty
+#       dimensions:
        groups:
            kubernetes:
                gauges: [ '(container_start_time_sec)onds', 'container_memory_usage_bytes' ]
-               counters: [ '(container_cpu_usage_sec)onds_total', '(container_network.*_packages)_total' ]
+               rates: [ '(container_cpu_usage_sec)onds_total', '(container_network.*_packages)_total' ]
                dimensions:
+# those four dimensions are moved here from the global section - are they really required?
+                   resource: resource
+                   namespace: kubernetes_namespace
+                   pod: kubernetes_pod_name
+                   hostname: kubernetes_io_hostname
+# end of moved section
                    container: kubernetes_container_name
                    zone: zone
                    cgroup_path:
                        source_key: 'id'
                        regex: '(/system.slice/.*)'
+           postgres:
+               gauges: [ 'pg_(database_size_bytes)' ]
+               dimensions:
+                   service: kubernetes_namespace
+                   database: datname
+                   region: region
+           puma:
+               counters: [ 'puma_(request_backlog)' ]
+               dimensions:
+                   service: kubernetes_namespace
+                   pod: kubernetes_pod_name
+                   region: region
+           blackbox.healthcheck:
+               gauges: [ 'blackbox_(.*_status)_gauge' ]
+               dimensions:
+                   test: check
+                   region: region
+           limes:
+               gauges: [ 'limes_(failed_scrapes)_rate' ]
+               dimensions:
+                   cluster: cluster
+                   service: service

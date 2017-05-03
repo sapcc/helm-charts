@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keystone-migration-job
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/bin-configmap.conf: {{ include (print $.Template.BasePath "/templates/bin-configmap.yaml") . | sha256sum }}
+        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/templates/etc-configmap.yaml") . | sha256sum }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: keystone-migration
+          image: "{{ default "hub.global.cloud.sap" .Values.repository }}/{{ .Values.keystone.image }}:{{ .Values.keystone.imageTag }}"
+          imagePullPolicy: {{ default "IfNotPresent" .Values.keystone.imagePullPolicy | quote }}
+          command:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "bash /scripts/db-sync"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: {{ .Release.Name }}-postgresql
+          volumeMounts:
+            - mountPath: /etc/keystone/keystone.conf
+              subPath: keystone.conf
+              name: keystone-etc
+            - mountPath: /etc/keystone/logging.conf
+              subPath: logging.conf
+              name: keystone-etc
+            - mountPath: /scripts
+              name: keystone-bin
+      volumes:
+        - name: keystone-etc
+          configMap:
+            name: keystone-etc
+        - name: keystone-bin
+          configMap:
+            name: keystone-bin

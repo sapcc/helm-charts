@@ -7,8 +7,7 @@ kafka:
     notification_topic: alarm-notifications
     notification_retry_topic: retry-notifications
     max_offset_lag: 600  # In seconds, undefined for none
-    periodic:
-        60: {{.Values.monasca_topics_notifications_periodic_60}}
+    periodic: periodic-notifications
 
 mysql:
     host: {{.Values.monasca_mysql_endpoint_host_internal}}

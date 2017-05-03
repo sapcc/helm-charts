@@ -6,7 +6,8 @@ metadata:
   labels:
     system: openstack
     service: monitoring
-    component: elasticsearch-master
+    component: elasticsearch
+    role: master
   annotations:
     kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
 
@@ -20,7 +21,8 @@ spec:
   template:
     metadata:
       labels:
-        component: elasticsearch-master
+        component: elasticsearch
+        role: master
       annotations:
         checksum/monasca-templates-monasca-es-etc-configmap.yaml: {{ include "monasca/templates/monasca-es-etc-configmap.yaml" . | sha256sum }}
         checksum/monasca-templates-monasca-es-bin-configmap.yaml: {{ include "monasca/templates/monasca-es-bin-configmap.yaml" . | sha256sum }}
@@ -40,6 +42,7 @@ spec:
           capabilities:
             add:
               - IPC_LOCK
+              - SYS_RESOURCE
         image: {{.Values.docker_repo}}/monasca-elasticsearch:{{.Values.image_version_monasca_elasticsearch}}
         imagePullPolicy: IfNotPresent
         command:
@@ -59,6 +62,8 @@ spec:
             value: "true"
           - name: NODE_DATA
             value: "false"
+          - name: NODE_INGEST
+            value: "false"
           - name: HTTP_ENABLE
             value: "true"
         volumeMounts:
@@ -72,6 +77,7 @@ spec:
             protocol: TCP
           - name: dummymasterport
             hostPort: {{.Values.monasca_elasticsearch_master_dummy_port}}
+            hostIP: 127.0.0.1
             containerPort: {{.Values.monasca_elasticsearch_master_dummy_port}}
       - name: monasca-agent-forwarder
         image: {{.Values.docker_repo}}/monasca-agent:{{.Values.image_version_monasca_agent}}

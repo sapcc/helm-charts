@@ -4,9 +4,8 @@ from elasticsearch_dsl import Search
 from datetime import datetime
 from pytz import timezone
 import time
-import os
 import sys
-#from datadog import initialize, statsd
+from datadog import initialize, statsd
 
 es = Elasticsearch(
 ['{{.Values.monasca_elasticsearch_endpoint_host_internal}}:{{.Values.monasca_elasticsearch_port_internal}}'],
@@ -14,14 +13,14 @@ es = Elasticsearch(
 http_auth=('{{.Values.monasca_elasticsearch_admin_user}}', '{{.Values.monasca_elasticsearch_admin_password}}'),
 use_ssl=False)
 
-#initialize(statsd_host='localhost', statsd_port=9125)
+initialize(statsd_host='blackbox-tests-canary.blackbox.svc.kubernetes.{{.Values.cluster_region}}.cloud.sap', statsd_port=9125)
 
 fmt = "%Y-%m-%d %H:%M:%S %Z%z"
 now_utc = datetime.utcnow()
 now_cet = datetime.now(timezone('Europe/Berlin'))
 index_date = now_utc.strftime('%Y.%m.%d')
 check_rs = 'Monitoring check at: %s' % now_cet.strftime(fmt)
-print str(check_rs)
+#print str(check_rs)
 
 doc = {
 '@timestamp': now_utc,
@@ -37,26 +36,17 @@ def storeMetric():
   try:
     es.index(index='logstash-%s' % index_date, doc_type='log', body=doc)
   except ConnectionError as ce:
-     print ("Elasticsearch host not found while sending logs entry to elasticsearch service: 404")
+     print ("%s Elasticsearch Monitoring check, Elasticsearch host not found while sending logs entry to elasticsearch service: 404" % datetime.now(timezone('Europe/Berlin')))
      print(ce)
-     f = open("/checks/status/monasca_elasticsearch_test","w")
-     f.write("1")
-     f.close()
-#     statsd.gauge('elasticsearch.monitoring.status', 0, tags=["method:put, component:elasticsearch"])
+     statsd.gauge('blackbox_canary_status', 1, tags=["check:elasticsearch"])
      sys.exit(0)
   except Exception as e:
-     print("Elasticsearch error while sending logs entry")
+     print("%s Elasticsearch Monitoring check, Elasticsearch error while sending logs entry" % datetime.now(timezone('Europe/Berlin')))
      print(e)
-     f = open("/checks/status/monasca_elasticsearch_test","w")
-     f.write("1")
-     f.close()
-#     statsd.gauge('elasticsearch.monitoring.status', 0, tags=["method:put, component:elasticsearch"])
+     statsd.gauge('blackbox_canary_status', 1, tags=["check:elasticsearch"])
      sys.exit(0)
   else:
-     f = open("/checks/status/monasca_elasticsearch_test","w")
-     f.write("0")
-     f.close()
-#     statsd.gauge('elasticsearch.monitoring.status', 1, tags=["method:put, component:elasticsearch"])
+     statsd.gauge("blackbox_canary_status", 0, tags=["check:elasticsearch"])
 
 
 
@@ -73,45 +63,27 @@ def searchLoop():
       try:
        response = s.execute()
       except NotFoundError as nf:
-       print ("Elasticsearch host not found while searching for log entry: 404")
+       print ("%s Elasticsearch Monitoring check, Elasticsearch host not found while searching for log entry: 404" % datetime.now(timezone('Europe/Berlin')))
        print(nf)
-       f = open("/checks/status/monasca_elasticsearch_test","w")
-       f.write("1")
-       f.close()
-#       statsd.gauge('elasticsearch.monitoring.status', 0, tags=["method:get, component:elasticsearch"])
+       statsd.gauge('blackbox_canary_status', 1, tags=["check:elasticsearch"])
        sys.exit(0)
       except Exception as e:
-       print("Elasticsearch error while searching for log entry")
+       print("%s Elasticsearch Monitoring check, Elasticsearch error while searching for log entry" % datetime.now(timezone('Europe/Berlin')))
        print(e)
-       f = open("/checks/status/monasca_elasticsearch_test","w")
-       f.write("1")
-       f.close()
-#       statsd.gauge('elasticsearch.monitoring.status', 0, tags=["method:get, component:elasticsearch"])
+       statsd.gauge('blackbox_canary_status', 1, tags=["check:elasticsearch"])
        sys.exit(0)
 
       if response.success() == True and response.hits.total == 1:
-#        print('%d hit found.' % response.hits.total)
-#        print('reponse time: %sms' % response.took)
-         f = open("/checks/status/monasca_elasticsearch_test","w")
-         f.write("0")
-         f.close()
-#        statsd.gauge('elasticsearch.monitoring.status', 1, tags=["method:get, component:elasticsearch"])
-#        statsd.gauge('elasticsearch.monitoring.time', response.took, tags=["method:get, component:elasticsearch"])
-#        statsd.gauge('elasticsearch.monitoring.status', 1, tags=["method:total, component:elasticsearch"])
-#        statsd.gauge('elasticsearch.monitoring.time', im , tags=["method:wait, component:elasticsearch"])
-#        print im + response.took
-         break
-#      statsd.gauge('elasticsearch.monitoring.time', im , tags=["method:wait, component:elasticsearch"])
+        print('%s Elasticsearch Monitoring check, response time: %sms' % (datetime.now(timezone('Europe/Berlin')), response.took))
+        statsd.gauge('blackbox_canary_status', 0, tags=["check:elasticsearch"])
+        statsd.gauge('blackbox_canary_duration', response.took, tags=["check:elasticsearch"])
+        break
       i = i+1
       time.sleep(i)
       if delta >= abort_after:
-        print 'error elasticsearch metrics could not be found'
-        f = open("/checks/status/monasca_elasticsearch_test","w")
-        f.write("1")
-        f.close()
-#        statsd.gauge('elasticsearch.monitoring.status', 0, tags=["method:get, component:elasticsearch"])
-#        statsd.gauge('elasticsearch.monitoring.time', im, tags=["method:wait, component:elasticsearch"])
-#        print im + response.took
+        print ('%s Elasticsearch Monitoring check, error elasticsearch metrics could not be found' % datetime.now(timezone('Europe/Berlin')))
+        statsd.gauge('blackbox_canary_status', 1, tags=["check:elasticsearch"])
+        statsd.gauge('blackbox_canary_duration', im, tags=["check:elasticsearch"])
 
 
 storeMetric()

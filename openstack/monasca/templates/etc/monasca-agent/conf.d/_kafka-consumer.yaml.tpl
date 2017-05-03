@@ -19,9 +19,9 @@ instances:
         thresh:
           - metrics
           - events
-        logstash-persister:
-          - transformed-log
-        logstash-metrics:
-          - transformed-log
-        logstash-transformer:
-          - log
+#        logstash-persister:
+#          - transformed-log
+#        logstash-metrics:
+#          - transformed-log
+#        logstash-transformer:
+#          - log

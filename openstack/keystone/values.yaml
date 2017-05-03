@@ -1,0 +1,151 @@
+# Default values for keystone.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+
+global:
+  tld: cloud.sap
+  region: cluster
+# imageRegistry: hub.global.cloud.sap
+
+debug: False
+
+keystone:
+  image: "monsoon/ubuntu-source-keystone-m3"
+  imageTag: "20170323083816"
+  ## Specify a imagePullPolicy
+  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # imagePullPolicy:
+
+  resources:
+    enabled: false
+    limits:
+      memory: 128Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 500m
+
+  adminUser: admin
+  adminPassword: secret
+  adminProjectName: admin
+#  cloudAdminProject: put-your-cloud-admin-project-id-here
+
+metrics:
+  enabled: false
+  port: '9102'
+
+  image: prom/statsd-exporter
+  imageTag: master
+  prefix: openstack
+
+  resources:
+    enabled: false
+    limits:
+      memory: 128Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 500m
+
+
+operations:
+  image: "monsoon/ubuntu-source-keystone-m3"
+  imageTag: "20170317090018"
+  ## Specify a imagePullPolicy
+  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # imagePullPolicy:
+
+  cronSchedule: "0 * * * *"
+
+  resources:
+    enabled: false
+    limits:
+      memory: 128Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 500m
+
+replicas: 2
+
+upgrades:
+  revisionHistory: 3
+  podReplacementStrategy: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 3
+
+
+services:
+  type: ClusterIP
+#  externalip: "192.168.1.100"
+
+  ingress:
+    enabled: false
+    # see https://github.com/kubernetes/ingress/blob/74d57c950282484885a74c92d3413110e3b95c69/controllers/nginx/configuration.md#rate-limiting
+  # limitRps: 100
+  # limitConnections: 100
+
+  public:
+    scheme: http
+    host: identity.cluster.cloud.sap
+    port: 5000
+    #tlsCertificate:
+    #tlsKey:
+
+  admin:
+    scheme: http
+    host: identity-admin.cluster.cloud.sap
+    port: 35357
+    #tlsCertificate:
+    #tlsKey:
+
+notifications:
+  enabled: true
+  format: cadf
+
+rabbitmq:
+  host: rabbitmq
+  user: openstack
+  password: secret
+
+token:
+  provider: fernet
+  expiration: 3600
+
+fernet:
+  maxActiveKeys: 3
+  secrets:
+  - c1dVSlFZVjRQRnBGR3pwSk1nMll6eEFwX2VDNURwRFVzLVd5aEVYaVI1dz0=
+  - M1V0dHp6bk5LYzVlQ1doMjdvUUctSGdmVFFEcWxIeDZXdHFDT25vT3RHUT0=
+
+
+memcached:
+  port: 11211
+
+sentry:
+  enabled: false
+# dsn: put-your-sentry-dsn-here
+
+postgresql:
+  postgresDatabase: keystone
+  postgresUser: postgres
+  postgresPassword: secret
+
+  dbUser: keystone
+  dbPassword: anotherSecret
+
+  dbInit: keystone-db-init
+  dbMaintain: keystone-db-maintain
+
+  persistence:
+    enabled: false
+
+  backup:
+    enabled: false
+

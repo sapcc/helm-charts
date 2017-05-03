@@ -31,12 +31,11 @@ spec:
           configMap:
             name: limes
       containers:
-        - name: collect
-          image: {{$.Values.limes.image}}:{{$.Values.limes.image_tag}}
+        - name: api
+          image: {{include "limes_image" $}}
           imagePullPolicy: {{$.Values.limes.image_pull_policy}}
-          command:
-            - /usr/bin/limes-serve
           args:
+            - serve
             - /etc/limes/limes.yaml
             - {{$cluster_id}}
           env:
