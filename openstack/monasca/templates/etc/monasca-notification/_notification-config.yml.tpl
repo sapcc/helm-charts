@@ -109,8 +109,7 @@ zookeeper:
     url: zk:{{.Values.monasca_zookeeper_port_internal}}
     notification_path: /notification/alarms
     notification_retry_path: /notification/retry
-    periodic_path:
-        60: /notification/60_seconds
+    periodic_path: /notification/periodic
 
 
 logging: # Used in logging.dictConfig
