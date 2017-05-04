@@ -12,6 +12,8 @@ spec:
       annotations:
         checksum/bind1.config: {{ include "dns/charts/bind1/templates/config.yaml" . | sha256sum }}
     spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.failure_domain_zone}}
       containers:
       - name: bind1
         image: {{.Values.image_bind}}:{{ .Values.image_bind_tag}}
