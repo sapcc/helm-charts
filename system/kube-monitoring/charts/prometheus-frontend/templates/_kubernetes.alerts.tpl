@@ -144,17 +144,17 @@ ALERT KubernetesPodRestartingTooMuch
 
 
 ALERT KubernetesDockerHangs
-  IF sum(rate(kubelet_docker_operations_timeout[5m])) by (instance) > 0
+  IF sum(rate(kubelet_docker_operations_timeout[5m])) by (instance,cluster) > 0
   FOR 15m
   LABELS {
     service = "k8s",
     severity = "warning",
     context = "docker",
-    dashboard = "kubernetes-node?var-server={{`{{$labels.node}}`}}"
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
     summary = "Docker hangs!",
-    description = "Docker on {{`{{$labels.node}}`}} is hanging",
+    description = "Docker on {{`{{$labels.instance}}`}} is hanging",
   }
 
 ALERT KubernetesApiServerDown
