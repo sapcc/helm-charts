@@ -144,7 +144,7 @@ ALERT KubernetesPodRestartingTooMuch
 
 
 ALERT KubernetesDockerHangs
-  IF sum(rate(kubelet_docker_operations[5m])) by (instance) == 0
+  IF sum(rate(kubelet_docker_operations_timeout[5m])) by (instance) > 0
   FOR 15m
   LABELS {
     service = "k8s",
