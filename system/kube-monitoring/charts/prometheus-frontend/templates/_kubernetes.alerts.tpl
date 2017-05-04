@@ -207,7 +207,7 @@ ALERT KubernetesApiServerLatency
   FOR 1h
   LABELS {
     service = "k8s",
-    severity = "warning",
+    severity = "info",
     context = "apiserver",
     dashboard = "kubernetes-apiserver"
   }
@@ -221,7 +221,7 @@ ALERT KubernetesApiServerEtcdAccessLatency
   FOR 1h
   LABELS {
     service = "k8s",
-    severity = "warning",
+    severity = "info",
     context = "apiserver",
     dashboard = "kubernetes-apiserver"
   }
