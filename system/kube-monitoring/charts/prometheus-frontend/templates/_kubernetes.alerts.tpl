@@ -332,7 +332,7 @@ ALERT HighNumberOfGoRoutines
   }
 
 ALERT PredictHighNumberOfGoRoutines
-  IF abs(predict_linear(go_goroutines{job="kube-system/kubelet"}[1h], 2*3600)) > avg_over_time(go_goroutines{job="kube-system/kubelet"}[3d] offset 3d) * 2
+  IF abs(predict_linear(go_goroutines{job="kube-system/kubelet"}[1h], 2*3600)) > 10000
   FOR 5m
   LABELS {
     service = "k8s",
