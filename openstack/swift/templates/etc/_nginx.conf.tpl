@@ -59,6 +59,8 @@ http {
             proxy_pass        http://127.0.0.1:8080;
             proxy_set_header  Host      $host;
             proxy_set_header  X-Real_IP $remote_addr;
+            proxy_set_header  X-Forwarded-For $remote_addr;
+            proxy_set_header  X-Forwarded-Host $remote_addr;
             proxy_pass_header Date;
 
             # buffering must be disabled since GET response or PUT request bodies can be *very* large
