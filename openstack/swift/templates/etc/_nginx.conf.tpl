@@ -63,8 +63,9 @@ http {
             proxy_pass_header Date;
 
             # buffering must be disabled since GET response or PUT request bodies can be *very* large
-            proxy_buffering off;
+            proxy_buffering         off;
             proxy_request_buffering off;
+            client_max_body_size    0;    # Don't check request body size
         }
     }
 }
