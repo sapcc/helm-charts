@@ -174,3 +174,5 @@ instances:
                dimensions:
                    cluster: cluster
                    service: service
+           swift:
+               gauges: [ 'swift_(async_pendings)_rate' ]
