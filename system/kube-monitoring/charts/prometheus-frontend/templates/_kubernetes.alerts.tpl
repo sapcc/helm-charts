@@ -319,7 +319,7 @@ ALERT KubernetesTooManyOpenFiles
   }
 
 ALERT HighNumberOfGoRoutines
-  IF go_goroutines{job="kube-system/kubelet"} > avg_over_time(go_goroutines{job="kube-system/kubelet"}[3d] offset 3d) * 2
+  IF go_goroutines{job="kube-system/kubelet"} > 5000
   FOR 5m
   LABELS {
     service = "k8s",
