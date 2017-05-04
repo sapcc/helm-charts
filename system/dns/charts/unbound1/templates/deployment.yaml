@@ -12,6 +12,8 @@ spec:
       annotations:
         checksum/unbound1.config: {{ include "dns/charts/unbound1/templates/config.yaml" . | sha256sum }}
     spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.failure_domain_zone}}
       containers:
       - name: unbound1
         image: {{.Values.image_unbound}}:{{ .Values.image_unbound_tag}}

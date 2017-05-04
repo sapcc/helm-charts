@@ -1,0 +1,68 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: hermes
+  labels:
+    system: openstack
+    service: audit
+    component: elasticsearch
+#  annotations:
+#    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+      annotations:
+#        checksum/logstash-etc-configmap.yaml: {{ include "hermes/templates/elasticsearch-etc-configmap.yaml" . | sha256sum }}
+        pod.alpha.kubernetes.io/init-containers: '[
+        {
+            "name": "init",
+            "image": "busybox",
+            "imagePullPolicy": "IfNotPresent",
+            "command": ["sh", "-c", "chown -R 1000:1000 /data"],
+            "volumeMounts": [
+                {
+                  "name": "data",
+                  "mountPath": "/data"
+                }
+            ]
+        }
+    ]' 
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: hermes-etc
+          configMap:
+            name: elasticsearch-etc
+        - name: data
+          persistentVolumeClaim:
+            claimName: hermes-elasticsearch
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:{{.Values.hermes_image_version_elasticsearch}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - elasticsearch
+          args:
+            - "-Epath.conf=/hermes-etc"
+          env:
+#            - name: COMMAND
+#              value: " elasticsearch -Epath.conf=/hermes-etc/ "
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: hermes-etc
+              mountPath: /hermes-etc
+            - name: data
+              mountPath: /data

@@ -144,17 +144,17 @@ ALERT KubernetesPodRestartingTooMuch
 
 
 ALERT KubernetesDockerHangs
-  IF sum(rate(kubelet_docker_operations[5m])) by (instance) == 0
+  IF rate(kubelet_docker_operations_timeout[5m])> 0
   FOR 15m
   LABELS {
     service = "k8s",
     severity = "warning",
     context = "docker",
-    dashboard = "kubernetes-node?var-server={{`{{$labels.node}}`}}"
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
     summary = "Docker hangs!",
-    description = "Docker on {{`{{$labels.node}}`}} is hanging",
+    description = "Docker on {{`{{$labels.instance}}`}} is hanging",
   }
 
 ALERT KubernetesApiServerDown
@@ -207,7 +207,7 @@ ALERT KubernetesApiServerLatency
   FOR 1h
   LABELS {
     service = "k8s",
-    severity = "warning",
+    severity = "info",
     context = "apiserver",
     dashboard = "kubernetes-apiserver"
   }
@@ -221,7 +221,7 @@ ALERT KubernetesApiServerEtcdAccessLatency
   FOR 1h
   LABELS {
     service = "k8s",
-    severity = "warning",
+    severity = "info",
     context = "apiserver",
     dashboard = "kubernetes-apiserver"
   }
@@ -319,7 +319,7 @@ ALERT KubernetesTooManyOpenFiles
   }
 
 ALERT HighNumberOfGoRoutines
-  IF go_goroutines{job="kube-system/kubelet"} > avg_over_time(go_goroutines{job="kube-system/kubelet"}[3d] offset 3d) * 2
+  IF go_goroutines{job="kube-system/kubelet"} > 5000
   FOR 5m
   LABELS {
     service = "k8s",
@@ -332,7 +332,7 @@ ALERT HighNumberOfGoRoutines
   }
 
 ALERT PredictHighNumberOfGoRoutines
-  IF abs(predict_linear(go_goroutines{job="kube-system/kubelet"}[1h], 2*3600)) > avg_over_time(go_goroutines{job="kube-system/kubelet"}[3d] offset 3d) * 2
+  IF abs(predict_linear(go_goroutines{job="kube-system/kubelet"}[1h], 2*3600)) > 10000
   FOR 5m
   LABELS {
     service = "k8s",

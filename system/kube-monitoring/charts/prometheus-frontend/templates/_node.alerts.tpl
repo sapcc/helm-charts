@@ -19,7 +19,7 @@ ALERT NodeClockDrift
   FOR 3m
   LABELS {
     service = "node",
-    severity = "critical",
+    severity = "info",
     context = "availability",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
