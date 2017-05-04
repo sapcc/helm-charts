@@ -128,6 +128,9 @@ logging: # Used in logging.dictConfig
             level: WARN
         statsd:
             level: INFO
+        monasca_notification:
+            level: DEBUG
+
     root:
         handlers:
             - console
