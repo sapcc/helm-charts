@@ -133,6 +133,7 @@ instances:
         - elektra
         - blackbox
         - monsoon3
+        - swift
    mapping:
 # taking the dimensions out for now, as they are empty
 #       dimensions:
@@ -174,3 +175,5 @@ instances:
                dimensions:
                    cluster: cluster
                    service: service
+           swift:
+               gauges: [ 'swift_(async_pendings)_rate' ]
