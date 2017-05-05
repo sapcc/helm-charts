@@ -133,6 +133,7 @@ instances:
         - elektra
         - blackbox
         - monsoon3
+        - swift
    mapping:
 # taking the dimensions out for now, as they are empty
 #       dimensions:
