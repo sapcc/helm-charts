@@ -71,11 +71,11 @@ Main:
   check_freq: 60
 
   # Number of Collector Threads to run
-  num_collector_threads: 4
+  num_collector_threads: 8
 
   # Maximum number of collection cycles where all of the threads in the pool are
   # still running plugins before the collector will exit
-  pool_full_max_retries: 4
+  pool_full_max_retries: 16
 
   # Threshold value for warning on collection time of each check (in seconds)
   sub_collection_warn: 6

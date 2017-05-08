@@ -1,5 +1,5 @@
 init_config:
-  check_frequency: 300
+  check_frequency: 60
   collect_period: 300
 
 instances:
