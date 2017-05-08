@@ -7,7 +7,8 @@ kafka:
     notification_topic: alarm-notifications
     notification_retry_topic: retry-notifications
     max_offset_lag: 600  # In seconds, undefined for none
-    periodic: periodic-notifications
+    periodic:
+        60: {{.Values.monasca_topics_notifications_periodic_60}}
 
 mysql:
     host: {{.Values.monasca_mysql_endpoint_host_internal}}
@@ -109,7 +110,8 @@ zookeeper:
     url: zk:{{.Values.monasca_zookeeper_port_internal}}
     notification_path: /notification/alarms
     notification_retry_path: /notification/retry
-    periodic_path: /notification/periodic
+    periodic_path: 
+        60: /notification/60_seconds
 
 logging: # Used in logging.dictConfig
     version: 1
