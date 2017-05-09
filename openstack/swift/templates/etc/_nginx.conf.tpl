@@ -70,6 +70,7 @@ http {
             proxy_http_version      1.1;
             proxy_buffering         off;
             proxy_request_buffering off;
+            # accept large PUT requests (5 GiB is the limit for a single object in Swift)
             client_max_body_size    5g;
         }
     }
