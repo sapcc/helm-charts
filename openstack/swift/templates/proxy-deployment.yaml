@@ -14,6 +14,13 @@ spec:
   replicas: {{$cluster.replicas}}
   strategy:
     type: RollingUpdate
+    rollingUpdate:
+      {{- if eq $cluster.replicas 1.0 }}
+      maxUnavailable: 0
+      {{- else }}
+      maxUnavailable: 1
+      {{- end }}
+      maxSurge: 2
   selector:
     matchLabels:
       component: swift-proxy-{{$cluster.name}}
