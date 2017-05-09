@@ -57,15 +57,21 @@ http {
             # have a trailing slash. Swift needs to see the original request
             # URL for its domain-remap and staticweb functionalities.
             proxy_pass        http://127.0.0.1:8080;
-            proxy_set_header  Host      $host;
-            proxy_set_header  X-Real_IP $remote_addr;
+            proxy_set_header  Host               $host;
+            proxy_set_header  X-Real_IP          $remote_addr;
+            proxy_set_header  X-Forwarded-For    $proxy_add_x_forwarded_for;
+            proxy_set_header  X-Forwarded-Host   $host:$server_port;
+            proxy_set_header  X-Forwarded-Server $host;
             proxy_pass_header Date;
 
             # buffering must be disabled since GET response or PUT request bodies can be *very* large
-            proxy_buffering off;
+            # based on http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering
+            # http 1.1 must be enabled when chunked transfer encoding is used to avoid request buffering
+            proxy_http_version      1.1;
+            proxy_buffering         off;
             proxy_request_buffering off;
             # accept large PUT requests (5 GiB is the limit for a single object in Swift)
-            client_max_body_size 5g;
+            client_max_body_size    5g;
         }
     }
 }
