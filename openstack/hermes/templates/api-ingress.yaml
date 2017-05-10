@@ -1,0 +1,24 @@
+{{ $config := .Values.hermes.certs }}
+kind: Ingress
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: hermes-api
+  labels:
+    app: hermes-api
+
+spec:
+#  tls:
+#    - secretName: hermes-api
+#      hosts: [ {{ $config.domain }} ]
+  rules:
+    - host: {{ $config.domain }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: hermes-api
+              servicePort: 8788
+
+---
+{{end}}

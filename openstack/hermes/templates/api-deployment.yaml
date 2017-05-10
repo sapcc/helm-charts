@@ -1,0 +1,63 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: hermes-api
+  labels:
+    app: hermes-api
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: hermes-api
+  template:
+    metadata:
+      labels:
+        name: hermes-api
+        app: hermes-api
+      annotations:
+        checksum: {{ include "hermes/templates/api-configmap.yaml" $ | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: hermes
+      containers:
+        - name: api
+          image: {{include "hermes_image" $}}
+          imagePullPolicy: {{$.Values.hermes.image_pull_policy}}
+          args:
+            - -f
+            - /etc/hermes/hermes.conf
+          env:
+            - name: hermes_DEBUG
+              value: '0'
+            {{- if eq $.Values.global.region "staging" }}{{ if eq $cluster_id "monsoon2" }}
+            - name: hermes_INSECURE
+              value: '1' # SSL certificates are hard :(
+            {{- end }}{{ end }}
+          volumeMounts:
+            - mountPath: /etc/hermes
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+---
+{{end}}
