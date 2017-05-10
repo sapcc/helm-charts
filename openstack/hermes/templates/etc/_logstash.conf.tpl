@@ -6,6 +6,9 @@ rabbitmq {
     port => {{.Values.hermes_rabbitmq_port}}
     queue => "{{.Values.hermes_rabbitmq_queue_name}}"
     subscription_retry_interval_seconds => 5
+    id => "logstash_hermes"
+    automatic_recovery => true
+    connect_retry_interval => 5
   }
 }
 
