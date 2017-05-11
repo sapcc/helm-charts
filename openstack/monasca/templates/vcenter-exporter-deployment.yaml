@@ -1,3 +1,4 @@
+{{- if .Values.vcenter_exporter.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -31,8 +32,8 @@ spec:
             name: vcenter-exporter-etc
       containers:
         - name: vcenter-exporter
-#          image: {{.Values.docker_repo}}/vcenter-exporter:{{.Values.image_version_monasca_wall_e}}
-          image: {{.Values.docker_repo}}/vcenter-exporter:latest
+#          image: {{.Values.docker_repo}}/vcenter-exporter:latest
+          image: {{.Values.docker_repo}}/vcenter-exporter:{{.Values.vcenter_exporter.image_version}}
           imagePullPolicy: IfNotPresent
           command:
 #            - /usr/local/bin/dumb-init
@@ -49,3 +50,4 @@ spec:
             - name: metrics
 # this should get 9101
               containerPort: 8000
+{{- end }}
