@@ -3,28 +3,18 @@ apiVersion: extensions/v1beta1
 
 metadata:
   name: hermes-api
-  labels:
-    app: hermes-api
 
 spec:
-#  revisionHistoryLimit: 5
   replicas: 1
-#  strategy:
-#    type: RollingUpdate
-#    rollingUpdate:
-#      maxUnavailable: 0
-#      maxSurge: 2
-  selector:
-    matchLabels:
-      name: hermes-api
   template:
     metadata:
       labels:
         name: hermes-api
-        app: hermes-api
       annotations:
         checksum: {{ include "hermes/templates/api-configmap.yaml" $ | sha256sum }}
     spec:
+      nodeSelector:
+        zone: farm
       volumes:
         - name: config
           configMap:
