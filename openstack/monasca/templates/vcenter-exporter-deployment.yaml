@@ -1,3 +1,4 @@
+{{- if .Values.vcenter_exporter.enabled }}
 {{- range $i, $config := .Values.monasca_vcenter_config -}}
 {{ if ne $i 0 }}---{{ end }}
 apiVersion: extensions/v1beta1
@@ -31,7 +32,7 @@ spec:
             name: vcenter-exporter
       containers:
         - name: vcenter-exporter
-          image: {{$.Values.docker_repo}}/vcenter-exporter:{{.Values.image_version_vcenter_exporter}}
+          image: {{$.Values.docker_repo}}/vcenter-exporter:{{$.Values.image_version_vcenter_exporter}}
           imagePullPolicy: IfNotPresent
           command:
             - python
@@ -46,5 +47,6 @@ spec:
           ports:
             - name: metrics
               containerPort: 8000 
+{{ end -}}
 {{ end -}}
 # this should get 9101
