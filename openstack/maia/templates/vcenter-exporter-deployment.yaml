@@ -1,14 +1,14 @@
 {{- if .Values.vcenter_exporter.enabled }}
-{{- range $i, $config := .Values.monasca_vcenter_config -}}
+{{- range $i, $config := .Values.maia_vcenter_config -}}
 {{ if ne $i 0 }}---{{ end }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: vcenter-exporter-{{$config.name}}
-  namespace: monasca
+  namespace: maia
   labels:
     system: openstack
-    service: monitoring
+    service: metrics
 
 spec:
   replicas: 1
@@ -22,12 +22,12 @@ spec:
       labels:
         component: vcenter-exporter-{{$config.name}}
       annotations:
-        checksum/monasca-templates-vcenter-exporter-configmap.yaml: {{ include "monasca/templates/vcenter-exporter-configmap.yaml" $ | sha256sum }}
+        checksum/maia-templates-vcenter-exporter-configmap.yaml: {{ include "monasca/templates/vcenter-exporter-configmap.yaml" $ | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: monasca-etc
+        - name: maia-etc
           configMap:
             name: vcenter-exporter
       containers:
@@ -39,11 +39,11 @@ spec:
           args:
             - /vcenter-exporter.py
             - -c
-            - /monasca-etc/{{$config.name}}.yaml
+            - /maia-etc/{{$config.name}}.yaml
           env:
           volumeMounts:
-            - mountPath: /monasca-etc
-              name: monasca-etc
+            - mountPath: /maia-etc
+              name: maia-etc
           ports:
             - name: metrics
               containerPort: 8000 
