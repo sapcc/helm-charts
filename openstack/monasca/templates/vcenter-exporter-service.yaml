@@ -1,12 +1,14 @@
+{{- range $i, $config := .Values.monasca_vcenter_config -}}
+{{ if ne $i 0 }}---{{ end }}
 kind: Service
 apiVersion: v1
 metadata:
-  name: vcenter-exporter
+  name: vcenter-exporter-{{$config.name}}
   namespace: monasca
   labels:
     system: openstack
     service: monitoring
-    component: vcenter-exporter
+    component: vcenter-exporter-{{$config.name}}
   annotations:
     prometheus.io/scrape: "true"
 # this should get 9101
@@ -14,8 +16,9 @@ metadata:
 
 spec:
   selector:
-    component: vcenter-exporter
+    component: vcenter-exporter-{{$config.name}}
   ports:
     - name: metrics
 # this should get 9101
       port: 8000
+{{ end -}}
