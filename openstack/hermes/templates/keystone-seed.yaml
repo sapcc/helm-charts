@@ -1,0 +1,47 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: hermes-seed
+
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+
+  roles:
+    - audit_viewer
+
+  services:
+    - name:        hermes
+      type:        audit-data
+      description: 'OpenStack Audit Data access'
+      enabled:     true
+      endpoints:
+        - region:    '{{.Values.global.region}}'
+          interface: public
+          enabled:   true
+          url:       '{{.Values.hermes.catalog_url}}'
+
+  domains:
+    - name: Default
+      users:
+        - name: '{{.Values.hermes.user_name}}'
+          description: Hermes Service
+          password: '{{.Values.hermes.password}}'
+          roles:
+            - project: service
+              role:    service
+        - name: admin
+          roles:
+          - domain: Default
+            role: audit_viewer
+          - project: admin
+            role: audit_viewer
+      groups:
+      - name: Administrators
+        roles:
+          - domain: Default
+            role: audit_viewer
+          - project: admin
+            role: audit_viewer
+
+{{- end -}}
