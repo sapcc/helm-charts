@@ -32,7 +32,8 @@ spec:
             name: vcenter-exporter
       containers:
         - name: vcenter-exporter
-          image: {{$.Values.docker_repo}}/vcenter-exporter:{{$.Values.image_version_vcenter_exporter}}
+# the printf below is to convert the build number into a string to avoid it being converted to scientific notation
+          image: {{$.Values.docker_repo}}/vcenter-exporter:{{ $.Values.image_version_vcenter_exporter  | printf "%0.f" }}
           imagePullPolicy: IfNotPresent
           command:
             - python
@@ -46,7 +47,7 @@ spec:
               name: maia-etc
           ports:
             - name: metrics
+# this should get 9101
               containerPort: 8000 
 {{ end -}}
 {{ end -}}
-# this should get 9101
