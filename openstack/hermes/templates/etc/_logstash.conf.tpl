@@ -10,6 +10,7 @@ rabbitmq {
     automatic_recovery => true
     connect_retry_interval => 60
     connection_timeout => 10000
+    heartbeat => 60
   }
 }
 
