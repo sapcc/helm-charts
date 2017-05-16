@@ -177,3 +177,9 @@ instances:
                    service: service
            swift:
                gauges: [ 'swift_(async_pendings)_rate' ]
+           networking-dvs:
+               gauges: [ 'openstack_networking_dvs_(.*)_timer' ]
+               dimensions:
+                   pod: pod_template_hash
+                   region: region
+                   host: name
