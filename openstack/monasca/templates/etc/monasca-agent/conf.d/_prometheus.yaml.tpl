@@ -183,3 +183,4 @@ instances:
                    pod: pod_template_hash
                    region: region
                    host: name
+                   quantile: quantile
