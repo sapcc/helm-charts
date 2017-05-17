@@ -24,9 +24,18 @@ spec:
           image: "{{.Values.image}}"
           args:
             - -config.file=/etc/prometheus/alertmanager.yml
-            - -web.external-url=https://alertmanager.global.{{.Values.global.domain}}
+            - -web.external-url=https://alertmanager.{{.Values.global.region}}.{{.Values.global.domain}}
+            - -mesh.nickname="{{.Values.mesh.nickname}}"
+            - -mesh.listen-address=:{{.Values.mesh.listen_address}}
+            {{- if .Values.mesh.peer }}
+            - -mesh.peer={{ toYaml .Values.mesh.peer }}
+            {{- end }}
           ports:
-            - name: http 
+            {{- if .Values.mesh.listen_address }}
+            - name: mesh
+              containerPort: {{.Values.mesh.listen_address}}
+            {{- end }}
+            - name: http
               containerPort: 9093
           volumeMounts:
             - name: config
@@ -35,4 +44,3 @@ spec:
         - name: config
           configMap:
             name: prometheus-alertmanager
-
