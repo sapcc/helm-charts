@@ -7,10 +7,7 @@ rabbitmq {
     queue => "{{.Values.hermes_rabbitmq_queue_name}}"
     subscription_retry_interval_seconds => 60
     id => "logstash_hermes"
-    automatic_recovery => true
-    connect_retry_interval => 60
-    connection_timeout => 10000
-    heartbeat => 60
+    automatic_recovery => false
   }
 }
 
