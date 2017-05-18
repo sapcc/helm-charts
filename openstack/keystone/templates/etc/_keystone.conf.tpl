@@ -11,6 +11,9 @@ logging_exception_prefix = %(process)d ERROR %(name)s %(instance)s
 
 notification_format = {{ .Values.notifications.format | default "basic" | quote }}
 driver = messaging
+{{ range $message_type := .Values.notifications.opt_out }}
+notification_opt_out = {{ $message_type }}
+{{ end }}
 
 [cache]
 backend = oslo_cache.memcache_pool
