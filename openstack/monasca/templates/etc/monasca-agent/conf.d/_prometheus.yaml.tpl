@@ -184,3 +184,4 @@ instances:
                    region: region
                    host: name
                    quantile: quantile
+                   agent: kubernetes_pod_name
