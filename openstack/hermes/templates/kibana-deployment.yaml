@@ -1,0 +1,58 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: kibana
+  labels:
+    system: openstack
+    service: audit
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: kibana
+      annotations:
+        checksum/kibana-templates-hermes-kibana-etc-configmap.yaml: {{ include "monasca/templates/etc-configmap.yaml" . | sha256sum }}
+        checksum/kibana-templates-hermes-kibana-bin-configmap.yaml: {{ include "monasca/templates/kibana-bin-configmap.yaml" . | sha256sum }}
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: kibana-bin
+          configMap:
+            name: kibana-bin
+        - name: kibana-etc
+          configMap:
+            name: kibana-etc
+      containers:
+        - name: kibana
+          image: {{.Values.docker_repo}}/monasca-kibana:{{.Values.image_version_kibana_kibana}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/dumb-init
+          args:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/bin/bash /kibana-bin/kibana-start"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "elasticsearch.hermes"
+          ports:
+            - name: nodejs
+              containerPort: {{.Values.kibana_kibana_port_public}}
+          volumeMounts:
+            - mountPath: /kibana-bin
+              name: kibana-bin
+            - mountPath: /kibana-etc
+              name: kibana-etc
