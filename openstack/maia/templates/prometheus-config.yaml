@@ -5,14 +5,4 @@ metadata:
 
 data:
   prometheus.yaml: |
-
-    scrape_configs:
-    - job_name: 'prometheus-maia'
-      static_configs:
-        - targets: ['localhost:9090']
-    {{- range $i, $config := .Values.vcenter_exporter.maia_vcenter_config -}}
-    {{ if ne $i 0 }}{{ end }}
-    - job_name: 'vcenter-exporter-{{$config.name}}'
-      static_configs:
-        - targets: ['vcenter-exporter-{{$config.name}}']
-    {{ end -}}
+{{ .Files.Get "prometheus.yaml" | indent 4 }}

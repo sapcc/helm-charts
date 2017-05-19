@@ -1,0 +1,52 @@
+global:
+  scrape_timeout: 55s
+
+scrape_configs:
+  # Scrape config for service endpoints.
+  #
+  # The relabeling allows the actual service scrape endpoint to be configured
+  # via the following annotations:
+  #
+  # * `prometheus.io/scrape`: Only scrape services that have a value of `true`
+  # * `prometheus.io/scheme`: If the metrics endpoint is secured then you will need
+  # to set this to `https` & most likely set the `tls_config` of the scrape config.
+  # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
+  # * `prometheus.io/port`: If the metrics are exposed on a different port to the
+  # service then set this appropriately.
+
+- job_name: 'maia/pods'
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_namespace]
+    regex: maia
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: instance
+
+- job_name: 'maia/endpoints'
+  kubernetes_sd_configs:
+  - role: endpoints
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_namespace]
+    regex: maia
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: instance
+
+- job_name: 'maia/services'
+  kubernetes_sd_configs:
+  - role: service
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_namespace]
+    regex: maia
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: instance
+
+- job_name: 'prometheus-maia'
+  static_configs:
+    - targets: ['localhost:9090']
