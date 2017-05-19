@@ -7,7 +7,7 @@ function process_config {
 
   export KIBANA_CONF_FILE="/opt/kibana/config/kibana.yml"
 
-  cp /monasca-etc/kibana-kibana.yml ${KIBANA_CONF_FILE}
+  cp /hermes-etc/kibana-kibana.yml ${KIBANA_CONF_FILE}
 
 }
 
