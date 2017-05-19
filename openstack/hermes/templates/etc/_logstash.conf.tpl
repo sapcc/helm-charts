@@ -18,6 +18,7 @@ filter {
   if ([payload][tenant_id]) {
     mutate { add_field => { "tenant_id" => "%{[payload][tenant_id]}" } }
   }
+  kv { source => "_source" }
 }
 
 output {
