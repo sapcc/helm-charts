@@ -35,8 +35,20 @@ data:
         routes:
         - receiver: 'kubernetes-warning'
           match:
-            severity: warning 
+            severity: warning
         - receiver: 'kubernetes-critical'
+          continue: true
+          match:
+            severity: critical
+      - receiver: openstack-info
+        continue: true
+        match_re:
+          context: openstack
+        routes:
+        - receiver: 'openstack-warning'
+          match:
+            severity: warning
+        - receiver: 'openstack-critical'
           continue: true
           match:
             severity: critical
@@ -50,7 +62,7 @@ data:
 
 
     receivers:
-    {{- range tuple "kubernetes-info" "kubernetes-warning" "kubernetes-critical" }}
+    {{- range tuple "kubernetes-info" "kubernetes-warning" "kubernetes-critical" "openstack-info" "openstack-warning" "openstack-critical" }}
     - name: {{ . }}
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}

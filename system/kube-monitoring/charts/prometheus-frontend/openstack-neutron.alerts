@@ -1,12 +1,12 @@
 ### Networking-DVS Alerts ###
 
 ALERT DVSPolling
-  IF min(irate(openstack_networking_dvs_plugins_ml2_drivers_mech_dvs_agent_dvs_agent_process_ports_timer_count[5m])) by (cluster) < 1
+  IF min(irate(openstack_networking_dvs_plugins_ml2_drivers_mech_dvs_agent_dvs_agent_process_ports_timer_count[5m])) by (cluster,kubernetes_pod_name) < 1
   FOR 5m
   LABELS {
-    service = "dvs",
+    service = "neutron",
     severity = "critical",
-    context = "availability",
+    context = "openstack",
     dashboard = "neutron-dvs-agent"
   }
   ANNOTATIONS {
@@ -15,12 +15,12 @@ ALERT DVSPolling
   }
   
 ALERT DVSSecGroup
-  IF max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) by (cluster) > 60
+  IF max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) by (cluster,kubernetes_pod_name) > 60
   FOR 5m
   LABELS {
-    service = "dvs",
+    service = "neutron",
     severity = "critical",
-    context = "availability",
+    context = "openstack",
     dashboard = "neutron-dvs-agent"
   }
   ANNOTATIONS {
