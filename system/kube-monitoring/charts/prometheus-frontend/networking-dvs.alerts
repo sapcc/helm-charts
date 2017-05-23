@@ -1,0 +1,30 @@
+### Networking-DVS Alerts ###
+
+ALERT DVSPolling
+  IF min(irate(openstack_networking_dvs_plugins_ml2_drivers_mech_dvs_agent_dvs_agent_process_ports_timer_count[5m])) < 1
+  FOR 5m
+  LABELS {
+    service = "dvs",
+    severity = "critical",
+    context = "availability",
+    dashboard = "neutron-dvs-agent"
+  }
+  ANNOTATIONS {
+    summary = "Polling iterations fall below 1 per minute",
+    description = "Polling iterations of DVS Agent {{ $labels.kubernetes_pod_name }} is below 1 per minute.",
+  }
+  
+ALERT DVSSecGroup
+  IF max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) > 60
+  FOR 5m
+  LABELS {
+    service = "dvs",
+    severity = "critical",
+    context = "availability",
+    dashboard = "neutron-dvs-agent"
+  }
+  ANNOTATIONS {
+    summary = "security group latency goes over 1 minute",
+    description = "Security Group latency of DVS Agent {{ $labels.kubernetes_pod_name }} is over 1 minute.",
+  }
+  
