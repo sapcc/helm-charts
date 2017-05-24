@@ -1,0 +1,112 @@
+ALERT KeystoneScrapeMissing
+  IF absent(up{component="keystone", type="api"})
+  FOR 1h
+  LABELS {
+    service = "keystone",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "Keystone cannot be scraped",
+    description = "Keystone failed to be scraped.",
+  }
+
+ALERT KeystoneDatabaseScrapeMissing
+  IF absent(up{component="keystone", type="database"})
+  FOR 1h
+  LABELS {
+    service = "keystone",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "Keystone database cannot be scraped",
+    description = "Keystones database failed to be scraped.",
+  }
+
+ALERT KeystoneApiDown
+  IF up{component="keystone", type="api"} == 0
+  FOR 5m
+  LABELS {
+    service = "keystone",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "A keystone server is DOWN",
+    description = "Keystone on {{`{{$labels.instance}}`}} is DOWN.",
+  }
+
+ALERT KeystoneDatabaseDown
+  IF up{component="keystone", type="database"} == 0
+  FOR 5m
+  LABELS {
+    service = "keystone",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "Keystone Database is DOWN",
+    description = "Keystones Database on {{`{{$labels.instance}}`}} is DOWN.",
+  }
+
+ALERT KeystoneAllDown
+  IF count(up{component="keystone", type="api"} == 0) == count(up{component="keystone", type="api""})
+  FOR 5m
+  LABELS {
+    service = "keystone",
+    severity = "critical",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "Keystone is unavailabele.",
+    description = "All keystone servers are down.",
+  }
+
+ALERT ActiveDirectoryScrapeMissing
+  IF absent(up{component="keystone", type="healthcheck"})
+  FOR 1h
+  LABELS {
+    service = "keystone",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "Active Directory cannot be scraped",
+    description = "Active Directory healthchecks failed to be scraped.",
+  }
+
+ALERT ActiveDirectoryNode1Down
+  IF ad_node_1_up_status == 1
+  FOR 5m
+  LABELS {
+    service = "active_directory",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "ActiveDirectory node 1 is down",
+    description = "ActiveDirectory node 1 is not responding to ping.",
+  }
+
+ALERT ActiveDirectoryNode2Down
+  IF ad_node_2_up_status == 1
+  FOR 5m
+  LABELS {
+    service = "active_directory",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "ActiveDirectory node 2 is down",
+    description = "ActiveDirectory node 2 is not responding to ping.",
+  }
+
