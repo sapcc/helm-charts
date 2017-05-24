@@ -12,7 +12,7 @@ rabbitmq {
 }
 
 filter {
-  if "identity.authenticate" in [event_type] {
+  if event_type in ["identity.authenticate","dns.domain.exists","dns.zone.exists"] {
     drop { }
   }
   if ![tenant_id] and "" in [project] {
