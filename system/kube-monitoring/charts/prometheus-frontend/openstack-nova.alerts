@@ -31,7 +31,7 @@ ALERT DVSSecGroup
 ### Nova Metrics ###
 
 ALERT NovaMaxDiskUsagePerc
-  IF 1.0 - min(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_local_gb_gauge) > .90
+  IF 1.0 - min(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_local_gb_gauge) by (cluster,host) > .90
   FOR 5m
   LABELS {
     service = "nova",
@@ -45,7 +45,7 @@ ALERT NovaMaxDiskUsagePerc
   }
   
   ALERT NovaMaxRAMUsagePerc
-  IF 1.0 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_memory_mb_gauge) > .90
+  IF 1.0 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_memory_mb_gauge) by (cluster,host) > .90
   FOR 5m
   LABELS {
     service = "nova",
