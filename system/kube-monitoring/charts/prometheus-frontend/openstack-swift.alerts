@@ -1,0 +1,69 @@
+ALERT swift-account-first-byte-timing
+  IF max(swift_proxy_firstbyte_timer{status="200",type="account",quantile="0.5"}) > 500.0
+  FOR 3m
+  LABELS {
+  service = "swift"
+  severity = "critical"
+  context = "openstack"
+  dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+  summary = "swift-account-first-byte-timing",
+  description = "Alert to notify if the first-byte-timing reached more than 500 within 3 minutes.",
+  }
+
+ALERT swift-container-first-byte-timing
+  IF max(swift_proxy_firstbyte_timer{status="200",type="container",quantile="0.5"}) > 500.0
+  FOR 3m
+  LABELS {
+  service = "swift"
+  severity = "critical"
+  context = "openstack"
+  dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+  summary = "swift-container-first-byte-timing",
+  description = "Alert to notify if the first-byte-timing reached more than 500 within 3 minutes.",
+  }
+  
+ALERT swift-object-first-byte-timing
+  IF max(swift_proxy_firstbyte_timer{status="200",type="object",quantile="0.5"}) > 500.0
+  FOR 3m
+  LABELS {
+  service = "swift"
+  severity = "critical"
+  context = "openstack"
+  dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+  summary = "swift-object-first-byte-timing",
+  description = "Alert to notify if the first-byte-timing reached more than 500 within 3 minutes.",
+  }  
+  
+ALERT swift-health-check
+  IF avg(swift_health_statsd_exit_code_gauge{}) > 0.2
+  FOR 5m
+  LABELS {
+  service = "swift"
+  severity = "critical"
+  context = "openstack"
+  dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+  summary = "swift-health-check",
+  description = "Swift health check failures. Run kubectl log swift-proxy-... collector to get details",
+  }    
+
+ALERT swift-used-space-75
+  IF max(swift_cluster_storage_used_percent_gauge{}) > 0.75
+  FOR 3m
+  LABELS {
+  service = "swift"
+  severity = "critical"
+  context = "openstack"
+  dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+  summary = "swift-used-space-75",
+  description = "Swift storage usage reached 75%",
+  } 
