@@ -52,6 +52,13 @@ data:
           continue: true
           match:
             severity: critical
+      {{- range tuple "keystone" "swift" "nova" }}
+      - receiver: openstack-{{ . }}
+        continue: true
+        match_re:
+          service: {{ . }}
+          context: openstack
+      {{- end }}
       {{- range tuple "staging" "eu-de-1" "eu-nl-1" "ap-au-1" "na-us-1" }}
       - receiver: region_{{ . }}
         match_re:
@@ -62,11 +69,24 @@ data:
 
 
     receivers:
-    {{- range tuple "kubernetes-info" "kubernetes-warning" "kubernetes-critical" "openstack-info" "openstack-warning" "openstack-critical" }}
+    {{- range tuple "kubernetes-info" "kubernetes-warning" "kubernetes-critical" }}
     - name: {{ . }}
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
         username: "Kubernetes Control Plane"
+        channel: "#{{ . }}"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        send_resolved: true
+    {{- end }}
+    {{- range tuple "openstack-info" "openstack-warning" "openstack-critical" "openstack-keystone" "openstack-swift" "openstack-nova" }}
+    - name: {{ . }}
+      slack_configs:
+      - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
+        username: "OpenStack Control Plane"
         channel: "#{{ . }}"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -86,6 +106,7 @@ data:
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
         pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        send_resolved: true
     {{- end }}
 
 
