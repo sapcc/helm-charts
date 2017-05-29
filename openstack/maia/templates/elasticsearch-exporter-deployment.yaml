@@ -1,0 +1,48 @@
+{{- if .Values.elasticsearch_exporter.enabled }}
+{{- range $i, $config := .Values.elasticsearch_exporter.elasticsearch_exporter -}}
+{{ if ne $i 0 }}---{{ end }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: vcenter-exporter-{{$config.name}}
+  namespace: maia
+  labels:
+    system: openstack
+    service: metrics
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: vcenter-exporter-{{$config.name}}
+    spec:
+      nodeSelector:
+        zone: farm
+      containers:
+        - name: vcenter-exporter
+          image: {{$.Values.vcenter_exporter.docker_repo}}/vcenter-exporter:{{ $.Values.vcenter_exporter.image_version }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - {{$config.hostname}}
+            - -es.protocol
+            - {{$config.protocol}}
+            - -es.port
+            - {{$config.port}}
+            - -es.user
+            - {{$config.username}}
+            - -es.password
+            - {{$configp.password}}
+            - -es.all
+          env:
+          ports:
+            - name: metrics
+# this should get 9101
+              containerPort: 9108
+{{ end -}}
+{{ end -}}
