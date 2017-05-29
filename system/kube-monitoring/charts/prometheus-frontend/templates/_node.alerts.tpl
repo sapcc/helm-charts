@@ -30,7 +30,7 @@ ALERT NodeClockDrift
 
 ALERT NodeKernelDeadlock
   IF kube_node_status_kernel_deadlock{condition="true"} == 1
-  FOR 5m
+  FOR 24h
   LABELS {
     service = "k8s",
     severity = "critical",
