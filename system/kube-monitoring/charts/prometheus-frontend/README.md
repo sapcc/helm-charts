@@ -78,13 +78,13 @@ It can be any link. Preferrably it links to the OpsDocu: https://github.wdf.sap.
 
 The alerts will be routed into a hierachy of Slack channels:
 
-  * {tier}-{severity}
-  * {tier}-{service}
+  * #{tier}-{severity}
+  * #{tier}-{service}
 
 This means:
-  * kubernetes-{info|warning|critical}
-  * openstack-{info|warning|critical}
-  * openstack-{neutron|nova|designate|...}
+  * #kubernetes-{info|warning|critical}
+  * #openstack-{info|warning|critical}
+  * #openstack-{neutron|nova|designate|...}
 
 ## Guidelines
 
