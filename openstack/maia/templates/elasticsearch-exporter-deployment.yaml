@@ -1,5 +1,5 @@
 {{- if .Values.elasticsearch_exporter.enabled }}
-{{- range $i, $config := .Values.elasticsearch_exporter.elasticsearch_exporter -}}
+{{- range $i, $config := .Values.elasticsearch_exporter.elasticsearch_config -}}
 {{ if ne $i 0 }}---{{ end }}
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -28,21 +28,9 @@ spec:
         - name: elasticsearch-exporter
           image: {{$.Values.elasticsearch_exporter.docker_repo}}/elasticsearch-exporter:{{ $.Values.elasticsearch_exporter.image_version }}
           imagePullPolicy: IfNotPresent
-          args:
-            - {{$config.hostname}}
-            - -es.protocol
-            - {{$config.protocol}}
-            - -es.port
-            - {{$config.port}}
-            - -es.user
-            - {{$config.username}}
-            - -es.password
-            - {{$config.password}}
-            - -es.all
-          env:
+          command: [ "/bin/elasticsearch_exporter", "-es.hostname", "{{$config.hostname}}", {{ if $config.protocol }}"-es.protocol", "{{$config.protocol}}",{{ end }} {{ if $config.port }}"-es.port", "{{$config.port}}", {{ end }} {{ if $config.username }}"-es.user", "{{$config.username}}",{{ end }} {{ if $config.password }}"-es.password", "{{$config.password}}",{{ end }} "-es.all" ]
           ports:
             - name: metrics
-# this should get 9101
-              containerPort: 9108
+              containerPort: 8000
 {{ end -}}
 {{ end -}}
