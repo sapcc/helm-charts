@@ -1,4 +1,32 @@
-### Canary
+### Blackbox alerts
+
+ALERT BlackboxTestApi
+  IF blackbox_api_status_gauge == 1
+  FOR 3m
+  LABELS {
+    service = "api_status",
+    severity = "critical",
+    context = "blackbox",
+    dashboard = "ccloud-health-blackbox-details"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox api test is failing",
+    description = "Blackbox api test {{ $labels.check }} are failing for 3m in a row."
+  }
+
+ALERT BlackboxTestDatapath
+  IF blackbox_datapath_status_gauge == 1
+  FOR 3m
+  LABELS {
+    service = "datapath_status",
+    severity = "critical",
+    context = "blackbox",
+    dashboard = "ccloud-health-datapath-details"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox datapath test is failing",
+    description = "Blackbox datapath test {{ $labels.check }} are failing for 3m in a row."
+  }
 
 ALERT BlackboxTestCanary
   IF blackbox_canary_status_gauge == 1 
