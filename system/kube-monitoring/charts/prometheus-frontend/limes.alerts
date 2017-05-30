@@ -1,0 +1,15 @@
+### Limes
+
+ALERT LimesFailedScrapes
+  IF sum(increase(limes_failed_scrapes[5m])) by (cluster,service,kubernetes_namespace,region) + sum(0 * limes_successful_scrapes) by (cluster,service,kubernetes_namespace,region) > 0
+  FOR 60m
+  LABELS {
+    service = "limes",
+    severity = "warning",
+    context = "openstack",
+    dashboard = "limes-overview"
+  }
+  ANNOTATIONS {
+    summary = "Limes cannot scrape backend"
+    description = "Limes cannot scrape backend data from service {{ $labels.service }} in cluster {{ $labels.cluster }} for more than an hour."
+  }
