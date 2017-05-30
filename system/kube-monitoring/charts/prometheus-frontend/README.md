@@ -74,6 +74,18 @@ Example: `playbook="{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_not_
 
 It can be any link. Preferrably it links to the OpsDocu: https://github.wdf.sap.corp/monsoon/convergedcloud-opsdocu-ui/tree/master/source/docs/support/playbook
 
+## Routing
+
+The alerts will be routed into a hierachy of Slack channels:
+
+  * {tier}-{severity}
+  * {tier}-{service}
+
+This means:
+  * kubernetes-{info|warning|critical}
+  * openstack-{info|warning|critical}
+  * openstack-{neutron|nova|designate|...}
+
 ## Guidelines
 
 ### Understandable Alerts
