@@ -1,0 +1,15 @@
+### Designate
+
+ALERT DnsBindDown
+  IF max_over_time{bind_up[3m]) < 1.0
+  FOR 3m
+  LABELS {
+    service = "designate",
+    severity = "critical",
+    context = "openstack",
+    dashboard = "openstack-designate-bind"
+  }
+  ANNOTATIONS {
+    summary = "DNS Bind server {{ $labels.kubernetes_name }} down."
+    description = "DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $lables.region }}."
+  }

@@ -1,0 +1,29 @@
+### Elektra
+
+ALERT ElektraPostgresDatabasesize
+  IF max_over_time(pg_database_size_bytes{app="elektra-postgresql"}[3m]) >= 8589934592.0
+  FOR 3m
+  LABELS {
+    service = "elektra",
+    severity = "warning",
+    context = "openstack",
+    dashboard = "elektra-postgres-capacity"
+  }
+  ANNOTATIONS {
+    summary = "Elektra Database size too large",
+    description = "The database size for Elektra >= 8 Gb : {{ $value }} bytes."
+  }
+
+ALERT ElektraPumaRequestBacklog
+  IF sum_over_time(puma_request_backlog{name="elektra"}[3m]) > 1.0
+  FOR 3m
+  LABELS {
+    service = "elektra",
+    severity = "warning",
+    context = "openstack",
+    dashboard = "elektra-details"
+  }
+  ANNOTATIONS {
+    summary = "Elektra puma waiting requests",
+    description = "Number of puma waiting requests for Elektra > 0 : {{ $value }}."
+  }
