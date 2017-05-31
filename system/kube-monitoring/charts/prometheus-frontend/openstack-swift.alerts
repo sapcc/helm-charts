@@ -1,4 +1,4 @@
-ALERT FirstByteTiming
+ALERT OpenstackSwiftFirstByteTiming
   IF max(swift_proxy_firstbyte_timer{status="200",quantile="0.5"}) by (os_cluster, type) > 1000.0
   FOR 3m
   LABELS {
@@ -12,7 +12,7 @@ ALERT FirstByteTiming
     description = "This alert indicates the latency in token validation.",
   }
 
-ALERT SwiftHealthCheck
+ALERT OpenstackSwiftHealthCheck
   IF avg(swift_health_statsd_exit_code_gauge{}) by (cluster) > 0.2
   FOR 5m
   LABELS {
@@ -26,7 +26,7 @@ ALERT SwiftHealthCheck
     description = "Swift health check failures. Run kubectl log swift-proxy-... collector to get details",
   }
   
-ALERT SwiftOverLappingObjects
+ALERT OpenstackSwiftOverLappingObjects
   IF min(swift_dispersion_object_overlapping_gauge{}) by (cluster) > 0
   FOR 3m
   LABELS {
@@ -40,7 +40,7 @@ ALERT SwiftOverLappingObjects
     description = "Swift has overlapping objects. Run swift-dispersion-report to get details",
   }
   
-ALERT SwiftOverLappingContainers
+ALERT OpenstackSwiftOverLappingContainers
   IF min(swift_dispersion_container_overlapping_gauge{}) by (cluster) > 0.0
   FOR 3m
   LABELS {
@@ -54,7 +54,7 @@ ALERT SwiftOverLappingContainers
     description = "Swift has overlapping containers. Run swift-dispersion-report to get details",
   } 
 
-ALERT SwiftMismatchedRings
+ALERT OpenstackSwiftMismatchedRings
   IF min(swift_cluster_md5_ring_not_matched_gauge{}) by (cluster) > 0.0
   FOR 3m
   LABELS {
@@ -68,7 +68,7 @@ ALERT SwiftMismatchedRings
     description = "Alarm on mismatched rings",
   } 
   
-ALERT SwiftDisksUnmounted
+ALERT OpenstackSwiftDisksUnmounted
   IF sum(swift_cluster_drives_unmounted_gauge{}) by (storage_ip) > 0.0
   FOR 3m
   LABELS {
@@ -82,7 +82,7 @@ ALERT SwiftDisksUnmounted
     description = "Swift drives not mounted. Run swift-recon --unmounted to get details",
   } 
 
-ALERT SwiftDiskFailures
+ALERT OpenstackSwiftDiskFailures
   IF sum(swift_cluster_drives_audit_errors_gauge) by (storage_ip) > 0.0
   FOR 3m
   LABELS {
@@ -97,7 +97,7 @@ ALERT SwiftDiskFailures
     description = "Swift drive failures. Run swift-recon --driveaudit to get details",
   }
   
-ALERT SwiftUsedSpace75
+ALERT OpenstackSwiftUsedSpace75
   IF max(swift_cluster_storage_used_percent_gauge{}) by (cluster) > 0.75
   FOR 3m
   LABELS {
@@ -111,7 +111,7 @@ ALERT SwiftUsedSpace75
     description = "Swift storage usage reached 75%",
   } 
 
-ALERT SwiftUsedSpace70
+ALERT OpenstackSwiftUsedSpace70
   IF max(swift_cluster_storage_used_percent_gauge{}) by (cluster) > 0.7
   FOR 3m
   LABELS {
@@ -125,7 +125,7 @@ ALERT SwiftUsedSpace70
     summary = "swift-used-space-70",
     description = "Swift storage usage reached 70%",
   }  
-ALERT SwiftUsedSpace60
+ALERT OpenstackSwiftUsedSpace60
   IF max(swift_cluster_storage_used_percent_gauge{}) by (cluster) > 0.6
   FOR 3m
   LABELS {
@@ -139,7 +139,7 @@ ALERT SwiftUsedSpace60
     description = "Swift storage usage reached 60%",
   } 
 
-ALERT SwiftUsedSpace50
+ALERT OpenstackSwiftUsedSpace50
   IF max(swift_cluster_storage_used_percent_gauge{}) by (cluster) > 0.5
   FOR 3m
   LABELS {
