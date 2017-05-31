@@ -96,9 +96,9 @@ Use the following naming convention: `Tier` `Service` `Description`
 
 For example:
 
-  * KubernetesSchedulerScrapeMissing
-  * OpenstackNovaStorageCrunchSoon
-  * DatapathACISplitBrain
+  * `Kubernetes` `Scheduler` `ScrapeMissing`
+  * `Openstack` `Nova` `StorageCrunchSoon`
+  * `Datapath` `ACI` `PolutedNATTable`
   
 ### Understandable Alerts
 
