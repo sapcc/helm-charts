@@ -1,10 +1,11 @@
-ALERT KeystoneScrapeMissing
+ALERT OpenstackKeystoneScrapeMissing
   IF absent(up{component="keystone", type="api"})
   FOR 1h
   LABELS {
+    tier = "openstack",
     service = "keystone",
     severity = "warning",
-    context = "openstack",
+    context = "availability",
     dashboard = "keystone"
   }
   ANNOTATIONS {
@@ -12,13 +13,14 @@ ALERT KeystoneScrapeMissing
     description = "Keystone failed to be scraped.",
   }
 
-ALERT KeystoneDatabaseScrapeMissing
+ALERT OpenstackKeystoneDatabaseScrapeMissing
   IF absent(up{component="keystone", type="database"})
   FOR 1h
   LABELS {
+    tier = "openstack",
     service = "keystone",
     severity = "warning",
-    context = "openstack",
+    context = "availability",
     dashboard = "keystone"
   }
   ANNOTATIONS {
@@ -26,41 +28,44 @@ ALERT KeystoneDatabaseScrapeMissing
     description = "Keystones database failed to be scraped.",
   }
 
-ALERT KeystoneApiDown
+ALERT OpenstackKeystoneApiDown
   IF up{component="keystone", type="api"} == 0
   FOR 5m
   LABELS {
+    tier = "openstack",
     service = "keystone",
     severity = "warning",
-    context = "openstack",
+    context = "availability",
     dashboard = "keystone"
   }
   ANNOTATIONS {
     summary = "A keystone server is DOWN",
-    description = "Keystone on {{`{{$labels.instance}}`}} is DOWN.",
+    description = "Keystone on {{ $labels.instance}} is DOWN.",
   }
 
-ALERT KeystoneDatabaseDown
+ALERT OpenstackKeystoneDatabaseDown
   IF up{component="keystone", type="database"} == 0
   FOR 5m
   LABELS {
+    tier = "openstack",
     service = "keystone",
     severity = "warning",
-    context = "openstack",
+    context = "availability",
     dashboard = "keystone"
   }
   ANNOTATIONS {
     summary = "Keystone Database is DOWN",
-    description = "Keystones Database on {{`{{$labels.instance}}`}} is DOWN.",
+    description = "Keystone database on {{ $labels.instance }} is DOWN.",
   }
 
-ALERT KeystoneAllDown
+ALERT OpenstackKeystoneAllDown
   IF count(up{component="keystone", type="api"} == 0) == count(up{component="keystone", type="api"})
   FOR 5m
   LABELS {
+    tier = "openstack",
     service = "keystone",
     severity = "critical",
-    context = "openstack",
+    context = "availability",
     dashboard = "keystone"
   }
   ANNOTATIONS {
@@ -72,9 +77,10 @@ ALERT ActiveDirectoryScrapeMissing
   IF absent(up{component="keystone", type="healthcheck"})
   FOR 1h
   LABELS {
+    tier = "openstack",
     service = "keystone",
     severity = "warning",
-    context = "openstack",
+    context = "availability",
     dashboard = "keystone"
   }
   ANNOTATIONS {
@@ -86,9 +92,10 @@ ALERT ActiveDirectoryNode1Down
   IF ad_node_1_up_status == 1
   FOR 5m
   LABELS {
+    tier = "openstack",
     service = "active_directory",
     severity = "warning",
-    context = "openstack",
+    context = "availability",
     dashboard = "keystone"
   }
   ANNOTATIONS {
@@ -100,9 +107,10 @@ ALERT ActiveDirectoryNode2Down
   IF ad_node_2_up_status == 1
   FOR 5m
   LABELS {
+    tier = "openstack",
     service = "active_directory",
     severity = "warning",
-    context = "openstack",
+    context = "availability",
     dashboard = "keystone"
   }
   ANNOTATIONS {
