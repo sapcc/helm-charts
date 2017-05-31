@@ -88,6 +88,18 @@ This means:
 
 ## Guidelines
 
+### Alert Names
+
+Despite each alert being enriched with labels it makes sense to have a convention on how to craft the alert's name. Labels are only accessible in Prometheus configuration or can be inferred from the notification. 
+
+Use the following naming convention: `Tier` `Service` `Description`
+
+For example:
+
+  * KubernetesSchedulerScrapeMissing
+  * OpenstackNovaStorageCrunchSoon
+  * DatapathACISplitBrain
+  
 ### Understandable Alerts
 
 Write you alerts in a way that can be understood by non-experts. 
