@@ -2,6 +2,7 @@ ALERT KubernetesKubeletDown
   IF up{job="kube-system/kubelet"} == 0
   FOR 15m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "kubelet",
@@ -17,6 +18,7 @@ ALERT KubernetesKubeletManyDown
   IF count(up{job="kube-system/kubelet"}) - sum(up{job="kube-system/kubelet"}) > 2
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "kubelet",
@@ -31,6 +33,7 @@ ALERT KubernetesKubeletScrapeMissing
   IF absent(up{job="kube-system/kubelet"})
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "kubelet",
@@ -45,6 +48,7 @@ ALERT KubernetesKubeletTooManyPods
   IF kubelet_running_pod_count > 225
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "kubelet",
@@ -59,6 +63,7 @@ ALERT KubernetesKubeletFull
   IF kubelet_running_pod_count >= 250
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "kubelet",
@@ -73,6 +78,7 @@ ALERT KubernetesNodeNotReady
   IF kube_node_status_ready{condition="true"} == 0
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "node",
@@ -90,6 +96,7 @@ ALERT KubernetesNodeManyNotReady
   IF count(kube_node_status_ready{condition="true"} == 0) > 2
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "node",
@@ -104,6 +111,7 @@ ALERT KubernetesNodeNotReady
   IF changes(kube_node_status_ready{condition="true"}[15m]) > 2
   FOR 15m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "node",
@@ -133,6 +141,7 @@ ALERT KubernetesPodRestartingTooMuch
   IF rate(kube_pod_container_status_restarts[15m]) > 0
   FOR 4h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "info",
     context = "pod",
@@ -147,6 +156,7 @@ ALERT KubernetesDockerHangs
   IF rate(kubelet_docker_operations_timeout[5m])> 0
   FOR 15m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "docker",
@@ -161,6 +171,7 @@ ALERT KubernetesApiServerDown
   IF up{job="kube-system/apiserver"} == 0
   FOR 15m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "apiserver",
@@ -175,6 +186,7 @@ ALERT KubernetesApiServerAllDown
   IF count(up{job="kube-system/apiserver"} == 0) == count(up{job="kube-system/apiserver"})
   FOR 5m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "apiserver",
@@ -189,6 +201,7 @@ ALERT KubernetesApiServerScrapeMissing
   IF absent(up{job="kube-system/apiserver"})
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "apiserver",
@@ -206,6 +219,7 @@ ALERT KubernetesApiServerLatency
     ) / 1e6 > 2.0
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "info",
     context = "apiserver",
@@ -220,6 +234,7 @@ ALERT KubernetesApiServerEtcdAccessLatency
   IF etcd_request_latencies_summary{quantile="0.99"} / 1e6 > 1.0
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "info",
     context = "apiserver",
@@ -236,6 +251,7 @@ ALERT KubernetesSchedulerDown
   IF count(up{job="kube-system/scheduler"} == 1) == 0
   FOR 5m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "scheduler",
@@ -250,6 +266,7 @@ ALERT KubernetesSchedulerScrapeMissing
   IF absent(up{job="kube-system/scheduler"})
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "scheduler",
@@ -264,6 +281,7 @@ ALERT KubernetesControllerManagerDown
   IF count(up{job="kube-system/controller-manager"} == 1) == 0
   FOR 5m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "controller-manager",
@@ -279,6 +297,7 @@ ALERT KubernetesControllerManagerScrapeMissing
   IF absent(up{job="kube-system/controller-manager"})
   FOR 1h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "controller-manager",
@@ -294,6 +313,7 @@ ALERT KubernetesTooManyOpenFiles
   IF 100*process_open_fds{job=~"kube-system/kubelet|kube-system/apiserver"} / process_max_fds > 50
   FOR 10m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "system",
@@ -308,6 +328,7 @@ ALERT KubernetesTooManyOpenFiles
   IF 100*process_open_fds{job=~"kube-system/kubelet|kube-system/apiserver"} / process_max_fds > 80
   FOR 10m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "system",
@@ -322,6 +343,7 @@ ALERT HighNumberOfGoRoutines
   IF go_goroutines{job="kube-system/kubelet"} > 5000
   FOR 5m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "kubelet"
@@ -335,6 +357,7 @@ ALERT PredictHighNumberOfGoRoutines
   IF abs(predict_linear(go_goroutines{job="kube-system/kubelet"}[1h], 2*3600)) > 10000
   FOR 5m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "kubelet"
@@ -348,6 +371,7 @@ ALERT NodeDiskPressure
   IF kube_node_status_disk_pressure{condition="true"} == 1
   FOR 5m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "kubelet"
@@ -361,6 +385,7 @@ ALERT NodeMemoryPressure
   IF kube_node_status_memory_pressure{condition="true"} == 1
   FOR 5m
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "warning",
     context = "kubelet"

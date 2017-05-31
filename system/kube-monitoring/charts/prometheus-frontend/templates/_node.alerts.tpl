@@ -4,6 +4,7 @@ ALERT NodeHighCpuUsage
   IF avg(irate(node_cpu{mode="idle"}[5m])) by(instance, region) < 0.2
   FOR 3m
   LABELS {
+    tier = "kubernetes",
     service   = "node",
     severity  = "warning",
     context   = "availability",
@@ -18,6 +19,7 @@ ALERT NodeClockDrift
   IF abs(ntp_drift_seconds) > 0.3
   FOR 3m
   LABELS {
+    tier = "kubernetes",
     service = "node",
     severity = "info",
     context = "availability",
@@ -32,6 +34,7 @@ ALERT NodeKernelDeadlock
   IF kube_node_status_kernel_deadlock{condition="true"} == 1
   FOR 24h
   LABELS {
+    tier = "kubernetes",
     service = "k8s",
     severity = "critical",
     context = "availability",
@@ -50,6 +53,7 @@ ALERT NodeHighNumberOfOpenConnections
   IF node_netstat_Tcp_CurrEstab > 20000
   FOR 3m
   LABELS {
+    tier = "kubernetes",
     service = "node",
     severity = "warning",
     context = "availability",
@@ -67,6 +71,7 @@ ALERT NodeHighRiseOfOpenConnections
   IF predict_linear(node_netstat_Tcp_CurrEstab[20m], 3600) > 32768
   FOR 3m
   LABELS {
+    tier = "kubernetes",
     service = "node",
     severity = "critical",
     context = "availability",
