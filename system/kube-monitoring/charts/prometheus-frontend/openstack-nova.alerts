@@ -1,6 +1,6 @@
 ### Networking-DVS Alerts ###
 
-ALERT DVSPolling
+ALERT OpenstackDVSPolling
   IF (min(rate(openstack_networking_dvs_plugins_ml2_drivers_mech_dvs_agent_dvs_agent_process_ports_timer_count[5m])) by (cluster) *60) < 1
   FOR 5m
   LABELS {
@@ -14,7 +14,7 @@ ALERT DVSPolling
     description = "Polling iterations of DVS Agent {{ $labels.kubernetes_pod_name }} is below 1 per minute.",
   }
   
-ALERT DVSSecGroup
+ALERT OpenstackDVSSecGroup
   IF max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) by (cluster,kubernetes_pod_name) > 60
   FOR 5m
   LABELS {
@@ -30,7 +30,7 @@ ALERT DVSSecGroup
 
 ### Nova Metrics ###
 
-ALERT NovaMaxDiskUsagePerc
+ALERT OpenstackNovaMaxDiskUsagePerc
   IF 1.0 - min(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_local_gb_gauge) by (cluster,host) > .90
   FOR 5m
   LABELS {
@@ -44,7 +44,7 @@ ALERT NovaMaxDiskUsagePerc
     description = "Nova Maximum Disk Usage is above 90%",
   }
   
-  ALERT NovaMaxRAMUsagePerc
+  ALERT OpenstackNovaMaxRAMUsagePerc
   IF 1.0 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_memory_mb_gauge) by (cluster,host) > .95
   FOR 5m
   LABELS {
