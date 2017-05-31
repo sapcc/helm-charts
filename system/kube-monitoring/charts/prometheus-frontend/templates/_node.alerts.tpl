@@ -1,7 +1,7 @@
 ### General node health ###
 
-ALERT NodeHighCpuUsage
-  IF avg(irate(node_cpu{mode="idle"}[5m])) by(instance, region) < 0.2
+ALERT KubernetesHostHighCPUUsage
+  IF avg(irate(node_cpu{mode="idle"}[5m])) by(instance, cluster) < 0.2
   FOR 3m
   LABELS {
     tier = "kubernetes",
@@ -15,7 +15,7 @@ ALERT NodeHighCpuUsage
     description = "The node {{`{{ $labels.instance }}`}} has more than 80% CPU load.",
   }
 
-ALERT NodeClockDrift
+ALERT KubernetesNodeClockDrift
   IF abs(ntp_drift_seconds) > 0.3
   FOR 3m
   LABELS {
@@ -30,7 +30,7 @@ ALERT NodeClockDrift
     description = "The clock on node {{`{{ $labels.instance }}`}} is more than 300ms apart from its NTP server. This can cause service degradation in Swift.",
   }
 
-ALERT NodeKernelDeadlock
+ALERT KubernetesNodeKernelDeadlock
   IF kube_node_status_kernel_deadlock{condition="true"} == 1
   FOR 24h
   LABELS {
@@ -49,7 +49,7 @@ ALERT NodeKernelDeadlock
 
 ### Network health ###
 
-ALERT NodeHighNumberOfOpenConnections
+ALERT KubernetesNodeHighNumberOfOpenConnections
   IF node_netstat_Tcp_CurrEstab > 20000
   FOR 3m
   LABELS {
@@ -67,7 +67,7 @@ ALERT NodeHighNumberOfOpenConnections
     description = "The node {{`{{ $labels.instance }}`}} has more than 20000 active TCP connections. The maximally possible amount is 32768 connections.",
   }
 
-ALERT NodeHighRiseOfOpenConnections
+ALERT KubernetesNodeHighRiseOfOpenConnections
   IF predict_linear(node_netstat_Tcp_CurrEstab[20m], 3600) > 32768
   FOR 3m
   LABELS {

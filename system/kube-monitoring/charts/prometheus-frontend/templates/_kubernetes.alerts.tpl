@@ -3,7 +3,7 @@ ALERT KubernetesKubeletDown
   FOR 15m
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "kubelet",
     severity = "warning",
     context = "kubelet",
     dashboard = "kubernetes-health"
@@ -19,7 +19,7 @@ ALERT KubernetesKubeletManyDown
   FOR 1h
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "kubelet",
     severity = "critical",
     context = "kubelet",
     dashboard = "kubernetes-health"
@@ -34,7 +34,7 @@ ALERT KubernetesKubeletScrapeMissing
   FOR 1h
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "kubelet",
     severity = "critical",
     context = "kubelet",
     dashboard = "kubernetes-health"
@@ -49,7 +49,7 @@ ALERT KubernetesKubeletTooManyPods
   FOR 1h
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "kubelet",
     severity = "warning",
     context = "kubelet",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
@@ -142,7 +142,7 @@ ALERT KubernetesPodRestartingTooMuch
   FOR 4h
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "resources",
     severity = "info",
     context = "pod",
   }
@@ -152,12 +152,12 @@ ALERT KubernetesPodRestartingTooMuch
   }
 
 
-ALERT KubernetesDockerHangs
+ALERT KubernetesKubeletDockerHangs
   IF rate(kubelet_docker_operations_timeout[5m])> 0
   FOR 15m
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "kubelet",
     severity = "warning",
     context = "docker",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
@@ -220,7 +220,7 @@ ALERT KubernetesApiServerLatency
   FOR 1h
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "apiserver",
     severity = "info",
     context = "apiserver",
     dashboard = "kubernetes-apiserver"
@@ -235,7 +235,7 @@ ALERT KubernetesApiServerEtcdAccessLatency
   FOR 1h
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "etcd",
     severity = "info",
     context = "apiserver",
     dashboard = "kubernetes-apiserver"
@@ -339,12 +339,12 @@ ALERT KubernetesTooManyOpenFiles
     description = "{{`{{$labels.job}}`}} on {{`{{$labels.instance}}`}} is using {{`{{$value}}`}}% of the available file/socket descriptors.",
   }
 
-ALERT HighNumberOfGoRoutines
+ALERT KubernetesHighNumberOfGoRoutines
   IF go_goroutines{job="kube-system/kubelet"} > 5000
   FOR 5m
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "kubelet",
     severity = "warning",
     context = "kubelet"
   }
@@ -353,12 +353,12 @@ ALERT HighNumberOfGoRoutines
     description = "Kublet on {{`{{$labels.instance}}`}} might be unresponsive due to a high number of go routines.",
   }
 
-ALERT PredictHighNumberOfGoRoutines
+ALERT KubernetesPredictHighNumberOfGoRoutines
   IF abs(predict_linear(go_goroutines{job="kube-system/kubelet"}[1h], 2*3600)) > 10000
   FOR 5m
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "kubelet",
     severity = "warning",
     context = "kubelet"
   }
@@ -367,12 +367,12 @@ ALERT PredictHighNumberOfGoRoutines
     description = "Kublet on {{`{{$labels.instance}}`}} might become unresponsive due to a high number of go routines within 2 hours.",
   }
 
-ALERT NodeDiskPressure
+ALERT KubernetesNodeDiskPressure
   IF kube_node_status_disk_pressure{condition="true"} == 1
   FOR 5m
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "node",
     severity = "warning",
     context = "kubelet"
   }
@@ -381,12 +381,12 @@ ALERT NodeDiskPressure
     description = "Kublet on {{`{{$labels.instance}}`}} under pressure due to insufficient available disk space.",
   }
 
-ALERT NodeMemoryPressure
+ALERT KubernetesNodeMemoryPressure
   IF kube_node_status_memory_pressure{condition="true"} == 1
   FOR 5m
   LABELS {
     tier = "kubernetes",
-    service = "k8s",
+    service = "node",
     severity = "warning",
     context = "kubelet"
   }
