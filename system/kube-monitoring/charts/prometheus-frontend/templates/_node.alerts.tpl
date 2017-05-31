@@ -1,7 +1,7 @@
 ### General node health ###
 
 ALERT NodeHighCpuUsage
-  IF avg by(instance)(irate(node_cpu{mode="idle"}[5m])) < 0.2
+  IF avg(irate(node_cpu{mode="idle"}[5m])) by(instance, region) < 0.2
   FOR 3m
   LABELS {
     service   = "node",
