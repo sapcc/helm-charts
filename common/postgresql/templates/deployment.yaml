@@ -7,10 +7,6 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: database
-  annotations:
-    checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
-    checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -28,6 +24,11 @@ spec:
     metadata:
       labels:
         app: {{ template "fullname" . }}
+        component: {{ .Values.postgresDatabase }}
+        type: database
+      annotations:
+        checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
+        checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
     spec:
       containers:
       - name: postgres
@@ -139,8 +140,10 @@ spec:
         image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
         env:
+        - name: POSTGRES_PASSWORD
+          value: {{ .Values.postgresPassword }}
         - name: DATA_SOURCE_NAME
-          value: postgresql://{{ default "postgres" .Values.postgresUser }}@localhost:5432?sslmode=disable
+          value: postgresql://{{ default "postgres" .Values.postgresUser }}@127.0.0.1:5432/{{.Values.postgresDatabase}}?sslmode=disable
         ports:
         - name: metrics
           containerPort: {{ default 9187 .Values.metrics.port }}
@@ -172,13 +175,13 @@ spec:
       {{- else }}
         emptyDir: {}
       {{- end }}
-      {{- if and .Values.metrics.enabled .Values.metrics.customMetrics }}
+      {{- if and  .Values.metrics.enabled .Values.metrics.customMetrics }}
       - name: custom-metrics
-        secret:
-          secretName: {{ template "fullname" . }}
+        configMap:
+          name: {{ template "fullname" . }}-etc
           items:
-            - key: custom-metrics.yaml
-              path: custom-metrics.yaml
+          - key: custom-metrics.yaml
+            path: custom-metrics.yaml
       {{- end }}
 {{- if .Values.dbInit }}
       - name: db-init

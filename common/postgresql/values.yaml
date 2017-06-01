@@ -1,7 +1,6 @@
 global:
   tld: cloud.sap
   region: local
-  imageRegistry: hub.global.cloud.sap
 # specify the k8s keystone namespace if it differs from the current chart
   #keystoneNamespace: keystone
 
@@ -71,9 +70,9 @@ metrics:
   port: 9187
   customMetrics:
     pg_database:
-      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+      query: "SELECT d.datname AS database, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
       metrics:
-        - datname:
+        - database:
             usage: "LABEL"
             description: "Name of the database"
         - size_bytes:

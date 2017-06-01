@@ -97,14 +97,6 @@ pipeline = healthcheck cors sizelimit url_normalize cc_ad public_version_service
 [pipeline:admin_version_api]
 pipeline = healthcheck cors sizelimit url_normalize cc_ad admin_version_service
 
-{{- if .Values.metrics.enabled }}
-[app:statsd_exporter_service]
-use = egg:keystone-extensions#statsd_exporter
-
-[pipeline:statsd_exporter]
-pipeline = cors sizelimit url_normalize request_id statsd_exporter_service
-{{- end }}
-
 [composite:main]
 use = egg:Paste#urlmap
 /v2.0 = public_api
@@ -115,7 +107,4 @@ use = egg:Paste#urlmap
 use = egg:Paste#urlmap
 /v2.0 = admin_api
 /v3 = api_v3
-{{- if .Values.metrics.enabled }}
-/statsd = statsd_exporter
-{{- end }}
 / = admin_version_api
