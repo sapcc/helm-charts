@@ -13,7 +13,7 @@ data:
 
     inhibit_rules:
     # Mute warnings for which also a critical alert exists. Per context and
-    # cluster.
+    # region.
     - source_match:
         severity: 'critical'
       target_match:
@@ -21,7 +21,7 @@ data:
       equal: ['context']
 
     route:
-      group_by: ['cluster', 'alertname']
+      group_by: ['region', 'alertname']
       group_wait: 1m
       group_interval: 5m
       repeat_interval: 12h
@@ -31,7 +31,7 @@ data:
       - receiver: kubernetes-info
         continue: true
         match_re:
-          service: k8s|etcd|prometheus|dns|node
+          tier: kubernetes
         routes:
         - receiver: 'kubernetes-warning'
           match:
@@ -43,7 +43,7 @@ data:
       - receiver: openstack-info
         continue: true
         match_re:
-          context: openstack
+          tier: openstack
         routes:
         - receiver: 'openstack-warning'
           match:
@@ -52,25 +52,18 @@ data:
           continue: true
           match:
             severity: critical
-      {{- range tuple "keystone" "swift" "nova" "limes" "elektra" "automation" }}
+      {{- range tuple "arc" "designate" "elektra" "keystone" "limes" "lyra" "nova" "swift" }}
       - receiver: openstack-{{ . }}
         continue: true
         match_re:
           service: {{ . }}
-          context: openstack
+          tier: openstack
       {{- end }}
       - receiver: blackbox-alerts
         continue: true
         match_re:
-          context: blackbox
-      {{- range tuple "staging" "eu-de-1" "eu-nl-1" "ap-au-1" "na-us-1" }}
-      - receiver: region_{{ . }}
-        match_re:
-          service: k8s|etcd|prometheus|dns|node
-          cluster: {{ . }}
-          severity: critical
-      {{- end }}
-
+          tier: hardware
+          service: blackbox
 
     receivers:
     {{- range tuple "kubernetes-info" "kubernetes-warning" "kubernetes-critical" }}
@@ -86,12 +79,12 @@ data:
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         send_resolved: true
     {{- end }}
-    {{- range tuple "openstack-info" "openstack-warning" "openstack-critical" "openstack-keystone" "openstack-swift" "openstack-nova" "openstack-limes" "openstack-elektra" "openstack-automation" }}
-    - name: {{ . }}
+    {{- range tuple "info" "warning" "critical" "arc" "designate" "elektra" "keystone" "limes" "lyra" "nova" "swift" }}
+    - name: openstack-{{ . }}
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
         username: "OpenStack Control Plane"
-        channel: "#{{ . }}"
+        channel: "#openstack-{{ . }}"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -111,19 +104,6 @@ data:
         pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         send_resolved: true 
-    {{- end }}
-    {{- range tuple "kubernetes" "region_staging" "region_eu-de-1" "region_eu-nl-1" "region_ap-au-1" "region_na-us-1" }}
-    - name: {{ . }}
-      slack_configs:
-      - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
-        username: "Kubernetes Control Plane"
-        channel: "#{{ . }}"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true
     {{- end }}
 
 

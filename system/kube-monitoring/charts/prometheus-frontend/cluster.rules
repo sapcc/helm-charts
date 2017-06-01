@@ -1,5 +1,5 @@
 cluster_namespace_controller_pod_container:spec_memory_limit_bytes =
-  sum by (cluster,namespace,controller,pod_name,container_name) (
+  sum by (region,namespace,controller,pod_name,container_name) (
     label_replace(
       container_spec_memory_limit_bytes{container_name!=""},
       "controller", "$1",
@@ -8,7 +8,7 @@ cluster_namespace_controller_pod_container:spec_memory_limit_bytes =
   )
 
 cluster_namespace_controller_pod_container:spec_cpu_shares =
-  sum by (cluster,namespace,controller,pod_name,container_name) (
+  sum by (region,namespace,controller,pod_name,container_name) (
     label_replace(
       container_spec_cpu_shares{container_name!=""},
       "controller", "$1",
@@ -17,7 +17,7 @@ cluster_namespace_controller_pod_container:spec_cpu_shares =
   )
 
 cluster_namespace_controller_pod_container:cpu_usage:rate =
-  sum by (cluster,namespace,controller,pod_name,container_name) (
+  sum by (region,namespace,controller,pod_name,container_name) (
     label_replace(
       irate(
         container_cpu_usage_seconds_total{container_name!=""}[5m]
@@ -28,7 +28,7 @@ cluster_namespace_controller_pod_container:cpu_usage:rate =
   )
 
 cluster_namespace_controller_pod_container:memory_usage:bytes =
-  sum by (cluster,namespace,controller,pod_name,container_name) (
+  sum by (region,namespace,controller,pod_name,container_name) (
     label_replace(
       container_memory_usage_bytes{container_name!=""},
       "controller", "$1",
@@ -37,7 +37,7 @@ cluster_namespace_controller_pod_container:memory_usage:bytes =
   )
 
 cluster_namespace_controller_pod_container:memory_working_set:bytes =
-  sum by (cluster,namespace,controller,pod_name,container_name) (
+  sum by (region,namespace,controller,pod_name,container_name) (
     label_replace(
       container_memory_working_set_bytes{container_name!=""},
       "controller", "$1",
@@ -46,7 +46,7 @@ cluster_namespace_controller_pod_container:memory_working_set:bytes =
   )
 
 cluster_namespace_controller_pod_container:memory_rss:bytes =
-  sum by (cluster,namespace,controller,pod_name,container_name) (
+  sum by (region,namespace,controller,pod_name,container_name) (
     label_replace(
       container_memory_rss{container_name!=""},
       "controller", "$1",
@@ -55,7 +55,7 @@ cluster_namespace_controller_pod_container:memory_rss:bytes =
   )
 
 cluster_namespace_controller_pod_container:memory_cache:bytes =
-  sum by (cluster,namespace,controller,pod_name,container_name) (
+  sum by (region,namespace,controller,pod_name,container_name) (
     label_replace(
       container_memory_cache{container_name!=""},
       "controller", "$1",
@@ -65,7 +65,7 @@ cluster_namespace_controller_pod_container:memory_cache:bytes =
 
 
 cluster_namespace_controller_pod_container:memory_pagefaults:rate =
-  sum by (cluster,namespace,controller,pod_name,container_name,scope,type) (
+  sum by (region,namespace,controller,pod_name,container_name,scope,type) (
     label_replace(
       irate(
         container_memory_failures_total{container_name!=""}[5m]
@@ -76,7 +76,7 @@ cluster_namespace_controller_pod_container:memory_pagefaults:rate =
   )
 
 cluster_namespace_controller_pod_container:memory_oom:rate =
-  sum by (cluster,namespace,controller,pod_name,container_name,scope,type) (
+  sum by (region,namespace,controller,pod_name,container_name,scope,type) (
     label_replace(
       irate(
         container_memory_failcnt{container_name!=""}[5m]
@@ -89,24 +89,24 @@ cluster_namespace_controller_pod_container:memory_oom:rate =
 ### Cluster resources ###
 
 cluster:memory_allocation:percent =
-  100 * sum by (cluster) (
+  100 * sum by (region) (
     container_spec_memory_limit_bytes{pod_name!=""}
-  ) / sum by (cluster) (
+  ) / sum by (region) (
     machine_memory_bytes
   )
 
 cluster:memory_used:percent =
-  100 * sum by (cluster) (
+  100 * sum by (region) (
     container_memory_usage_bytes{pod_name!=""}
-  ) / sum by (cluster) (
+  ) / sum by (region) (
     machine_memory_bytes
   )
 
 cluster:cpu_allocation:percent =
-  100 * sum by (cluster) (
+  100 * sum by (region) (
     container_spec_cpu_shares{pod_name!=""}
-  ) / sum by (cluster) (
-    container_spec_cpu_shares{id="/"} * on(cluster,instance) machine_cpu_cores
+  ) / sum by (region) (
+    container_spec_cpu_shares{id="/"} * on(region,instance) machine_cpu_cores
   )
 
 ### API latency ###
@@ -115,38 +115,38 @@ cluster:cpu_allocation:percent =
 cluster_resource_verb:apiserver_latency:quantile_seconds{quantile="0.99"} =
   histogram_quantile(
     0.99,
-    sum by(le,cluster,job,resource,verb) (apiserver_request_latencies_bucket)
+    sum by(le,region,job,resource,verb) (apiserver_request_latencies_bucket)
   ) / 1e6
 cluster_resource_verb:apiserver_latency:quantile_seconds{quantile="0.9"} =
   histogram_quantile(
     0.9,
-    sum by(le,cluster,job,resource,verb) (apiserver_request_latencies_bucket)
+    sum by(le,region,job,resource,verb) (apiserver_request_latencies_bucket)
   ) / 1e6
 cluster_resource_verb:apiserver_latency:quantile_seconds{quantile="0.5"} =
   histogram_quantile(
     0.5,
-    sum by(le,cluster,job,resource,verb) (apiserver_request_latencies_bucket)
+    sum by(le,region,job,resource,verb) (apiserver_request_latencies_bucket)
   ) / 1e6
 
 ### Scheduling latency ###
 
 cluster:scheduler_e2e_scheduling_latency:quantile_seconds{quantile="0.99"} =
-  histogram_quantile(0.99,sum by (le,cluster) (scheduler_e2e_scheduling_latency_microseconds_bucket)) / 1e6
+  histogram_quantile(0.99,sum by (le,region) (scheduler_e2e_scheduling_latency_microseconds_bucket)) / 1e6
 cluster:scheduler_e2e_scheduling_latency:quantile_seconds{quantile="0.9"} =
-  histogram_quantile(0.9,sum by (le,cluster) (scheduler_e2e_scheduling_latency_microseconds_bucket)) / 1e6
+  histogram_quantile(0.9,sum by (le,region) (scheduler_e2e_scheduling_latency_microseconds_bucket)) / 1e6
 cluster:scheduler_e2e_scheduling_latency:quantile_seconds{quantile="0.5"} =
-  histogram_quantile(0.5,sum by (le,cluster) (scheduler_e2e_scheduling_latency_microseconds_bucket)) / 1e6
+  histogram_quantile(0.5,sum by (le,region) (scheduler_e2e_scheduling_latency_microseconds_bucket)) / 1e6
 
 cluster:scheduler_scheduling_algorithm_latency:quantile_seconds{quantile="0.99"} =
-  histogram_quantile(0.99,sum by (le,cluster) (scheduler_scheduling_algorithm_latency_microseconds_bucket)) / 1e6
+  histogram_quantile(0.99,sum by (le,region) (scheduler_scheduling_algorithm_latency_microseconds_bucket)) / 1e6
 cluster:scheduler_scheduling_algorithm_latency:quantile_seconds{quantile="0.9"} =
-  histogram_quantile(0.9,sum by (le,cluster) (scheduler_scheduling_algorithm_latency_microseconds_bucket)) / 1e6
+  histogram_quantile(0.9,sum by (le,region) (scheduler_scheduling_algorithm_latency_microseconds_bucket)) / 1e6
 cluster:scheduler_scheduling_algorithm_latency:quantile_seconds{quantile="0.5"} =
-  histogram_quantile(0.5,sum by (le,cluster) (scheduler_scheduling_algorithm_latency_microseconds_bucket)) / 1e6
+  histogram_quantile(0.5,sum by (le,region) (scheduler_scheduling_algorithm_latency_microseconds_bucket)) / 1e6
 
 cluster:scheduler_binding_latency:quantile_seconds{quantile="0.99"} =
-  histogram_quantile(0.99,sum by (le,cluster) (scheduler_binding_latency_microseconds_bucket)) / 1e6
+  histogram_quantile(0.99,sum by (le,region) (scheduler_binding_latency_microseconds_bucket)) / 1e6
 cluster:scheduler_binding_latency:quantile_seconds{quantile="0.9"} =
-  histogram_quantile(0.9,sum by (le,cluster) (scheduler_binding_latency_microseconds_bucket)) / 1e6
+  histogram_quantile(0.9,sum by (le,region) (scheduler_binding_latency_microseconds_bucket)) / 1e6
 cluster:scheduler_binding_latency:quantile_seconds{quantile="0.5"} =
-  histogram_quantile(0.5,sum by (le,cluster) (scheduler_binding_latency_microseconds_bucket)) / 1e6
+  histogram_quantile(0.5,sum by (le,region) (scheduler_binding_latency_microseconds_bucket)) / 1e6

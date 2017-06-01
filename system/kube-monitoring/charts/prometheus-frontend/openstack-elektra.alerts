@@ -4,9 +4,10 @@ ALERT OpenstackElektraPostgresDatabasesize
   IF max(pg_database_size_bytes{app="elektra-postgresql"}) by (region) >= 8589934592.0
   FOR 3m
   LABELS {
+    tier = "openstack",
     service = "elektra",
     severity = "warning",
-    context = "openstack",
+    context = "databasesize",
     dashboard = "elektra-postgres-capacity"
   }
   ANNOTATIONS {
@@ -18,6 +19,7 @@ ALERT OpenstackElektraPumaRequestBacklog
   IF sum(puma_request_backlog{name="elektra"}) by (region) > 1.0
   FOR 3m
   LABELS {
+    tier = "openstack",
     service = "elektra",
     severity = "warning",
     context = "openstack",
