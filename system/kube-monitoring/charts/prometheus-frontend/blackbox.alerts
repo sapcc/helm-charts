@@ -1,43 +1,86 @@
-### Blackbox alerts
+### Openstack Blackbox API Alerts
 
-ALERT BlackboxTestApi
-  IF blackbox_api_status_gauge == 1
-  FOR 3m
+ALERT OpenstackApiHealthCheck1
+  IF avg_over_time(blackbox_api_status_gauge[3m]) > 0.6
   LABELS {
-    service = "api_status",
-    severity = "critical",
-    context = "blackbox",
+    severity = "warning"
+    tier = "openstack"
+    service = "{{ $labels.check }}"
+    context = "{{ $labels.check }}"
     dashboard = "ccloud-health-blackbox-details"
   }
   ANNOTATIONS {
-    summary = "Blackbox api test is failing",
-    description = "Blackbox api test {{ $labels.check }} are failing for 5 times in a row."
+    summary = "Blackbox api tests are failing",
+    description = "Blackbox api test {{ $labels.check }} are failing for 5 minutes."
   }
 
-ALERT BlackboxTestDatapath
-  IF blackbox_datapath_status_gauge == 1
-  FOR 3m
+ALERT OpenstackApiHealthCheck2
+  IF avg_over_time(blackbox_api_status_gauge[5m]) > 0.6
   LABELS {
-    service = "datapath_status",
-    severity = "critical",
-    context = "blackbox",
-    dashboard = "ccloud-health-datapath-details"
+    severity = "critical"
+    tier = "openstack"
+    service = "{{ $labels.check }}"
+    context = "{{ $labels.check }}"
+    dashboard = "ccloud-health-blackbox-details"
   }
   ANNOTATIONS {
-    summary = "Blackbox datapath test is failing",
-    description = "Blackbox datapath test {{ $labels.check }} are failing for 5 times in a row."
+    summary = "Blackbox api tests are failing",
+    description = "Blackbox api test {{ $labels.check }} is failing for 10 minutes."
   }
 
-ALERT BlackboxTestCanary
-  IF blackbox_canary_status_gauge == 1 
-  FOR 20m
+### Openstack Blackbox Canary Alerts
+
+ALERT OpenstackCanaryHealthCheck1
+  IF avg_over_time(blackbox_canary_status_gauge[5m]) > 0.6
   LABELS {
-    service = "canary_status",
-    severity = "warning",
-    context = "blackbox",
+    severity = "warning"
+    tier = "openstack"
+    context = "{{ $labels.check }}"
     dashboard = "ccloud-health-canary-details"
   }
   ANNOTATIONS {
-    summary = "Blackbox test is failing",
-    description = "Blackbox canary test {{ $labels.check }} is failing for 3 times in a row."
+    summary = "Blackbox canary tests are failing",
+    description = "Blackbox canary test {{ $labels.check }} are failing for 5 minutes."
   }
+
+ALERT OpenstackCanaryHealthCheck2
+  IF avg_over_time(blackbox_canary_status_gauge[10m]) > 0.6
+  LABELS {
+    severity = "critical"
+    tier = "openstack"
+    context = "{{ $labels.check }}"
+    dashboard = "ccloud-health-canary-details"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox canary tests are failing",
+    description = "Blackbox canary test {{ $labels.check }} is failing for 10 minutes."
+  }
+
+### Openstack Blackbox Datapath Alerts
+
+ALERT OpenstackDatapathHealthCheck1
+  IF avg_over_time(blackbox_datapath_status_gauge[3m]) > 0.6
+  LABELS {
+    severity = "warning"
+    tier = "openstack"
+    context = "{{ $labels.check }}"
+    dashboard = "ccloud-health-datapath-details"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox datapath tests are failing",
+    description = "Blackbox datapath test {{ $labels.check }} are failing for 5 minutes."
+  }
+
+ALERT OpenstackDatapathHealthCheck2
+  IF avg_over_time(blackbox_datapath_status_gauge[5m]) > 0.6
+  LABELS {
+    severity = "critical"
+    tier = "openstack"
+    context = "{{ $labels.check }}"
+    dashboard = "ccloud-health-datapath-details"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox datapath tests are failing",
+    description = "Blackbox datapath test {{ $labels.check }} is failing for 10 minutes."
+  }
+
