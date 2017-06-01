@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: elk-kibana
+  namespace: elk
+
+spec:
+  tls:
+     - secretName: elk-kibana
+       hosts: [{{.Values.elk_kibana_endpoint_host_public}}]
+  rules:
+    - host: {{.Values.elk_kibana_endpoint_host_public}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: elk-kibana
+            servicePort: {{.Values.elk_kibana_port_public}}
