@@ -1,10 +1,11 @@
-ALERT PrometheusFrontendDown
+ALERT KubernetesPrometheusFrontendDown
   IF count(up{job="prometheus-regions-federation"}) by (cluster) unless count(up{job="prometheus-frontend"}) by (cluster)
   FOR 15m
   LABELS {
     service = "prometheus",
     severity = "critical",
     context = "availability",
+    tier = "kubernetes",
     dashboard = "prometheus?var-instance=frontend"
   }
   ANNOTATIONS {
@@ -12,13 +13,14 @@ ALERT PrometheusFrontendDown
     description = "Prometheus Frontend is DOWN. Alerting and dashboards are unavailable",
   }
 
-ALERT PrometheusCollectorDown
+ALERT KubernetesPrometheusCollectorDown
   IF count(up{job="prometheus-regions-federation"}) by (cluster) unless count(up{job="prometheus-collector"}) by (cluster)
   FOR 15m
   LABELS {
     service = "prometheus",
     severity = "critical",
     context = "availability",
+    tier = "kubernetes",
     dashboard = "prometheus?var-instance=collector"
   }
   ANNOTATIONS {
@@ -26,13 +28,14 @@ ALERT PrometheusCollectorDown
     description = "Prometheus Collector is DOWN. Alerting and dashboards are currently based on outdated data",
   }
 
-ALERT PrometheusFederationCollector
+ALERT KubernetesPrometheusFederationCollector
   IF absent(up{job="prometheus-collector-federation"}) or up{job="prometheus-collector-federation"} == 0
   FOR 15m
   LABELS {
     service = "prometheus",
     severity = "warning",
     context = "availability",
+    tier = "kubernetes",
     dashboard = "prometheus?var-instance=frontend"
   }
   ANNOTATIONS {
@@ -40,13 +43,14 @@ ALERT PrometheusFederationCollector
     description = "Prometheus Frontend can't federate data from the Collector. Data will be stale",
   }
 
-ALERT PrometheusFederationRegions
+ALERT KubernetesPrometheusFederationRegions
   IF absent(up{job="prometheus-regions-federation"}) or up{job="prometheus-regions-federation"} == 0
   FOR 15m
   LABELS {
     service = "prometheus",
     severity = "critical",
     context = "availability-global",
+    tier = "kubernetes",
   }
   ANNOTATIONS {
     summary = "Global Prometheus Federation is having trouble",
