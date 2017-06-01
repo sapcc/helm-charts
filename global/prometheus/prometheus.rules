@@ -1,5 +1,5 @@
 ALERT KubernetesPrometheusFrontendDown
-  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless count(up{job="prometheus-frontend"}) by (cluster)
+  IF count(up{job="prometheus-regions-federation"}) by (region) unless count(up{job="prometheus-frontend"}) by (region)
   FOR 15m
   LABELS {
     service = "prometheus",
@@ -14,7 +14,7 @@ ALERT KubernetesPrometheusFrontendDown
   }
 
 ALERT KubernetesPrometheusCollectorDown
-  IF count(up{job="prometheus-regions-federation"}) by (cluster) unless count(up{job="prometheus-collector"}) by (cluster)
+  IF count(up{job="prometheus-regions-federation"}) by (region) unless count(up{job="prometheus-collector"}) by (region)
   FOR 15m
   LABELS {
     service = "prometheus",
@@ -54,5 +54,5 @@ ALERT KubernetesPrometheusFederationRegions
   }
   ANNOTATIONS {
     summary = "Global Prometheus Federation is having trouble",
-    description = "Prometheus Global can't federate data from {{ $labels.cluster }}. Alerting will be unavailable!",
+    description = "Prometheus Global can't federate data from {{ $labels.region }}. Alerting will be unavailable!",
   }
