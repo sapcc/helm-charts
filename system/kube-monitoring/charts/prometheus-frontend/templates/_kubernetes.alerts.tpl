@@ -215,7 +215,7 @@ ALERT KubernetesApiServerScrapeMissing
 ALERT KubernetesApiServerLatency
   IF histogram_quantile(
       0.99,
-      sum without (instance,node,resource) (apiserver_request_latencies_bucket{verb!~"CONNECT|WATCHLIST|WATCH"})
+      sum without (instance,node,resource) (apiserver_request_latencies_bucket{verb!~"CONNECT|WATCHLIST|WATCH|LIST"})
     ) / 1e6 > 2.0
   FOR 1h
   LABELS {
