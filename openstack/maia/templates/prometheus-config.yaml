@@ -6,8 +6,6 @@ metadata:
 data:
   ca.cert: |
 {{ .Values.prometheus.ca | indent 4}}
-  bearer_token_file: |
-{{ .Values.prometheus.token | indent 4 }}
   prometheus.yaml: |
     global:
       scrape_timeout: 55s
@@ -28,13 +26,13 @@ data:
     - job_name: 'maia/pods'
       tls_config:
         ca_file: /etc/prometheus/ca.cert
-      bearer_token_file: /etc/prometheus/bearer_token_file
+      bearer_token: {{ .Values.prometheus.token | quote}}
 
       kubernetes_sd_configs:
       - api_server: "https://apiserver.{{.Values.global.region}}.{{.Values.global.domain}}"
         tls_config:
           ca_file: /etc/prometheus/ca.cert
-        bearer_token_file: /etc/prometheus/bearer_token_file
+        bearer_token: {{ .Values.prometheus.token | quote }}
         role: pod
       relabel_configs:
       - action: keep
@@ -61,13 +59,13 @@ data:
     - job_name: 'maia/endpoints'
       tls_config:
         ca_file: /etc/prometheus/ca.cert
-      bearer_token_file: /etc/prometheus/bearer_token_file
+      bearer_token: {{ .Values.prometheus.token | quote }}
 
       kubernetes_sd_configs:
       - api_server: "https://apiserver.{{.Values.global.region}}.{{.Values.global.domain}}"
         tls_config:
           ca_file: /etc/prometheus/ca.cert
-        bearer_token_file: /etc/prometheus/bearer_token_file
+        bearer_token: {{ .Values.prometheus.token | quote }}
         role: endpoints
       relabel_configs:
       - action: keep
@@ -97,13 +95,13 @@ data:
     - job_name: 'maia/services'
       tls_config:
         ca_file: /etc/prometheus/ca.cert
-      bearer_token_file: /etc/prometheus/bearer_token_file
+      bearer_token: {{ .Values.prometheus.token | quote }}
 
       kubernetes_sd_configs:
       - api_server: "https://apiserver.{{.Values.global.region}}.{{.Values.global.domain}}"
         tls_config:
           ca_file: /etc/prometheus/ca.cert
-        bearer_token_file: /etc/prometheus/bearer_token_file
+        bearer_token: {{ .Values.prometheus.token | quote }}
         role: service
       relabel_configs:
       - action: keep
