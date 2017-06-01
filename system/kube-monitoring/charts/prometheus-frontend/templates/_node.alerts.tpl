@@ -1,7 +1,7 @@
 ### General node health ###
 
 ALERT KubernetesHostHighCPUUsage
-  IF avg(irate(node_cpu{mode="idle"}[5m])) by(instance, cluster) < 0.2
+  IF avg(irate(node_cpu{mode="idle"}[5m])) by(instance, region) < 0.2
   FOR 3m
   LABELS {
     tier = "kubernetes",
