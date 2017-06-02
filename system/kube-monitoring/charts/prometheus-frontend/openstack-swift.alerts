@@ -1,0 +1,213 @@
+ALERT SwiftAccountFirstByteTiming
+  IF max(swift_proxy_firstbyte_timer{status="200",type="account",quantile="0.5"}) by (cluster) > 500.0
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "critical"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-account-first-byte-timing",
+    description = "Alert to notify if the swift account first-byte-timing reached more than 500 within 3 minutes.",
+  }
+
+ALERT SwiftContainerFirstByteTiming
+  IF max(swift_proxy_firstbyte_timer{status="200",type="container",quantile="0.5"}) by (cluster) > 500.0
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "critical"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-container-first-byte-timing",
+    description = "Alert to notify if the swift container first-byte-timing reached more than 500 within 3 minutes.",
+  }
+  
+ALERT SwiftObjectFirstByteTiming
+  IF max(swift_proxy_firstbyte_timer{status="200",type="object",quantile="0.5"}) by (cluster) > 500.0
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "critical"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-object-first-byte-timing",
+    description = "Alert to notify if the swift object first-byte-timing reached more than 500 within 3 minutes.",
+  }  
+  
+ALERT SwiftHealthCheck
+  IF avg(swift_health_statsd_exit_code_gauge{}) by (cluster) > 0.2
+  FOR 5m
+  LABELS {
+    service = "swift"
+    severity = "critical"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-health-check",
+    description = "Swift health check failures. Run kubectl log swift-proxy-... collector to get details",
+  }    
+
+ALERT SwiftUsedSpace75
+  IF max(swift_cluster_storage_used_percent_gauge,180) by (cluster) > 0.75
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "critical"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-used-space-75",
+    description = "Swift storage usage reached 75%",
+  } 
+
+ALERT SwiftUsedSpace70
+  IF max(swift_cluster_storage_used_percent_gauge{},180) by (cluster) > 0.7
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "warning"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  
+  ANNOTATIONS {
+    summary = "swift-used-space-70",
+    description = "Swift storage usage reached 70%",
+  }
+  
+ALERT SwiftOverLappingObjects
+  IF min(swift_dispersion_container_overlapping_gauge{}, 180) by (cluster) > 0
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "warning"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-overlapping-objects",
+    description = "Swift has overlapping objects. Run swift-dispersion-report to get details",
+  }
+  
+ALERT SwiftOverLappingContainers
+  IF min(swift_dispersion_container_overlapping_gauge{}, 180) by (cluster) > 0.0
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "warning"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-overlapping-containers",
+    description = "Swift has overlapping containers. Run swift-dispersion-report to get details",
+  } 
+
+# ALERT SwiftNTPOffset
+#  IF min(ntp.offset{service=object-store}, 180) by (cluster) < -0.3 or MAX(ntp.offset{service=object-store}, 180) by (cluster) > 0.3
+#  FOR 3m
+#  LABELS {
+#    service = "swift"
+#    severity = "warning"
+#    context = "openstack"
+#    dashboard = "swift-overview"
+#  }
+#  
+#  ANNOTATIONS {
+#    summary = "swift-ntpoffset",
+#    description = "Swift NTP offset is over +/- 300ms on (by (systemtype)) {{ $labels.systemtype }} and {{ $labels.hostname }}.",
+#  }
+  
+ALERT SwiftMismatchedRings
+  IF min(swift_cluster_md5_ring_not_matched_gauge{}, 180) by (cluster) > 0.0
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "warning"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-mismatched-rings",
+    description = "Alarm on mismatched rings",
+  } 
+  
+ALERT SwiftDisksUnmounted
+  IF max(swift_cluster_drives_unmounted_gauge{}, 180) by (cluster) > 0.0
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "warning"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-disks-unmounted",
+    description = "Swift drives not mounted. Run swift-recon --unmounted to get details",
+  } 
+
+ALERT SwiftDiskFailures
+  IF max(swift_cluster_drives_audit_errors_gauge{}, 180) by (cluster) > 0.0
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "warning"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  
+  ANNOTATIONS {
+    summary = "swift-disk-failures",
+    description = "Swift drive failures. Run swift-recon --driveaudit to get details",
+  }
+  
+# ALERT SwiftCPUOverload
+# IF avg(cpu.idle_perc{service=object-store}, 300) by (cluster) < 20.0
+#  FOR 3m
+#  LABELS {
+#    service = "swift"
+#    severity = "warning"
+#    context = "openstack"
+#    dashboard = "swift-overview"
+#  }
+#  ANNOTATIONS {
+#    summary = "swift-cpu-overload",
+#    description = "Swift CPU idle below 20% on {{systemtype}} {{hostname}}",
+#  } 
+  
+ALERT SwiftUsedSpace60
+  IF max(swift_cluster_storage_used_percent_gauge{}, 180) by (cluster) > 0.6
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "info"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  ANNOTATIONS {
+    summary = "swift-used-space-60",
+    description = "Swift storage usage reached 60%",
+  } 
+
+ALERT SwiftUsedSpace50
+  IF max(swift_cluster_storage_used_percent_gauge{}, 180) by (cluster) > 0.5
+  FOR 3m
+  LABELS {
+    service = "swift"
+    severity = "info"
+    context = "openstack"
+    dashboard = "swift-overview"
+  }
+  
+  ANNOTATIONS {
+    summary = "swift-used-space-50",
+    description = "Swift storage usage reached 50%",
+  }
