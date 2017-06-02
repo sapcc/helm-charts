@@ -1,3 +1,32 @@
+### Openstack Blackbox API SLAs
+
+ALERT OpenstackApiAvailablityBelowSLA
+  IF 1 - (sum(sum_over_time(blackbox_api_status_gauge[24h])) by (check,region) / 1440) < 0.99
+  LABELS {
+    severity = "warning",
+    tier = "openstack",
+    service = "{{ $labels.check }}",
+    context = "api-sla-{{ $labels.check }}",
+  }
+  ANNOTATIONS {
+    summary = "Availability dropped below 99%.",
+    description = "Availability of the {{ $labels.check }} API dropped below 99% for the last 24h. SLA violated"
+  }
+
+ALERT OpenstackApiAvailablityBelowSLA
+  IF 1 - (sum(sum_over_time(blackbox_api_status_gauge[24h])) by (check,region) / 1440) < 0.95
+  LABELS {
+    severity = "critical",
+    tier = "openstack",
+    service = "{{ $labels.check }}",
+    context = "api-sla-{{ $labels.check }}",
+  }
+  ANNOTATIONS {
+    summary = "Availability dropped below 95%. ",
+    description = "Availability of the {{ $labels.check }} API dropped below 95% for the last 24h. SLA violated. There is a serious problem!"
+  }
+  
+
 ### Openstack Blackbox API Alerts
 
 ALERT OpenstackApiDown
