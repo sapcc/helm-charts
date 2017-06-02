@@ -32,7 +32,7 @@ ALERT KubernetesNodeClockDrift
 
 ALERT KubernetesNodeKernelDeadlock
   IF kube_node_status_kernel_deadlock{condition="true"} == 1
-  FOR 24h
+  FOR 48h
   LABELS {
     tier = "kubernetes",
     service = "k8s",
