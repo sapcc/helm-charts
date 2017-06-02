@@ -10,19 +10,19 @@ spec:
   template:
     metadata:
       labels:
-        component: elk-fluent
+        component: fluent
       annotations:
-        checksum/elk-templates-fluent-etc-configmap.yaml: {{ include "elk/templates/elk-fluent-etc-configmap.yaml" . | sha256sum }}
-        checksum/elk-templates-fluent-bin-configmap.yaml: {{ include "elk/templates/elk-fluent-bin-configmap.yaml" . | sha256sum }}
+        checksum/elk-templates-fluent-etc-configmap.yaml: {{ include "elk/templates/fluent-etc-configmap.yaml" . | sha256sum }}
+        checksum/elk-templates-fluent-bin-configmap.yaml: {{ include "elk/templates/fluent-bin-configmap.yaml" . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
     spec:
       volumes:
-        - name: es-bin
+        - name: fluent-bin
           configMap:
-            name: es-fluent-bin
-        - name: es-etc
+            name: fluent-bin
+        - name: fluent-etc
           configMap:
-            name: es-fluent-etc
+            name: fluent-etc
         - name: varlog
           hostPath:
             path: /var/log
@@ -51,10 +51,10 @@ spec:
 #              cpu: 1000m
 #              memory: 2000Mi
           volumeMounts:
-            - name: elk-bin
-              mountPath: /elk-bin
-            - name: elk-etc
-              mountPath: /elk-etc
+            - name: fluent-bin
+              mountPath: /fluent-bin
+            - name: fluent-etc
+              mountPath: /fluent-etc
             - name: varlog
               mountPath: /var/log
             - name: varlibdockercontainers

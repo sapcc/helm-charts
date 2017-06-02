@@ -1,9 +1,9 @@
 #!/bin/bash
 
 function process_config {
-  cp -f /elk-etc/elasticsearch.yaml /elasticsearch/config/elasticsearch.yaml
-  cp -f /elk-etc/log4j2.properties /elasticsearch/config/log4j2.properties
-  cp -f /elk-etc/jvm.options /elasticsearch/config/jvm.options
+  cp -f /es-etc/elasticsearch.yaml /elasticsearch/config/elasticsearch.yaml
+  cp -f /es-etc/log4j2.properties /elasticsearch/config/log4j2.properties
+  cp -f /es-etc/jvm.options /elasticsearch/config/jvm.options
 }
 
 function start_application {

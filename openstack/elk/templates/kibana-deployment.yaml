@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: elk-kibana
+  name: kibana
   namespace: elk
   labels:
     system: openstack
@@ -19,18 +19,18 @@ spec:
       labels:
         component: elk-kibana
       annotations:
-        checksum/elk-templates-elk-kibana-etc-configmap.yaml: {{ include "elk/templates/elk-kibana-etc-configmap.yaml" . | sha256sum }}
-        checksum/elk-templates-elk-kibana-bin-configmap.yaml: {{ include "elk/templates/elk-kibana-bin-configmap.yaml" . | sha256sum }}
+        checksum/elk-templates-kibana-etc-configmap.yaml: {{ include "elk/templates/kibana-etc-configmap.yaml" . | sha256sum }}
+        checksum/elk-templates-kibana-bin-configmap.yaml: {{ include "elk/templates/kibana-bin-configmap.yaml" . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: elk-bin
+        - name: kibana-bin
           configMap:
-            name: elk-kibana-bin
-        - name: elk-etc
+            name: kibana-bin
+        - name: kibana-etc
           configMap:
-            name: elk-kibana-etc
+            name: kibana-etc
       containers:
         - name: elk-kibana
           image: {{.Values.docker_repo}}/elk-kibana:{{.Values.image_version_elk_kibana}}
@@ -41,7 +41,7 @@ spec:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/bin/bash /elk-bin/kibana-start"
+              value: "/bin/bash /kibana-bin/kibana-start"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -52,7 +52,7 @@ spec:
             - name: nodejs
               containerPort: {{.Values.elk_kibana_port_public}}
           volumeMounts:
-            - mountPath: /elk-bin
-              name: elk-bin
-            - mountPath: /elk-etc
-              name: elk-etc
+            - mountPath: /kibana-bin
+              name: kibana-bin
+            - mountPath: /kibana-etc
+              name: kibana-etc

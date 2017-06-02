@@ -3,14 +3,14 @@
 set -e
 
 # set some env variables from the openstack env properly based on env
-. /elk-bin/common-start
+. /kibana-bin/common-start
 
 function process_config {
 
   export KIBANA_VERSION=$(cat /KIBANA_VERSION.env)
   export KIBANA_CONF_FILE="/opt/kibana/config/kibana.yml"
 
-  cp /elk-etc/kibana.yml ${KIBANA_CONF_FILE}
+  cp /kibana-etc/kibana.yml ${KIBANA_CONF_FILE}
 
 }
 

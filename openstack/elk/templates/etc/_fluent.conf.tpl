@@ -52,7 +52,7 @@
   <parse>
     @type grok
     grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:process} (\[)?(req-)?(%{REQUESTID:requestid})
-    custom_pattern_path /elk-etc/pattern
+    custom_pattern_path /es-etc/pattern
   </parse>
 </filter>
 
@@ -74,7 +74,7 @@
   <parse>
     @type grok
     grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}\"?( )?(%{NOTSPACE:request_time})
-    custom_pattern_path /elk-etc/pattern
+    custom_pattern_path /es-etc/pattern
   </parse>
 </filter>
 
@@ -138,7 +138,7 @@
   <parse>
     @type grok
       grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
-      custom_pattern_path /elk-etc/pattern
+      custom_pattern_path /es-etc/pattern
   </parse>
 </filter>
 
@@ -174,7 +174,7 @@
     @type grok
     grok_pattern %{COMBINEDAPACHELOG}
    time_format "%d/%b/%Y:%H:%M:%S %z"
-    custom_pattern_path /elk-etc/pattern
+    custom_pattern_path /es-etc/pattern
   </parse>
 </filter>
 
@@ -440,7 +440,7 @@
    user {{.Values.elk_elasticsearch_data_user}}
    password {{.Values.elk_elasticsearch_data_password}}
    template_name "logstash"
-   template_file "/elk-etc/fluent-logstash.json"
+   template_file "/es-etc/fluent-logstash.json"
    time_as_integer false
    @log_level info
    buffer_type "memory"

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-. /elk-bin/common-start
+. /fluent-bin/common-start
 
 function process_config {
 
-  cp /elk-etc/fluent.conf /etc/fluent/fluent.conf
+  cp /fluent-etc/fluent.conf /etc/fluent/fluent.conf
   echo $KUBERNETES_SERVICE_HOST
   sed -i "s|KUBERNETES_SERVICE_HOST|$KUBERNETES_SERVICE_HOST|g" /etc/fluent/fluent.conf
 }
