@@ -65,7 +65,7 @@ ALERT OpenstackApiFlappingShort
   }
 
 ALERT OpenstackApiFlappingLong
-  IF changes(blackbox_api_status_gauge[24h]) > 100
+  IF changes(blackbox_api_status_gauge[24h]) > 25
   LABELS {
     severity = "info",
     tier = "openstack",
@@ -111,7 +111,7 @@ ALERT OpenstackDatapathFlappingShort
   }
 
 ALERT OpenstackDatapathFlappingLong
-  IF changes(blackbox_datapath_status_gauge[24h]) > 100
+  IF changes(blackbox_datapath_status_gauge[24h]) > 25
   LABELS {
     severity = "info",
     tier = "openstack",
@@ -155,5 +155,17 @@ ALERT OpenstackCanaryHealthCheckFlapping
     description = "{{ $labels.check }} test is flapping for 120 minutes."
   }
 
-
+ALERT OpenstackCanaryHealthCheckFlappingLong
+  IF changes(blackbox_canary_status_gauge[24h]) > 25
+  LABELS {
+    severity = "info",
+    tier = "openstack",
+    context = "{{ $labels.check }}",
+    dashboard = "ccloud-health-canary-details",
+    sentry = "Blackbox"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox canary test",
+    description = "{{ $labels.check }} is flapping for 24 hours."
+  }
 
