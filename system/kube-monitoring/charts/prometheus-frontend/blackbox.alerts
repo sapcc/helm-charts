@@ -29,7 +29,71 @@ ALERT OpenstackApiAvailablityBelowSLA
     summary = "Availability dropped below 95%. ",
     description = "Availability of the {{ $labels.check }} API dropped below 95% for the last 24h. SLA violated. There is a serious problem!"
   }
-  
+
+### Openstack Datapath SLAs
+
+ALERT OpenstackDatapathAvailabilityBelowSLA
+  IF 1 - (sum(sum_over_time(blackbox_datapath_status_gauge[24h])) by (check,region) / 1440) < 0.98
+  FOR 8h
+  LABELS {
+    severity = "info",
+    tier = "openstack",
+    service = "{{ $labels.check }}",
+    context = "datapath-sla-{{ $labels.check }}",
+    dashboard = "ccloud-health-datapath-details?var-script={{ $labels.check }}"
+  }
+  ANNOTATIONS {
+    summary = "Availability dropped below 98%.",
+    description = "Availability of the {{ $labels.check }} datapath health check dropped below 98% for the last 24h. SLA violated"
+  }
+
+ALERT OpenstackDatapathAvailablityBelowSLA
+  IF 1 - (sum(sum_over_time(blackbox_datapath_status_gauge[24h])) by (check,region) / 1440) < 0.95
+  FOR 1h
+  LABELS {
+    severity = "warning",
+    tier = "openstack",
+    service = "{{ $labels.check }}",
+    context = "datapath-sla-{{ $labels.check }}",
+    dashboard = "ccloud-health-datapath-details?var-script={{ $labels.check }}"
+  }
+  ANNOTATIONS {
+    summary = "Availability dropped below 95%. ",
+    description = "Availability of the {{ $labels.check }} datapath health check dropped below 95% for the last 24h. SLA violated. There is a serious problem!"
+  }
+
+### Openstack Canary SLAs
+
+ALERT OpenstackCanaryAvailabilityBelowSLA
+  IF 1 - (sum(sum_over_time(blackbox_canary_status_gauge[24h])) by (check,region) / 1440) < 0.98
+  FOR 8h
+  LABELS {
+    severity = "info",
+    tier = "openstack",
+    service = "{{ $labels.check }}",
+    context = "canary-sla-{{ $labels.check }}",
+    dashboard = "ccloud-health-canary-details?var-script={{ $labels.check }}"
+  }
+  ANNOTATIONS {
+    summary = "Availability dropped below 98%.",
+    description = "Availability of the {{ $labels.check }} canary health check dropped below 98% for the last 24h. SLA violated"
+  }
+
+ALERT OpenstackCanaryAvailablityBelowSLA
+  IF 1 - (sum(sum_over_time(blackbox_canary_status_gauge[24h])) by (check,region) / 1440) < 0.95
+  FOR 1h
+  LABELS {
+    severity = "warning",
+    tier = "openstack",
+    service = "{{ $labels.check }}",
+    context = "canary-sla-{{ $labels.check }}",
+    dashboard = "ccloud-health-canary-details?var-script={{ $labels.check }}"
+  }
+  ANNOTATIONS {
+    summary = "Availability dropped below 95%. ",
+    description = "Availability of the {{ $labels.check }} canary health check dropped below 95% for the last 24h. SLA violated. There is a serious problem!"
+  }
+
 
 ### Openstack Blackbox API Alerts
 
@@ -49,7 +113,7 @@ ALERT OpenstackApiDown
     description = "Api {{ $labels.check }} is down for 15 times in a row."
   }
 
-ALERT OpenstackApiFlappingShort
+ALERT OpenstackApiFlapping
   IF changes(blackbox_api_status_gauge[30m]) > 8
   LABELS {
     severity = "critical",
@@ -62,21 +126,6 @@ ALERT OpenstackApiFlappingShort
   ANNOTATIONS {
     summary = "Blackbox api test",
     description = "Api {{ $labels.check }} is flapping for 30 minutes."
-  }
-
-ALERT OpenstackApiFlappingLong
-  IF changes(blackbox_api_status_gauge[24h]) > 25
-  LABELS {
-    severity = "info",
-    tier = "openstack",
-    service = "{{ $labels.check }}",
-    context = "{{ $labels.check }}",
-    dashboard = "ccloud-health-blackbox-details",
-    sentry = "Blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox api test",
-    description = "Api {{ $labels.check }} is flapping for 24 hours."
   }
 
 ### Openstack Blackbox Datapath Alerts
@@ -96,7 +145,7 @@ ALERT OpenstackDatapathDown
     description = "Datapath {{ $labels.check }} is down for 15 times in a row."
   }
 
-ALERT OpenstackDatapathFlappingShort
+ALERT OpenstackDatapathFlapping
   IF changes(blackbox_datapath_status_gauge[30m]) > 8
   LABELS {
     severity = "warning",
@@ -108,20 +157,6 @@ ALERT OpenstackDatapathFlappingShort
   ANNOTATIONS {
     summary = "Blackbox datapath test",
     description = "Datapath {{ $labels.check }} is flapping for 30 minutes."
-  }
-
-ALERT OpenstackDatapathFlappingLong
-  IF changes(blackbox_datapath_status_gauge[24h]) > 25
-  LABELS {
-    severity = "info",
-    tier = "openstack",
-    context = "{{ $labels.check }}",
-    dashboard = "ccloud-health-datapath-details",
-    sentry = "Blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox datapath test",
-    description = "Datapath {{ $labels.check }} is flapping for 24 hours."
   }
 
 ### Openstack Blackbox Canary Alerts
@@ -153,19 +188,5 @@ ALERT OpenstackCanaryHealthCheckFlapping
   ANNOTATIONS {
     summary = "Blackbox canary test",
     description = "{{ $labels.check }} test is flapping for 120 minutes."
-  }
-
-ALERT OpenstackCanaryHealthCheckFlappingLong
-  IF changes(blackbox_canary_status_gauge[24h]) > 25
-  LABELS {
-    severity = "info",
-    tier = "openstack",
-    context = "{{ $labels.check }}",
-    dashboard = "ccloud-health-canary-details",
-    sentry = "Blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox canary test",
-    description = "{{ $labels.check }} is flapping for 24 hours."
   }
 
