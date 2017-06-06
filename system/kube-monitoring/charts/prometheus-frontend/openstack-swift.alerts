@@ -1,5 +1,5 @@
 ALERT OpenstackSwiftFirstByteTiming
-  IF max(swift_proxy_firstbyte_timer{status="200",quantile="0.5"}) by (os_cluster, type) > 1000.0
+  IF max(swift_proxy_firstbyte_timer{status="200",quantile="0.5"}) by (region, os_cluster, type) > 1000.0
   FOR 3m
   LABELS {
     service = "swift"
@@ -13,7 +13,7 @@ ALERT OpenstackSwiftFirstByteTiming
   }
 
 ALERT OpenstackSwiftHealthCheck
-  IF avg(swift_health_statsd_exit_code_gauge{}) by (cluster) > 0.2
+  IF avg(swift_health_statsd_exit_code_gauge{}) by (region) > 0.2
   FOR 5m
   LABELS {
     service = "swift"
@@ -27,7 +27,7 @@ ALERT OpenstackSwiftHealthCheck
   }
   
 ALERT OpenstackSwiftOverLappingObjects
-  IF min(swift_dispersion_object_overlapping_gauge{}) by (cluster) > 0
+  IF min(swift_dispersion_object_overlapping_gauge{}) by (region) > 0
   FOR 3m
   LABELS {
     service = "swift"
@@ -41,7 +41,7 @@ ALERT OpenstackSwiftOverLappingObjects
   }
   
 ALERT OpenstackSwiftOverLappingContainers
-  IF min(swift_dispersion_container_overlapping_gauge{}) by (cluster) > 0.0
+  IF min(swift_dispersion_container_overlapping_gauge{}) by (region) > 0.0
   FOR 3m
   LABELS {
     service = "swift"
@@ -55,7 +55,7 @@ ALERT OpenstackSwiftOverLappingContainers
   } 
 
 ALERT OpenstackSwiftMismatchedRings
-  IF min(swift_cluster_md5_ring_not_matched_gauge{}) by (cluster) > 0.0
+  IF min(swift_cluster_md5_ring_not_matched_gauge{}) by (region) > 0.0
   FOR 3m
   LABELS {
     service = "swift"
@@ -69,7 +69,7 @@ ALERT OpenstackSwiftMismatchedRings
   } 
   
 ALERT OpenstackSwiftDisksUnmounted
-  IF sum(swift_cluster_drives_unmounted_gauge{}) by (storage_ip) > 0.0
+  IF sum(swift_cluster_drives_unmounted_gauge{}) by (region, storage_ip) > 0.0
   FOR 3m
   LABELS {
     service = "swift"
@@ -83,7 +83,7 @@ ALERT OpenstackSwiftDisksUnmounted
   } 
 
 ALERT OpenstackSwiftDiskFailures
-  IF sum(swift_cluster_drives_audit_errors_gauge) by (storage_ip) > 0.0
+  IF sum(swift_cluster_drives_audit_errors_gauge) by (region, storage_ip) > 0.0
   FOR 3m
   LABELS {
     service = "swift"
@@ -91,18 +91,17 @@ ALERT OpenstackSwiftDiskFailures
     context = "openstack"
     dashboard = "swift-overview"
   }
-  
   ANNOTATIONS {
     summary = "swift disk failures on the server IP ($labels.storage_ip)",
     description = "Swift drive failures. Run swift-recon --driveaudit to get details",
   }
   
 ALERT OpenstackSwiftUsedSpace75
-  IF max(swift_cluster_storage_used_percent_gauge{}) by (cluster) > 0.75
+  IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.75
   FOR 3m
   LABELS {
     service = "swift"
-    severity = "info"
+    severity = "warning"
     context = "openstack"
     dashboard = "swift-overview"
   }
@@ -112,21 +111,21 @@ ALERT OpenstackSwiftUsedSpace75
   } 
 
 ALERT OpenstackSwiftUsedSpace70
-  IF max(swift_cluster_storage_used_percent_gauge{}) by (cluster) > 0.7
+  IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.7
   FOR 3m
   LABELS {
     service = "swift"
-    severity = "info"
+    severity = "warning"
     context = "openstack"
     dashboard = "swift-overview"
   }
-  
   ANNOTATIONS {
     summary = "swift-used-space-70",
     description = "Swift storage usage reached 70%",
-  }  
+  }
+
 ALERT OpenstackSwiftUsedSpace60
-  IF max(swift_cluster_storage_used_percent_gauge{}) by (cluster) > 0.6
+  IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.6
   FOR 3m
   LABELS {
     service = "swift"
@@ -140,7 +139,7 @@ ALERT OpenstackSwiftUsedSpace60
   } 
 
 ALERT OpenstackSwiftUsedSpace50
-  IF max(swift_cluster_storage_used_percent_gauge{}) by (cluster) > 0.5
+  IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.5
   FOR 3m
   LABELS {
     service = "swift"
@@ -148,7 +147,6 @@ ALERT OpenstackSwiftUsedSpace50
     context = "openstack"
     dashboard = "swift-overview"
   }
-  
   ANNOTATIONS {
     summary = "swift-used-space-50",
     description = "Swift storage usage reached 50%",
