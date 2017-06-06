@@ -43,8 +43,8 @@ spec:
               add:
                 - IPC_LOCK
                 - SYS_RESOURCE
-          image: {{.Values.docker_repo}}/elk-elasticsearch:{{.Values.image_version_elk_elasticsearch}}
-          imagePullPolicy: IfNotPresent
+          image: {{.Values.docker_repo}}/elk-elasticsearch:{{.Values.elk_image_version_elasticsearch}}
+          imagePullPolicy: Always
           command:
             - /usr/local/bin/dumb-init
           args:
@@ -70,12 +70,13 @@ spec:
             - mountPath: /es-etc
               name: es-etc
           ports:
-            - containerPort: {{.Values.elk_elasticsearch_port_cluster}}
-              name: transport
+            - name: transport
+              containerPort: {{.Values.elk_elasticsearch_port_cluster}}
               protocol: TCP
-            - containerPort: {{.Values.elk_elasticsearch_port_internal}}
-              name: http
+            - name: http
+              containerPort: {{.Values.elk_elasticsearch_port_internal}}
               protocol: TCP
             - name: dummymasterport
               hostPort: {{.Values.elk_elasticsearch_client_dummy_port}}
               hostIP: 127.0.0.1
+              containerPort: {{.Values.elk_elasticsearch_client_dummy_port}}

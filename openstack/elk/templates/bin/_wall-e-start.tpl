@@ -15,6 +15,7 @@ function start_application {
 
   export STDOUT_LOC=${STDOUT_LOC:-/proc/1/fd/1}  
   export STDERR_LOC=${STDERR_LOC:-/proc/1/fd/2}
+  unset http_proxy https_proxy all_proxy no_proxy
   export ELK_ELASTICSEARCH_MASTER_PROJECT_ID={{.Values.elk_elasticsearch_master_project_id}}
   cp -f /monasca-content/monasca-content/kibana/search.json /search.json
   cp -f /monasca-content/monasca-content/kibana/vizualization.json /vizualization.json

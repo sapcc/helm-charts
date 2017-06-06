@@ -31,15 +31,15 @@ spec:
             path: /var/lib/docker/containers
       containers:
         - name: fluent
-          image: {{.Values.docker_repo}}/fluent:{{.Values.image_version_fluent}}
-          imagePullPolicy: IfNotPresent
+          image: {{.Values.docker_repo}}/elk-fluent:{{.Values.elk_image_version_fluent}}
+          imagePullPolicy: Always
           command:
             - /usr/local/bin/dumb-init
           args:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/bin/bash /es-bin/fluent-start"
+              value: "/bin/bash /fluent-bin/fluent-start"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -61,6 +61,7 @@ spec:
               mountPath: /var/lib/docker/containers
               readOnly: true
           ports: 
-            - containerPort: {{.Values.elk_fluent_port}}
+            - name: fluent
+              containerPort: {{.Values.elk_fluent_port}}
               hostPort: {{.Values.elk_fluent_port}}
               hostIP: 127.0.0.1

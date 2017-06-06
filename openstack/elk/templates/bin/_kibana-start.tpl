@@ -7,6 +7,7 @@ set -e
 
 function process_config {
 
+  unset http_proxy https_proxy all_proxy no_proxy
   export KIBANA_VERSION=$(cat /KIBANA_VERSION.env)
   export KIBANA_CONF_FILE="/opt/kibana/config/kibana.yml"
 
