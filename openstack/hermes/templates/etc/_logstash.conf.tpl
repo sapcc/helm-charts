@@ -7,7 +7,9 @@ rabbitmq {
     queue => "{{.Values.hermes_rabbitmq_queue_name}}"
     subscription_retry_interval_seconds => 60
     id => "logstash_hermes"
-    automatic_recovery => false
+    # From https://www.elastic.co/guide/en/logstash/current/plugins-inputs-rabbitmq.html#plugins-inputs-rabbitmq-automatic_recovery:
+    #  Set this to automatically recover from a broken connection. You almost certainly don’t want to override this!!!
+    automatic_recovery => true
   }
 }
 
