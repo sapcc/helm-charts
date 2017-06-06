@@ -1,7 +1,7 @@
 ### Limes
 
 ALERT OpenstackLimesFailedScrapes
-  IF sum(irate(limes_successful_scrapes[5m])) by (service, region) == 0
+  IF sum(irate(limes_successful_scrapes[5m])) by (region, os_cluster, service) == 0
   FOR 60m
   LABELS {
     tier = "openstack",
@@ -12,5 +12,5 @@ ALERT OpenstackLimesFailedScrapes
   }
   ANNOTATIONS {
     summary = "Limes cannot scrape backend",
-    description = "Limes cannot scrape backend data from service {{ $labels.service }} for more than an hour."
+    description = "Limes cannot scrape backend data from service {{ $labels.service }} in {{ $labels.os_cluster }} for more than an hour."
   }
