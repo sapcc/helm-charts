@@ -51,7 +51,7 @@ ALERT KubernetesNodeKernelDeadlock
 
 ALERT KubernetesNodeHighNumberOfOpenConnections
   IF node_netstat_Tcp_CurrEstab > 20000
-  FOR 3m
+  FOR 15m
   LABELS {
     tier = "kubernetes",
     service = "node",
@@ -69,7 +69,7 @@ ALERT KubernetesNodeHighNumberOfOpenConnections
 
 ALERT KubernetesNodeHighRiseOfOpenConnections
   IF predict_linear(node_netstat_Tcp_CurrEstab[20m], 3600) > 32768
-  FOR 3m
+  FOR 15m
   LABELS {
     tier = "kubernetes",
     service = "node",
