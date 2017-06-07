@@ -17,7 +17,7 @@ ALERT KubernetesHostHighCPUUsage
 
 ALERT KubernetesNodeClockDrift
   IF abs(ntp_drift_seconds) > 0.3
-  FOR 3m
+  FOR 10m
   LABELS {
     tier = "kubernetes",
     service = "node",
@@ -36,7 +36,7 @@ ALERT KubernetesNodeKernelDeadlock
   LABELS {
     tier = "kubernetes",
     service = "k8s",
-    severity = "critical",
+    severity = "info",
     context = "availability",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_safe_rebooting.html",
@@ -51,7 +51,7 @@ ALERT KubernetesNodeKernelDeadlock
 
 ALERT KubernetesNodeHighNumberOfOpenConnections
   IF node_netstat_Tcp_CurrEstab > 20000
-  FOR 3m
+  FOR 15m
   LABELS {
     tier = "kubernetes",
     service = "node",
@@ -69,7 +69,7 @@ ALERT KubernetesNodeHighNumberOfOpenConnections
 
 ALERT KubernetesNodeHighRiseOfOpenConnections
   IF predict_linear(node_netstat_Tcp_CurrEstab[20m], 3600) > 32768
-  FOR 3m
+  FOR 15m
   LABELS {
     tier = "kubernetes",
     service = "node",
