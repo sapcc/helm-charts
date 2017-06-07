@@ -103,6 +103,36 @@ ALERT OpenstackSwiftDiskFailures
     description = "Swift drive failures. Run swift-recon --driveaudit to get details",
   }
   
+ALERT OpenstackSwiftAsyncPendings50
+  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 50
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "warning",
+    context = "asyncpendings",
+    dashboard = "swift-overview",
+  }
+  ANNOTATIONS {
+    summary = "swift object server async pendings {{ $labels.instance }}",
+    description = "Async Pendings indicate an overload scenario or faulty device(s)",
+  }
+  
+ALERT OpenstackSwiftAsyncPendings500
+  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 500
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "critical",
+    context = "asyncpendings",
+    dashboard = "swift-overview",
+  }
+  ANNOTATIONS {
+    summary = "swift object server async pendings {{ $labels.instance }}",
+    description = "Async Pendings indicate an overload scenario or faulty device(s)",
+  }
+  
 ALERT OpenstackSwiftUsedSpace75
   IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.75
   FOR 3m
