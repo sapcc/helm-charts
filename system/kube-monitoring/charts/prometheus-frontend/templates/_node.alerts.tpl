@@ -17,7 +17,7 @@ ALERT KubernetesHostHighCPUUsage
 
 ALERT KubernetesNodeClockDrift
   IF abs(ntp_drift_seconds) > 0.3
-  FOR 3m
+  FOR 10m
   LABELS {
     tier = "kubernetes",
     service = "node",
