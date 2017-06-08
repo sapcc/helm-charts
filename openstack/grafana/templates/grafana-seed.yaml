@@ -1,0 +1,40 @@
+{{- if .Values.grafana_seeding_enabled }}
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: grafana-seed
+  labels:
+    component: monitoring
+spec:
+  requires:
+#    - keystone-seed
+    - monsoon3/domain-ccadmin-seed
+
+  roles:
+  - monitoring_admin
+  - monitoring_viewer
+
+  domains:
+  - name: ccadmin
+    projects:
+    - name: master
+      roles:
+# this can go most probably
+#      - user: concourse@Default
+#        role: monitoring_admin
+      - group: CCADMIN_CLOUD_ADMINS
+        role: monitoring_admin
+      - group: CCADMIN_DOMAIN_ADMINS
+        role: monitoring_admin
+      - group: CCADMIN_MONITORING_USERS
+        role: monitoring_viewer
+
+# this can go most probably
+#    groups:
+#    - name: Administrators
+#      roles:
+#      - project: admin
+#        role: monitoring_admin
+{{- end }}
+{{- end }}
