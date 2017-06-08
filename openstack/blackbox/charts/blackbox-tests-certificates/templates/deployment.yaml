@@ -1,0 +1,87 @@
+kind: Deployment
+apiVersion: extensions/v1beta1 
+
+metadata:
+  name: blackbox-tests-certificates
+
+spec:
+  replicas: {{.Values.global.replicaCount}}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: blackbox-tests-certificates
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: blackbox-tests-certificates
+          persistentVolumeClaim:
+            claimName: blackbox-tests-certificates
+      containers:
+        - name: pytest
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - "-n 4"
+            - "--timeout 15"
+            - "--disable-pytest-warnings"
+            - "-r fExXpP"
+            - "tests/test_certificates.py"
+          volumeMounts:
+            - name: blackbox-tests-certificates
+              mountPath: /opt/logs
+              readOnly: false
+          env:
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.openstack.region_name | quote }}
+            - name: CERTS_ALERT_PERIOD
+              value : {{ .Values.certs.alert_period | quote }}
+            - name: CERTS_NAMES
+              value: {{- range .Values.certs.names }} {{ . | title | quote }},{{- end }}
+            - name: SENTRY_DSN
+              value: {{ .Values.global.sentry.dsn | quote }}
+            - name: STATSD_HOST
+              value: "localhost"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: "blackbox-certificates"
+            - name: SLEEP_ITERATE
+              value: {{ .Values.sleep.iterate | quote }}
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
+        - name: statsd
+          image: prom/statsd-exporter:master
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.port_metrics}}
