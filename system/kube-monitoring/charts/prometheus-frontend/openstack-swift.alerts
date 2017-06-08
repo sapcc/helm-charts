@@ -103,6 +103,66 @@ ALERT OpenstackSwiftDiskFailures
     description = "Swift drive failures. Run swift-recon --driveaudit to get details",
   }
   
+ALERT OpenstackSwiftAsyncPendings50
+  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 50
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "warning",
+    context = "asyncpendings",
+    dashboard = "swift-overview",
+  }
+  ANNOTATIONS {
+    summary = "swift object server async pendings {{ $labels.instance }}",
+    description = "Async Pendings indicate an overload scenario or faulty device(s)",
+  }
+  
+ALERT OpenstackSwiftAsyncPendings500
+  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 500
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "critical",
+    context = "asyncpendings",
+    dashboard = "swift-overview",
+  }
+  ANNOTATIONS {
+    summary = "swift object server async pendings {{ $labels.instance }}",
+    description = "Async Pendings indicate an overload scenario or faulty device(s)",
+  }
+
+ALERT OpenstackSwiftRateLimit1000
+  IF sum(increase(swift_proxy_timer_count{status='498'}[5m])) by (region, os_cluster) > 1000
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "warning",
+    context = "ratelimit",
+    dashboard = "swift-overview",
+  }
+  ANNOTATIONS {
+    summary = "swift rate limit hit in {{ $labels.os_cluster }}",
+    description = "Check kibana for the causing account and container",
+  }
+
+ALERT OpenstackSwiftRateLimit5000
+  IF sum(increase(swift_proxy_timer_count{status='498'}[5m])) by (region, os_cluster) > 5000
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "critical",
+    context = "ratelimit",
+    dashboard = "swift-overview",
+  }
+  ANNOTATIONS {
+    summary = "swift rate limit hit in {{ $labels.os_cluster }}",
+    description = "Check kibana for the causing account and container",
+  }
+  
 ALERT OpenstackSwiftUsedSpace75
   IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.75
   FOR 3m
