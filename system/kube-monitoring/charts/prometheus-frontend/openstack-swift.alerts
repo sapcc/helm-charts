@@ -6,10 +6,10 @@ ALERT OpenstackSwiftFirstByteTiming
     service = "swift",
     severity = "info",
     context = "firtsbytetiming",
-    dashboard = "swift-proxy?var-cluster={{`{{ $labels.os_cluster }}`}}&var-proxy={{`{{ $labels.instance }}`}}",
+    dashboard = "swift-proxy?var-cluster={{ $labels.os_cluster }}&var-proxy={{ $labels.instance }}",
   }
   ANNOTATIONS {
-    summary = "first byte timing of {{ $labels.os_cluster }} - {{ $labels.type }}",
+    summary = "first byte timing for {{ $labels.type }} in {{ $labels.os_cluster }} increased",
     description = "This alert indicates the latency in token validation.",
   }
 
@@ -27,9 +27,9 @@ ALERT OpenstackSwiftHealthCheck
     summary = "swift-health-check",
     description = "Swift health check failures. Run kubectl log swift-proxy-... collector to get details",
   }
-  
+
 ALERT OpenstackSwiftOverLappingObjects
-  IF min(swift_dispersion_object_overlapping_gauge{}) by (region) > 0
+  IF swift_dispersion_object_overlapping_gauge > 0
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -42,9 +42,9 @@ ALERT OpenstackSwiftOverLappingObjects
     summary = "swift-overlapping-objects",
     description = "Swift has overlapping objects. Run swift-dispersion-report to get details",
   }
-  
+
 ALERT OpenstackSwiftOverLappingContainers
-  IF min(swift_dispersion_container_overlapping_gauge{}) by (region) > 0.0
+  IF swift_dispersion_container_overlapping_gauge > 0
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -56,10 +56,10 @@ ALERT OpenstackSwiftOverLappingContainers
   ANNOTATIONS {
     summary = "swift-overlapping-containers",
     description = "Swift has overlapping containers. Run swift-dispersion-report to get details",
-  } 
+  }
 
 ALERT OpenstackSwiftMismatchedRings
-  IF min(swift_cluster_md5_ring_not_matched_gauge{}) by (region) > 0.0
+  IF swift_cluster_md5_ring_not_matched_gauge > 0
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -71,8 +71,8 @@ ALERT OpenstackSwiftMismatchedRings
   ANNOTATIONS {
     summary = "swift-mismatched-rings",
     description = "Alarm on mismatched rings",
-  } 
-  
+  }
+
 ALERT OpenstackSwiftDisksUnmounted
   IF sum(swift_cluster_drives_unmounted_gauge{}) by (region, storage_ip) > 0.0
   FOR 3m
@@ -86,7 +86,7 @@ ALERT OpenstackSwiftDisksUnmounted
   ANNOTATIONS {
     summary = "swift disks unmounted on the server IP {{ $labels.storage_ip }}",
     description = "Swift drives not mounted. Run swift-recon --unmounted to get details",
-  } 
+  }
 
 ALERT OpenstackSwiftDiskFailures
   IF sum(swift_cluster_drives_audit_errors_gauge) by (region, storage_ip) > 0.0
@@ -102,7 +102,7 @@ ALERT OpenstackSwiftDiskFailures
     summary = "swift disk failures on the server IP {{ $labels.storage_ip }}",
     description = "Swift drive failures. Run swift-recon --driveaudit to get details",
   }
-  
+
 ALERT OpenstackSwiftAsyncPendings50
   IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 50
   FOR 3m
@@ -117,7 +117,7 @@ ALERT OpenstackSwiftAsyncPendings50
     summary = "swift object server async pendings {{ $labels.instance }}",
     description = "Async Pendings indicate an overload scenario or faulty device(s)",
   }
-  
+
 ALERT OpenstackSwiftAsyncPendings500
   IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 500
   FOR 3m
@@ -162,7 +162,7 @@ ALERT OpenstackSwiftRateLimit5000
     summary = "swift rate limit hit in {{ $labels.os_cluster }}",
     description = "Check kibana for the causing account and container",
   }
-  
+
 ALERT OpenstackSwiftUsedSpace75
   IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.75
   FOR 3m
@@ -171,12 +171,12 @@ ALERT OpenstackSwiftUsedSpace75
     service = "swift",
     severity = "warning",
     context = "usedcapacity",
-    dashboard = "swift-capacity-global?var-region={{`{{$labels.region}}`}}",
+    dashboard = "swift-capacity-global?var-region={{ $labels.region }}",
   }
   ANNOTATIONS {
     summary = "swift-used-space-75",
     description = "Swift storage usage reached 75%",
-  } 
+  }
 
 ALERT OpenstackSwiftUsedSpace70
   IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.7
@@ -186,7 +186,7 @@ ALERT OpenstackSwiftUsedSpace70
     service = "swift",
     severity = "warning",
     context = "usedcapacity",
-    dashboard = "swift-capacity-global?var-region={{`{{$labels.region}}`}}",
+    dashboard = "swift-capacity-global?var-region={{ $labels.region }}",
   }
   ANNOTATIONS {
     summary = "swift-used-space-70",
@@ -201,12 +201,12 @@ ALERT OpenstackSwiftUsedSpace60
     service = "swift",
     severity = "info",
     context = "usedcapacity",
-    dashboard = "swift-capacity-global?var-region={{`{{$labels.region}}`}}",
+    dashboard = "swift-capacity-global?var-region={{ $labels.region }}",
   }
   ANNOTATIONS {
     summary = "swift-used-space-60",
     description = "Swift storage usage reached 60%",
-  } 
+  }
 
 ALERT OpenstackSwiftUsedSpace50
   IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.5
