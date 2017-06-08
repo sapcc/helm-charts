@@ -14,24 +14,24 @@ function start_application {
   # Set cluster region
   export CLUSTER_REGION={{.Values.global.region}}
   # Set Grafana admin/local username & password
-  export GF_SECURITY_ADMIN_USER={{.Values.monasca.grafana.admin.user}}
-  export GF_SECURITY_ADMIN_PASSWORD={{.Values.monasca.grafana.admin.password}}
-  export MONASCA_GRAFANA_LOCAL_USER={{.Values.monasca.grafana.local.user}}
-  export MONASCA_GRAFANA_LOCAL_PASSWORD={{.Values.monasca.grafana.local.password}}
+  export GF_SECURITY_ADMIN_USER={{.Values.grafana.admin.user}}
+  export GF_SECURITY_ADMIN_PASSWORD={{.Values.grafana.admin.password}}
+  export MONASCA_GRAFANA_LOCAL_USER={{.Values.grafana.local.user}}
+  export MONASCA_GRAFANA_LOCAL_PASSWORD={{.Values.grafana.local.password}}
   # Set flags for wiping/loading datasources & dashboards
-  export MONASCA_GRAFANA_WIPE_DATASOURCES={{.Values.monasca.grafana.wipe.datasources}}
-  export MONASCA_GRAFANA_LOAD_DATASOURCES={{.Values.monasca.grafana.load.datasources}}
-  export MONASCA_GRAFANA_WIPE_DASHBOARDS={{.Values.monasca.grafana.wipe.dashboards}}
-  export MONASCA_GRAFANA_LOAD_DASHBOARDS={{.Values.monasca.grafana.load.dashboards}}
+  export MONASCA_GRAFANA_WIPE_DATASOURCES={{.Values.grafana.wipe.datasources}}
+  export MONASCA_GRAFANA_LOAD_DATASOURCES={{.Values.grafana.load.datasources}}
+  export MONASCA_GRAFANA_WIPE_DASHBOARDS={{.Values.grafana.wipe.dashboards}}
+  export MONASCA_GRAFANA_LOAD_DASHBOARDS={{.Values.grafana.load.dashboards}}
   # Set elasticsearch user and password required for elasticsearch datasource
-  export MONASCA_ELASTICSEARCH_USER={{.Values.monasca.elasticsearch.admin.user}}
-  export MONASCA_ELASTICSEARCH_PASSWORD={{.Values.monasca.elasticsearch.admin.password}}
-  export MONASCA_ELASTICSEARCH_MASTER_PROJECT_ID={{.Values.monasca.elasticsearch.master_project_id}}
-  export MONASCA_ELASTICSEARCH_VERSION={{.Values.monasca.elasticsearch.version}}
+  export MONASCA_ELASTICSEARCH_USER={{.Values.elasticsearch.admin.user}}
+  export MONASCA_ELASTICSEARCH_PASSWORD={{.Values.elasticsearch.admin.password}}
+  export MONASCA_ELASTICSEARCH_MASTER_PROJECT_ID={{.Values.elasticsearch.master_project_id}}
+  export MONASCA_ELASTICSEARCH_VERSION={{.Values.elasticsearch.version}}
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until grafana is up and write to stdout and logfile in parallel
   if [ -x /opt/grafana/datasources-dashboards.sh ]; then
-    (while netstat -lnt | awk '$4 ~ /:{{.Values.monasca.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; /opt/grafana/datasources-dashboards.sh ) 2>&1 | tee /opt/grafana/datasources-dashboards.log &
+    (while netstat -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; /opt/grafana/datasources-dashboards.sh ) 2>&1 | tee /opt/grafana/datasources-dashboards.log &
   fi
 
   if [ -f /var/lib/grafana/grafana.db ]; then
