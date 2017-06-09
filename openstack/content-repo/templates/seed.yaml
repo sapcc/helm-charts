@@ -1,0 +1,28 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: content-repo-seed
+
+spec:
+  requires:
+  - swift/swift-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-default-seed
+
+  domains:
+    - name: Default
+      users:
+        - name: repo
+          description: Repo Service User
+          password: '{{ .Values.password }}'
+          roles:
+            - project: service
+              role:    service
+
+    - name: ccadmin
+      projects:
+      - name: master
+        roles:
+          # permission to write to ccadmin/master containers
+          - user: repo@Default
+            role: swiftoperator
