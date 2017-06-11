@@ -36,7 +36,7 @@ ALERT KubernetesNodeKernelDeadlock
   LABELS {
     tier = "kubernetes",
     service = "k8s",
-    severity = "info",
+    severity = "ignore",
     context = "availability",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_safe_rebooting.html",
