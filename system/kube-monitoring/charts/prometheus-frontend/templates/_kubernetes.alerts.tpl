@@ -193,7 +193,7 @@ ALERT KubernetesApiServerAllDown
     dashboard = "kubernetes-health"
   }
   ANNOTATIONS {
-    summary = "API is unavailabele!!!",
+    summary = "API is unavailable!!!",
     description = "All apiservers are down. API is unavailable!",
   }
 
