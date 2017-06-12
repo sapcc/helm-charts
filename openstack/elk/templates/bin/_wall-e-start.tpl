@@ -45,7 +45,6 @@ function start_application {
       --type=data
   
   cat <(crontab -l) <(echo "0 6 * * * /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
-  cat <(crontab -l) <(echo "* * * * * /usr/bin/python2.7 /wall-e-bin/elasticsearch-test.py > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
   cat <(crontab -l) <(echo "0 3 * * * . /wall-e-bin/create-kibana-audit-indexes.sh  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
 
   exec cron -f 
