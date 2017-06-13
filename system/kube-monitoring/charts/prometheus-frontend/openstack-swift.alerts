@@ -74,7 +74,7 @@ ALERT OpenstackSwiftDiskFailures
   }
 
 ALERT OpenstackSwiftAsyncPendings50
-  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 50
+  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region) > 500
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -84,12 +84,12 @@ ALERT OpenstackSwiftAsyncPendings50
     dashboard = "swift-overview",
   }
   ANNOTATIONS {
-    summary = "swift object server async pendings {{ $labels.instance }}",
+    summary = "swift object server async pendings",
     description = "Async Pendings indicate an overload scenario or faulty device(s)",
   }
 
 ALERT OpenstackSwiftAsyncPendings500
-  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 500
+  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region) > 2000
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -99,7 +99,7 @@ ALERT OpenstackSwiftAsyncPendings500
     dashboard = "swift-overview",
   }
   ANNOTATIONS {
-    summary = "swift object server async pendings {{ $labels.instance }}",
+    summary = "swift object server async pendings",
     description = "Async Pendings indicate an overload scenario or faulty device(s)",
   }
 
