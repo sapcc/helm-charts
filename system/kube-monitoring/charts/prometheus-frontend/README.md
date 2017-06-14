@@ -74,6 +74,14 @@ Example: `playbook="{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_not_
 
 It can be any link. Preferrably it links to the OpsDocu: https://github.wdf.sap.corp/monsoon/convergedcloud-opsdocu-ui/tree/master/source/docs/support/playbook
 
+## Sentry
+
+If there is a Sentry project relevant for this alert, you can add its name in the `sentry` label.
+
+```sentry = "Blackbox"```
+
+The regional Sentry prefix will be added automatically to the URL.
+
 ## Routing
 
 The alerts will be routed into a hierachy of Slack channels:
