@@ -117,6 +117,21 @@ data:
       - source_labels: [__meta_kubernetes_service_name]
         target_label: kubernetes_pod_name
 
+    # openstack sd as described here https://prometheus.io/docs/operating/configuration/#openstack_sd_config
+    # one job per domain
+    {{- $root := . -}}
+    {{ if .Values.openstack.domain_ids }}
+      {{ range .Values.openstack.domain_ids }}
+      - job_name: nova-instances-{{ . }}
+        openstack_sd_configs:
+        - identity_endpoint: {{ $root.Values.openstack.identity_endpoint | quote }}
+          region: {{ $root.Values.global.region | quote }}
+          userid: {{ $root.Values.openstack.userid | quote }}
+          password : {{ $root.Values.openstack.password | quote }}
+          domain_id: {{ . | quote }}
+      {{ end }}
+    {{ end }}
+
     - job_name: 'prometheus-maia'
       static_configs:
         - targets: ['localhost:9090']
