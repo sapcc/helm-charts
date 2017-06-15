@@ -34,6 +34,9 @@ data:
           ca_file: /etc/prometheus/ca.cert
         bearer_token: {{ .Values.prometheus.token | quote }}
         role: pod
+        namespaces:
+          names:
+            maia
       relabel_configs:
       - action: keep
         source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
@@ -50,9 +53,6 @@ data:
         replacement: ${1}:${2}
       - action: labelmap
         regex: __meta_kubernetes_pod_label_(.+)
-      - action: keep
-        source_labels: [__meta_kubernetes_namespace]
-        regex: maia
       - source_labels: [__meta_kubernetes_pod_name]
         target_label: kubernetes_pod_name
 
@@ -67,6 +67,9 @@ data:
           ca_file: /etc/prometheus/ca.cert
         bearer_token: {{ .Values.prometheus.token | quote }}
         role: endpoints
+        namespaces:
+          names:
+            maia
       relabel_configs:
       - action: keep
         source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
@@ -84,9 +87,6 @@ data:
         target_label: __address__
         regex: ([^:]+)(?::\d+);(\d+)
         replacement: $1:$2
-      - action: keep
-        source_labels: [__meta_kubernetes_namespace]
-        regex: maia
       - source_labels: [__meta_kubernetes_namespace]
         target_label: kubernetes_namespace
       - source_labels: [__meta_kubernetes_service_name]
@@ -103,6 +103,9 @@ data:
           ca_file: /etc/prometheus/ca.cert
         bearer_token: {{ .Values.prometheus.token | quote }}
         role: service
+        namespaces:
+          names:
+            maia
       relabel_configs:
       - action: keep
         source_labels: [__meta_kubernetes_namespace]
