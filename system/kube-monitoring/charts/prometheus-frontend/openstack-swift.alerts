@@ -133,62 +133,17 @@ ALERT OpenstackSwiftRateLimit5000
     description = "Check kibana for the causing account and container",
   }
 
-ALERT OpenstackSwiftUsedSpace75
-  IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.75
-  FOR 3m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "usedcapacity",
-    dashboard = "swift-capacity-global?var-region={{ $labels.region }}",
-  }
-  ANNOTATIONS {
-    summary = "swift-used-space-75",
-    description = "Swift storage usage reached 75%",
-  }
-
-ALERT OpenstackSwiftUsedSpace70
-  IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.7
-  FOR 3m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "usedcapacity",
-    dashboard = "swift-capacity-global?var-region={{ $labels.region }}",
-  }
-  ANNOTATIONS {
-    summary = "swift-used-space-70",
-    description = "Swift storage usage reached 70%",
-  }
-
-ALERT OpenstackSwiftUsedSpace60
-  IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.6
-  FOR 3m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "info",
-    context = "usedcapacity",
-    dashboard = "swift-capacity-global?var-region={{ $labels.region }}",
-  }
-  ANNOTATIONS {
-    summary = "swift-used-space-60",
-    description = "Swift storage usage reached 60%",
-  }
-
 ALERT OpenstackSwiftUsedSpace50
-  IF max(swift_cluster_storage_used_percent_gauge{}) by (region) > 0.5
-  FOR 3m
+  IF max(predict_linear(swift_cluster_storage_used_percent_gauge[1w], 60*60*24*30)) by (region) > 0.8
+  FOR 1d
   LABELS {
     tier = "openstack",
     service = "swift",
-    severity = "info",
+    severity = "warning",
     context = "usedcapacity",
     dashboard = "swift-capacity-global?var-region={{ $labels.region }}",
   }
   ANNOTATIONS {
-    summary = "swift-used-space-50",
-    description = "Swift storage usage reached 50%",
+    summary = "Swift storage expected to be full soon",
+    description = "Swift storage usage will reach 80% in 30 days. Order hardware now!,
   }
