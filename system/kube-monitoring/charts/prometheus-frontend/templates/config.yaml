@@ -17,6 +17,12 @@ data:
 {{ include "kube-monitoring/charts/prometheus-frontend/templates/_kubernetes.alerts.tpl" . | indent 4 }}
 
   prometheus.yaml: |
+    global:
+      # The labels to add to any time series or alerts when communicating with
+      # external systems (federation, remote storage, Alertmanager).
+      external_labels:
+        region: {{ .Values.global.region }}
+
     rule_files:
       - ./*.rules
       - ./*.alerts
