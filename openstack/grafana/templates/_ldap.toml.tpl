@@ -14,11 +14,10 @@ ssl_skip_verify = true
 # root_ca_cert = "/path/to/certificate.crt"
 
 # Search user bind dn
-#bind_dn = "cn="{{ .Values.ldap.bind_dn }},{{ .Values.ldap.suffix }}""
-bind_dn = "cn=%s,{{ .Values.ldap.bind_dn }},{{ .Values.ldap.suffix }}"
+bind_dn = "{{ .Values.ldap.bind_dn }},{{ .Values.ldap.suffix }}"
 # Search user bind password
 # If the password contains # or ; you have to wrap it with trippel quotes. Ex """#password;"""
-#bind_password = '{{ .Values.ldap.password }}'
+bind_password = "{{ .Values.ldap.password }}"
 
 
 # User search filter, for example "(cn=%s)" or "(sAMAccountName=%s)" or "(uid=%s)"
@@ -27,7 +26,7 @@ search_filter = "{{ .Values.ldap.filter }}"
 # An array of base dns to search through
 search_base_dns =  ["OU=Identities,{{ .Values.ldap.suffix }}"]
 group_search_base_dns = ["{{ .Values.ldap.group_search_base_dns }},{{ .Values.ldap.suffix }}"]
-member_of = "{{ .Values.ldap.members }}"
+member_of = "{{ .Values.ldap.members }},{{ .Values.ldap.suffix }}"
 
 [servers.attributes]
 name = "givenName"

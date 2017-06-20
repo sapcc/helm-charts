@@ -3,12 +3,12 @@
 # set some env variables from the openstack env properly based on env
 function process_config {
 
-  cp /grafana-etc/grafana.ini /opt/grafana/grafana.ini
-  cp /grafana-etc/ldap.toml /opt/grafana/ldap.toml
+  cp /grafana-etc/grafana.ini /etc/grafana/grafana.ini
+  cp /grafana-etc/ldap.toml /etc/grafana/ldap.toml
   
-  cp -f /grafana-content/datasources-dashboards.sh /opt/grafana/datasources-dashboards.sh
   mkdir /dashboards
-  find /monasca-content/ -name "dashboards"|xargs -I {} find {} -name "*.json"|xargs -I {} echo cp \"{}\"  /dashboards/
+  cp -f /grafana-content/monasca-content/datasources-dashboards.sh /dashboards/datasources-dashboards.sh
+  find /grafana-content/monasca-content/ -name "dashboards"|xargs -I {} find {} -name "*.json"|xargs -I {} echo cp \"{}\"  /dashboards/
 
 }
 
@@ -44,10 +44,10 @@ function start_application {
     for i in `ls -tr /var/lib/grafana/backup/* | head -n -20`; do rm $i; done
   fi
 
-  cd /opt/grafana
   # strange log config to get no file logging according to https://github.com/grafana/grafana/issues/5018
   echo "Starting Grafana with lock /var/lib/grafana/.lock"
-  exec chpst -L /var/lib/grafana/container.lock ./grafana -config grafana.ini cfg:default.log.mode=console
+#  exec chpst -L /var/lib/grafana/container.lock ./grafana -config grafana.ini cfg:default.log.mode=console
+  exec /usr/sbin/grafana-server -config /etc/grafana/grafana.ini cfg:default.log.mode=console
 
 }
 

@@ -149,7 +149,7 @@ login_hint = UserID[@domain]
 
 #################################### Auth LDAP ##########################
 [auth.ldap]
-enabled = false
+enabled = true
 config_file = /grafana-etc/ldap.toml
 allow_sign_up = false
 
