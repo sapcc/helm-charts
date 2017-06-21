@@ -26,7 +26,7 @@ data:
     - job_name: 'maia/pods'
       tls_config:
         ca_file: /etc/prometheus/ca.cert
-      bearer_token: {{ .Values.prometheus.token | quote}}
+      bearer_token: {{ .Values.prometheus.token | quote }}
 
       kubernetes_sd_configs:
       - api_server: "https://apiserver.{{.Values.global.region}}.{{.Values.global.domain}}"
@@ -114,6 +114,7 @@ data:
       - source_labels: [__meta_kubernetes_service_name]
         target_label: kubernetes_pod_name
 
+    # self-scrape the embedded prometheus (even when K8S API is down)
     - job_name: 'prometheus-maia'
       static_configs:
-        - targets: ['localhost:9090']
+        - targets: ['localhost:{{ .Values.prometheus.listen_port }}']
