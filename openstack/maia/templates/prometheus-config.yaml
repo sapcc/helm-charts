@@ -120,14 +120,14 @@ data:
     # openstack sd as described here https://prometheus.io/docs/operating/configuration/#openstack_sd_config
     # one job per domain
     {{- $root := . -}}
-    {{ if .Values.openstack.domain_ids }}
-      {{ range .Values.openstack.domain_ids }}
+    {{ if .Values.prometheus.openstack_sd }}
+      {{ range .Values.prometheus.openstack_sd.domain_ids }}
       - job_name: nova-instances-{{ . }}
         openstack_sd_configs:
-        - identity_endpoint: {{ $root.Values.openstack.identity_endpoint | quote }}
+        - identity_endpoint: {{ $root.Values.prometheus.openstack_sd.identity_endpoint | quote }}
           region: {{ $root.Values.global.region | quote }}
-          userid: {{ $root.Values.openstack.userid | quote }}
-          password : {{ $root.Values.openstack.password | quote }}
+          userid: {{ $root.Values.prometheus.openstack_sd.userid | quote }}
+          password : {{ $root.Values.prometheus.openstack_sd.password | quote }}
           domain_id: {{ . | quote }}
       {{ end }}
     {{ end }}
