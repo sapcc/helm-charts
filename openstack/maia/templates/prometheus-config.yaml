@@ -34,6 +34,9 @@ data:
           ca_file: /etc/prometheus/ca.cert
         bearer_token: {{ .Values.prometheus.token | quote }}
         role: pod
+        namespaces:
+          names:
+            - maia
       relabel_configs:
       - action: keep
         source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
@@ -50,9 +53,6 @@ data:
         replacement: ${1}:${2}
       - action: labelmap
         regex: __meta_kubernetes_pod_label_(.+)
-      - action: keep
-        source_labels: [__meta_kubernetes_namespace]
-        regex: maia
       - source_labels: [__meta_kubernetes_pod_name]
         target_label: kubernetes_pod_name
 
@@ -67,6 +67,9 @@ data:
           ca_file: /etc/prometheus/ca.cert
         bearer_token: {{ .Values.prometheus.token | quote }}
         role: endpoints
+        namespaces:
+          names:
+            - maia
       relabel_configs:
       - action: keep
         source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
@@ -84,9 +87,6 @@ data:
         target_label: __address__
         regex: ([^:]+)(?::\d+);(\d+)
         replacement: $1:$2
-      - action: keep
-        source_labels: [__meta_kubernetes_namespace]
-        regex: maia
       - source_labels: [__meta_kubernetes_namespace]
         target_label: kubernetes_namespace
       - source_labels: [__meta_kubernetes_service_name]
@@ -103,6 +103,9 @@ data:
           ca_file: /etc/prometheus/ca.cert
         bearer_token: {{ .Values.prometheus.token | quote }}
         role: service
+        namespaces:
+          names:
+            - maia
       relabel_configs:
       - action: keep
         source_labels: [__meta_kubernetes_namespace]
@@ -113,6 +116,21 @@ data:
         target_label: kubernetes_namespace
       - source_labels: [__meta_kubernetes_service_name]
         target_label: kubernetes_pod_name
+
+    # openstack sd as described here https://prometheus.io/docs/operating/configuration/#openstack_sd_config
+    # one job per domain
+    {{- $root := . -}}
+    {{ if .Values.prometheus.openstack_sd }}
+      {{ range .Values.prometheus.openstack_sd.domain_ids }}
+      - job_name: nova-instances-{{ . }}
+        openstack_sd_configs:
+        - identity_endpoint: {{ $root.Values.prometheus.openstack_sd.identity_endpoint | quote }}
+          region: {{ $root.Values.global.region | quote }}
+          userid: {{ $root.Values.prometheus.openstack_sd.userid | quote }}
+          password : {{ $root.Values.prometheus.openstack_sd.password | quote }}
+          domain_id: {{ . | quote }}
+      {{ end }}
+    {{ end }}
 
     # self-scrape the embedded prometheus (even when K8S API is down)
     - job_name: 'prometheus-maia'
