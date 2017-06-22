@@ -190,6 +190,33 @@ ALERT OpenstackCanaryHealthCheckFlapping
     description = "{{ $labels.check }} test is flapping for 120 minutes."
   }
 
+### Openstack Blackbox Certificates Alerts
+  if blackbox_certificates_status_gauge == 1
+  FOR 10m
+  LABELS {
+    severity = "warning",
+    tier = "openstack",
+    context = "{{ $labels.check }}",
+    sentry = "Blackbox"
+  }
+  ANNOTATIONS {
+    summary = "Certificates",
+    description = "Certificate {{ $labels.check }} expires in the near future."
+  }
+
+  if blackbox_certificates_status_gauge == 1
+  FOR 15d
+  LABELS {
+    severity = "critical",
+    tier = "openstack",
+    context = "{{ $labels.check }}",
+    sentry = "Blackbox"
+  }
+  ANNOTATIONS {
+    summary = "Certificates",
+    description = "Certificate {{ $labels.check }} expires in the near future."
+  }
+
 ### Blackbox Metrics alerts
 
 ALERT BlackboxApiMetricsDown
