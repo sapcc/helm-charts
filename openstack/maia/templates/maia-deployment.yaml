@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: maia
+  namespace: maia
+  labels:
+    system: openstack
+    service: metrics
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: maia
+      annotations:
+        checksum/maia-templates-maia-configmap.yaml: {{ include "maia/templates/maia-configmap.yaml" . | sha256sum }}
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: maia-etc
+          configMap:
+            name: maia
+      containers:
+        - name: maia
+          image: "{{ .Values.global.image_registry }}/monsoon/maia:{{ .Values.maia.image_tag }}"
+          imagePullPolicy: IfNotPresent
+#          command: ["sh"]
+#          args:
+#            - -c
+#            - "ls /etc/maia; sleep 10000"
+          args: ["-config.file", "/etc/maia/maia.conf"]
+          env:
+          volumeMounts:
+            - mountPath: /etc/maia
+              name: maia-etc
+          ports:
+            - name: api
+              containerPort: {{ .Values.maia.listen_port }}

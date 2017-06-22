@@ -1,0 +1,92 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: maia-seed
+  labels:
+    component: maia
+spec:
+  requires:
+#    - keystone-seed
+#    - monsoon3/domain-cc3test-seed
+#    - monsoon3/domain-ccadmin-seed
+
+  roles:
+  - monitoring_viewer
+  - monitoring_admin
+
+# TODO expose as OpenStack service
+#  services:
+#  - name: maia
+#    type: maia
+#    description: OpenStack Multi-Tenant Access to Prometheus
+#    endpoints:
+#    - interface: admin
+#      region: '{{.Values.cluster_region}}'
+#      url: '{{.Values.maia_endpoint_protocol_admin}}://{{.Values.maia_endpoint_host_admin}}:{{.Values.maia_port_admin}}/api/v1'
+#    - interface: public
+#      region: '{{.Values.cluster_region}}'
+#      url: '{{.Values.maia_endpoint_protocol_public}}://{{.Values.maia_endpoint_host_public}}:{{.Values.maia_port_public}}/api/v1'
+#    - interface: internal
+#      region: '{{.Values.cluster_region}}'
+#      url: '{{.Values.maia_endpoint_protocol_internal}}://{{.Values.maia_endpoint_host_internal}}:{{.Values.maia_port_internal}}/api/v1'
+
+  domains:
+  - name: {{.Values.maia.service_user.user_domain_name}}
+    users:
+    - name: '{{.Values.maia.service_user.name}}'
+      description: 'Maia API User'
+      password: '{{ .Values.maia.service_user.password }}'
+      roles:
+      - project: {{.Values.maia.service_user.project_name}}
+        role: service
+
+  - name: ccadmin
+    projects:
+    - name: master
+      roles:
+      - group: CCADMIN_CLOUD_ADMINS
+        role: monitoring_admin
+      - group: CCADMIN_DOMAIN_ADMINS
+        role: monitoring_admin
+      - group: CCADMIN_MONITORING_USERS
+        role: monitoring_viewer
+
+  # TODO: reactivate once we have tests
+  # - name: cc3test
+  #   projects:
+  #   - name: monitoring_test
+  #     description: 'project for used for testing the monitoring service'
+  #   users:
+  #   - name: test_monasca_agent
+  #     description: user employed by the Monasca Agents installed during the tests
+  #     password: '{{.Values.cc3test_monasca_agent_password}}'
+  #     roles:
+  #     - project: monitoring_test
+  #       role: monasca-agent
+  #   - name: test_monasca_user
+  #     description: user for calling the Monasca API during the tests
+  #     password: '{{.Values.cc3test_monasca_user_password}}'
+  #     roles:
+  #     - project: monitoring_test
+  #       role: monasca-user
+  #   - name: test_monasca_viewer
+  #     description: user for calling the Monasca API during the readonly tests
+  #     password: '{{.Values.cc3test_monasca_viewer_password}}'
+  #     roles:
+  #     - project: monitoring_test
+  #       role: monasca-viewer
+  #   groups:
+  #   - name: Administrators
+  #     roles:
+  #     - project: admin
+  #       role: monasca-user
+  #     - project: admin
+  #       role: monasca-agent
+  #     - project: test
+  #       role: monasca-user
+  #     - project: test
+  #       role: monasca-agent
+  #     - project: monitoring_test
+  #       role: admin
+{{- end }}
