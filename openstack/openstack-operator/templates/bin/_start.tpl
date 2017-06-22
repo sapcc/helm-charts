@@ -57,4 +57,4 @@ export SENTRY_DSN={{ .Values.sentry.dsn | quote}}
 {{- end }}
 
 echo "Starting openstack-operator.."
-/openstack-operator --v 1
+/openstack-operator --v {{ default 1 .Values.logLevel }}
