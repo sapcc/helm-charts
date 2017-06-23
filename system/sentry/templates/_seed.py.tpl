@@ -55,6 +55,8 @@ def ensure_user(email, password):
                 )
             click.echo('Added to organization: %s' % (org.slug,))
             org.default_role='manager'
+            org.name=os.getenv('ORGANIZATION_NAME', 'Sentry')
+            org.slug=os.getenv('ORGANIZATION_SLUG', 'sentry')
             org.save()
             click.echo('Changed default role to manager')
         return user

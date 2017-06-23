@@ -1,8 +1,12 @@
+{{- if and .Values.adminPassword .Values.adminToken .Values.adminEmail }}
+  The admin user {{.Values.adminEmail}} has been seeded with the given password.
+{{- else}}
 1. To create an initial superuser run this:
   Bash at al:
   kubectl exec -it $(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "fullname" . }}" -o jsonpath="{.items[0].metadata.name}") sentry createuser
   Fish Shell:
   kubectl exec -it (kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "fullname" . }}" -o jsonpath="{.items[0].metadata.name}") sentry createuser
+{{- end}}
 
 2. Get the application URL by running these commands:
 {{- if contains "NodePort" .Values.service.type }}
