@@ -29,6 +29,10 @@
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.swift.tempURLKey } }
 {{- if .Values.sentryDSN }}
 - name: SENTRY_DSN
+{{- if eq .Values.sentryDSN "auto" }}
+  valueFrom: { secretKeyRef:    { name: sentry, key: lyra.DSN } }
+{{- else }}
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: sentryDsn } }
+{{- end }}
 {{- end }}
 {{- end -}}
