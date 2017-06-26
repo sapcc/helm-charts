@@ -1,0 +1,35 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: session-pruning
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: session-pruning
+    spec:
+      containers:
+        - name: pruning
+{{- if typeIs "float64" .Values.image.tag  }}{{/* You can't make this shit up. Remove as soon as possible */}}
+          image: {{.Values.image.repository}}:{{.Values.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.image.repository}}:{{.Values.image.tag}}
+{{- end }}
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          args:
+            - sh
+            - -ec
+            - |
+              while true; do
+                if [ $(date '+%H%M') = '{{ .Values.session_cleanup_time }}' ]; then
+                  bin/rake sessions:cleanup
+                  echo "bin/rake sessions:cleanup exited"
+                fi
+                sleep 55
+              done
+          env:
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
