@@ -74,10 +74,14 @@ spec:
               valueFrom: { secretKeyRef:    { name: elektra, key: monsoon.openstack.auth.api.password } }
             - name: MONSOON_RAILS_SECRET_TOKEN
               valueFrom: { secretKeyRef:    { name: elektra, key: monsoon.rails.secret.token } }
-{{- if .Values.sentry_dsn }}
+            {{- if .Values.sentryDSN }}
             - name: SENTRY_DSN
-              valueFrom: { secretKeyRef:    { name: elektra, key: sentry.dsn } }
-{{- end }}
+            {{- if eq .Values.sentryDSN "auto" }}
+              valueFrom: { secretKeyRef:    { name: sentry, key: elektra.DSN } }
+            {{- else }}
+              valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: sentryDSN } }
+            {{- end }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /system/liveliness
