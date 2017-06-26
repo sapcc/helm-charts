@@ -1,0 +1,28 @@
+apiVersion: batch/v2alpha1
+kind: ScheduledJob
+
+metadata:
+  name: elektra-session-pruning
+
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: session-cleanup
+  {{- if typeIs "float64" .Values.image.tag  }}{{/* You can't make this shit up. Remove as soon as possible */}}
+              image: {{.Values.image.repository}}:{{.Values.image.tag | printf "%0.f" }}
+  {{- else }}
+              image: {{.Values.image.repository}}:{{.Values.image.tag}}
+  {{- end }}
+              args:
+                - bin/rake
+                - sessions:cleanup
+              env:
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 16 }}
+  schedule: 15 4 * * *
+  concurrencyPolicy: Replace
+  #  successfulJobsHistoryLimit: 1
+  #  failedJobsHistoryLimit: 1
