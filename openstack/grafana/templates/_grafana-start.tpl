@@ -45,8 +45,7 @@ function start_application {
   fi
 
   # strange log config to get no file logging according to https://github.com/grafana/grafana/issues/5018
-  echo "Starting Grafana with lock /var/lib/grafana/.lock"
-#  exec chpst -L /var/lib/grafana/container.lock ./grafana -config grafana.ini cfg:default.log.mode=console
+  cd /usr/share/grafana
   exec /usr/sbin/grafana-server -config /etc/grafana/grafana.ini cfg:default.log.mode=console
 
 }
