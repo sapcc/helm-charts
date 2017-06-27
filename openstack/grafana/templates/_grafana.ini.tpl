@@ -64,17 +64,19 @@ data = /var/lib/grafana
 
 #################################### Database ####################################
 [database]
-type={{.Values.grafana.db.type}}
-host=postgres.{{.Release.Namespace}}
-user={{.Values.postgres.user}}
-password={{.Values.postgres.password}}
-ssl_mode=disable
-
+#type={{.Values.grafana.db.type}}
+#host=postgres.{{.Release.Namespace}}
+#user={{.Values.postgres.user}}
+#password={{.Values.postgres.password}}
+#ssl_mode=disable
+type=sqlite3
+path=/etc/grafana/grafana.db
 
 #################################### Session ####################################
 [session]
 # Either "memory", "file", "redis", "mysql", "postgres", default is "file"
-provider = postgres
+#provider = postgres
+provider = file
 
 # Provider config options
 # memory: not have any config yet
@@ -82,7 +84,8 @@ provider = postgres
 # redis: config like redis server e.g. `addr=127.0.0.1:6379,pool_size=100,db=grafana`
 # mysql: go-sql-driver/mysql dsn config string, e.g. `user:password@tcp(127.0.0.1:3306)/database_name`
 postgres: user={{.Values.postgres.user}} password={{.Values.postgres.password}} host=postgres.{{.Release.Namespace}} port=5432 dbname=grafana sslmode=disable
-;provider_config = sessions
+#;provider_config = sessions
+provider_config = .
 
 # Session cookie name
 ;cookie_name = grafana_sess
@@ -147,11 +150,14 @@ verify_email_enabled = false
 # Background text for the user field on the login page
 login_hint = UserID[@domain]
 
+[auth.basic]
+enabled = true
+
 #################################### Auth LDAP ##########################
 [auth.ldap]
 enabled = true
 config_file = /grafana-etc/ldap.toml
-allow_sign_up = false
+allow_sign_up = true
 
 
 #################################### Logging ##########################
@@ -166,13 +172,15 @@ level = {{.Values.grafana.log_level}}
 format = json
 
 ;#################################### Dashboard JSON files ##########################
-[dashboards.json]
-enabled = true
-path = /dashboards/
+#[dashboards.json]
+#enabled = true
+#path = /dashboards/
 
 #################################### Alerting ############################
 [alerting]
 # Disable alerting engine & UI features
 ;enabled = true
+enabled = false
 # Makes it possible to turn off alert rule execution but alerting UI is visible
 ;execute_alerts = true
+execute_alerts = false

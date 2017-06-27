@@ -5,14 +5,11 @@ function process_config {
 
   cp /grafana-etc/grafana.ini /etc/grafana/grafana.ini
   cp /grafana-etc/ldap.toml /etc/grafana/ldap.toml
-  
-  mkdir /dashboards
-  cp -f /grafana-content/monasca-content/datasources-dashboards.sh /dashboards/datasources-dashboards.sh
-  find /grafana-content/monasca-content/ -name "dashboards"|xargs -I {} find {} -name "*.json"|xargs -I {} echo cp \"{}\"  /dashboards/
 
 }
 
 function start_application {
+
   # Set cluster region
   export CLUSTER_REGION={{.Values.global.region}}
   # Set Grafana admin/local username & password
@@ -32,9 +29,9 @@ function start_application {
   export ELASTICSEARCH_VERSION={{.Values.elasticsearch.version}}
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until grafana is up and write to stdout and logfile in parallel
-#  if [ -x /opt/grafana/datasources-dashboards.sh ]; then
-#    (while netstat -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; /opt/grafana/datasources-dashboards.sh ) 2>&1 | tee /opt/grafana/datasources-dashboards.log &
-##  fi
+  if [ -f /grafana-content/monasca-content/scripts/datasources-dashboards.sh ]; then
+    (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-content/monasca-content/scripts/datasources-dashboards.sh ) 2>&1 | tee /var/log/datasources-dashboards.log &
+  fi
 
   if [ -f /var/lib/grafana/grafana.db ]; then
     echo "creating a backup of the grafana db at /var/lib/grafana/backup/grafana.db.`date +%Y%m%d%H%M%S`"

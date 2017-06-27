@@ -17,7 +17,7 @@ spec:
         checksum/grafana.etc: {{ include "grafana/templates/grafana-etc-configmap.yaml" . | sha256sum }}
         checksum/grafana.bin: {{ include "grafana/templates/grafana-bin-configmap.yaml" . | sha256sum }}
         checksum/grafana.ini: {{ include "grafana/templates/_grafana.ini.tpl" . | sha256sum }}
-        checksum/grafana.ini: {{ include "grafana/templates/_ldap.toml.tpl" . | sha256sum }}
+        checksum/ldap.toml: {{ include "grafana/templates/_ldap.toml.tpl" . | sha256sum }}
         checksum/grafana-start: {{ include "grafana/templates/_grafana-start.tpl" . | sha256sum }}
         pod.alpha.kubernetes.io/initialized: "true"
     spec:
@@ -41,19 +41,21 @@ spec:
           image: "grafana/grafana:latest"
           imagePullPolicy: {{.Values.image.pullPolicy}}
           command:
-            - /openstack-kube/openstack-kube/scripts/_container_init
+            - /bin/bash
           args:
-            - grafana-start
+            - /grafana-bin/grafana-start
           ports:
             - name: nodejs
               containerPort: 3000
           volumeMounts:
+{{- if .Values.persistence.enabled }}
             - name: datadir
               mountPath: /var/lib/grafana
               readOnly: false
+{{- end }}
             - mountPath: /grafana-content
               name: grafana-content
-            - mountPath: /container.init
+            - mountPath: /grafana-bin
               name: grafana-bin
             - mountPath: /grafana-etc
               name: grafana-etc
