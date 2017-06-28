@@ -2,20 +2,13 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 replicaCount: 1
-cluster:
-  configuration:
-    repository: https://github.wdf.sap.corp/monsoon/openstack-kube.git
-    revision: master
-  content:
-    repository: https://github.wdf.sap.corp/monsoon/monasca-content
-    revision: master
 image:
   repository: "@/cc/secrets"
   pullPolicy: IfNotPresent
   version: "@/cc/secrets"
 namespace: '@/cc/secrets'
 service:
-  name: monasca-grafana
+  name: grafana
   type: ClusterIP
 #  externalPort: 3000
   internalPort: 3000
@@ -27,6 +20,8 @@ service:
 #    cpu: 100m
 #    memory: 128Mi
 postgres:
+  image: postgres
+  image_version: 9.5
   persistence:
     enabled: true
   user: postgres
@@ -50,13 +45,6 @@ ingress:
   enabled: false
 service:
   externalPort: 3000
-keystone:
-  api:
-    endpoint:
-      internal:
-        protocol: '@/cc/secrets'
-        host: '@/cc/secrets'
-        port: '@/cc/secrets'
 
 elasticsearch:
   # version may be overridden to 5 in some landscapes
@@ -70,6 +58,8 @@ admin:
     domain:
       name: '@/cc/secrets'
 grafana:
+  image: grafana/grafana
+  image_version: 4.3.2
   seeding_enabled: true
   log_level: 'Info'
   admin:
@@ -80,7 +70,7 @@ grafana:
     password: '@/cc/secrets'
   db:
     type: 'postgres'
-    host: 'postgres.monasca'
+    host: 'postgres.grafana'
     ssl_mode: disable
   role:
     viewer: 'monitoring_viewer'
