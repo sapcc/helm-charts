@@ -30,13 +30,13 @@ readonlyrest:
     - name: data
       type: allow
       actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
-      indices: ["logstash-*",]
+      indices: ["logstash-*"]
       auth_key: {{.Values.elk_elasticsearch_data_user}}:{{.Values.elk_elasticsearch_data_password}}
 
     - name: Monsoon (read only, but can create dashboards)
       type: allow
       kibana_access: ro
-      indices: [".kibana", ".kibana-devnull", "logstash-*"]
+      indices: [".kibana", ".kibana-devnull", "logstash-*", "{{.Values.elk_elasticsearch_master_project_id}}-*"]
 
     - name: Admin
       type: allow

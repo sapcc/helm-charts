@@ -71,8 +71,6 @@ spec:
               value: {{ .Values.global.jump.url | quote }}
             - name: JUMP_USER
               value: {{ .Values.global.jump.user | quote }}
-            - name: SENTRY_DSN
-              value: {{ .Values.global.sentry.dsn | quote }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
@@ -110,7 +108,15 @@ spec:
             - name: SLEEP_ITERATE
               value: {{ .Values.sleep.iterate | quote }}
             - name: OS_PASSWORD
-              valueFrom: { secretKeyRef:    { name: blackbox-tests-canary, key: os.password } }
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-canary
+                  key: os.password
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: blackbox.DSN
           livenessProbe:
             exec:
               command:
@@ -139,7 +145,7 @@ spec:
             - "python helper/purge_resources.py"
             - "-n c_blackbox"
             - "-r 300"
-            - "server volume floatip"
+            - "server volume floatip recordset"
           volumeMounts:
             - name: blackbox-tests-canary
               mountPath: /opt/logs
@@ -168,7 +174,10 @@ spec:
             - name: SLEEP_PURGE
               value: {{ .Values.sleep.purge | quote }}
             - name: OS_PASSWORD
-              valueFrom: { secretKeyRef:    { name: blackbox-tests-canary, key: os.password } }
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-canary
+                  key: os.password
           livenessProbe:
             exec:
               command:
