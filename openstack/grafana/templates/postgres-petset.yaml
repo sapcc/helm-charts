@@ -17,18 +17,27 @@ spec:
         name: grafana-postgres
         component: grafana-postgres
       annotations:
+        checksum/create-session-table.sql: {{ include "grafana/templates/_create-session-table.sql.tpl" . | sha256sum }}
+        checksum/postgres-start: {{ include "grafana/templates/_postgres-start.tpl" . | sha256sum }}
+        checksum/helpers: {{ include "grafana/templates/_helpers.tpl" . | sha256sum }}
         pod.alpha.kubernetes.io/initialized: "true"
     spec:
       nodeSelector:
         zone: farm
-{{- if not .Values.persistence.enabled }}
       volumes:
+{{- if not .Values.persistence.enabled }}
         - name: storage
           emptyDir: {}
 {{- end }}
+        - name: grafana-bin
+          configMap:
+            name: grafana-bin
+        - name: grafana-etc
+          configMap:
+            name: grafana-etc
       containers:
         - name: postgres
-          image: hub.global.cloud.sap/monsoon/postgres:9.5
+          image: {{.Values.postgres.image}}:{{.Values.postgres.image_version}}
           env:
             - name: PGDATA
               value: /postgresql/data
@@ -36,12 +45,20 @@ spec:
               value: grafana
             - name: POSTGRES_PASSWORD
               value: {{.Values.postgres.password}}
+          command:
+            - /bin/bash
+          args:
+            - /grafana-bin/postgres-start
           ports:
             - name: postgres
               containerPort: 5432
           volumeMounts:
             - name: storage
               mountPath: /postgresql
+            - name: grafana-bin
+              mountPath: /grafana-bin
+            - name: grafana-etc
+              mountPath: /grafana-etc
 {{- if .Values.postgres.backup.enabled }}
         - image: {{.Values.postgres.backup.repository}}:{{.Values.postgres.backup.image_version}}
           name: backup

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# set some env variables from the openstack env properly based on env
 function process_config {
 
   cp /grafana-etc/grafana.ini /etc/grafana/grafana.ini
@@ -27,20 +26,14 @@ function start_application {
   export ELASTICSEARCH_PASSWORD={{.Values.elasticsearch.admin.password}}
   export ELASTICSEARCH_MASTER_PROJECT_ID={{.Values.elasticsearch.master_project_id}}
   export ELASTICSEARCH_VERSION={{.Values.elasticsearch.version}}
+  # install some plugins
+  grafana-cli plugins install vonage-status-panel
+  grafana-cli plugins install mtanda-histogram-panel
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until grafana is up and write to stdout and logfile in parallel
   if [ -f /grafana-content/monasca-content/scripts/datasources-dashboards.sh ]; then
     (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-content/monasca-content/scripts/datasources-dashboards.sh ) 2>&1 | tee /var/log/datasources-dashboards.log &
   fi
-
-  if [ -f /var/lib/grafana/grafana.db ]; then
-    echo "creating a backup of the grafana db at /var/lib/grafana/backup/grafana.db.`date +%Y%m%d%H%M%S`"
-    mkdir -p /var/lib/grafana/backup
-    cp /var/lib/grafana/grafana.db /var/lib/grafana/backup/grafana.db.`date +%Y%m%d%H%M%S`
-    # keep only the last 20 backups to avoid the disk running over
-    for i in `ls -tr /var/lib/grafana/backup/* | head -n -20`; do rm $i; done
-  fi
-
   # strange log config to get no file logging according to https://github.com/grafana/grafana/issues/5018
   cd /usr/share/grafana
   exec /usr/sbin/grafana-server -config /etc/grafana/grafana.ini cfg:default.log.mode=console

@@ -21,7 +21,7 @@ data = /var/lib/grafana
 #
 # Directory where grafana will automatically scan and look for plugins
 #
-;plugins = /var/lib/grafana/plugins
+plugins = /var/lib/grafana/plugins
 
 #
 #################################### Server ####################################
@@ -64,28 +64,28 @@ data = /var/lib/grafana
 
 #################################### Database ####################################
 [database]
-#type={{.Values.grafana.db.type}}
-#host=postgres.{{.Release.Namespace}}
-#user={{.Values.postgres.user}}
-#password={{.Values.postgres.password}}
-#ssl_mode=disable
-type=sqlite3
-path=/etc/grafana/grafana.db
+type={{.Values.grafana.db.type}}
+host=postgres.{{.Release.Namespace}}
+user={{.Values.postgres.user}}
+password={{.Values.postgres.password}}
+ssl_mode=disable
+#type=sqlite3
+#path=/etc/grafana/grafana.db
 
 #################################### Session ####################################
 [session]
 # Either "memory", "file", "redis", "mysql", "postgres", default is "file"
-#provider = postgres
-provider = file
+provider = postgres
+#provider = file
 
 # Provider config options
 # memory: not have any config yet
 # file: session dir path, is relative to grafana data_path
 # redis: config like redis server e.g. `addr=127.0.0.1:6379,pool_size=100,db=grafana`
 # mysql: go-sql-driver/mysql dsn config string, e.g. `user:password@tcp(127.0.0.1:3306)/database_name`
-postgres: user={{.Values.postgres.user}} password={{.Values.postgres.password}} host=postgres.{{.Release.Namespace}} port=5432 dbname=grafana sslmode=disable
 #;provider_config = sessions
-provider_config = .
+provider_config = user={{.Values.postgres.user}} password={{.Values.postgres.password}} host=postgres.{{.Release.Namespace}} port=5432 dbname=grafana sslmode=disable
+#provider_config = .
 
 # Session cookie name
 ;cookie_name = grafana_sess
@@ -100,7 +100,7 @@ session_life_time = 604800
 #################################### Security ####################################
 [security]
 # default admin user, created on startup
-admin_user = admin
+admin_user = {{.Values.admin.user}}
 
 # default admin password, can be changed before first start of grafana,  or in profile settings
 admin_password = {{.Values.admin.password}}

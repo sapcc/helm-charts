@@ -19,6 +19,7 @@ spec:
         checksum/grafana.ini: {{ include "grafana/templates/_grafana.ini.tpl" . | sha256sum }}
         checksum/ldap.toml: {{ include "grafana/templates/_ldap.toml.tpl" . | sha256sum }}
         checksum/grafana-start: {{ include "grafana/templates/_grafana-start.tpl" . | sha256sum }}
+        checksum/helpers: {{ include "grafana/templates/_helpers.tpl" . | sha256sum }}
         pod.alpha.kubernetes.io/initialized: "true"
     spec:
       nodeSelector:
@@ -34,11 +35,9 @@ spec:
         - name: grafana-etc
           configMap:
             name: grafana-etc
-        - name: datadir
-          emptyDir: {}
       containers:
         - name: "grafana"
-          image: "grafana/grafana:latest"
+          image: {{.Values.grafana.image}}:{{.Values.grafana.image_version}}
           imagePullPolicy: {{.Values.image.pullPolicy}}
           command:
             - /bin/bash
@@ -48,27 +47,9 @@ spec:
             - name: nodejs
               containerPort: 3000
           volumeMounts:
-{{- if .Values.persistence.enabled }}
-            - name: datadir
-              mountPath: /var/lib/grafana
-              readOnly: false
-{{- end }}
-            - mountPath: /grafana-content
-              name: grafana-content
-            - mountPath: /grafana-bin
-              name: grafana-bin
-            - mountPath: /grafana-etc
-              name: grafana-etc
-
-{{- if .Values.persistence.enabled }}
-  volumeClaimTemplates:
-  - metadata:
-      name: datadir
-      annotations:
-        volume.alpha.kubernetes.io/storage-class: anything
-    spec:
-      accessModes: [ "ReadWriteMany" ]
-      resources:
-        requests:
-          storage: 1Gi
-{{- end }}
+            - name: grafana-content
+              mountPath: /grafana-content
+            - name: grafana-bin
+              mountPath: /grafana-bin
+            - name: grafana-etc
+              mountPath: /grafana-etc
