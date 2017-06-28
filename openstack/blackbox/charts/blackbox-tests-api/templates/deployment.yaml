@@ -71,8 +71,8 @@ spec:
               value: {{ .Values.limes_url | quote }}
             - name: API_ELEKTRA_URL
               value: {{ .Values.elektra_url | quote }}
-            - name: SENTRY_DSN
-              value: {{ .Values.global.sentry.dsn | quote }}
+#            - name: SENTRY_DSN
+#              value: {{ .Values.global.sentry.dsn | quote }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
@@ -86,6 +86,12 @@ spec:
                 secretKeyRef:
                   name: blackbox-tests-api
                   key: os.password
+            - name: SENTRY_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: sentry
+                    key: blackbox.DSN
+
           livenessProbe:
             exec:
               command:
