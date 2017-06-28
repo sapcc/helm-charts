@@ -1,0 +1,31 @@
+{{ if .Values.operator.enabled -}}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: {{ template "fullname" . }}-operator
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}-operator
+    spec:
+      containers:
+        - name: operator
+          image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}" 
+          imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          env:
+            - name: SENTRY_ENDPOINT
+              value: {{ .Values.operator.sentryEndpoint }}
+            - name: SENTRY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "fullname" . }} 
+                  key: admin-api-token
+            - name: SENTRY_ORGANIZATION
+              value: {{ .Values.organizationSlug }}
+{{- end }}

@@ -13,8 +13,14 @@ data:
     chroot: /coreos
 
     drives:
+    {{- if .Values.drives }}
+      {{- range $drives := .Values.drives }}
+      - {{ $drives }}
+      {{- end -}}
+    {{ else }}
       - /dev/sd[a-z]
       - /dev/sd[a-z][a-z]
+    {{ end }}
 
     # the Swift user and group is UID/GID 1000 in the Kolla containers
     chown:

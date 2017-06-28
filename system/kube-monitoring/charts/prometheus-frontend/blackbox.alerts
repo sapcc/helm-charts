@@ -190,3 +190,84 @@ ALERT OpenstackCanaryHealthCheckFlapping
     description = "{{ $labels.check }} test is flapping for 120 minutes."
   }
 
+### Openstack Blackbox Certificates Alerts
+ALERT OpenstackCertificateExpires
+  IF blackbox_certificates_status_gauge == 1
+  FOR 10m
+  LABELS {
+    severity = "warning",
+    tier = "openstack",
+    context = "{{ $labels.check }}",
+    sentry = "Blackbox"
+  }
+  ANNOTATIONS {
+    summary = "Certificates",
+    description = "Certificate {{ $labels.check }} expires in the near future."
+  }
+ALERT OpenstackCertificateExpiresSoon
+  IF blackbox_certificates_status_gauge == 1
+  FOR 15d
+  LABELS {
+    severity = "critical",
+    tier = "openstack",
+    context = "{{ $labels.check }}",
+    sentry = "Blackbox"
+  }
+  ANNOTATIONS {
+    summary = "Certificates",
+    description = "Certificate {{ $labels.check }} expires in the near future."
+  }
+
+### Blackbox Metrics alerts
+
+ALERT BlackboxApiMetricsDown
+  IF absent(up{kubernetes_namespace="blackbox",kubernetes_name="blackbox-tests-api"}) == 1
+  FOR 15m
+  LABELS {
+    severity = "critical",
+    tier = "openstack",
+    service = "blackbox-tests-api"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox api metrics",
+    description = "Api metrics are down for 15 times in a row."
+  }
+
+ALERT BlackboxDatapathMetricsDown
+  IF absent(up{kubernetes_namespace="blackbox",kubernetes_name="blackbox-tests-datapath"}) == 1
+  FOR 15m
+  LABELS {
+    severity = "critical",
+    tier = "openstack",
+    service = "blackbox-tests-datapath"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox datapath metrics",
+    description = "Datapath metrics are down for 15 times in a row."
+  }
+
+ALERT BlackboxCanaryMetricsDown
+  IF absent(up{kubernetes_namespace="blackbox",kubernetes_name="blackbox-tests-canary"}) == 1
+  FOR 30m
+  LABELS {
+    severity = "critical",
+    tier = "openstack",
+    service = "blackbox-tests-canary"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox canary metrics",
+    description = "Canary metrics are down for 15 times in a row."
+  }
+
+ALERT BlackboxCertificatesMetricsDown
+  IF absent(up{kubernetes_namespace="blackbox",kubernetes_name="blackbox-tests-certificates"}) == 1
+  FOR 15m
+  LABELS {
+    severity = "critical",
+    tier = "openstack",
+    service = "blackbox-tests-certificates"
+  }
+  ANNOTATIONS {
+    summary = "Blackbox certificates metrics",
+    description = "Certificates metrics are down for 15 times in a row."
+  }

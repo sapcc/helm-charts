@@ -1,6 +1,6 @@
 ALERT OpenstackSwiftFirstByteTiming
   IF max(swift_proxy_firstbyte_timer{status="200",quantile="0.5"}) by (region, os_cluster, type, instance) > 1000.0
-  FOR 3m
+  FOR 15m
   LABELS {
     tier = "openstack",
     service = "swift",
@@ -30,7 +30,7 @@ ALERT OpenstackSwiftHealthCheck
 
 ALERT OpenstackSwiftMismatchedRings
   IF swift_cluster_md5_ring_not_matched_gauge > 0
-  FOR 3m
+  FOR 15m
   LABELS {
     tier = "openstack",
     service = "swift",
@@ -74,7 +74,7 @@ ALERT OpenstackSwiftDiskFailures
   }
 
 ALERT OpenstackSwiftAsyncPendings50
-  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 50
+  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region) > 500
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -84,12 +84,12 @@ ALERT OpenstackSwiftAsyncPendings50
     dashboard = "swift-overview",
   }
   ANNOTATIONS {
-    summary = "swift object server async pendings {{ $labels.instance }}",
+    summary = "swift object server async pendings",
     description = "Async Pendings indicate an overload scenario or faulty device(s)",
   }
 
 ALERT OpenstackSwiftAsyncPendings500
-  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region, instance) > 500
+  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region) > 2000
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -99,7 +99,7 @@ ALERT OpenstackSwiftAsyncPendings500
     dashboard = "swift-overview",
   }
   ANNOTATIONS {
-    summary = "swift object server async pendings {{ $labels.instance }}",
+    summary = "swift object server async pendings",
     description = "Async Pendings indicate an overload scenario or faulty device(s)",
   }
 
