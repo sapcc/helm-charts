@@ -36,7 +36,8 @@ readonlyrest:
     - name: Monsoon (read only, but can create dashboards)
       type: allow
       kibana_access: ro
-      indices: [".kibana", ".kibana-devnull", "logstash-*", "{{.Values.elk_elasticsearch_master_project_id}}-*"]
+      auth_key: {{.Values.elk_elasticsearch_monsoon_user}}:{{.Values.elk_elasticsearch_monsoon_password}}
+      indices: [".kibana", ".kibana-devnull", "{{.Values.elk_elasticsearch_master_project_id}}-*"]
 
     - name: Admin
       type: allow
