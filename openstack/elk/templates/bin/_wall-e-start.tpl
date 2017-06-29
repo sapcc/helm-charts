@@ -17,9 +17,9 @@ function start_application {
   export STDERR_LOC=${STDERR_LOC:-/proc/1/fd/2}
   unset http_proxy https_proxy all_proxy no_proxy
   export ELK_ELASTICSEARCH_MASTER_PROJECT_ID={{.Values.elk_elasticsearch_master_project_id}}
-  cp -f /monasca-content/monasca-content/kibana/search.json /search.json
-  cp -f /monasca-content/monasca-content/kibana/vizualization.json /vizualization.json
-  cp -f /monasca-content/monasca-content/kibana/dashboard.json /dashboard.json
+  cp -f /grafana-content/kibana/search.json /search.json
+  cp -f /grafana-content/kibana/vizualization.json /vizualization.json
+  cp -f /grafana-content/kibana/dashboard.json /dashboard.json
   sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /search.json
   sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /vizualization.json
   sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /dashboard.json
@@ -27,7 +27,7 @@ function start_application {
 
   curl -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_cluster/settings" -d '{"transient": { "discovery.zen.minimum_master_nodes": 2 }}'
 
-  curl -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/{{.Values.elk_elasticsearch_master_project_id}}" -d "@/monasca-content/monasca-content/elasticsearch/{{.Values.monasca_elasticsearch_master_project_id}}.json"
+  curl -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/{{.Values.elk_elasticsearch_master_project_id}}" -d "@/grafana-content/elasticsearch/{{.Values.elk_elasticsearch_master_project_id}}.json"
 
   /node_modules/elasticdump/bin/elasticdump \
       --input=/search.json \
