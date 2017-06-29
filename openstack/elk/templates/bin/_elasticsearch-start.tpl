@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function process_config {
-  cp -f /es-etc/elasticsearch.yaml /elasticsearch/config/elasticsearch.yaml
+  cp -f /es-etc/elasticsearch.yaml /elasticsearch/config/elasticsearch.yml
   cp -f /es-etc/log4j2.properties /elasticsearch/config/log4j2.properties
   cp -f /es-etc/jvm.options /elasticsearch/config/jvm.options
 }
