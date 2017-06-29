@@ -2,9 +2,6 @@
 
 set -e
 
-# set some env variables from the openstack env properly based on env
-. /kibana-bin/common-start
-
 function process_config {
 
   unset http_proxy https_proxy all_proxy no_proxy
