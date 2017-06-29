@@ -10,6 +10,7 @@ function process_config {
 function start_application {
 
   #/usr/local/bin/fluentd --use-v1-config --suppress-repeated-stacktrace 
+  export no_proxy=$no_proxy,100.
   exec /usr/local/bin/fluentd --use-v1-config
 
 }

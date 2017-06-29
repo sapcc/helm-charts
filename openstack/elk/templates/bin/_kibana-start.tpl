@@ -24,6 +24,7 @@ function start_application {
 
 
   echo "Starting Kibana"
+  export no_proxy=$no_proxy,100.
   exec /opt/kibana/bin/kibana
 
 }
