@@ -13,6 +13,11 @@ path:
   data: /data/data
   logs: /data/log
 
+es:
+  logs:
+    base_path: /data/log
+    clustername: {.Values.elk_elasticsearch_cluster_name}}
+
 network.host: 0.0.0.0
 transport.host: 0.0.0.0
 http.enabled: ${HTTP_ENABLE}

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-. /fluent-bin/common-start
-
 function process_config {
   unset http_proxy https_proxy all_proxy no_proxy
   cp /fluent-etc/fluent.conf /etc/fluent/fluent.conf

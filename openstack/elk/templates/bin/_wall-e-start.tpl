@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# set some env variables from the openstack env properly based on env
-. /wall-e-bin/common-start
-
 function process_config {
 
   echo "nothing to be done for process_config"
