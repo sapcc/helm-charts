@@ -16,7 +16,7 @@ path:
 es:
   logs:
     base_path: /data/log
-    clustername: {.Values.elk_elasticsearch_cluster_name}}
+    clustername: {{.Values.elk_elasticsearch_cluster_name}}
 
 network.host: 0.0.0.0
 transport.host: 0.0.0.0
