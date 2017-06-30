@@ -13,6 +13,21 @@ ALERT OpenstackSwiftFirstByteTiming
     description = "This alert indicates the latency in token validation.",
   }
 
+ALERT OpenstackSwiftServiceUnavailable
+  IF sum(irate(swift_proxy_timer_sum{policy="all",status="503"}[5m])) by (os_cluster) > 0
+  FOR 5m
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "critical",
+    context = "serviceunavailable",
+    dashboard = "swift-proxy?var-cluster={{ $labels.os_cluster }}",
+  }
+  ANNOTATIONS {
+    summary = "swift-service-unavailable",
+    description = "Swift is responding with 503. Usually the root cause is a broken token validation",
+  }
+
 ALERT OpenstackSwiftHealthCheck
   IF avg(swift_health_statsd_exit_code_gauge{}) by (region) > 0.2
   FOR 5m
