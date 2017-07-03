@@ -1,7 +1,7 @@
 client:
   hosts:
-    - {{.Values.monasca_elasticsearch_endpoint_host_internal}}
-  port: {{.Values.monasca_elasticsearch_port_internal}}
+    - {{.Values.elk_elasticsearch_endpoint_host_internal}}
+  port: {{.Values.elk_elasticsearch_port_internal}}
   url_prefix:
   use_ssl: False
   certificate:
@@ -11,7 +11,7 @@ client:
   aws_secret_key:
   aws_region:
   ssl_no_validate: False
-  http_auth: {{.Values.monasca_elasticsearch_admin_user}}:{{.Values.monasca_elasticsearch_admin_password}}
+  http_auth: {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}
   timeout: 60
   master_only: False
 
