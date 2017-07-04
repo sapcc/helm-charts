@@ -26,9 +26,9 @@ spec:
         zone: farm
       containers:
         - name: elasticsearch-exporter
-          image: {{$.Values.docker_repo}}/elasticsearch-exporter:{{ $.Values.elk_image_version_elasticsearch_exporter }}
+          image: justwatch/elasticsearch-exporter:{{ $.Values.elk_image_version_elasticsearch_exporter }}
           imagePullPolicy: IfNotPresent
-          command: [ "/bin/elasticsearch_exporter", "-es.hostname", "{{$config.hostname}}", {{ if $config.protocol }}"-es.protocol", "{{$config.protocol}}",{{ end }} {{ if $config.port }}"-es.port", "{{$config.port}}", {{ end }} {{ if $config.username }}"-es.user", "{{$config.username}}",{{ end }} {{ if $config.password }}"-es.password", "{{$config.password}}",{{ end }} "-es.all", "-web.listen-address", ":{{ $.Values.elasticsearch_exporter.listen_port }}" ]
+          command: [ "/bin/elasticsearch_exporter", "-es.uri", "{{$config.protocol}}://{{ if $config.auth }}{{$config.username }}:{{$config.password }}@{{ end }}{{$config.hostname}}:{{$config.port}}" , "-es.all", "-web.listen-address", ":{{ $.Values.elasticsearch_exporter.listen_port }}" ]
           ports:
             - name: metrics
               containerPort: {{ $.Values.elasticsearch_exporter.listen_port }}
