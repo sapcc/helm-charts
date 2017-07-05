@@ -21,8 +21,8 @@ function start_application {
   grafana-cli plugins install mtanda-histogram-panel
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until grafana is up and write to stdout and logfile in parallel
-  if [ -f /grafana-bin/grafana-initial-setup.sh ]; then
-    (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup.sh ) 2>&1 | tee /var/log/grafana-initial-setup.log &
+  if [ -f /grafana-bin/grafana-initial-setup ]; then
+    (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana-initial-setup.log &
   fi
   # strange log config to get no file logging according to https://github.com/grafana/grafana/issues/5018
   cd /usr/share/grafana
