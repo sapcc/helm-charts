@@ -28,17 +28,38 @@ readonlyrest:
     access_control_rules:
 
     - name: data
-      type: allow
       actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
       indices: ["logstash-*"]
       auth_key: {{.Values.elk_elasticsearch_data_user}}:{{.Values.elk_elasticsearch_data_password}}
 
     - name: Monsoon (read only, but can create dashboards)
-      type: allow
       kibana_access: ro
       auth_key: {{.Values.elk_elasticsearch_monsoon_user}}:{{.Values.elk_elasticsearch_monsoon_password}}
       indices: [".kibana", ".kibana-devnull", "{{.Values.elk_elasticsearch_master_project_id}}-*"]
 
     - name: Admin
-      type: allow
       auth_key: {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}
+
+    - name: Accept requests from users in group team2 on index2
+      ldap_auth:
+          - name: "ldap1"
+            groups: ["{{ .Values.ldap.domain_admin }},{{ .Values.ldap.suffix }}","{{ .Values.ldap.cloud_admin }},{{ .Values.ldap.suffix }}"]
+            cache_ttl_in_sec: 60
+
+   ldaps:
+    
+    - name: ldap1
+      host: "{{ .Values.ldap.host }}"
+      port: {{ .Values.ldap.port }}
+      ssl_enabled: {{ .Values.ldap.ssl }}
+      ssl_trust_all_certs: {{ .Values.ldap.ssl_skip_verify}}
+      bind_dn: "{{.Values.ldap.bind_dn}},{{ .Values.ldap.suffix }}"                 
+      bind_password: "{{ .Values.ldap.password }}"                            
+      search_user_base_DN: "OU=Identities,{{ .Values.ldap.suffix }}"
+      user_id_attribute: "uidnumber" 
+      search_groups_base_DN: "{{ .Values.ldap.group_search_base_dns }},{{ .Values.ldap.suffix }}"
+      unique_member_attribute: "givenName"                   # optional, default "uniqueMember"
+      connection_pool_size: 10                 
+      connection_timeout_in_sec: 10           
+      request_timeout_in_sec: 10             
+      cache_ttl_in_sec: 60                  
