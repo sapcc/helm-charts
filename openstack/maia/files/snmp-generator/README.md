@@ -19,3 +19,4 @@ snmp_exporter:
       priv_protocol: DES
       security_level: authPriv
       priv_password: password1
+      target: snmp-device-name-or-ip
