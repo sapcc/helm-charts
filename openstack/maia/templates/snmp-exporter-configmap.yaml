@@ -1,5 +1,4 @@
 {{- if .Values.snmp_exporter.enabled }}
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,28 +6,17 @@ metadata:
   labels:
     system: openstack
     service: metrics
-    component: configuration
 data:
 {{- range $config := .Values.snmp_exporter.maia_snmp_config }}
-  {{$config.name}}.yaml: |
-    default:
-#      version: 1
-#      auth:
-#        community: SomeCommunityString
-#      version: 2
-#      auth:
-#        community: SomeCommunityString
-#      version: 3
-#        auth:
-#        username: SomeUser
-#        password: TotallySecret
-#        auth_protocol: SHA
-#        priv_protocol: AES
-#        security_level: SomethingReadOnly
-#        priv_password: SomeOtherSecret
-#  walk:
-#    - 0.0.0.0.0.0
-#  metrics:
-#    - 0.0.0.0.0.0
+  {{ $config.name }}.yaml: |
+{{ include (print "maia/templates/_snmp-exporter-" $config.name ".yaml.tpl") . | indent 4 }}
+      version: 3
+      auth:
+        username: {{ $config.username }}
+        password: {{ $config.password }}
+        auth_protocol: {{ $config.auth_protocol }}
+        priv_protocol: {{ $config.priv_protocol }}
+        security_level: {{ $config.security_level }}
+        priv_password: {{ $config.priv_password }}
 {{- end }}
 {{- end }}

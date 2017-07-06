@@ -33,15 +33,13 @@ spec:
       containers:
         - name: snmp-exporter
 # the printf below is to convert the build number into a string to avoid it being converted to scientific notation
-#          image: {{$.Values.snmp_exporter.docker_repo}}/snmp_exporter:{{ $.Values.snmp_exporter.image_version | printf "%0.f" }}
-          image: {{$.Values.snmp_exporter.docker_repo}}/snmp-exporter:{{ $.Values.snmp_exporter.image_version }}
+#          image: {{$.Values.snmp_exporter.docker_repo}}:{{ $.Values.snmp_exporter.image_version | printf "%0.f" }}
+          image: {{$.Values.snmp_exporter.docker_repo}}:{{ $.Values.snmp_exporter.image_version }}
           imagePullPolicy: IfNotPresent
-#          command:
-#            - python
-#          args:
-#            - /snmp-exporter.py
-#            - -c
-#            - /maia-etc/{{$config.name}}.yaml
+          command:
+            - /bin/snmp_exporter
+          args:
+            - -config.file=/maia-etc/{{$config.name}}.yaml
           env:
           volumeMounts:
             - mountPath: /maia-etc
