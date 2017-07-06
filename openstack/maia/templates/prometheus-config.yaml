@@ -127,6 +127,32 @@ data:
         domain_name: {{ .Values.prometheus.openstack_sd.domain_name | quote }}
     {{ end }}
 
+    # loop over all snmp exporters and exchange exporter and snmp device name, so that
+    # the metric is labeled by snmp device name and not by exporter name
+    {{- range $config := .Values.snmp_exporter.maia_snmp_config }}
+    - job_name: 'snmp-{{ $config.name }}'
+      static_configs:
+        - targets:
+          - {{ $config.target }} # SNMP device
+      metrics_path: /snmp
+      params:
+        module: [{{ $config.name }}]
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - source_labels: [__param_target]
+          target_label: instance
+        - target_label: __address__
+          replacement: snmp-exporter-{{ $config.name }}:9116 # SNMP exporter
+# this still needs some doc studies ...
+#      metric_relabel_configs:
+#        - source_labels: [__name__]
+#          regex: (.*)
+#          target_label: snmp_${1}
+#          action: replace
+
+    {{- end }}
+
     # self-scrape the embedded prometheus (even when K8S API is down)
     - job_name: 'prometheus-maia'
       static_configs:
