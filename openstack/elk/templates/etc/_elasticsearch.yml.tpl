@@ -41,13 +41,15 @@ readonlyrest:
       auth_key: {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}
 
     - name: Accept requests from users in group team2 on index2
-      ldap_auth:
-          - name: "ldap1"
-            groups: ["{{ .Values.ldap.domain_admin }},{{ .Values.ldap.suffix }}","{{ .Values.ldap.cloud_admin }},{{ .Values.ldap.suffix }}"]
-            cache_ttl_in_sec: 60
+      type: allow
+      ldap_authentication:
+        name: "ldap1"
+      ldap_authorization:
+        name: "ldap1"
+        groups: ["CCADMIN_DOMAIN_USERS","CCADMIN_MONITORING_USERS"]
 
-   ldaps:
-    
+    ldaps:
+
     - name: ldap1
       host: "{{ .Values.ldap.host }}"
       port: {{ .Values.ldap.port }}
@@ -56,9 +58,9 @@ readonlyrest:
       bind_dn: "{{.Values.ldap.bind_dn}},{{ .Values.ldap.suffix }}"                 
       bind_password: "{{ .Values.ldap.password }}"                            
       search_user_base_DN: "OU=Identities,{{ .Values.ldap.suffix }}"
-      user_id_attribute: "uidnumber" 
+      user_id_attribute: "sAMAccountName" 
       search_groups_base_DN: "{{ .Values.ldap.group_search_base_dns }},{{ .Values.ldap.suffix }}"
-      unique_member_attribute: "givenName"                   # optional, default "uniqueMember"
+      unique_member_attribute: "member"
       connection_pool_size: 10                 
       connection_timeout_in_sec: 10           
       request_timeout_in_sec: 10             
