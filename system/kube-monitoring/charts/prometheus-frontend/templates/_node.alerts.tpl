@@ -32,11 +32,11 @@ ALERT KubernetesNodeClockDrift
 
 ALERT KubernetesNodeKernelDeadlock
   IF kube_node_status_kernel_deadlock{condition="true"} == 1
-  FOR 48h
+  FOR 96h
   LABELS {
     tier = "kubernetes",
     service = "k8s",
-    severity = "ignore",
+    severity = "info",
     context = "availability",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_safe_rebooting.html",
