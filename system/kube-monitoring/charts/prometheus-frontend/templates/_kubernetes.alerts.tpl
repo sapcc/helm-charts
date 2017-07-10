@@ -4,7 +4,7 @@ ALERT KubernetesKubeletDown
   LABELS {
     tier = "kubernetes",
     service = "kubelet",
-    severity = "warning",
+    severity = "critical",
     context = "kubelet",
     dashboard = "kubernetes-health"
   }
