@@ -323,6 +323,21 @@ asrtest:
   - 1.3.6.1.2.1.92.1.1.2
   - 1.3.6.1.2.1.92.1.2.1
   - 1.3.6.1.2.1.92.1.2.2
+  - 1.3.6.1.4.1.9.10.77.1.1.4.1.2
+  - 1.3.6.1.4.1.9.10.77.1.1.4.1.3
+  - 1.3.6.1.4.1.9.10.77.1.1.4.1.4
+  - 1.3.6.1.4.1.9.10.77.1.2.1
+  - 1.3.6.1.4.1.9.10.77.1.2.2.1.10
+  - 1.3.6.1.4.1.9.10.77.1.2.2.1.2
+  - 1.3.6.1.4.1.9.10.77.1.2.2.1.3
+  - 1.3.6.1.4.1.9.10.77.1.2.2.1.4
+  - 1.3.6.1.4.1.9.10.77.1.2.2.1.5
+  - 1.3.6.1.4.1.9.10.77.1.2.2.1.8
+  - 1.3.6.1.4.1.9.10.77.1.2.2.1.9
+  - 1.3.6.1.4.1.9.10.77.1.2.3
+  - 1.3.6.1.4.1.9.10.77.1.3.1.1.2
+  - 1.3.6.1.4.1.9.10.77.1.3.1.1.3
+  - 1.3.6.1.4.1.9.10.77.1.3.1.1.4
   - 1.3.6.1.6.1.1
   - 1.3.6.1.6.3.1.1.6.1
   - 1.3.6.1.6.3.10.2.1.1
@@ -360,340 +375,340 @@ asrtest:
   - 1.3.6.1.6.3.13.1.3.1.4
   - 1.3.6.1.6.3.13.1.3.1.5
   metrics:
-  - name: snmp_asrtest_sysDescr
+  - name: snmp_asr_sysDescr
     oid: 1.3.6.1.2.1.1.1
     type: DisplayString
-  - name: snmp_asrtest_sysContact
+  - name: snmp_asr_sysContact
     oid: 1.3.6.1.2.1.1.4
     type: DisplayString
-  - name: snmp_asrtest_sysName
+  - name: snmp_asr_sysName
     oid: 1.3.6.1.2.1.1.5
     type: DisplayString
-  - name: snmp_asrtest_sysLocation
+  - name: snmp_asr_sysLocation
     oid: 1.3.6.1.2.1.1.6
     type: DisplayString
-  - name: snmp_asrtest_sysServices
+  - name: snmp_asr_sysServices
     oid: 1.3.6.1.2.1.1.7
     type: gauge
-  - name: snmp_asrtest_sysORLastChange
+  - name: snmp_asr_sysORLastChange
     oid: 1.3.6.1.2.1.1.8
     type: gauge
-  - name: snmp_asrtest_snmpInPkts
+  - name: snmp_asr_snmpInPkts
     oid: 1.3.6.1.2.1.11.1
     type: counter
-  - name: snmp_asrtest_snmpInBadValues
+  - name: snmp_asr_snmpInBadValues
     oid: 1.3.6.1.2.1.11.10
     type: counter
-  - name: snmp_asrtest_snmpInReadOnlys
+  - name: snmp_asr_snmpInReadOnlys
     oid: 1.3.6.1.2.1.11.11
     type: counter
-  - name: snmp_asrtest_snmpInGenErrs
+  - name: snmp_asr_snmpInGenErrs
     oid: 1.3.6.1.2.1.11.12
     type: counter
-  - name: snmp_asrtest_snmpInTotalReqVars
+  - name: snmp_asr_snmpInTotalReqVars
     oid: 1.3.6.1.2.1.11.13
     type: counter
-  - name: snmp_asrtest_snmpInTotalSetVars
+  - name: snmp_asr_snmpInTotalSetVars
     oid: 1.3.6.1.2.1.11.14
     type: counter
-  - name: snmp_asrtest_snmpInGetRequests
+  - name: snmp_asr_snmpInGetRequests
     oid: 1.3.6.1.2.1.11.15
     type: counter
-  - name: snmp_asrtest_snmpInGetNexts
+  - name: snmp_asr_snmpInGetNexts
     oid: 1.3.6.1.2.1.11.16
     type: counter
-  - name: snmp_asrtest_snmpInSetRequests
+  - name: snmp_asr_snmpInSetRequests
     oid: 1.3.6.1.2.1.11.17
     type: counter
-  - name: snmp_asrtest_snmpInGetResponses
+  - name: snmp_asr_snmpInGetResponses
     oid: 1.3.6.1.2.1.11.18
     type: counter
-  - name: snmp_asrtest_snmpInTraps
+  - name: snmp_asr_snmpInTraps
     oid: 1.3.6.1.2.1.11.19
     type: counter
-  - name: snmp_asrtest_snmpOutPkts
+  - name: snmp_asr_snmpOutPkts
     oid: 1.3.6.1.2.1.11.2
     type: counter
-  - name: snmp_asrtest_snmpOutTooBigs
+  - name: snmp_asr_snmpOutTooBigs
     oid: 1.3.6.1.2.1.11.20
     type: counter
-  - name: snmp_asrtest_snmpOutNoSuchNames
+  - name: snmp_asr_snmpOutNoSuchNames
     oid: 1.3.6.1.2.1.11.21
     type: counter
-  - name: snmp_asrtest_snmpOutBadValues
+  - name: snmp_asr_snmpOutBadValues
     oid: 1.3.6.1.2.1.11.22
     type: counter
-  - name: snmp_asrtest_snmpOutGenErrs
+  - name: snmp_asr_snmpOutGenErrs
     oid: 1.3.6.1.2.1.11.24
     type: counter
-  - name: snmp_asrtest_snmpOutGetRequests
+  - name: snmp_asr_snmpOutGetRequests
     oid: 1.3.6.1.2.1.11.25
     type: counter
-  - name: snmp_asrtest_snmpOutGetNexts
+  - name: snmp_asr_snmpOutGetNexts
     oid: 1.3.6.1.2.1.11.26
     type: counter
-  - name: snmp_asrtest_snmpOutSetRequests
+  - name: snmp_asr_snmpOutSetRequests
     oid: 1.3.6.1.2.1.11.27
     type: counter
-  - name: snmp_asrtest_snmpOutGetResponses
+  - name: snmp_asr_snmpOutGetResponses
     oid: 1.3.6.1.2.1.11.28
     type: counter
-  - name: snmp_asrtest_snmpOutTraps
+  - name: snmp_asr_snmpOutTraps
     oid: 1.3.6.1.2.1.11.29
     type: counter
-  - name: snmp_asrtest_snmpInBadVersions
+  - name: snmp_asr_snmpInBadVersions
     oid: 1.3.6.1.2.1.11.3
     type: counter
-  - name: snmp_asrtest_snmpEnableAuthenTraps
+  - name: snmp_asr_snmpEnableAuthenTraps
     oid: 1.3.6.1.2.1.11.30
     type: gauge
-  - name: snmp_asrtest_snmpSilentDrops
+  - name: snmp_asr_snmpSilentDrops
     oid: 1.3.6.1.2.1.11.31
     type: counter
-  - name: snmp_asrtest_snmpProxyDrops
+  - name: snmp_asr_snmpProxyDrops
     oid: 1.3.6.1.2.1.11.32
     type: counter
-  - name: snmp_asrtest_snmpInBadCommunityNames
+  - name: snmp_asr_snmpInBadCommunityNames
     oid: 1.3.6.1.2.1.11.4
     type: counter
-  - name: snmp_asrtest_snmpInBadCommunityUses
+  - name: snmp_asr_snmpInBadCommunityUses
     oid: 1.3.6.1.2.1.11.5
     type: counter
-  - name: snmp_asrtest_snmpInASNParseErrs
+  - name: snmp_asr_snmpInASNParseErrs
     oid: 1.3.6.1.2.1.11.6
     type: counter
-  - name: snmp_asrtest_snmpInTooBigs
+  - name: snmp_asr_snmpInTooBigs
     oid: 1.3.6.1.2.1.11.8
     type: counter
-  - name: snmp_asrtest_snmpInNoSuchNames
+  - name: snmp_asr_snmpInNoSuchNames
     oid: 1.3.6.1.2.1.11.9
     type: counter
-  - name: snmp_asrtest_ifNumber
+  - name: snmp_asr_ifNumber
     oid: 1.3.6.1.2.1.2.1
     type: gauge
-  - name: snmp_asrtest_ifIndex
+  - name: snmp_asr_ifIndex
     oid: 1.3.6.1.2.1.2.2.1.1
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifInOctets
+  - name: snmp_asr_ifInOctets
     oid: 1.3.6.1.2.1.2.2.1.10
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifInUcastPkts
+  - name: snmp_asr_ifInUcastPkts
     oid: 1.3.6.1.2.1.2.2.1.11
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifInDiscards
+  - name: snmp_asr_ifInDiscards
     oid: 1.3.6.1.2.1.2.2.1.13
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifInErrors
+  - name: snmp_asr_ifInErrors
     oid: 1.3.6.1.2.1.2.2.1.14
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifInUnknownProtos
+  - name: snmp_asr_ifInUnknownProtos
     oid: 1.3.6.1.2.1.2.2.1.15
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifOutOctets
+  - name: snmp_asr_ifOutOctets
     oid: 1.3.6.1.2.1.2.2.1.16
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifOutUcastPkts
+  - name: snmp_asr_ifOutUcastPkts
     oid: 1.3.6.1.2.1.2.2.1.17
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifOutDiscards
+  - name: snmp_asr_ifOutDiscards
     oid: 1.3.6.1.2.1.2.2.1.19
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifDescr
+  - name: snmp_asr_ifDescr
     oid: 1.3.6.1.2.1.2.2.1.2
     type: DisplayString
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifOutErrors
+  - name: snmp_asr_ifOutErrors
     oid: 1.3.6.1.2.1.2.2.1.20
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifType
+  - name: snmp_asr_ifType
     oid: 1.3.6.1.2.1.2.2.1.3
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifMtu
+  - name: snmp_asr_ifMtu
     oid: 1.3.6.1.2.1.2.2.1.4
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifSpeed
+  - name: snmp_asr_ifSpeed
     oid: 1.3.6.1.2.1.2.2.1.5
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifPhysAddress
+  - name: snmp_asr_ifPhysAddress
     oid: 1.3.6.1.2.1.2.2.1.6
     type: PhysAddress48
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifAdminStatus
+  - name: snmp_asr_ifAdminStatus
     oid: 1.3.6.1.2.1.2.2.1.7
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifOperStatus
+  - name: snmp_asr_ifOperStatus
     oid: 1.3.6.1.2.1.2.2.1.8
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifLastChange
+  - name: snmp_asr_ifLastChange
     oid: 1.3.6.1.2.1.2.2.1.9
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifName
+  - name: snmp_asr_ifName
     oid: 1.3.6.1.2.1.31.1.1.1.1
     type: DisplayString
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifHCOutOctets
+  - name: snmp_asr_ifHCOutOctets
     oid: 1.3.6.1.2.1.31.1.1.1.10
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifHCOutUcastPkts
+  - name: snmp_asr_ifHCOutUcastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.11
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifHCOutMulticastPkts
+  - name: snmp_asr_ifHCOutMulticastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.12
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifHCOutBroadcastPkts
+  - name: snmp_asr_ifHCOutBroadcastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.13
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifLinkUpDownTrapEnable
+  - name: snmp_asr_ifLinkUpDownTrapEnable
     oid: 1.3.6.1.2.1.31.1.1.1.14
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifHighSpeed
+  - name: snmp_asr_ifHighSpeed
     oid: 1.3.6.1.2.1.31.1.1.1.15
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifPromiscuousMode
+  - name: snmp_asr_ifPromiscuousMode
     oid: 1.3.6.1.2.1.31.1.1.1.16
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifConnectorPresent
+  - name: snmp_asr_ifConnectorPresent
     oid: 1.3.6.1.2.1.31.1.1.1.17
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifAlias
+  - name: snmp_asr_ifAlias
     oid: 1.3.6.1.2.1.31.1.1.1.18
     type: DisplayString
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifCounterDiscontinuityTime
+  - name: snmp_asr_ifCounterDiscontinuityTime
     oid: 1.3.6.1.2.1.31.1.1.1.19
     type: gauge
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifInMulticastPkts
+  - name: snmp_asr_ifInMulticastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.2
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifInBroadcastPkts
+  - name: snmp_asr_ifInBroadcastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.3
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifOutMulticastPkts
+  - name: snmp_asr_ifOutMulticastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.4
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifOutBroadcastPkts
+  - name: snmp_asr_ifOutBroadcastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.5
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifHCInOctets
+  - name: snmp_asr_ifHCInOctets
     oid: 1.3.6.1.2.1.31.1.1.1.6
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifHCInUcastPkts
+  - name: snmp_asr_ifHCInUcastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.7
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifHCInMulticastPkts
+  - name: snmp_asr_ifHCInMulticastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.8
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifHCInBroadcastPkts
+  - name: snmp_asr_ifHCInBroadcastPkts
     oid: 1.3.6.1.2.1.31.1.1.1.9
     type: counter
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_asrtest_ifStackStatus
+  - name: snmp_asr_ifStackStatus
     oid: 1.3.6.1.2.1.31.1.2.1.3
     type: gauge
     indexes:
@@ -701,7 +716,7 @@ asrtest:
       type: gauge
     - labelname: ifStackLowerLayer
       type: gauge
-  - name: snmp_asrtest_ifRcvAddressStatus
+  - name: snmp_asr_ifRcvAddressStatus
     oid: 1.3.6.1.2.1.31.1.4.1.2
     type: gauge
     indexes:
@@ -709,7 +724,7 @@ asrtest:
       type: gauge
     - labelname: ifRcvAddressAddress
       type: PhysAddress48
-  - name: snmp_asrtest_ifRcvAddressType
+  - name: snmp_asr_ifRcvAddressType
     oid: 1.3.6.1.2.1.31.1.4.1.3
     type: gauge
     indexes:
@@ -717,79 +732,79 @@ asrtest:
       type: gauge
     - labelname: ifRcvAddressAddress
       type: PhysAddress48
-  - name: snmp_asrtest_ifTableLastChange
+  - name: snmp_asr_ifTableLastChange
     oid: 1.3.6.1.2.1.31.1.5
     type: gauge
-  - name: snmp_asrtest_ifStackLastChange
+  - name: snmp_asr_ifStackLastChange
     oid: 1.3.6.1.2.1.31.1.6
     type: gauge
-  - name: snmp_asrtest_ipForwarding
+  - name: snmp_asr_ipForwarding
     oid: 1.3.6.1.2.1.4.1
     type: gauge
-  - name: snmp_asrtest_ipOutRequests
+  - name: snmp_asr_ipOutRequests
     oid: 1.3.6.1.2.1.4.10
     type: counter
-  - name: snmp_asrtest_ipOutDiscards
+  - name: snmp_asr_ipOutDiscards
     oid: 1.3.6.1.2.1.4.11
     type: counter
-  - name: snmp_asrtest_ipOutNoRoutes
+  - name: snmp_asr_ipOutNoRoutes
     oid: 1.3.6.1.2.1.4.12
     type: counter
-  - name: snmp_asrtest_ipReasmTimeout
+  - name: snmp_asr_ipReasmTimeout
     oid: 1.3.6.1.2.1.4.13
     type: gauge
-  - name: snmp_asrtest_ipReasmReqds
+  - name: snmp_asr_ipReasmReqds
     oid: 1.3.6.1.2.1.4.14
     type: counter
-  - name: snmp_asrtest_ipReasmOKs
+  - name: snmp_asr_ipReasmOKs
     oid: 1.3.6.1.2.1.4.15
     type: counter
-  - name: snmp_asrtest_ipReasmFails
+  - name: snmp_asr_ipReasmFails
     oid: 1.3.6.1.2.1.4.16
     type: counter
-  - name: snmp_asrtest_ipFragOKs
+  - name: snmp_asr_ipFragOKs
     oid: 1.3.6.1.2.1.4.17
     type: counter
-  - name: snmp_asrtest_ipFragFails
+  - name: snmp_asr_ipFragFails
     oid: 1.3.6.1.2.1.4.18
     type: counter
-  - name: snmp_asrtest_ipFragCreates
+  - name: snmp_asr_ipFragCreates
     oid: 1.3.6.1.2.1.4.19
     type: counter
-  - name: snmp_asrtest_ipDefaultTTL
+  - name: snmp_asr_ipDefaultTTL
     oid: 1.3.6.1.2.1.4.2
     type: gauge
-  - name: snmp_asrtest_ipAdEntAddr
+  - name: snmp_asr_ipAdEntAddr
     oid: 1.3.6.1.2.1.4.20.1.1
     type: IpAddr
     indexes:
     - labelname: ipAdEntAddr
       type: IpAddr
-  - name: snmp_asrtest_ipAdEntIfIndex
+  - name: snmp_asr_ipAdEntIfIndex
     oid: 1.3.6.1.2.1.4.20.1.2
     type: gauge
     indexes:
     - labelname: ipAdEntAddr
       type: IpAddr
-  - name: snmp_asrtest_ipAdEntNetMask
+  - name: snmp_asr_ipAdEntNetMask
     oid: 1.3.6.1.2.1.4.20.1.3
     type: IpAddr
     indexes:
     - labelname: ipAdEntAddr
       type: IpAddr
-  - name: snmp_asrtest_ipAdEntBcastAddr
+  - name: snmp_asr_ipAdEntBcastAddr
     oid: 1.3.6.1.2.1.4.20.1.4
     type: gauge
     indexes:
     - labelname: ipAdEntAddr
       type: IpAddr
-  - name: snmp_asrtest_ipAdEntReasmMaxSize
+  - name: snmp_asr_ipAdEntReasmMaxSize
     oid: 1.3.6.1.2.1.4.20.1.5
     type: gauge
     indexes:
     - labelname: ipAdEntAddr
       type: IpAddr
-  - name: snmp_asrtest_ipNetToMediaIfIndex
+  - name: snmp_asr_ipNetToMediaIfIndex
     oid: 1.3.6.1.2.1.4.22.1.1
     type: gauge
     indexes:
@@ -797,7 +812,7 @@ asrtest:
       type: gauge
     - labelname: ipNetToMediaNetAddress
       type: IpAddr
-  - name: snmp_asrtest_ipNetToMediaPhysAddress
+  - name: snmp_asr_ipNetToMediaPhysAddress
     oid: 1.3.6.1.2.1.4.22.1.2
     type: PhysAddress48
     indexes:
@@ -805,7 +820,7 @@ asrtest:
       type: gauge
     - labelname: ipNetToMediaNetAddress
       type: IpAddr
-  - name: snmp_asrtest_ipNetToMediaNetAddress
+  - name: snmp_asr_ipNetToMediaNetAddress
     oid: 1.3.6.1.2.1.4.22.1.3
     type: IpAddr
     indexes:
@@ -813,7 +828,7 @@ asrtest:
       type: gauge
     - labelname: ipNetToMediaNetAddress
       type: IpAddr
-  - name: snmp_asrtest_ipNetToMediaType
+  - name: snmp_asr_ipNetToMediaType
     oid: 1.3.6.1.2.1.4.22.1.4
     type: gauge
     indexes:
@@ -821,13 +836,13 @@ asrtest:
       type: gauge
     - labelname: ipNetToMediaNetAddress
       type: IpAddr
-  - name: snmp_asrtest_ipRoutingDiscards
+  - name: snmp_asr_ipRoutingDiscards
     oid: 1.3.6.1.2.1.4.23
     type: counter
-  - name: snmp_asrtest_ipCidrRouteNumber
+  - name: snmp_asr_ipCidrRouteNumber
     oid: 1.3.6.1.2.1.4.24.3
     type: gauge
-  - name: snmp_asrtest_ipCidrRouteDest
+  - name: snmp_asr_ipCidrRouteDest
     oid: 1.3.6.1.2.1.4.24.4.1.1
     type: IpAddr
     indexes:
@@ -839,7 +854,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteNextHopAS
+  - name: snmp_asr_ipCidrRouteNextHopAS
     oid: 1.3.6.1.2.1.4.24.4.1.10
     type: gauge
     indexes:
@@ -851,7 +866,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteMetric1
+  - name: snmp_asr_ipCidrRouteMetric1
     oid: 1.3.6.1.2.1.4.24.4.1.11
     type: gauge
     indexes:
@@ -863,7 +878,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteMetric2
+  - name: snmp_asr_ipCidrRouteMetric2
     oid: 1.3.6.1.2.1.4.24.4.1.12
     type: gauge
     indexes:
@@ -875,7 +890,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteMetric3
+  - name: snmp_asr_ipCidrRouteMetric3
     oid: 1.3.6.1.2.1.4.24.4.1.13
     type: gauge
     indexes:
@@ -887,7 +902,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteMetric4
+  - name: snmp_asr_ipCidrRouteMetric4
     oid: 1.3.6.1.2.1.4.24.4.1.14
     type: gauge
     indexes:
@@ -899,7 +914,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteMetric5
+  - name: snmp_asr_ipCidrRouteMetric5
     oid: 1.3.6.1.2.1.4.24.4.1.15
     type: gauge
     indexes:
@@ -911,7 +926,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteStatus
+  - name: snmp_asr_ipCidrRouteStatus
     oid: 1.3.6.1.2.1.4.24.4.1.16
     type: gauge
     indexes:
@@ -923,7 +938,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteMask
+  - name: snmp_asr_ipCidrRouteMask
     oid: 1.3.6.1.2.1.4.24.4.1.2
     type: IpAddr
     indexes:
@@ -935,7 +950,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteTos
+  - name: snmp_asr_ipCidrRouteTos
     oid: 1.3.6.1.2.1.4.24.4.1.3
     type: gauge
     indexes:
@@ -947,7 +962,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteNextHop
+  - name: snmp_asr_ipCidrRouteNextHop
     oid: 1.3.6.1.2.1.4.24.4.1.4
     type: IpAddr
     indexes:
@@ -959,7 +974,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteIfIndex
+  - name: snmp_asr_ipCidrRouteIfIndex
     oid: 1.3.6.1.2.1.4.24.4.1.5
     type: gauge
     indexes:
@@ -971,7 +986,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteType
+  - name: snmp_asr_ipCidrRouteType
     oid: 1.3.6.1.2.1.4.24.4.1.6
     type: gauge
     indexes:
@@ -983,7 +998,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteProto
+  - name: snmp_asr_ipCidrRouteProto
     oid: 1.3.6.1.2.1.4.24.4.1.7
     type: gauge
     indexes:
@@ -995,7 +1010,7 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_ipCidrRouteAge
+  - name: snmp_asr_ipCidrRouteAge
     oid: 1.3.6.1.2.1.4.24.4.1.8
     type: gauge
     indexes:
@@ -1007,298 +1022,298 @@ asrtest:
       type: gauge
     - labelname: ipCidrRouteNextHop
       type: IpAddr
-  - name: snmp_asrtest_inetCidrRouteNumber
+  - name: snmp_asr_inetCidrRouteNumber
     oid: 1.3.6.1.2.1.4.24.6
     type: gauge
-  - name: snmp_asrtest_ipv4InterfaceTableLastChange
+  - name: snmp_asr_ipv4InterfaceTableLastChange
     oid: 1.3.6.1.2.1.4.27
     type: gauge
-  - name: snmp_asrtest_ipv4InterfaceReasmMaxSize
+  - name: snmp_asr_ipv4InterfaceReasmMaxSize
     oid: 1.3.6.1.2.1.4.28.1.2
     type: gauge
     indexes:
     - labelname: ipv4InterfaceIfIndex
       type: gauge
-  - name: snmp_asrtest_ipv4InterfaceEnableStatus
+  - name: snmp_asr_ipv4InterfaceEnableStatus
     oid: 1.3.6.1.2.1.4.28.1.3
     type: gauge
     indexes:
     - labelname: ipv4InterfaceIfIndex
       type: gauge
-  - name: snmp_asrtest_ipv4InterfaceRetransmitTime
+  - name: snmp_asr_ipv4InterfaceRetransmitTime
     oid: 1.3.6.1.2.1.4.28.1.4
     type: gauge
     indexes:
     - labelname: ipv4InterfaceIfIndex
       type: gauge
-  - name: snmp_asrtest_ipInReceives
+  - name: snmp_asr_ipInReceives
     oid: 1.3.6.1.2.1.4.3
     type: counter
-  - name: snmp_asrtest_ipSystemStatsInUnknownProtos
+  - name: snmp_asr_ipSystemStatsInUnknownProtos
     oid: 1.3.6.1.2.1.4.31.1.1.10
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInTruncatedPkts
+  - name: snmp_asr_ipSystemStatsInTruncatedPkts
     oid: 1.3.6.1.2.1.4.31.1.1.11
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInForwDatagrams
+  - name: snmp_asr_ipSystemStatsInForwDatagrams
     oid: 1.3.6.1.2.1.4.31.1.1.12
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCInForwDatagrams
+  - name: snmp_asr_ipSystemStatsHCInForwDatagrams
     oid: 1.3.6.1.2.1.4.31.1.1.13
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsReasmReqds
+  - name: snmp_asr_ipSystemStatsReasmReqds
     oid: 1.3.6.1.2.1.4.31.1.1.14
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsReasmOKs
+  - name: snmp_asr_ipSystemStatsReasmOKs
     oid: 1.3.6.1.2.1.4.31.1.1.15
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsReasmFails
+  - name: snmp_asr_ipSystemStatsReasmFails
     oid: 1.3.6.1.2.1.4.31.1.1.16
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInDiscards
+  - name: snmp_asr_ipSystemStatsInDiscards
     oid: 1.3.6.1.2.1.4.31.1.1.17
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInDelivers
+  - name: snmp_asr_ipSystemStatsInDelivers
     oid: 1.3.6.1.2.1.4.31.1.1.18
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCInDelivers
+  - name: snmp_asr_ipSystemStatsHCInDelivers
     oid: 1.3.6.1.2.1.4.31.1.1.19
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutRequests
+  - name: snmp_asr_ipSystemStatsOutRequests
     oid: 1.3.6.1.2.1.4.31.1.1.20
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCOutRequests
+  - name: snmp_asr_ipSystemStatsHCOutRequests
     oid: 1.3.6.1.2.1.4.31.1.1.21
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutNoRoutes
+  - name: snmp_asr_ipSystemStatsOutNoRoutes
     oid: 1.3.6.1.2.1.4.31.1.1.22
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutForwDatagrams
+  - name: snmp_asr_ipSystemStatsOutForwDatagrams
     oid: 1.3.6.1.2.1.4.31.1.1.23
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCOutForwDatagrams
+  - name: snmp_asr_ipSystemStatsHCOutForwDatagrams
     oid: 1.3.6.1.2.1.4.31.1.1.24
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutDiscards
+  - name: snmp_asr_ipSystemStatsOutDiscards
     oid: 1.3.6.1.2.1.4.31.1.1.25
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutFragReqds
+  - name: snmp_asr_ipSystemStatsOutFragReqds
     oid: 1.3.6.1.2.1.4.31.1.1.26
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutFragOKs
+  - name: snmp_asr_ipSystemStatsOutFragOKs
     oid: 1.3.6.1.2.1.4.31.1.1.27
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutFragFails
+  - name: snmp_asr_ipSystemStatsOutFragFails
     oid: 1.3.6.1.2.1.4.31.1.1.28
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutFragCreates
+  - name: snmp_asr_ipSystemStatsOutFragCreates
     oid: 1.3.6.1.2.1.4.31.1.1.29
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInReceives
+  - name: snmp_asr_ipSystemStatsInReceives
     oid: 1.3.6.1.2.1.4.31.1.1.3
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutTransmits
+  - name: snmp_asr_ipSystemStatsOutTransmits
     oid: 1.3.6.1.2.1.4.31.1.1.30
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCOutTransmits
+  - name: snmp_asr_ipSystemStatsHCOutTransmits
     oid: 1.3.6.1.2.1.4.31.1.1.31
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutOctets
+  - name: snmp_asr_ipSystemStatsOutOctets
     oid: 1.3.6.1.2.1.4.31.1.1.32
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCOutOctets
+  - name: snmp_asr_ipSystemStatsHCOutOctets
     oid: 1.3.6.1.2.1.4.31.1.1.33
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInMcastPkts
+  - name: snmp_asr_ipSystemStatsInMcastPkts
     oid: 1.3.6.1.2.1.4.31.1.1.34
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCInMcastPkts
+  - name: snmp_asr_ipSystemStatsHCInMcastPkts
     oid: 1.3.6.1.2.1.4.31.1.1.35
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInMcastOctets
+  - name: snmp_asr_ipSystemStatsInMcastOctets
     oid: 1.3.6.1.2.1.4.31.1.1.36
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCInMcastOctets
+  - name: snmp_asr_ipSystemStatsHCInMcastOctets
     oid: 1.3.6.1.2.1.4.31.1.1.37
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutMcastPkts
+  - name: snmp_asr_ipSystemStatsOutMcastPkts
     oid: 1.3.6.1.2.1.4.31.1.1.38
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCOutMcastPkts
+  - name: snmp_asr_ipSystemStatsHCOutMcastPkts
     oid: 1.3.6.1.2.1.4.31.1.1.39
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCInReceives
+  - name: snmp_asr_ipSystemStatsHCInReceives
     oid: 1.3.6.1.2.1.4.31.1.1.4
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutMcastOctets
+  - name: snmp_asr_ipSystemStatsOutMcastOctets
     oid: 1.3.6.1.2.1.4.31.1.1.40
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCOutMcastOctets
+  - name: snmp_asr_ipSystemStatsHCOutMcastOctets
     oid: 1.3.6.1.2.1.4.31.1.1.41
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInBcastPkts
+  - name: snmp_asr_ipSystemStatsInBcastPkts
     oid: 1.3.6.1.2.1.4.31.1.1.42
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCInBcastPkts
+  - name: snmp_asr_ipSystemStatsHCInBcastPkts
     oid: 1.3.6.1.2.1.4.31.1.1.43
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsOutBcastPkts
+  - name: snmp_asr_ipSystemStatsOutBcastPkts
     oid: 1.3.6.1.2.1.4.31.1.1.44
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCOutBcastPkts
+  - name: snmp_asr_ipSystemStatsHCOutBcastPkts
     oid: 1.3.6.1.2.1.4.31.1.1.45
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsDiscontinuityTime
+  - name: snmp_asr_ipSystemStatsDiscontinuityTime
     oid: 1.3.6.1.2.1.4.31.1.1.46
     type: gauge
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInOctets
+  - name: snmp_asr_ipSystemStatsInOctets
     oid: 1.3.6.1.2.1.4.31.1.1.5
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsHCInOctets
+  - name: snmp_asr_ipSystemStatsHCInOctets
     oid: 1.3.6.1.2.1.4.31.1.1.6
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInHdrErrors
+  - name: snmp_asr_ipSystemStatsInHdrErrors
     oid: 1.3.6.1.2.1.4.31.1.1.7
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInNoRoutes
+  - name: snmp_asr_ipSystemStatsInNoRoutes
     oid: 1.3.6.1.2.1.4.31.1.1.8
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipSystemStatsInAddrErrors
+  - name: snmp_asr_ipSystemStatsInAddrErrors
     oid: 1.3.6.1.2.1.4.31.1.1.9
     type: counter
     indexes:
     - labelname: ipSystemStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInUnknownProtos
+  - name: snmp_asr_ipIfStatsInUnknownProtos
     oid: 1.3.6.1.2.1.4.31.3.1.10
     type: counter
     indexes:
@@ -1306,7 +1321,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInTruncatedPkts
+  - name: snmp_asr_ipIfStatsInTruncatedPkts
     oid: 1.3.6.1.2.1.4.31.3.1.11
     type: counter
     indexes:
@@ -1314,7 +1329,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInForwDatagrams
+  - name: snmp_asr_ipIfStatsInForwDatagrams
     oid: 1.3.6.1.2.1.4.31.3.1.12
     type: counter
     indexes:
@@ -1322,7 +1337,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCInForwDatagrams
+  - name: snmp_asr_ipIfStatsHCInForwDatagrams
     oid: 1.3.6.1.2.1.4.31.3.1.13
     type: counter
     indexes:
@@ -1330,7 +1345,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsReasmReqds
+  - name: snmp_asr_ipIfStatsReasmReqds
     oid: 1.3.6.1.2.1.4.31.3.1.14
     type: counter
     indexes:
@@ -1338,7 +1353,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsReasmOKs
+  - name: snmp_asr_ipIfStatsReasmOKs
     oid: 1.3.6.1.2.1.4.31.3.1.15
     type: counter
     indexes:
@@ -1346,7 +1361,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsReasmFails
+  - name: snmp_asr_ipIfStatsReasmFails
     oid: 1.3.6.1.2.1.4.31.3.1.16
     type: counter
     indexes:
@@ -1354,7 +1369,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInDiscards
+  - name: snmp_asr_ipIfStatsInDiscards
     oid: 1.3.6.1.2.1.4.31.3.1.17
     type: counter
     indexes:
@@ -1362,7 +1377,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInDelivers
+  - name: snmp_asr_ipIfStatsInDelivers
     oid: 1.3.6.1.2.1.4.31.3.1.18
     type: counter
     indexes:
@@ -1370,7 +1385,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCInDelivers
+  - name: snmp_asr_ipIfStatsHCInDelivers
     oid: 1.3.6.1.2.1.4.31.3.1.19
     type: counter
     indexes:
@@ -1378,7 +1393,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutRequests
+  - name: snmp_asr_ipIfStatsOutRequests
     oid: 1.3.6.1.2.1.4.31.3.1.20
     type: counter
     indexes:
@@ -1386,7 +1401,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCOutRequests
+  - name: snmp_asr_ipIfStatsHCOutRequests
     oid: 1.3.6.1.2.1.4.31.3.1.21
     type: counter
     indexes:
@@ -1394,7 +1409,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutForwDatagrams
+  - name: snmp_asr_ipIfStatsOutForwDatagrams
     oid: 1.3.6.1.2.1.4.31.3.1.23
     type: counter
     indexes:
@@ -1402,7 +1417,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCOutForwDatagrams
+  - name: snmp_asr_ipIfStatsHCOutForwDatagrams
     oid: 1.3.6.1.2.1.4.31.3.1.24
     type: counter
     indexes:
@@ -1410,7 +1425,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutDiscards
+  - name: snmp_asr_ipIfStatsOutDiscards
     oid: 1.3.6.1.2.1.4.31.3.1.25
     type: counter
     indexes:
@@ -1418,7 +1433,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutFragReqds
+  - name: snmp_asr_ipIfStatsOutFragReqds
     oid: 1.3.6.1.2.1.4.31.3.1.26
     type: counter
     indexes:
@@ -1426,7 +1441,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutFragOKs
+  - name: snmp_asr_ipIfStatsOutFragOKs
     oid: 1.3.6.1.2.1.4.31.3.1.27
     type: counter
     indexes:
@@ -1434,7 +1449,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutFragFails
+  - name: snmp_asr_ipIfStatsOutFragFails
     oid: 1.3.6.1.2.1.4.31.3.1.28
     type: counter
     indexes:
@@ -1442,7 +1457,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutFragCreates
+  - name: snmp_asr_ipIfStatsOutFragCreates
     oid: 1.3.6.1.2.1.4.31.3.1.29
     type: counter
     indexes:
@@ -1450,7 +1465,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInReceives
+  - name: snmp_asr_ipIfStatsInReceives
     oid: 1.3.6.1.2.1.4.31.3.1.3
     type: counter
     indexes:
@@ -1458,7 +1473,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutTransmits
+  - name: snmp_asr_ipIfStatsOutTransmits
     oid: 1.3.6.1.2.1.4.31.3.1.30
     type: counter
     indexes:
@@ -1466,7 +1481,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCOutTransmits
+  - name: snmp_asr_ipIfStatsHCOutTransmits
     oid: 1.3.6.1.2.1.4.31.3.1.31
     type: counter
     indexes:
@@ -1474,7 +1489,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutOctets
+  - name: snmp_asr_ipIfStatsOutOctets
     oid: 1.3.6.1.2.1.4.31.3.1.32
     type: counter
     indexes:
@@ -1482,7 +1497,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCOutOctets
+  - name: snmp_asr_ipIfStatsHCOutOctets
     oid: 1.3.6.1.2.1.4.31.3.1.33
     type: counter
     indexes:
@@ -1490,7 +1505,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInMcastPkts
+  - name: snmp_asr_ipIfStatsInMcastPkts
     oid: 1.3.6.1.2.1.4.31.3.1.34
     type: counter
     indexes:
@@ -1498,7 +1513,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCInMcastPkts
+  - name: snmp_asr_ipIfStatsHCInMcastPkts
     oid: 1.3.6.1.2.1.4.31.3.1.35
     type: counter
     indexes:
@@ -1506,7 +1521,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInMcastOctets
+  - name: snmp_asr_ipIfStatsInMcastOctets
     oid: 1.3.6.1.2.1.4.31.3.1.36
     type: counter
     indexes:
@@ -1514,7 +1529,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCInMcastOctets
+  - name: snmp_asr_ipIfStatsHCInMcastOctets
     oid: 1.3.6.1.2.1.4.31.3.1.37
     type: counter
     indexes:
@@ -1522,7 +1537,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutMcastPkts
+  - name: snmp_asr_ipIfStatsOutMcastPkts
     oid: 1.3.6.1.2.1.4.31.3.1.38
     type: counter
     indexes:
@@ -1530,7 +1545,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCOutMcastPkts
+  - name: snmp_asr_ipIfStatsHCOutMcastPkts
     oid: 1.3.6.1.2.1.4.31.3.1.39
     type: counter
     indexes:
@@ -1538,7 +1553,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCInReceives
+  - name: snmp_asr_ipIfStatsHCInReceives
     oid: 1.3.6.1.2.1.4.31.3.1.4
     type: counter
     indexes:
@@ -1546,7 +1561,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutMcastOctets
+  - name: snmp_asr_ipIfStatsOutMcastOctets
     oid: 1.3.6.1.2.1.4.31.3.1.40
     type: counter
     indexes:
@@ -1554,7 +1569,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCOutMcastOctets
+  - name: snmp_asr_ipIfStatsHCOutMcastOctets
     oid: 1.3.6.1.2.1.4.31.3.1.41
     type: counter
     indexes:
@@ -1562,7 +1577,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInBcastPkts
+  - name: snmp_asr_ipIfStatsInBcastPkts
     oid: 1.3.6.1.2.1.4.31.3.1.42
     type: counter
     indexes:
@@ -1570,7 +1585,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCInBcastPkts
+  - name: snmp_asr_ipIfStatsHCInBcastPkts
     oid: 1.3.6.1.2.1.4.31.3.1.43
     type: counter
     indexes:
@@ -1578,7 +1593,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsOutBcastPkts
+  - name: snmp_asr_ipIfStatsOutBcastPkts
     oid: 1.3.6.1.2.1.4.31.3.1.44
     type: counter
     indexes:
@@ -1586,7 +1601,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCOutBcastPkts
+  - name: snmp_asr_ipIfStatsHCOutBcastPkts
     oid: 1.3.6.1.2.1.4.31.3.1.45
     type: counter
     indexes:
@@ -1594,7 +1609,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsDiscontinuityTime
+  - name: snmp_asr_ipIfStatsDiscontinuityTime
     oid: 1.3.6.1.2.1.4.31.3.1.46
     type: gauge
     indexes:
@@ -1602,7 +1617,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInOctets
+  - name: snmp_asr_ipIfStatsInOctets
     oid: 1.3.6.1.2.1.4.31.3.1.5
     type: counter
     indexes:
@@ -1610,7 +1625,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsHCInOctets
+  - name: snmp_asr_ipIfStatsHCInOctets
     oid: 1.3.6.1.2.1.4.31.3.1.6
     type: counter
     indexes:
@@ -1618,7 +1633,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInHdrErrors
+  - name: snmp_asr_ipIfStatsInHdrErrors
     oid: 1.3.6.1.2.1.4.31.3.1.7
     type: counter
     indexes:
@@ -1626,7 +1641,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInNoRoutes
+  - name: snmp_asr_ipIfStatsInNoRoutes
     oid: 1.3.6.1.2.1.4.31.3.1.8
     type: counter
     indexes:
@@ -1634,7 +1649,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipIfStatsInAddrErrors
+  - name: snmp_asr_ipIfStatsInAddrErrors
     oid: 1.3.6.1.2.1.4.31.3.1.9
     type: counter
     indexes:
@@ -1642,7 +1657,7 @@ asrtest:
       type: gauge
     - labelname: ipIfStatsIfIndex
       type: gauge
-  - name: snmp_asrtest_ipAddressPrefixOrigin
+  - name: snmp_asr_ipAddressPrefixOrigin
     oid: 1.3.6.1.2.1.4.32.1.5
     type: gauge
     indexes:
@@ -1654,7 +1669,7 @@ asrtest:
       type: OctetString
     - labelname: ipAddressPrefixLength
       type: gauge
-  - name: snmp_asrtest_ipAddressPrefixOnLinkFlag
+  - name: snmp_asr_ipAddressPrefixOnLinkFlag
     oid: 1.3.6.1.2.1.4.32.1.6
     type: gauge
     indexes:
@@ -1666,7 +1681,7 @@ asrtest:
       type: OctetString
     - labelname: ipAddressPrefixLength
       type: gauge
-  - name: snmp_asrtest_ipAddressPrefixAutonomousFlag
+  - name: snmp_asr_ipAddressPrefixAutonomousFlag
     oid: 1.3.6.1.2.1.4.32.1.7
     type: gauge
     indexes:
@@ -1678,7 +1693,7 @@ asrtest:
       type: OctetString
     - labelname: ipAddressPrefixLength
       type: gauge
-  - name: snmp_asrtest_ipAddressPrefixAdvPreferredLifetime
+  - name: snmp_asr_ipAddressPrefixAdvPreferredLifetime
     oid: 1.3.6.1.2.1.4.32.1.8
     type: gauge
     indexes:
@@ -1690,7 +1705,7 @@ asrtest:
       type: OctetString
     - labelname: ipAddressPrefixLength
       type: gauge
-  - name: snmp_asrtest_ipAddressPrefixAdvValidLifetime
+  - name: snmp_asr_ipAddressPrefixAdvValidLifetime
     oid: 1.3.6.1.2.1.4.32.1.9
     type: gauge
     indexes:
@@ -1702,10 +1717,10 @@ asrtest:
       type: OctetString
     - labelname: ipAddressPrefixLength
       type: gauge
-  - name: snmp_asrtest_ipAddressSpinLock
+  - name: snmp_asr_ipAddressSpinLock
     oid: 1.3.6.1.2.1.4.33
     type: gauge
-  - name: snmp_asrtest_ipAddressRowStatus
+  - name: snmp_asr_ipAddressRowStatus
     oid: 1.3.6.1.2.1.4.34.1.10
     type: gauge
     indexes:
@@ -1713,7 +1728,7 @@ asrtest:
       type: gauge
     - labelname: ipAddressAddr
       type: OctetString
-  - name: snmp_asrtest_ipAddressStorageType
+  - name: snmp_asr_ipAddressStorageType
     oid: 1.3.6.1.2.1.4.34.1.11
     type: gauge
     indexes:
@@ -1721,7 +1736,7 @@ asrtest:
       type: gauge
     - labelname: ipAddressAddr
       type: OctetString
-  - name: snmp_asrtest_ipAddressIfIndex
+  - name: snmp_asr_ipAddressIfIndex
     oid: 1.3.6.1.2.1.4.34.1.3
     type: gauge
     indexes:
@@ -1729,7 +1744,7 @@ asrtest:
       type: gauge
     - labelname: ipAddressAddr
       type: OctetString
-  - name: snmp_asrtest_ipAddressType
+  - name: snmp_asr_ipAddressType
     oid: 1.3.6.1.2.1.4.34.1.4
     type: gauge
     indexes:
@@ -1737,7 +1752,7 @@ asrtest:
       type: gauge
     - labelname: ipAddressAddr
       type: OctetString
-  - name: snmp_asrtest_ipAddressOrigin
+  - name: snmp_asr_ipAddressOrigin
     oid: 1.3.6.1.2.1.4.34.1.6
     type: gauge
     indexes:
@@ -1745,7 +1760,7 @@ asrtest:
       type: gauge
     - labelname: ipAddressAddr
       type: OctetString
-  - name: snmp_asrtest_ipAddressStatus
+  - name: snmp_asr_ipAddressStatus
     oid: 1.3.6.1.2.1.4.34.1.7
     type: gauge
     indexes:
@@ -1753,7 +1768,7 @@ asrtest:
       type: gauge
     - labelname: ipAddressAddr
       type: OctetString
-  - name: snmp_asrtest_ipAddressCreated
+  - name: snmp_asr_ipAddressCreated
     oid: 1.3.6.1.2.1.4.34.1.8
     type: gauge
     indexes:
@@ -1761,7 +1776,7 @@ asrtest:
       type: gauge
     - labelname: ipAddressAddr
       type: OctetString
-  - name: snmp_asrtest_ipAddressLastChanged
+  - name: snmp_asr_ipAddressLastChanged
     oid: 1.3.6.1.2.1.4.34.1.9
     type: gauge
     indexes:
@@ -1769,7 +1784,7 @@ asrtest:
       type: gauge
     - labelname: ipAddressAddr
       type: OctetString
-  - name: snmp_asrtest_ipNetToPhysicalPhysAddress
+  - name: snmp_asr_ipNetToPhysicalPhysAddress
     oid: 1.3.6.1.2.1.4.35.1.4
     type: PhysAddress48
     indexes:
@@ -1779,7 +1794,7 @@ asrtest:
       type: gauge
     - labelname: ipNetToPhysicalNetAddress
       type: OctetString
-  - name: snmp_asrtest_ipNetToPhysicalLastUpdated
+  - name: snmp_asr_ipNetToPhysicalLastUpdated
     oid: 1.3.6.1.2.1.4.35.1.5
     type: gauge
     indexes:
@@ -1789,7 +1804,7 @@ asrtest:
       type: gauge
     - labelname: ipNetToPhysicalNetAddress
       type: OctetString
-  - name: snmp_asrtest_ipNetToPhysicalType
+  - name: snmp_asr_ipNetToPhysicalType
     oid: 1.3.6.1.2.1.4.35.1.6
     type: gauge
     indexes:
@@ -1799,7 +1814,7 @@ asrtest:
       type: gauge
     - labelname: ipNetToPhysicalNetAddress
       type: OctetString
-  - name: snmp_asrtest_ipNetToPhysicalState
+  - name: snmp_asr_ipNetToPhysicalState
     oid: 1.3.6.1.2.1.4.35.1.7
     type: gauge
     indexes:
@@ -1809,7 +1824,7 @@ asrtest:
       type: gauge
     - labelname: ipNetToPhysicalNetAddress
       type: OctetString
-  - name: snmp_asrtest_ipNetToPhysicalRowStatus
+  - name: snmp_asr_ipNetToPhysicalRowStatus
     oid: 1.3.6.1.2.1.4.35.1.8
     type: gauge
     indexes:
@@ -1819,109 +1834,109 @@ asrtest:
       type: gauge
     - labelname: ipNetToPhysicalNetAddress
       type: OctetString
-  - name: snmp_asrtest_ipInHdrErrors
+  - name: snmp_asr_ipInHdrErrors
     oid: 1.3.6.1.2.1.4.4
     type: counter
-  - name: snmp_asrtest_ipInAddrErrors
+  - name: snmp_asr_ipInAddrErrors
     oid: 1.3.6.1.2.1.4.5
     type: counter
-  - name: snmp_asrtest_ipForwDatagrams
+  - name: snmp_asr_ipForwDatagrams
     oid: 1.3.6.1.2.1.4.6
     type: counter
-  - name: snmp_asrtest_ipInUnknownProtos
+  - name: snmp_asr_ipInUnknownProtos
     oid: 1.3.6.1.2.1.4.7
     type: counter
-  - name: snmp_asrtest_ipInDiscards
+  - name: snmp_asr_ipInDiscards
     oid: 1.3.6.1.2.1.4.8
     type: counter
-  - name: snmp_asrtest_ipInDelivers
+  - name: snmp_asr_ipInDelivers
     oid: 1.3.6.1.2.1.4.9
     type: counter
-  - name: snmp_asrtest_icmpInMsgs
+  - name: snmp_asr_icmpInMsgs
     oid: 1.3.6.1.2.1.5.1
     type: counter
-  - name: snmp_asrtest_icmpInTimestamps
+  - name: snmp_asr_icmpInTimestamps
     oid: 1.3.6.1.2.1.5.10
     type: counter
-  - name: snmp_asrtest_icmpInTimestampReps
+  - name: snmp_asr_icmpInTimestampReps
     oid: 1.3.6.1.2.1.5.11
     type: counter
-  - name: snmp_asrtest_icmpInAddrMasks
+  - name: snmp_asr_icmpInAddrMasks
     oid: 1.3.6.1.2.1.5.12
     type: counter
-  - name: snmp_asrtest_icmpInAddrMaskReps
+  - name: snmp_asr_icmpInAddrMaskReps
     oid: 1.3.6.1.2.1.5.13
     type: counter
-  - name: snmp_asrtest_icmpOutMsgs
+  - name: snmp_asr_icmpOutMsgs
     oid: 1.3.6.1.2.1.5.14
     type: counter
-  - name: snmp_asrtest_icmpOutErrors
+  - name: snmp_asr_icmpOutErrors
     oid: 1.3.6.1.2.1.5.15
     type: counter
-  - name: snmp_asrtest_icmpOutDestUnreachs
+  - name: snmp_asr_icmpOutDestUnreachs
     oid: 1.3.6.1.2.1.5.16
     type: counter
-  - name: snmp_asrtest_icmpOutTimeExcds
+  - name: snmp_asr_icmpOutTimeExcds
     oid: 1.3.6.1.2.1.5.17
     type: counter
-  - name: snmp_asrtest_icmpOutParmProbs
+  - name: snmp_asr_icmpOutParmProbs
     oid: 1.3.6.1.2.1.5.18
     type: counter
-  - name: snmp_asrtest_icmpOutSrcQuenchs
+  - name: snmp_asr_icmpOutSrcQuenchs
     oid: 1.3.6.1.2.1.5.19
     type: counter
-  - name: snmp_asrtest_icmpInErrors
+  - name: snmp_asr_icmpInErrors
     oid: 1.3.6.1.2.1.5.2
     type: counter
-  - name: snmp_asrtest_icmpOutRedirects
+  - name: snmp_asr_icmpOutRedirects
     oid: 1.3.6.1.2.1.5.20
     type: counter
-  - name: snmp_asrtest_icmpOutEchos
+  - name: snmp_asr_icmpOutEchos
     oid: 1.3.6.1.2.1.5.21
     type: counter
-  - name: snmp_asrtest_icmpOutEchoReps
+  - name: snmp_asr_icmpOutEchoReps
     oid: 1.3.6.1.2.1.5.22
     type: counter
-  - name: snmp_asrtest_icmpOutTimestamps
+  - name: snmp_asr_icmpOutTimestamps
     oid: 1.3.6.1.2.1.5.23
     type: counter
-  - name: snmp_asrtest_icmpOutTimestampReps
+  - name: snmp_asr_icmpOutTimestampReps
     oid: 1.3.6.1.2.1.5.24
     type: counter
-  - name: snmp_asrtest_icmpOutAddrMasks
+  - name: snmp_asr_icmpOutAddrMasks
     oid: 1.3.6.1.2.1.5.25
     type: counter
-  - name: snmp_asrtest_icmpOutAddrMaskReps
+  - name: snmp_asr_icmpOutAddrMaskReps
     oid: 1.3.6.1.2.1.5.26
     type: counter
-  - name: snmp_asrtest_icmpStatsInMsgs
+  - name: snmp_asr_icmpStatsInMsgs
     oid: 1.3.6.1.2.1.5.29.1.2
     type: counter
     indexes:
     - labelname: icmpStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_icmpStatsInErrors
+  - name: snmp_asr_icmpStatsInErrors
     oid: 1.3.6.1.2.1.5.29.1.3
     type: counter
     indexes:
     - labelname: icmpStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_icmpStatsOutMsgs
+  - name: snmp_asr_icmpStatsOutMsgs
     oid: 1.3.6.1.2.1.5.29.1.4
     type: counter
     indexes:
     - labelname: icmpStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_icmpStatsOutErrors
+  - name: snmp_asr_icmpStatsOutErrors
     oid: 1.3.6.1.2.1.5.29.1.5
     type: counter
     indexes:
     - labelname: icmpStatsIPVersion
       type: gauge
-  - name: snmp_asrtest_icmpInDestUnreachs
+  - name: snmp_asr_icmpInDestUnreachs
     oid: 1.3.6.1.2.1.5.3
     type: counter
-  - name: snmp_asrtest_icmpMsgStatsInPkts
+  - name: snmp_asr_icmpMsgStatsInPkts
     oid: 1.3.6.1.2.1.5.30.1.3
     type: counter
     indexes:
@@ -1929,7 +1944,7 @@ asrtest:
       type: gauge
     - labelname: icmpMsgStatsType
       type: gauge
-  - name: snmp_asrtest_icmpMsgStatsOutPkts
+  - name: snmp_asr_icmpMsgStatsOutPkts
     oid: 1.3.6.1.2.1.5.30.1.4
     type: counter
     indexes:
@@ -1937,37 +1952,37 @@ asrtest:
       type: gauge
     - labelname: icmpMsgStatsType
       type: gauge
-  - name: snmp_asrtest_icmpInTimeExcds
+  - name: snmp_asr_icmpInTimeExcds
     oid: 1.3.6.1.2.1.5.4
     type: counter
-  - name: snmp_asrtest_icmpInParmProbs
+  - name: snmp_asr_icmpInParmProbs
     oid: 1.3.6.1.2.1.5.5
     type: counter
-  - name: snmp_asrtest_icmpInSrcQuenchs
+  - name: snmp_asr_icmpInSrcQuenchs
     oid: 1.3.6.1.2.1.5.6
     type: counter
-  - name: snmp_asrtest_icmpInRedirects
+  - name: snmp_asr_icmpInRedirects
     oid: 1.3.6.1.2.1.5.7
     type: counter
-  - name: snmp_asrtest_icmpInEchos
+  - name: snmp_asr_icmpInEchos
     oid: 1.3.6.1.2.1.5.8
     type: counter
-  - name: snmp_asrtest_icmpInEchoReps
+  - name: snmp_asr_icmpInEchoReps
     oid: 1.3.6.1.2.1.5.9
     type: counter
-  - name: snmp_asrtest_tcpRtoAlgorithm
+  - name: snmp_asr_tcpRtoAlgorithm
     oid: 1.3.6.1.2.1.6.1
     type: gauge
-  - name: snmp_asrtest_tcpInSegs
+  - name: snmp_asr_tcpInSegs
     oid: 1.3.6.1.2.1.6.10
     type: counter
-  - name: snmp_asrtest_tcpOutSegs
+  - name: snmp_asr_tcpOutSegs
     oid: 1.3.6.1.2.1.6.11
     type: counter
-  - name: snmp_asrtest_tcpRetransSegs
+  - name: snmp_asr_tcpRetransSegs
     oid: 1.3.6.1.2.1.6.12
     type: counter
-  - name: snmp_asrtest_tcpConnState
+  - name: snmp_asr_tcpConnState
     oid: 1.3.6.1.2.1.6.13.1.1
     type: gauge
     indexes:
@@ -1979,7 +1994,7 @@ asrtest:
       type: IpAddr
     - labelname: tcpConnRemPort
       type: gauge
-  - name: snmp_asrtest_tcpConnLocalAddress
+  - name: snmp_asr_tcpConnLocalAddress
     oid: 1.3.6.1.2.1.6.13.1.2
     type: IpAddr
     indexes:
@@ -1991,7 +2006,7 @@ asrtest:
       type: IpAddr
     - labelname: tcpConnRemPort
       type: gauge
-  - name: snmp_asrtest_tcpConnLocalPort
+  - name: snmp_asr_tcpConnLocalPort
     oid: 1.3.6.1.2.1.6.13.1.3
     type: gauge
     indexes:
@@ -2003,7 +2018,7 @@ asrtest:
       type: IpAddr
     - labelname: tcpConnRemPort
       type: gauge
-  - name: snmp_asrtest_tcpConnRemAddress
+  - name: snmp_asr_tcpConnRemAddress
     oid: 1.3.6.1.2.1.6.13.1.4
     type: IpAddr
     indexes:
@@ -2015,7 +2030,7 @@ asrtest:
       type: IpAddr
     - labelname: tcpConnRemPort
       type: gauge
-  - name: snmp_asrtest_tcpConnRemPort
+  - name: snmp_asr_tcpConnRemPort
     oid: 1.3.6.1.2.1.6.13.1.5
     type: gauge
     indexes:
@@ -2027,19 +2042,19 @@ asrtest:
       type: IpAddr
     - labelname: tcpConnRemPort
       type: gauge
-  - name: snmp_asrtest_tcpInErrs
+  - name: snmp_asr_tcpInErrs
     oid: 1.3.6.1.2.1.6.14
     type: counter
-  - name: snmp_asrtest_tcpOutRsts
+  - name: snmp_asr_tcpOutRsts
     oid: 1.3.6.1.2.1.6.15
     type: counter
-  - name: snmp_asrtest_tcpHCInSegs
+  - name: snmp_asr_tcpHCInSegs
     oid: 1.3.6.1.2.1.6.17
     type: counter
-  - name: snmp_asrtest_tcpHCOutSegs
+  - name: snmp_asr_tcpHCOutSegs
     oid: 1.3.6.1.2.1.6.18
     type: counter
-  - name: snmp_asrtest_tcpConnectionState
+  - name: snmp_asr_tcpConnectionState
     oid: 1.3.6.1.2.1.6.19.1.7
     type: gauge
     indexes:
@@ -2055,7 +2070,7 @@ asrtest:
       type: OctetString
     - labelname: tcpConnectionRemPort
       type: gauge
-  - name: snmp_asrtest_tcpConnectionProcess
+  - name: snmp_asr_tcpConnectionProcess
     oid: 1.3.6.1.2.1.6.19.1.8
     type: gauge
     indexes:
@@ -2071,10 +2086,10 @@ asrtest:
       type: OctetString
     - labelname: tcpConnectionRemPort
       type: gauge
-  - name: snmp_asrtest_tcpRtoMin
+  - name: snmp_asr_tcpRtoMin
     oid: 1.3.6.1.2.1.6.2
     type: gauge
-  - name: snmp_asrtest_tcpListenerProcess
+  - name: snmp_asr_tcpListenerProcess
     oid: 1.3.6.1.2.1.6.20.1.4
     type: gauge
     indexes:
@@ -2084,40 +2099,40 @@ asrtest:
       type: OctetString
     - labelname: tcpListenerLocalPort
       type: gauge
-  - name: snmp_asrtest_tcpRtoMax
+  - name: snmp_asr_tcpRtoMax
     oid: 1.3.6.1.2.1.6.3
     type: gauge
-  - name: snmp_asrtest_tcpMaxConn
+  - name: snmp_asr_tcpMaxConn
     oid: 1.3.6.1.2.1.6.4
     type: gauge
-  - name: snmp_asrtest_tcpActiveOpens
+  - name: snmp_asr_tcpActiveOpens
     oid: 1.3.6.1.2.1.6.5
     type: counter
-  - name: snmp_asrtest_tcpPassiveOpens
+  - name: snmp_asr_tcpPassiveOpens
     oid: 1.3.6.1.2.1.6.6
     type: counter
-  - name: snmp_asrtest_tcpAttemptFails
+  - name: snmp_asr_tcpAttemptFails
     oid: 1.3.6.1.2.1.6.7
     type: counter
-  - name: snmp_asrtest_tcpEstabResets
+  - name: snmp_asr_tcpEstabResets
     oid: 1.3.6.1.2.1.6.8
     type: counter
-  - name: snmp_asrtest_tcpCurrEstab
+  - name: snmp_asr_tcpCurrEstab
     oid: 1.3.6.1.2.1.6.9
     type: gauge
-  - name: snmp_asrtest_udpInDatagrams
+  - name: snmp_asr_udpInDatagrams
     oid: 1.3.6.1.2.1.7.1
     type: counter
-  - name: snmp_asrtest_udpNoPorts
+  - name: snmp_asr_udpNoPorts
     oid: 1.3.6.1.2.1.7.2
     type: counter
-  - name: snmp_asrtest_udpInErrors
+  - name: snmp_asr_udpInErrors
     oid: 1.3.6.1.2.1.7.3
     type: counter
-  - name: snmp_asrtest_udpOutDatagrams
+  - name: snmp_asr_udpOutDatagrams
     oid: 1.3.6.1.2.1.7.4
     type: counter
-  - name: snmp_asrtest_udpLocalAddress
+  - name: snmp_asr_udpLocalAddress
     oid: 1.3.6.1.2.1.7.5.1.1
     type: IpAddr
     indexes:
@@ -2125,7 +2140,7 @@ asrtest:
       type: IpAddr
     - labelname: udpLocalPort
       type: gauge
-  - name: snmp_asrtest_udpLocalPort
+  - name: snmp_asr_udpLocalPort
     oid: 1.3.6.1.2.1.7.5.1.2
     type: gauge
     indexes:
@@ -2133,7 +2148,7 @@ asrtest:
       type: IpAddr
     - labelname: udpLocalPort
       type: gauge
-  - name: snmp_asrtest_udpEndpointProcess
+  - name: snmp_asr_udpEndpointProcess
     oid: 1.3.6.1.2.1.7.7.1.8
     type: gauge
     indexes:
@@ -2151,193 +2166,277 @@ asrtest:
       type: gauge
     - labelname: udpEndpointInstance
       type: gauge
-  - name: snmp_asrtest_udpHCInDatagrams
+  - name: snmp_asr_udpHCInDatagrams
     oid: 1.3.6.1.2.1.7.8
     type: counter
-  - name: snmp_asrtest_udpHCOutDatagrams
+  - name: snmp_asr_udpHCOutDatagrams
     oid: 1.3.6.1.2.1.7.9
     type: counter
-  - name: snmp_asrtest_mteResourceSampleMinimum
+  - name: snmp_asr_mteResourceSampleMinimum
     oid: 1.3.6.1.2.1.88.1.1.1
     type: gauge
-  - name: snmp_asrtest_mteResourceSampleInstanceMaximum
+  - name: snmp_asr_mteResourceSampleInstanceMaximum
     oid: 1.3.6.1.2.1.88.1.1.2
     type: gauge
-  - name: snmp_asrtest_mteResourceSampleInstances
+  - name: snmp_asr_mteResourceSampleInstances
     oid: 1.3.6.1.2.1.88.1.1.3
     type: gauge
-  - name: snmp_asrtest_mteResourceSampleInstancesHigh
+  - name: snmp_asr_mteResourceSampleInstancesHigh
     oid: 1.3.6.1.2.1.88.1.1.4
     type: gauge
-  - name: snmp_asrtest_mteResourceSampleInstanceLacks
+  - name: snmp_asr_mteResourceSampleInstanceLacks
     oid: 1.3.6.1.2.1.88.1.1.5
     type: counter
-  - name: snmp_asrtest_mteTriggerFailures
+  - name: snmp_asr_mteTriggerFailures
     oid: 1.3.6.1.2.1.88.1.2.1
     type: counter
-  - name: snmp_asrtest_mteEventFailures
+  - name: snmp_asr_mteEventFailures
     oid: 1.3.6.1.2.1.88.1.4.1
     type: counter
-  - name: snmp_asrtest_nlmConfigGlobalEntryLimit
+  - name: snmp_asr_nlmConfigGlobalEntryLimit
     oid: 1.3.6.1.2.1.92.1.1.1
     type: gauge
-  - name: snmp_asrtest_nlmConfigGlobalAgeOut
+  - name: snmp_asr_nlmConfigGlobalAgeOut
     oid: 1.3.6.1.2.1.92.1.1.2
     type: gauge
-  - name: snmp_asrtest_nlmStatsGlobalNotificationsLogged
+  - name: snmp_asr_nlmStatsGlobalNotificationsLogged
     oid: 1.3.6.1.2.1.92.1.2.1
     type: counter
-  - name: snmp_asrtest_nlmStatsGlobalNotificationsBumped
+  - name: snmp_asr_nlmStatsGlobalNotificationsBumped
     oid: 1.3.6.1.2.1.92.1.2.2
     type: counter
-  - name: snmp_asrtest_snmpSetSerialNo
+  - name: snmp_asr_cnatInterfaceRealm
+    oid: 1.3.6.1.4.1.9.10.77.1.1.4.1.2
+    type: gauge
+    indexes:
+    - labelname: cnatInterfaceIndex
+      type: gauge
+  - name: snmp_asr_cnatInterfaceStorageType
+    oid: 1.3.6.1.4.1.9.10.77.1.1.4.1.3
+    type: gauge
+    indexes:
+    - labelname: cnatInterfaceIndex
+      type: gauge
+  - name: snmp_asr_cnatInterfaceStatus
+    oid: 1.3.6.1.4.1.9.10.77.1.1.4.1.4
+    type: gauge
+    indexes:
+    - labelname: cnatInterfaceIndex
+      type: gauge
+  - name: snmp_asr_cnatAddrBindNumberOfEntries
+    oid: 1.3.6.1.4.1.9.10.77.1.2.1
+    type: gauge
+  - name: snmp_asr_cnatAddrBindOutTranslate
+    oid: 1.3.6.1.4.1.9.10.77.1.2.2.1.10
+    type: counter
+    indexes:
+    - labelname: cnatAddrBindLocalAddr
+      type: IpAddr
+  - name: snmp_asr_cnatAddrBindGlobalAddr
+    oid: 1.3.6.1.4.1.9.10.77.1.2.2.1.2
+    type: IpAddr
+    indexes:
+    - labelname: cnatAddrBindLocalAddr
+      type: IpAddr
+  - name: snmp_asr_cnatAddrBindId
+    oid: 1.3.6.1.4.1.9.10.77.1.2.2.1.3
+    type: gauge
+    indexes:
+    - labelname: cnatAddrBindLocalAddr
+      type: IpAddr
+  - name: snmp_asr_cnatAddrBindDirection
+    oid: 1.3.6.1.4.1.9.10.77.1.2.2.1.4
+    type: gauge
+    indexes:
+    - labelname: cnatAddrBindLocalAddr
+      type: IpAddr
+  - name: snmp_asr_cnatAddrBindType
+    oid: 1.3.6.1.4.1.9.10.77.1.2.2.1.5
+    type: gauge
+    indexes:
+    - labelname: cnatAddrBindLocalAddr
+      type: IpAddr
+  - name: snmp_asr_cnatAddrBindCurrentIdleTime
+    oid: 1.3.6.1.4.1.9.10.77.1.2.2.1.8
+    type: gauge
+    indexes:
+    - labelname: cnatAddrBindLocalAddr
+      type: IpAddr
+  - name: snmp_asr_cnatAddrBindInTranslate
+    oid: 1.3.6.1.4.1.9.10.77.1.2.2.1.9
+    type: counter
+    indexes:
+    - labelname: cnatAddrBindLocalAddr
+      type: IpAddr
+  - name: snmp_asr_cnatAddrPortBindNumberOfEntries
+    oid: 1.3.6.1.4.1.9.10.77.1.2.3
+    type: gauge
+  - name: snmp_asr_cnatProtocolStatsInTranslate
+    oid: 1.3.6.1.4.1.9.10.77.1.3.1.1.2
+    type: counter
+    indexes:
+    - labelname: cnatProtocolStatsName
+      type: gauge
+  - name: snmp_asr_cnatProtocolStatsOutTranslate
+    oid: 1.3.6.1.4.1.9.10.77.1.3.1.1.3
+    type: counter
+    indexes:
+    - labelname: cnatProtocolStatsName
+      type: gauge
+  - name: snmp_asr_cnatProtocolStatsRejectCount
+    oid: 1.3.6.1.4.1.9.10.77.1.3.1.1.4
+    type: counter
+    indexes:
+    - labelname: cnatProtocolStatsName
+      type: gauge
+  - name: snmp_asr_snmpSetSerialNo
     oid: 1.3.6.1.6.3.1.1.6.1
     type: gauge
-  - name: snmp_asrtest_snmpEngineID
+  - name: snmp_asr_snmpEngineID
     oid: 1.3.6.1.6.3.10.2.1.1
     type: OctetString
-  - name: snmp_asrtest_snmpEngineBoots
+  - name: snmp_asr_snmpEngineBoots
     oid: 1.3.6.1.6.3.10.2.1.2
     type: gauge
-  - name: snmp_asrtest_snmpEngineTime
+  - name: snmp_asr_snmpEngineTime
     oid: 1.3.6.1.6.3.10.2.1.3
     type: gauge
-  - name: snmp_asrtest_snmpEngineMaxMessageSize
+  - name: snmp_asr_snmpEngineMaxMessageSize
     oid: 1.3.6.1.6.3.10.2.1.4
     type: gauge
-  - name: snmp_asrtest_snmpUnknownSecurityModels
+  - name: snmp_asr_snmpUnknownSecurityModels
     oid: 1.3.6.1.6.3.11.2.1.1
     type: counter
-  - name: snmp_asrtest_snmpInvalidMsgs
+  - name: snmp_asr_snmpInvalidMsgs
     oid: 1.3.6.1.6.3.11.2.1.2
     type: counter
-  - name: snmp_asrtest_snmpUnknownPDUHandlers
+  - name: snmp_asr_snmpUnknownPDUHandlers
     oid: 1.3.6.1.6.3.11.2.1.3
     type: counter
-  - name: snmp_asrtest_snmpTargetSpinLock
+  - name: snmp_asr_snmpTargetSpinLock
     oid: 1.3.6.1.6.3.12.1.1
     type: gauge
-  - name: snmp_asrtest_snmpTargetAddrTAddress
+  - name: snmp_asr_snmpTargetAddrTAddress
     oid: 1.3.6.1.6.3.12.1.2.1.3
     type: OctetString
     indexes:
     - labelname: snmpTargetAddrName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetAddrTimeout
+  - name: snmp_asr_snmpTargetAddrTimeout
     oid: 1.3.6.1.6.3.12.1.2.1.4
     type: gauge
     indexes:
     - labelname: snmpTargetAddrName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetAddrRetryCount
+  - name: snmp_asr_snmpTargetAddrRetryCount
     oid: 1.3.6.1.6.3.12.1.2.1.5
     type: gauge
     indexes:
     - labelname: snmpTargetAddrName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetAddrTagList
+  - name: snmp_asr_snmpTargetAddrTagList
     oid: 1.3.6.1.6.3.12.1.2.1.6
     type: OctetString
     indexes:
     - labelname: snmpTargetAddrName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetAddrParams
+  - name: snmp_asr_snmpTargetAddrParams
     oid: 1.3.6.1.6.3.12.1.2.1.7
     type: OctetString
     indexes:
     - labelname: snmpTargetAddrName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetAddrStorageType
+  - name: snmp_asr_snmpTargetAddrStorageType
     oid: 1.3.6.1.6.3.12.1.2.1.8
     type: gauge
     indexes:
     - labelname: snmpTargetAddrName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetAddrRowStatus
+  - name: snmp_asr_snmpTargetAddrRowStatus
     oid: 1.3.6.1.6.3.12.1.2.1.9
     type: gauge
     indexes:
     - labelname: snmpTargetAddrName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetParamsMPModel
+  - name: snmp_asr_snmpTargetParamsMPModel
     oid: 1.3.6.1.6.3.12.1.3.1.2
     type: gauge
     indexes:
     - labelname: snmpTargetParamsName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetParamsSecurityModel
+  - name: snmp_asr_snmpTargetParamsSecurityModel
     oid: 1.3.6.1.6.3.12.1.3.1.3
     type: gauge
     indexes:
     - labelname: snmpTargetParamsName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetParamsSecurityName
+  - name: snmp_asr_snmpTargetParamsSecurityName
     oid: 1.3.6.1.6.3.12.1.3.1.4
     type: OctetString
     indexes:
     - labelname: snmpTargetParamsName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetParamsSecurityLevel
+  - name: snmp_asr_snmpTargetParamsSecurityLevel
     oid: 1.3.6.1.6.3.12.1.3.1.5
     type: gauge
     indexes:
     - labelname: snmpTargetParamsName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetParamsStorageType
+  - name: snmp_asr_snmpTargetParamsStorageType
     oid: 1.3.6.1.6.3.12.1.3.1.6
     type: gauge
     indexes:
     - labelname: snmpTargetParamsName
       type: OctetString
-  - name: snmp_asrtest_snmpTargetParamsRowStatus
+  - name: snmp_asr_snmpTargetParamsRowStatus
     oid: 1.3.6.1.6.3.12.1.3.1.7
     type: gauge
     indexes:
     - labelname: snmpTargetParamsName
       type: OctetString
-  - name: snmp_asrtest_snmpUnavailableContexts
+  - name: snmp_asr_snmpUnavailableContexts
     oid: 1.3.6.1.6.3.12.1.4
     type: counter
-  - name: snmp_asrtest_snmpUnknownContexts
+  - name: snmp_asr_snmpUnknownContexts
     oid: 1.3.6.1.6.3.12.1.5
     type: counter
-  - name: snmp_asrtest_snmpNotifyTag
+  - name: snmp_asr_snmpNotifyTag
     oid: 1.3.6.1.6.3.13.1.1.1.2
     type: OctetString
     indexes:
     - labelname: snmpNotifyName
       type: OctetString
-  - name: snmp_asrtest_snmpNotifyType
+  - name: snmp_asr_snmpNotifyType
     oid: 1.3.6.1.6.3.13.1.1.1.3
     type: gauge
     indexes:
     - labelname: snmpNotifyName
       type: OctetString
-  - name: snmp_asrtest_snmpNotifyStorageType
+  - name: snmp_asr_snmpNotifyStorageType
     oid: 1.3.6.1.6.3.13.1.1.1.4
     type: gauge
     indexes:
     - labelname: snmpNotifyName
       type: OctetString
-  - name: snmp_asrtest_snmpNotifyRowStatus
+  - name: snmp_asr_snmpNotifyRowStatus
     oid: 1.3.6.1.6.3.13.1.1.1.5
     type: gauge
     indexes:
     - labelname: snmpNotifyName
       type: OctetString
-  - name: snmp_asrtest_snmpNotifyFilterProfileName
+  - name: snmp_asr_snmpNotifyFilterProfileName
     oid: 1.3.6.1.6.3.13.1.2.1.1
     type: OctetString
     indexes:
     - labelname: snmpTargetParamsName
       type: OctetString
-  - name: snmp_asrtest_snmpNotifyFilterProfileStorType
+  - name: snmp_asr_snmpNotifyFilterProfileStorType
     oid: 1.3.6.1.6.3.13.1.2.1.2
     type: gauge
     indexes:
     - labelname: snmpTargetParamsName
       type: OctetString
-  - name: snmp_asrtest_snmpNotifyFilterProfileRowStatus
+  - name: snmp_asr_snmpNotifyFilterProfileRowStatus
     oid: 1.3.6.1.6.3.13.1.2.1.3
     type: gauge
     indexes:
