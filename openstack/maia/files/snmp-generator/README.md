@@ -3,7 +3,7 @@ those files are used as input to the snmp-exporter generator (https://github.com
 cp demo1-generator.yaml generator.yml
 <path-to-generator>/generator generate
 # this prefixes the metric names with snmp_
-perl -p -i -e 's,-\ name:\ ,-\ name:\ snmp_,g' snmp.yml > ../../templates/_snmp-exporter-demo1.yaml.tpl
+perl -p -e 's,-\ name:\ ,-\ name:\ snmp_,g' snmp.yml > ../../templates/_snmp-exporter-demo1.yaml.tpl
 
 for this to work the following section has to exist in the secrets file:
 

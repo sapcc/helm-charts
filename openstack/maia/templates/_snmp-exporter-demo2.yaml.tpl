@@ -14,42 +14,42 @@ demo2:
   - 1.3.6.1.4.1.2021.4.5
   - 1.3.6.1.4.1.2021.4.6
   metrics:
-  - name: snmp_memIndex
+  - name: snmp_demo2_memIndex
     oid: 1.3.6.1.4.1.2021.4.1
     type: gauge
-  - name: snmp_memSwapError
+  - name: snmp_demo2_memSwapError
     oid: 1.3.6.1.4.1.2021.4.100
     type: gauge
-  - name: snmp_memSwapErrorMsg
+  - name: snmp_demo2_memSwapErrorMsg
     oid: 1.3.6.1.4.1.2021.4.101
     type: DisplayString
-  - name: snmp_memTotalFree
+  - name: snmp_demo2_memTotalFree
     oid: 1.3.6.1.4.1.2021.4.11
     type: gauge
-  - name: snmp_memMinimumSwap
+  - name: snmp_demo2_memMinimumSwap
     oid: 1.3.6.1.4.1.2021.4.12
     type: gauge
-  - name: snmp_memShared
+  - name: snmp_demo2_memShared
     oid: 1.3.6.1.4.1.2021.4.13
     type: gauge
-  - name: snmp_memBuffer
+  - name: snmp_demo2_memBuffer
     oid: 1.3.6.1.4.1.2021.4.14
     type: gauge
-  - name: snmp_memCached
+  - name: snmp_demo2_memCached
     oid: 1.3.6.1.4.1.2021.4.15
     type: gauge
-  - name: snmp_memErrorName
+  - name: snmp_demo2_memErrorName
     oid: 1.3.6.1.4.1.2021.4.2
     type: DisplayString
-  - name: snmp_memTotalSwap
+  - name: snmp_demo2_memTotalSwap
     oid: 1.3.6.1.4.1.2021.4.3
     type: gauge
-  - name: snmp_memAvailSwap
+  - name: snmp_demo2_memAvailSwap
     oid: 1.3.6.1.4.1.2021.4.4
     type: gauge
-  - name: snmp_memTotalReal
+  - name: snmp_demo2_memTotalReal
     oid: 1.3.6.1.4.1.2021.4.5
     type: gauge
-  - name: snmp_memAvailReal
+  - name: snmp_demo2_memAvailReal
     oid: 1.3.6.1.4.1.2021.4.6
     type: gauge
