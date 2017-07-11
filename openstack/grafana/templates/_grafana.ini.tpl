@@ -164,6 +164,7 @@ allow_sign_up = true
 [log]
 level = {{.Values.grafana.log_level}}
 mode = console
+#filters = ldap:debug
 
 [log.console]
 level = {{.Values.grafana.log_level}}
