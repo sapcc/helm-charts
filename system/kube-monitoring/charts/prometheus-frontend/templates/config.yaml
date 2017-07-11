@@ -111,6 +111,33 @@ data:
         - targets:
           - 'prometheus-collector.{{ .Release.Namespace }}:9090'
 
+    - job_name: 'prometheus-maia-federation'
+      scrape_interval: 30s
+      scrape_timeout: 25s
+
+      honor_labels: true
+      metrics_path: '/federate'
+
+      params:
+        'match[]':
+          - '{__name__=~"^snmp_asr_.+"}'
+
+      relabel_configs:
+        - action: replace
+          target_label: region
+          replacement: {{ .Values.global.region }}
+
+      metric_relabel_configs:
+        - action: replace
+          source_labels: [__name__]
+          target_label: __name__
+          regex: aggregated:(.+)
+          replacement: $1
+
+      static_configs:
+        - targets:
+          - 'prometheus-maia.maia:9090'
+
     alerting:
       alertmanagers:
       - scheme: https
