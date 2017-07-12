@@ -270,7 +270,7 @@ scrape_configs:
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: snmp-exporter-{{ $config.name }}:9116 # SNMP exporter
+      replacement: snmp-exporter-{{ $config.name }}.maia:9116 # SNMP exporter
 {{- end}}
 
 # Static Targets 
