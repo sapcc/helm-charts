@@ -22,21 +22,21 @@ data:
 {{- end }}
 {{- if .Values.snmp_exporter }}
   snmp_targets.yaml: |
-     # loop over all snmp exporters and exchange exporter and snmp device name, so that
-     # the metric is labeled by snmp device name and not by exporter name
-     {{- range $config := .Values.snmp_exporter.maia_snmp_config }}
-       static_configs:
-         - targets:
-           - {{ $config.target }} # SNMP device
-       metrics_path: /snmp
-       params:
-         module: [ {{ $config.name }} ]
-       relabel_configs:
-         - source_labels: [__address__]
-           target_label: __param_target
-         - source_labels: [__param_target]
-           target_label: instance
-         - target_label: __address__
-           replacement: snmp-exporter-{{ $config.name }}:9116 # SNMP exporter
-     {{- end }}
+  # loop over all snmp exporters and exchange exporter and snmp device name, so that
+  # the metric is labeled by snmp device name and not by exporter name
+  {{- range $config := .Values.snmp_exporter.maia_snmp_config }}
+   static_configs:
+     - targets:
+       - {{ $config.target }} # SNMP device
+   metrics_path: /snmp
+   params:
+     module: [ {{ $config.name }} ]
+   relabel_configs:
+     - source_labels: [__address__]
+       target_label: __param_target
+     - source_labels: [__param_target]
+       target_label: instance
+     - target_label: __address__
+       replacement: snmp-exporter-{{ $config.name }}:9116 # SNMP exporter
+  {{- end }}
 {{- end }}
