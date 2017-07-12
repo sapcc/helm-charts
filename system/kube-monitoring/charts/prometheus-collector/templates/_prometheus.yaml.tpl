@@ -256,6 +256,7 @@ scrape_configs:
 
 # loop over all snmp exporters and exchange exporter and snmp device name, so that
 # the metric is labeled by snmp device name and not by exporter name
+{{- if .Values.snmp_exporter }}
 {{- range $config := .Values.snmp_exporter.maia_snmp_config }}
 - job_name: 'snmp-{{ $config.name }}'
   static_configs:
@@ -271,6 +272,7 @@ scrape_configs:
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter-{{ $config.name }}.maia:9116 # SNMP exporter
+{{- end}}
 {{- end}}
 
 # Static Targets 
