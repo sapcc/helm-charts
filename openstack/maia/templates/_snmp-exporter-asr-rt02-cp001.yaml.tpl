@@ -1,4 +1,4 @@
-asr_rtmolab3:
+asr-rt02-cp001:
   walk:
   - 1.3.6.1.4.1.9.10.77.1.2.1
   metrics:
