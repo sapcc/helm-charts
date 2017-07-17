@@ -147,3 +147,18 @@ ALERT OpenstackSwiftUsedSpace50
     summary = "Swift storage expected to be full soon",
     description = "Swift storage usage will reach 80% in 30 days. Order hardware now!",
   }
+
+ALERT OpenstackSwiftRepo
+  IF repo_sync_last_run_gauge{kind="success"} < 1
+  FOR 2d
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "warning",
+    context = "repo",
+    dashboard = "repo-sync?var-repo={{ $labels.repo }}",
+  }
+  ANNOTATIONS {
+    summary = "Repo {{ $labels.repo }} sync failed",
+    description = "Content repo {{ $labels.repo }} sync failed. Check the logs.",
+  }
