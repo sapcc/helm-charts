@@ -264,7 +264,7 @@ scrape_configs:
       - {{ $config.target }} # SNMP device
   metrics_path: /snmp
   params:
-    module: [{{ $config.name }}]
+    module: [{{ $config.configname }}]
   relabel_configs:
     - source_labels: [__address__]
       target_label: __param_target
