@@ -61,3 +61,5 @@ snmpwalk -M $HOME/.snmp/mibs -m CISCO-IETF-NAT-MIB -v2c snmp-host .
 the following will create output suitable for adding it easily to a generator.yml file:
 
 snmpwalk -M $HOME/.snmp/mibs -m CISCO-IETF-NAT-MIB -Oq -v2c snmp-host 1.3.6.1.4.1.9.10.77 | sed 's,.*::,\ \ \ \ \ \ -\ ,g ; s,\..*,,g' | sort -u
+
+the files *-metrics.txt contain a (incomplete)  list of metrics, which might be obtained this way. this list should just give a rough idea about them, as it is not complete and might depend on the config of the components and actual hardware as well.
