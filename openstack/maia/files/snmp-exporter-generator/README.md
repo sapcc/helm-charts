@@ -21,7 +21,7 @@ snmp_exporter:
       security_level: authPriv
       priv_password: asrpass
       target: 10.11.12.13
-      prefix: snmp_asr_
+      configname: asr
 
 or for snmp v2 auth (v1 is the same with version: 1):
 
@@ -31,7 +31,7 @@ or for snmp v2 auth (v1 is the same with version: 1):
       version: 2
       community: asrcomm
       target: 10.11.12.13
-      prefix: snmp_asr_
+      configname: asr
 
 how to create the xyz-generator.yaml file with snmpwalk?
 
