@@ -162,3 +162,18 @@ ALERT OpenstackSwiftRepo
     summary = "Repo {{ $labels.repo }} sync failed",
     description = "Content repo {{ $labels.repo }} sync failed. Check the logs.",
   }
+
+ALERT OpenstackSwiftDriveAutopilotConsistencyCheck
+  IF rate(swift_drive_autopilot_events[3m]) > 0.02
+  FOR 5m
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "warning",
+    context = "autopilot",
+    dashboard = "swift-overview",
+  }
+  ANNOTATIONS {
+    summary = "No consistency checks performed",
+    description = "Autopilot {{ $labels.kubernetes_pod_name }} does not perform its consistency checks on schedule. Please check if it's having a bad time.",
+  }
