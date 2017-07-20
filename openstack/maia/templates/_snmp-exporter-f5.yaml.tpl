@@ -11,4 +11,4 @@ f5:
     type: gauge
     indexes:
     - labelname: ltmVirtualServStatName
-      type: OctetString
+      type: DisplayString
