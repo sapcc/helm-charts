@@ -32,8 +32,8 @@ spec:
             name: vcenter-exporter
       containers:
         - name: vcenter-exporter
-# the printf below is to convert the build number into a string to avoid it being converted to scientific notation
-          image: {{$.Values.vcenter_exporter.docker_repo}}/vcenter-exporter:{{ $.Values.vcenter_exporter.image_version | printf "%0.f" }}
+          # remove the "$" prefix which is used to prevent helm's --set option from reformatting plain numbers into floats in scientific notation
+          image: {{$.Values.vcenter_exporter.docker_repo}}/vcenter-exporter:{{ $.Values.vcenter_exporter.image_version | replace "$" "" }}
           imagePullPolicy: IfNotPresent
           command:
             - python
