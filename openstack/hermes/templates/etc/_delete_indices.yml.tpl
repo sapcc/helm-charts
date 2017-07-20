@@ -9,9 +9,7 @@ actions:
   1:
     action: delete_indices
     description: >-
-      Delete indices older than {{.Values.elk_elasticsearch_data_retention}} days (based on index name), for logstash-
-      prefixed indices. Ignore the error if the filter does not result in an
-      actionable list of indices (ignore_empty_list) and exit cleanly.
+      Delete indices older than {{.Values.hermes_elasticsearch_retention}} days
     options:
       ignore_empty_list: True
       timeout_override:
@@ -19,8 +17,8 @@ actions:
       disable_action: False
     filters:
     - filtertype: pattern
-      kind: prefix
-      value: audit-
+      kind: regex
+      value: '^audit'
       exclude:
     - filtertype: age
       source: name
