@@ -2,8 +2,8 @@ those files are used as input to the snmp-exporter generator (https://github.com
 
 cp asr-generator.yaml generator.yml
 <path-to-generator>/generator generate
-# this prefixes the metric names with snmp_asr_
-perl -p -e 's,-\ name:\ ,-\ name:\ snmp_asr_,g' snmp.yml > ../../templates/_snmp-exporter-asr.yaml.tpl
+# this prefixes the metric names with snmp_asr_ and replace the unreadable Octetstring with something more readable
+perl -p -e 's,-\ name:\ ,-\ name:\ snmp_asr_,g;s,OctetString,DisplayString,g' snmp.yml > ../../templates/_snmp-exporter-asr.yaml.tpl
 
 for this to work the following section has to exist in the secrets file (for snmp v3 auth):
 
