@@ -19,3 +19,23 @@ spec:
     targetPort: postgresql
   selector:
     app: {{ template "fullname" . }}
+
+{{- if .Values.metrics.enabled }}
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backup-metrics
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9188"
+spec:
+  clusterIP: None
+  ports:
+    - name: backup-metrics
+      port: 9188
+      protocol: TCP
+  selector:
+    app: limes-postgresql
+{{- end }}
