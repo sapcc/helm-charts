@@ -36,6 +36,13 @@ data:
           target_label: instance
         - target_label: __address__
           replacement: snmp-exporter-{{ $config.name }}:9116 # SNMP exporter
+      metric_relabel_configs:
+        - source_labels: [ltmVirtualServStatName]
+          target_label: project_id
+          regex: /Project_(.*)/Project_.*
+        - source_labels: [ltmVirtualServStatName]
+          target_label: lb_id
+          regex: /Project_.*/Project_(.*)
     {{- end }}
 
     # self-scrape the embedded prometheus (even when K8S API is down)

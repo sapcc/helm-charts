@@ -272,6 +272,13 @@ scrape_configs:
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter-{{ $config.name }}.maia:9116 # SNMP exporter
+  metric_relabel_configs:
+    - source_labels: [ltmVirtualServStatName]
+      target_label: project_id
+      regex: /Project_(.*)/Project_.*
+    - source_labels: [ltmVirtualServStatName]
+      target_label: lb_id
+      regex: /Project_.*/Project_(.*)
 {{- end}}
 {{- end}}
 
