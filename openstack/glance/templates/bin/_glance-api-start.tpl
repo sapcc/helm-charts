@@ -7,4 +7,4 @@ for f in /glance-etc/*; do
 done
 
 #chown -R glance: /glance_store
-exec  /var/lib/kolla/venv/bin/glance-api
+exec  glance-api
