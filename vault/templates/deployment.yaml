@@ -1,0 +1,76 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: vault
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault
+  template:
+    metadata:
+      labels:
+        app: vault
+    spec:
+      containers:
+        - name: etcd
+          image: quay.io/coreos/etcd:v{{.Values.etcd_version}}
+          env:
+            - name: ETCD_DATA_DIR
+              value: /var/lib/etcd
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/etcd
+        - name: vault
+          image: {{.Values.image}}
+          command:
+            - vault
+            - server
+            - -config
+            - /etc/vault/config.json
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vault
+          ports:
+            - name: http
+              containerPort: 80
+        - name: unseal
+          image: {{.Values.image}}
+          command:
+            - unseal
+          env:
+            - name: VAULT_ADDR
+              value: http://localhost
+            - name: KEY0
+              valueFrom:
+                secretKeyRef:
+                  name: vault
+                  key: key0
+            - name: KEY1
+              valueFrom:
+                secretKeyRef:
+                  name: vault
+                  key: key1
+            - name: KEY2
+              valueFrom:
+                secretKeyRef:
+                  name: vault
+                  key: key2
+        - name: debug
+          image: docker.mo.sap.corp/monsoon3/debug
+          command:
+            - tail
+            - -f
+            - /dev/null
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/etcd
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vault
+        - name: config
+          configMap:
+            name: vault
