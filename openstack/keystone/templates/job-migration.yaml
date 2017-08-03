@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: keystone-bootstrap-job
+  name: keystone-job-migration
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -15,25 +15,23 @@ spec:
         app: {{ template "fullname" . }}
       annotations:
         chart-version: {{.Chart.Version}}
-        checksum/bin-configmap.conf: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
-        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: bootstrap
-          image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.keystone.image }}:{{ .Values.keystone.imageTag }}"
-          imagePullPolicy: {{ default "IfNotPresent" .Values.keystone.imagePullPolicy | quote }}
+        - name: keystone-migration
+          image: "{{ default "hub.global.cloud.sap" .Values.repository }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
+          imagePullPolicy: {{ default "IfNotPresent" .Values.api.imagePullPolicy | quote }}
           command:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "bash /scripts/bootstrap"
+              value: "bash /scripts/db-sync"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
               value: {{ .Release.Name }}-postgresql
-            - name: DEPENDENCY_JOBS
-              value: keystone-migration-job
           volumeMounts:
             - mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf

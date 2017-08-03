@@ -1,0 +1,191 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: keystone-api
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: openstack
+    component: keystone
+    type: api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  minReadySeconds: {{ .Values.api.minReadySeconds | default 5}}
+  revisionHistoryLimit: {{ .Values.api.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.api.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.api.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.api.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.api.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        name: keystone-api
+        system: openstack
+        component: keystone
+        type: api
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
+        scheduler.alpha.kubernetes.io/affinity: >
+          {"podAntiAffinity":
+            {"preferredDuringSchedulingIgnoredDuringExecution": [
+              {"weight": 10, "podAffinityTerm":
+                {"topologyKey": "kubernetes.io/hostname",
+                 "labelSelector": { "matchExpressions": [
+                    {"key": "app", "operator": "In", "values": ["{{ template "fullname" . }}"]},
+                    {"key": "release", "operator": "In", "values": ["{{ .Release.Name }}"]},
+                    {"key": "system", "operator": "In", "values": ["openstack"]},
+                    {"key": "component", "operator": "In", "values": ["keystone"]},
+                    {"key": "type", "operator": "In", "values": ["api"]}
+                  ]}
+                }
+              }
+            ]}
+          }
+{{- end }}
+    spec:
+      containers:
+        - name: api
+          image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
+          imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+          command:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/scripts/keystone-api.sh start"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: keystone-job-migration,keystone-job-bootstrap
+            - name: DEPENDENCY_SERVICE
+              value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              value: {{ .Values.sentry.dsn | quote}}
+            {{- end }}
+            {{- if .Values.api.metrics.enabled }}
+            - name: STATSD_HOST
+              value: "127.0.0.1"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: {{ .Values.api.metrics.prefix | default "openstack" | quote }}
+            {{- end }}
+          ports:
+            - name: public
+              containerPort: 5000
+            - name: admin
+              containerPort: 35357
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /scripts/keystone-api.sh
+                  - stop
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 5000
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
+          volumeMounts:
+            - name: etc-keystone
+              mountPath: /etc/keystone
+            - name: wsgi-keystone
+              mountPath: /var/www/cgi-bin/keystone
+            - name: keystone-etc
+              mountPath: /etc/keystone/keystone.conf
+              subPath: keystone.conf
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/keystone-paste.ini
+              subPath: keystone-paste.ini
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.json
+              subPath: policy.json
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/logging.conf
+              subPath: logging.conf
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/sso_callback_template.html
+              subPath: sso_callback_template.html
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
+              subPath: wsgi-keystone.conf
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/apache2/mods-available/mpm_event.conf
+              subPath: mpm_event.conf
+              readOnly: true
+            - name: fernet
+              mountPath: /fernet-keys
+              readOnly: true
+            - name: keystone-bin
+              mountPath: /scripts
+              readOnly: true
+          {{- if .Values.api.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.api.resources.limits.cpu | quote }}
+              memory: {{ .Values.api.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.api.resources.requests.cpu | quote }}
+              memory: {{ .Values.api.resources.requests.memory | quote }}
+          {{- end }}
+        {{- if .Values.api.metrics.enabled }}
+        - name: statsd
+          image: "{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
+          imagePullPolicy: {{ .Values.api.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.api.metrics.port }}
+          {{- if .Values.api.metrics.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.api.metrics.resources.limits.cpu | quote }}
+              memory: {{ .Values.api.metrics.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.api.metrics.resources.requests.cpu | quote }}
+              memory: {{ .Values.api.metrics.resources.requests.memory | quote }}
+          {{- end }}
+        {{- end }}
+      volumes:
+        - name: etc-keystone
+          emptyDir: {}
+        - name: wsgi-keystone
+          emptyDir: {}
+        - name: keystone-etc
+          configMap:
+            name: keystone-etc
+            defaultMode: 0444
+        - name: keystone-bin
+          configMap:
+            name: keystone-bin
+            defaultMode: 0555
+        - name: fernet
+          secret:
+            secretName: keystone-fernet
+            defaultMode: 0555

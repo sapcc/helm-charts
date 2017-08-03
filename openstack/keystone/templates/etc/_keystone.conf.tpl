@@ -9,9 +9,9 @@ logging_context_format_string = %(process)d %(levelname)s %(name)s [%(request_id
 logging_default_format_string = %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
 logging_exception_prefix = %(process)d ERROR %(name)s %(instance)s
 
-notification_format = {{ .Values.notifications.format | default "basic" | quote }}
+notification_format = {{ .Values.api.notifications.format | default "basic" | quote }}
 driver = messaging
-{{ range $message_type := .Values.notifications.opt_out }}
+{{ range $message_type := .Values.api.notifications.opt_out }}
 notification_opt_out = {{ $message_type }}
 {{ end }}
 
@@ -25,12 +25,12 @@ enabled = true
 servers = {{include "memcached_host" . | default "memcached" }}:{{.Values.memcached.port | default 11211}}
 
 [token]
-provider = {{ .Values.token.provider | default "fernet" }}
-expiration = {{ .Values.token.expiration | default 3600 }}
+provider = {{ .Values.api.token.provider | default "fernet" }}
+expiration = {{ .Values.api.token.expiration | default 3600 }}
 
 [fernet_tokens]
 key_repository = /fernet-keys
-max_active_keys = {{ .Values.fernet.max_active_keys | default 3 }}
+max_active_keys = {{ .Values.api.fernet.max_active_keys | default 3 }}
 
 [database]
 connection = postgresql://{{ .Values.postgresql.dbUser }}:{{ .Values.postgresql.dbPassword }}@{{include "db_host" .}}:5432/{{.Values.postgresql.postgresDatabase}}
