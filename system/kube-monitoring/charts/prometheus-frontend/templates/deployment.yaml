@@ -1,12 +1,17 @@
-apiVersion: apps/v1alpha1
-kind: PetSet
+apiVersion: extensions/v1beta1
+kind: Deployment
 
 metadata:
-  name: prometheus-frontend 
+  name: prometheus-frontend
+  labels:
+    app: prometheus
+    type: frontend
 
 spec:
-  replicas: 1 
-  serviceName: prometheus-frontend
+  replicas: 1
+  minReadySeconds: 10
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -26,6 +31,7 @@ spec:
             - -web.console.templates=/etc/prometheus/consoles
             - -web.external-url=https://prometheus.{{.Values.global.region}}.{{.Values.global.domain}}
             - -storage.local.series-file-shrink-ratio={{ default 0.1 .Values.series_file_shrink_ratio }}
+            - -log.level={{ default "info" .Values.log_level }}
           ports:
             - name: http 
               containerPort: 9090
@@ -37,15 +43,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: data 
+            claimName: {{ .Values.persistence.name | quote }}
         - name: config
           configMap:
             name: prometheus-frontend
-  volumeClaimTemplates:
-    - metadata:
-        name: data 
-      spec:
-        accessModes: [ "ReadWriteMany" ]
-        resources:
-          requests:
-            storage: 300Gi
