@@ -1,0 +1,16 @@
+### OpenStack Database Backup
+
+ALERT OpenstackDatabaseBackupAge
+  IF (time()-backup_last_success)/60/60 >= 24
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "backup",
+    severity = "warning",
+    context = "backupage",
+    dashboard = "database-replication"
+  }
+  ANNOTATIONS {
+    summary = "Database Backup too old",
+    description = "The last successful database backup is {{ $value }} hours old."
+  }
