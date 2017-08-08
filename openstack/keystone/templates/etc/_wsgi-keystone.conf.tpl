@@ -1,30 +1,79 @@
-Listen 5000
-Listen 35357
+# Copyright 2017 The Openstack-Helm Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+Listen 0.0.0.0:5000
+Listen 0.0.0.0:35357
+
+ErrorLog /dev/stdout
+
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" proxy
+
+SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+CustomLog /dev/stdout combined env=!forwarded
+CustomLog /dev/stdout proxy env=forwarded
 
 <VirtualHost *:5000>
-    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP} python-path=/usr/lib/python2.7/site-packages
+    WSGIDaemonProcess keystone-public processes=1 threads=4 user=keystone group=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-public
-    WSGIScriptAlias / /var/www/cgi-bin/keystone/main
+    WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
     LimitRequestBody 114688
     <IfVersion >= 2.4>
-      ErrorLogFormat "%{cu}t %M \"%{X-Openstack-Request-Id}i\" \"%{X-Auth-Token}i\" \"%{X-Subject-Token}i\""
+      ErrorLogFormat "%{cu}t %M"
     </IfVersion>
-    ErrorLog /proc/self/fd/1
-    CustomLog /proc/self/fd/1 "%h %t \"%r\" %>s %O %D %X \"%{Referer}i\" \"%{User-Agent}i\" \"%{X-Openstack-Request-Id}i\" \"%{X-Auth-Token}i\" \"%{X-Subject-Token}i\""
+    ErrorLog /dev/stdout
+
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout combined env=!forwarded
+    CustomLog /dev/stdout proxy env=forwarded
 </VirtualHost>
 
 <VirtualHost *:35357>
-    WSGIDaemonProcess keystone-admin processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP} python-path=/usr/lib/python2.7/site-packages
+    WSGIDaemonProcess keystone-admin processes=1 threads=4 user=keystone group=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-admin
-    WSGIScriptAlias / /var/www/cgi-bin/keystone/admin
+    WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-admin
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
     LimitRequestBody 114688
     <IfVersion >= 2.4>
-      ErrorLogFormat "%{cu}t %M \"%{X-Openstack-Request-Id}i\" \"%{X-Auth-Token}i\" \"%{X-Subject-Token}i\""
+      ErrorLogFormat "%{cu}t %M"
     </IfVersion>
-    ErrorLog /proc/self/fd/1
-    CustomLog /proc/self/fd/1 "%h %t \"%r\" %>s %O %D %X \"%{Referer}i\" \"%{User-Agent}i\" \"%{X-Openstack-Request-Id}i\" \"%{X-Auth-Token}i\" \"%{X-Subject-Token}i\""
+    ErrorLog /dev/stdout
+
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout combined env=!forwarded
+    CustomLog /dev/stdout proxy env=forwarded
 </VirtualHost>
+
+Alias /identity /var/www/cgi-bin/keystone/keystone-wsgi-public
+<Location /identity>
+    SetHandler wsgi-script
+    Options +ExecCGI
+
+    WSGIProcessGroup keystone-public
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+</Location>
+
+Alias /identity_admin /var/www/cgi-bin/keystone/keystone-wsgi-admin
+<Location /identity_admin>
+    SetHandler wsgi-script
+    Options +ExecCGI
+
+    WSGIProcessGroup keystone-admin
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+</Location>

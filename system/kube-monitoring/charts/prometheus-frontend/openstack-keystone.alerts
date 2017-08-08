@@ -93,7 +93,7 @@ ALERT OpenstackActiveDirectoryNode1Down
   FOR 5m
   LABELS {
     tier = "openstack",
-    service = "active_directory",
+    service = "keystone",
     severity = "warning",
     context = "availability",
     dashboard = "keystone"
@@ -108,7 +108,7 @@ ALERT OpenstackActiveDirectoryNode2Down
   FOR 5m
   LABELS {
     tier = "openstack",
-    service = "active_directory",
+    service = "keystone",
     severity = "warning",
     context = "availability",
     dashboard = "keystone"
@@ -118,3 +118,77 @@ ALERT OpenstackActiveDirectoryNode2Down
     description = "ActiveDirectory node 2 is not responding to ping.",
   }
 
+ALERT OpenstackActiveDirectoryResolveFailed
+  IF ad_dns_resolve_status == 1
+  FOR 5m
+  LABELS {
+    tier = "openstack",
+    service = "keystone",
+    severity = "critical",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "ldap.global.cloud.sap DNS resolve failed",
+    description = "LDAP (active directory) DNS is not resolving.",
+  }
+
+ALERT OpenstackCAMResolveFailed
+  IF ad_dns_resolve_cam_status == 1
+  FOR 5m
+  LABELS {
+    tier = "openstack",
+    service = "keystone",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "CAM DNS resolve failed",
+    description = "CAM DNS is not resolving.",
+  }
+
+ALERT OpenstackCAMDown
+  IF ad_cam_up_status == 1
+  FOR 5m
+  LABELS {
+    tier = "openstack",
+    service = "keystone",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "CAM is down",
+    description = "CAM is not responding to ping.",
+  }
+
+ALERT OpenstackEWSResolveFailed
+  IF ad_dns_resolve_ews_status == 1
+  FOR 5m
+  LABELS {
+    tier = "openstack",
+    service = "keystone",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "SAP autodiscover.sap.com DNS resolve failed",
+    description = "SAP Exchange webservice DNS is not resolving.",
+  }
+
+ALERT OpenstackEWSDown
+  IF ad_ews_up_status == 1
+  FOR 5m
+  LABELS {
+    tier = "openstack",
+    service = "keystone",
+    severity = "warning",
+    context = "availability",
+    dashboard = "keystone"
+  }
+  ANNOTATIONS {
+    summary = "SAP autodiscover.sap.com is down",
+    description = "SAP Exchange webservice is not responding to ping.",
+  }

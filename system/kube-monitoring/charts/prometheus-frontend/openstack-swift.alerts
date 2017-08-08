@@ -134,7 +134,7 @@ ALERT OpenstackSwiftRateLimit5000
   }
 
 ALERT OpenstackSwiftUsedSpace
-  IF max(predict_linear(swift_cluster_storage_used_percent_gauge[1w], 60*60*24*30)) by (region) > 0.8
+  IF max(predict_linear(swift_cluster_storage_used_percent_gauge_average[1w], 60*60*24*30)) by (region) > 0.8
   FOR 1d
   LABELS {
     tier = "openstack",
@@ -164,8 +164,8 @@ ALERT OpenstackSwiftRepo
   }
 
 ALERT OpenstackSwiftDriveAutopilotConsistencyCheck
-  IF rate(swift_drive_autopilot_events{type="consistency-check"}[3m]) < 0.02
-  FOR 5m
+  IF rate(swift_drive_autopilot_events{type="consistency-check"}[5m]) < 0.02
+  FOR 10m
   LABELS {
     tier = "openstack",
     service = "swift",

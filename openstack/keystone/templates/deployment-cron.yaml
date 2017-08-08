@@ -10,8 +10,8 @@ metadata:
     component: keystone
     type: operations
 spec:
-  replicas: 1
-  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  replicas: {{ .Values.cron.replicas }}
+  revisionHistoryLimit: {{ .Values.cron.upgrades.revisionHistory }}
   strategy:
     type: Recreate
   selector:
@@ -24,13 +24,13 @@ spec:
         name: keystone-cron
       annotations:
         chart-version: {{.Chart.Version}}
-        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        checksum/bin-configmap.conf: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
     spec:
       containers:
         - name: operations
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.operations.image }}:{{ .Values.operations.imageTag }}
-          imagePullPolicy: {{ .Values.operations.imagePullPolicy | default "IfNotPresent" | quote }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ .Values.cron.imageTag }}
+          imagePullPolicy: {{ .Values.cron.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /usr/local/bin/kubernetes-entrypoint
           env:
@@ -39,7 +39,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: keystone-migration-job,keystone-bootstrap-job
+              value: keystone-job-migration,keystone-job-bootstrap
             - name: DEPENDENCY_SERVICE
               value: {{ .Release.Name }}-postgresql
             {{- if .Values.sentry.enabled }}
@@ -55,14 +55,14 @@ spec:
               name: keystone-etc
             - mountPath: /scripts
               name: keystone-bin
-          {{- if .Values.operations.resources.enabled }}
+          {{- if .Values.cron.resources.enabled }}
           resources:
             limits:
-              cpu: {{ .Values.operations.resources.limits.cpu | quote }}
-              memory: {{ .Values.operations.resources.limits.memory | quote }}
+              cpu: {{ .Values.cron.resources.limits.cpu | quote }}
+              memory: {{ .Values.cron.resources.limits.memory | quote }}
             requests:
-              cpu: {{ .Values.operations.resources.requests.cpu | quote }}
-              memory: {{ .Values.operations.resources.requests.memory | quote }}
+              cpu: {{ .Values.cron.resources.requests.cpu | quote }}
+              memory: {{ .Values.cron.resources.requests.memory | quote }}
           {{- end }}
       volumes:
         - name: keystone-etc

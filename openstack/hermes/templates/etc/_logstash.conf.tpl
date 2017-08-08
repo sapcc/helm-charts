@@ -15,10 +15,8 @@ filter {
   if "identity.authenticate" in [event_type] {
     drop { }
   }
-  if "dns.domain.exists" in [event_type] {
-    drop { }
-  }
-  if "dns.zone.exists" in [event_type] {
+  # Drop DNS events as they are not CADF format, reevaluate later.
+  if "dns." in [event_type] {
     drop { }
   }
   if ![tenant_id] and "" in [project] {
@@ -27,7 +25,7 @@ filter {
   if ([payload][tenant_id]) {
     mutate { add_field => { "tenant_id" => "%{[payload][tenant_id]}" } }
   }
-  if "identity.role_assignment.created" in [event_type] {
+  if "identity." in [event_type] {
     mutate { add_field => { "tenant_id" => "%{[payload][project]}" } }
     }
   if "identity.project" in [event_type] {

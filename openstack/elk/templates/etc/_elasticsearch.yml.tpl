@@ -3,7 +3,7 @@ cluster.name: {{.Values.elk_elasticsearch_cluster_name}}
 cloud:
   kubernetes:
     service: es-master
-    namespace: {{.Values.elk_namespace}} 
+    namespace: {{.Values.elk_namespace}}
 
 node:
   master: ${NODE_MASTER}
@@ -24,7 +24,7 @@ discovery.zen.minimum_master_nodes: 2
 
 readonlyrest:
     enable: true
-    response_if_req_forbidden: <h1>Forbidden</h1>    
+    response_if_req_forbidden: <h1>Forbidden</h1>
     access_control_rules:
 
     - name: data
@@ -42,9 +42,7 @@ readonlyrest:
 
     - name: Accept requests from users in group team2 on index2
       type: allow
-      ldap_authentication:
-        name: "ldap1"
-      ldap_authorization:
+      ldap_auth:
         name: "ldap1"
         groups: ["CCADMIN_DOMAIN_USERS","CCADMIN_MONITORING_USERS"]
 
@@ -55,13 +53,13 @@ readonlyrest:
       port: {{ .Values.ldap.port }}
       ssl_enabled: {{ .Values.ldap.ssl }}
       ssl_trust_all_certs: {{ .Values.ldap.ssl_skip_verify}}
-      bind_dn: "{{.Values.ldap.bind_dn}},{{ .Values.ldap.suffix }}"                 
-      bind_password: "{{ .Values.ldap.password }}"                            
+      bind_dn: "{{.Values.ldap.bind_dn}},{{ .Values.ldap.suffix }}"
+      bind_password: "{{ .Values.ldap.password }}"
       search_user_base_DN: "OU=Identities,{{ .Values.ldap.suffix }}"
-      user_id_attribute: "sAMAccountName" 
+      user_id_attribute: "sAMAccountName"
       search_groups_base_DN: "{{ .Values.ldap.group_search_base_dns }},{{ .Values.ldap.suffix }}"
       unique_member_attribute: "member"
-      connection_pool_size: 10                 
-      connection_timeout_in_sec: 10           
-      request_timeout_in_sec: 10             
-      cache_ttl_in_sec: 60                  
+      connection_pool_size: 10
+      connection_timeout_in_sec: 10
+      request_timeout_in_sec: 10
+      cache_ttl_in_sec: 60

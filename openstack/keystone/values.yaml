@@ -10,76 +10,106 @@ global:
 
 debug: False
 
-keystone:
-  image: "monsoon/ubuntu-source-keystone"
-  imageTag: "20170530084852"
+api:
+  image: "monsoon/loci-keystone"
+  imageTag: "mitaka-latest"
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
   ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
   ##
   # imagePullPolicy:
-
-  resources:
-    enabled: false
-    limits:
-      memory: 128Mi
-      cpu: 500m
-    requests:
-      memory: 128Mi
-      cpu: 500m
 
   adminUser: admin
   adminPassword: secret
   adminProjectName: admin
 #  cloudAdminProject: put-your-cloud-admin-project-id-here
 
-metrics:
-  enabled: false
-  port: '9102'
+  notifications:
+    enabled: true
+    format: cadf
+    opt_out:
+      - identity.authenticate
 
-  image: prom/statsd-exporter
-  imageTag: master
-  prefix: openstack
+  token:
+    provider: fernet
+    # lifetime of a token in minutes
+    expiration: 3600
+
+  fernet:
+    maxActiveKeys: 3
+    secrets:
+    - c1dVSlFZVjRQRnBGR3pwSk1nMll6eEFwX2VDNURwRFVzLVd5aEVYaVI1dz0=
+    - M1V0dHp6bk5LYzVlQ1doMjdvUUctSGdmVFFEcWxIeDZXdHFDT25vT3RHUT0=
+
+  metrics:
+    enabled: false
+    port: '9102'
+
+    image: prom/statsd-exporter
+    imageTag: master
+    prefix: openstack
+
+    resources:
+      enabled: false
+      limits:
+        memory: 128Mi
+        cpu: 500m
+      requests:
+        memory: 128Mi
+        cpu: 500m
+
+  terminationGracePeriodSeconds: 30
+  minReadySeconds: 5
+  replicas: 2
 
   resources:
     enabled: false
-    limits:
-      memory: 128Mi
-      cpu: 500m
+
     requests:
-      memory: 128Mi
-      cpu: 500m
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "1024Mi"
+      cpu: "2000m"
 
+  upgrades:
+    revisionHistory: 3
+    podReplacementStrategy: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
 
-operations:
-  image: "monsoon/ubuntu-source-keystone"
-  imageTag: "20170530084852"
-  ## Specify a imagePullPolicy
-  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
-  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-  ##
-  # imagePullPolicy:
+cron:
+  image: "monsoon/loci-keystone"
+  imageTag: "mitaka-latest"
 
   cronSchedule: "0 * * * *"
 
+  replicas: 1
+
   resources:
     enabled: false
-    limits:
-      memory: 128Mi
-      cpu: 500m
+
     requests:
-      memory: 128Mi
-      cpu: 500m
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "1024Mi"
+      cpu: "2000m"
 
-replicas: 2
+  replicas: 1
 
-upgrades:
-  revisionHistory: 3
-  podReplacementStrategy: RollingUpdate
-  rollingUpdate:
-    maxUnavailable: 0
-    maxSurge: 3
+  upgrades:
+    revisionHistory: 3
+    podReplacementStrategy: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 3
 
+
+sentry:
+  enabled: false
+# dsn: put-your-sentry-dsn-here
 
 services:
   type: ClusterIP
@@ -105,35 +135,14 @@ services:
     #tlsCertificate:
     #tlsKey:
 
-notifications:
-  enabled: true
-  format: cadf
-  opt_out:
-    - identity.authenticate
-
 rabbitmq:
   host: rabbitmq
   user: openstack
   password: secret
 
-token:
-  provider: fernet
-  # lifetime of a token in minutes
-  expiration: 3600
-
-fernet:
-  maxActiveKeys: 3
-  secrets:
-  - c1dVSlFZVjRQRnBGR3pwSk1nMll6eEFwX2VDNURwRFVzLVd5aEVYaVI1dz0=
-  - M1V0dHp6bk5LYzVlQ1doMjdvUUctSGdmVFFEcWxIeDZXdHFDT25vT3RHUT0=
-
 
 memcached:
   port: 11211
-
-sentry:
-  enabled: false
-# dsn: put-your-sentry-dsn-here
 
 postgresql:
   postgresDatabase: keystone

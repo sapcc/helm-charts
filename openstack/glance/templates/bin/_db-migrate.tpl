@@ -6,4 +6,4 @@ for f in /glance-etc/*; do
     cp $f /etc/glance
 done
 
-exec /var/lib/kolla/venv/bin/glance-manage db_sync
+exec glance-manage db_sync

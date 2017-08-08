@@ -44,7 +44,8 @@ spec:
             - "--timeout 300"
             - "--disable-pytest-warnings"
             - "-r fExXpP"
-            - "tests/test_canary.py"
+            - "-m canary"
+            - "tests"
           volumeMounts:
             - name: blackbox-tests-canary
               mountPath: /opt/logs
@@ -93,10 +94,6 @@ spec:
               value: {{ .Values.fixed_network_id | quote }}
             - name: CANARY_FLOATIP_NETWORK_ID
               value: {{ .Values.floatip_network_id | quote }}
-            - name: CANARY_FLOATIP_SUBNET_NAMES
-              value: {{ .Values.floatip_subnet_names | quote }}
-            - name: CANARY_FLOATIP_SUBNET_IDS
-              value: {{ .Values.floatip_subnet_ids | quote }}
             - name: CANARY_AUTOMATION_ID
               value: {{ .Values.automation_id | quote }}
             - name: CANARY_AUTOMATION_NODE_IDS
@@ -145,7 +142,7 @@ spec:
             - "python helper/purge_resources.py"
             - "-n c_blackbox"
             - "-r 300"
-            - "server volume floatip recordset"
+            - "server volume floatip recordset secgroups"
           volumeMounts:
             - name: blackbox-tests-canary
               mountPath: /opt/logs
