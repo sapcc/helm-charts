@@ -42,9 +42,7 @@ readonlyrest:
 
     - name: Accept requests from users in group team2 on index2
       type: allow
-      ldap_authentication:
-        name: "ldap1"
-      ldap_authorization:
+      ldap_auth:
         name: "ldap1"
         groups: ["CCADMIN_DOMAIN_USERS","CCADMIN_MONITORING_USERS"]
 
