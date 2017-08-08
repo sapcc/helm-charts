@@ -62,6 +62,6 @@ readonlyrest:
       search_groups_base_DN: "{{ .Values.ldap.group_search_base_dns }},{{ .Values.ldap.suffix }}"
       unique_member_attribute: "member"
       connection_pool_size: 10
-      connection_timeout_in_sec: 60
-      request_timeout_in_sec: 60
+      connection_timeout_in_sec: 10
+      request_timeout_in_sec: 10
       cache_ttl_in_sec: 60
