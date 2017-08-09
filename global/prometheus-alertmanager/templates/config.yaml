@@ -37,6 +37,7 @@ data:
         continue: true
         match_re:
           tier: kubernetes
+          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
         routes:
         - receiver: 'kubernetes-warning'
           match:
@@ -49,6 +50,7 @@ data:
         continue: true
         match_re:
           tier: openstack
+          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
         routes:
         - receiver: 'openstack-warning'
           match:
@@ -63,12 +65,15 @@ data:
         match_re:
           service: {{ . }}
           tier: openstack
+          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
       {{- end }}
       - receiver: blackbox-alerts
         continue: true
         match_re:
           tier: hardware
           service: blackbox
+          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
+
 
     receivers:
     {{- range tuple "kubernetes-info" "kubernetes-warning" "kubernetes-critical" }}
