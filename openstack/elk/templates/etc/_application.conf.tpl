@@ -26,11 +26,15 @@ data.path = "./cerebro.db"
 hosts = [
   {
     host = "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}"
-    name = "Secured Cluster"
+    name = "elk cluster"
     auth = {
       username = "{{.Values.elk_elasticsearch_admin_user}}"
       password = "{{.Values.elk_elasticsearch_admin_password}}"
     }
+  },
+  {
+    host = "http://elasticsearch.hermes:9200"
+    name = "hermes cluster"
   }
 ]
 
