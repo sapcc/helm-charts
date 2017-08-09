@@ -1,14 +1,26 @@
 # Secret will be used to sign session cookies, CSRF tokens and for other encryption utilities.
 # It is highly recommended to change this value before running cerebro in production.
-play.crypto.secret="{{.Values.elk_elasticsearch_manager_secret}}"
+secret="{{.Values.elk_elasticsearch_manager_secret}}"
 
+# Application base path
+basePath = "/"
 
+# Defaults to RUNNING_PID at the root directory of the app.
+# To avoid creating a PID file set this value to /dev/null
+#pidfile.path = "/var/run/cerebro.pid"
+pidfile.path=/dev/null
+
+# Rest request history max size per user
+rest.history.size = 50 // defaults to 50 if not specified
+
+# Path of local database file
+#data.path: "/var/lib/cerebro/cerebro.db"
+data.path = "./cerebro.db"
+
+# not sure if this is maybe needed
 # The application languages
 # ~~~~~
-play.i18n.langs=["en"]
-
-play.modules.enabled += "controllers.auth.Module"
-play.modules.enabled += "elastic.ElasticModule"
+#play.i18n.langs=["en"]
 
 # A list of known hosts
 hosts = [
@@ -24,17 +36,13 @@ hosts = [
 
 # Authentication
 auth = {
-  type: basic
-    settings: {
-      username = "{{.Values.elk_elasticsearch_admin_user}}"
-      password = "{{.Values.elk_elasticsearch_admin_password}}"
-    }
+  type: ldap
+  settings: {
+    url = "ldaps://{{.Values.ldap.host}}:{{.Values.ldap.port}}"
+    base-dn = "{{.Values.ldap.search_base_dbs}},{{.Values.ldap.suffix}}"
+    bind-dn = "{{.Values.ldap.bind_dn}},{{.Values.ldap.suffix}}"
+    bind-pw = "{{.Values.ldap.password}}"
+    userAttr = "sAMAccountName"
+    userGroup = "{{.Values.ldap.user_group}},{{.Values.ldap.suffix}}"
+  }
 }
-
-rest.history.size: 50 // defaults to 50 if not specified
-data.path: "./cerebro.db"
-
-slick.dbs.default.driver="slick.driver.SQLiteDriver$"
-slick.dbs.default.db.driver=org.sqlite.JDBC
-slick.dbs.default.db.url="jdbc:sqlite:"${data.path}
-play.evolutions.db.default.autoApply = true

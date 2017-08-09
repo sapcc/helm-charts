@@ -27,6 +27,12 @@ readonlyrest:
     response_if_req_forbidden: <h1>Forbidden</h1>
     access_control_rules:
 
+    - name: LDAP auth
+      # type: allow
+      ldap_auth:
+        name: "ldap1"
+        groups: ["CCADMIN_DOMAIN_USERS","CCADMIN_MONITORING_USERS"]
+
     - name: data
       actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
       indices: ["logstash-*"]
@@ -39,12 +45,6 @@ readonlyrest:
 
     - name: Admin
       auth_key: {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}
-
-    - name: Accept requests from users in group team2 on index2
-      type: allow
-      ldap_auth:
-        name: "ldap1"
-        groups: ["CCADMIN_DOMAIN_USERS","CCADMIN_MONITORING_USERS"]
 
     ldaps:
 
