@@ -32,6 +32,13 @@ http {
     tcp_nodelay         on;
     types_hash_max_size 2048;
 
+    {{- if $cluster.rate_limit_connections }}
+    limit_conn_zone $binary_remote_addr zone=conn_limit:10m;
+    {{- end }}
+    {{- if $cluster.rate_limit_requests }}
+    limit_req_zone $binary_remote_addr zone=req_limit:10m rate={{ $cluster.rate_limit_requests }}r/s;
+    {{- end }}
+
     server {
         # TODO http/2 support
         # This could not be enabled as there were issues with high latency connections
@@ -51,6 +58,17 @@ http {
         ssl_dhparam   /etc/nginx/dhparam.pem;
         ssl_ciphers 'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS';
         ssl_prefer_server_ciphers on;
+
+        {{- if $cluster.rate_limit_connections }}
+        # Rate Limit Connections
+        limit_conn conn_limit {{ $cluster.rate_limit_connections }};
+        limit_conn_status 429;
+        {{- end }}
+        {{- if $cluster.rate_limit_requests }}
+        # Rate Limit Requests
+        limit_req zone=req_limit burst={{ $cluster.rate_limit_burst }} nodelay;
+        limit_req_status 429;
+        {{- end }}
 
         location / {
             # NOTE: It's imperative that the argument to proxy_pass does not
