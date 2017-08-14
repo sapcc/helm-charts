@@ -1,0 +1,22 @@
+{{- if .Values.metrics_enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}-backup-etcd-metrics
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{.Values.metrics_port | quote }}
+spec:
+  clusterIP: None
+  ports:
+    - name: backup-etcd-metrics
+      port: {{.Values.metrics_port | quote }}
+      protocol: TCP
+  selector:
+    app: {{ template "fullname" . }}
+{{- end }}

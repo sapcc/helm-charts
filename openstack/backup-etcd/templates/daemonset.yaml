@@ -1,0 +1,53 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: backup-etcd
+  namespace: kube-system
+spec:
+  template:
+    metadata:
+      labels:
+        app: backup-etcd
+    spec:
+      containers:
+      - name: backup-etcd
+        image: {{.Values.repository}}:{{.Values.image_version}}
+        imagePullPolicy: IfNotPresent
+        command:
+        - "/bin/backup-etcd"
+        volumeMounts:
+          - mountPath: /var/lib/etcd2/master0
+            name: etcd-volume
+        env:
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: OS_AUTH_URL
+          value: {{.Values.backup_os_auth_url}}
+        - name: OS_AUTH_VERSION
+          value: "3"
+        - name: OS_USERNAME
+          value: {{.Values.backup_os_username}}
+        - name: OS_USER_DOMAIN_NAME
+          value: {{.Values.backup_os_user_domain}}
+        - name: OS_PROJECT_NAME
+          value: {{.Values.backup_os_project_name}}
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: {{.Values.backup_os_project_domain}}
+        - name: OS_REGION_NAME
+          value: {{.Values.backup_os_region_name}}
+        - name: OS_PASSWORD
+          value: {{.Values.backup_os_password | quote}}
+        - name: BACKUP_INTERVAL
+          value: {{.Values.backup_interval | quote }}
+        - name: BACKUP_EXPIRATION_AFTER
+          value: {{.Values.backup_expire_after | quote }}
+      volumes:
+      - name: etcd-volume
+        hostPath:
+          path: /var/lib/etcd2/master0
