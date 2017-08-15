@@ -40,11 +40,11 @@ readonlyrest:
     - name: Admin
       auth_key: {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}
 
-    - name: Accept requests from users in group team2 on index2
+    - name: LDAP auth
       type: allow
       ldap_auth:
         name: "ldap1"
-        groups: ["CCADMIN_DOMAIN_USERS","CCADMIN_MONITORING_USERS"]
+        groups: [{{.Values.ldap.es_user_groups}}]
 
     ldaps:
 
@@ -62,4 +62,4 @@ readonlyrest:
       connection_pool_size: 10
       connection_timeout_in_sec: 10
       request_timeout_in_sec: 10
-      cache_ttl_in_sec: 60
+      cache_ttl_in_sec: 300
