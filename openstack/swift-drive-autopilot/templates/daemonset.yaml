@@ -5,8 +5,7 @@ metadata:
   name: swift-drive-autopilot
   namespace: swift
   labels:
-    system: openstack
-    component: objectstore
+    release: "{{.Release.Name}}"
 
 spec:
   template:
@@ -14,6 +13,7 @@ spec:
       labels:
         component: swift-drive-autopilot
         from: daemonset
+        release: "{{.Release.Name}}"
       annotations:
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-storage"}]'
         prometheus.io/scrape: "true"
@@ -30,7 +30,7 @@ spec:
             path: /
       containers:
         - name: boot
-          image: {{.Values.global.imageRegistry}}/monsoon/swift-drive-autopilot-m3:{{include "image_version" .}}
+          image: {{.Values.global.imageRegistry}}/monsoon/swift-drive-autopilot:{{include "image_version" .}}
           securityContext:
             privileged: true
           args:
