@@ -62,4 +62,4 @@ readonlyrest:
       connection_pool_size: 10
       connection_timeout_in_sec: 10
       request_timeout_in_sec: 10
-      cache_ttl_in_sec: 60
+      cache_ttl_in_sec: 300
