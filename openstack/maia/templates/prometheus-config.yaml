@@ -49,4 +49,14 @@ data:
     - job_name: 'prometheus-maia'
       static_configs:
         - targets: ['localhost:{{ .Values.prometheus.listen_port }}']
+
+    # expose tenant-specific metrics collected by kube-system monitoring
+    - job_name: 'kube-system'
+      static_configs:
+        - 'prometheus-collector.kube-system:9090'
+      metrics_path: '/federate'
+      params:
+        'match[]':
+          # import any tenant-specific metric, except for those which already have been imported
+          - '{__name__!~"^snmp_.*",project_id!=""}'
 {{- end }}
