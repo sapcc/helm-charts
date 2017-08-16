@@ -1,14 +1,25 @@
 apiVersion: extensions/v1beta1
-kind: DaemonSet
+kind: Deployment
 metadata:
   name: backup-etcd
-  namespace: kube-system
+  namespace: backup
 spec:
   template:
     metadata:
       labels:
         app: backup-etcd
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+      annotations:
+        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"master"}]'
+{{if .Values.metrics_enabled}}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{.Values.metrics_port | quote }}
+{{endif}}
     spec:
+      replicas: 1
+      nodeSelector:
+        species: master
       containers:
       - name: backup-etcd
         image: {{.Values.repository}}:{{.Values.image_version}}
@@ -16,7 +27,7 @@ spec:
         command:
         - "/bin/backup-etcd"
         volumeMounts:
-          - mountPath: /var/lib/etcd2/master0
+          - mountPath: /var/lib/etcd2
             name: etcd-volume
         env:
         - name: MY_POD_NAME
@@ -47,7 +58,12 @@ spec:
           value: {{.Values.backup_interval | quote }}
         - name: BACKUP_EXPIRATION_AFTER
           value: {{.Values.backup_expire_after | quote }}
+{{if .Values.metrics_enabled}}
+        ports:
+        - name: metrics
+          containerPort: {{.Values.metrics_port | quote }}
+{{endif}}
       volumes:
       - name: etcd-volume
         hostPath:
-          path: /var/lib/etcd2/master0
+          path: /var/lib/etcd2
