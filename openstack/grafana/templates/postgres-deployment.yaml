@@ -1,5 +1,5 @@
-kind: PetSet
-apiVersion: apps/v1alpha1
+kind: Deployment
+apiVersion: extensions/v1beta1
 
 metadata:
   name: grafana-postgres
@@ -8,8 +8,10 @@ metadata:
     service: monitoring
     component: grafana
 spec:
-  serviceName: "grafana-postgres"
   replicas: 1
+  minReadySeconds: 10
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -24,9 +26,12 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-{{- if not .Values.persistence.enabled }}
         - name: storage
+{{- if not .Values.persistence.enabled }}
           emptyDir: {}
+{{- else }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.name | quote }}
 {{- end }}
         - name: grafana-bin
           configMap:
@@ -84,14 +89,4 @@ spec:
               value: {{.Values.postgres.backup.os_password | quote}}
             - name: BACKUP_PGSQL_FULL
               value: {{.Values.postgres.backup.interval_full | quote}}
-{{- end }}
-{{- if .Values.persistence.enabled }}
-  volumeClaimTemplates:
-  - metadata:
-      name: storage
-    spec:
-      accessModes: [ "ReadWriteMany" ]
-      resources:
-        requests:
-          storage: 10Gi
 {{- end }}
