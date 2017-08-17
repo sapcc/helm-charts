@@ -37,7 +37,8 @@ appender.deprecation_rolling.strategy.type = DefaultRolloverStrategy
 appender.deprecation_rolling.strategy.max = 4
 
 logger.deprecation.name = org.elasticsearch.deprecation
-logger.deprecation.level = warn
+#logger.deprecation.level = warn
+logger.deprecation.level = off
 logger.deprecation.appenderRef.console.ref = console
 #logger.deprecation.appenderRef.deprecation_rolling.ref = console
 logger.deprecation.additivity = false

@@ -11,8 +11,11 @@ global:
 debug: False
 
 api:
-  image: "monsoon/loci-keystone"
-  imageTag: "mitaka-latest"
+  image: "monsoon/ubuntu-source-keystone"
+  imageTag: "20170816.1"
+
+  #image: "monsoon/loci-keystone"
+  #imageTag: "mitaka-latest"
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
   ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -80,8 +83,11 @@ api:
       maxSurge: 1
 
 cron:
-  image: "monsoon/loci-keystone"
-  imageTag: "mitaka-latest"
+  image: "monsoon/ubuntu-source-keystone"
+  imageTag: "20170816.1"
+
+  ##image: "monsoon/loci-keystone"
+  #imageTag: "mitaka-latest"
 
   cronSchedule: "0 * * * *"
 
@@ -161,58 +167,51 @@ postgresql:
   backup:
     enabled: false
 
-  metrics:
-    enabled: true
-    customMetrics:
-      pg_database:
-        query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
-        metrics:
-          - datname:
-              usage: "LABEL"
-              description: "Name of the database"
-          - size_bytes:
-              usage: "GAUGE"
-              description: "Size of the database in bytes"
-      openstack_roles_total:
-        query: "SELECT COUNT(*) as gauge FROM role"
-        metrics:
-          - gauge:
-              usage: "GAUGE"
-              description: "Total keystone role count"
-      openstack_users_total:
-        query: "SELECT COUNT(*) as gauge FROM id_mapping WHERE entity_type = 'user'"
-        metrics:
-          - gauge:
-              usage: "GAUGE"
-              description: "Total keystone user count"
-      openstack_groups_total:
-        query: "SELECT COUNT(*) as gauge FROM id_mapping WHERE entity_type = 'group'"
-        metrics:
-          - gauge:
-              usage: "GAUGE"
-              description: "Total keystone group count"
-      openstack_domains_total:
-        query: "SELECT COUNT(*) - 1 as gauge FROM project WHERE domain_id = '<<keystone.domain.root>>'"
-        metrics:
-          - gauge:
-              usage: "GAUGE"
-              description: "Total keystone domain count"
-      openstack_projects_total:
-        query: "SELECT COUNT(*) as gauge FROM project WHERE domain_id != '<<keystone.domain.root>>'"
-        metrics:
-          - gauge:
-              usage: "GAUGE"
-              description: "Total keystone project count"
-      openstack_assignments_total:
-        query: "SELECT COUNT(*) as gauge FROM assignment"
-        metrics:
-          - gauge:
-              usage: "GAUGE"
-              description: "Total keystone role-assignment count"
-      openstack_revocations_total:
-        query: "SELECT COUNT(*) as gauge FROM revocation_event"
-        metrics:
-          - gauge:
-              usage: "GAUGE"
-              description: "Total keystone token revocation count"
+pgmetrics:
+  postgresql:
+    db_password: secret
+
+  customMetrics:
+    openstack_roles_total:
+      query: "SELECT COUNT(*) as gauge FROM role"
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total keystone role count"
+    openstack_users_total:
+      query: "SELECT COUNT(*) as gauge FROM id_mapping WHERE entity_type = 'user'"
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total keystone user count"
+    openstack_groups_total:
+      query: "SELECT COUNT(*) as gauge FROM id_mapping WHERE entity_type = 'group'"
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total keystone group count"
+    openstack_domains_total:
+      query: "SELECT COUNT(*) - 1 as gauge FROM project WHERE domain_id = '<<keystone.domain.root>>'"
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total keystone domain count"
+    openstack_projects_total:
+      query: "SELECT COUNT(*) as gauge FROM project WHERE domain_id != '<<keystone.domain.root>>'"
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total keystone project count"
+    openstack_assignments_total:
+      query: "SELECT COUNT(*) as gauge FROM assignment"
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total keystone role-assignment count"
+    openstack_revocations_total:
+      query: "SELECT COUNT(*) as gauge FROM revocation_event"
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total keystone token revocation count"
 

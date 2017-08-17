@@ -14,36 +14,55 @@ function start_application {
   export STDERR_LOC=${STDERR_LOC:-/proc/1/fd/2}
   unset http_proxy https_proxy all_proxy no_proxy
   export ELK_ELASTICSEARCH_MASTER_PROJECT_ID={{.Values.elk_elasticsearch_master_project_id}}
-  cp -f /grafana-content/grafana-content/kibana/search.json /search.json
-  cp -f /grafana-content/grafana-content/kibana/vizualization.json /vizualization.json
-  cp -f /grafana-content/grafana-content/kibana/dashboard.json /dashboard.json
+  cp -f /elk-content/elk-content/kibana/search.json /search.json
+  cp -f /elk-content/elk-content/kibana/visualization.json /visualization.json
+  cp -f /elk-content/elk-content/kibana/dashboard.json /dashboard.json
   sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /search.json
-  sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /vizualization.json
+  sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /visualization.json
   sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /dashboard.json
-  
 
-  curl -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_cluster/settings" -d '{"transient": { "discovery.zen.minimum_master_nodes": 2 }}'
+  echo "INFO: setting discovery.zen.minimum_master_nodes to 2"  
+  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_cluster/settings" -d '{"transient": { "discovery.zen.minimum_master_nodes": 2 }}'
 
-  curl -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/{{.Values.elk_elasticsearch_master_project_id}}" -d "@/grafana-content/grafana-content/elasticsearch/{{.Values.elk_elasticsearch_master_project_id}}.json"
+  # this is only required for regions with logs in the master project (for example from swift outside of ccloud etc.)
+  if [ -f /elk-content/elk-content/elasticsearch/{{.Values.cluster_region}}/{{.Values.elk_elasticsearch_master_project_id}}.json ]; then
+    echo "INFO: creating index for master project {{.Values.elk_elasticsearch_master_project_id}}"
+    curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/{{.Values.elk_elasticsearch_master_project_id}}" -d "@/elk-content/elk-content/elasticsearch/{{.Values.cluster_region}}/{{.Values.elk_elasticsearch_master_project_id}}.json"
+  else
+    echo "INFO: no master project id defined in secrets or no config found for it in elk-content - not creating an index for it"
+  fi
 
+  echo ""
+  echo "INFO: setting up the discover panel"
   /node_modules/elasticdump/bin/elasticdump \
       --input=/search.json \
       --output=http://{{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}@{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/.kibana \
       --type=data
 
+  echo "INFO: setting up the visualization panel"
   /node_modules/elasticdump/bin/elasticdump \
-      --input=/vizualization.json \
+      --input=/visualization.json \
       --output=http://{{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}@{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/.kibana \
       --type=data
   
+  echo "INFO: setting up the dashboard panel"
   /node_modules/elasticdump/bin/elasticdump \
       --input=/dashboard.json \
       --output=http://{{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}@{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/.kibana \
       --type=data
-  
-  cat <(crontab -l) <(echo "0 6 * * * /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
-  cat <(crontab -l) <(echo "0 3 * * * . /wall-e-bin/create-kibana-audit-indexes.sh  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
 
+  # run the creation of the index patterns and the index retention cleanup deletion once on startup and put them into cron to run once per night afterwards
+  echo "INFO: creating the indexes"
+  . /wall-e-bin/create-kibana-indexes.sh
+  echo ""
+  echo "INFO: deleting indexes older than the retention time"
+  /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml
+  
+  echo "INFO: setting up cron jobs for index creation and purging"
+  cat <(crontab -l) <(echo "0 3 * * * . /wall-e-bin/create-kibana-indexes.sh  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  cat <(crontab -l) <(echo "0 6 * * * /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+
+  echo "INFO: starting cron in foreground"
   exec cron -f 
 
 }

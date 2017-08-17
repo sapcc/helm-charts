@@ -30,13 +30,18 @@ data:
       group_wait: 1m
       group_interval: 7m
       repeat_interval: 12h
-      receiver: kubernetes-info 
+      receiver: dev-null
 
       routes:
+      - receiver: dev-null
+        continue: true
+        match_re:
+          region: staging
       - receiver: kubernetes-info
         continue: true
         match_re:
           tier: kubernetes
+          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
         routes:
         - receiver: 'kubernetes-warning'
           match:
@@ -49,6 +54,7 @@ data:
         continue: true
         match_re:
           tier: openstack
+          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
         routes:
         - receiver: 'openstack-warning'
           match:
@@ -57,21 +63,17 @@ data:
           continue: true
           match:
             severity: critical
-      {{- range tuple "arc" "designate" "elektra" "keystone" "limes" "lyra" "nova" "swift" "neutron" }}
+      {{- range tuple "arc" "designate" "elektra" "keystone" "limes" "lyra" "nova" "swift" "neutron" "elk" }}
       - receiver: openstack-{{ . }}
         continue: true
         match_re:
           service: {{ . }}
           tier: openstack
+          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
       {{- end }}
-      - receiver: blackbox-alerts
-        continue: true
-        match_re:
-          tier: hardware
-          service: blackbox
 
     receivers:
-    {{- range tuple "kubernetes-info" "kubernetes-warning" "kubernetes-critical" }}
+    {{- range tuple "dev-null" "kubernetes-info" "kubernetes-warning" "kubernetes-critical" }}
     - name: {{ . }}
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
@@ -84,7 +86,7 @@ data:
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         send_resolved: true
     {{- end }}
-    {{- range tuple "info" "warning" "critical" "arc" "designate" "elektra" "keystone" "limes" "lyra" "nova" "swift" "neutron" }}
+    {{- range tuple "info" "warning" "critical" "arc" "designate" "elektra" "keystone" "limes" "lyra" "nova" "swift" "neutron" "elk" }}
     - name: openstack-{{ . }}
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
@@ -97,20 +99,6 @@ data:
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         send_resolved: true 
     {{- end }}
-    {{- range tuple "blackbox-alerts" }}
-    - name: {{ . }}
-      slack_configs:
-      - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
-        username: "Blackbox Health Checks"
-        channel: "#{{ . }}"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true 
-    {{- end }}
-
 
   {{- $files := .Files }}
   {{ range tuple "slack.tmpl" }}
