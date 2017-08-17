@@ -1,13 +1,15 @@
 {{- if .Values.prometheus.enabled }}
-apiVersion: apps/v1alpha1
-kind: PetSet
+apiVersion: extensions/v1beta1
+kind: Deployment
 
 metadata:
   name: prometheus-maia
 
 spec:
   replicas: 1
-  serviceName: prometheus-maia
+  minReadySeconds: 10
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -39,16 +41,8 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: data
+            claimName: {{ .Values.prometheus.persistence.name | quote }}
         - name: config
           configMap:
             name: prometheus-maia
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: [ "ReadWriteMany" ]
-        resources:
-          requests:
-            storage: 100Gi
 {{- end }}
