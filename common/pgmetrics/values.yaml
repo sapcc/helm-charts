@@ -1,0 +1,59 @@
+global:
+  tld: cloud.sap
+  region: local
+
+## image repository
+image: "wrouesnel/postgres_exporter"
+## image version
+imageTag: "v0.2.1"
+
+## Specify a imagePullPolicy
+## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+##
+# imagePullPolicy: IfNotPresent
+
+## metrics exporter port to be scraped by prometheus
+port: '9187'
+
+## the database name (default: helm release name)
+# db_name:
+
+db_password: DEFINED-IN-COMPONENT-CHART
+
+## the database user to use
+# db_user: postgres
+
+## the database port to use
+# db_port: 5432
+
+
+customMetrics:
+  pg_database:
+    query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+    metrics:
+      - datname:
+          usage: "LABEL"
+          description: "Name of the database"
+      - size_bytes:
+          usage: "GAUGE"
+          description: "Size of the database in bytes"
+
+replicas: 1
+
+upgrades:
+  revisionHistory: 3
+  podReplacementStrategy: Recreate
+
+## Configure resource requests and limits
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+##
+resources:
+  enabled: false
+  limits:
+    memory: 256Mi
+    cpu: 500m
+  requests:
+    memory: 256Mi
+    cpu: 500m
+
