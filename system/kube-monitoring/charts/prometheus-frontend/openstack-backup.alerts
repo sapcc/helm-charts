@@ -1,0 +1,46 @@
+### OpenStack Database Backup
+
+ALERT OpenstackDatabaseBackupAge2Hours
+  IF (time()-backup_last_success)/60/60 >= 2
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "backup",
+    severity = "warning",
+    context = "backupage",
+    dashboard = "db-backup"
+  }
+  ANNOTATIONS {
+    summary = "Database Backup too old",
+    description = "The last successful database backup for {{ app }} is {{ $value }} hours old."
+  }
+
+ALERT OpenstackDatabaseBackupAge4Hours
+  IF (time()-backup_last_success)/60/60 >= 4
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "backup",
+    severity = "critical",
+    context = "backupage",
+    dashboard = "db-backup"
+  }
+  ANNOTATIONS {
+    summary = "Database Backup too old",
+    description = "The last successful database backup for {{ app }} is {{ $value }} hours old."
+  }
+
+ALERT OpenstackDatabaseBackupReplicationAge
+  IF (time()-backup_replication_last_success)/60/60 >= 24
+  FOR 3m
+  LABELS {
+    tier = "openstack",
+    service = "backup-replication",
+    severity = "warning",
+    context = "replicationage",
+    dashboard = "db-backup-replication"
+  }
+  ANNOTATIONS {
+    summary = "Database Backup Replication too old",
+    description = "The last successful database backup replication is {{ $value }} hours old."
+  }
