@@ -63,11 +63,21 @@ resources:
 
 metrics:
   enabled: false
-  image: "quay.io/prometheus/node-exporter"
-  imageTag: v0.14.0
+  image: "wrouesnel/postgres_exporter"
+  imageTag: v0.1.3
   imagePullPolicy: IfNotPresent
 
-  port: 9100
+  port: 9187
+  customMetrics:
+    pg_database:
+      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+      metrics:
+        - datname:
+            usage: "LABEL"
+            description: "Name of the database"
+        - size_bytes:
+            usage: "GAUGE"
+            description: "Size of the database in bytes"
   resources:
     enabled: false
     limits:
