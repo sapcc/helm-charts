@@ -4,20 +4,26 @@ metadata:
   name: backup-etcd
   namespace: backup
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backup-etcd
   template:
     metadata:
+      name: backup-etcd
+      namespace: backup
       labels:
         app: backup-etcd
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
       annotations:
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"master"}]'
-{{if .Values.metrics_enabled}}
+{{- if .Values.metrics_enabled}}
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{.Values.metrics_port | quote }}
-{{endif}}
+        prometheus.io/port: {{.Values.metrics_port | quote}}
+{{- end}}
     spec:
-      replicas: 1
       nodeSelector:
         species: master
       containers:
@@ -25,44 +31,42 @@ spec:
         image: {{.Values.repository}}:{{.Values.image_version}}
         imagePullPolicy: IfNotPresent
         command:
-        - "/bin/backup-etcd"
+          - "/bin/backup-etcd"
         volumeMounts:
           - mountPath: /var/lib/etcd2
             name: etcd-volume
         env:
-        - name: MY_POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: MY_POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: OS_AUTH_URL
-          value: {{.Values.backup_os_auth_url}}
-        - name: OS_AUTH_VERSION
-          value: "3"
-        - name: OS_USERNAME
-          value: {{.Values.backup_os_username}}
-        - name: OS_USER_DOMAIN_NAME
-          value: {{.Values.backup_os_user_domain}}
-        - name: OS_PROJECT_NAME
-          value: {{.Values.backup_os_project_name}}
-        - name: OS_PROJECT_DOMAIN_NAME
-          value: {{.Values.backup_os_project_domain}}
-        - name: OS_REGION_NAME
-          value: {{.Values.backup_os_region_name}}
-        - name: OS_PASSWORD
-          value: {{.Values.backup_os_password | quote}}
-        - name: BACKUP_INTERVAL
-          value: {{.Values.backup_interval | quote }}
-        - name: BACKUP_EXPIRATION_AFTER
-          value: {{.Values.backup_expire_after | quote }}
-{{if .Values.metrics_enabled}}
+          - name: MY_POD_NAME
+            value: backup-etcd
+          - name: MY_POD_NAMESPACE
+            value: {{.Release.Namespace}}
+          - name: OS_AUTH_URL
+            value: {{.Values.backup_os_auth_url}}
+          - name: OS_AUTH_VERSION
+            value: "3"
+          - name: OS_USERNAME
+            value: {{.Values.backup_os_username}}
+          - name: OS_USER_DOMAIN_NAME
+            value: {{.Values.backup_os_user_domain}}
+          - name: OS_PROJECT_NAME
+            value: {{.Values.backup_os_project_name}}
+          - name: OS_PROJECT_DOMAIN_NAME
+            value: {{.Values.backup_os_project_domain}}
+          - name: OS_REGION_NAME
+            value: {{.Values.backup_os_region_name}}
+          - name: OS_PASSWORD
+            value: {{.Values.backup_os_password | quote}}
+          - name: BACKUP_INTERVAL
+            value: {{.Values.backup_interval | quote }}
+          - name: BACKUP_EXPIRATION_AFTER
+            value: {{.Values.backup_expire_after | quote }}
+{{- if .Values.metrics_enabled}}
+          - name: BACKUP_METRICS_PORT
+            value: {{.Values.metrics_port | quote }}
         ports:
-        - name: metrics
-          containerPort: {{.Values.metrics_port | quote }}
-{{endif}}
+          - name: metrics
+            containerPort: {{.Values.metrics_port}}
+{{- end}}
       volumes:
       - name: etcd-volume
         hostPath:
