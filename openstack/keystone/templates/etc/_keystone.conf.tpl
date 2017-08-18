@@ -45,8 +45,8 @@ enabled = true
 allow_redelegation = true
 
 [resource]
-admin_project_domain_name = {{ default "Default" .Values.api.adminDomainName }}
-admin_project_name = {{ default "admin" .Values.api.adminProjectName }}
+admin_project_domain_name = {{ default "Default" .Values.api.cloudAdminDomainName }}
+admin_project_name = {{ default "admin" .Values.api.cloudAdminProjectName }}
 
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.user | default "rabbitmq" }}

@@ -103,8 +103,8 @@
     "identity:check_implied_role": "rule:cloud_admin",
 
     "blacklist_roles": "'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s",
-{{ if .Values.cloud_admin_project }}
-    "blacklist_projects": "'{{.Values.cloud_admin_project}}':%(target.project.id)s",
+{{ if .Values.cloudAdminProjectId }}
+    "blacklist_projects": "'{{.Values.cloudAdminProjectId}}':%(target.project.id)s",
 {{- else }}
     "blacklist_projects": "",
 {{- end }}
