@@ -1,0 +1,47 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: network-datapath
+
+spec:
+  requires:
+  # uncomment once keystone brings its own seed
+  # - {{/* default .Release.Namespace .Values.global.keystoneNamespace */}}/keystone-seed
+  - monsoon3/test-blackbox-seed
+
+  domains:
+  - name: cc3test
+    projects:
+    - name: admin
+      network_quota:
+        subnetpool: 5
+        subnet: 5
+        network: 5
+        rbac_policy: 10
+        router: 3
+      networks:
+      - name: private_datapath_admin_cc3test
+        tags:
+        - blackbox-admin
+        subnets:
+        - name: private_datapath_admin_cc3test_sub
+          cidr: 10.180.0.0/16
+          ip_version: 4
+      - name: private_internet_admin_cc3test
+        tags:
+        - blackbox-admin
+        subnets:
+        -name : private_internet_admin_cc3test_sub
+          cidr: 10.180.0.0/16
+          ip_version: 4
+      routers:
+      - name: private_datapath_admin-TO-FloatingIP-External-monsoon3
+        external_gateway_info:
+          network: FloatingIP-external-monsoon3-01@monsoon3-net-infra@monsoon3
+        interfaces:
+        - subnet: private_datapath_admin_cc3test_sub
+      - name: private_internet_admin-TO-FloatingIP-External-monsoon3
+        external_gateway_info:
+          network: FloatingIP-external-monsoon3-01@monsoon3-net-infra@monsoon3
+        interfaces:
+        - subnet: private_internet_admin_cc3test_sub
