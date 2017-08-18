@@ -30,7 +30,7 @@ expiration = {{ .Values.api.token.expiration | default 3600 }}
 
 [fernet_tokens]
 key_repository = /fernet-keys
-max_active_keys = {{ .Values.api.fernet.max_active_keys | default 3 }}
+max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 
 [database]
 connection = postgresql://{{ default .Release.Name .Values.postgresql.dbUser }}:{{ .Values.postgresql.dbPassword }}@{{include "db_host" .}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
@@ -45,8 +45,8 @@ enabled = true
 allow_redelegation = true
 
 [resource]
-admin_project_domain_name = Default
-admin_project_name = admin
+admin_project_domain_name = {{ default "Default" .Values.api.adminDomainName }}
+admin_project_name = {{ default "admin" .Values.api.adminProjectName }}
 
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.user | default "rabbitmq" }}
