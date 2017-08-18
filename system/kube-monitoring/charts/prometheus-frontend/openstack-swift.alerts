@@ -14,7 +14,7 @@ ALERT OpenstackSwiftFirstByteTiming
   }
 
 ALERT OpenstackSwiftServiceUnavailable
-  IF sum(irate(swift_proxy_timer_sum{policy="all",status="503"}[5m])) by (os_cluster) > 0
+  IF sum(irate(swift_proxy_timer_sum{policy="all",status="503"}[5m])) by (os_cluster) > 100
   FOR 5m
   LABELS {
     tier = "openstack",
@@ -34,7 +34,7 @@ ALERT OpenstackSwiftHealthCheck
   LABELS {
     tier = "openstack",
     service = "swift",
-    severity = "critical",
+    severity = "warning",
     context = "health",
     dashboard = "swift-overview",
   }
@@ -94,7 +94,7 @@ ALERT OpenstackSwiftAsyncPendings
   LABELS {
     tier = "openstack",
     service = "swift",
-    severity = "critical",
+    severity = "warning",
     context = "asyncpendings",
     dashboard = "swift-overview",
   }
@@ -109,7 +109,7 @@ ALERT OpenstackSwiftRateLimit1000
   LABELS {
     tier = "openstack",
     service = "swift",
-    severity = "warning",
+    severity = "info",
     context = "ratelimit",
     dashboard = "swift-overview",
   }
@@ -124,7 +124,7 @@ ALERT OpenstackSwiftRateLimit5000
   LABELS {
     tier = "openstack",
     service = "swift",
-    severity = "critical",
+    severity = "warning",
     context = "ratelimit",
     dashboard = "swift-overview",
   }
@@ -139,7 +139,7 @@ ALERT OpenstackSwiftUsedSpace
   LABELS {
     tier = "openstack",
     service = "swift",
-    severity = "warning",
+    severity = "info",
     context = "usedcapacity",
     dashboard = "swift-capacity-global?var-region={{ $labels.region }}",
   }
