@@ -1,7 +1,7 @@
 ### predictive elk running out of disk space alert ###
 
 ALERT OpenstackElkPredictOutOfDiskSpace
-IF predict_linear(elasticsearch_data_diskspace_used_percentage{mount=~"/data \\(10.46.*"}[24h], 4 * 24 * 3600 ) > 85
+IF elasticsearch_data_diskspace_used_percentage{mount=~"/data \\(10.46.*"} > 80
   FOR 30m
   LABELS {
     tier = "openstack",
@@ -12,5 +12,5 @@ IF predict_linear(elasticsearch_data_diskspace_used_percentage{mount=~"/data \\(
   }
   ANNOTATIONS {
     summary = "Elastic Search might run out of disk space",
-    description = "The disk space on {{ $labels.host }} might possibly get above 85% soon. Please cleanup elastic search or lower the retention period for the logs."
+    description = "The disk usage on {{ $labels.host }}:{{ $labels.mount }} is above 80% now, thus very close to the low watermark of 85%. Please consider cleaning up elastic search or lower the retention period for the logs."
 }
