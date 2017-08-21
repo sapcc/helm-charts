@@ -17,12 +17,20 @@ notification_opt_out = {{ $message_type }}
 
 [cache]
 backend = oslo_cache.memcache_pool
-memcache_servers = {{include "memcached_host" . | default "memcached" }}:{{.Values.memcached.port | default 11211}}
+{{- if .Values.memcached.host }}
+memcache_servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
+{{ else }}
+memcache_servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11211}}
+{{- end }}
 config_prefix = cache.keystone
 enabled = true
 
 [memcache]
-servers = {{include "memcached_host" . | default "memcached" }}:{{.Values.memcached.port | default 11211}}
+{{- if .Values.memcached.host }}
+servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
+{{ else }}
+servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11211}}
+{{- end }}
 
 [token]
 provider = {{ .Values.api.token.provider | default "fernet" }}
@@ -51,7 +59,11 @@ admin_project_name = {{ default "admin" .Values.api.cloudAdminProjectName }}
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.user | default "rabbitmq" }}
 rabbit_password = {{ .Values.rabbitmq.password }}
-rabbit_host = {{ include "memcached_host" . | default "rabbitmq" }}
+{{- if .Values.rabbitmq.host }}
+rabbit_host = {{ .Values.rabbitmq.host }}
+{{ else }}
+rabbit_host = {{ include "rabbitmq_host" . }}
+{{- end }}
 rabbit_port = {{ .Values.rabbitmq.port | default 5672 }}
 rabbit_virtual_host = {{ .Values.rabbitmq.virtual_host | default "/" }}
 rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
