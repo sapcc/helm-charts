@@ -4,7 +4,7 @@ kind: Secret
 apiVersion: v1
 
 metadata:
-  name: tls-{{.Values.services.public.host | replace "." "-" }}
+  name: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -22,7 +22,7 @@ kind: Secret
 apiVersion: v1
 
 metadata:
-  name: tls-{{.Values.services.admin.host | replace "." "-" }}
+  name: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -54,23 +54,23 @@ metadata:
 spec:
   tls:
   {{- if .Values.services.public.tlsCertificate }}
-     - secretName: tls-{{.Values.services.public.host | replace "." "-" }}
-       hosts: [{{ .Values.services.public.host }}]
+     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
   {{- end }}
   {{- if .Values.services.admin.tlsCertificate }}
-     - secretName: tls-{{.Values.services.admin.host | replace "." "-" }}
-       hosts: [{{ .Values.services.admin.host }}]
+     - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+       hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
   {{- end }}
 
   rules:
-    - host: {{.Values.services.public.host}}
+    - host: {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
         - path: /
           backend:
             serviceName: keystone
             servicePort: {{ default "5000"  .Values.services.public.port }}
-    - host: {{.Values.services.admin.host}}
+    - host: {{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
         - path: /

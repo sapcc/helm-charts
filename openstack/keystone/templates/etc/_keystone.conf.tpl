@@ -51,7 +51,7 @@ admin_project_name = {{ default "admin" .Values.api.cloudAdminProjectName }}
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.user | default "rabbitmq" }}
 rabbit_password = {{ .Values.rabbitmq.password }}
-rabbit_host = {{ .Values.rabbitmq.host | default "rabbitmq" }}
+rabbit_host = {{ include "memcached_host" . | default "rabbitmq" }}
 rabbit_port = {{ .Values.rabbitmq.port | default 5672 }}
 rabbit_virtual_host = {{ .Values.rabbitmq.virtual_host | default "/" }}
 rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
