@@ -8,6 +8,8 @@ unset http_proxy
 # this is only required for regions with logs in the master project (for example from swift outside of ccloud etc.)
 if [ -f /elk-content/elk-content/elasticsearch/{{.Values.cluster_region}}/{{.Values.elk_elasticsearch_master_project_id}}.json ]; then
   curl -s -u {{ .Values.elk_elasticsearch_admin_user }}:{{ .Values.elk_elasticsearch_admin_password }} -XPUT http://{{ .Values.elk_elasticsearch_endpoint_host_internal }}:{{ .Values.elk_elasticsearch_port_internal}}/.kibana/index-pattern/master@ccadmin -d '{"title" : "master@ccadmin",  "timeFieldName": "@timestamp"}'
+  # line break for cleaner output
+  echo ""
 fi
 
 # log indexes
@@ -21,7 +23,11 @@ for i in ${indexes}; do
     TIME_FIELD_NAME="@timestamp"
   fi
   curl -s -u {{ .Values.elk_elasticsearch_admin_user }}:{{ .Values.elk_elasticsearch_admin_password }} -XPUT http://{{ .Values.elk_elasticsearch_endpoint_host_internal }}:{{ .Values.elk_elasticsearch_port_internal}}/.kibana/index-pattern/${i}-* -d "{\"title\" : \"${i}-*\",  \"timeFieldName\": \"$TIME_FIELD_NAME\"}"
+  # line break for cleaner output
+  echo ""
 done
 
 # make the logstash index the default one
 curl -s -u {{ .Values.elk_elasticsearch_admin_user }}:{{ .Values.elk_elasticsearch_admin_password }} -XPUT http://{{ .Values.elk_elasticsearch_endpoint_host_internal }}:{{ .Values.elk_elasticsearch_port_internal}}/.kibana/config/$KIBANA_VERSION -d '{"defaultIndex" : "logstash-*"}'
+# line break for cleaner output
+echo ""
