@@ -1,12 +1,14 @@
-apiVersion: apps/v1alpha1
-kind: PetSet
+apiVersion: extensions/v1beta1
+kind: Deployment
 
 metadata:
   name: prometheus-global
 
 spec:
-  replicas: 1 
-  serviceName: prometheus-global
+  replicas: 1
+  minReadySeconds: 10
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -35,15 +37,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: data 
+            claimName: {{ .Values.persistence.name | quote }}
         - name: config
           configMap:
             name: prometheus-global
-  volumeClaimTemplates:
-    - metadata:
-        name: data 
-      spec:
-        accessModes: [ "ReadWriteMany" ]
-        resources:
-          requests:
-            storage: 300Gi
