@@ -15,16 +15,17 @@ MARKER="/swift-drive-state/service-startup-time/rsyncd"
 touch "${MARKER}"
 
 function _start_application {
-    apt-get update && apt-get -y install build-essential && apt-get clean
-    cd /tmp
-    curl http://rsync.samba.org/ftp/rsync/src/rsync-3.1.1.tar.gz | tar xz
-    cd *rsync*
-    ./configure
-    make
-    cp rsync /usr/bin/rsync
-    chmod +x /usr/bin/rsync
-    make clean
-    #rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    if [ "$RSYNC_COMPAT" = "true" ]; then
+      apt-get update && apt-get -y install build-essential && apt-get clean
+      cd /tmp
+      curl http://rsync.samba.org/ftp/rsync/src/rsync-3.1.1.tar.gz | tar xz
+      cd *rsync*
+      ./configure
+      make
+      cp rsync /usr/bin/rsync
+      chmod +x /usr/bin/rsync
+      make clean
+    fi
 
     bash /swift-bin/unmount-helper "${MARKER}" &
     /usr/bin/rsync --daemon --config=/swift-etc/rsyncd.conf --no-detach
