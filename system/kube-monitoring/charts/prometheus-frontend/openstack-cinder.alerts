@@ -1,0 +1,15 @@
+### Cinder Alerts ###
+
+ALERT OpenstackCinderVolumeStuck
+  IF (sum(openstack_stuck_volumes_count_gauge)) by (region,host) *60) > 0
+  FOR 5m
+  LABELS {
+    service = "cinder",
+    severity = "info",
+    tier = "openstack",
+    dashboard = "cinder"
+  }
+  ANNOTATIONS {
+    summary = "Cinder Volumes in stuck state",
+    description = "Sum of Openstack Cinder Volume is more than 1",
+  }
