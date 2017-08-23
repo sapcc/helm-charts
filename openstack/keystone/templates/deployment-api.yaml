@@ -23,19 +23,16 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      name: keystone-api
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
-        chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-        release: {{ .Release.Name }}
-        heritage: {{ .Release.Service }}
         name: keystone-api
         system: openstack
         component: keystone
         type: api
       annotations:
+        chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
 {{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
@@ -58,7 +55,7 @@ spec:
 {{- end }}
     spec:
       containers:
-        - name: api
+        - name: keystone-api
           image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
           imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
@@ -153,7 +150,7 @@ spec:
               memory: {{ .Values.api.resources.requests.memory | quote }}
           {{- end }}
         {{- if .Values.api.metrics.enabled }}
-        - name: statsd
+        - name: keystone-statsd
           image: "{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
           imagePullPolicy: {{ .Values.api.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
           ports:

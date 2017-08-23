@@ -7,12 +7,17 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    system: openstack
     component: keystone
+    type: job
 spec:
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
+        name: keystone-job-bootstrap
+        system: openstack
+        component: keystone
+        type: job
       annotations:
         chart-version: {{.Chart.Version}}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
@@ -20,7 +25,7 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: bootstrap
+        - name: keystone-bootstrap
           image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
           imagePullPolicy: {{ default "IfNotPresent" .Values.api.imagePullPolicy | quote }}
           command:

@@ -1,5 +1,9 @@
 [loggers]
-keys = root, keystone, ldap
+{{- if .Values.debug }}
+keys = root
+{{- else }}
+keys = root, keystone, keystonemiddleware, keystoneauth, ldap, amqp, amqplib, oslo_messaging
+{{- end }}
 
 [handlers]
 keys = stderr, stdout, null{{ if .Values.sentry.enabled }}, sentry{{ end }}
@@ -8,31 +12,82 @@ keys = stderr, stdout, null{{ if .Values.sentry.enabled }}, sentry{{ end }}
 keys = context, default
 
 [logger_root]
+{{- if .Values.debug }}
+level = DEBUG
+handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{ else }}
 level = WARNING
 handlers = null
+{{- end }}
 
 [logger_keystone]
-{{ if .Values.debug }}
+{{- if .Values.debug }}
 level = DEBUG
-{{ else }}
+handlers = null
+{{- else }}
 level = INFO
-{{ end }}
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
 qualname = keystone
 
-[logger_ldap]
+[logger_keystonemiddleware]
+{{- if .Values.debug }}
+level = DEBUG
+handlers = null
+{{- else }}
 level = INFO
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
+qualname = keystonemiddleware
+
+[logger_keystoneauth]
+{{- if .Values.debug }}
+level = DEBUG
+handlers = null
+{{- else }}
+level = INFO
+handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
+qualname = keystoneauth
+
+[logger_oslo_messaging]
+{{- if .Values.debug }}
+level = DEBUG
+handlers = null
+{{- else }}
+level = DEBUG
+handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
+qualname = oslo.messaging
+
+[logger_ldap]
+{{- if .Values.debug }}
+level = INFO
+handlers = null
+{{- else }}
+level = WARNING
+handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
 qualname = keystone.common.ldap.core
 
 [logger_amqp]
-level = WARNING
+{{- if .Values.debug }}
+level = DEBUG
+handlers = null
+{{- else }}
+level = INFO
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
 qualname = amqp
 
 [logger_amqplib]
-level = WARNING
+{{- if .Values.debug }}
+level = DEBUG
+handlers = null
+{{- else }}
+level = INFO
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
 qualname = amqplib
 
 [logger_sqlalchemy]
@@ -45,7 +100,11 @@ qualname = sqlalchemy
 
 [logger_eventletwsgi]
 level = INFO
+{{- if .Values.debug }}
+handlers = null
+{{- else }}
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
 qualname = eventlet.wsgi.server
 
 [handler_stderr]
