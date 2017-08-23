@@ -75,7 +75,7 @@ ALERT KubernetesKubeletFull
   }
 
 ALERT KubernetesNodeNotReady
-  IF kube_node_status_ready{condition="true"} == 0
+  IF kube_node_status_condition{condition="Ready",status="true"} == 0
   FOR 1h
   LABELS {
     tier = "kubernetes",
@@ -93,7 +93,7 @@ ALERT KubernetesNodeNotReady
   }
 
 ALERT KubernetesNodeManyNotReady
-  IF count(kube_node_status_ready{condition="true"} == 0) > 2
+  IF count(kube_node_status_condition{condition="Ready",status="true"} == 0) > 2
   FOR 1h
   LABELS {
     tier = "kubernetes",
@@ -108,7 +108,7 @@ ALERT KubernetesNodeManyNotReady
   }
 
 ALERT KubernetesNodeNotReady
-  IF changes(kube_node_status_ready{condition="true"}[15m]) > 2
+  IF changes(kube_node_status_condition{condition="Ready",status="true"}[15m]) > 2
   FOR 15m
   LABELS {
     tier = "kubernetes",
@@ -368,7 +368,7 @@ ALERT KubernetesPredictHighNumberOfGoRoutines
   }
 
 ALERT KubernetesNodeDiskPressure
-  IF kube_node_status_disk_pressure{condition="true"} == 1
+  IF kube_node_status_condition{condition="DiskPressure",status="true"} == 1
   FOR 5m
   LABELS {
     tier = "kubernetes",
@@ -382,7 +382,7 @@ ALERT KubernetesNodeDiskPressure
   }
 
 ALERT KubernetesNodeMemoryPressure
-  IF kube_node_status_memory_pressure{condition="true"} == 1
+  IF kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
   FOR 5m
   LABELS {
     tier = "kubernetes",
