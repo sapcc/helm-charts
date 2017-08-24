@@ -31,7 +31,7 @@ ALERT KubernetesNodeClockDrift
   }
 
 ALERT KubernetesNodeKernelDeadlock
-  IF kube_node_status_kernel_deadlock{condition="true"} == 1
+  IF kube_node_status_condition{condition="KernelDeadlock",status="true"} == 1
   FOR 96h
   LABELS {
     tier = "kubernetes",

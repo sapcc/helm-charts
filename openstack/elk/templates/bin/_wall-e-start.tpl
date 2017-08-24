@@ -55,7 +55,7 @@ function start_application {
   echo "INFO: creating the indexes"
   . /wall-e-bin/create-kibana-indexes.sh
   echo ""
-  echo "INFO: deleting indexes older than the retention time"
+  echo "INFO: deleting old indexes in case we run out of space"
   /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml
   
   echo "INFO: setting up cron jobs for index creation and purging"
