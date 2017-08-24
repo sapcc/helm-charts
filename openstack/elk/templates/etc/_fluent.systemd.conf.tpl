@@ -15,10 +15,21 @@
     persistent true
     path /var/log/journal.pos
   </storage>
-  tag kube-proxy
+  tag systemd
   read_from_head true
-  strip_underscores true
 </source>
+
+<filter **>
+  @type systemd_entry
+#  field_map {"MESSAGE": "log", "_PID": ["process", "pid"], "_CMDLINE": "process", "_COMM": "cmd"}
+#  field_map_strict false
+  fields_lowercase true
+  fields_strip_underscores true
+</filter>
+
+#<match **>
+#  @type stdout
+#</match>
 
 <match **>
    @type elasticsearch
@@ -29,6 +40,7 @@
    index_name systemd
    type_name fluentd
    logstash_prefix systemd
+   logstash_format true
    template_name "systemd"
    template_file "/fluent-etc/systemd.json"
    time_as_integer false
