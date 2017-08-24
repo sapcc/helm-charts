@@ -17,6 +17,10 @@ data:
     - job_name: 'vcenter-{{ $config.name }}'
       static_configs:
         - targets: ['vcenter-exporter-{{ $config.name }}:9102']
+      metric_relabel_configs:
+      - source_labels: [vmware_name]
+        regex: c_blackbox.*|c_regression.*
+        action: drop
     {{- end }}
 
     # loop over all snmp exporters and exchange exporter and snmp device name, so that
