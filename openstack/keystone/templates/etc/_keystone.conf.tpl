@@ -10,7 +10,6 @@ logging_default_format_string = %(process)d %(levelname)s %(name)s [-] %(instanc
 logging_exception_prefix = %(process)d ERROR %(name)s %(instance)s
 
 notification_format = {{ .Values.api.notifications.format | default "basic" | quote }}
-driver = messaging
 {{ range $message_type := .Values.api.notifications.opt_out }}
 notification_opt_out = {{ $message_type }}
 {{ end }}
@@ -67,3 +66,6 @@ rabbit_host = {{ include "rabbitmq_host" . }}
 rabbit_port = {{ .Values.rabbitmq.port | default 5672 }}
 rabbit_virtual_host = {{ .Values.rabbitmq.virtual_host | default "/" }}
 rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
+
+[oslo_messaging_notifications]
+driver = messaging

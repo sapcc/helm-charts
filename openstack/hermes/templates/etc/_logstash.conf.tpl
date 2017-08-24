@@ -25,11 +25,17 @@ filter {
   if ([payload][tenant_id]) {
     mutate { add_field => { "tenant_id" => "%{[payload][tenant_id]}" } }
   }
-  if "identity." in [event_type] {
+  # Created, and Deleted have same mutate.
+  if "identity.role_assigned." in [event_type] {
     mutate { add_field => { "tenant_id" => "%{[payload][project]}" } }
-    }
+  }
+  # Don't see a project id, there's a default domain id on these events
+  if "identity.user.updated" in [event_type] {
+    mutate { add_field => { "tenant_id" => "%{[payload][initiator][domain_id]}" } } 
+  }
+  # The target project is valid here. 
   if "identity.project" in [event_type] {
-    mutate { add_field => { "domain_id" => "%{[payload][initiator][domain_id]}" } }
+    mutate { add_field => { "domain_id" => "%{[payload][target][id]}" } }
     }
   if "identity.OS-TRUST" in [event_type] {
     mutate { add_field => { "tenant_id" => "%{[payload][initiator][project_id]}" } }
