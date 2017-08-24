@@ -55,7 +55,7 @@ qualname = keystoneauth
 level = DEBUG
 handlers = null
 {{- else }}
-level = DEBUG
+level = INFO
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{- end }}
 qualname = oslo.messaging

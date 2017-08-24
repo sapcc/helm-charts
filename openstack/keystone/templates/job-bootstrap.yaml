@@ -1,3 +1,4 @@
+{{- if .Release.IsInstall }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -22,6 +23,8 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        # only run once on initial install
+        "helm.sh/hook": post-install
     spec:
       restartPolicy: OnFailure
       containers:
@@ -55,3 +58,4 @@ spec:
         - name: keystone-bin
           configMap:
             name: keystone-bin
+{{ end -}}

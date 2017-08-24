@@ -65,8 +65,10 @@ spec:
               value: "/scripts/keystone-api.sh start"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+{{- if .Release.IsInstall }}
             - name: DEPENDENCY_JOBS
               value: keystone-job-migration,keystone-job-bootstrap
+{{- end }}
             - name: DEPENDENCY_SERVICE
               value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
             {{- if .Values.sentry.enabled }}

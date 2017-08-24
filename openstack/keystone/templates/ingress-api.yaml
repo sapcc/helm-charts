@@ -12,6 +12,9 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: keystone
     type: config
+  annotations:
+    # only create once and never touch again, since it should be updated via a k8s operator
+    "helm.sh/hook": pre-install
 data:
   tls.crt: {{ .Values.services.public.tlsCertificate | b64enc }}
   tls.key: {{ .Values.services.public.tlsKey | b64enc }}
@@ -30,6 +33,10 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: keystone
     type: config
+  annotations:
+    # only create once and never touch again, since it should be updated via a k8s operator
+    "helm.sh/hook": pre-install
+
 data:
   tls.crt: {{ .Values.services.admin.tlsCertificate | b64enc }}
   tls.key: {{ .Values.services.admin.tlsKey | b64enc }}
