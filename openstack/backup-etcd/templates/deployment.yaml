@@ -25,10 +25,8 @@ spec:
         heritage: "{{ .Release.Service }}"
       annotations:
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"master"}]'
-{{- if .Values.metrics_enabled}}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{.Values.metrics_port | quote}}
-{{- end}}
     spec:
       nodeSelector:
         species: master
@@ -66,13 +64,11 @@ spec:
             value: {{.Values.backup_interval | quote }}
           - name: BACKUP_EXPIRATION_AFTER
             value: {{.Values.backup_expire_after | quote }}
-{{- if .Values.metrics_enabled}}
           - name: BACKUP_METRICS_PORT
             value: {{.Values.metrics_port | quote }}
         ports:
           - name: metrics
             containerPort: {{.Values.metrics_port}}
-{{- end}}
       volumes:
       - name: etcd-volume
         hostPath:
