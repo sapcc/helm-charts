@@ -5,6 +5,12 @@ metadata:
   namespace: backup
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+  minReadySeconds: 5
+  revisionHistoryLimit: 5
   selector:
     matchLabels:
       app: backup-etcd
@@ -53,7 +59,7 @@ spec:
           - name: OS_PROJECT_DOMAIN_NAME
             value: {{.Values.backup_os_project_domain}}
           - name: OS_REGION_NAME
-            value: {{.Values.backup_os_region_name}}
+            value: {{.Values.global.region}}
           - name: OS_PASSWORD
             value: {{.Values.backup_os_password | quote}}
           - name: BACKUP_INTERVAL
