@@ -13,3 +13,28 @@ spec:
     component: grafana-postgres
   ports:
     - port: 5432 
+    
+{{- if .Values.metrics.enabled }}
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-postgres-backup-metrics
+  labels:
+    app: grafana-postgres
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9188"
+spec:
+  clusterIP: None
+  ports:
+    - name: backup-metrics
+      port: 9188
+      protocol: TCP
+  selector:
+    app: grafana-postgres
+{{- end }}
