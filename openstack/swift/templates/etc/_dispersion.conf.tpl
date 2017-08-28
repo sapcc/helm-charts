@@ -1,9 +1,9 @@
 [dispersion]
-auth_user = test_admin
+auth_user = swift_dispersion
 user_domain_name = cc3test
 project_name = swift_dispersion
 project_domain_name = cc3test
-auth_key = {{.Values.cc3test_admin_password}}
+auth_key = {{.Values.dispersion_password}}
 auth_url = {{.Values.dispersion_auth_url}}
 auth_version = 3
 keystone_api_insecure = no

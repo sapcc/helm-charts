@@ -12,14 +12,21 @@ data:
   config.yaml: |
     {{- $caretaker := .Values.swift_account_caretaker }}
     common:
-      os_auth_url: {{ $caretaker.common.os_auth_url }}
-      os_user_domain_name: {{ $caretaker.common.os_user_domain_name }}
-      os_username: {{ $caretaker.common.os_username }}
-      os_password: {{ $caretaker.common.os_password }}
-      os_project_domain_name: {{ $caretaker.common.os_project_domain_name }}
-      os_project_name: {{ $caretaker.common.os_project_name }}
+      os_auth_url: {{ $caretaker.auth_url }}
+      os_user_domain_name: Default
+      os_username: swift_caretaker
+      os_password: {{ $caretaker.password }}
+      os_project_domain_name: cc3test
+      os_project_name: swift_test
     verify:
-      {{- range $index, $config := $caretaker.verify }}
+      - cluster_name: cluster-3
+        os_auth_url: {{ $caretaker.auth_url }}
+        os_user_domain_name: Default
+        os_username: swift_caretaker
+        os_password: {{ $caretaker.password }}
+        os_project_domain_name: Default
+        os_project_name: service
+      {{- range $index, $config := $caretaker.additional_clusters }}
       - cluster_name: {{ $index }}
         os_auth_url: {{ $config.os_auth_url }}
         os_user_domain_name: {{ $config.os_user_domain_name }}
