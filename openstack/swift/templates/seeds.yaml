@@ -68,7 +68,7 @@ spec:
         role: swiftoperator
     - name: swift_caretaker
       description: 'Swift Account Caretaker'
-      password: {{ index $.Values.swift_account_caretaker.verify "cluster-3" "os_password" }}
+      password: {{ $.Values.swift_account_caretaker.password }}
       roles:
       - project: service
         role: service
@@ -139,9 +139,19 @@ spec:
         role: swiftoperator
 
   - name: cc3test
+    users:
+    - name: swift_dispersion
+      description: 'Swift Dispersion'
+      password: '{{ $.Values.dispersion_password }}'
+      roles:
+      - project: swift_dispersion
+        role: swiftoperator
     projects:
     - name: swift_test
       description: 'swift test - mini_test'
+      roles:
+      - user: swift_caretaker@Default
+        role: swiftoperator
       swift:
         enabled: true
         containers:
