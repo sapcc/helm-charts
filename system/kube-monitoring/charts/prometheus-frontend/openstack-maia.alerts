@@ -64,3 +64,18 @@ IF maia_login_errors_count{service="metrics"} > 0
     description = "Maia API is affected by errors when accessing Keystone"
   }
 
+ALERT OpenstackMaiaUp
+IF up{service="metrics",component="maia"} < 1
+  FOR 15m
+  LABELS {
+    tier = "openstack",
+    service = "{{ $labels.service }}",
+    component = "{{ $labels.component }}",
+    severity = "warn",
+    context = "availability",
+    dashboard = "Maia-Details"
+  }
+  ANNOTATIONS {
+    summary = "Maia is not available",
+    description = "Maia monitoring endpoint is down => Maia is down"
+  }

@@ -18,12 +18,12 @@ data:
       static_configs:
         - targets: ['vcenter-exporter-{{ $config.name }}:9102']
       relabel_configs:
-      - source_labels: [instance, instance_uuid, job, exported_job]
-        action: labeldrop
+        - regex: "instance|job|exported_job|exported_instance"
+          action: labeldrop
       metric_relabel_configs:
-      - source_labels: [vmware_name]
-        regex: c_blackbox.*|c_regression.*
-        action: drop
+        - source_labels: [vmware_name]
+          regex: c_blackbox.*|c_regression.*
+          action: drop
     {{- end }}
 
     # loop over all snmp exporters and exchange exporter and snmp device name, so that
@@ -43,7 +43,7 @@ data:
           target_label: instance
         - target_label: __address__
           replacement: snmp-exporter-{{ $config.name }}:9116 # SNMP exporter
-        - source_labels: [instance, instance_uuid, job]
+        - regex: "instance|instance_uuid|job"
           action: labeldrop
       metric_relabel_configs:
         - source_labels: [ltmVirtualServStatName]
@@ -64,8 +64,8 @@ data:
       static_configs:
         - targets: ['prometheus-collector.kube-monitoring:9090']
       relabel_configs:
-      - source_labels: [instance, instance_uuid, job, kubernetes_namespace, kubernetes_pod_name, pod_template_hash]
-        action: labeldrop
+        - regex: "instance|instance_uuid|job|kubernetes_namespace|kubernetes_pod_name|pod_template_hash"
+          action: labeldrop
       metrics_path: '/federate'
       params:
         'match[]':
