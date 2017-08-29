@@ -21,6 +21,8 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9235"
+    # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
+    terminationGracePeriodSeconds: 60
     spec:
       containers:
         - name: rails
@@ -48,6 +50,11 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                #Give the ingress some time to reload its config
+                command: ["/bin/sh","-c","sleep 30"]
         - name: puma-metrics
           image: sapcc/puma-exporter:0.1.0
           ports:
