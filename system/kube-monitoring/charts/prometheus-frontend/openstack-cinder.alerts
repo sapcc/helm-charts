@@ -13,3 +13,31 @@ ALERT OpenstackCinderVolumeStuck
     summary = "Cinder Volumes in stuck state",
     description = "Sum of Openstack Cinder Volume Stuck is more than 1",
   }
+
+ALERT OpenstackCinderVolumeAttach
+  IF (openstack_stuck_volumes_max_duration_gauge{status="attaching"} by (host)) > 15
+  FOR 5m
+  LABELS {
+    service = "cinder",
+    severity = "info",
+    tier = "openstack",
+    dashboard = "cinder"
+  }
+  ANNOTATIONS {
+    summary = "Cinder Volumes taking more than 15s to attach",
+    description = "Cinder Volumes taking more than 15s to attach in {{ $labels.host }}",
+  }
+  
+  ALERT OpenstackCinderVolumeDetach
+  IF (openstack_stuck_volumes_max_duration_gauge{status="detaching"} by (host)) > 10
+  FOR 5m
+  LABELS {
+    service = "cinder",
+    severity = "info",
+    tier = "openstack",
+    dashboard = "cinder"
+  }
+  ANNOTATIONS {
+    summary = "Cinder Volumes taking more than 10s to detach",
+    description = "Cinder Volumes taking more than 10s to detach in {{ $labels.host }}",
+  }
