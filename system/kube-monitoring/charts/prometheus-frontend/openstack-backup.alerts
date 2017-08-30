@@ -30,23 +30,23 @@ ALERT OpenstackDatabaseBackupAge4Hours
     description = "The last successful database backup for {{ $labels.app }} is {{ $value }} hours old."
   }
 
-#ALERT OpenstackDatabaseBackupReplicationAge
-#  IF (time()-backup_replication_last_success)/60/60 >= 24 AND backup_replication_last_success > 0
-#  FOR 10m
-#  LABELS {
-#    tier = "openstack",
-#    service = "backup-replication",
-#    severity = "warning",
-#    context = "replicationage",
-#    dashboard = "db-backup-replication"
-#  }
-#  ANNOTATIONS {
-#    summary = "Database Backup Replication too old",
-#    description = "The last successful database backup replication is {{ $value }} hours old."
-#  }
+ALERT OpenstackDatabaseBackupReplicationAge
+  IF (time()-backup_replication_last_success)/60/60 >= 24 AND backup_replication_last_success > 0
+  FOR 10m
+  LABELS {
+    tier = "openstack",
+    service = "backup-replication",
+    severity = "warning",
+    context = "replicationage",
+    dashboard = "db-backup-replication"
+  }
+  ANNOTATIONS {
+    summary = "Database Backup Replication too old",
+    description = "The last successful database backup replication is {{ $value }} hours old."
+  }
 
 ALERT OpenstackDatabaseBackupReplicationMissing
-  IF backup_replication_last_success = 0
+  IF backup_replication_last_success == 0
   FOR 10m
   LABELS {
     tier = "openstack",
