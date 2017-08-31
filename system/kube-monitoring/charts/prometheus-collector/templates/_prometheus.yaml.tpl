@@ -254,34 +254,6 @@ scrape_configs:
     regex: ([^:]+)(:\d+)?
     replacement: ${1}:9101
 
-# loop over all snmp exporters and exchange exporter and snmp device name, so that
-# the metric is labeled by snmp device name and not by exporter name
-{{- if .Values.snmp_exporter }}
-{{- range $config := .Values.snmp_exporter.maia_snmp_config }}
-- job_name: 'snmp-{{ $config.name }}'
-  static_configs:
-    - targets:
-      - {{ $config.target }} # SNMP device
-  metrics_path: /snmp
-  params:
-    module: [{{ $config.configname }}]
-  relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: snmp-exporter-{{ $config.name }}.maia:9116 # SNMP exporter
-  metric_relabel_configs:
-    - source_labels: [ltmVirtualServStatName]
-      target_label: project_id
-      regex: /Project_(.*)/Project_.*
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
-      regex: /Project_.*/Project_(.*)
-{{- end}}
-{{- end}}
-
 # Static Targets 
 #
 - job_name: 'prometheus-collector'
