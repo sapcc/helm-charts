@@ -8,7 +8,7 @@ ALERT KubernetesHostHighCPUUsage
     service   = "node",
     severity  = "warning",
     context   = "availability",
-    meta      = "{{$labels.instance}}",
+    meta      = "{{`{{ $labels.instance }}`}}",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
@@ -24,7 +24,7 @@ ALERT KubernetesNodeClockDrift
     service   = "node",
     severity  = "info",
     context   = "availability",
-    meta      = "{{$labels.instance}}",
+    meta      = "{{`{{ $labels.instance }}`}}",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
@@ -40,7 +40,7 @@ ALERT KubernetesNodeKernelDeadlock
     service  = "k8s",
     severity = "info",
     context  = "availability",
-    meta     = "{{$labels.instance}}",
+    meta     = "{{`{{ $labels.instance }}`}}",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_safe_rebooting.html",
     {{- end }}
@@ -60,7 +60,7 @@ ALERT KubernetesNodeHighNumberOfOpenConnections
     service   = "node",
     severity  = "warning",
     context   = "availability",
-    meta      = "{{$labels.instance}}",
+    meta      = "{{`{{ $labels.instance }}`}}",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_high_tcp_connections.html",
@@ -79,7 +79,7 @@ ALERT KubernetesNodeHighRiseOfOpenConnections
     service   = "node",
     severity  = "critical",
     context   = "availability",
-    meta      = "{{$labels.instance}}",
+    meta      = "{{`{{ $labels.instance }}`}}",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_high_tcp_connections.html",
