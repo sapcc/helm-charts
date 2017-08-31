@@ -6,7 +6,8 @@ ALERT KubernetesKubeletDown
     service = "kubelet",
     severity = "critical",
     context = "kubelet",
-    dashboard = "kubernetes-health"
+    meta = "{{ $labels.instance }}",
+    dashboard = "kubernetes-health",
   }
   ANNOTATIONS {
     summary = "A Kubelet is DOWN",
@@ -52,7 +53,8 @@ ALERT KubernetesKubeletTooManyPods
     service = "kubelet",
     severity = "warning",
     context = "kubelet",
-    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
+    meta = "{{ $labels.instance }}",
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
   }
   ANNOTATIONS {
     summary = "Kubelet is close to pod limit",
@@ -67,7 +69,8 @@ ALERT KubernetesKubeletFull
     service = "k8s",
     severity = "critical",
     context = "kubelet",
-    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
+    meta = "{{ $labels.instance }}",
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
   }
   ANNOTATIONS {
     summary = "Kubelet is full",
@@ -82,6 +85,7 @@ ALERT KubernetesNodeNotReady
     service = "k8s",
     severity = "critical",
     context = "node",
+    meta = "{{ $labels.node }}",
     dashboard = "kubernetes-node?var-server={{`{{$labels.node}}`}}",
     {{ if .Values.ops_docu_url -}}
         playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_not_ready.html",
@@ -115,7 +119,8 @@ ALERT KubernetesNodeNotReady
     service = "k8s",
     severity = "warning",
     context = "node",
-    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
+    meta = "{{ $labels.node }}",
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
   }
   ANNOTATIONS {
     summary = "Node Readyness is flapping",
@@ -145,6 +150,7 @@ ALERT KubernetesPodRestartingTooMuch
     service = "resources",
     severity = "info",
     context = "pod",
+    meta = "{{`{{$labels.namespace}}`}}/{{`{{$labels.pod}}`}}",
   }
   ANNOTATIONS {
     summary = "Pod is in a restart loop",
@@ -160,7 +166,8 @@ ALERT KubernetesKubeletDockerHangs
     service = "kubelet",
     severity = "warning",
     context = "docker",
-    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
+    meta = "{{ $labels.instance }}",
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
   }
   ANNOTATIONS {
     summary = "Docker hangs!",
@@ -175,7 +182,8 @@ ALERT KubernetesApiServerDown
     service = "k8s",
     severity = "warning",
     context = "apiserver",
-    dashboard = "kubernetes-kubelet?var-node={{`{{$labels.instance}}`}}"
+    meta = "{{ $labels.instance }}",
+    dashboard = "kubernetes-kubelet?var-node={{`{{$labels.instance}}`}}",
   }
   ANNOTATIONS {
     summary = "An ApiServer is DOWN",
@@ -317,7 +325,8 @@ ALERT KubernetesTooManyOpenFiles
     service = "k8s",
     severity = "warning",
     context = "system",
-    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
+    meta = "{{ $labels.instance }}",
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
   }
   ANNOTATIONS {
     summary = "Too many open file descriptors",
@@ -332,7 +341,8 @@ ALERT KubernetesTooManyOpenFiles
     service = "k8s",
     severity = "critical",
     context = "system",
-    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
+    meta = "{{ $labels.instance }}",
+    dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
   }
   ANNOTATIONS {
     summary = "Too many open file descriptors",
@@ -346,7 +356,8 @@ ALERT KubernetesHighNumberOfGoRoutines
     tier = "kubernetes",
     service = "kubelet",
     severity = "warning",
-    context = "kubelet"
+    context = "kubelet",
+    meta = "{{ $labels.instance }}",
   }
   ANNOTATIONS {
     summary = "High number of Go routines",
@@ -360,7 +371,8 @@ ALERT KubernetesPredictHighNumberOfGoRoutines
     tier = "kubernetes",
     service = "kubelet",
     severity = "warning",
-    context = "kubelet"
+    context = "kubelet",
+    meta = "{{ $labels.instance }}",
   }
   ANNOTATIONS {
     summary = "Predicting high number of Go routines",
@@ -374,7 +386,8 @@ ALERT KubernetesNodeDiskPressure
     tier = "kubernetes",
     service = "node",
     severity = "warning",
-    context = "kubelet"
+    context = "kubelet",
+    meta = "{{ $labels.instance }}",
   }
   ANNOTATIONS {
     summary = "Insufficient disk space",
@@ -388,10 +401,10 @@ ALERT KubernetesNodeMemoryPressure
     tier = "kubernetes",
     service = "node",
     severity = "warning",
-    context = "kubelet"
+    context = "kubelet",
+    meta = "{{ $labels.instance }}",
   }
   ANNOTATIONS {
     summary = "Insufficient memory",
     description = "Kublet on {{`{{$labels.instance}}`}} under pressure due to insufficient available memory.",
   }
-
