@@ -4,10 +4,11 @@ ALERT KubernetesHostHighCPUUsage
   IF avg(irate(node_cpu{mode="idle"}[5m])) by(instance, region) < 0.2
   FOR 3m
   LABELS {
-    tier = "kubernetes",
+    tier      = "kubernetes",
     service   = "node",
     severity  = "warning",
     context   = "availability",
+    meta      = "{{$labels.instance}}",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
@@ -19,10 +20,11 @@ ALERT KubernetesNodeClockDrift
   IF abs(ntp_drift_seconds) > 0.3
   FOR 10m
   LABELS {
-    tier = "kubernetes",
-    service = "node",
-    severity = "info",
-    context = "availability",
+    tier      = "kubernetes",
+    service   = "node",
+    severity  = "info",
+    context   = "availability",
+    meta      = "{{$labels.instance}}",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
   }
   ANNOTATIONS {
@@ -34,10 +36,11 @@ ALERT KubernetesNodeKernelDeadlock
   IF kube_node_status_condition{condition="KernelDeadlock",status="true"} == 1
   FOR 96h
   LABELS {
-    tier = "kubernetes",
-    service = "k8s",
+    tier     = "kubernetes",
+    service  = "k8s",
     severity = "info",
-    context = "availability",
+    context  = "availability",
+    meta     = "{{$labels.instance}}",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_node_safe_rebooting.html",
     {{- end }}
@@ -53,10 +56,11 @@ ALERT KubernetesNodeHighNumberOfOpenConnections
   IF node_netstat_Tcp_CurrEstab > 20000
   FOR 15m
   LABELS {
-    tier = "kubernetes",
-    service = "node",
-    severity = "warning",
-    context = "availability",
+    tier      = "kubernetes",
+    service   = "node",
+    severity  = "warning",
+    context   = "availability",
+    meta      = "{{$labels.instance}}",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_high_tcp_connections.html",
@@ -71,10 +75,11 @@ ALERT KubernetesNodeHighRiseOfOpenConnections
   IF predict_linear(node_netstat_Tcp_CurrEstab[20m], 3600) > 32768
   FOR 15m
   LABELS {
-    tier = "kubernetes",
-    service = "node",
-    severity = "critical",
-    context = "availability",
+    tier      = "kubernetes",
+    service   = "node",
+    severity  = "critical",
+    context   = "availability",
+    meta      = "{{$labels.instance}}",
     dashboard = "kubernetes-node?var-server={{`{{$labels.instance}}`}}",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/k8s_high_tcp_connections.html",
