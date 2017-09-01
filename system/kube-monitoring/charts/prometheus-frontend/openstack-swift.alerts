@@ -164,6 +164,40 @@ ALERT OpenstackSwiftRepo
     description = "Content repo {{ $labels.repo }} sync failed. Check the logs.",
   }
 
+ALERT OpenstackSwiftRepoEntitlementForbidden
+  IF repo_sync_check_success_gauge == -1
+  FOR 1h
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "warning",
+    context = "repo-{{ $labels.repo }}-entitlement",
+    meta = "{{ $labels.repo }}",
+    dashboard = "repo-sync?var-repo={{ $labels.repo }}",
+    #playbook = TODO
+  }
+  ANNOTATIONS {
+    summary = "Repo {{ $labels.repo }} entitlement lost",
+    description = "Repo {{ $labels.repo }} the entitlement became invalid.",
+  }
+
+ALERT OpenstackSwiftRepoEntitlement
+  IF repo_sync_check_success_gauge == 0
+  FOR 1h
+  LABELS {
+    tier = "openstack",
+    service = "swift",
+    severity = "info",
+    context = "repo-{{ $labels.repo }}-entitlement",
+    meta = "{{ $labels.repo }}",
+    dashboard = "repo-sync?var-repo={{ $labels.repo }}",
+    #playbook = TODO
+  }
+  ANNOTATIONS {
+    summary = "Repo {{ $labels.repo }} entitlement check failed",
+    description = "Repo {{ $labels.repo }} entitlement check failed. Check the logs.",
+  }
+
 ALERT OpenstackSwiftDriveAutopilotConsistencyCheck
   IF rate(swift_drive_autopilot_events{type="consistency-check"}[5m]) < 0.02
   FOR 10m
