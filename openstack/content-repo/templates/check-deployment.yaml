@@ -1,0 +1,49 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: content-repo-check
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: content-repo-check
+  template:
+    metadata:
+      labels:
+        component: content-repo-check
+      annotations:
+        checksum/check.bin: {{ include "content-repo/templates/bin-configmap.yaml" . | sha256sum }}
+        checksum/check.secrets: {{ include "content-repo/templates/secrets.yaml" . | sha256sum }}
+    spec:
+      volumes:
+      - name: bin
+        configMap:
+          name: bin-check
+      - name: secret
+        secret:
+          secretName: swift-http-import
+      containers:
+      - name: check
+        image: alpine:{{.Values.image_version_auxiliary_alpine}}
+        args:
+          - /bin/sh
+          - /bin-check/check-rhn
+        env:
+          - name: STATSD_HOSTNAME
+            value: {{ $.Values.statsd_hostname | quote }}
+          - name: CHECK_INTERVAL
+            value: "900" # 15 min
+        volumeMounts:
+          - mountPath: /secret-check
+            name: secret
+          - mountPath: /bin-check
+            name: bin
