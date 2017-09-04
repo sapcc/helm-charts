@@ -24,7 +24,9 @@ ALERT OpenstackRepoEntitlementForbidden
     context = "repo-{{`{{ $labels.repo }}`}}-entitlement",
     meta = "{{`{{ $labels.repo }}`}}",
     dashboard = "repo-sync?var-repo={{`{{ $labels.repo }}`}}",
-    playbook = "{{`{{ .Values.ops_docu_url }}`}}/docs/support/playbook/repo_{{`{{ $labels.repo }}`}}_entitlement.html",
+    {{ if .Values.ops_docu_url -}}
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/repo_{{`{{ $labels.repo }}`}}_entitlement.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Repo {{`{{ $labels.repo }}`}} entitlement lost",
