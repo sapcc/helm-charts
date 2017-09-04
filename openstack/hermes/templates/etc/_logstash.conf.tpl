@@ -9,6 +9,16 @@ rabbitmq {
     id => "logstash_hermes"
     automatic_recovery => false
   }
+rabbitmq {
+    host => "{{.Values.hermes_legacy_rabbitmq_host}}"
+    user => "{{.Values.hermes_legacy_rabbitmq_user}}"
+    password => "{{.Values.hermes_legacy_rabbitmq_password}}"
+    port => {{.Values.hermes_legacy_rabbitmq_port}}
+    queue => "{{.Values.hermes_legacy_rabbitmq_queue_name}}"
+    subscription_retry_interval_seconds => 60
+    id => "logstash_legacy_hermes"
+    automatic_recovery => false
+  }
 }
 
 filter {
@@ -16,8 +26,8 @@ filter {
     drop { }
   }
   # Drop DNS events as they are not CADF format, reevaluate later.
-  if "dns." in [event_type] {
-    drop { }
+#  if "dns." in [event_type] {
+#    drop { }
   }
   if ![tenant_id] and "" in [project] {
     mutate { add_field => { "tenant_id" => "%{[project]}" } }
@@ -72,6 +82,11 @@ output {
         template_overwrite => true
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
+    }
+  }
+  if "logstash_legacy_hermes" in [id] {
+    file {
+     path => "/usr/share/logstash/fileoutput/legacy-%{+YYYY-MM-dd}"
     }
   }
 }
