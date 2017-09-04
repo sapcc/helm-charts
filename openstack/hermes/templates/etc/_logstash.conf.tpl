@@ -9,16 +9,16 @@ rabbitmq {
     id => "logstash_hermes"
     automatic_recovery => false
   }
-rabbitmq {
-    host => "{{.Values.hermes_legacy_rabbitmq_host}}"
-    user => "{{.Values.hermes_legacy_rabbitmq_user}}"
-    password => "{{.Values.hermes_legacy_rabbitmq_password}}"
-    port => {{.Values.hermes_legacy_rabbitmq_port}}
-    queue => "{{.Values.hermes_legacy_rabbitmq_queue_name}}"
-    subscription_retry_interval_seconds => 60
-    id => "logstash_legacy_hermes"
-    automatic_recovery => false
-  }
+#rabbitmq {
+#    host => "{{.Values.hermes_legacy_rabbitmq_host}}"
+#    user => "{{.Values.hermes_legacy_rabbitmq_user}}"
+#    password => "{{.Values.hermes_legacy_rabbitmq_password}}"
+#    port => {{.Values.hermes_legacy_rabbitmq_port}}
+#    queue => "{{.Values.hermes_legacy_rabbitmq_queue_name}}"
+#    subscription_retry_interval_seconds => 60
+#    id => "logstash_legacy_hermes"
+#    automatic_recovery => false
+#  }
 }
 
 filter {
