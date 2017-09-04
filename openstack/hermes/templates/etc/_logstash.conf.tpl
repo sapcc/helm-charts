@@ -26,9 +26,9 @@ filter {
     drop { }
   }
   # Drop DNS events as they are not CADF format, reevaluate later.
-#  if "dns." in [event_type] {
-#    drop { }
-  }
+  #  if "dns." in [event_type] {
+  #    drop { }
+  #  }
   if ![tenant_id] and "" in [project] {
     mutate { add_field => { "tenant_id" => "%{[project]}" } }
   }
