@@ -86,7 +86,7 @@ output {
   }
   if "logstash_legacy_hermes" in [id] {
     file {
-     path => "/usr/share/logstash/fileoutput/legacy-%{+YYYY-MM-dd}"
+     path => "/usr/share/logstash/legacy-%{+YYYY-MM-dd}"
     }
   }
 }
