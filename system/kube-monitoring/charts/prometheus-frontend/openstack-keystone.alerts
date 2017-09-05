@@ -14,7 +14,7 @@ ALERT OpenstackKeystoneScrapeMissing
   }
 
 ALERT OpenstackKeystoneDatabaseScrapeMissing
-  IF absent(up{component="keystone", type="database"})
+  IF absent(kube_pod_container_status_running{container="postgres", pod=~"keystone-postgres.*"})
   FOR 1h
   LABELS {
     tier = "openstack",
@@ -25,7 +25,7 @@ ALERT OpenstackKeystoneDatabaseScrapeMissing
   }
   ANNOTATIONS {
     summary = "Keystone database cannot be scraped",
-    description = "Keystones database failed to be scraped.",
+    description = "Keystones database running status failed to be scraped.",
   }
 
 ALERT OpenstackKeystoneApiDown
@@ -34,8 +34,9 @@ ALERT OpenstackKeystoneApiDown
   LABELS {
     tier = "openstack",
     service = "keystone",
-    severity = "warning",
+    severity = "info",
     context = "availability",
+    meta = "a keystone instance went down on {{ $labels.instance }} "
     dashboard = "keystone"
   }
   ANNOTATIONS {
@@ -44,7 +45,7 @@ ALERT OpenstackKeystoneApiDown
   }
 
 ALERT OpenstackKeystoneDatabaseDown
-  IF up{component="keystone", type="database"} == 0
+  IF count(kube_pod_container_status_running{container="postgres", pod=~"keystone-postgres.*"} == 0) by (region) == count(kube_pod_container_status_running{container="postgres", pod=~"keystone-postgres.*"}) by (region)
   FOR 5m
   LABELS {
     tier = "openstack",
@@ -66,6 +67,7 @@ ALERT OpenstackKeystoneAllDown
     service = "keystone",
     severity = "critical",
     context = "availability",
+    meta = "all keystone instances are down"
     dashboard = "keystone"
   }
   ANNOTATIONS {
