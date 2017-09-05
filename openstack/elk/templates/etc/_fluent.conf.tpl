@@ -64,7 +64,7 @@
   @type grep
   <exclude>
     key log
-    pattern "password"\:
+    pattern \"password\"\:
   </exclude>
 </filter>
 
