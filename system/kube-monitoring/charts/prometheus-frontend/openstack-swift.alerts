@@ -148,22 +148,6 @@ ALERT OpenstackSwiftUsedSpace
     description = "Swift storage usage will reach 80% in 30 days. Order hardware now!",
   }
 
-ALERT OpenstackSwiftRepo
-  IF repo_sync_last_run_gauge{kind="success"} < 1
-  FOR 2d
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "repo",
-    meta = "{{ $labels.repo }}",
-    dashboard = "repo-sync?var-repo={{ $labels.repo }}",
-  }
-  ANNOTATIONS {
-    summary = "Repo {{ $labels.repo }} sync failed",
-    description = "Content repo {{ $labels.repo }} sync failed. Check the logs.",
-  }
-
 ALERT OpenstackSwiftDriveAutopilotConsistencyCheck
   IF rate(swift_drive_autopilot_events{type="consistency-check"}[5m]) < 0.02
   FOR 10m

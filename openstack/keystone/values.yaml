@@ -40,7 +40,7 @@ api:
 
   token:
     provider: fernet
-    # lifetime of a token in minutes
+    # lifetime of a token in seconds
     expiration: 3600
 
   fernet:
@@ -181,6 +181,15 @@ pgmetrics:
   db_password: anotherSecret
 
   customMetrics:
+    pg_database:
+      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+      metrics:
+        - datname:
+            usage: "LABEL"
+            description: "Name of the database"
+        - size_bytes:
+            usage: "GAUGE"
+            description: "Size of the database in bytes"
     openstack_roles_total:
       query: "SELECT COUNT(*) as gauge FROM role"
       metrics:

@@ -59,6 +59,15 @@
   </parse>
 </filter>
 
+
+<filter kubernetes.var.log.containers.neutron-server**>
+  @type grep
+  <exclude>
+    key log
+    pattern \"password\"\:
+  </exclude>
+</filter>
+
 <filter kubernetes.var.log.containers.unbound**>
   @type parser
   key_name log

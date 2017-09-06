@@ -221,10 +221,10 @@ ALERT KubernetesApiServerScrapeMissing
   }
 
 ALERT KubernetesApiServerLatency
-  IF histogram_quantile(
+  IF max(histogram_quantile(
       0.99,
       sum without (instance,node,resource) (apiserver_request_latencies_bucket{verb!~"CONNECT|WATCHLIST|WATCH|LIST"})
-    ) / 1e6 > 2.0
+    ) / 1e6 > 2.0)
   FOR 1h
   LABELS {
     tier = "kubernetes",
@@ -235,7 +235,7 @@ ALERT KubernetesApiServerLatency
   }
   ANNOTATIONS {
     summary = "Kubernetes apiserver latency is high",
-    description = "Latency for {{`{{$labels.verb}}`}} is higher than 2s.",
+    description = "Latency for is higher than 2s.",
   }
 
 ALERT KubernetesApiServerEtcdAccessLatency
