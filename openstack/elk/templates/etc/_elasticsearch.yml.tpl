@@ -32,6 +32,11 @@ readonlyrest:
       indices: ["logstash-*"]
       auth_key: {{.Values.elk_elasticsearch_data_user}}:{{.Values.elk_elasticsearch_data_password}}
 
+    - name: jump
+      actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+      indices: ["jump-*"]
+      auth_key: {{.Values.elk_elasticsearch_jump_user}}:{{.Values.elk_elasticsearch_jump_password}}
+
     - name: Monsoon (read only, but can create dashboards)
       kibana_access: ro
       auth_key: {{.Values.elk_elasticsearch_monsoon_user}}:{{.Values.elk_elasticsearch_monsoon_password}}
