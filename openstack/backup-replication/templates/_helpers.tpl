@@ -14,3 +14,15 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 24 -}}
 {{- end -}}
+
+{{- define "backup_image" -}}
+  {{- if typeIs "string" .Values.image_version -}}
+    {{ required "This release should be installed by the deployment pipeline!" "" }}
+  {{- else -}}
+    {{- if typeIs "float64" .Values.image_version -}}
+      {{.Values.repository}}:{{.Values.image_version | printf "%0.f"}}
+    {{- else -}}
+      {{.Values.repository}}:{{.Values.image_version}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
