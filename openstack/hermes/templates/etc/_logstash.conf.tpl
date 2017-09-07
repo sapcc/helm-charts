@@ -22,13 +22,11 @@ rabbitmq {
 }
 
 filter {
-  ### Keystone/Identity Rules
   # Remove unneeded authenticate, not useful for auditing.
   if "identity.authenticate" in [event_type] {
     drop { }
   }
   
-  ### Designate/DNS rules
   # Designate has duplicate messages for zone and domain, drop zone as that's consistent with other similar services.
   if "dns.zone." in [event_type] {
     drop { }
@@ -42,7 +40,6 @@ filter {
     mutate { add_field => { "[payload][eventTime]"" => "%{[timestamp]}" } }
   }
 
-  ### Global Rules
   if ![tenant_id] and "" in [project] {
     mutate { add_field => { "tenant_id" => "%{[project]}" } }
   }
