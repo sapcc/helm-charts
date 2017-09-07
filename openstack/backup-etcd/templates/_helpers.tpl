@@ -22,7 +22,7 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
     {{- if typeIs "float64" .Values.image_version -}}
       {{.Values.repository}}:{{.Values.image_version | printf "%0.f"}}
     {{- else -}}
-      {{.Values.repository}}:{$.Values.image_version}}
+      {{.Values.repository}}:{.Values.image_version}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
