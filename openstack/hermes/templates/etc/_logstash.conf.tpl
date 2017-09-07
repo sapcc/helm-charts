@@ -25,8 +25,12 @@ filter {
   if "identity.authenticate" in [event_type] {
     drop { }
   }
-  # Drop DNS events as they are not CADF format, reevaluate later.
-  if "dns." in [event_type] {
+  # Designate has duplicate messages for zone and domain, drop one set of them.
+  if "dns.domain." in [event_type] {
+    drop { }
+  }
+  # Drop all DNS exists messages as they are periodic messages that are not useful for us.
+  if "dns.zone.exists" in [event_type] {
     drop { }
   }
   if ![tenant_id] and "" in [project] {
@@ -54,12 +58,12 @@ filter {
 }
 
 output {
-  # in case we want to write out the legacy dns events to a file for debugging
-  # if "dns." in [event_type] {
-  #   file {
-  #    path => "/usr/share/logstash/legacy-%{+YYYY-MM-dd}"
-  #   }
-  # }
+  # Write out designate events to file until we develop a proper cadf mapping
+  if "dns." in [event_type] {
+    file {
+     path => "/usr/share/logstash/designate-%{+YYYY-MM-dd}"
+    }
+  }
   # else if ([tenant_id]) {
   if ([tenant_id]) {
     elasticsearch {
