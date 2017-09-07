@@ -22,17 +22,27 @@ rabbitmq {
 }
 
 filter {
+  ### Keystone/Identity Rules
+  # Remove unneeded authenticate, not useful for auditing.
   if "identity.authenticate" in [event_type] {
     drop { }
   }
-  # Designate has duplicate messages for zone and domain, drop one set of them.
-  if "dns.domain." in [event_type] {
+  
+  ### Designate/DNS rules
+  # Designate has duplicate messages for zone and domain, drop zone as that's consistent with other similar services.
+  if "dns.zone." in [event_type] {
     drop { }
   }
   # Drop all DNS exists messages as they are periodic messages that are not useful for us.
-  if "dns.zone.exists" in [event_type] {
+  if "dns.domain.exists" in [event_type] {
     drop { }
   }
+  # Map Designate Fields to standardized format.
+  if "dns." in [event_type] {
+    mutate { add_field => { "[payload][eventTime]"" => "%{[timestamp]}" } }
+  }
+
+  ### Global Rules
   if ![tenant_id] and "" in [project] {
     mutate { add_field => { "tenant_id" => "%{[project]}" } }
   }
@@ -54,6 +64,7 @@ filter {
   if "identity.OS-TRUST" in [event_type] {
     mutate { add_field => { "tenant_id" => "%{[payload][initiator][project_id]}" } }
     }
+
   kv { source => "_source" }
 }
 
