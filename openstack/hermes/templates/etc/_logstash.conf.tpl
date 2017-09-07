@@ -59,11 +59,11 @@ filter {
 
 output {
   # Write out designate events to file until we develop a proper cadf mapping
-  if "dns." in [event_type] {
-    file {
-     path => "/usr/share/logstash/designate-%{+YYYY-MM-dd}"
-    }
-  }
+  #if "dns." in [event_type] {
+  #  file {
+  #   path => "/usr/share/logstash/designate-%{+YYYY-MM-dd}"
+  #  }
+  #}
   # else if ([tenant_id]) {
   if ([tenant_id]) {
     elasticsearch {
