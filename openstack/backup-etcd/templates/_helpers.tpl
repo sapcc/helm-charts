@@ -17,12 +17,12 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 
 {{- define "backup_image" -}}
   {{- if typeIs "string" .Values.image_version -}}
-    {{ required "This release should be installed by the deployment pipeline!" "" }}
+    {{.Values.repository}}:{{.Values.image_version}}
   {{- else -}}
     {{- if typeIs "float64" .Values.image_version -}}
       {{.Values.repository}}:{{.Values.image_version | printf "%0.f"}}
     {{- else -}}
-      {{.Values.repository}}:{.Values.image_version}}
+      {{.Values.repository}}:{{.Values.image_version}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
