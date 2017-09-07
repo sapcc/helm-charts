@@ -37,7 +37,7 @@ filter {
   }
   # Map Designate Fields to standardized format.
   if "dns." in [event_type] {
-    mutate { add_field => { "[payload][eventTime]"" => "%{[timestamp]}" } }
+    mutate { add_field => { "[payload][eventTime]" => "%{[timestamp]}" } }
   }
 
   if ![tenant_id] and "" in [project] {
