@@ -11,8 +11,13 @@ spec:
   replicas: 1
   template:
     metadata:
+      name: backup-replication
+      namespace: backup
       labels:
-        name: backup-replication
+        app: backup-replication
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
       annotations:
         checksum: {{ include "backup-replication/templates/replica-configmap.yaml" $ | sha256sum }}
     spec:
