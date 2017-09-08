@@ -35,6 +35,10 @@ filter {
   if "dns.domain.exists" in [event_type] {
     drop { }
   }
+  # Remove Canary Tests 
+  if "Canary_test" in [payload][description] {
+    drop { }
+  }
   # Map Designate Fields to standardized format.
   if "dns." in [event_type] {
     mutate { add_field => { "[payload][eventTime]" => "%{[@timestamp]}" } }
