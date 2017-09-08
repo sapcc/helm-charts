@@ -44,7 +44,8 @@ filter {
     mutate { add_field => { "[payload][eventTime]" => "%{[@timestamp]}" } }
     mutate { add_field => { "[payload][target][typeURI]" => "dns/domain" } }
     mutate { add_field => { "[payload][target][id]" => "%{[payload][id]}" } }
-    mutate { add_field => { "[payload][initiator][user_id]" => "%{[_context_user_id]}" } }
+    # Docs say it's _context_user_id , we have _context_user that doesn't look right. TODO: sort it out.
+    mutate { add_field => { "[payload][initiator][user_id]" => "%{[_context_user]}" } }
   }
   
 
