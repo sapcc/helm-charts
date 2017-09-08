@@ -39,10 +39,14 @@ filter {
   if "Canary_test" in [payload][description] {
     drop { }
   }
-  # Map Designate Fields to standardized format.
+  # Map Designate Fields to standardized CADF format.
   if "dns." in [event_type] {
     mutate { add_field => { "[payload][eventTime]" => "%{[@timestamp]}" } }
+    mutate { add_field => { "[payload][target][typeURI]" => "dns/domain" } }
+    mutate { add_field => { "[payload][target][id]" => "%{[payload][id]}" } }
+    mutate { add_field => { "[payload][initiator][user_id]" => "%{[_context_user_id]}" } }
   }
+  
 
   if ![tenant_id] and "" in [project] {
     mutate { add_field => { "tenant_id" => "%{[project]}" } }
