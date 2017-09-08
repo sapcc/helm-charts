@@ -1,0 +1,30 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: flamegraph-viewer
+  labels:
+    system: flamegraph
+    type: web
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 3
+  template:
+    metadata:
+      labels:
+        name: flamegraph-viewer
+        system: flamegraph
+        type: web
+    spec:
+      containers:
+      - name: web
+        image: {{ .Values.images.viewer }}
+        imagePullPolicy: Always
+        env:
+        - name: DB_URL
+          value: "redis://:{{.Values.redis.redisPassword}}@flamegraph-redis:6379"
