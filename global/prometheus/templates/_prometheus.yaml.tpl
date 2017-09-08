@@ -34,16 +34,34 @@ scrape_configs:
 
   static_configs:
     - targets:
-      - 'prometheus.ap-au-1.cloud.sap'
-      - 'prometheus.ap-cn-1.cloud.sap'
-      - 'prometheus.ap-jp-1.cloud.sap'
-      - 'prometheus.eu-de-1.cloud.sap'
-      - 'prometheus.eu-nl-1.cloud.sap'
-      - 'prometheus.la-br-1.cloud.sap'
-      - 'prometheus.na-ca-1.cloud.sap'
-      - 'prometheus.na-us-1.cloud.sap'
-      - 'prometheus.na-us-3.cloud.sap'
-      - 'prometheus.staging.cloud.sap'
+{{- range $region := .Values.regions }}
+      - "prometheus.{{ $region }}.cloud.sap"
+{{- end }}
+
+- job_name: 'prometheus-collector-regions-federation'
+  scheme: https
+  scrape_interval: 30s
+  scrape_timeout: 25s
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
+      - '{__name__=~"up{job='prometheus-collector'}"}'
+
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region
+      regex: prometheus-collector.(.+).cloud.sap
+      replacement: $1
+
+  static_configs:
+    - targets:
+{{- range $region := .Values.regions }}
+      - "prometheus-collector.{{ $region }}.cloud.sap"
+{{- end }}
 
 alerting:
   alertmanagers:
