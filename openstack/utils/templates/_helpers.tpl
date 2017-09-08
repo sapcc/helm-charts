@@ -20,18 +20,26 @@ propagate=0
 {{ end }}
 {{- end }}
 
+{{- define "osprofiler_url" }}
+    {{- $options := merge .Values.osprofiler .Values.global.osprofiler -}}
+redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
+{{- end }}
+
 {{- define "osprofiler" }}
-    {{- $options := .Values.osprofiler }}
+    {{- $options := merge .Values.osprofiler .Values.global.osprofiler }}
     {{- if $options.enabled }}
 
 [profiler]
+osprofiler_connect_string = {{ include "osprofiler_url" . }}
         {{- range $key, $value := $options }}
+            {{- if not (kindIs "map" $value) }}
 {{ $key }} = {{ $value }}
+            {{- end }}
         {{- end }}
     {{- end }}
 {{- end }}
 
 {{- define "osprofiler_pipe" }}
-    {{- $options := .Values.osprofiler }}
+    {{- $options := merge .Values.osprofiler .Values.global.osprofiler }}
     {{- if $options.enabled }} osprofiler{{ end -}}
 {{- end }}
