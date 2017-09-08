@@ -17,7 +17,7 @@ spec:
       - name: {{ template "fullname" . }}
         image: "{{ .Values.image }}"
         imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
-        args: [ --requirepass, $(REDIS_PASSWORD) ]
+        args: [ {{- if .Values.config }} /etc/redis/redis.conf, {{- end }} --requirepass, $(REDIS_PASSWORD) ]
         env:
         - name: REDIS_PASSWORD
           valueFrom:
@@ -46,6 +46,10 @@ spec:
         volumeMounts:
         - name: redis-data
           mountPath: /data
+      {{- if .Values.config }}
+        - name: redis-config
+          mountPath: /etc/redis
+      {{- end }}
       volumes:
       - name: redis-data
       {{- if .Values.persistence.enabled }}
@@ -53,4 +57,10 @@ spec:
           claimName: {{ template "fullname" . }}
       {{- else }}
         emptyDir: {}
-      {{- end -}}
+      {{- end }}
+      {{- if .Values.config }}
+      - name: redis-config
+        configMap:
+          name: {{ template "fullname" . }}
+          defaultMode: 0444
+      {{- end }}
