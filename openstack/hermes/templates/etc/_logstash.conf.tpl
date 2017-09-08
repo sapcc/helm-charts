@@ -47,6 +47,10 @@ filter {
     # Docs say it's _context_user_id , we have _context_user that doesn't look right. TODO: sort it out.
     mutate { add_field => { "[payload][initiator][user_id]" => "%{[_context_user]}" } }
   }
+  # Remove Auth Token from Designate Events, security risk.
+  if "" in [_context_auth_token] {
+    mutate { remove_field => ["_context_auth_token"] }
+  }
   
 
   if ![tenant_id] and "" in [project] {
