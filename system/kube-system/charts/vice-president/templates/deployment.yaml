@@ -5,6 +5,9 @@ metadata:
   namespace: kube-system
   labels:
     app: {{ template "name" . }}
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: {{ .Values.metrics_port | quote }}
 spec:
   replicas: 1
   template:
@@ -21,6 +24,7 @@ spec:
             - --vice-president-config=/etc/vice-president/config/vice-president.conf
             - --vice-cert=/etc/vice-president/secrets/vice.cert
             - --vice-key=/etc/vice-president/secrets/vice.key
+            - --metric-listen-address=":{{.Values.metrics_port}}"
             - --v={{ default 1 .Values.log_level }}
           volumeMounts:
             - name: config
