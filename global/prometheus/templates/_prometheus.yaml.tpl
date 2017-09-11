@@ -48,7 +48,7 @@ scrape_configs:
 
   params:
     'match[]':
-      - '{__name__=~"up{job='prometheus-collector'}"}'
+      - '{__name__=~"up{job=\"prometheus-collector\"}"}'
 
   relabel_configs:
     - action: replace
