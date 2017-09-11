@@ -1,5 +1,5 @@
 ALERT VicePresidentUnavailable
-  IF absent(kube_pod_info{pod=~"vice-president-.*"})
+  IF absent(kube_pod_status_ready{condition="true",pod=~"vice-president-.*"})
   FOR 10m
   LABELS {
     tier = "datapath",
@@ -13,7 +13,7 @@ ALERT VicePresidentUnavailable
   }
 
 ALERT CertificateEnrollmentError
-  IF inc(vice_president_failed_enrollments)
+  IF sum(increase(vice_president_failed_enrollments[5m])) by (ingress,host) > 0
   FOR 10m
   LABELS {
     tier = "datapath",
@@ -27,7 +27,7 @@ ALERT CertificateEnrollmentError
   }
 
 ALERT CertificateRenewalError
-  IF inc(vice_president_failed_renewals)
+  IF sum(increase(vice_president_failed_renewals[5m])) by (ingress,host) > 0
   FOR 10m
   LABELS {
     tier = "datapath",
@@ -41,7 +41,7 @@ ALERT CertificateRenewalError
   }
 
 ALERT CertificatePickupError
-  IF inc(vice_president_failed_pickups)
+  IF sum(increase(vice_president_failed_pickups[5m])) by (ingress,host) > 0
   FOR 10m
   LABELS {
     tier = "datapath",
@@ -55,7 +55,7 @@ ALERT CertificatePickupError
   }
 
 ALERT CertificateApprovalError
-  IF inc(vice_president_failed_approvals)
+  IF sum(increase(vice_president_failed_approvals[5m])) by (ingress,host) > 0
   FOR 10m
   LABELS {
     tier = "datapath",

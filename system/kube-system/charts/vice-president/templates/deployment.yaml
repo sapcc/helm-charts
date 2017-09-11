@@ -5,15 +5,16 @@ metadata:
   namespace: kube-system
   labels:
     app: {{ template "name" . }}
-  annotations:
-    prometheus.io/scrape: 'true'
-    prometheus.io/port: {{ .Values.metrics_port | quote }}
+
 spec:
   replicas: 1
   template:
     metadata:
       labels:
         app: {{ template "name" . }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: {{ .Values.metrics_port | quote }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
@@ -31,6 +32,9 @@ spec:
               mountPath: /etc/vice-president/config
             - name: certs
               mountPath: /etc/vice-president/secrets
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metrics_port }}
       volumes:
         - name: config
           configMap:
