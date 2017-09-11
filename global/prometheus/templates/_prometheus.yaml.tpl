@@ -1,5 +1,6 @@
 rule_files:
   - ./*.rules
+  - ./*.alerts
 
 scrape_configs:
 - job_name: 'prometheus-global'
