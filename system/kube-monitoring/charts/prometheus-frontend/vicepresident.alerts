@@ -1,0 +1,69 @@
+ALERT VicePresidentUnavailable
+  IF absent(kube_pod_info{pod=~"vice-president-.*"})
+  FOR 10m
+  LABELS {
+    tier = "datapath",
+    service = "vice-president",
+    severity = "critical",
+    context = "availability"
+  }
+  ANNOTATIONS {
+    summary = "The VICE president is unavailable",
+    description = "The VICE president is down. Automatic handling of certificates will not be available.",
+  }
+
+ALERT CertificateEnrollmentError
+  IF inc(vice_president_failed_enrollments)
+  FOR 10m
+  LABELS {
+    tier = "datapath",
+    service = "vice-president",
+    severity = "warning",
+    context = "availability"
+  }
+  ANNOTATIONS {
+    summary = "Failed to enroll certificate",
+    description = "Failed to enroll certificate for {{ $labels.host }} .",
+  }
+
+ALERT CertificateRenewalError
+  IF inc(vice_president_failed_renewals)
+  FOR 10m
+  LABELS {
+    tier = "datapath",
+    service = "vice-president",
+    severity = "warning",
+    context = "availability"
+  }
+  ANNOTATIONS {
+      summary = "Failed to renew certificate",
+      description = "Failed to renew certificate for {{ $labels.host }} .",
+  }
+
+ALERT CertificatePickupError
+  IF inc(vice_president_failed_pickups)
+  FOR 10m
+  LABELS {
+    tier = "datapath",
+    service = "vice-president",
+    severity = "warning",
+    context = "availability"
+  }
+  ANNOTATIONS {
+      summary = "Failed to pickup certificate",
+      description = "Failed to pickup certificate for {{ $labels.host }} .",
+  }
+
+ALERT CertificateApprovalError
+  IF inc(vice_president_failed_approvals)
+  FOR 10m
+  LABELS {
+    tier = "datapath",
+    service = "vice-president",
+    severity = "warning",
+    context = "availability"
+  }
+  ANNOTATIONS {
+      summary = "Failed to pickup certificate",
+      description = "Failed to approve certificate for {{ $labels.host }} .",
+  }
