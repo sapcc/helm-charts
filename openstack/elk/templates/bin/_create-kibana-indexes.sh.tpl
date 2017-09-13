@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KIBANA_VERSION="5.4.2"
+KIBANA_VERSION="5.5.2"
 
 unset http_proxy
 
