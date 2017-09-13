@@ -33,6 +33,10 @@ function start_application {
   fi
 
   echo ""
+  echo "INFO: creating index for jump server logs"
+  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/jump" -d "@/wall-e-etc/jump.json"
+
+  echo ""
   echo "INFO: setting up the discover panel"
   /node_modules/elasticdump/bin/elasticdump \
       --input=/search.json \
