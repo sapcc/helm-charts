@@ -451,8 +451,6 @@
    port {{.Values.elk_elasticsearch_port_internal}}
    user {{.Values.elk_elasticsearch_data_user}}
    password {{.Values.elk_elasticsearch_data_password}}
-   template_name "logstash"
-   template_file "/fluent-etc/logstash.json"
    time_as_integer false
    @log_level info
    buffer_type "memory"

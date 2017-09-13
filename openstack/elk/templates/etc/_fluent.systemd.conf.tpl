@@ -41,8 +41,6 @@
    type_name fluentd
    logstash_prefix systemd
    logstash_format true
-   template_name "systemd"
-   template_file "/fluent-etc/systemd.json"
    time_as_integer false
    @log_level info
    buffer_type "memory"

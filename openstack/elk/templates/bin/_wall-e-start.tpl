@@ -33,7 +33,15 @@ function start_application {
   fi
 
   echo ""
-  echo "INFO: creating index for jump server logs"
+  echo "INFO: creating index for fluentd/logstash logs"
+  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/logstash" -d "@/wall-e-etc/logstash.json"
+
+  echo ""
+  echo "INFO: creating index for fluent-systemd/systemd logs"
+  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/systemd" -d "@/wall-e-etc/systemd.json"
+
+  echo ""
+  echo "INFO: creating index for filebeat/jump server logs"
   curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/jump" -d "@/wall-e-etc/jump.json"
 
   echo ""
