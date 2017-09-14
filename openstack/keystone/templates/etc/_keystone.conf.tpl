@@ -14,6 +14,13 @@ notification_format = {{ .Values.api.notifications.format | default "basic" | qu
 notification_opt_out = {{ $message_type }}
 {{ end }}
 
+{{- if .Values.api.auth }}
+[auth]
+methods = {{ .Values.api.auth.methods | default "password,token" }}
+{{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
+{{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
+{{- end }}
+
 [cache]
 backend = oslo_cache.memcache_pool
 {{- if .Values.memcached.host }}
@@ -69,3 +76,10 @@ rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 
 [oslo_messaging_notifications]
 driver = messaging
+
+{{ if .Values.api.radius }}
+[radius]
+host = {{ .Values.api.radius.host | default "radius" }}
+port = {{ .Values.api.radius.port | default "radius" }}
+secret = {{ .Values.api.radius.secret }}
+{{ end }}

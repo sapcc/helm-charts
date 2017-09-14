@@ -2,7 +2,7 @@
 {{- if .Values.debug }}
 keys = root
 {{- else }}
-keys = root, keystone, keystonemiddleware, keystoneauth, ldap, amqp, amqplib, oslo_messaging
+keys = root, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, amqp, amqplib, oslo_messaging
 {{- end }}
 
 [handlers]
@@ -16,7 +16,7 @@ keys = context, default
 level = DEBUG
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{ else }}
-level = WARNING
+level = ERROR
 handlers = null
 {{- end }}
 
@@ -29,6 +29,26 @@ level = INFO
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{- end }}
 qualname = keystone
+
+[logger_cc]
+{{- if .Values.debug }}
+level = DEBUG
+handlers = null
+{{- else }}
+level = INFO
+handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
+qualname = cc
+
+[logger_radius]
+{{- if .Values.debug }}
+level = DEBUG
+handlers = null
+{{- else }}
+level = INFO
+handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
+qualname = radius
 
 [logger_keystonemiddleware]
 {{- if .Values.debug }}
@@ -48,7 +68,7 @@ handlers = null
 level = INFO
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{- end }}
-qualname = keystoneauth
+qualname = keystoneauth1
 
 [logger_oslo_messaging]
 {{- if .Values.debug }}
@@ -65,7 +85,7 @@ qualname = oslo.messaging
 level = INFO
 handlers = null
 {{- else }}
-level = WARNING
+level = INFO
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{- end }}
 qualname = keystone.common.ldap.core
