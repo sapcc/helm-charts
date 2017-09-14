@@ -59,3 +59,45 @@ ALERT OpenstackNovaMaxDiskUsagePerc
     summary = "Nova Maximum RAM Usage percentage metric",
     description = "Nova Maximum RAM Usage is above 95%.",
   }
+
+  ALERT OpenstackNovaInstanceDeleted
+  IF max(rate(openstack_compute_instances_gauge{vm_state=~".*deleted.*"}[15m]))* 60 * 60 by (host) > 1
+  FOR 5m
+  LABELS {
+    service = "nova",
+    severity = "info",
+    tier = "openstack",
+    dashboard = "nova-hypervisor"
+  }
+  ANNOTATIONS {
+    summary = "Openstack Instances in Deleted State Metric",
+    description = "Openstack Instances Count in Deleted State is above 1 at {{ $labels.host }} over the last 15mins",
+  }
+  
+    ALERT OpenstackNovaInstanceError
+  IF max(rate(openstack_compute_instances_gauge{vm_state=~".*error.*"}[15m]))* 60 * 60 by (host) > 1
+  FOR 5m
+  LABELS {
+    service = "nova",
+    severity = "info",
+    tier = "openstack",
+    dashboard = "nova-hypervisor"
+  }
+  ANNOTATIONS {
+    summary = "Openstack Instances in Error State Metric",
+    description = "Openstack Instances Count in Error State is above 1 at {{ $labels.host }} over the last 15mins",
+  }
+  
+    ALERT OpenstackNovaInstanceBuilding
+  IF max(rate(openstack_compute_instances_gauge{vm_state=~".*building.*"}[15m]))* 60 * 60 by (host) > 1
+  FOR 5m
+  LABELS {
+    service = "nova",
+    severity = "info",
+    tier = "openstack",
+    dashboard = "nova-hypervisor"
+  }
+  ANNOTATIONS {
+    summary = "Openstack Instances in Building State Metric",
+    description = "Openstack Instances Count in Building State is above 1 at {{ $labels.host }} over the last 15mins",
+  }
