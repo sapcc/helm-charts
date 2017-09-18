@@ -12,5 +12,20 @@ ALERT OpenstackDesignateDnsBindDown
   }
   ANNOTATIONS {
     summary = "DNS Bind server {{ $labels.kubernetes_name }} down.",
-    description = "DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $lables.region }}."
+    description = "DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $labels.region }}."
+  }
+
+ALERT OpenstackDesignateZoneError
+  IF  sum(sql_openstack_designate_zones{status="ERROR"} by (host,status)) > 0
+  FOR 5m
+  LABELS {
+    tier = "openstack",
+    service = "designate",
+    severity = "info",
+    context = "zone_replication",
+    dashboard = "openstack-designate"
+  }
+  ANNOTATIONS {
+    summary = "Designate Zone in Error State",
+    description = "Designate Zone in Error State at {{ $labels.host }}."
   }
