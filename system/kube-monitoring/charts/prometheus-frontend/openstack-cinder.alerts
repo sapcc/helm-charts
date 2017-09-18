@@ -15,13 +15,14 @@ ALERT OpenstackCinderVolumeStuck
   }
 
 ALERT OpenstackCinderVolumeAttach
-  IF max(openstack_stuck_volumes_max_duration_gauge{status="attaching"}) by (host) > 15
+  IF max(openstack_stuck_volumes_max_duration_gauge{status="attaching"}) by (host,check) > 15
   FOR 5m
   LABELS {
     service = "cinder",
     severity = "info",
     tier = "openstack",
-    dashboard = "cinder"
+    dashboard = "cinder",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Cinder Volumes taking more than 15s to attach",
