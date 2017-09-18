@@ -13,7 +13,7 @@ ALERT OpenstackDVSPolling
     summary = "Polling iterations fall below 1 per minute",
     description = "Polling iterations of DVS Agent {{ $labels.kubernetes_pod_name }} is below 1 per minute.",
   }
-  
+
 ALERT OpenstackDVSSecGroup
   IF max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) by (region,kubernetes_pod_name) > 60
   FOR 5m
@@ -38,13 +38,13 @@ ALERT OpenstackNovaMaxDiskUsagePerc
     severity = "critical",
     context= "diskspace",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "openstack-nova"
   }
   ANNOTATIONS {
     summary = "Nova Maximum Disk Usage percentage metric",
     description = "Nova Maximum Disk Usage is above 90%",
   }
-  
+
 ALERT OpenstackNovaMaxRAMUsagePerc
   IF 1.0 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_memory_mb_gauge) by (region,availability_zone) > .95
   FOR 8h
@@ -53,7 +53,7 @@ ALERT OpenstackNovaMaxRAMUsagePerc
     severity = "warning",
     context= "diskspace",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "openstack-nova"
   }
   ANNOTATIONS {
     summary = "Nova Maximum RAM Usage percentage metric",
@@ -67,7 +67,7 @@ ALERT OpenstackNovaInstanceStuckBuilding
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "openstack-nova"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Building state metric",
@@ -81,13 +81,13 @@ ALERT OpenstackNovaInstanceStuckDeleting
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "openstack-nova"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Deleting state metric",
     description = "Nova Instance Stuck in Deleting state over 15mins in {{ $labels.host }}",
   }
-  
+
 ALERT OpenstackNovaInstanceStuckStopping
   IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="stopping"}) by (host) > 0
   FOR 5m
@@ -95,7 +95,7 @@ ALERT OpenstackNovaInstanceStuckStopping
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "openstack-nova"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Stopping state metric",
@@ -109,7 +109,7 @@ ALERT OpenstackNovaInstanceStuckStarting
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "openstack-nova"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Starting state metric",
@@ -123,13 +123,13 @@ ALERT OpenstackNovaInstanceStuckSpawning
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "openstack-nova"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Spawning state metric",
     description = "Nova Instance Stuck in Spawning state over 15mins in {{ $labels.host }}",
   }
-  
+
 ALERT OpenstackNovaInstanceStuckRebooting
   IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="rebooting"}) by (host) > 0
   FOR 5m
@@ -137,7 +137,7 @@ ALERT OpenstackNovaInstanceStuckRebooting
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "openstack-nova"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Rebooting state metric",
