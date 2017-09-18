@@ -16,7 +16,7 @@ ALERT OpenstackDesignateDnsBindDown
   }
 
 ALERT OpenstackDesignateZoneError
-  IF  sum(sql_openstack_designate_zones{status="ERROR"}) by (host,status) > 0
+  IF  sum(sql_openstack_designate_zones{status="ERROR"}) by (zone_name) > 0
   FOR 5m
   LABELS {
     tier = "openstack",
@@ -27,5 +27,20 @@ ALERT OpenstackDesignateZoneError
   }
   ANNOTATIONS {
     summary = "Designate Zone in Error State",
-    description = "Designate Zone in Error State at {{ $labels.host }}."
+    description = "{{ $labels.zone_name }} in Error State."
   }
+
+  ALERT OpenstackDesignateMultipleZoneErrors
+    IF  sum(sql_openstack_designate_zones{status="ERROR"}) > 1
+    FOR 5m
+    LABELS {
+      tier = "openstack",
+      service = "designate",
+      severity = "warning",
+      context = "zone_replication",
+      dashboard = "openstack-designate"
+    }
+    ANNOTATIONS {
+      summary = "Designate Zones in Error State",
+      description = "{{ $value }} Designate Zones in Error State."
+    }
