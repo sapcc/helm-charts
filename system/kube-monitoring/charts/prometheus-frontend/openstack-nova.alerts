@@ -1,7 +1,7 @@
 ### Networking-DVS Alerts ###
 
 ALERT OpenstackDVSPolling
-  IF (min(rate(openstack_networking_dvs_plugins_ml2_drivers_mech_dvs_agent_dvs_agent_process_ports_timer_count[5m])) by (region,kubernetes_pod_name,check) *60) < 1
+  IF min(rate(openstack_networking_dvs_plugins_ml2_drivers_mech_dvs_agent_dvs_agent_process_ports_timer_count[5m]) by (region,kubernetes_pod_name,check) *60 < 1
   FOR 5m
   LABELS {
     service = "nova",
@@ -16,7 +16,7 @@ ALERT OpenstackDVSPolling
   }
 
 ALERT OpenstackDVSSecGroup
-  IF max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) by (region,kubernetes_pod_name,check) > 60
+  IF max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) by (kubernetes_pod_name,check) > 60
   FOR 5m
   LABELS {
     service = "nova",
@@ -33,7 +33,7 @@ ALERT OpenstackDVSSecGroup
 ### Nova Metrics ###
 
 ALERT OpenstackNovaMaxDiskUsagePerc
-  IF 1.0 - min(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_local_gb_gauge) by (region,availability_zone,check) > .90
+  IF 1.0 - min(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_local_gb_gauge) by (availability_zone,check) > .90
   FOR 8h
   LABELS {
     service = "nova",
@@ -49,7 +49,7 @@ ALERT OpenstackNovaMaxDiskUsagePerc
   }
 
 ALERT OpenstackNovaMaxRAMUsagePerc
-  IF 1.0 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_memory_mb_gauge) by (region,availability_zone,check) > .95
+  IF 1.0 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_memory_mb_gauge) by (availability_zone,check) > .95
   FOR 8h
   LABELS {
     service = "nova",
