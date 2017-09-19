@@ -1,13 +1,14 @@
 ### Networking-DVS Alerts ###
 
 ALERT OpenstackDVSPolling
-  IF (min(rate(openstack_networking_dvs_plugins_ml2_drivers_mech_dvs_agent_dvs_agent_process_ports_timer_count[5m])) by (region,kubernetes_pod_name) *60) < 1
+  IF (min(rate(openstack_networking_dvs_plugins_ml2_drivers_mech_dvs_agent_dvs_agent_process_ports_timer_count[5m])) by (region,kubernetes_pod_name,check) *60) < 1
   FOR 5m
   LABELS {
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "neutron-dvs-agent"
+    dashboard = "neutron-dvs-agent",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Polling iterations fall below 1 per minute",
@@ -15,13 +16,14 @@ ALERT OpenstackDVSPolling
   }
 
 ALERT OpenstackDVSSecGroup
-  IF max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) by (region,kubernetes_pod_name) > 60
+  IF max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) by (region,kubernetes_pod_name,check) > 60
   FOR 5m
   LABELS {
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "neutron-dvs-agent"
+    dashboard = "neutron-dvs-agent",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "security group latency goes over 1 minute",
@@ -31,14 +33,15 @@ ALERT OpenstackDVSSecGroup
 ### Nova Metrics ###
 
 ALERT OpenstackNovaMaxDiskUsagePerc
-  IF 1.0 - min(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_local_gb_gauge) by (region,availability_zone) > .90
+  IF 1.0 - min(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_local_gb_gauge) by (region,availability_zone,check) > .90
   FOR 8h
   LABELS {
     service = "nova",
     severity = "critical",
     context= "diskspace",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "nova-hypervisor",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Nova Maximum Disk Usage percentage metric",
@@ -46,14 +49,15 @@ ALERT OpenstackNovaMaxDiskUsagePerc
   }
 
 ALERT OpenstackNovaMaxRAMUsagePerc
-  IF 1.0 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_memory_mb_gauge) by (region,availability_zone) > .95
+  IF 1.0 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*"}/openstack_compute_nodes_memory_mb_gauge) by (region,availability_zone,check) > .95
   FOR 8h
   LABELS {
     service = "nova",
     severity = "warning",
     context= "diskspace",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "nova-hypervisor",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Nova Maximum RAM Usage percentage metric",
@@ -61,13 +65,14 @@ ALERT OpenstackNovaMaxRAMUsagePerc
   }
 
 ALERT OpenstackNovaInstanceStuckBuilding
-  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="building"}) by (host) > 0
+  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="building"}) by (host,check) > 0
   FOR 5m
   LABELS {
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "nova-hypervisor",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Building state metric",
@@ -75,13 +80,14 @@ ALERT OpenstackNovaInstanceStuckBuilding
   }
 
 ALERT OpenstackNovaInstanceStuckDeleting
-  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="deleting"}) by (host) > 0
+  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="deleting"}) by (host,check) > 0
   FOR 5m
   LABELS {
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "nova-hypervisor",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Deleting state metric",
@@ -89,13 +95,14 @@ ALERT OpenstackNovaInstanceStuckDeleting
   }
 
 ALERT OpenstackNovaInstanceStuckStopping
-  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="stopping"}) by (host) > 0
+  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="stopping"}) by (host,check) > 0
   FOR 5m
   LABELS {
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "nova-hypervisor",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Stopping state metric",
@@ -103,13 +110,14 @@ ALERT OpenstackNovaInstanceStuckStopping
   }
 
 ALERT OpenstackNovaInstanceStuckStarting
-  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="starting"}) by (host) > 0
+  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="starting"}) by (host,check) > 0
   FOR 5m
   LABELS {
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "nova-hypervisor",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Starting state metric",
@@ -117,13 +125,14 @@ ALERT OpenstackNovaInstanceStuckStarting
   }
 
 ALERT OpenstackNovaInstanceStuckSpawning
-  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="spawning"}) by (host) > 0
+  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="spawning"}) by (host,check) > 0
   FOR 5m
   LABELS {
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "nova-hypervisor",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Spawning state metric",
@@ -131,13 +140,14 @@ ALERT OpenstackNovaInstanceStuckSpawning
   }
 
 ALERT OpenstackNovaInstanceStuckRebooting
-  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="rebooting"}) by (host) > 0
+  IF sum(openstack_compute_stuck_instances_count_gauge{vm_state="rebooting"}) by (host,check) > 0
   FOR 5m
   LABELS {
     service = "nova",
     severity = "info",
     tier = "openstack",
-    dashboard = "nova-hypervisor"
+    dashboard = "nova-hypervisor",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Rebooting state metric",
