@@ -1,14 +1,15 @@
 ### Designate
 
 ALERT OpenstackDesignateDnsBindDown
-  IF max(bind_up) by (region, kubernetes_name) < 1.0
+  IF max(bind_up) by (region, kubernetes_name,check) < 1.0
   FOR 3m
   LABELS {
     tier = "openstack",
     service = "designate",
     severity = "critical",
     context = "bind",
-    dashboard = "openstack-designate-bind"
+    dashboard = "openstack-designate-bind",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "DNS Bind server {{ $labels.kubernetes_name }} down.",
@@ -16,14 +17,15 @@ ALERT OpenstackDesignateDnsBindDown
   }
 
 ALERT OpenstackDesignateZoneError
-  IF  sum(sql_openstack_designate_zones{status="ERROR"}) by (zone_name) > 0
+  IF  sum(sql_openstack_designate_zones{status="ERROR"}) by (zone_name,check) > 0
   FOR 5m
   LABELS {
     tier = "openstack",
     service = "designate",
     severity = "info",
     context = "zone_replication",
-    dashboard = "openstack-designate"
+    dashboard = "openstack-designate",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Designate Zone in Error State",
@@ -31,14 +33,15 @@ ALERT OpenstackDesignateZoneError
   }
 
   ALERT OpenstackDesignateMultipleZoneErrors
-    IF  sum(sql_openstack_designate_zones{status="ERROR"}) > 1
+    IF  sum(sql_openstack_designate_zones{status="ERROR"}) by (check)> 1
     FOR 5m
     LABELS {
       tier = "openstack",
       service = "designate",
       severity = "warning",
       context = "zone_replication",
-      dashboard = "openstack-designate"
+      dashboard = "openstack-designate",
+      meta = "{{ $labels.check }}"
     }
     ANNOTATIONS {
       summary = "Designate Zones in Error State",
