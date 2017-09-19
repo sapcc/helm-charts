@@ -1,13 +1,14 @@
 ### Cinder Alerts ###
 
 ALERT OpenstackCinderVolumeStuck
-  IF (sum(openstack_stuck_volumes_count_gauge) by (host,status)) > 0
+  IF sum(openstack_stuck_volumes_count_gauge) by (host,status,check) > 0
   FOR 5m
   LABELS {
     service = "cinder",
     severity = "info",
     tier = "openstack",
-    dashboard = "cinder"
+    dashboard = "cinder",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Cinder Volumes in stuck state",
@@ -30,13 +31,14 @@ ALERT OpenstackCinderVolumeAttach
   }
 
 ALERT OpenstackCinderVolumeDetach
-  IF max(openstack_stuck_volumes_max_duration_gauge{status="detaching"}) by (host) > 10
+  IF max(openstack_stuck_volumes_max_duration_gauge{status="detaching"}) by (host,check) > 10
   FOR 5m
   LABELS {
     service = "cinder",
     severity = "info",
     tier = "openstack",
-    dashboard = "cinder"
+    dashboard = "cinder",
+    meta = "{{ $labels.check }}"
   }
   ANNOTATIONS {
     summary = "Cinder Volumes taking more than 10s to detach",
