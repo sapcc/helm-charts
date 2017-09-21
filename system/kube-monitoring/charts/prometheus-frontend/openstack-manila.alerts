@@ -1,14 +1,14 @@
 ### Manila Alerts ###
 
 ALERT OpenstackManilaSharesStuck
-  IF (sum(openstack_manila_shares_stuck_count_gauge) by (host,status,check)) > 0
+  IF (sum(openstack_manila_shares_stuck_count_gauge) by (host,status)) > 0
   FOR 5m
   LABELS {
     service = "manila",
     severity = "info",
     tier = "openstack",
     dashboard = "manila"
-    meta = "{{ $labels.check }}"
+    meta = "{{ $value }} shares"
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html"
   }
   ANNOTATIONS {
@@ -17,30 +17,30 @@ ALERT OpenstackManilaSharesStuck
   }
 
 ALERT OpenstackManilaSharesStuckCreate
-  IF max(openstack_manila_shares_stuck_max_duration_gauge{status="creating"}) by (host,check) > 15
+  IF max(openstack_manila_shares_stuck_max_duration_gauge{status="creating"}) by (host) > 15
   FOR 5m
   LABELS {
     service = "manila",
     severity = "info",
     tier = "openstack",
     dashboard = "manila",
-    meta = "{{ $labels.check }}"
+    meta = "{{ $value }} seconds"
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html"
   }
   ANNOTATIONS {
-    summary = "Manila Shares taking more than 15 minutes to attach",
-    description = "Manila Shares taking more than 15 minutes to attach in {{ $labels.host }}",
+    summary = "Manila Shares taking more than 15 minutes to create",
+    description = "Manila Shares taking more than 15 minutes to create in {{ $labels.host }}",
   }
 
 ALERT OpenstackManilaSharesStuckDelete
-  IF max(openstack_manila_shares_stuck_max_duration_gauge{status="deleting"}) by (host,check) > 15
+  IF max(openstack_manila_shares_stuck_max_duration_gauge{status="deleting"}) by (host) > 15
   FOR 5m
   LABELS {
     service = "manila",
     severity = "info",
     tier = "openstack",
     dashboard = "manila"
-    meta = "{{ $labels.check }}"
+    meta = "{{ $value }} seconds"
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html"
   }
   ANNOTATIONS {
