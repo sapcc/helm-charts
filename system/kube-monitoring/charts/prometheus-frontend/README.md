@@ -100,7 +100,7 @@ This means:
 The meta label will be used in the Alert Overview Dashboard to display additional information beside the alert name.
 
 ```
-meta="{{ $labels.check }}"
+meta="<your additional info for the alert, maybe the {{$value}} or a {{$label.my_label}}>"
 ```
 
 ## Guidelines
