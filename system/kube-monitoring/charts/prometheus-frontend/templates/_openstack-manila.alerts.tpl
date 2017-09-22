@@ -8,7 +8,7 @@ ALERT OpenstackManilaSharesStuck
     severity = "info",
     tier = "openstack",
     dashboard = "manila",
-    meta = "{{ $value }} shares",
+    meta = "{{`{{ $value }}`}} shares",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
     {{- end }}
@@ -26,14 +26,14 @@ ALERT OpenstackManilaSharesStuckCreate
     severity = "info",
     tier = "openstack",
     dashboard = "manila",
-    meta = "{{day_of_month($value})-1} day(s) {{hour($value)}} hour(s) {{minute($value)}} minute(s)",
+    meta = "{{`{{day_of_month($value)-1}}`}} day(s) {{`{{hour($value)}}`}} hour(s) {{`{{minute($value)}}`}} minute(s)",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
     {{- end }}
   }
   ANNOTATIONS {
     summary = "Manila Shares taking more than 15 minutes to create",
-    description = "Manila Shares taking more than 15 minutes to create in {{ $labels.host }}",
+    description = "Manila Shares taking more than 15 minutes to create in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackManilaSharesStuckDelete
@@ -44,12 +44,12 @@ ALERT OpenstackManilaSharesStuckDelete
     severity = "info",
     tier = "openstack",
     dashboard = "manila",
-    meta = "{{day_of_month($value)-1}} day(s) {{hour($value)}} hour(s) {{minute($value)}} minute(s)",
+    meta = "{{`{{day_of_month($value)-1}}`}} day(s) {{`{{hour($value)}}`}} hour(s) {{`{{minute($value)}}`}} minute(s)",
     {{ if .Values.ops_docu_url -}}
     playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
     {{- end }}
   }
   ANNOTATIONS {
     summary = "Manila Shares taking more than 15 minutes to delete",
-    description = "Manila Shares taking more than 15 minutes to delete in {{ $labels.host }}",
+    description = "Manila Shares taking more than 15 minutes to delete in {{`{{ $labels.host }}`}}",
   }
