@@ -9,7 +9,9 @@ ALERT OpenstackManilaSharesStuck
     tier = "openstack",
     dashboard = "manila",
     meta = "{{ $value }} shares",
-    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html"
+    {{ if .Values.ops_docu_url -}}
+    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Manila shares in stuck state",
@@ -25,7 +27,9 @@ ALERT OpenstackManilaSharesStuckCreate
     tier = "openstack",
     dashboard = "manila",
     meta = "{{day_of_month($value})-1} day(s) {{hour($value)}} hour(s) {{minute($value)}} minute(s)",
-    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html"
+    {{ if .Values.ops_docu_url -}}
+    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Manila Shares taking more than 15 minutes to create",
@@ -40,8 +44,10 @@ ALERT OpenstackManilaSharesStuckDelete
     severity = "info",
     tier = "openstack",
     dashboard = "manila",
-    meta = "{{day_of_month($value})-1} day(s) {{hour($value)}} hour(s) {{minute($value)}} minute(s)",
-    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html"
+    meta = "{{day_of_month($value)-1}} day(s) {{hour($value)}} hour(s) {{minute($value)}} minute(s)",
+    {{ if .Values.ops_docu_url -}}
+    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Manila Shares taking more than 15 minutes to delete",
