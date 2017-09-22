@@ -26,7 +26,7 @@ ALERT OpenstackManilaSharesStuckCreate
     severity = "info",
     tier = "openstack",
     dashboard = "manila",
-    meta = "{{`{{print minute($value) .}}`}} minute(s)",
+    meta = "{{`{{print `minute($value)` .}}`}} minute(s)",
     {{ if .Values.ops_docu_url -}}
       playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
     {{- end }}
