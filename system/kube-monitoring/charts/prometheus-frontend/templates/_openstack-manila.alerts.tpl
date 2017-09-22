@@ -26,7 +26,7 @@ ALERT OpenstackManilaSharesStuckCreate
     severity = "info",
     tier = "openstack",
     dashboard = "manila",
-    meta = "{{`{{print `minute($value)` .}}`}} minute(s)",
+    meta = "{{`{{ $value }}`}} seconds",
     {{ if .Values.ops_docu_url -}}
       playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
     {{- end }}
@@ -44,7 +44,7 @@ ALERT OpenstackManilaSharesStuckDelete
     severity = "info",
     tier = "openstack",
     dashboard = "manila",
-    meta = "{{`{{day_of_month(vector($value))-1}}`}} day(s) {{`{{hour(vector($value))}}`}} hour(s) {{`{{minute(vector($value))}}`}} minute(s)",
+    meta = "{{`{{ $value }}`}} seconds",
     {{ if .Values.ops_docu_url -}}
       playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
     {{- end }}
