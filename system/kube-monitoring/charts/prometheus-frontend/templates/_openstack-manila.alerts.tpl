@@ -10,7 +10,7 @@ ALERT OpenstackManilaSharesStuck
     dashboard = "manila",
     meta = "{{`{{ $value }}`}} shares",
     {{ if .Values.ops_docu_url -}}
-    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
     {{- end }}
   }
   ANNOTATIONS {
@@ -26,9 +26,9 @@ ALERT OpenstackManilaSharesStuckCreate
     severity = "info",
     tier = "openstack",
     dashboard = "manila",
-    meta = "{{`{{day_of_month(vector($value))-1}}`}} day(s) {{`{{hour(vector($value))}}`}} hour(s) {{`{{minute(vector($value))}}`}} minute(s)",
+    meta = "{{`{{print minute($value) .}}`}} minute(s)",
     {{ if .Values.ops_docu_url -}}
-    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
     {{- end }}
   }
   ANNOTATIONS {
@@ -46,7 +46,7 @@ ALERT OpenstackManilaSharesStuckDelete
     dashboard = "manila",
     meta = "{{`{{day_of_month(vector($value))-1}}`}} day(s) {{`{{hour(vector($value))}}`}} hour(s) {{`{{minute(vector($value))}}`}} minute(s)",
     {{ if .Values.ops_docu_url -}}
-    playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/shares_stuck.html",
     {{- end }}
   }
   ANNOTATIONS {
