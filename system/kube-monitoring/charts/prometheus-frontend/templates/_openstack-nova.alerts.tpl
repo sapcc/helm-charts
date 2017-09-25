@@ -87,7 +87,10 @@ ALERT OpenstackNovaInstanceStuckDeleting
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}}instances",
+    {{ if .Values.ops_docu_url -}}
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/nova/delete_stuck_instance.html/#Delete",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Deleting state metric",
@@ -147,7 +150,10 @@ ALERT OpenstackNovaInstanceStuckRebooting
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}} instances",
+    {{ if .Values.ops_docu_url -}}
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/nova/delete_stuck_instance.html/#Rebooting",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Rebooting state metric",
