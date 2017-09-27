@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.unbound.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{.Values.unbound.port_unbound_exporter}}"
+    parrot.sap.cc/announce: 'true'
+    externalip.sap.cc/ignore: 'true'
+spec:
+  selector:
+    app: {{ .Values.unbound.name }}
+    type: dns
+  ports: 
+    - name: dns-tcp
+      protocol: TCP
+      port: 53
+      targetPort: dns-tcp
+    - name: dns-udp
+      protocol: UDP
+      port: 53
+      targetPort: dns-udp
+  externalIPs: ["{{.Values.unbound.externalIP}}"]
