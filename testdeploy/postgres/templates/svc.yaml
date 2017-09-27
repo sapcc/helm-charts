@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: "{{ .Values.postgresDatabase }}"
+    type: database
+{{- if .Values.metrics.enabled }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{default 9187 .Values.metrics.port }}"
+{{- end }}
+spec:
+  selector:
+    app: {{ template "fullname" . }}
+  ports:
+  - name: postgresql
+    port: 5432
+    targetPort: postgresql
+
+{{- if .Values.backup.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}-backup-metrics
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9188"
+spec:
+  clusterIP: None
+  ports:
+    - name: backup-metrics
+      port: 9188
+      protocol: TCP
+  selector:
+    app: {{ template "fullname" . }}
+{{- end }}

@@ -1,0 +1,62 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-initdb
+  namespace: backup-test
+  labels:
+    type: configuration
+    component: mariadb
+
+data:
+  00_init.sh: |
+    export TERM=dumb
+    mysql -u root --password=foobar <<- EOSQL
+      	CREATE DATABASE demo12 CHARACTER SET utf8 COLLATE utf8_general_ci;
+      	CREATE DATABASE demo1234 CHARACTER SET utf8 COLLATE utf8_general_ci;
+    EOSQL
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mariadb
+  namespace: backup-test
+  labels:
+    app: mariadb
+spec:
+  containers:
+  - image: mariadb:10.1
+    name: mariadb
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: foobar
+    volumeMounts:
+    - mountPath: /var/lib/mysql
+      name: db-data
+    - mountPath: /var/run/mysqld
+      name: db-socket
+  - image: hub.global.cloud.sap/monsoon/backup-tools:v0.5.12
+    name: backup
+    env:
+    - name: MY_POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: MY_POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    volumeMounts:
+    - mountPath: /db/data
+      name: db-data
+    - mountPath: /db/socket
+      name: db-socket
+    - mountPath: /docker-entrypoint-initdb.d
+      name: db-initdb
+  volumes:
+  - name: db-data
+    emptyDir: {}
+  - name: db-initdb
+    configMap:
+      name: mariadb-initdb
+      defaultMode: 0755

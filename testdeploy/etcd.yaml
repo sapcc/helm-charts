@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backup-etcd
+  namespace: backup-test
+  labels:
+    app: etcd
+spec:
+  containers:
+  - name: backup-etcd
+    image: hub.global.cloud.sap/monsoon/backup-etcd:v0.2.0
+    command:
+      - "/bin/backup-etcd"
+    volumeMounts:
+      - name: etcd-volume
+        mountPath: /var/lib/etcd2
+    env:
+    env:
+      - name: MY_POD_NAME
+        value: etcd
+      - name: MY_POD_NAMESPACE
+        value: backup-test
+      - name: OS_AUTH_URL
+        value: $SWIFT-OS-AUTH-URL
+      - name: OS_AUTH_VERSION
+        value: "$SWIFT-OS-AUTH-VERSION"
+      - name: OS_USERNAME
+        value: $SWIFT-OS-USERNAME
+      - name: OS_USER_DOMAIN_NAME
+        value: $SWIFT-OS-USER-DOMAIN
+      - name: OS_PROJECT_NAME
+        value: $SWIFT-OS-PROJECT-NAME
+      - name: OS_PROJECT_DOMAIN_NAME
+        value: $SWIFT-OS-PROJECT-DOMAIN
+      - name: OS_REGION_NAME
+        value: $SWIFT-OS-REGION-NAME
+      - name: OS_PASSWORD
+        value: "$SWIFT-OS-PASSWORD"
+      - name: BACKUP_INTERVAL
+        value: "1 hours"
+      - name: BACKUP_EXPIRATION_AFTER
+        value: "864000"
+  - name: etcd
+    image: sapcc/etcd:v2.3.8
+    env:
+      - name: ETCD_NAME
+        value: etcd0
+      - name: ETCD_DATA_DIR
+        value: /var/lib/etcd2/etcd0
+      - name: ETCD_INITIAL_CLUSTER
+        value: etcd0=http://127.0.0.1:2380
+      - name: ETCD_INITIAL_CLUSTER_TOKEN
+        value: etcd-cluster-1
+      - name: ETCD_INITIAL_ADVERTISE_PEER_URLS
+        value: http://127.0.0.1:2380
+      - name: ETCD_ADVERTISE_CLIENT_URLS
+        value: http://localhost:2379
+      - name: ETCD_LISTEN_PEER_URLS
+        value: http://0.0.0.0:2380
+      - name: ETCD_LISTEN_CLIENT_URLS
+        value: http://0.0.0.0:2379,http://0.0.0.0:4001
+    livenessProbe:
+      httpGet:
+        host: 127.0.0.1
+        path: /health
+        port: 2379
+      initialDelaySeconds: 300
+      timeoutSeconds: 5
+    volumeMounts:
+      - name: etcd-volume
+        mountPath: /var/lib/etcd2
+  volumes:
+  - name: etcd-volume
+      emptyDir: {}

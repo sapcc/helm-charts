@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pgsql
+  namespace: backup-test
+  labels:
+    app: postgres
+spec:
+  containers:
+  - image: postgres:latest
+    name: pgsql
+  - image: hub.global.cloud.sap/monsoon/backup-tools:v0.5.12
+    name: backup
+    env:
+    - name: MY_POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: MY_POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
