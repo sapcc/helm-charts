@@ -21,6 +21,13 @@ methods = {{ .Values.api.auth.methods | default "password,token" }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
 {{- end }}
 
+{{- if .Values.services.ingress.x509.trusted_issuer }}
+[tokenless_auth]
+trusted_issuer = {{ .Values.services.ingress.x509.trusted_issuer }}
+issuer_attribute = {{ .Values.services.ingress.x509.issuer_attribute | default "SSL_CLIENT_I_DN" }}
+protocol = x509
+{{- end }}
+
 [cache]
 backend = oslo_cache.memcache_pool
 {{- if .Values.memcached.host }}

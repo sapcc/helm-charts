@@ -1,4 +1,21 @@
 {{- if .Values.services.ingress.enabled }}
+{{- if .Values.services.ingress.x509.ca }}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: keystone-x509-ca
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: x509-ca
+data:
+  ca.crt: {{ .Values.services.ingress.x509.ca | b64enc }}
+---
+{{- end }}
 {{- if .Values.services.public.tlsCertificate}}
 kind: Secret
 apiVersion: v1
@@ -57,6 +74,10 @@ metadata:
     {{- end }}
     {{- if .Values.services.ingress.limitConnections }}
     ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
+    {{- end }}
+    {{- if .Values.services.ingress.x509.ca }}
+    ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/keystone-x509-ca
+    ingress.kubernetes.io/auth-tls-verify-depth: "1"
     {{- end }}
 spec:
   tls:
