@@ -50,7 +50,7 @@ The `context` label is used grouping these inhibitions. Put alerts for similar e
 
 For example:
 
-  * `context=diskspace`,`serverity=critical`
+  * `context=diskspace`,`severity=critical`
   Disk 100% full. We are doomed.
   * `context=diskspace`.`severity=warning`
   Disk 80% full. We will be doomed in 3 days...
@@ -127,10 +127,10 @@ Try to write alerts that predict failures. This allows us to intervene before an
 
 Imagine:
 
-  * `context=diskspace`,`serverity=warning`,`predict_linear(node_filesystem_free[1h], 4*3600) < 0`
+  * `context=diskspace`,`severity=warning`,`predict_linear(node_filesystem_free[1h], 4*3600) < 0`
     Disk will full in 4 hours... Impeding doom. Do something soon!
 
-  * `context=diskspace`,`serverity=critical`,`node_filesystem_free = 0`
+  * `context=diskspace`,`severity=critical`,`node_filesystem_free = 0`
     Disk 100% full. We are doomed.
 
 Here we will get the `diskfull` alert before the problem actually appears.
