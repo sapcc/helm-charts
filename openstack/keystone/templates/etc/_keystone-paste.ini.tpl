@@ -28,11 +28,6 @@ use = egg:keystone#build_auth_context
 [filter:token_auth]
 use = egg:keystone#token_auth
 
-[filter:admin_token_auth]
-# This is deprecated in the M release and will be removed in the O release.
-# Use `keystone-manage bootstrap` and remove this from the pipelines below.
-use = egg:keystone#admin_token_auth
-
 [filter:json_body]
 use = egg:keystone#json_body
 

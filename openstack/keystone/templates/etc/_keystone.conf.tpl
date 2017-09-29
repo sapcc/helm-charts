@@ -17,9 +17,25 @@ notification_opt_out = {{ $message_type }}
 {{- if .Values.api.auth }}
 [auth]
 methods = {{ .Values.api.auth.methods | default "password,token" }}
+{{ if .Values.api.auth.external }}external = {{ .Values.api.auth.external }}{{ end }}
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
 {{- end }}
+
+[external]
+user_name_header = {{ .Values.api.cc_external.user_name_header | default "HTTP_X_USER_NAME" }}
+user_domain_name_header = {{ .Values.api.cc_external.user_domain_name_header | default "HTTP_X_USER_DOMAIN_NAME" }}
+{{- if .Values.api.cc_external.trusted_key }}
+trusted_key_header = {{ .Values.api.cc_external.trusted_key_header | default "HTTP_X_TRUSTED_KEY" }}
+trusted_key_value = {{ .Values.api.cc_external.trusted_key }}
+{{- end }}
+
+{{ if .Values.api.cc_radius }}
+[radius]
+host = {{ .Values.api.cc_radius.host | default "radius" }}
+port = {{ .Values.api.cc_radius.port | default "radius" }}
+secret = {{ .Values.api.cc_radius.secret }}
+{{ end }}
 
 {{- if .Values.services.ingress.x509.trusted_issuer }}
 [tokenless_auth]
@@ -84,9 +100,3 @@ rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 [oslo_messaging_notifications]
 driver = messaging
 
-{{ if .Values.api.radius }}
-[radius]
-host = {{ .Values.api.radius.host | default "radius" }}
-port = {{ .Values.api.radius.port | default "radius" }}
-secret = {{ .Values.api.radius.secret }}
-{{ end }}
