@@ -1,7 +1,7 @@
 {{- define "swift_endpoint_host" -}}
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
-{{$cluster.endpoint_host}}.{{$context.global.region}}.{{$context.global.domain}}
+{{$cluster.endpoint_host}}.{{$context.global.region}}.{{$context.global.tld}}
 {{- end -}}
 
 {{/*
@@ -74,7 +74,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- $service := index . 1 -}}
 {{- $context := index . 2 }}
 - name: {{ $service }}
-  image: {{$context.Values.global.docker_repo}}/ubuntu-source-swift-{{ $image }}-m3:{{ printf "image_version_swift_%s" $image | index $context.Values }}
+  image: {{$context.Values.global.imageRegistry}}/monsoon/ubuntu-source-swift-{{ $image }}-m3:{{ printf "image_version_swift_%s" $image | index $context.Values }}
   command:
     - /usr/bin/dumb-init
   args:
