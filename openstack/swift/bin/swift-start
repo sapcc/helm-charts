@@ -85,15 +85,21 @@ function process_config {
     esac
 }
 
-# function to initialize syslog
+# function to initialize syslog; uses either busybox-syslogd (default) or rsyslogd
 function start_rsyslog {
-    # make rsyslog run as root (for access to stdout)
-    sed -i /PrivDrop/d /etc/rsyslog.conf
-    # send the main syslog to stdout of PID 1
-    rm -f /var/log/syslog
-    ln -s /proc/1/fd/1 /var/log/syslog
-    # start rsyslogd (will fork off by itself)
-    /usr/sbin/rsyslogd
+    # TODO: remove rsyslogd support when migration away from Kolla is done
+    if [ -x /sbin/syslogd ]; then
+        # start busybox-syslogd
+        /sbin/syslogd -O /proc/1/fd/1
+    else
+        # make rsyslog run as root (for access to stdout)
+        sed -i /PrivDrop/d /etc/rsyslog.conf
+        # send the main syslog to stdout of PID 1
+        rm -f /var/log/syslog
+        ln -s /proc/1/fd/1 /var/log/syslog
+        # start rsyslogd (will fork off by itself)
+        /usr/sbin/rsyslogd
+    fi
 }
 
 # function to run a cronjob
