@@ -117,37 +117,40 @@ function every {
     done
 }
 
+# we need to find where Swift is installed in our $PATH, because the $PATH variable is reset by sudo(1)
+SWIFT_BIN_PATH="$(dirname "$(which swift-proxy-server)")"
+
 function _start_application {
     case "$COMPONENT_NAME" in
         proxy-server)
             start_rsyslog
-            sudo -u swift -g swift swift-proxy-server /etc/swift/proxy-server.conf
+            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-proxy-server" /etc/swift/proxy-server.conf
             ;;
         account-caretaker-collect)
             bash /swift-bin/unmount-helper "${MARKER}" &
-            every 86400 swift-account-caretaker -c /caretaker-etc/config.yaml -l info collect
+            every 86400 "${SWIFT_BIN_PATH}/swift-account-caretaker" -c /caretaker-etc/config.yaml -l info collect
             ;;
         account-caretaker-mergify)
-            every 86400 swift-account-caretaker -c /caretaker-etc/config.yaml -l info mergify --history=30
+            every 86400 "${SWIFT_BIN_PATH}/swift-account-caretaker" -c /caretaker-etc/config.yaml -l info mergify --history=30
             ;;
         account-*)
             start_rsyslog
             bash /swift-bin/unmount-helper "${MARKER}" &
-            sudo -u swift -g swift swift-${COMPONENT_NAME} /etc/swift/account-server.conf
+            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-${COMPONENT_NAME}" /etc/swift/account-server.conf
             ;;
         container-*)
             start_rsyslog
             bash /swift-bin/unmount-helper "${MARKER}" &
-            sudo -u swift -g swift swift-${COMPONENT_NAME} /etc/swift/container-server.conf
+            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-${COMPONENT_NAME}" /etc/swift/container-server.conf
             ;;
         object-expirer)
             start_rsyslog
-            sudo -u swift -g swift swift-object-expirer /etc/swift/object-expirer.conf
+            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-object-expirer" /etc/swift/object-expirer.conf
             ;;
         object-*)
             start_rsyslog
             bash /swift-bin/unmount-helper "${MARKER}" &
-            sudo -u swift -g swift swift-${COMPONENT_NAME} /etc/swift/object-server.conf
+            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-${COMPONENT_NAME}" /etc/swift/object-server.conf
             ;;
         health-statsd)
             # Data is usually collected once a minute, but if there is a problem and
@@ -161,7 +164,7 @@ function _start_application {
             start_rsyslog
             bash /swift-bin/unmount-helper "${MARKER}" &
             mkdir -p /var/run/swift && chown swift:swift /var/run/swift
-            every 300 sudo -u swift -g swift swift-recon-cron /etc/swift/object-server.conf
+            every 300 sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-recon-cron" /etc/swift/object-server.conf
             ;;
     esac
 }
