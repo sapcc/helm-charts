@@ -107,18 +107,22 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
-When .Values.image_version is given, use the combined Swift image for everything. Otherwise, use the Kolla-based images.
+When .Values.release is set to "kolla", use the Kolla-based images. Otherwise, use the combined Swift image for everything.
 When passed via `helm upgrade --set`, the image_version is misterpreted as a float64. So special care is needed to render it correctly.
 {{- define "swift_image" -}}
   {{- $image   := index . 0 -}}
   {{- $context := index . 1 -}}
-  {{- if typeIs "string" $context.Values.image_version -}}
+  {{- if eq "kolla" $context.Values.release -}}
     {{$context.Values.global.imageRegistry}}/monsoon/ubuntu-source-swift-{{$image}}-m3:{{ printf "image_version_swift_%s" $image | trimSuffix "-server" | index $context.Values }}
   {{- else -}}
-    {{- if typeIs "float64" $context.Values.image_version -}}
-      {{$context.Values.global.imageRegistry}}/monsoon/swift:{{$context.Values.image_version | printf "%0.f"}}
+    {{- if typeIs "string" $context.Values.image_version -}}
+      {{ required "This release should be installed by the deployment pipeline!" "" }}
     {{- else -}}
-      {{$context.Values.global.imageRegistry}}/monsoon/swift:{{$context.Values.image_version}}
+      {{- if typeIs "float64" $context.Values.image_version -}}
+        {{$context.Values.global.imageRegistry}}/monsoon/swift-mitaka:{{$context.Values.image_version | printf "%0.f"}}
+      {{- else -}}
+        {{$context.Values.global.imageRegistry}}/monsoon/swift-mitaka:{{$context.Values.image_version}}
+      {{- end -}}
     {{- end -}}
   {{- end -}}
 {{- end }}
