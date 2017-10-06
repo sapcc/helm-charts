@@ -61,7 +61,7 @@ filter {
     mutate { add_field => { "tenant_id" => "%{[payload][tenant_id]}" } }
   }
   # Created, and Deleted have same mutate.
-  if "identity.role_assignnent." in [event_type] {
+  if "identity.role_assignment." in [event_type] {
     mutate { add_field => { "tenant_id" => "%{[payload][project]}" } }
   }
   # Don't see a project id, there's a default domain id on these events
