@@ -18,7 +18,7 @@ cc_ad_enabled: True
 
 api:
   image: "monsoon/loci-keystone"
-  imageTag: mitaka-20170929063634
+  imageTag: mitaka-20171005151016
 
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
@@ -53,10 +53,10 @@ api:
 
   auth:
   # Allowed authentication methods. (list value)
-    methods: password,token,totp
+    methods: password,token,totp,external
     password: cc_password   # CCloud password auth method with EWS mirroring
-    totp: cc_radius   # SecurID via totp auth method/plugin
-    external: cc_external # Trusted header based authentication
+    totp: cc_radius         # SecurID via totp auth method/plugin
+    external: cc_x509       # x509 client certificate based authentication
 
   # SecurID authentication settings over Radius (required for cc_radius)
   cc_radius:
@@ -64,12 +64,12 @@ api:
     port: 1812
     secret: <your-shared-secret>
 
-  # Trusted external request header based authentication
-  cc_external:
-    user_name_header: HTTP_X_USER_NAME
+  # Trusted x509 certificate
+  cc_x509:
+    trusted_issuer_cn: SSO_CA
+    trusted_issuer_o: SAP-AG
+    user_domain_id_header: HTTP_X_USER_DOMAIN_ID
     user_domain_name_header: HTTP_X_USER_DOMAIN_NAME
-    trusted_key_header: HTTP_X_TRUSTED_KEY
-    #trusted_key: <your-trusted-secret>
 
   metrics:
     enabled: false
@@ -111,7 +111,7 @@ api:
 
 cron:
   image: "monsoon/loci-keystone"
-  imageTag: mitaka-20170929063634
+  imageTag: mitaka-20171005151016
 
   cronSchedule: "0 * * * *"
 

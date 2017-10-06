@@ -22,16 +22,27 @@ methods = {{ .Values.api.auth.methods | default "password,token" }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
 {{- end }}
 
-[external]
+
+{{ if .Values.api.cc_x509 }}
+[cc_x509]
+trusted_issuer_cn = {{ .Values.api.cc_x509.trusted_issuer_cn | default "SSO_CA" }}
+trusted_issuer_o = {{ .Values.api.cc_x509.trusted_issuer_o | default "SAP-AG" }}
+user_domain_id_header = {{ .Values.api.cc_x509.user_domain_id_header | default "HTTP_X_USER_DOMAIN_ID" }}
+user_domain_name_header = {{ .Values.api.cc_x509.user_domain_name_header | default "HTTP_X_USER_DOMAIN_NAME" }}
+{{- end }}
+
+{{ if .Values.api.cc_external }}
+[cc_external]
 user_name_header = {{ .Values.api.cc_external.user_name_header | default "HTTP_X_USER_NAME" }}
 user_domain_name_header = {{ .Values.api.cc_external.user_domain_name_header | default "HTTP_X_USER_DOMAIN_NAME" }}
 {{- if .Values.api.cc_external.trusted_key }}
 trusted_key_header = {{ .Values.api.cc_external.trusted_key_header | default "HTTP_X_TRUSTED_KEY" }}
-trusted_key_value = {{ .Values.api.cc_external.trusted_key }}
+trusted_key_value = {{ .Values.api.cc_external.trusted_key_value }}
+{{- end }}
 {{- end }}
 
 {{ if .Values.api.cc_radius }}
-[radius]
+[cc_radius]
 host = {{ .Values.api.cc_radius.host | default "radius" }}
 port = {{ .Values.api.cc_radius.port | default "radius" }}
 secret = {{ .Values.api.cc_radius.secret }}
