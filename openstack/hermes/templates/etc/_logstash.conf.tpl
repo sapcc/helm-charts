@@ -45,7 +45,9 @@ filter {
     mutate { add_field => { "[payload][target][typeURI]" => "dns/domain" } }
     mutate { add_field => { "[payload][target][id]" => "%{[payload][id]}" } }
     # Docs say it's _context_user_id , we have _context_user that doesn't look right. TODO: sort it out.
-    mutate { add_field => { "[payload][initiator][user_id]" => "%{[_context_user]}" } }
+    if [_context_user] != "" {
+        mutate { add_field => { "[payload][initiator][user_id]" => "%{[_context_user]}" } }
+    }
   }
   # Remove Auth Token from Designate Events, security risk.
   if "" in [_context_auth_token] {
