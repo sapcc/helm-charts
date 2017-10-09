@@ -1,7 +1,7 @@
 {{- range $repo, $config := .Values.repos }}
-{{- if $config.schedule }}
-apiVersion: batch/v2alpha1
-kind: ScheduledJob
+{{- if and ($.Capabilities.APIVersions.Has "batch/v1beta1") $config.schedule }}
+apiVersion: batch/v1beta1
+kind: CronJob
 metadata:
   name: content-repo-import-{{$repo}}
   namespace: content-repo
@@ -11,6 +11,8 @@ metadata:
 spec:
   schedule: {{$config.schedule}}
   concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   jobTemplate:
     {{- tuple $repo $.Values | include "job_spec" | indent 4 }}
 
