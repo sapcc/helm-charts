@@ -10,8 +10,13 @@
   value: {{ .Values.monsoon_dashboard_mail_server | quote }}
 - name: MONSOON_DASHBOARD_AVATAR_URL
   value: {{ .Values.monsoon_dashboard_avatar_url | quote }}
+{{- if .Values.monsoon_openstack_auth_api_endpoint }}
 - name: MONSOON_OPENSTACK_AUTH_API_ENDPOINT
   value: {{ .Values.monsoon_openstack_auth_api_endpoint | quote }}
+{{ else }}
+- name: MONSOON_OPENSTACK_AUTH_API_ENDPOINT
+  value: {{ include "keystone_url" . | quote }}
+{{- end }}
 - name: MONSOON_OPENSTACK_AUTH_API_USERID
   value: {{ .Values.monsoon_openstack_auth_api_userid | quote }}
 - name: MONSOON_OPENSTACK_AUTH_API_DOMAIN
