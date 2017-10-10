@@ -33,7 +33,7 @@ ALERT OpenstackCinderVolumeAttach
   }
   ANNOTATIONS {
     summary = "Cinder Volumes taking more than 15s to attach",
-    description = "Cinder Volumes taking more than 15s to attach in {{ $labels.host }}",
+    description = "Cinder Volumes taking more than 15s to attach in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackCinderVolumeDetach
