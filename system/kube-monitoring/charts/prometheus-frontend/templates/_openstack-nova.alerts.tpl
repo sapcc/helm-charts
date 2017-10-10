@@ -12,7 +12,7 @@ ALERT OpenstackDVSPolling
   }
   ANNOTATIONS {
     summary = "Polling iterations fall below 1 per minute",
-    description = "Polling iterations of DVS Agent {{ $labels.kubernetes_pod_name }} is below 1 per minute.",
+    description = "Polling iterations of DVS Agent {{`{{ $labels.kubernetes_pod_name }}`}} is below 1 per minute.",
   }
 
 ALERT OpenstackDVSSecGroup
@@ -27,7 +27,7 @@ ALERT OpenstackDVSSecGroup
   }
   ANNOTATIONS {
     summary = "security group latency goes over 1 minute",
-    description = "Security Group latency of DVS Agent {{ $labels.kubernetes_pod_name }} is over 1 minute.",
+    description = "Security Group latency of DVS Agent {{`{{ $labels.kubernetes_pod_name }}`}} is over 1 minute.",
   }
 
 ### Nova Metrics ###
@@ -79,7 +79,7 @@ ALERT OpenstackNovaInstanceStuckBuilding
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Building state metric",
-    description = "Nova Instance Stuck in Building state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Building state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckDeleting
@@ -97,7 +97,7 @@ ALERT OpenstackNovaInstanceStuckDeleting
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Deleting state metric",
-    description = "Nova Instance Stuck in Deleting state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Deleting state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckStopping
@@ -112,7 +112,7 @@ ALERT OpenstackNovaInstanceStuckStopping
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Stopping state metric",
-    description = "Nova Instance Stuck in Stopping state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Stopping state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckStarting
@@ -127,7 +127,7 @@ ALERT OpenstackNovaInstanceStuckStarting
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Starting state metric",
-    description = "Nova Instance Stuck in Starting state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Starting state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckSpawning
@@ -142,7 +142,7 @@ ALERT OpenstackNovaInstanceStuckSpawning
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Spawning state metric",
-    description = "Nova Instance Stuck in Spawning state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Spawning state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckRebooting
@@ -159,5 +159,5 @@ ALERT OpenstackNovaInstanceStuckRebooting
     {{- end }}  }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Rebooting state metric",
-    description = "Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Rebooting state over 15mins in {{`{{ $labels.host }}`}}",
   }
