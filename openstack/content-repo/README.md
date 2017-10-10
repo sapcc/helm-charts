@@ -12,7 +12,7 @@ See https://github.com/sapcc/swift-http-import
 
 ## Deactivated features
 
-If your kubernetes cluster supports ScheduledJobs you can enable that via specifying a schedule:
+If your kubernetes cluster supports CronJobs you can enable that via specifying a schedule:
 
 ```yaml
 repos:

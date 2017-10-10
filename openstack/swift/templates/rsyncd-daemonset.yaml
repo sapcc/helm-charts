@@ -1,4 +1,3 @@
-{{- if .Values.daemonsets }}
 kind: DaemonSet
 apiVersion: extensions/v1beta1
 
@@ -38,7 +37,7 @@ spec:
             path: /run/swift-storage/state
       containers:
         - name: server
-          image: {{.Values.global.docker_repo}}/ubuntu-source-swift-rsyncd-m3:{{.Values.image_version_swift_rsyncd}}
+          image: {{ tuple "rsyncd" . | include "swift_image" }}
           command:
             - /usr/bin/dumb-init
           args:
@@ -59,4 +58,3 @@ spec:
               name: swift-drives
             - mountPath: /swift-drive-state
               name: swift-drive-state
-{{- end }}

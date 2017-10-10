@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.unbound.name }}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.unbound.name }}
+        type: dns
+      annotations:
+        checksum/unbound.config: {{ include "unbound/templates/config.yaml" . | sha256sum }}
+    spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.unbound.failure_domain_zone}}
+      containers:
+      - name: unbound
+        image: {{.Values.unbound.image_unbound}}:{{ .Values.unbound.image_unbound_tag}}
+        imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+        securityContext:
+         privileged: true
+        ports:
+          - name: dns-tcp
+            containerPort: 53
+            protocol: TCP
+          - name: dns-udp
+            containerPort: 53
+            protocol: UDP
+        volumeMounts:
+          - name: unbound-conf
+            mountPath: /etc/unbound
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - /etc/unbound/healthz
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - /etc/unbound/healthz
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      - name: metric
+        image: {{.Values.unbound.image_unbound_exporter}}:{{ .Values.unbound.image_unbound_exporter_tag}}
+        imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
+        ports:
+          - name: metrics
+            containerPort: {{.Values.unbound.port_unbound_exporter}}
+        volumeMounts:
+          - name: unbound-conf
+            mountPath: /etc/unbound
+      volumes:
+      - name: unbound-conf
+        configMap:
+          name: {{.Values.unbound.name}}

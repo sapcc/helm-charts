@@ -42,20 +42,49 @@ spec:
               value: {{ .Release.Name }}-postgresql
             - name: DEPENDENCY_JOBS
               value: keystone-job-migration
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              value: {{ .Values.sentry.dsn | quote}}
+            {{- end }}
           volumeMounts:
-            - mountPath: /etc/keystone/keystone.conf
+            - name: etc-keystone
+              mountPath: /etc/keystone
+            - name: keystone-etc
+              mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
-              name: keystone-etc
-            - mountPath: /etc/keystone/logging.conf
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/keystone-paste.ini
+              subPath: keystone-paste.ini
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.json
+              subPath: policy.json
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/logging.conf
               subPath: logging.conf
-              name: keystone-etc
-            - mountPath: /scripts
-              name: keystone-bin
+              readOnly: true
+            - name: fernet
+              mountPath: /fernet-keys
+              readOnly: true
+            - name: keystone-bin
+              mountPath: /scripts
+              readOnly: true
       volumes:
+        - name: etc-keystone
+          emptyDir: {}
         - name: keystone-etc
           configMap:
             name: keystone-etc
+            defaultMode: 0444
         - name: keystone-bin
           configMap:
             name: keystone-bin
+            defaultMode: 0555
+        - name: fernet
+          secret:
+            secretName: keystone-fernet
+            defaultMode: 0555
+
 {{ end -}}

@@ -45,14 +45,15 @@ filter {
     mutate { add_field => { "[payload][target][typeURI]" => "dns/domain" } }
     mutate { add_field => { "[payload][target][id]" => "%{[payload][id]}" } }
     # Docs say it's _context_user_id , we have _context_user that doesn't look right. TODO: sort it out.
-    mutate { add_field => { "[payload][initiator][user_id]" => "%{[_context_user]}" } }
+    if [_context_user] != "" {
+        mutate { add_field => { "[payload][initiator][user_id]" => "%{[_context_user]}" } }
+    }
   }
   # Remove Auth Token from Designate Events, security risk.
   if "" in [_context_auth_token] {
     mutate { remove_field => ["_context_auth_token"] }
   }
   
-
   if ![tenant_id] and "" in [project] {
     mutate { add_field => { "tenant_id" => "%{[project]}" } }
   }
@@ -60,7 +61,10 @@ filter {
     mutate { add_field => { "tenant_id" => "%{[payload][tenant_id]}" } }
   }
   # Created, and Deleted have same mutate.
-  if "identity.role_assigned." in [event_type] {
+  if "identity.role_assignment.created" in [event_type] {
+    mutate { add_field => { "tenant_id" => "%{[payload][project]}" } }
+  }
+  if "identity.role_assignment.deleted" in [event_type] {
     mutate { add_field => { "tenant_id" => "%{[payload][project]}" } }
   }
   # Don't see a project id, there's a default domain id on these events

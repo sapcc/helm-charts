@@ -1,5 +1,4 @@
 {{- if .Values.swift_account_caretaker.enable }}
-{{- if .Values.daemonsets }}
 kind: DaemonSet
 apiVersion: extensions/v1beta1
 
@@ -41,7 +40,7 @@ spec:
             path: /run/swift-storage/state
       containers:
         - name: caretaker
-          image: {{.Values.global.docker_repo}}/ubuntu-source-swift-account-m3:{{.Values.image_version_swift_account}}
+          image: {{ tuple "account" . | include "swift_image" }}
           command:
             - /usr/bin/dumb-init
           args:
@@ -63,5 +62,4 @@ spec:
               name: swift-drives
             - mountPath: /swift-drive-state
               name: swift-drive-state
-{{- end }}
 {{- end }}

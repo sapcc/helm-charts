@@ -1,4 +1,4 @@
-### predictive elk running out of disk space alert ###
+### predictive elk running out of disk space alert and count of nodes alert and cluster status###
 
 ALERT OpenstackElkPredictOutOfDiskSpace
 IF elasticsearch_data_diskspace_used_percentage{mount=~"/data \\(10.*"} > 85
@@ -13,4 +13,49 @@ IF elasticsearch_data_diskspace_used_percentage{mount=~"/data \\(10.*"} > 85
   ANNOTATIONS {
     summary = "Elastic Search might run out of disk space",
     description = "The disk usage on {{ $labels.host }}:{{ $labels.mount }} in the {{ $labels.cluster }} cluster is above 85% now. Please consider cleaning up elastic search or lower the retention period for the logs."
+}
+
+ALERT OpenstackElkNodesMissing
+IF elasticsearch_cluster_health_number_of_nodes{cluster="elkelasticsearch"} / elasticsearch_cluster_health_number_of_data_nodes{cluster="elkelasticsearch"} < 3
+  FOR 30m
+  LABELS {
+    tier = "openstack",
+    service = "elk",
+    severity = "info",
+    context = "nodes",
+#    dashboard = "elasticsearch-clusters"
+  }
+  ANNOTATIONS {
+    summary = "Elastic Search one or more nodes are missing",
+    description = "One or more nodes are missing in the {{ $labels.cluster }} cluster service:{{ $labels.service }}. Please check, if there is an equal count of each type client, master and data nodes."
+}
+
+ALERT OpenstackClusterRed
+IF elasticsearch_cluster_health_status{color="red"} == 1
+  FOR 30m
+  LABELS {
+    tier = "openstack",
+    service = "{{ $labels.cluster }}",
+    severity = "info",
+    context = "nodes",
+#    dashboard = "elasticsearch-clusters"
+  }
+  ANNOTATIONS {
+    summary = "Elastic Search {{ $labels.cluster }} cluster is RED",
+    description = "Cluster {{ $labels.cluster }} is RED. Please check all nodes."
+}
+
+ALERT OpenstackElkClusterYellow
+IF elasticsearch_cluster_health_status{cluster="elkelasticsearch",color="yellow"} == 1
+  FOR 30m
+  LABELS {
+    tier = "openstack",
+    service = "{{ $labels.cluster }}",
+    severity = "info",
+    context = "nodes",
+#    dashboard = "elasticsearch-clusters"
+  }
+  ANNOTATIONS {
+    summary = "Elastic Search {{ $labels.cluster }} cluster status is YELLOW",
+    description = "Cluster {{ $labels.cluster }} is YELLOW. Please check the data nodes one or more are missing."
 }

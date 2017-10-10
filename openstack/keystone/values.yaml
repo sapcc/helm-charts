@@ -13,14 +13,13 @@ debug: False
 # run a db_sync to migrate the db schema ?
 run_db_migration: False
 
-api:
-  #image: "monsoon/loci-keystone"
-  #imageTag: mitaka-20170918124702
-  image: "monsoon/ubuntu-source-keystone"
-  imageTag: "20170918.1"
+# activate custom cc_ad identity driver?
+cc_ad_enabled: True
 
-  #image: "monsoon/loci-keystone"
-  #imageTag: "mitaka-latest"
+api:
+  image: "monsoon/loci-keystone"
+  imageTag: mitaka-20171005151016
+
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
   ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -52,17 +51,25 @@ api:
     - M1V0dHp6bk5LYzVlQ1doMjdvUUctSGdmVFFEcWxIeDZXdHFDT25vT3RHUT0=
     - WmlYLUZUZ1BNVnNPU2tib01YUkc0SkhZMGswLXFfeVF0eTdHbVBjSDZjND0=
 
-  #auth:
+  auth:
   # Allowed authentication methods. (list value)
-  # methods: password,token,totp
-  # password: cc_password   # CCloud password auth method with EWS mirroring
-  # totp: cc_radius   # SecurID via totp auth method/plugin
+    methods: password,token,totp,external
+    password: cc_password   # CCloud password auth method with EWS mirroring
+    totp: cc_radius         # SecurID via totp auth method/plugin
+    external: cc_x509       # x509 client certificate based authentication
 
   # SecurID authentication settings over Radius (required for cc_radius)
-  #radius:
-  #  host: radius
-  #  port: 1812
-  #  secret: <your-shared-secret>
+  cc_radius:
+    host: radius
+    port: 1812
+    secret: <your-shared-secret>
+
+  # Trusted x509 certificate
+  cc_x509:
+    trusted_issuer_cn: SSO_CA
+    trusted_issuer_o: SAP-AG
+    user_domain_id_header: HTTP_X_USER_DOMAIN_ID
+    user_domain_name_header: HTTP_X_USER_DOMAIN_NAME
 
   metrics:
     enabled: false
@@ -103,13 +110,8 @@ api:
       maxSurge: 1
 
 cron:
-  #image: "monsoon/loci-keystone"
-  #imageTag: mitaka-20170918124702
-  image: "monsoon/ubuntu-source-keystone"
-  imageTag: "20170918.1"
-
-  ##image: "monsoon/loci-keystone"
-  #imageTag: "mitaka-latest"
+  image: "monsoon/loci-keystone"
+  imageTag: mitaka-20171005151016
 
   cronSchedule: "0 * * * *"
 
@@ -148,6 +150,12 @@ services:
     # see https://github.com/kubernetes/ingress/blob/74d57c950282484885a74c92d3413110e3b95c69/controllers/nginx/configuration.md#rate-limiting
   # limitRps: 100
   # limitConnections: 100
+
+    # x509 client certificate support
+    x509:
+      # ca: <your ca certificate>
+      issuer_attribute: HTTP_SSL_CLIENT_I_DN
+      #trusted_issuer: CN=SSO_CA,O=SAP-AG,C=DE
 
   public:
     scheme: http

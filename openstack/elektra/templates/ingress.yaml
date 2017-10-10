@@ -1,8 +1,24 @@
 {{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.ca }}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: elektra-x509-ca
+data:
+  ca.crt: {{ .Values.ingress.ca | b64enc }}
+---
+{{- end }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: elektra
+  annotations:
+    {{- if .Values.ingress.ca }}
+    ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/elektra-x509-ca
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    ingress.kubernetes.io/auth-tls-verify-depth: "1"
+    {{- end }}
 spec:
   tls:
      - secretName: elektra

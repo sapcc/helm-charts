@@ -18,15 +18,21 @@ data:
       password: '{{$config.password}}'
       port: 443
       ignore_ssl: True
-      interval: 60
+      interval: {{$.Values.vcenter_exporter.interval}}
       log: 'INFO'
       shorter_names_regex: '{{$.Values.vcenter_exporter.shorter_names_regex}}'
+      {{- if $config.host_match_regex}}
+      host_match_regex: '{{$config.host_match_regex}}'
+      {{- end }}
+      ignore_match_regex: '(^c_blackbox_|^datapath_|^canary_).*'
       vm_metrics:
       - 'cpu.latency.average'
       - 'cpu.usage.average'
       - 'cpu.usagemhz.average'
       - 'cpu.wait.summation'
       - 'disk.usage.average'
+      - 'disk.numberRead.summation'
+      - 'disk.numberWrite.summation'
       - 'mem.usage.average'
       - 'net.usage.average'
       - 'net.bytesRx.average'

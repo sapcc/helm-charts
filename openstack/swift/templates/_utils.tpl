@@ -1,7 +1,7 @@
 {{- define "swift_endpoint_host" -}}
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
-{{$cluster.endpoint_host}}.{{$context.global.region}}.{{$context.global.domain}}
+{{$cluster.endpoint_host}}.{{$context.global.region}}.{{$context.global.tld}}
 {{- end -}}
 
 {{/*
@@ -74,7 +74,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- $service := index . 1 -}}
 {{- $context := index . 2 }}
 - name: {{ $service }}
-  image: {{$context.Values.global.docker_repo}}/ubuntu-source-swift-{{ $image }}-m3:{{ printf "image_version_swift_%s" $image | index $context.Values }}
+  image: {{ tuple $image $context | include "swift_image" }}
   command:
     - /usr/bin/dumb-init
   args:
@@ -105,6 +105,27 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     - mountPath: /swift-drive-state
       name: swift-drive-state
 {{- end -}}
+
+{{- /**********************************************************************************/ -}}
+When .Values.release is set to "kolla", use the Kolla-based images. Otherwise, use the combined Swift image for everything.
+When passed via `helm upgrade --set`, the image_version is misterpreted as a float64. So special care is needed to render it correctly.
+{{- define "swift_image" -}}
+  {{- $image   := index . 0 -}}
+  {{- $context := index . 1 -}}
+  {{- if eq "kolla" $context.Values.release -}}
+    {{$context.Values.global.imageRegistry}}/monsoon/ubuntu-source-swift-{{$image}}-m3:{{ printf "image_version_swift_%s" $image | trimSuffix "-server" | index $context.Values }}
+  {{- else -}}
+    {{- if typeIs "string" $context.Values.image_version -}}
+      {{ required "This release should be installed by the deployment pipeline!" "" }}
+    {{- else -}}
+      {{- if typeIs "float64" $context.Values.image_version -}}
+        {{$context.Values.global.imageRegistry}}/monsoon/swift-mitaka:{{$context.Values.image_version | printf "%0.f"}}
+      {{- else -}}
+        {{$context.Values.global.imageRegistry}}/monsoon/swift-mitaka:{{$context.Values.image_version}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end }}
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_statsd_exporter_container" }}
