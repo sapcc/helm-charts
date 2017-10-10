@@ -8,7 +8,7 @@ ALERT OpenstackDVSPolling
     severity = "info",
     tier = "openstack",
     dashboard = "neutron-dvs-agent",
-    meta = "{{ $labels.kubernetes_pod_name }} below 1min"
+    meta = "{{`{{ $labels.kubernetes_pod_name }}`}} below 1min"
   }
   ANNOTATIONS {
     summary = "Polling iterations fall below 1 per minute",
@@ -23,7 +23,7 @@ ALERT OpenstackDVSSecGroup
     severity = "info",
     tier = "openstack",
     dashboard = "neutron-dvs-agent",
-    meta = "{{ $labels.kubernetes_pod_name }} below 1min"
+    meta = "{{`{{ $labels.kubernetes_pod_name }}`}} below 1min"
   }
   ANNOTATIONS {
     summary = "security group latency goes over 1 minute",
@@ -41,7 +41,7 @@ ALERT OpenstackNovaMaxDiskUsagePerc
     context= "diskspace",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $labels.availability_zone }} DiskUsage above 90%"
+    meta = "{{`{{ $labels.availability_zone }}`}} DiskUsage above 90%"
   }
   ANNOTATIONS {
     summary = "Nova Maximum Disk Usage percentage metric",
@@ -57,7 +57,7 @@ ALERT OpenstackNovaMaxRAMUsagePerc
     context= "diskspace",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $labels.availability_zone }} RAMUsage above 95%"
+    meta = "{{`{{ $labels.availability_zone }}`}} RAMUsage above 95%"
   }
   ANNOTATIONS {
     summary = "Nova Maximum RAM Usage percentage metric",
@@ -108,7 +108,7 @@ ALERT OpenstackNovaInstanceStuckStopping
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}} instances"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Stopping state metric",
@@ -123,7 +123,7 @@ ALERT OpenstackNovaInstanceStuckStarting
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}} instances"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Starting state metric",
@@ -138,7 +138,7 @@ ALERT OpenstackNovaInstanceStuckSpawning
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}} instances"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Spawning state metric",
