@@ -51,5 +51,5 @@ ALERT OpenstackCinderVolumeDetach
   }
   ANNOTATIONS {
     summary = "Cinder Volumes taking more than 10s to detach",
-    description = "Cinder Volumes taking more than 10s to detach in {{ $labels.host }}",
+    description = "Cinder Volumes taking more than 10s to detach in {{`{{ $labels.host }}`}}",
   }
