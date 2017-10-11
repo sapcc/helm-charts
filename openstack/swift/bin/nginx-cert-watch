@@ -1,0 +1,14 @@
+#!/bin/sh
+
+echo "CertWatch: Change detected"
+cp -f /tls-secret/tls.crt /etc/nginx/ssl
+cp -f /tls-secret/tls.key /etc/nginx/ssl
+
+echo "CertWatch: Reload nginx"
+kill -HUP $(ps -ef | grep nginx | grep master | awk '{print $1}')
+
+if [ "$1" == "x" ]; then
+  # tls.crt is a symlink, k8s is deleting the underlying file and therefore
+  # watch is not possible any longer - therefore restart inotifyd again
+  inotifyd /usr/local/bin/nginx-cert-watch /tls-secret/tls.crt:c &
+fi
