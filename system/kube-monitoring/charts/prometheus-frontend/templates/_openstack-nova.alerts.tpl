@@ -8,11 +8,11 @@ ALERT OpenstackDVSPolling
     severity = "info",
     tier = "openstack",
     dashboard = "neutron-dvs-agent",
-    meta = "{{ $labels.kubernetes_pod_name }} below 1min"
+    meta = "{{`{{ $labels.kubernetes_pod_name }}`}} below 1min"
   }
   ANNOTATIONS {
     summary = "Polling iterations fall below 1 per minute",
-    description = "Polling iterations of DVS Agent {{ $labels.kubernetes_pod_name }} is below 1 per minute.",
+    description = "Polling iterations of DVS Agent {{`{{ $labels.kubernetes_pod_name }}`}} is below 1 per minute.",
   }
 
 ALERT OpenstackDVSSecGroup
@@ -23,11 +23,11 @@ ALERT OpenstackDVSSecGroup
     severity = "info",
     tier = "openstack",
     dashboard = "neutron-dvs-agent",
-    meta = "{{ $labels.kubernetes_pod_name }} below 1min"
+    meta = "{{`{{ $labels.kubernetes_pod_name }}`}} below 1min"
   }
   ANNOTATIONS {
     summary = "security group latency goes over 1 minute",
-    description = "Security Group latency of DVS Agent {{ $labels.kubernetes_pod_name }} is over 1 minute.",
+    description = "Security Group latency of DVS Agent {{`{{ $labels.kubernetes_pod_name }}`}} is over 1 minute.",
   }
 
 ### Nova Metrics ###
@@ -41,7 +41,7 @@ ALERT OpenstackNovaMaxDiskUsagePerc
     context= "diskspace",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $labels.availability_zone }} DiskUsage above 90%"
+    meta = "{{`{{ $labels.availability_zone }}`}} DiskUsage above 90%"
   }
   ANNOTATIONS {
     summary = "Nova Maximum Disk Usage percentage metric",
@@ -57,7 +57,7 @@ ALERT OpenstackNovaMaxRAMUsagePerc
     context= "diskspace",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $labels.availability_zone }} RAMUsage above 95%"
+    meta = "{{`{{ $labels.availability_zone }}`}} RAMUsage above 95%"
   }
   ANNOTATIONS {
     summary = "Nova Maximum RAM Usage percentage metric",
@@ -72,11 +72,14 @@ ALERT OpenstackNovaInstanceStuckBuilding
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}} instances",
+    {{ if .Values.ops_docu_url -}}
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/nova/instance_error_on_create.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Building state metric",
-    description = "Nova Instance Stuck in Building state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Building state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckDeleting
@@ -87,11 +90,14 @@ ALERT OpenstackNovaInstanceStuckDeleting
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}}instances",
+    {{ if .Values.ops_docu_url -}}
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/nova/delete_stuck_instance.html/#Delete",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Deleting state metric",
-    description = "Nova Instance Stuck in Deleting state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Deleting state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckStopping
@@ -102,11 +108,11 @@ ALERT OpenstackNovaInstanceStuckStopping
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}} instances"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Stopping state metric",
-    description = "Nova Instance Stuck in Stopping state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Stopping state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckStarting
@@ -117,11 +123,11 @@ ALERT OpenstackNovaInstanceStuckStarting
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}} instances"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Starting state metric",
-    description = "Nova Instance Stuck in Starting state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Starting state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckSpawning
@@ -132,11 +138,11 @@ ALERT OpenstackNovaInstanceStuckSpawning
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
+    meta = "{{`{{ $value }}`}} instances"
   }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Spawning state metric",
-    description = "Nova Instance Stuck in Spawning state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Spawning state over 15mins in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackNovaInstanceStuckRebooting
@@ -147,9 +153,11 @@ ALERT OpenstackNovaInstanceStuckRebooting
     severity = "info",
     tier = "openstack",
     dashboard = "nova-hypervisor",
-    meta = "{{ $value }} instances"
-  }
+    meta = "{{`{{ $value }}`}} instances",
+    {{ if .Values.ops_docu_url -}}
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/nova/delete_stuck_instance.html/#Rebooting",
+    {{- end }}  }
   ANNOTATIONS {
     summary = "Openstack Nova Instance Stuck in Rebooting state metric",
-    description = "Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.host }}",
+    description = "Nova Instance Stuck in Rebooting state over 15mins in {{`{{ $labels.host }}`}}",
   }

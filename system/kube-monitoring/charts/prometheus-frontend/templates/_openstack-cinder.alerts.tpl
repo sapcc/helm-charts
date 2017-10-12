@@ -8,7 +8,10 @@ ALERT OpenstackCinderVolumeStuck
     severity = "info",
     tier = "openstack",
     dashboard = "cinder",
-    meta = "{{ $value }} volumes stuck"
+    meta = "{{`{{ $value }}`}} volumes stuck",
+    {{ if .Values.ops_docu_url -}}
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/volumes.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Cinder Volumes in stuck state",
@@ -23,11 +26,14 @@ ALERT OpenstackCinderVolumeAttach
     severity = "info",
     tier = "openstack",
     dashboard = "cinder",
-    meta = "{{ $labels.host }} has volumes stuck in attach state"
+    meta = "{{`{{ $labels.host }}`}} has volumes stuck in attach state",
+    {{ if .Values.ops_docu_url -}}
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/volumes.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Cinder Volumes taking more than 15s to attach",
-    description = "Cinder Volumes taking more than 15s to attach in {{ $labels.host }}",
+    description = "Cinder Volumes taking more than 15s to attach in {{`{{ $labels.host }}`}}",
   }
 
 ALERT OpenstackCinderVolumeDetach
@@ -38,9 +44,12 @@ ALERT OpenstackCinderVolumeDetach
     severity = "info",
     tier = "openstack",
     dashboard = "cinder",
-    meta = "{{ $labels.host }} has volumes stuck in detach state"
+    meta = "{{`{{ $labels.host }}`}} has volumes stuck in detach state",
+    {{ if .Values.ops_docu_url -}}
+      playbook = "{{.Values.ops_docu_url}}/docs/support/playbook/volumes.html",
+    {{- end }}
   }
   ANNOTATIONS {
     summary = "Cinder Volumes taking more than 10s to detach",
-    description = "Cinder Volumes taking more than 10s to detach in {{ $labels.host }}",
+    description = "Cinder Volumes taking more than 10s to detach in {{`{{ $labels.host }}`}}",
   }
