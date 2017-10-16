@@ -9,23 +9,6 @@ URL_BASE={{ .Values.keystone.authUrl }}
 URL_BASE={{include "keystone_url" .}}
 {{- end }}
 
-#echo "Waiting for the keystone-api ${URL_BASE} to become available.."
-#n=1
-#m=12
-#until [ $n -ge $m ]
-#do
-#    curl ${URL_BASE} > /dev/null 2>&1  && break
-#    echo "Attempt $n of $m waiting 10 seconds to retry"
-#    n=$[$n+1]
-#    sleep 10
-#done
-#
-#if [ $n -eq $m ]
-#then
-#    echo "Keystone not available within 120 seconds"
-#    exit 1
-#fi
-
 export OS_AUTH_URL=${URL_BASE}/v3
 export OS_AUTH_TYPE=v3password
 export OS_USERNAME={{ .Values.keystone.username }}
