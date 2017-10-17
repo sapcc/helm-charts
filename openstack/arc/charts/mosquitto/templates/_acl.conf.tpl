@@ -1,5 +1,5 @@
 {{- define "acl.conf" -}}
-user O=arc-boker,OU=arc-api
+user O=arc-api,OU=arc-api
 topic #
 pattern write registration/%o/%u/%c
 pattern write reply/+
