@@ -83,16 +83,15 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "1"
     {{- end }}
+    {{- if .Values.services.ingress.vice_president }}
+    vice-president: "true"
+    {{- end }}
 spec:
   tls:
-  {{- if .Values.services.public.tlsCertificate }}
-     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
-       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
-  {{- end }}
-  {{- if .Values.services.admin.tlsCertificate }}
-     - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
-       hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
-  {{- end }}
+    - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+      hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+      hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
 
   rules:
     - host: {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
