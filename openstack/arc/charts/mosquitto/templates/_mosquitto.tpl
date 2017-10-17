@@ -7,6 +7,7 @@ connection_messages true
 bind_address 127.0.0.1
 port 1883
 auth_plugin /usr/lib/mosquitto_auth_plugin_monsoon.so
+auth_opt_acl_file /mosquitto/acl.conf
 
 # TLS listener
 listener {{ .Values.service.internalPort }} 0.0.0.0
