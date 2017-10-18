@@ -16,6 +16,7 @@ data:
   ca.crt: {{ .Values.services.ingress.x509.ca | b64enc }}
 ---
 {{- end }}
+{{- if not .Values.services.ingress.vice_president }}
 {{- if .Values.services.public.tlsCertificate}}
 kind: Secret
 apiVersion: v1
@@ -31,7 +32,7 @@ metadata:
     type: config
   annotations:
     # only create once and never touch again, since it should be updated via a k8s operator
-    #"helm.sh/hook": pre-install, post-upgrade
+    "helm.sh/hook": pre-install, post-upgrade
 data:
   tls.crt: {{ .Values.services.public.tlsCertificate | b64enc }}
   tls.key: {{ .Values.services.public.tlsKey | b64enc }}
@@ -52,12 +53,13 @@ metadata:
     type: config
   annotations:
     # only create once and never touch again, since it should be updated via a k8s operator
-    #"helm.sh/hook": pre-install, post-upgrade
+    "helm.sh/hook": pre-install, post-upgrade
 
 data:
   tls.crt: {{ .Values.services.admin.tlsCertificate | b64enc }}
   tls.key: {{ .Values.services.admin.tlsKey | b64enc }}
 ---
+{{- end }}
 {{- end }}
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -88,10 +90,14 @@ metadata:
     {{- end }}
 spec:
   tls:
+    {{- if or .Values.services.public.tlsCertificate .Values.services.ingress.vice_president }}
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{- end }}
+    {{- if or .Values.services.admin.tlsCertificate .Values.services.ingress.vice_president }}
     - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{- end }}
 
   rules:
     - host: {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
