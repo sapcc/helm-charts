@@ -26,6 +26,7 @@ scrape_configs:
       - '{__name__=~"up"}'
       - '{__name__=~"^swift_cluster_storage_used_percent_.+"}'
       - '{__name__=~"^pg_database_size_bytes_gauge_average$"}'
+      - '{__name__=~"^limes_consolidated_.+"}'
 
   relabel_configs:
     - action: replace
