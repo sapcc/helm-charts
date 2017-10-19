@@ -30,9 +30,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: keystone
     type: config
-  annotations:
-    # only create once and never touch again, since it should be updated via a k8s operator
-    "helm.sh/hook": pre-install, post-upgrade
 data:
   tls.crt: {{ .Values.services.public.tlsCertificate | b64enc }}
   tls.key: {{ .Values.services.public.tlsKey | b64enc }}
@@ -51,10 +48,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: keystone
     type: config
-  annotations:
-    # only create once and never touch again, since it should be updated via a k8s operator
-    "helm.sh/hook": pre-install, post-upgrade
-
 data:
   tls.crt: {{ .Values.services.admin.tlsCertificate | b64enc }}
   tls.key: {{ .Values.services.admin.tlsKey | b64enc }}
@@ -94,9 +87,14 @@ spec:
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
     {{- end }}
-    {{- if or .Values.services.admin.tlsCertificate .Values.services.ingress.vice_president }}
+    {{- if .Values.services.ingress.vice_president }}
+    - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+      hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{ else }}
+    {{- if .Values.services.admin.tlsCertificate }}
     - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{- end }}
     {{- end }}
 
   rules:
