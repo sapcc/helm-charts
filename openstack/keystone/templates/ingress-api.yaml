@@ -83,14 +83,14 @@ metadata:
     {{- end }}
 spec:
   tls:
-    {{- if or .Values.services.public.tlsCertificate .Values.services.ingress.vice_president }}
+    {{- if .Values.services.ingress.vice_president }}
+    - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+      hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}, {{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{ else }}
+    {{- if or .Values.services.public.tlsCertificate }}
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
     {{- end }}
-    {{- if .Values.services.ingress.vice_president }}
-    - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
-      hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
-    {{ else }}
     {{- if .Values.services.admin.tlsCertificate }}
     - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
