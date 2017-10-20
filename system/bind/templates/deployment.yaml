@@ -1,0 +1,62 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.bind.name }}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.bind.name }}
+        component: designate
+      annotations:
+        checksum/{{ .Values.bind.name }}.config: {{ include "dns/charts/{{ .Values.bind.name }}/templates/config.yaml" . | sha256sum }}
+    spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.failure_domain_zone}}
+      containers:
+      - name: {{ .Values.bind.name }}
+        image: {{.Values.image_bind}}:{{ .Values.image_bind_tag}}
+        imagePullPolicy: {{ .Values.image_pullPolicy }}
+        ports:
+          - name: dns-tcp
+            containerPort: 53
+            protocol: TCP
+          - name: dns-udp
+            containerPort: 53
+            protocol: UDP
+          - name: rndc-tcp
+            containerPort: 953
+            protocol: TCP
+        volumeMounts:
+          - name: persistent-storage
+            mountPath: /var/lib/bind
+          - name: bind-conf
+            mountPath: /etc/bind
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - /etc/bind/healthz
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - /etc/bind/healthz
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      - name: metric
+        image: {{.Values.image_bind_exporter}}:{{ .Values.image_bind_exporter_tag}}
+        imagePullPolicy: {{ .Values.image_pullPolicy }}
+        ports:
+          - name: metrics
+            containerPort: 9119
+      volumes:
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.bind.name }}
+      - name: bind-conf
+        configMap:
+          name: {{ .Values.bind.name }}

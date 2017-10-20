@@ -85,21 +85,9 @@ function process_config {
     esac
 }
 
-# function to initialize syslog; uses either busybox-syslogd (default) or rsyslogd
+# function to initialize busybox-syslogd
 function start_rsyslog {
-    # TODO: remove rsyslogd support when migration away from Kolla is done
-    if [ -x /sbin/syslogd ]; then
-        # start busybox-syslogd
-        /sbin/syslogd -O /proc/1/fd/1
-    else
-        # make rsyslog run as root (for access to stdout)
-        sed -i /PrivDrop/d /etc/rsyslog.conf
-        # send the main syslog to stdout of PID 1
-        rm -f /var/log/syslog
-        ln -s /proc/1/fd/1 /var/log/syslog
-        # start rsyslogd (will fork off by itself)
-        /usr/sbin/rsyslogd
-    fi
+    /sbin/syslogd -O /proc/1/fd/1
 }
 
 # function to run a cronjob
@@ -117,6 +105,11 @@ function every {
     done
 }
 
+# function to run a process under the Swift user/group
+function run_as_swift {
+    sudo -u swift -g swift --preserve-env "$@"
+}
+
 # we need to find where Swift is installed in our $PATH, because the $PATH variable is reset by sudo(1)
 SWIFT_BIN_PATH="$(dirname "$(which swift-proxy-server)")"
 
@@ -124,7 +117,7 @@ function _start_application {
     case "$COMPONENT_NAME" in
         proxy-server)
             start_rsyslog
-            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-proxy-server" /etc/swift/proxy-server.conf
+            run_as_swift "${SWIFT_BIN_PATH}/swift-proxy-server" /etc/swift/proxy-server.conf
             ;;
         account-caretaker-collect)
             bash /swift-bin/unmount-helper "${MARKER}" &
@@ -136,21 +129,21 @@ function _start_application {
         account-*)
             start_rsyslog
             bash /swift-bin/unmount-helper "${MARKER}" &
-            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-${COMPONENT_NAME}" /etc/swift/account-server.conf
+            run_as_swift "${SWIFT_BIN_PATH}/swift-${COMPONENT_NAME}" /etc/swift/account-server.conf
             ;;
         container-*)
             start_rsyslog
             bash /swift-bin/unmount-helper "${MARKER}" &
-            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-${COMPONENT_NAME}" /etc/swift/container-server.conf
+            run_as_swift "${SWIFT_BIN_PATH}/swift-${COMPONENT_NAME}" /etc/swift/container-server.conf
             ;;
         object-expirer)
             start_rsyslog
-            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-object-expirer" /etc/swift/object-expirer.conf
+            run_as_swift "${SWIFT_BIN_PATH}/swift-object-expirer" /etc/swift/object-expirer.conf
             ;;
         object-*)
             start_rsyslog
             bash /swift-bin/unmount-helper "${MARKER}" &
-            sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-${COMPONENT_NAME}" /etc/swift/object-server.conf
+            run_as_swift "${SWIFT_BIN_PATH}/swift-${COMPONENT_NAME}" /etc/swift/object-server.conf
             ;;
         health-statsd)
             # Data is usually collected once a minute, but if there is a problem and
@@ -158,13 +151,13 @@ function _start_application {
             # points in Grafana, or by "UNDETERMINED" alerts in Monasca.
             #
             # --preserve-env is required to pass the LOG_LEVEL to swift-health-statsd.
-            every 60 sudo -u swift -g swift --preserve-env bash /swift-bin/health-statsd-wrap "${SWIFT_BIN_PATH}"
+            every 60 run_as_swift bash /swift-bin/health-statsd-wrap "${SWIFT_BIN_PATH}"
             ;;
         recon-cron)
             start_rsyslog
             bash /swift-bin/unmount-helper "${MARKER}" &
             mkdir -p /var/run/swift && chown swift:swift /var/run/swift
-            every 300 sudo -u swift -g swift "${SWIFT_BIN_PATH}/swift-recon-cron" /etc/swift/object-server.conf
+            every 300 run_as_swift "${SWIFT_BIN_PATH}/swift-recon-cron" /etc/swift/object-server.conf
             ;;
     esac
 }

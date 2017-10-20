@@ -45,13 +45,16 @@ data:
     {{end}}
     jobs:
       {{- range $index, $job := $config.jobs}}
-      - from:      {{$job.from}}
-        to:        {{$job.to}}
+      - from:
+          url:  {{$job.from.url}}
+          cert: {{ coalesce $job.from.cert $config.cert "''" }}
+          key:  {{ coalesce $job.from.key $config.key "''" }}
+          ca:   {{ coalesce $job.from.ca $config.ca "''" }}
+        to:
+          container: {{$job.to.container}}
+          object_prefix: {{$job.to.object_prefix}}
         except:    {{ coalesce $job.except $config.except "''" }}
         only:      {{ coalesce $job.only $config.only "''" }}
         immutable: {{ coalesce $job.immutable $config.immutable "''" }}
-        cert:      {{ coalesce $job.cert $config.cert "''" }}
-        key:       {{ coalesce $job.key $config.key "''" }}
-        ca:        {{ coalesce $job.ca $config.ca "''" }}
       {{- end}}
 {{ end}}

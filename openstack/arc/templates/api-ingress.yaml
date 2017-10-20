@@ -1,4 +1,5 @@
 {{- if .Values.api.ingress.enabled }}
+{{- if .Values.api.ingress.tlsCertificate }}
 kind: Secret
 apiVersion: v1
 
@@ -10,14 +11,19 @@ data:
   tls.crt: {{ .Values.api.ingress.tlsCertificate | b64enc }}
   tls.key: {{ .Values.api.ingress.tlsKey | b64enc }}
 ---
+{{- end }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: arc-api
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  {{- if .Values.api.ingress.vice_president }}
+  annotations:
+    vice-president: "true"
+  {{- end }}
 spec:
-  {{- if .Values.api.ingress.tlsCertificate }}
+  {{- if or .Values.api.ingress.tlsCertificate .Values.api.ingress.vice_president }}
   tls:
      - secretName: arc-api-ingress
        hosts: [{{ .Values.api.ingress.host }}]

@@ -1,5 +1,5 @@
-apiVersion: apps/v1alpha1
-kind: PetSet
+apiVersion: {{ if and (eq .Capabilities.KubeVersion.Major "1") (le .Capabilities.KubeVersion.Minor "5") }}apps/v1alpha1{{ else }}apps/v1beta2{{ end }}
+kind: {{ if and (eq .Capabilities.KubeVersion.Major "1") (le .Capabilities.KubeVersion.Minor "5") }}PetSet{{ else }}StatefulSet{{ end }}
 metadata:
   name: es-data
   namespace: elk
@@ -8,11 +8,8 @@ metadata:
     service: logging
     component: elasticsearch
     role: data
-    kubeVersion: {{ .Capabilities.KubeVersion.Major }}
-    tillerVersion: {{ .Capabilities.TillerVersion }}
   annotations:
     kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
-
 spec:
   serviceName: "es-data"
   replicas: {{.Values.elk_elasticsearch_data_replicas}}

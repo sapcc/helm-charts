@@ -1,0 +1,178 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: neutron-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/keystone-seed
+  - monsoon3/domain-cc3test-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-bn-seed
+  - monsoon3/domain-bs-seed
+  - monsoon3/domain-hcm-seed
+  - monsoon3/domain-hcp03-seed
+  - monsoon3/domain-hec-seed
+  - monsoon3/domain-monsoon3-seed
+  - monsoon3/domain-s4-seed
+
+  roles:
+  - network_admin
+  - network_viewer
+  - cloud_network_admin
+
+  services:
+  - name: neutron
+    type: network
+    description: Openstack Networking
+    endpoints:
+    - interface: public
+      region: {{ .Values.global.region }}
+      url: https://{{include "neutron_api_endpoint_host_public" .}}
+    - interface: admin
+      region: {{ .Values.global.region }}
+      url: http://neutron-server.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9696
+    - interface: internal
+      region: {{ .Values.global.region }}
+      url: http://neutron-server.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9696
+
+  domains:
+  - name: Default
+    projects:
+    - name: l3admin
+      description: Cisco L3 Admin Project
+    users:
+    - name: neutron
+      description: Neutron Service
+      password: {{ .Values.global.neutron_service_password }}
+      roles:
+      - project: service
+        role: service
+      - project: service
+        role: admin
+      - project: service
+        role: cloud_network_admin
+      - project: l3admin
+        role: admin
+      - project: l3admin
+        role: cloud_network_admin
+    - name: admin
+      roles:
+      - domain: Default
+        role: cloud_network_admin
+      - project: admin
+        role: cloud_network_admin
+    groups:
+    - name: administrators
+      roles:
+      - domain: Default
+        role: cloud_network_admin
+      - project: admin
+        role: cloud_network_admin
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      roles:
+      - user: admin@Default
+        role: cloud_network_admin
+    groups:
+    - name: CCADMIN_CLOUD_ADMINS
+      roles:
+      - project: cloud_admin
+        role: cloud_network_admin
+    - name: CCADMIN_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: ccadmin-net-infra
+        role: network_admin
+      - project: ccadmin-net-infra
+        role: cloud_network_admin
+      - project: ccadmin-shared-infra
+        role: network_admin
+
+  - name: bn
+    groups:
+    - name: BN_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: bn-net-infra
+        role: network_admin
+      - project: bn-net-infra
+        role: cloud_network_admin
+      - project: bn-shared-infra
+        role: network_admin
+
+  - name: bs
+    groups:
+    - name: BS_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: bs-net-infra
+        role: network_admin
+      - project: bs-net-infra
+        role: cloud_network_admin
+      - project: bs-shared-infra
+        role: network_admin
+
+  - name: hcm
+    groups:
+    - name: HCM_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: hcm-net-infra
+        role: network_admin
+      - project: hcm-net-infra
+        role: cloud_network_admin
+      - project: hcm-shared-infra
+        role: network_admin
+
+  - name: hcp03
+    groups:
+    - name: HCP03_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: hcp03-net-infra
+        role: network_admin
+      - project: hcp03-net-infra
+        role: cloud_network_admin
+      - project: hcp03-shared-infra
+        role: network_admin
+
+  - name: hec
+    groups:
+    - name: HEC_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: hec-net-infra
+        role: network_admin
+      - project: hec-net-infra
+        role: cloud_network_admin
+      - project: hec-shared-infra
+        role: network_admin
+
+  - name: monsoon3
+    groups:
+    - name: MONSOON3_DOMAIN_ADMINS
+      roles:
+      - project: cc-demo
+        role: network_admin
+    - name: MONSOON3_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: cc-demo
+        role: network_admin
+      - project: monsoon3-net-infra
+        role: network_admin
+      - project: monsoon3-net-infra
+        role: cloud_network_admin
+      - project: monsoon3-shared-infra
+        role: network_admin
+
+  - name: s4
+    groups:
+    - name: S4_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: s4-net-infra
+        role: network_admin
+      - project: s4-net-infra
+        role: cloud_network_admin
+      - project: s4-shared-infra
+        role: network_admin

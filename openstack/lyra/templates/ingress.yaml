@@ -5,8 +5,12 @@ metadata:
   name: {{ .Release.Name }}
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  {{- if .Values.ingress.vice_president }}
+  annotations:
+    vice-president: "true"
+  {{- end }}
 spec:
-  {{- if .Values.ingress.tlsCertificate }}
+  {{- if or .Values.ingress.tlsCertificate .Values.ingress.vice_president }}
   tls:
     - secretName: {{ .Release.Name }}
       hosts:

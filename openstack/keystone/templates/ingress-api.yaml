@@ -16,6 +16,7 @@ data:
   ca.crt: {{ .Values.services.ingress.x509.ca | b64enc }}
 ---
 {{- end }}
+{{- if not .Values.services.ingress.vice_president }}
 {{- if .Values.services.public.tlsCertificate}}
 kind: Secret
 apiVersion: v1
@@ -29,9 +30,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: keystone
     type: config
-  annotations:
-    # only create once and never touch again, since it should be updated via a k8s operator
-    #"helm.sh/hook": pre-install, post-upgrade
 data:
   tls.crt: {{ .Values.services.public.tlsCertificate | b64enc }}
   tls.key: {{ .Values.services.public.tlsKey | b64enc }}
@@ -50,14 +48,11 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: keystone
     type: config
-  annotations:
-    # only create once and never touch again, since it should be updated via a k8s operator
-    #"helm.sh/hook": pre-install, post-upgrade
-
 data:
   tls.crt: {{ .Values.services.admin.tlsCertificate | b64enc }}
   tls.key: {{ .Values.services.admin.tlsKey | b64enc }}
 ---
+{{- end }}
 {{- end }}
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -83,16 +78,24 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "1"
     {{- end }}
+    {{- if .Values.services.ingress.vice_president }}
+    vice-president: "true"
+    {{- end }}
 spec:
   tls:
-  {{- if .Values.services.public.tlsCertificate }}
-     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
-       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
-  {{- end }}
-  {{- if .Values.services.admin.tlsCertificate }}
-     - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
-       hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
-  {{- end }}
+    {{- if .Values.services.ingress.vice_president }}
+    - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+      hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}, {{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{ else }}
+    {{- if or .Values.services.public.tlsCertificate }}
+    - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+      hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{- end }}
+    {{- if .Values.services.admin.tlsCertificate }}
+    - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+      hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{- end }}
+    {{- end }}
 
   rules:
     - host: {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
