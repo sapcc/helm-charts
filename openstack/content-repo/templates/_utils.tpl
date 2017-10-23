@@ -16,7 +16,6 @@ When passed via `helm upgrade --set`, the image version is misinterpreted as a f
 {{- define "job_spec" -}}
 {{- $repo        := index . 0 -}}
 {{- $values      := index . 1 -}}
-{{- $repo_values := index $values.repos $repo }}
 spec:
   template:
     spec:
@@ -33,7 +32,7 @@ spec:
         image: {{$values.global.docker_repo}}/swift-http-import:{{ include "image_version" $values }}
         args:
           - /etc/http-import/config/{{$repo}}.yaml
-        {{- if or $values.debug $repo_values.debug }}
+        {{- if or $values.debug (index (index $values.repos $repo) "debug") }}
         env:
           - name: 'DEBUG'
             value: '1'
