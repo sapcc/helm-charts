@@ -8,7 +8,7 @@ metadata:
     type: api
     component: neutron
 spec:
-  replicas: {{ .Values.pod.replicas.api }}
+  replicas: {{ if not .Values.pod.debug.server }}{{ .Values.pod.replicas.server }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
@@ -36,27 +36,33 @@ spec:
     spec:
       containers:
         - name: neutron-server
-          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/{{.Values.image_name}}:{{.Values.image_version}}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{.Values.image_name}}:{{.Values.image_tag}}
           imagePullPolicy: IfNotPresent
+{{- if not .Values.pod.debug.server }}
           livenessProbe:
             httpGet:
               path: /
               port: {{.Values.global.neutron_api_port_internal | default 9696}}
             initialDelaySeconds: 120
             timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.global.neutron_api_port_internal | default 9696}}
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+{{- end }}
           command:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/container.init/neutron-server-start"
+              value: "{{ if not .Values.pod.debug.server }}/container.init/neutron-server-start{{ else }}sleep inf{{ end }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
               value: "neutron-migration"
             - name: DEPENDENCY_SERVICE
               value: "neutron-postgresql,rabbitmq"
-            - name: DEBUG_CONTAINER
-              value: "false"
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT

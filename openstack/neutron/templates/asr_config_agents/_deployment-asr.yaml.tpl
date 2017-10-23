@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
         - name: neutron-cisco-asr
-          image: {{$context.Values.global.image_repository}}/{{$context.Values.global.image_namespace}}/{{$context.Values.image_name}}:{{$context.Values.image_version}}
+          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr-start
