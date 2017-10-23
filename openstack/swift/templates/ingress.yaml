@@ -1,0 +1,32 @@
+{{- range $index, $cluster := .Values.clusters }}
+{{- if not $cluster.tls_crt }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: swift-{{$cluster.name}}
+  annotations:
+    # the ingress controller won't pick this up
+    kubernetes.io/ingress.class: "noop.vice-president"
+    # enable vice-president
+    vice-president: "true"
+
+# workaround to enable the vice-president for non-ingress based swift.
+# the vp will only evaluate the following spec.tls section
+spec:
+  tls:
+     - secretName: tls-swift-{{$cluster.name}}
+       hosts: [swift-{{$cluster.name}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
+       {{- range $index, $san := $cluster.sans }},{{$san}}.{{$.Values.global.region}}.{{$.Values.global.tld}}{{ end }}]
+  # the following is mandatory in an ingress resource, but will be ignored by the vice-president
+  rules:
+    - host: swift-{{$cluster.name}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: swift-{{$cluster.name}}
+            servicePort: 9090
+---
+{{- end }}
+{{- end }}

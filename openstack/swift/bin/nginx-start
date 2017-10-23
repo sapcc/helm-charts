@@ -8,5 +8,12 @@ mkdir -p /etc/nginx/ssl
 cp -f /tls-secret/tls.crt /etc/nginx/ssl
 cp -f /tls-secret/tls.key /etc/nginx/ssl
 
+cp -f /swift-bin/nginx-cert-watch /usr/local/bin/nginx-cert-watch
+chmod +x /usr/local/bin/nginx-cert-watch
+
 [ "$DEBUG_CONTAINER" = true ] && exec tail -f /dev/null
-exec nginx -g 'daemon off;'
+
+# Get notified when certs are changed via vive-president
+inotifyd /usr/local/bin/nginx-cert-watch /tls-secret/tls.crt:c &
+
+nginx -g 'daemon off;'
