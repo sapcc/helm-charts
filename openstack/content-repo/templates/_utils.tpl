@@ -32,7 +32,7 @@ spec:
         image: {{$values.global.docker_repo}}/swift-http-import:{{ include "image_version" $values }}
         args:
           - /etc/http-import/config/{{$repo}}.yaml
-        {{- if $values.debug}}
+        {{- if or $values.debug (index (index $values.repos $repo) "debug") }}
         env:
           - name: 'DEBUG'
             value: '1'
