@@ -14,8 +14,8 @@ When passed via `helm upgrade --set`, the image version is misinterpreted as a f
 
 {{- /**********************************************************************************/ -}}
 {{- define "job_spec" -}}
-{{- $repo        := index . 0 -}}
-{{- $values      := index . 1 -}}
+{{- $repo    := index . 0 -}}
+{{- $values  := index . 1 }}
 spec:
   template:
     spec:
