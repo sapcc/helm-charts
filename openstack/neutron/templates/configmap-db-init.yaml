@@ -27,6 +27,7 @@ data:
 
     export PGUSER={{ default "postgres" .Values.postgresql.postgresUser }}
     psql <<- EOSQL
-        ALTER ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.dbPassword }}';
-        ALTER ROLE {{ .Values.postgresql.postgresUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.postgresPassword }}';
+        CREATE DATABASE {{.Values.postgresql.postgresDatabase}};
+        CREATE ROLE {{.Values.postgresql.dbUser}} WITH ENCRYPTED PASSWORD '{{.Values.postgresql.dbPassword}}' LOGIN;
+        GRANT ALL PRIVILEGES ON DATABASE {{.Values.postgresql.postgresDatabase}} TO {{.Values.postgresql.dbUser}};
     EOSQL
