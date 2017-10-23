@@ -85,9 +85,13 @@ function process_config {
     esac
 }
 
-# function to initialize busybox-syslogd
+# function to initialize syslog-stdout (default) or busybox-syslogd
 function start_rsyslog {
-    /sbin/syslogd -O /proc/1/fd/1
+    if hash syslog-stdout &>/dev/null; then
+        syslog-stdout &
+    else
+        /sbin/syslogd -O /proc/1/fd/1
+    fi
 }
 
 # function to run a cronjob
