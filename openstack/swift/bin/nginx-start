@@ -8,12 +8,33 @@ mkdir -p /etc/nginx/ssl
 cp -f /tls-secret/tls.crt /etc/nginx/ssl
 cp -f /tls-secret/tls.key /etc/nginx/ssl
 
-cp -f /swift-bin/nginx-cert-watch /usr/local/bin/nginx-cert-watch
-chmod +x /usr/local/bin/nginx-cert-watch
+# in a subshell, run a recurring check for new TLS secrets
+( while true; do
+
+  sleep 30
+
+  # do not attempt to install new cert if the certs are broken (e.g. because we catch
+  # k8s in the middle of mounting a new secret)
+  if ! grep -q 'END CERTIFICATE' /tls-secret/tls.crt; then
+    echo "$(date): cert watch: skipping reload because /tls-secret/tls.crt is broken"
+    continue
+  fi
+  if ! grep -q 'END RSA PRIVATE KEY' /tls-secret/tls.key; then
+    echo "$(date): cert watch: skipping reload because /tls-secret/tls.key is broken"
+    continue
+  fi
+
+  # only reload if secrets have changed
+  if diff -q /tls-secret/tls.crt /etc/nginx/ssl/tls.crt && diff -q /tls-secret/tls.key /etc/nginx/ssl/tls.key; then
+    : # nothing to do
+  else
+    cp -f /tls-secret/tls.crt /etc/nginx/ssl
+    cp -f /tls-secret/tls.key /etc/nginx/ssl
+    echo "$(date): cert watch: reloading nginx"
+    kill -HUP $(ps -ef | awk '/nginx/ && /master/ { print $1 }')
+  fi
+
+done ) &
 
 [ "$DEBUG_CONTAINER" = true ] && exec tail -f /dev/null
-
-# Get notified when certs are changed via vive-president
-inotifyd /usr/local/bin/nginx-cert-watch /tls-secret/tls.crt:c &
-
 nginx -g 'daemon off;'
