@@ -16,11 +16,11 @@ metadata:
 spec:
   tls:
      - secretName: tls-swift-{{$cluster.name}}
-       hosts: [swift-{{$cluster.name}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
+       hosts: [{{$cluster.endpoint_host}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
        {{- range $index, $san := $cluster.sans }},{{$san}}.{{$.Values.global.region}}.{{$.Values.global.tld}}{{ end }}]
   # the following is mandatory in an ingress resource, but will be ignored by the vice-president
   rules:
-    - host: swift-{{$cluster.name}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
+    - host: {{$cluster.endpoint_host}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
       http:
         paths:
         - path: /
