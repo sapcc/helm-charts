@@ -1,118 +1,128 @@
 input {
+
+# consume Keystone notifications
 rabbitmq {
-    host => "{{.Values.hermes_rabbitmq_host}}"
-    user => "{{.Values.hermes_rabbitmq_user}}"
-    password => "{{.Values.hermes_rabbitmq_password}}"
-    port => {{.Values.hermes_rabbitmq_port}}
-    queue => "{{.Values.hermes_rabbitmq_queue_name}}"
+    # only for keystone
+    host => "{{.Values.hermes.rabbitmq.keystone.host}}"
+    password => "{{.Values.hermes.rabbitmq.keystone.password}}"
+    # the remaining parameters are equal
+    user => "{{.Values.hermes.rabbitmq.user}}"
+    port => {{.Values.hermes.rabbitmq.port}}
+    queue => "{{.Values.hermes.rabbitmq.queue_name}}"
     subscription_retry_interval_seconds => 60
-    id => "logstash_hermes"
+    id => "logstash_hermes_keystone"
     automatic_recovery => false
   }
-rabbitmq {
-    host => "{{.Values.hermes_legacy_rabbitmq_host}}"
-    user => "{{.Values.hermes_legacy_rabbitmq_user}}"
-    password => "{{.Values.hermes_legacy_rabbitmq_password}}"
-    port => {{.Values.hermes_legacy_rabbitmq_port}}
-    queue => "{{.Values.hermes_legacy_rabbitmq_queue_name}}"
-    subscription_retry_interval_seconds => 60
-    id => "logstash_legacy_hermes"
-    automatic_recovery => false
-  }
+
+# consume Nova notifications
+# rabbitmq {
+#     host => "{{.Values.hermes_nova_rabbitmq_host}}"
+#     user => "{{.Values.hermes_nova_rabbitmq_user}}"
+#     password => "{{.Values.hermes_nova_rabbitmq_password}}"
+#     port => {{.Values.hermes_nova_rabbitmq_port}}
+#     queue => "{{.Values.hermes_nova_rabbitmq_queue_name}}"
+#     subscription_retry_interval_seconds => 60
+#     id => "logstash_hermes_nova"
+#     automatic_recovery => false
+#   }
+# }
 }
 
+
 filter {
-  # Remove unneeded authenticate, not useful for auditing.
-  if "identity.authenticate" in [event_type] {
-    drop { }
+  # Strip oslo envelope
+  mutate {
+    remove_field => [ "publisher_id", "event_type", "message_id", "priority", "timestamp" ] 
   }
-  
-  # Designate has duplicate messages for zone and domain, drop zone as that's consistent with other similar services.
-  if "dns.zone." in [event_type] {
-    drop { }
+  ruby {
+    code => "
+      event.get('payload').each {|k, v|
+        event.set(k, v)
+      }
+      event.remove('payload')
+    "
   }
-  # Drop all DNS exists messages as they are periodic messages that are not useful for us.
-  if "dns.domain.exists" in [event_type] {
-    drop { }
-  }
-  # Remove Canary Tests 
-  if "Canary_test" in [payload][description] {
-    drop { }
-  }
-  # Map Designate Fields to standardized CADF format.
-  if "dns." in [event_type] {
-    mutate { add_field => { "[payload][eventTime]" => "%{[@timestamp]}" } }
-    mutate { add_field => { "[payload][target][typeURI]" => "dns/domain" } }
-    mutate { add_field => { "[payload][target][id]" => "%{[payload][id]}" } }
-    # Docs say it's _context_user_id , we have _context_user that doesn't look right. TODO: sort it out.
-    if [_context_user] != "" {
-        mutate { add_field => { "[payload][initiator][user_id]" => "%{[_context_user]}" } }
+
+  # KEYSTONE TRANSFORMATIONS
+  # Keystone specific transformations to compensate for scope missing from initiator element
+  # When scope is missing from initiator, get it from action-specific parameters
+  if ![initiator][project_id] and ![initiator][domain_id] {
+    if [project] {
+      mutate { rename => { "%{[project]}" => "%{[initiator][project_id]}" } }
+    } else if [domain] {
+      mutate { add_field => { "[initiator][domain_id]" => "%{[initiator][domain_id]}" } }
     }
   }
-  # Remove Auth Token from Designate Events, security risk.
-  if "" in [_context_auth_token] {
-    mutate { remove_field => ["_context_auth_token"] }
-  }
-  
-  if ![tenant_id] and "" in [project] {
-    mutate { add_field => { "tenant_id" => "%{[project]}" } }
-  }
-  if ([payload][tenant_id]) {
-    mutate { add_field => { "tenant_id" => "%{[payload][tenant_id]}" } }
-  }
-  # Created, and Deleted have same mutate.
-  if "identity.role_assignment.created" in [event_type] {
-    mutate { add_field => { "tenant_id" => "%{[payload][project]}" } }
-  }
-  if "identity.role_assignment.deleted" in [event_type] {
-    mutate { add_field => { "tenant_id" => "%{[payload][project]}" } }
-  }
-  # Don't see a project id, there's a default domain id on these events
-  if "identity.user.updated" in [event_type] {
-    mutate { add_field => { "tenant_id" => "%{[payload][initiator][domain_id]}" } } 
-  }
-  # The target project is valid here. 
-  if "identity.project" in [event_type] {
-    mutate { add_field => { "domain_id" => "%{[payload][target][id]}" } }
+
+  # rename initiator user_id into the 'id' field for consistency
+  if [initiator][user_id] {
+    mutate {
+      replace => { "[initiator][id]" => "%{[initiator][user_id]}" } 
+      remove_field => ["[initiator][user_id]"]
     }
-  if "identity.OS-TRUST" in [event_type] {
-    mutate { add_field => { "tenant_id" => "%{[payload][initiator][project_id]}" } }
+  }
+
+  # notify target projects/domains as well
+  if ![target][project_id] and ![target][domain_id] {
+    if [project] {
+      mutate { add_field => { "[target][project_id]" => "%{[project]}" } }
+    } else if [domain] {
+      mutate { add_field => { "[target][domain_id]" => "%{[domain]}" } }
     }
+  }
+
+  if [target][typeURI] == "service/security/account/user" and [user] {
+     mutate {
+       replace => { "[target][id]" => "%{[user]}" }
+       remove_field => ["[user]"]
+     }
+  }
+
+  mutate {
+    remove_field => ["[domain]", "[project]"] 
+  }
+
+  # Calculate the variable index name part from payload (@metadata will not be part of the event)
+  if [initiator][project_id] {
+    mutate { add_field => { "[@metadata][index]" => "%{[initiator][project_id]}" } }
+  } else if [initiator][domain_id] {
+    mutate { add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" } }
+  }
+
+  # Calculate the variable index name part from payload (@metadata will not be part of the event)
+  if [target][project_id] {
+    mutate { add_field => { "[@metadata][index2]" => "%{[target][project_id]}" } }
+  } else if [target][domain_id] {
+    mutate { add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" } }
+  }
 
   kv { source => "_source" }
 }
 
 output {
-  # Write out designate events to file until we develop a proper cadf mapping
-  #if "dns." in [event_type] {
-  #  file {
-  #   path => "/usr/share/logstash/designate-%{+YYYY-MM-dd}"
-  #  }
-  #}
-  # else if ([tenant_id]) {
-  if ([tenant_id]) {
+  if ([@metadata][index]) {
     elasticsearch {
-        index => "audit-%{tenant_id}-%{+YYYY.MM.dd}"
+        index => "audit-%{[@metadata][index]}-%{+YYYY.MM.dd}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
     }
-  }
-  else if ([domain_id]) {
-    elasticsearch {
-        index => "audit-%{domain_id}-%{+YYYY.MM.dd}"
-        template => "/hermes-etc/audit.json"
-        template_name => "audit"
-        template_overwrite => true
-        hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
-        flush_size => 500
-    }
-  }
-  else {
+  } else {
     elasticsearch {
         index => "audit-default-%{+YYYY.MM.dd}"
+        template => "/hermes-etc/audit.json"
+        template_name => "audit"
+        template_overwrite => true
+        hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
+        flush_size => 500
+    }
+  }
+  # cc the target tenant
+  if ([@metadata][index2] and [@metadata][index2] != [@metadata][index]) {
+    elasticsearch {
+        index => "audit-%{[@metadata][index2]}-%{+YYYY.MM.dd}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
