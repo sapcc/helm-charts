@@ -11,6 +11,7 @@ function process_config {
     cp /neutron-etc/logging.conf /etc/neutron/logging.conf
     cp /neutron-etc/neutron-policy.json  /etc/neutron/policy.json
     cp /neutron-etc/rootwrap.conf  /etc/neutron/rootwrap.conf
+
     cp /neutron-etc-vendor/cisco-cfg-agent.ini /etc/neutron/plugins/cisco/cisco_cfg_agent.ini
 }
 

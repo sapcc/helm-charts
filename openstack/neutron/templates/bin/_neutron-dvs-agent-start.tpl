@@ -11,7 +11,7 @@ function process_config {
     cp /neutron-etc/rootwrap.conf  /etc/neutron/rootwrap.conf
     cp /neutron-etc/ml2-conf.ini  /etc/neutron/plugins/ml2/ml2_conf.ini
     cp /ml2-conf-vmware/ml2-vmware.ini  /etc/neutron/plugins/ml2/ml2-vmware.ini
-
+    cp /neutron-etc/neutron-policy.json  /etc/neutron/policy.json
     apply_patches # Apply hot-fixes, which need to be either upstreamed or moved to the container build
 }
 

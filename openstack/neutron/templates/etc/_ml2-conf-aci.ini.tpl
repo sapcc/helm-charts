@@ -21,4 +21,6 @@ apic_password = {{.Values.aci.apic_password}}
 # Whether use SSl for connecting to the APIC controller or not
 apic_use_ssl = True
 
+apic_application_profile = {{.Values.aci.apic_application_profile}}
+
 {{.Values.aci.bindings}}
