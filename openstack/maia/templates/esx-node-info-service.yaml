@@ -1,0 +1,24 @@
+{{- if .Values.esx_node_info.enabled }}
+{{- range $i, $config := .Values.vcenter_exporter.maia_vcenter_config -}}
+{{ if ne $i 0 }}---{{ end }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: esx-node-info-{{$config.name}}
+  namespace: maia
+  labels:
+    system: openstack
+    service: metrics
+    component: esx-node-info-{{$config.name}}
+  annotations:
+    maia.io/scrape: "true"
+    maia.io/port: "{{$.Values.vcenter_exporter.listen_port}}"
+
+spec:
+  selector:
+    component: esx-node-info-{{$config.name}}
+  ports:
+    - name: metrics
+      port: {{$.Values.vcenter_exporter.listen_port}}
+{{ end -}}
+{{ end -}}
