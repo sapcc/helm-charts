@@ -62,12 +62,29 @@ filter {
     }
   }
 
-  # notify target projects/domains as well
-  if ![target][project_id] and ![target][domain_id] {
+  # add target projects/domains as attachment
+  if ![target][attachments] {
     if [project] {
-      mutate { add_field => { "[target][project_id]" => "%{[project]}" } }
+      ruby {
+        code => "
+          attachments = event.get('[target][attachments]')
+          if attachments.nil?
+            attachments = []
+          end
+          attachments << { 'name' => 'project_id', 'contentType' => '/data/security/project', 'content' => event.get('project') }
+          event.set('[target][attachments]', attachments)
+        "
     } else if [domain] {
-      mutate { add_field => { "[target][domain_id]" => "%{[domain]}" } }
+      ruby {
+        code => "
+          attachments = event.get('[target][attachments]')
+          if attachments.nil?
+            attachments = []
+          end
+          attachments << { 'name' => 'domain_id', 'contentType' => '/data/security/domain', 'content' => event.get('domain') }
+          event.set('[target][attachments]', attachments)
+        "
+      }
     }
   }
 
@@ -78,22 +95,25 @@ filter {
      }
   }
 
-  mutate {
-    remove_field => ["[domain]", "[project]"] 
-  }
-
   # Calculate the variable index name part from payload (@metadata will not be part of the event)
+
+  # primary index
   if [initiator][project_id] {
     mutate { add_field => { "[@metadata][index]" => "%{[initiator][project_id]}" } }
   } else if [initiator][domain_id] {
     mutate { add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" } }
   }
 
-  # Calculate the variable index name part from payload (@metadata will not be part of the event)
-  if [target][project_id] {
-    mutate { add_field => { "[@metadata][index2]" => "%{[target][project_id]}" } }
-  } else if [target][domain_id] {
-    mutate { add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" } }
+  # secondary index (keystone only)
+  if [project] {
+    mutate { add_field => { "[@metadata][index2]" => "%{[project]}" } }
+  } else if [domain] {
+    mutate { add_field => { "[@metadata][index2]" => "%{[domain]}" } }
+  }
+
+  # remove keystone specific fields after they have been mapped to standard attachments 
+  mutate {
+    remove_field => ["[domain]", "[project]"] 
   }
 
   kv { source => "_source" }
