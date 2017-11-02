@@ -8,7 +8,7 @@ input {
 output {
   elasticsearch {
     index => "netflow-%{+YYYY.MM.dd}"
-    template => "/elk-etc"
+    template => "/elk-etc/netflow.json"
     template_name => "netflow"
     template_overwrite => true
     hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}"]

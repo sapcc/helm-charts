@@ -1,6 +1,6 @@
 {
   "order": 0,
-  "template": "logstash-*",
+  "template": "netflow-*",
   "settings": {
     "index": {
       "refresh_interval": "10s",
