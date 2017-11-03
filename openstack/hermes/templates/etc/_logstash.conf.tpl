@@ -44,6 +44,18 @@ filter {
   }
 
   # KEYSTONE TRANSFORMATIONS
+
+  mutate {
+     gsub => [
+        # use proper CADF taxonomy for actions
+        "action", "created\.", "create/",
+        "action", "deleted\.", "delete/",
+        "action", "updated\.", "create/",
+        "action", "disabled\.", "disable/",
+        "action", "\.", "/"
+     ]
+  }
+
   # Keystone specific transformations to compensate for scope missing from initiator element
   # When scope is missing from initiator, get it from action-specific parameters
   if ![initiator][project_id] and ![initiator][domain_id] {
@@ -63,31 +75,43 @@ filter {
   }
 
   # add target projects/domains as attachment
-  if ![target][attachments] {
-    if [project] {
-      ruby {
-        code => "
-          attachments = event.get('[target][attachments]')
-          if attachments.nil?
-            attachments = []
-          end
-          attachments << { 'name' => 'project_id', 'contentType' => '/data/security/project', 'content' => event.get('project') }
-          event.set('[target][attachments]', attachments)
-        "
-    } else if [domain] {
-      ruby {
-        code => "
-          attachments = event.get('[target][attachments]')
-          if attachments.nil?
-            attachments = []
-          end
-          attachments << { 'name' => 'domain_id', 'contentType' => '/data/security/domain', 'content' => event.get('domain') }
-          event.set('[target][attachments]', attachments)
-        "
-      }
+  if [project] {
+    ruby {
+      code => "
+       attachments = event.get('[target][attachments]')
+        if attachments.nil?
+          attachments = []
+        end
+        attachments << { 'name' => 'project_id', 'contentType' => '/data/security/project', 'content' => event.get('project') }
+        event.set('[target][attachments]', attachments)
+      "
+    }
+  } else if [domain] {
+    ruby {
+      code => "
+        attachments = event.get('[target][attachments]')
+        if attachments.nil?
+          attachments = []
+        end
+        attachments << { 'name' => 'domain_id', 'contentType' => '/data/security/domain', 'content' => event.get('domain') }
+        event.set('[target][attachments]', attachments)
+      "
+    }
+  }
+  if [role] {
+    ruby {
+      code => "
+       attachments = event.get('[target][attachments]')
+        if attachments.nil?
+          attachments = []
+        end
+        attachments << { 'name' => 'role_id', 'contentType' => '/data/security/role', 'content' => event.get('role') }
+        event.set('[target][attachments]', attachments)
+      "
     }
   }
 
+  # replace target ID with real user ID
   if [target][typeURI] == "service/security/account/user" and [user] {
      mutate {
        replace => { "[target][id]" => "%{[user]}" }
