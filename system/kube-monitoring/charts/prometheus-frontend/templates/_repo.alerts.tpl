@@ -1,6 +1,6 @@
 ALERT OpenstackRepo
-  IF repo_sync_last_run_gauge{kind="success"} < 1
-  FOR 2d
+  IF floor((time()-repo_sync_last_run_gauge{kind="success_timestamp"})/60/60) > 48
+  FOR 10m
   LABELS {
     tier = "openstack",
     service = "swift",
@@ -10,8 +10,8 @@ ALERT OpenstackRepo
     dashboard = "repo-sync?var-repo={{`{{ $labels.repo }}`}}",
   }
   ANNOTATIONS {
-    summary = "Repo {{`{{ $labels.repo }}`}} sync failed",
-    description = "Content repo {{`{{ $labels.repo }}`}} sync failed. Check the logs.",
+    summary = "Content repo {{`{{ $labels.repo }}`}} outdated",
+    description = "Content repo {{`{{ $labels.repo }}`}} was not succesful updated for at least 48h. Check the logs.",
   }
 
 ALERT OpenstackRepoEntitlementForbidden
