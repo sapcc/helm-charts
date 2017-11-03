@@ -9,19 +9,33 @@ function sleepuntil ()
 
   sleep_seconds=$(( $target_epoch - $current_epoch ))
   #If time is already reached, wait for the next day
-  if [ ${sleep_seconds} -lt 0 ]; then
-    sleep_seconds=$((86400 + sleep_seconds))
+  if [ $sleep_seconds -lt 0 ]; then
+    sleep_seconds=$(( 86400 + $sleep_seconds ))
   fi
 
   echo "Sleeping for $sleep_seconds seconds..."
   sleep $sleep_seconds
 }
 
-# Run forever
+# Run forever or 10 failed attempts in a row
 while :; do
+  timeout=1
+  attempt=1
+
   # Run the command immediately
   # Run until completed succesful
-  until "$@"; do :; done
+  until "$@"; do
+    if [ $attempt -gt 10 ]; then
+      echo "Too many failed attempts. Exiting..."
+      exit 1
+    fi
+    attempt=$(( $attempt + 1 ))
+
+    # Exponential Backoff
+    timeout=$(( $timeout * 2 ))
+    echo "Retry in $timeout seconds..."
+    sleep $timeout
+  done
 
   # Sleep until midnight and a random time within 15 mins
   sleepuntil 23:59:59 && sleep $((RANDOM % 900))
