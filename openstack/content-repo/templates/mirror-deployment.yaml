@@ -1,0 +1,62 @@
+{{- range $repo, $config := .Values.repos }}
+{{- if not ( and ($.Capabilities.APIVersions.Has "batch/v1beta1") $config.schedule ) }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: content-repo-{{ $repo }}
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: content-repo-{{ $repo }}
+  template:
+    metadata:
+      labels:
+        component: content-repo-{{ $repo }}
+      annotations:
+        checksum/check.bin: {{ include "content-repo/templates/bin-configmap.yaml" $ | sha256sum }}
+        checksum/check.secrets: {{ include "content-repo/templates/secrets.yaml" $ | sha256sum }}
+    spec:
+      volumes:
+      - name: bin
+        configMap:
+          name: bin-content-repo
+      - name: config
+        configMap:
+          name: swift-http-import
+      - name: secret
+        secret:
+          secretName: swift-http-import
+      containers:
+      - name: swift-http-import
+        image: {{$.Values.global.docker_repo}}/swift-http-import:{{ include "image_version" $.Values }}
+        command:
+          - /usr/bin/dumb-init
+        args:
+          - /bin/sh
+          - /bin-content-repo/sleep-until-midnight
+          - /usr/bin/swift-http-import
+          - /etc/http-import/config/{{$repo}}.yaml{{- if or $.Values.debug $config.debug }}
+        env:
+          - name: 'DEBUG'
+            value: '1'
+        {{- end}}
+        volumeMounts:
+          - mountPath: /bin-content-repo
+            name: bin
+          - mountPath: /etc/http-import/config
+            name: config
+          - mountPath: /etc/http-import/secret
+            name: secret
+---
+{{end}}
+{{end}}
