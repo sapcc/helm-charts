@@ -9,8 +9,12 @@ spec:
       labels:
         app: sysctl
     spec:
-      nodeSelector:
-        zone: farm
+      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        effect: "network"
+      {{- end }}
       containers:
         - image: sapcc/sysctl:latest
           name: sysctl
