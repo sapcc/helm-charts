@@ -46,8 +46,13 @@ spec:
           - /bin-content-repo/sleep-until-midnight
           - /usr/bin/swift-http-import
           - /etc/http-import/config/{{$repo}}.yaml
-        {{- if or $.Values.debug $config.debug }}
         env:
+        {{- if $.Values.timezone }}
+          # Setting this env variable, will force sleep_until to the correct timezone
+          - name: 'TZ'
+            value: {{ $.Values.timezone }}
+        {{- end}}
+        {{- if or $.Values.debug $config.debug }}
           - name: 'DEBUG'
             value: '1'
         {{- end}}
