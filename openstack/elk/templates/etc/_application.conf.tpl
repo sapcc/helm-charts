@@ -46,6 +46,7 @@ auth = {
     base-dn = "{{.Values.ldap.search_base_dbs}},{{.Values.ldap.suffix}}"
     bind-dn = "{{.Values.ldap.bind_dn}},{{.Values.ldap.suffix}}"
     bind-pw = "{{.Values.ldap.password}}"
+    userDomain = "{{.Values.ldap.userdomain}}"
     userAttr = "sAMAccountName"
     userGroup = "{{.Values.ldap.user_group}},{{.Values.ldap.suffix}}"
   }
