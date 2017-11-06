@@ -7,10 +7,10 @@ function sleepuntil ()
   current_epoch=$(date +%s)
   target_epoch=$(date -d $1 +%s)
 
-  sleep_seconds=$(( $target_epoch - $current_epoch ))
+  sleep_seconds=$(( target_epoch - current_epoch ))
   #If time is already reached, wait for the next day
   if [ $sleep_seconds -lt 0 ]; then
-    sleep_seconds=$(( 86400 + $sleep_seconds ))
+    sleep_seconds=$(( 86400 + sleep_seconds ))
   fi
 
   echo "Sleeping for $sleep_seconds seconds..."
@@ -29,10 +29,10 @@ while :; do
       echo "Too many failed attempts. Exiting..."
       exit 1
     fi
-    attempt=$(( $attempt + 1 ))
+    attempt=$(( attempt + 1 ))
 
     # Exponential Backoff
-    timeout=$(( $timeout * 2 ))
+    timeout=$(( timeout * 2 ))
     echo "Retry in $timeout seconds..."
     sleep $timeout
   done
