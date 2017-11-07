@@ -16,6 +16,12 @@ spec:
         checksum/elk-templates-fluent-bin-configmap.yaml: {{ include "elk/templates/fluent-bin-configmap.yaml" . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
     spec:
+      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      tolerations:
+      - key: "species"
+        operator: "Exists"
+        effect: "NoSchedule"
+      {{- end }}
       volumes:
         - name: fluent-bin
           configMap:
