@@ -19,14 +19,23 @@ spec:
     metadata:
       labels:
         name: neutron-agents-{{$agent.name}}
+      {{- if le $context.Capabilities.KubeVersion.Minor "6" }}
       annotations:
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"network"}]'
+      {{- end }}
     spec:
       hostNetwork: true
       hostPID: true
       hostIPC: true
       nodeSelector:
         kubernetes.io/hostname: {{$agent.node}}
+      {{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "network"
+        effect: "NoSchedule"
+      {{- end }}
       containers:
         - name: neutron-dhcp-agent
           image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{ or $context.Values.agent_image_tag $context.Values.image_tag}}
