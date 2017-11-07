@@ -11,35 +11,3 @@ When passed via `helm upgrade --set`, the image version is misinterpreted as a f
     {{- end -}}
   {{- end -}}
 {{- end -}}
-
-{{- /**********************************************************************************/ -}}
-{{- define "job_spec" -}}
-{{- $repo    := index . 0 -}}
-{{- $values  := index . 1 }}
-spec:
-  template:
-    spec:
-      restartPolicy: OnFailure
-      volumes:
-        - name: config
-          configMap:
-            name: swift-http-import
-        - name: secret
-          secret:
-            secretName: swift-http-import
-      containers:
-      - name: swift-http-import
-        image: {{$values.global.docker_repo}}/swift-http-import:{{ include "image_version" $values }}
-        args:
-          - /etc/http-import/config/{{$repo}}.yaml
-        {{- if or $values.debug (index (index $values.repos $repo) "debug") }}
-        env:
-          - name: 'DEBUG'
-            value: '1'
-        {{- end}}
-        volumeMounts:
-          - mountPath: /etc/http-import/config
-            name: config
-          - mountPath: /etc/http-import/secret
-            name: secret
-{{- end -}}
