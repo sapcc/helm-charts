@@ -19,11 +19,13 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9102"
     spec:
+      {{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
       tolerations:
       - key: "species"
         operator: "Equal"
         value: "swift-storage"
         effect: "NoSchedule"
+      {{- end }}
       nodeSelector:
         species: swift-storage
       volumes:
