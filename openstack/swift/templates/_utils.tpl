@@ -22,6 +22,17 @@ scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-sto
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
+{{- define "swift_daemonset_tolerations" }}
+{{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
+tolerations:
+- key: "species"
+  operator: "Equal"
+  value: "swift-storage"
+  effect: "NoSchedule"
+{{- end }}
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
 {{- define "swift_prometheus_annotations" }}
 prometheus.io/scrape: "true"
 prometheus.io/port: "9102"
