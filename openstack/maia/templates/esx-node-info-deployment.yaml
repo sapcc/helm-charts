@@ -22,7 +22,7 @@ spec:
       labels:
         component: esx-node-info-{{$config.name}}
       annotations:
-        checksum/maia-templates-vcenter-exporter-configmap.yaml: {{ include "maia/templates/vcenter-operator-configmap.yaml" $ | sha256sum }}
+        checksum/maia-templates-vcenter-exporter-configmap.yaml: {{ include "maia/templates/vcenter-exporter-configmap.yaml" $ | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
@@ -33,7 +33,7 @@ spec:
       containers:
         - name: esx-node-info
           # remove the "string:" prefix which is used to prevent helm's --set option from reformatting plain numbers into floats in scientific notation
-          image: {{$.Values.vcenter_exporter.docker_repo}}/esx-node-info:{{ $.Values.esx-node-info.image_version | replace "string:" "" }}
+          image: {{$.Values.vcenter_exporter.docker_repo}}/esx-node-info:{{ $.Values.esx_node_info.image_version | replace "string:" "" }}
           imagePullPolicy: IfNotPresent
           command:
             - python
