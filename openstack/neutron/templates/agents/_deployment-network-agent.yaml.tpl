@@ -29,7 +29,7 @@ spec:
         kubernetes.io/hostname: {{$agent.node}}
       containers:
         - name: neutron-dhcp-agent
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.agent_image_tag | $context.Values.image_tag}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -53,7 +53,7 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: neutron-metadata-agent
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.agent_image_tag | $context.Values.image_tag}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -75,7 +75,7 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: neutron-l3-agent
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.agent_image_tag | $context.Values.image_tag}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -100,7 +100,7 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: neutron-ovs-agent
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.agent_image_tag | $context.Values.image_tag}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -126,7 +126,7 @@ spec:
               name: container-init
 
         - name: ovs
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.agent_image_tag | $context.Values.image_tag}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -151,7 +151,7 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: ovs-db
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.agent_image_tag | $context.Values.image_tag}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
