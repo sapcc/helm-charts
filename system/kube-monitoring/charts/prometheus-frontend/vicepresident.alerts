@@ -1,17 +1,3 @@
-ALERT VicePresidentUnavailable
-  IF absent(kube_pod_status_ready{condition="true",pod=~"vice-president-.*"})
-  FOR 10m
-  LABELS {
-    tier = "datapath",
-    service = "vice-president",
-    severity = "ignore-critical",
-    context = "availability"
-  }
-  ANNOTATIONS {
-    summary = "The VICE president is unavailable",
-    description = "The VICE president is down. Automatic handling of certificates will not be available.",
-  }
-
 ALERT CertificateEnrollmentError
   IF sum(increase(vice_president_failed_enrollments[5m])) by (ingress,host) > 0
   FOR 10m
