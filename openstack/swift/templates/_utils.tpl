@@ -23,7 +23,7 @@ scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-sto
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_tolerations" }}
-{{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
+{{- if ge .Capabilities.KubeVersion.Minor "7" }}
 tolerations:
 - key: "species"
   operator: "Equal"
