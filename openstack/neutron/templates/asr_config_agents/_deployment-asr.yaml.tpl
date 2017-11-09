@@ -40,7 +40,11 @@ spec:
             - /container.init/neutron-asr-start
           env:
             - name: DEBUG_CONTAINER
+            {{ if $context.Values.pod.debug.asr_agent }}
+              value: "true"
+            {{else}}
               value: "false"
+            {{ end }}
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:

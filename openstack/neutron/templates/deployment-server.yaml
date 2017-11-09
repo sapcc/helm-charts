@@ -56,7 +56,13 @@ spec:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "{{ if not .Values.pod.debug.server }}/container.init/neutron-server-start{{ else }}sleep inf{{ end }}"
+              value: "/container.init/neutron-server-start"
+            - name: DEBUG_CONTAINER
+            {{ if .Values.pod.debug.server }}
+              value: "true"
+            {{else}}
+              value: "false"
+            {{ end }}
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
