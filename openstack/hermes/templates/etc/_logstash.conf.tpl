@@ -62,7 +62,7 @@ filter {
     if [project] {
       mutate { rename => { "%{[project]}" => "%{[initiator][project_id]}" } }
     } else if [domain] {
-      mutate { add_field => { "[initiator][domain_id]" => "%{[initiator][domain_id]}" } }
+      mutate { rename => { "%{[domain]}" => "%{[initiator][domain_id]}" } }
     }
   }
 
