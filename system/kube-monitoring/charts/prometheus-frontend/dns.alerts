@@ -1,61 +1,55 @@
-skydns_skydns_dns_error_count_total_irate = irate(skydns_skydns_dns_error_count_total[5m])
+groups:
+- name: dns.alerts
+  rules:
+  - alert: KubernetesDNSErrorSpike
+    expr: sum(irate(skydns_skydns_dns_error_count_total[5m])) BY (system, cause) > sum(avg_over_time(skydns_skydns_dns_error_count_total_irate[12h] OFFSET 12h))
+          BY (system, cause) * 4 + 100
+    for: 15m
+    labels:
+      context: errors
+      dashboard: kubernetes-dns
+      service: dns
+      severity: info
+      tier: kubernetes
+    annotations:
+      description: Unusually many errors in {{ $labels.system }}/{{ $labels.cause }}
+      summary: Unusual high kube-dns errors
 
-ALERT KubernetesDNSErrorSpike
-  IF sum(irate(skydns_skydns_dns_error_count_total[5m])) BY (system,cause) > sum(avg_over_time(skydns_skydns_dns_error_count_total_irate[12h] OFFSET 12h)) BY (system,cause) * 4 + 100
-  FOR 15m
-  LABELS {
-    tier = "kubernetes",
-    service = "dns",
-    severity = "info",
-    context = "errors",
-    dashboard = "kubernetes-dns"
-  }
-  ANNOTATIONS {
-    summary = "Unusual high kube-dns errors",
-    description = "Unusually many errors in {{ $labels.system }}/{{ $labels.cause }}",
-  }
+  - alert: KubernetesDNSDown
+    expr: up{job="kube-system/dns"} == 0
+    for: 15m
+    labels:
+      context: availability
+      dashboard: kubernetes-health
+      service: dns
+      severity: warning
+      tier: kubernetes
+    annotations:
+      description: Kube-dns on {{ $labels.instance }} is DOWN.
+      summary: An kube-dns is DOWN
 
-ALERT KubernetesDNSDown
-  IF up{job="kube-system/dns"} == 0
-  FOR 15m
-  LABELS {
-    tier = "kubernetes",
-    service = "dns",
-    severity = "warning",
-    context = "availability",
-    dashboard = "kubernetes-health"
-  }
-  ANNOTATIONS {
-    summary = "An kube-dns is DOWN",
-    description = "Kube-dns on {{ $labels.instance }} is DOWN.",
-  }
+  - alert: KubernetesDNSAllDown
+    expr: count(up{job="kube-system/dns"} == 0) == count(up{job="kube-system/dns"})
+    for: 5m
+    labels:
+      context: availability
+      dashboard: kubernetes-health
+      service: dns
+      severity: critical
+      tier: kubernetes
+    annotations:
+      description: All kube-dns servers are down. Cluster internal DNS is unavailable!
+      summary: Kube-DNS is unavailable
 
-ALERT KubernetesDNSAllDown
-  IF count(up{job="kube-system/dns"} == 0) == count(up{job="kube-system/dns"})
-  FOR 5m
-  LABELS {
-    tier = "kubernetes",
-    service = "dns",
-    severity = "critical",
-    context = "availability",
-    dashboard = "kubernetes-health"
-  }
-  ANNOTATIONS {
-    summary = "Kube-DNS is unavailable!",
-    description = "All kube-dns servers are down. Cluster internal DNS is unavailable!",
-  }
-
-ALERT KubernetesDNSScrapeMissing
-  IF absent(up{job="kube-system/dns"})
-  FOR 1h
-  LABELS {
-    tier = "kubernetes",
-    service = "dns",
-    severity = "warning",
-    context = "availability",
-    dashboard = "kubernetes-health"
-  }
-  ANNOTATIONS {
-    summary = "Kube-dns cannot be scraped",
-    description = "Kube-dns failed to be scraped.",
-  }
+  - alert: KubernetesDNSScrapeMissing
+    expr: absent(up{job="kube-system/dns"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: kubernetes-health
+      service: dns
+      severity: warning
+      tier: kubernetes
+    annotations:
+      description: Kube-dns failed to be scraped.
+      summary: Kube-dns cannot be scraped

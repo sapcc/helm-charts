@@ -23,15 +23,13 @@ spec:
         - name: prometheus 
           image: "{{.Values.global.prometheus.image}}:{{.Values.global.prometheus.tag}}"
           args:
-            - -config.file=/etc/prometheus/prometheus.yaml
-            - -storage.local.path=/prometheus
-            - -storage.local.target-heap-size={{.Values.target_heap_size}}
-            - -storage.local.retention={{.Values.retention}}
-            - -web.console.libraries=/etc/prometheus/console_libraries
-            - -web.console.templates=/etc/prometheus/consoles
-            - -web.external-url=https://prometheus.{{.Values.global.region}}.{{.Values.global.domain}}
-            - -storage.local.series-file-shrink-ratio={{ default 0.1 .Values.series_file_shrink_ratio }}
-            - -log.level={{ default "info" .Values.log_level }}
+            - --config.file=/etc/prometheus/prometheus.yaml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention={{.Values.retention}}
+            - --web.console.libraries=/etc/prometheus/console_libraries
+            - --web.console.templates=/etc/prometheus/consoles
+            - --web.external-url=https://prometheus.{{.Values.global.region}}.{{.Values.global.domain}}
+            - --log.level={{ default "info" .Values.log_level }}
           ports:
             - name: http 
               containerPort: 9090

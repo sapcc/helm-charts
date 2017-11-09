@@ -1,49 +1,44 @@
-### Designate
+groups:
+- name: openstack-designate.alerts
+  rules:
+  - alert: OpenstackDesignateDnsBindDown
+    expr: max(bind_up) BY (region, kubernetes_name) < 1
+    for: 3m
+    labels:
+      context: bind
+      dashboard: openstack-designate-bind
+      meta: '{{ $labels.kubernetes_name }}'
+      service: designate
+      severity: critical
+      tier: openstack
+    annotations:
+      description: DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $labels.region }}.
+      summary: DNS Bind server {{ $labels.kubernetes_name }} down.
 
-ALERT OpenstackDesignateDnsBindDown
-  IF max(bind_up) by (region, kubernetes_name) < 1.0
-  FOR 3m
-  LABELS {
-    tier = "openstack",
-    service = "designate",
-    severity = "critical",
-    context = "bind",
-    meta = "{{ $labels.kubernetes_name }}",
-    dashboard = "openstack-designate-bind"
-  }
-  ANNOTATIONS {
-    summary = "DNS Bind server {{ $labels.kubernetes_name }} down.",
-    description = "DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $labels.region }}."
-  }
+  - alert: OpenstackDesignateZoneError
+    expr: sum(sql_openstack_designate_zones{status="ERROR"}) BY (zone_name) > 0
+    for: 15m
+    labels:
+      context: zone_replication
+      dashboard: openstack-designate
+      meta: '{{ $labels.zone_name }}'
+      service: designate
+      severity: info
+      tier: openstack
+    annotations:
+      description: '{{ $labels.zone_name }} in Error State.'
+      summary: Designate Zone in Error State
 
-ALERT OpenstackDesignateZoneError
-  IF  sum(sql_openstack_designate_zones{status="ERROR"}) by (zone_name) > 0
-  FOR 15m
-  LABELS {
-    tier = "openstack",
-    service = "designate",
-    severity = "info",
-    context = "zone_replication",
-    meta = "{{ $labels.zone_name }}",
-    dashboard = "openstack-designate"
-  }
-  ANNOTATIONS {
-    summary = "Designate Zone in Error State",
-    description = "{{ $labels.zone_name }} in Error State."
-  }
-
-ALERT OpenstackDesignateMultipleZoneErrors
-  IF  sum(sql_openstack_designate_zones{status="ERROR"}) > 1
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "designate",
-    severity = "warning",
-    context = "zone_replication",
-    meta = "{{ $value }} zones",
-    dashboard = "openstack-designate"
-  }
-  ANNOTATIONS {
-    summary = "Designate Zones in Error State",
-    description = "{{ $value }} Designate Zones in Error State."
-  }
+  - alert: OpenstackDesignateMultipleZoneErrors
+    expr: sum(sql_openstack_designate_zones{status="ERROR"}) > 1
+    for: 5m
+    labels:
+      context: zone_replication
+      dashboard: openstack-designate
+      meta: '{{ $value }} zones'
+      service: designate
+      severity: warning
+      tier: openstack
+    annotations:
+      description: '{{ $value }} Designate Zones in Error State.'
+      summary: Designate Zones in Error State

@@ -1,184 +1,154 @@
-### Openstack Blackbox API Alerts
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: OpenstackApiDown
+    expr: blackbox_api_status_gauge == 1
+    for: 15m
+    labels:
+      context: '{{ $labels.check }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }}'
+      sentry: blackbox
+      service: '{{ $labels.check }}'
+      severity: critical
+      tier: openstack
+    annotations:
+      description: Api {{ $labels.check }} is down for 15 times in a row.
+      summary: Blackbox api test
 
-ALERT OpenstackApiDown
-  IF blackbox_api_status_gauge == 1
-  FOR 15m
-  LABELS {
-    severity = "critical",
-    tier = "openstack",
-    service = "{{ $labels.check }}",
-    context = "{{ $labels.check }}",
-    meta = "{{ $labels.check }}",
-    dashboard = "ccloud-health-blackbox-details",
-    sentry = "blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox api test",
-    description = "Api {{ $labels.check }} is down for 15 times in a row."
-  }
+  - alert: OpenstackApiFlapping
+    expr: changes(blackbox_api_status_gauge[30m]) > 8
+    labels:
+      context: '{{ $labels.check }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }}'
+      sentry: blackbox
+      service: '{{ $labels.check }}'
+      severity: critical
+      tier: openstack
+    annotations:
+      description: Api {{ $labels.check }} is flapping for 30 minutes.
+      summary: Blackbox api test
 
-ALERT OpenstackApiFlapping
-  IF changes(blackbox_api_status_gauge[30m]) > 8
-  LABELS {
-    severity = "critical",
-    tier = "openstack",
-    service = "{{ $labels.check }}",
-    context = "{{ $labels.check }}",
-    meta = "{{ $labels.check }}",
-    dashboard = "ccloud-health-blackbox-details",
-    sentry = "blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox api test",
-    description = "Api {{ $labels.check }} is flapping for 30 minutes."
-  }
+  - alert: OpenstackDatapathDown
+    expr: blackbox_datapath_status_gauge == 1
+    for: 15m
+    labels:
+      context: '{{ $labels.check }}'
+      dashboard: ccloud-health-datapath-details
+      meta: '{{ $labels.check }}'
+      sentry: blackbox
+      severity: critical
+      tier: openstack
+    annotations:
+      description: Datapath {{ $labels.check }} is down for 15 times in a row.
+      summary: Blackbox datapath test
 
-### Openstack Blackbox Datapath Alerts
+  - alert: OpenstackDatapathFlapping
+    expr: changes(blackbox_datapath_status_gauge[30m]) > 8
+    labels:
+      context: '{{ $labels.check }}'
+      dashboard: ccloud-health-datapath-details
+      meta: '{{ $labels.check }}'
+      sentry: blackbox
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Datapath {{ $labels.check }} is flapping for 30 minutes.
+      summary: Blackbox datapath test
 
-ALERT OpenstackDatapathDown
-  IF blackbox_datapath_status_gauge == 1
-  FOR 15m
-  LABELS {
-    severity = "critical",
-    tier = "openstack",
-    context = "{{ $labels.check }}",
-    meta = "{{ $labels.check }}",
-    dashboard = "ccloud-health-datapath-details",
-    sentry = "blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox datapath test",
-    description = "Datapath {{ $labels.check }} is down for 15 times in a row."
-  }
+  - alert: OpenstackCanaryHealthCheckFailing
+    expr: blackbox_canary_status_gauge == 1
+    for: 1h
+    labels:
+      context: '{{ $labels.check }}'
+      dashboard: ccloud-health-canary-details
+      meta: '{{ $labels.check }}'
+      sentry: blackbox
+      severity: warning
+      tier: openstack
+    annotations:
+      description: '{{ $labels.check }} test is failing for 5 time in a row.'
+      summary: Blackbox canary test
 
-ALERT OpenstackDatapathFlapping
-  IF changes(blackbox_datapath_status_gauge[30m]) > 8
-  LABELS {
-    severity = "warning",
-    tier = "openstack",
-    context = "{{ $labels.check }}",
-    meta = "{{ $labels.check }}",
-    dashboard = "ccloud-health-datapath-details",
-    sentry = "blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox datapath test",
-    description = "Datapath {{ $labels.check }} is flapping for 30 minutes."
-  }
+  - alert: OpenstackCanaryHealthCheckFlapping
+    expr: changes(blackbox_canary_status_gauge[2h]) > 8
+    labels:
+      context: '{{ $labels.check }}'
+      dashboard: ccloud-health-canary-details
+      meta: '{{ $labels.check }}'
+      sentry: blackbox
+      severity: warning
+      tier: openstack
+    annotations:
+      description: '{{ $labels.check }} test is flapping for 120 minutes.'
+      summary: Blackbox canary test
 
-### Openstack Blackbox Canary Alerts
+  - alert: OpenstackCertificateExpires
+    expr: blackbox_certificates_status_gauge == 1
+    for: 1d
+    labels:
+      context: '{{ $labels.check }}'
+      meta: '{{ $labels.check }}'
+      sentry: blackbox
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Certificate {{ $labels.check }} expires in the near future.
+      summary: Certificates
 
-ALERT OpenstackCanaryHealthCheckFailing
-  IF blackbox_canary_status_gauge == 1
-  FOR 60m
-  LABELS {
-    severity = "warning",
-    tier = "openstack",
-    context = "{{ $labels.check }}",
-    meta = "{{ $labels.check }}",
-    dashboard = "ccloud-health-canary-details",
-    sentry = "blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox canary test",
-    description = "{{ $labels.check }} test is failing for 5 time in a row."
-  }
+  - alert: OpenstackCertificateExpiresSoon
+    expr: blackbox_certificates_status_gauge == 1
+    for: 15d
+    labels:
+      context: '{{ $labels.check }}'
+      meta: '{{ $labels.check }}'
+      sentry: blackbox
+      severity: critical
+      tier: openstack
+    annotations:
+      description: Certificate {{ $labels.check }} expires in the near future.
+      summary: Certificates
 
-ALERT OpenstackCanaryHealthCheckFlapping
-  IF changes(blackbox_canary_status_gauge[120m]) > 8
-  LABELS {
-    severity = "warning",
-    tier = "openstack",
-    context = "{{ $labels.check }}",
-    meta = "{{ $labels.check }}",
-    dashboard = "ccloud-health-canary-details",
-    sentry = "blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox canary test",
-    description = "{{ $labels.check }} test is flapping for 120 minutes."
-  }
+  - alert: BlackboxApiMetricsDown
+    expr: absent(up{kubernetes_name="blackbox-tests-api",kubernetes_namespace="blackbox"}) == 1
+    for: 15m
+    labels:
+      service: blackbox-tests-api
+      severity: info
+      tier: openstack
+    annotations:
+      description: Api metrics are down for 15 times in a row.
+      summary: Blackbox api metrics
+  - alert: BlackboxDatapathMetricsDown
+    expr: absent(up{kubernetes_name="blackbox-tests-datapath",kubernetes_namespace="blackbox"}) == 1
+    for: 15m
+    labels:
+      service: blackbox-tests-datapath
+      severity: info
+      tier: openstack
+    annotations:
+      description: Datapath metrics are down for 15 times in a row.
+      summary: Blackbox datapath metrics
 
-### Openstack Blackbox Certificates Alerts
-ALERT OpenstackCertificateExpires
-  IF blackbox_certificates_status_gauge == 1
-  FOR 24h
-  LABELS {
-    severity = "warning",
-    tier = "openstack",
-    meta = "{{ $labels.check }}",
-    context = "{{ $labels.check }}",
-    sentry = "blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Certificates",
-    description = "Certificate {{ $labels.check }} expires in the near future."
-  }
-ALERT OpenstackCertificateExpiresSoon
-  IF blackbox_certificates_status_gauge == 1
-  FOR 15d
-  LABELS {
-    severity = "critical",
-    tier = "openstack",
-    context = "{{ $labels.check }}",
-    meta = "{{ $labels.check }}",
-    sentry = "blackbox"
-  }
-  ANNOTATIONS {
-    summary = "Certificates",
-    description = "Certificate {{ $labels.check }} expires in the near future."
-  }
+  - alert: BlackboxCanaryMetricsDown
+    expr: absent(up{kubernetes_name="blackbox-tests-canary",kubernetes_namespace="blackbox"}) == 1
+    for: 30m
+    labels:
+      service: blackbox-tests-canary
+      severity: info
+      tier: openstack
+    annotations:
+      description: Canary metrics are down for 15 times in a row.
+      summary: Blackbox canary metrics
 
-### Blackbox Metrics alerts
-
-ALERT BlackboxApiMetricsDown
-  IF absent(up{kubernetes_namespace="blackbox",kubernetes_name="blackbox-tests-api"}) == 1
-  FOR 15m
-  LABELS {
-    severity = "info",
-    tier = "openstack",
-    service = "blackbox-tests-api"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox api metrics",
-    description = "Api metrics are down for 15 times in a row."
-  }
-
-ALERT BlackboxDatapathMetricsDown
-  IF absent(up{kubernetes_namespace="blackbox",kubernetes_name="blackbox-tests-datapath"}) == 1
-  FOR 15m
-  LABELS {
-    severity = "info",
-    tier = "openstack",
-    service = "blackbox-tests-datapath"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox datapath metrics",
-    description = "Datapath metrics are down for 15 times in a row."
-  }
-
-ALERT BlackboxCanaryMetricsDown
-  IF absent(up{kubernetes_namespace="blackbox",kubernetes_name="blackbox-tests-canary"}) == 1
-  FOR 30m
-  LABELS {
-    severity = "info",
-    tier = "openstack",
-    service = "blackbox-tests-canary"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox canary metrics",
-    description = "Canary metrics are down for 15 times in a row."
-  }
-
-ALERT BlackboxCertificatesMetricsDown
-  IF absent(up{kubernetes_namespace="blackbox",kubernetes_name="blackbox-tests-certificates"}) == 1
-  FOR 15m
-  LABELS {
-    severity = "info",
-    tier = "openstack",
-    service = "blackbox-tests-certificates"
-  }
-  ANNOTATIONS {
-    summary = "Blackbox certificates metrics",
-    description = "Certificates metrics are down for 15 times in a row."
-  }
+  - alert: BlackboxCertificatesMetricsDown
+    expr: absent(up{kubernetes_name="blackbox-tests-certificates",kubernetes_namespace="blackbox"}) == 1
+    for: 15m
+    labels:
+      service: blackbox-tests-certificates
+      severity: info
+      tier: openstack
+    annotations:
+      description: Certificates metrics are down for 15 times in a row.
+      summary: Blackbox certificates metrics
