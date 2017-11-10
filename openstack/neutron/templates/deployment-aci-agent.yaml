@@ -25,6 +25,9 @@ spec:
       annotations:
         pod.beta.kubernetes.io/hostname:  aci-agent-pet
     spec:
+      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      hostname:  aci-agent-pet
+      {{- end }}
       containers:
         - name: neutron-aci-agent
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{.Values.image_name}}:{{.Values.image_tag}}

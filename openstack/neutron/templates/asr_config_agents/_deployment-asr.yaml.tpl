@@ -32,6 +32,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{$context.Values.port_metrics}}"
     spec:
+      {{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
+      hostname:  {{ $config_agent.hostname }}
+      {{- end }}
       containers:
         - name: neutron-cisco-asr
           image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}

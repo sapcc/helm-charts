@@ -28,6 +28,9 @@ spec:
       annotations:
         pod.beta.kubernetes.io/hostname:  f5-{{ $loadbalancer.name }}
     spec:
+      {{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
+      hostname:  {{ $loadbalancer.name }}
+      {{- end }}
       containers:
         - name: neutron-f5agent-{{ $loadbalancer.name }}
           image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}
