@@ -12,6 +12,12 @@ spec:
       annotations:
         container-linux-update.v1.coreos.com/agent-version: v0.2.1
     spec:
+      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      tolerations:
+      - key: "species"
+        operator: "Exists"
+        effect: "NoSchedule"
+      {{- end }}
       containers:
       - name: update-agent
         image: quay.io/coreos/container-linux-update-operator:v0.2.1
