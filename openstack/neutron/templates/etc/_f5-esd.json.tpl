@@ -5,11 +5,13 @@
   "proxy_protocol_2edF_v1_0": {
     "lbaas_fastl4": "",
     "lbaas_ctcp": "tcp",
-    "lbaas_irule": ["proxy_protocol_2edF_v1_0"]
+    "lbaas_irule": ["proxy_protocol_2edF_v1_0"],
+    "lbaas_one_connect": ""
   },
   "standard_tcp_a3de_v1_0": {
     "lbaas_fastl4": "",
-    "lbaas_ctcp": "tcp"
+    "lbaas_ctcp": "tcp",
+    "lbaas_one_connect": ""
   },
   "x_forward_5b6e_v1_0": {
     "lbaas_irule": ["cc_x_forward_5b6e_v1_0"]
