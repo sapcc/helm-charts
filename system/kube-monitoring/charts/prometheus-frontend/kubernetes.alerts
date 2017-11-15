@@ -161,3 +161,15 @@ groups:
     annotations:
       description: "{{ $labels.job }} on {{ $labels.instance }} is using {{ $value }}% of the available file/socket descriptors"
       summary: Too many open file descriptors
+
+  - alert: KubernetesPVCPendingOrLost
+    expr: kube_persistentvolumeclaim_status_phase{phase=~"Pending|Lost"} == 1
+    for: 5m
+    labels:
+      tier: kubernetes
+      service: k8s
+      severity: info
+      context: pvc
+    annotations:
+      description: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} stuck in phase {{ $labels.phase }}"
+      summary: "PVC stuck in phase {{ $labels.phase }}"
