@@ -12,8 +12,8 @@ data:
       - ./*.tmpl
 
     inhibit_rules:
-    # Mute warnings for which also a critical alert exists. Per context and
-    # region.
+    # Mute warnings for which also a critical alert exists.
+    # Per context and region.
     - source_match:
         severity: 'critical'
       target_match:
@@ -44,9 +44,24 @@ data:
           region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
         routes:
         - receiver: 'kubernetes-warning'
+          continue: true
           match:
             severity: warning
         - receiver: 'kubernetes-critical'
+          continue: true
+          match:
+            severity: critical
+      - receiver: kubernikus-info
+        continue: true
+        match_re:
+          tier: kubernikus
+          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
+        routes:
+        - receiver: 'kubernikus-warning'
+          continue: true
+          match:
+            severity: warning
+        - receiver: 'kubernikus-critical'
           continue: true
           match:
             severity: critical
@@ -57,6 +72,7 @@ data:
           region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$
         routes:
         - receiver: 'openstack-warning'
+          continue: true
           match:
             severity: warning
         - receiver: 'openstack-critical'
@@ -78,6 +94,19 @@ data:
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
         username: "Kubernetes Control Plane"
+        channel: "#{{ . }}"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        send_resolved: true
+    {{- end }}
+    {{- range tuple "kubernikus-info" "kubernikus-warning" "kubernikus-critical" }}
+    - name: {{ . }}
+      slack_configs:
+      - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
+        username: "Kubernikus Control Plane"
         channel: "#{{ . }}"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
