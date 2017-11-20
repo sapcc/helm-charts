@@ -135,7 +135,7 @@ When passed via `helm upgrade --set`, the image_version is misinterpreted as a f
 {{- define "swift_statsd_exporter_container" }}
 - name: statsd
   image: prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
-  args: [ -statsd.mapping-config=/swift-etc/statsd-exporter.conf ]
+  args: [ -statsd.mapping-config=/swift-etc/statsd-exporter.conf, -statsd.add-suffix=false ]
   ports:
     - name: statsd
       containerPort: 9125

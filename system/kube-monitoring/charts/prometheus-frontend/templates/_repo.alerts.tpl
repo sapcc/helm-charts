@@ -1,5 +1,5 @@
 ALERT OpenstackRepo
-  IF floor((time()-repo_sync_last_run_gauge{kind="success_timestamp"})/60/60) > 48
+  IF (floor((time()-repo_sync_last_run_gauge{kind="success_timestamp"})/60/60) > 48 OR floor((time()-repo_sync_last_run{kind="success_timestamp"})/60/60) > 48)
   FOR 10m
   LABELS {
     tier = "openstack",
@@ -15,7 +15,7 @@ ALERT OpenstackRepo
   }
 
 ALERT OpenstackRepoEntitlementForbidden
-  IF repo_sync_check_success_gauge == -1
+  IF (repo_sync_check_success_gauge == -1 OR repo_sync_check_success == -1)
   FOR 1h
   LABELS {
     tier = "openstack",
@@ -34,7 +34,7 @@ ALERT OpenstackRepoEntitlementForbidden
   }
 
 ALERT OpenstackRepoEntitlement
-  IF repo_sync_check_success_gauge == 0
+  IF (repo_sync_check_success_gauge == 0 OR repo_sync_check_success == 0)
   FOR 1h
   LABELS {
     tier = "openstack",

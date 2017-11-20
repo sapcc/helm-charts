@@ -1,5 +1,5 @@
 ALERT OpenstackSwiftFirstByteTiming
-  IF max(swift_proxy_firstbyte_timer{status="200",quantile="0.5"}) by (region, os_cluster, type, instance) > 1000.0
+  IF (max(swift_proxy_firstbyte_timer{status="200",quantile="0.5"}) by (region, os_cluster, type, instance) > 1000.0 OR max(swift_proxy_firstbyte{status="200",quantile="0.5"}) by (region, os_cluster, type, instance) > 1000.0)
   FOR 15m
   LABELS {
     tier = "openstack",
@@ -14,7 +14,7 @@ ALERT OpenstackSwiftFirstByteTiming
   }
 
 ALERT OpenstackSwiftServiceUnavailable
-  IF sum(irate(swift_proxy_timer_sum{policy="all",status="503"}[5m])) by (os_cluster) > 100
+  IF (sum(irate(swift_proxy_timer_sum{policy="all",status="503"}[5m])) by (os_cluster) > 100 OR sum(irate(swift_proxy_sum{policy="all",status="503"}[5m])) by (os_cluster) > 100)
   FOR 5m
   LABELS {
     tier = "openstack",
@@ -29,7 +29,7 @@ ALERT OpenstackSwiftServiceUnavailable
   }
 
 ALERT OpenstackSwiftHealthCheck
-  IF avg(swift_health_statsd_exit_code_gauge{}) by (region) > 0.2
+  IF (avg(swift_health_statsd_exit_code_gauge{}) by (region) > 0.2 OR avg(swift_health_statsd_exit_code{}) by (region) > 0.2)
   FOR 5m
   LABELS {
     tier = "openstack",
@@ -44,7 +44,7 @@ ALERT OpenstackSwiftHealthCheck
   }
 
 ALERT OpenstackSwiftMismatchedRings
-  IF swift_cluster_md5_ring_not_matched_gauge > 0
+  IF (swift_cluster_md5_ring_not_matched_gauge > 0 OR swift_cluster_md5_ring_not_matched > 0)
   FOR 15m
   LABELS {
     tier = "openstack",
@@ -59,7 +59,7 @@ ALERT OpenstackSwiftMismatchedRings
   }
 
 ALERT OpenstackSwiftDisksUnmounted
-  IF sum(swift_cluster_drives_unmounted_gauge{}) by (region, storage_ip) > 0.0
+  IF (sum(swift_cluster_drives_unmounted_gauge{}) by (region, storage_ip) > 0.0 OR sum(swift_cluster_drives_unmounted{}) by (region, storage_ip) > 0.0)
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -74,7 +74,7 @@ ALERT OpenstackSwiftDisksUnmounted
   }
 
 ALERT OpenstackSwiftDiskFailures
-  IF sum(swift_cluster_drives_audit_errors_gauge) by (region, storage_ip) > 0.0
+  IF (sum(swift_cluster_drives_audit_errors_gauge) by (region, storage_ip) > 0.0 OR sum(swift_cluster_drives_audit_errors) by (region, storage_ip) > 0.0)
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -89,7 +89,7 @@ ALERT OpenstackSwiftDiskFailures
   }
 
 ALERT OpenstackSwiftAsyncPendings
-  IF sum(increase(swift_object_server_async_pendings_counter[5m])) by (region) > 2000
+  IF (sum(increase(swift_object_server_async_pendings_counter[5m])) by (region) > 2000 OR sum(increase(swift_object_server_async_pendings[5m])) by (region) > 2000)
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -104,7 +104,7 @@ ALERT OpenstackSwiftAsyncPendings
   }
 
 ALERT OpenstackSwiftRateLimit1000
-  IF sum(increase(swift_proxy_timer_count{status='498'}[5m])) by (region, os_cluster) > 1000
+  IF (sum(increase(swift_proxy_timer_count{status='498'}[5m])) by (region, os_cluster) > 1000 OR sum(increase(swift_proxy_count{status='498'}[5m])) by (region, os_cluster) > 1000)
   FOR 3m
   LABELS {
     tier = "openstack",
@@ -119,7 +119,7 @@ ALERT OpenstackSwiftRateLimit1000
   }
 
 ALERT OpenstackSwiftRateLimit5000
-  IF sum(increase(swift_proxy_timer_count{status='498'}[5m])) by (region, os_cluster) > 5000
+  IF (sum(increase(swift_proxy_timer_count{status='498'}[5m])) by (region, os_cluster) > 5000 OR sum(increase(swift_proxy_count{status='498'}[5m])) by (region, os_cluster) > 5000)
   FOR 3m
   LABELS {
     tier = "openstack",
