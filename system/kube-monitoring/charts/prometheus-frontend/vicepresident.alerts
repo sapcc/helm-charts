@@ -1,55 +1,46 @@
-ALERT CertificateEnrollmentError
-  IF sum(increase(vice_president_failed_enrollments[5m])) by (ingress,host) > 0
-  FOR 10m
-  LABELS {
-    tier = "datapath",
-    service = "vice-president",
-    severity = "warning",
-    context = "availability"
-  }
-  ANNOTATIONS {
-    summary = "Failed to enroll certificate",
-    description = "Failed to enroll certificate for {{ $labels.host }} .",
-  }
+groups:
+- name: vicepresident.alerts
+  rules:
+  - alert: CertificateEnrollmentError
+    expr: sum(increase(vice_president_failed_enrollments[5m])) BY (ingress, host) > 0
+    labels:
+      context: availability
+      service: vice-president
+      severity: warning
+      tier: datapath
+    annotations:
+      description: Failed to enroll certificate for {{ $labels.host }} .
+      summary: Failed to enroll certificate
 
-ALERT CertificateRenewalError
-  IF sum(increase(vice_president_failed_renewals[5m])) by (ingress,host) > 0
-  FOR 10m
-  LABELS {
-    tier = "datapath",
-    service = "vice-president",
-    severity = "warning",
-    context = "availability"
-  }
-  ANNOTATIONS {
-      summary = "Failed to renew certificate",
-      description = "Failed to renew certificate for {{ $labels.host }} .",
-  }
+  - alert: CertificateRenewalError
+    expr: sum(increase(vice_president_failed_renewals[5m])) BY (ingress, host) > 0
+    labels:
+      context: availability
+      service: vice-president
+      severity: warning
+      tier: datapath
+    annotations:
+      description: Failed to renew certificate for {{ $labels.host }} .
+      summary: Failed to renew certificate
 
-ALERT CertificatePickupError
-  IF sum(increase(vice_president_failed_pickups[5m])) by (ingress,host) > 0
-  FOR 10m
-  LABELS {
-    tier = "datapath",
-    service = "vice-president",
-    severity = "warning",
-    context = "availability"
-  }
-  ANNOTATIONS {
-      summary = "Failed to pickup certificate",
-      description = "Failed to pickup certificate for {{ $labels.host }} .",
-  }
+  - alert: CertificatePickupError
+    expr: sum(increase(vice_president_failed_pickups[5m])) BY (ingress, host) > 0
+    labels:
+      context: availability
+      service: vice-president
+      severity: warning
+      tier: datapath
+    annotations:
+      description: Failed to pickup certificate for {{ $labels.host }} .
+      summary: Failed to pickup certificate
 
-ALERT CertificateApprovalError
-  IF sum(increase(vice_president_failed_approvals[5m])) by (ingress,host) > 0
-  FOR 10m
-  LABELS {
-    tier = "datapath",
-    service = "vice-president",
-    severity = "warning",
-    context = "availability"
-  }
-  ANNOTATIONS {
-      summary = "Failed to pickup certificate",
-      description = "Failed to approve certificate for {{ $labels.host }} .",
-  }
+  - alert: CertificateApprovalError
+    expr: sum(increase(vice_president_failed_approvals[5m])) BY (ingress, host) > 0
+    labels:
+      context: availability
+      service: vice-president
+      severity: warning
+      tier: datapath
+    annotations:
+      description: Failed to approve certificate for {{ $labels.host }} .
+      summary: Failed to pickup certificate

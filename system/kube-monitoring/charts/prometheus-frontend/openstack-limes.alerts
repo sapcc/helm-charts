@@ -1,16 +1,16 @@
-### Limes
-
-ALERT OpenstackLimesFailedScrapes
-  IF sum(increase(limes_failed_scrapes[5m])) by (service, service_name, region) > 0
-  FOR 60m
-  LABELS {
-    tier = "openstack",
-    service = "{{ $labels.service_name }}",
-    severity = "warning",
-    context = "failedscrapes",
-    dashboard = "limes-overview"
-  }
-  ANNOTATIONS {
-    summary = "Limes cannot scrape {{ title $labels.service_name }}",
-    description = "Limes cannot scrape data from {{ title $labels.service_name }} for more than an hour. Please check if {{ title $labels.service_name }} is working."
-  }
+groups:
+- name: openstack-limes.alerts
+  rules:
+  - alert: OpenstackLimesFailedScrapes
+    expr: sum(increase(limes_failed_scrapes[5m])) BY (service, service_name) > 0
+    for: 1h
+    labels:
+      context: failedscrapes
+      dashboard: limes-overview
+      service: '{{ $labels.service_name }}'
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Limes cannot scrape data from {{ title $labels.service_name }}
+        for more than an hour. Please check if {{ title $labels.service_name }} is working.
+      summary: Limes cannot scrape {{ title $labels.service_name }}

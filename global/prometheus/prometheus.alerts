@@ -1,58 +1,53 @@
-ALERT KubernetesPrometheusFrontendDown
-  IF count(up{job="prometheus-regions-federation"}) by (region) unless count(up{job="prometheus-frontend"}) by (region)
-  FOR 15m
-  LABELS {
-    service = "prometheus",
-    severity = "critical",
-    context = "availability",
-    tier = "kubernetes",
-    dashboard = "prometheus?var-instance=frontend"
-  }
-  ANNOTATIONS {
-    summary = "Prometheus Frontend is DOWN",
-    description = "Prometheus Frontend is DOWN. Alerting and dashboards are unavailable",
-  }
+groups:
+- name: global/prometheus/prometheus.alerts
+  rules:
+  - alert: KubernetesPrometheusFrontendDown
+    expr: count(up{job="prometheus-regions-federation"}) BY (region) unless count(up{job="prometheus-frontend"}) BY (region)
+    for: 15m
+    labels:
+      context: availability
+      dashboard: prometheus?var-instance=frontend
+      service: prometheus
+      severity: critical
+      tier: kubernetes
+    annotations:
+      description: Prometheus Frontend is DOWN. Alerting and dashboards are unavailable
+      summary: Prometheus Frontend is DOWN
 
-ALERT KubernetesPrometheusCollectorDown
-  IF count(up{job="prometheus-collector-regions-federation"}) by (region) unless count(up{job="prometheus-collector"}) by (region)
-  FOR 15m
-  LABELS {
-    service = "prometheus",
-    severity = "critical",
-    context = "availability",
-    tier = "kubernetes",
-    dashboard = "prometheus?var-instance=collector"
-  }
-  ANNOTATIONS {
-    summary = "Prometheus Collector is DOWN",
-    description = "Prometheus Collector is DOWN. Alerting and dashboards are currently based on outdated data",
-  }
+  - alert: KubernetesPrometheusCollectorDown
+    expr: count(up{job="prometheus-collector-regions-federation"}) BY (region) unless count(up{job="prometheus-collector"}) BY (region)
+    for: 15m
+    labels:
+      context: availability
+      dashboard: prometheus?var-instance=collector
+      service: prometheus
+      severity: critical
+      tier: kubernetes
+    annotations:
+      description: Prometheus Collector is DOWN. Alerting and dashboards are currently based on outdated data
+      summary: Prometheus Collector is DOWN
 
-ALERT KubernetesPrometheusFederationCollector
-  IF absent(up{job="prometheus-collector-federation"}) or up{job="prometheus-collector-federation"} == 0
-  FOR 15m
-  LABELS {
-    service = "prometheus",
-    severity = "warning",
-    context = "availability",
-    tier = "kubernetes",
-    dashboard = "prometheus?var-instance=frontend"
-  }
-  ANNOTATIONS {
-    summary = "Prometheus Frontend Federation is DOWN",
-    description = "Prometheus Frontend can't federate data from the Collector. Data will be stale",
-  }
+  - alert: KubernetesPrometheusFederationCollector
+    expr: absent(up{job="prometheus-collector-federation"}) or up{job="prometheus-collector-federation"} == 0
+    for: 15m
+    labels:
+      context: availability
+      dashboard: prometheus?var-instance=frontend
+      service: prometheus
+      severity: warning
+      tier: kubernetes
+    annotations:
+      description: Prometheus Frontend can't federate data from the Collector. Data will be stale
+      summary: Prometheus Frontend Federation is DOWN
 
-ALERT KubernetesPrometheusFederationRegions
-  IF absent(up{job="prometheus-regions-federation"}) or up{job="prometheus-regions-federation"} == 0
-  FOR 15m
-  LABELS {
-    service = "prometheus",
-    severity = "critical",
-    context = "availability-global",
-    tier = "kubernetes",
-  }
-  ANNOTATIONS {
-    summary = "Global Prometheus Federation is having trouble",
-    description = "Prometheus Global can't federate data from {{ $labels.region }}. Alerting will be unavailable!",
-  }
+  - alert: KubernetesPrometheusFederationRegions
+    expr: absent(up{job="prometheus-regions-federation"}) or up{job="prometheus-regions-federation"} == 0
+    for: 15m
+    labels:
+      context: availability-global
+      service: prometheus
+      severity: critical
+      tier: kubernetes
+    annotations:
+      description: Prometheus Global can't federate data from {{ $labels.region }}. Alerting will be unavailable!
+      summary: Global Prometheus Federation is having trouble
