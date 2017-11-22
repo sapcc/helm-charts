@@ -3,44 +3,53 @@ input {
 # consume Keystone notifications
 rabbitmq {
     # only for keystone
+    id => "logstash_hermes_keystone"
     host => "{{.Values.hermes.rabbitmq.keystone.host}}"
+    user => "{{.Values.hermes.rabbitmq.keystone.user}}"
     password => "{{.Values.hermes.rabbitmq.keystone.password}}"
+    # the remaining parameters are equal
+    port => {{.Values.hermes.rabbitmq.port}}
+    queue => "{{.Values.hermes.rabbitmq.queue_name}}"
+    subscription_retry_interval_seconds => 60
+    automatic_recovery => false
+  }
+
+# consume Nova notifications
+rabbitmq {
+    # only for nova
+    id => "logstash_hermes_nova"
+    host => "{{.Values.hermes.rabbitmq.nova.host}}"
+    password => "{{.Values.hermes.rabbitmq.nova.password}}"
     # the remaining parameters are equal
     user => "{{.Values.hermes.rabbitmq.user}}"
     port => {{.Values.hermes.rabbitmq.port}}
     queue => "{{.Values.hermes.rabbitmq.queue_name}}"
     subscription_retry_interval_seconds => 60
-    id => "logstash_hermes_keystone"
     automatic_recovery => false
   }
-
-# consume Nova notifications
-# rabbitmq {
-#     host => "{{.Values.hermes_nova_rabbitmq_host}}"
-#     user => "{{.Values.hermes_nova_rabbitmq_user}}"
-#     password => "{{.Values.hermes_nova_rabbitmq_password}}"
-#     port => {{.Values.hermes_nova_rabbitmq_port}}
-#     queue => "{{.Values.hermes_nova_rabbitmq_queue_name}}"
-#     subscription_retry_interval_seconds => 60
-#     id => "logstash_hermes_nova"
-#     automatic_recovery => false
-#   }
-# }
 }
 
 
 filter {
-  # Strip oslo envelope
-  mutate {
-    remove_field => [ "publisher_id", "event_type", "message_id", "priority", "timestamp" ] 
+  # unwrap messagingv2 envelope
+  if [oslo.message] {
+    json { source => "oslo.message" }
   }
+  # Strip oslo header
   ruby {
     code => "
-      event.get('payload').each {|k, v|
-        event.set(k, v)
-      }
-      event.remove('payload')
+      v1pl = event.get('payload')
+      if !v1pl.nil?
+        v1pl.each {|k, v|
+          event.set(k, v)
+        }
+        event.remove('payload')
+      end
     "
+  }
+  # remove all the oslo stuff
+  mutate {
+    remove_field => [ "oslo.message", "oslo.version", "publisher_id", "event_type", "message_id", "priority", "timestamp" ] 
   }
 
   # KEYSTONE TRANSFORMATIONS
@@ -78,7 +87,7 @@ filter {
   if [project] {
     ruby {
       code => "
-       attachments = event.get('[target][attachments]')
+        attachments = event.get('[target][attachments]')
         if attachments.nil?
           attachments = []
         end
@@ -137,7 +146,7 @@ filter {
 
   # remove keystone specific fields after they have been mapped to standard attachments 
   mutate {
-    remove_field => ["[domain]", "[project]"] 
+    remove_field => ["[domain]", "[project]", "[role]"] 
   }
 
   kv { source => "_source" }
