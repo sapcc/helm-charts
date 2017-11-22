@@ -14,6 +14,7 @@ rabbitmq {
     automatic_recovery => false
   }
 
+{{ if .Values.hermes.rabbitmq.nova.host }}
 # consume Nova notifications
 rabbitmq {
     # only for nova
@@ -28,6 +29,7 @@ rabbitmq {
     automatic_recovery => false
   }
 }
+{{ end }}
 
 
 filter {
