@@ -1,0 +1,55 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cinder-db-purge
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: cinder-db-purge
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: cinder-db-purge
+      annotations:
+        checksum/cinder-db-purge-templates-cinder-db-purge-bin-configmap.yaml: {{ include "cinder-db-purge/templates/cinder-db-purge-bin-configmap.yaml" . | sha256sum }}
+        checksum/cinder-db-purge-templates-bin-db-purge-start.tpl: {{ include "cinder-db-purge/templates/bin/_cinder-db-purge-start.tpl" . | sha256sum }}
+        checksum/cinder-db-purge-templates-bin-db-purge.tpl: {{ include "cinder-db-purge/templates/bin/_cinder-db-purge.tpl" . | sha256sum }}
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: cinder-db-purge-bin
+          configMap:
+            name: cinder-db-purge-bin
+        - name: cinder-etc
+          configMap:
+            name: cinder-etc
+      containers:
+        - name: cinder-db-purge
+          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-api:{{.Values.image_version_cinder_db_purge}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.pod.debug.db_purge }}/bin/bash /cinder-db-purge-bin/cinder-db-purge-start{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "postgres-cinder,cinder-api"
+          volumeMounts:
+            - mountPath: /cinder-db-purge-bin
+              name: cinder-db-purge-bin
+            - mountPath: /cinder-etc
+              name: cinder-etc
