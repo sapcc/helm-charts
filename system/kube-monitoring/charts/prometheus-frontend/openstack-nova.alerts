@@ -1,0 +1,139 @@
+groups:
+- name: openstack-nova.alerts
+  rules:
+  - alert: OpenstackDVSPolling
+    expr: min(rate(openstack_networking_dvs_plugins_ml2_drivers_mech_dvs_agent_dvs_agent_process_ports_timer_count[5m]))
+          BY (kubernetes_pod_name) * 60 < 1
+    for: 5m
+    labels:
+      dashboard: neutron-dvs-agent
+      meta: '{{ $labels.kubernetes_pod_name }} below 1min'
+      service: nova
+      severity: info
+      tier: openstack
+    annotations:
+      description: Polling iterations of DVS Agent {{ $labels.kubernetes_pod_name }} is below 1 per minute.
+      summary: Polling iterations fall below 1 per minute
+
+  - alert: OpenstackDVSSecGroup
+    expr: max(openstack_networking_dvs_security_group_updates_timer{quantile="0.99"}) BY (kubernetes_pod_name) > 60
+    for: 5m
+    labels:
+      dashboard: neutron-dvs-agent
+      meta: '{{ $labels.kubernetes_pod_name }} below 1min'
+      service: nova
+      severity: info
+      tier: openstack
+    annotations:
+      description: Security Group latency of DVS Agent {{ $labels.kubernetes_pod_name }} is over 1 minute.
+      summary: security group latency goes over 1 minute
+
+  - alert: OpenstackNovaMaxDiskUsagePerc
+    expr: 1 - max(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"} / openstack_compute_nodes_local_gb_gauge) BY (availability_zone) > 0.9
+    for: 8h
+    labels:
+      context: diskspace
+      dashboard: nova-hypervisor
+      meta: '{{ $labels.availability_zone }} DiskUsage above 90%'
+      service: nova
+      severity: critical
+      tier: openstack
+    annotations:
+      description: Nova Maximum Disk Usage is above 90%
+      summary: Nova Maximum Disk Usage percentage metric
+
+  - alert: OpenstackNovaMaxRAMUsagePerc
+    expr: 1 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*"} / openstack_compute_nodes_memory_mb_gauge) BY (availability_zone) > 0.95
+    for: 8h
+    labels:
+      context: diskspace
+      dashboard: nova-hypervisor
+      meta: '{{ $labels.availability_zone }} RAMUsage above 95%'
+      service: nova
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Nova Maximum RAM Usage is above 95%.
+      summary: Nova Maximum RAM Usage percentage metric
+
+  - alert: OpenstackNovaInstanceStuckBuilding
+    expr: sum(openstack_compute_stuck_instances_count_gauge{host!="nova-compute-ironic",vm_state="building"}) BY (host) > 0
+    for: 5m
+    labels:
+      dashboard: nova-hypervisor
+      meta: '{{ $value }} instances'
+      playbook: docs/support/playbook/nova/instance_error_on_create.html
+      service: nova
+      severity: info
+      tier: openstack
+    annotations:
+      description: Nova Instance Stuck in Building state over 15mins in {{ $labels.host }}
+      summary: Openstack Nova Instance Stuck in Building state metric
+
+  - alert: OpenstackNovaInstanceStuckDeleting
+    expr: sum(openstack_compute_stuck_instances_count_gauge{vm_state="deleting"}) BY (host) > 0
+    for: 5m
+    labels:
+      dashboard: nova-hypervisor
+      meta: '{{ $value }}instances'
+      playbook: docs/support/playbook/nova/delete_stuck_instance.html/#Delete
+      service: nova
+      severity: info
+      tier: openstack
+    annotations:
+      description: Nova Instance Stuck in Deleting state over 15mins in {{ $labels.host }}
+      summary: Openstack Nova Instance Stuck in Deleting state metric
+
+  - alert: OpenstackNovaInstanceStuckStopping
+    expr: sum(openstack_compute_stuck_instances_count_gauge{vm_state="stopping"}) BY (host) > 0
+    for: 5m
+    labels:
+      dashboard: nova-hypervisor
+      meta: '{{ $value }} instances'
+      service: nova
+      severity: info
+      tier: openstack
+    annotations:
+      description: Nova Instance Stuck in Stopping state over 15mins in {{ $labels.host }}
+      summary: Openstack Nova Instance Stuck in Stopping state metric
+
+  - alert: OpenstackNovaInstanceStuckStarting
+    expr: sum(openstack_compute_stuck_instances_count_gauge{vm_state="starting"})
+      BY (host) > 0
+    for: 5m
+    labels:
+      dashboard: nova-hypervisor
+      meta: '{{ $value }} instances'
+      service: nova
+      severity: info
+      tier: openstack
+    annotations:
+      description: Nova Instance Stuck in Starting state over 15mins in {{ $labels.host }}
+      summary: Openstack Nova Instance Stuck in Starting state metric
+
+  - alert: OpenstackNovaInstanceStuckSpawning
+    expr: sum(openstack_compute_stuck_instances_count_gauge{vm_state="spawning"}) BY (host) > 0
+    for: 5m
+    labels:
+      dashboard: nova-hypervisor
+      meta: '{{ $value }} instances'
+      service: nova
+      severity: info
+      tier: openstack
+    annotations:
+      description: Nova Instance Stuck in Spawning state over 15mins in {{ $labels.host }}
+      summary: Openstack Nova Instance Stuck in Spawning state metric
+
+  - alert: OpenstackNovaInstanceStuckRebooting
+    expr: sum(openstack_compute_stuck_instances_count_gauge{vm_state="rebooting"}) BY (host) > 0
+    for: 5m
+    labels:
+      dashboard: nova-hypervisor
+      meta: '{{ $value }} instances'
+      playbook: docs/support/playbook/nova/delete_stuck_instance.html/#Rebooting
+      service: nova
+      severity: info
+      tier: openstack
+    annotations:
+      description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.host }}
+      summary: Openstack Nova Instance Stuck in Rebooting state metric

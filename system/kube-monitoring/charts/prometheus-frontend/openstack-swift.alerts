@@ -1,164 +1,148 @@
-ALERT OpenstackSwiftFirstByteTiming
-  IF (max(swift_proxy_firstbyte_timer{status="200",quantile="0.5"}) by (region, os_cluster, type, instance) > 1000.0 OR max(swift_proxy_firstbyte{status="200",quantile="0.5"}) by (region, os_cluster, type, instance) > 1000.0)
-  FOR 15m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "info",
-    context = "firtsbytetiming",
-    dashboard = "swift-proxy?var-cluster={{ $labels.os_cluster }}&var-proxy={{ $labels.instance }}",
-  }
-  ANNOTATIONS {
-    summary = "first byte timing for {{ $labels.type }} in {{ $labels.os_cluster }} increased",
-    description = "This alert indicates the latency in token validation.",
-  }
+groups:
+- name: openstack-swift.alerts
+  rules:
+  - alert: OpenstackSwiftFirstByteTiming
+    expr: (max(swift_proxy_firstbyte_timer{quantile="0.5",status="200"}) BY (os_cluster, type, instance) > 1000 OR max(swift_proxy_firstbyte{quantile="0.5",status="200"}) BY (os_cluster, type, instance) > 1000)
+    for: 15m
+    labels:
+      context: firtsbytetiming
+      dashboard: swift-proxy?var-cluster={{ $labels.os_cluster }}&var-proxy={{ $labels.instance }}
+      service: swift
+      severity: info
+      tier: openstack
+    annotations:
+      description: This alert indicates the latency in token validation.
+      summary: first byte timing for {{ $labels.type }} in {{ $labels.os_cluster }}
+        increased
 
-ALERT OpenstackSwiftServiceUnavailable
-  IF (sum(irate(swift_proxy_timer_sum{policy="all",status="503"}[5m])) by (os_cluster) > 100 OR sum(irate(swift_proxy_sum{policy="all",status="503"}[5m])) by (os_cluster) > 100)
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "critical",
-    context = "serviceunavailable",
-    dashboard = "swift-proxy?var-cluster={{ $labels.os_cluster }}",
-  }
-  ANNOTATIONS {
-    summary = "swift-service-unavailable",
-    description = "Swift is responding with 503. Usually the root cause is a broken token validation",
-  }
+  - alert: OpenstackSwiftServiceUnavailable
+    expr: (sum(irate(swift_proxy_timer_sum{policy="all",status="503"}[5m])) BY (os_cluster) > 100 OR sum(irate(swift_proxy_sum{policy="all",status="503"}[5m])) BY (os_cluster) > 100)
+    for: 5m
+    labels:
+      context: serviceunavailable
+      dashboard: swift-proxy?var-cluster={{ $labels.os_cluster }}
+      service: swift
+      severity: critical
+      tier: openstack
+    annotations:
+      description: Swift is responding with 503. Usually the root cause is a broken
+        token validation
+      summary: swift-service-unavailable
 
-ALERT OpenstackSwiftHealthCheck
-  IF (avg(swift_health_statsd_exit_code_gauge{}) by (region) > 0.2 OR avg(swift_health_statsd_exit_code{}) by (region) > 0.2)
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "health",
-    dashboard = "swift-overview",
-  }
-  ANNOTATIONS {
-    summary = "swift-health-check",
-    description = "Swift health check failures. Run kubectl log swift-proxy-... collector to get details",
-  }
+  - alert: OpenstackSwiftHealthCheck
+    expr: (avg(swift_health_statsd_exit_code_gauge) BY (region) > 0.2 OR avg(swift_health_statsd_exit_code) BY (region) > 0.2)
+    for: 5m
+    labels:
+      context: health
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Swift health check failures. Run kubectl log swift-proxy-... collector to get details
+      summary: swift-health-check
 
-ALERT OpenstackSwiftMismatchedRings
-  IF (swift_cluster_md5_ring_not_matched_gauge > 0 OR swift_cluster_md5_ring_not_matched > 0)
-  FOR 15m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "mismatchedrings",
-    dashboard = "swift-overview",
-  }
-  ANNOTATIONS {
-    summary = "swift-mismatched-rings",
-    description = "Alarm on mismatched rings",
-  }
+  - alert: OpenstackSwiftMismatchedRings
+    expr: (swift_cluster_md5_ring_not_matched_gauge > 0 OR swift_cluster_md5_ring_not_matched > 0)
+    for: 15m
+    labels:
+      context: mismatchedrings
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Alarm on mismatched rings
+      summary: swift-mismatched-rings
 
-ALERT OpenstackSwiftDisksUnmounted
-  IF (sum(swift_cluster_drives_unmounted_gauge{}) by (region, storage_ip) > 0.0 OR sum(swift_cluster_drives_unmounted{}) by (region, storage_ip) > 0.0)
-  FOR 3m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "drivesunmounted",
-    dashboard = "swift-overview",
-  }
-  ANNOTATIONS {
-    summary = "swift disks unmounted on the server IP {{ $labels.storage_ip }}",
-    description = "Swift drives not mounted. Run swift-recon --unmounted to get details",
-  }
+  - alert: OpenstackSwiftDisksUnmounted
+    expr: (sum(swift_cluster_drives_unmounted_gauge) BY (storage_ip) > 0 OR sum(swift_cluster_drives_unmounted) BY (storage_ip) > 0)
+    for: 3m
+    labels:
+      context: drivesunmounted
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Swift drives not mounted. Run swift-recon --unmounted to get details
+      summary: swift disks unmounted on the server IP {{ $labels.storage_ip }}
 
-ALERT OpenstackSwiftDiskFailures
-  IF (sum(swift_cluster_drives_audit_errors_gauge) by (region, storage_ip) > 0.0 OR sum(swift_cluster_drives_audit_errors) by (region, storage_ip) > 0.0)
-  FOR 3m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "drivefailures",
-    dashboard = "swift-overview",
-  }
-  ANNOTATIONS {
-    summary = "swift disk failures on the server IP {{ $labels.storage_ip }}",
-    description = "Swift drive failures. Run swift-recon --driveaudit to get details",
-  }
+  - alert: OpenstackSwiftDiskFailures
+    expr: (sum(swift_cluster_drives_audit_errors_gauge) BY (storage_ip) > 0 OR sum(swift_cluster_drives_audit_errors) BY (storage_ip) > 0)
+    for: 3m
+    labels:
+      context: drivefailures
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Swift drive failures. Run swift-recon --driveaudit to get details
+      summary: swift disk failures on the server IP {{ $labels.storage_ip }}
 
-ALERT OpenstackSwiftAsyncPendings
-  IF (sum(increase(swift_object_server_async_pendings_counter[5m])) by (region) > 2000 OR sum(increase(swift_object_server_async_pendings[5m])) by (region) > 2000)
-  FOR 3m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "asyncpendings",
-    dashboard = "swift-overview",
-  }
-  ANNOTATIONS {
-    summary = "swift object server async pendings reached 2000",
-    description = "Async Pendings indicate an overload scenario or faulty device(s)",
-  }
+  - alert: OpenstackSwiftAsyncPendings
+    expr: (sum(increase(swift_object_server_async_pendings_counter[5m])) > 2000 OR sum(increase(swift_object_server_async_pendings[5m])) > 2000)
+    for: 3m
+    labels:
+      context: asyncpendings
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Async Pendings indicate an overload scenario or faulty device(s)
+      summary: swift object server async pendings reached 2000
 
-ALERT OpenstackSwiftRateLimit1000
-  IF (sum(increase(swift_proxy_timer_count{status='498'}[5m])) by (region, os_cluster) > 1000 OR sum(increase(swift_proxy_count{status='498'}[5m])) by (region, os_cluster) > 1000)
-  FOR 3m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "info",
-    context = "ratelimit",
-    dashboard = "swift-overview",
-  }
-  ANNOTATIONS {
-    summary = "swift rate limit hit in {{ $labels.os_cluster }}",
-    description = "Check kibana for the causing account and container",
-  }
+  - alert: OpenstackSwiftRateLimit1000
+    expr: (sum(increase(swift_proxy_timer_count{status="498"}[5m])) BY (os_cluster) > 1000 OR sum(increase(swift_proxy_count{status="498"}[5m])) BY (os_cluster) > 1000)
+    for: 3m
+    labels:
+      context: ratelimit
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      tier: openstack
+    annotations:
+      description: Check kibana for the causing account and container
+      summary: swift rate limit hit in {{ $labels.os_cluster }}
 
-ALERT OpenstackSwiftRateLimit5000
-  IF (sum(increase(swift_proxy_timer_count{status='498'}[5m])) by (region, os_cluster) > 5000 OR sum(increase(swift_proxy_count{status='498'}[5m])) by (region, os_cluster) > 5000)
-  FOR 3m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "ratelimit",
-    dashboard = "swift-overview",
-  }
-  ANNOTATIONS {
-    summary = "swift rate limit hit in {{ $labels.os_cluster }}",
-    description = "Check kibana for the causing account and container",
-  }
+  - alert: OpenstackSwiftRateLimit5000
+    expr: (sum(increase(swift_proxy_timer_count{status="498"}[5m])) BY (os_cluster) > 5000 OR sum(increase(swift_proxy_count{status="498"}[5m])) BY (os_cluster) > 5000)
+    for: 3m
+    labels:
+      context: ratelimit
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Check kibana for the causing account and container
+      summary: swift rate limit hit in {{ $labels.os_cluster }}
 
-ALERT OpenstackSwiftUsedSpace
-  IF max(predict_linear(swift_cluster_storage_used_percent_gauge_average[1w], 60*60*24*30)) by (region) > 0.8
-  FOR 1d
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "info",
-    context = "usedcapacity",
-    dashboard = "swift-capacity-global?var-region={{ $labels.region }}",
-  }
-  ANNOTATIONS {
-    summary = "Swift storage expected to be full soon",
-    description = "Swift storage usage will reach 80% in 30 days. Order hardware now!",
-  }
+  - alert: OpenstackSwiftUsedSpace
+    expr: max(predict_linear(swift_cluster_storage_used_percent_gauge_average[1w], 60 * 60 * 24 * 30)) > 0.8
+    for: 1d
+    labels:
+      context: usedcapacity
+      dashboard: swift-capacity-global?var-region={{ $labels.region }}
+      service: swift
+      severity: info
+      tier: openstack
+    annotations:
+      description: Swift storage usage will reach 80% in 30 days. Order hardware now!
+      summary: Swift storage expected to be full soon
 
-ALERT OpenstackSwiftDriveAutopilotConsistencyCheck
-  IF rate(swift_drive_autopilot_events{type="consistency-check"}[5m]) < 0.02
-  FOR 10m
-  LABELS {
-    tier = "openstack",
-    service = "swift",
-    severity = "warning",
-    context = "autopilot",
-    dashboard = "swift-overview",
-  }
-  ANNOTATIONS {
-    summary = "No consistency checks performed",
-    description = "Autopilot {{ $labels.kubernetes_pod_name }} does not perform its consistency checks on schedule. Please check if it's having a bad time.",
-  }
+  - alert: OpenstackSwiftDriveAutopilotConsistencyCheck
+    expr: rate(swift_drive_autopilot_events{type="consistency-check"}[5m]) < 0.02
+    for: 10m
+    labels:
+      context: autopilot
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Autopilot {{ $labels.kubernetes_pod_name }} does not perform its
+        consistency checks on schedule. Please check if it's having a bad time.
+      summary: No consistency checks performed

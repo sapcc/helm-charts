@@ -1,0 +1,44 @@
+groups:
+- name: openstack-cinder.alerts
+  rules:
+  - alert: OpenstackCinderVolumeStuck
+    expr: sum(openstack_stuck_volumes_count_gauge) BY (host, status) > 0
+    for: 5m
+    labels:
+      dashboard: cinder
+      meta: '{{ $value }} volumes stuck'
+      playbook: docs/support/playbook/volumes.html
+      service: cinder
+      severity: info
+      tier: openstack
+    annotations:
+      description: Sum of Openstack Cinder Volume Stuck is more than 1
+      summary: Cinder Volumes in stuck state
+
+  - alert: OpenstackCinderVolumeAttach
+    expr: max(openstack_stuck_volumes_max_duration_gauge{status="attaching"}) BY (host) > 15
+    for: 5m
+    labels:
+      dashboard: cinder
+      meta: '{{ $labels.host }} has volumes stuck in attach state'
+      playbook: docs/support/playbook/volumes.html
+      service: cinder
+      severity: info
+      tier: openstack
+    annotations:
+      description: Cinder Volumes taking more than 15s to attach in {{ $labels.host }}
+      summary: Cinder Volumes taking more than 15s to attach
+
+  - alert: OpenstackCinderVolumeDetach
+    expr: max(openstack_stuck_volumes_max_duration_gauge{status="detaching"}) BY (host) > 10
+    for: 5m
+    labels:
+      dashboard: cinder
+      meta: '{{ $labels.host }} has volumes stuck in detach state'
+      playbook: docs/support/playbook/volumes.html
+      service: cinder
+      severity: info
+      tier: openstack
+    annotations:
+      description: Cinder Volumes taking more than 10s to detach in {{ $labels.host }}
+      summary: Cinder Volumes taking more than 10s to detach

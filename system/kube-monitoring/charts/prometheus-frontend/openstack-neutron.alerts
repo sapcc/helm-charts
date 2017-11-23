@@ -1,16 +1,17 @@
-### predictive running out of floating ips alert ###
-
-ALERT OpenstackNeutronPredictOutOfFIP
-IF predict_linear(snmp_asr_cnatAddrBindNumberOfEntries[24h], 3600 * 24 * 4) > 800
-  FOR 10m
-  LABELS {
-    tier = "openstack",
-    service = "neutron",
-    severity = "warning",
-    context = "floatingip",
-    dashboard = "maia-asr-info"
-  }
-  ANNOTATIONS {
-    summary = "STILL IN TEST MODE: Floating IP's possibly soon exhausted",
-    description = "STILL IN TEST MODE: The Floating IP's on {{ $labels.job }} might possibly get exhausted soon. This is not an exact warning, but a heads up to check the current FIP situation."
-}
+groups:
+- name: openstack-neutron.alerts
+  rules:
+  - alert: OpenstackNeutronPredictOutOfFIP
+    expr: predict_linear(snmp_asr_cnatAddrBindNumberOfEntries[1d], 3600 * 24 * 4) > 800
+    for: 10m
+    labels:
+      context: floatingip
+      dashboard: maia-asr-info
+      service: neutron
+      severity: warning
+      tier: openstack
+    annotations:
+      description: 'STILL IN TEST MODE: The Floating IP''s on {{ $labels.job }} might
+        possibly get exhausted soon. This is not an exact warning, but a heads up
+        to check the current FIP situation.'
+      summary: 'STILL IN TEST MODE: Floating IP''s possibly soon exhausted'

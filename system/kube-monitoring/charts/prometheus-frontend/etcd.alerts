@@ -1,120 +1,97 @@
-### General cluster availability ###
+groups:
+- name: etcd.alerts
+  rules:
+  - alert: KubernetesEtcdDown
+    expr: up{job="kube-system/etcd"} == 0
+    for: 15m
+    labels:
+      context: availability
+      dashboard: kubernetes-etcd
+      service: etcd
+      severity: warning
+      tier: kubernetes
+    annotations:
+      description: Etcd on {{ $labels.instance }} is DOWN.
+      summary: An Etcd is DOWN
 
-ALERT KubernetesEtcdDown
-  IF up{job="kube-system/etcd"} == 0
-  FOR 15m
-  LABELS {
-    tier = "kubernetes",
-    service = "etcd",
-    severity = "warning",
-    context = "availability",
-    dashboard = "kubernetes-etcd"
-  }
-  ANNOTATIONS {
-    summary = "An Etcd is DOWN",
-    description = "Etcd on {{ $labels.instance }} is DOWN.",
-  }
+  - alert: KubernetesEtcdInsufficientPeers
+    expr: sum(up{job="kube-system/etcd"}) BY (region) <= 2
+    for: 3m
+    labels:
+      context: availability
+      dashboard: kubernetes-etcd
+      service: etcd
+      severity: info
+      tier: kubernetes
+    annotations:
+      description: If one more etcd peer goes down the cluster will be unavailable
+      summary: Etcd cluster small
 
-ALERT KubernetesEtcdInsufficientPeers
-  IF sum(up{job="kube-system/etcd"}) by (region) <= 2
-  FOR 3m
-  LABELS {
-    tier = "kubernetes",
-    service = "etcd",
-    severity = "info",
-    context = "availability",
-    dashboard = "kubernetes-etcd"
-  }
-  ANNOTATIONS {
-    summary = "Etcd cluster small",
-    description = "If one more etcd peer goes down the cluster will be unavailable",
-  }
+  - alert: KubernetesEtcdUnavailable
+    expr: sum(up{job="kube-system/etcd"}) BY (region) <= 1
+    for: 3m
+    labels:
+      context: availability
+      dashboard: kubernetes-etcd
+      service: etcd
+      severity: critical
+      tier: kubernetes
+    annotations:
+      description: The etcd cluster is DOWN. Kubernetes API is unavailable.
+      summary: Etcd cluster is DOWN
 
-ALERT KubernetesEtcdUnavailable
-  IF sum(up{job="kube-system/etcd"}) by (region) <= 1
-  FOR 3m
-  LABELS {
-    tier = "kubernetes",
-    service = "etcd",
-    severity = "critical",
-    context = "availability",
-    dashboard = "kubernetes-etcd"
-  }
-  ANNOTATIONS {
-    summary = "Etcd cluster is DOWN",
-    description = "The etcd cluster is DOWN. Kubernetes API is unavailable.",
-  }
+  - alert: KubernetesEtcdFdExhaustionClose
+    expr: predict_linear(instance:fd_utilization[1h], 3600 * 4) > 1
+    for: 10m
+    labels:
+      context: system
+      dashboard: kubernetes-etcd
+      service: etcd
+      severity: warning
+      tier: kubernetes
+    annotations:
+      description: The etcd on {{ $labels.instance }} will exhaust in file descriptors
+        soon
+      summary: Etcd's file descriptors soon exhausted
 
+  - alert: KubernetesEtcdFdExhaustionTooClose
+    expr: predict_linear(instance:fd_utilization[10m], 3600) > 1
+    for: 10m
+    labels:
+      context: system
+      dashboard: kubernetes-etcd
+      service: etcd
+      severity: critical
+      tier: kubernetes
+    annotations:
+      description: Etcd on {{ $labels.instance }} will exhaust in file descriptors
+        within 1h!
+      summary: Etcd's file descriptors soon exhausted
 
-instance:fd_utilization = process_open_fds{component="etcd"} / process_max_fds{componentn="etcd"}
+  - alert: KubernetesEtcdHighNumberOfFailedProposals
+    expr: increase(etcd_server_proposal_failed_total[1h]) > 12
+    labels:
+      context: proposals
+      dashboard: kubernetes-etcd
+      playbook: https://coreos.com/etcd/docs/latest/admin_guide.html
+      service: etcd
+      severity: warning
+      tier: kubernetes
+    annotations:
+      description: Etcd on {{ $labels.instance }} has seen {{ $value }} proposal failures
+        within the last hour
+      summary: There is a high number of failed proposals
 
-# alert if file descriptors are likely to exhaust within the next 4 hours
-ALERT KubernetesEtcdFdExhaustionClose
-  IF predict_linear(instance:fd_utilization[1h], 3600 * 4) > 1
-  FOR 10m
-  LABELS {
-    tier = "kubernetes",
-    service = "etcd",
-    severity = "warning",
-    context = "system",
-    dashboard = "kubernetes-etcd"
-  }
-  ANNOTATIONS {
-    summary = "Etcd's file descriptors soon exhausted",
-    description = "The etcd on {{ $labels.instance }} will exhaust in file descriptors soon",
-  }
-
-# alert if file descriptors are likely to exhaust within the next hour
-ALERT KubernetesEtcdFdExhaustionTooClose
-  IF predict_linear(instance:fd_utilization[10m], 3600) > 1
-  FOR 10m
-  LABELS {
-    tier = "kubernetes",
-    service = "etcd",
-    severity = "critical",
-    context = "system",
-    dashboard = "kubernetes-etcd"
-  }
-  ANNOTATIONS {
-    summary = "Etcd's file descriptors soon exhausted",
-    description = "Etcd on {{ $labels.instance }} will exhaust in file descriptors within 1h!",
-  }
-
-
-### etcd proposal alerts ###
-
-# alert if there are several failed proposals within an hour
-ALERT KubernetesEtcdHighNumberOfFailedProposals
-  IF increase(etcd_server_proposal_failed_total[1h]) > 12 
-  LABELS {
-    tier = "kubernetes",
-    service = "etcd",
-    severity = "warning",
-    context = "proposals",
-    dashboard = "kubernetes-etcd",
-    playbook = "https://coreos.com/etcd/docs/latest/admin_guide.html"
-  }
-  ANNOTATIONS {
-    summary = "There is a high number of failed proposals",
-    description = "Etcd on {{ $labels.instance }} has seen {{ $value }} proposal failures within the last hour",
-  }
-
-
-### etcd disk io latency alerts ###
-
-# alert if 99th percentile of fsync durations is higher than 500ms
-ALERT KubernetesEtcdHighFsyncDurations
-  IF etcd_wal_fsync_durations_microseconds{quantile="0.99"} / 1000000 > 0.5
-  FOR 10m
-  LABELS {
-    tier = "kubernetes",
-    service = "etcd",
-    severity = "warning",
-    context = "filesystem",
-    dashboard = "kubernetes-etcd",
-    playbook = "https://coreos.com/etcd/docs/latest/admin_guide.html"
-  }
-  ANNOTATIONS {
-    summary = "high fsync durations",
-    description = "Ectd on {{ $labels.instance }} is seeing high fsync durations.",
-  }
+  - alert: KubernetesEtcdHighFsyncDurations
+    expr: etcd_wal_fsync_durations_microseconds{quantile="0.99"} / 1e+06 > 0.5
+    for: 10m
+    labels:
+      context: filesystem
+      dashboard: kubernetes-etcd
+      playbook: https://coreos.com/etcd/docs/latest/admin_guide.html
+      service: etcd
+      severity: warning
+      tier: kubernetes
+    annotations:
+      description: Ectd on {{ $labels.instance }} is seeing high fsync durations.
+      summary: high fsync durations

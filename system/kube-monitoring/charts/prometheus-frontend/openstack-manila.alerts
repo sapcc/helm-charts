@@ -1,0 +1,46 @@
+groups:
+- name: openstack-manila.alerts
+  rules:
+  - alert: OpenstackManilaSharesStuck
+    expr: (sum(openstack_manila_shares_stuck_count_gauge) BY (host, status)) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} shares'
+      playbook: docs/support/playbook/shares_stuck.html
+      service: manila
+      severity: info
+      tier: openstack
+    annotations:
+      description: Sum of Openstack Manila Shares Stuck is more than 1
+      summary: Manila shares in stuck state
+
+  - alert: OpenstackManilaSharesStuckCreate
+    expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="creating"})
+      BY (host) > 15
+    for: 5m
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} seconds'
+      playbook: docs/support/playbook/shares_stuck.html
+      service: manila
+      severity: info
+      tier: openstack
+    annotations:
+      description: Manila Shares taking more than 15 minutes to create in {{ $labels.host }}
+      summary: Manila Shares taking more than 15 minutes to create
+
+  - alert: OpenstackManilaSharesStuckDelete
+    expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="deleting"})
+      BY (host) > 15
+    for: 5m
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} seconds'
+      playbook: docs/support/playbook/shares_stuck.html
+      service: manila
+      severity: info
+      tier: openstack
+    annotations:
+      description: Manila Shares taking more than 15 minutes to delete in {{ $labels.host }}
+      summary: Manila Shares taking more than 15 minutes to delete

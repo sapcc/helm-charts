@@ -1,196 +1,199 @@
-ALERT OpenstackKeystoneScrapeMissing
-  IF absent(up{component="keystone", type="api"})
-  FOR 1h
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "warning",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "Keystone cannot be scraped",
-    description = "Keystone failed to be scraped.",
-  }
+groups:
+- name: openstack-keystone.alerts
+  rules:
+  - alert: OpenstackKeystoneScrapeMissing
+    expr: absent(up{component="keystone",type="api"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Keystone failed to be scraped.
+      summary: Keystone cannot be scraped
 
-ALERT OpenstackKeystoneDatabaseScrapeMissing
-  IF absent(kube_pod_container_status_running{container="postgres", pod=~"keystone-postgres.*"})
-  FOR 1h
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "warning",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "Keystone database cannot be scraped",
-    description = "Keystones database running status failed to be scraped.",
-  }
+  - alert: OpenstackKeystoneDatabaseScrapeMissing
+    expr: absent(kube_pod_container_status_running{container="postgres",pod=~"keystone-postgres.*"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Keystones database running status failed to be scraped.
+      summary: Keystone database cannot be scraped
 
-ALERT OpenstackKeystoneApiDown
-  IF up{component="keystone", type="api"} == 0
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "info",
-    context = "availability",
-    meta = "a keystone instance went down on {{ $labels.instance }}",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "A keystone server is DOWN",
-    description = "Keystone on {{ $labels.instance}} is DOWN.",
-  }
+  - alert: OpenstackKeystoneApiDown
+    expr: up{component="keystone",type="api"} == 0
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      meta: a keystone instance went down on {{ $labels.instance }}
+      service: keystone
+      severity: info
+      tier: openstack
+    annotations:
+      description: Keystone on {{ $labels.instance}} is DOWN.
+      summary: A keystone server is DOWN
 
-ALERT OpenstackKeystoneDatabaseDown
-  IF count(kube_pod_container_status_running{container="postgres", pod=~"keystone-postgres.*"} == 0) by (region) == count(kube_pod_container_status_running{container="postgres", pod=~"keystone-postgres.*"}) by (region)
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "critical",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "Keystone Database is DOWN",
-    description = "Keystone database on {{ $labels.instance }} is DOWN.",
-  }
+  - alert: OpenstackKeystoneDatabaseDown
+    expr: count(kube_pod_container_status_running{container="postgres",pod=~"keystone-postgres.*"} == 0) == count(kube_pod_container_status_running{container="postgres",pod=~"keystone-postgres.*"})
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: critical
+      tier: openstack
+    annotations:
+      description: Keystone database on {{ $labels.instance }} is DOWN.
+      summary: Keystone Database is DOWN
 
-ALERT OpenstackKeystoneAllDown
-  IF count(up{component="keystone", type="api"} == 0) by (region) == count(up{component="keystone", type="api"}) by (region)
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "critical",
-    context = "availability",
-    meta = "all keystone instances are down",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "Keystone is unavailable.",
-    description = "All keystone servers are down.",
-  }
+  - alert: OpenstackKeystoneAllDown
+    expr: count(up{component="keystone",type="api"} == 0) == count(up{component="keystone",type="api"})
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      meta: all keystone instances are down
+      service: keystone
+      severity: critical
+      tier: openstack
+    annotations:
+      description: All keystone servers are down.
+      summary: Keystone is unavailable.
 
-ALERT OpenstackKeystoneADHealthcheckScrapeMissing
-  IF absent(up{component="keystone", type="healthcheck"})
-  FOR 1h
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "warning",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "Active Directory cannot be scraped",
-    description = "Active Directory healthchecks failed to be scraped.",
-  }
+  - alert: OpenstackKeystoneADHealthcheckScrapeMissing
+    expr: absent(up{component="keystone",type="healthcheck"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Active Directory healthchecks failed to be scraped.
+      summary: Active Directory cannot be scraped
 
-ALERT OpenstackActiveDirectoryNode1Down
-  IF ad_node_1_up_status == 1
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "warning",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "ActiveDirectory node 1 is down",
-    description = "ActiveDirectory node 1 is not responding to ping.",
-  }
+  - alert: OpenstackActiveDirectoryNode1Down
+    expr: ad_node_1_up_status == 1
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: openstack
+    annotations:
+      description: ActiveDirectory node 1 is not responding to ping.
+      summary: ActiveDirectory node 1 is down
 
-ALERT OpenstackActiveDirectoryNode2Down
-  IF ad_node_2_up_status == 1
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "warning",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "ActiveDirectory node 2 is down",
-    description = "ActiveDirectory node 2 is not responding to ping.",
-  }
+  - alert: OpenstackActiveDirectoryNode2Down
+    expr: ad_node_2_up_status == 1
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: openstack
+    annotations:
+      description: ActiveDirectory node 2 is not responding to ping.
+      summary: ActiveDirectory node 2 is down
 
-ALERT OpenstackActiveDirectoryResolveFailed
-  IF ad_dns_resolve_status == 1
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "critical",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "ldap.global.cloud.sap DNS resolve failed",
-    description = "LDAP (active directory) DNS is not resolving.",
-  }
+  - alert: OpenstackActiveDirectoryResolveFailed
+    expr: ad_dns_resolve_status == 1
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: critical
+      tier: openstack
+    annotations:
+      description: LDAP (active directory) DNS is not resolving.
+      summary: ldap.global.cloud.sap DNS resolve failed
 
-ALERT OpenstackCAMResolveFailed
-  IF ad_dns_resolve_cam_status == 1
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "info",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "CAM DNS resolve failed",
-    description = "CAM DNS is not resolving.",
-  }
+  - alert: OpenstackActiveDirectorySearchUsersFailed
+    expr: ad_search_user_status == 1
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: critical
+      tier: openstack
+    annotations:
+      description: LDAP (active directory) user searches are failing.
+      summary: LDAP user searches are failing.
 
-ALERT OpenstackCAMDown
-  IF ad_cam_up_status == 1
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "info",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "CAM is down",
-    description = "CAM is not responding to ping.",
-  }
+  - alert: OpenstackActiveDirectorySearchGroupsFailed
+    expr: ad_search_group_status == 1
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: critical
+      tier: openstack
+    annotations:
+      description: LDAP (active directory) group searches are failing.
+      summary: LDAP group searches are failing.
 
-ALERT OpenstackEWSResolveFailed
-  IF ad_dns_resolve_ews_status == 1
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "warning",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "SAP autodiscover.sap.com DNS resolve failed",
-    description = "SAP Exchange webservice DNS is not resolving.",
-  }
+  - alert: OpenstackCAMResolveFailed
+    expr: ad_dns_resolve_cam_status == 1
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: info
+      tier: openstack
+    annotations:
+      description: CAM DNS is not resolving.
+      summary: CAM DNS resolve failed
 
-ALERT OpenstackEWSDown
-  IF ad_ews_up_status == 1
-  FOR 5m
-  LABELS {
-    tier = "openstack",
-    service = "keystone",
-    severity = "warning",
-    context = "availability",
-    dashboard = "keystone"
-  }
-  ANNOTATIONS {
-    summary = "SAP autodiscover.sap.com is down",
-    description = "SAP Exchange webservice is not responding to ping.",
-  }
+  - alert: OpenstackCAMDown
+    expr: ad_cam_up_status == 1
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: info
+      tier: openstack
+    annotations:
+      description: CAM is not responding to ping.
+      summary: CAM is down
+
+  - alert: OpenstackEWSResolveFailed
+    expr: ad_dns_resolve_ews_status == 1
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: openstack
+    annotations:
+      description: SAP Exchange webservice DNS is not resolving.
+      summary: SAP autodiscover.sap.com DNS resolve failed
+
+  - alert: OpenstackEWSDown
+    expr: ad_ews_up_status == 1
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: openstack
+    annotations:
+      description: SAP Exchange webservice is not responding to ping.
+      summary: SAP autodiscover.sap.com is down
