@@ -14,7 +14,7 @@ rabbitmq {
     automatic_recovery => false
   }
 
-{{ if .Values.hermes.rabbitmq.nova.host }}
+{{ if .Values.hermes.rabbitmq.nova.password }}
 # consume Nova notifications
 rabbitmq {
     # only for nova
