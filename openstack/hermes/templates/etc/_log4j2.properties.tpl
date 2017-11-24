@@ -2,7 +2,7 @@ status = warn
 
 # log action execution errors for easier debugging
 logger.action.name = org.elasticsearch.action
-logger.action.level = warn 
+logger.action.level = warn
 
 appender.console.type = Console
 appender.console.name = console
