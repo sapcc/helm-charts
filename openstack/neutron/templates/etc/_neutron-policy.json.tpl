@@ -186,7 +186,7 @@
     "get_loadbalancer-agent": "rule:context_is_admin",
     "get_loadbalancer-pools": "rule:context_is_admin",
     "get_agent-loadbalancers": "rule:context_is_admin",
-    "get_loadbalancer-hosting-agent": "context_is_network_viewer",
+    "get_loadbalancer-hosting-agent": "context_is_editor",
 
     "create_floatingip": "rule:context_is_editor",
     "create_floatingip:floating_ip_address": "rule:context_is_admin",
