@@ -14,7 +14,7 @@ rabbitmq {
     automatic_recovery => false
   }
 
-{{ if .Values.hermes.rabbitmq.nova.password }}
+{{- if .Values.hermes.rabbitmq.nova.password }}
 # consume Nova notifications
 rabbitmq {
     # only for nova
@@ -28,8 +28,8 @@ rabbitmq {
     subscription_retry_interval_seconds => 60
     automatic_recovery => false
   }
+{{- end }}
 }
-{{ end }}
 
 
 filter {
