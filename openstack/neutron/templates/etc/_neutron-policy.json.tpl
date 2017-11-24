@@ -8,6 +8,7 @@
     "context_is_network_admin": "rule:context_is_admin or rule:admin",
     "context_is_editor": "rule:context_is_network_admin or rule:member",
     "context_is_viewer":  "rule:context_is_editor or rule:viewer",
+    "network_view_all": "role:network_viewer or role:member or role:network_admin or rule:context_is_admin",
 
     "network_owner": "tenant_id:%(network:tenant_id)s",
     "network_owner_or_owner": "rule:network_owner or rule:owner",
@@ -186,7 +187,7 @@
     "get_loadbalancer-agent": "rule:context_is_admin",
     "get_loadbalancer-pools": "rule:context_is_admin",
     "get_agent-loadbalancers": "rule:context_is_admin",
-    "get_loadbalancer-hosting-agent": "rule:context_is_viewer",
+    "get_loadbalancer-hosting-agent": "rule:network_view_all",
 
     "create_floatingip": "rule:context_is_editor",
     "create_floatingip:floating_ip_address": "rule:context_is_admin",
