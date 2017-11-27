@@ -97,8 +97,8 @@ admin_project_domain_name = {{ default "Default" .Values.api.cloudAdminDomainNam
 admin_project_name = {{ default "admin" .Values.api.cloudAdminProjectName }}
 
 [oslo_messaging_rabbit]
-rabbit_userid = {{ .Values.rabbitmq.user | default "rabbitmq" }}
-rabbit_password = {{ .Values.rabbitmq.password }}
+rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
+rabbit_password = {{ .Values.rabbitmq.users.default.password }}
 {{- if .Values.rabbitmq.host }}
 rabbit_host = {{ .Values.rabbitmq.host }}
 {{ else }}
