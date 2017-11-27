@@ -1,10 +1,13 @@
 {{- if .Values.vcenter_exporter.enabled }}
-{{- range $i, $config := .Values.vcenter_exporter.maia_vcenter_config -}}
-{{ if ne $i 0 }}---{{ end }}
+{{ $vcenters := .Values.vcenter_exporter.maia_vcenter_config -}}
+{{ $exporters := .Values.vcenter_exporter.exporter_types -}}
+{{- range $i, $config := $vcenters -}}
+{{- range $j, $exportertype := $exporters -}}
+{{ if or $j $i }}---{{ end }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: vcenter-exporter-{{$config.name}}
+  name: vcenter-exporter-{{$exportertype.name}}-{{$config.name}}
   namespace: maia
   labels:
     system: openstack
@@ -20,7 +23,7 @@ spec:
   template:
     metadata:
       labels:
-        component: vcenter-exporter-{{$config.name}}
+        component: vcenter-exporter-{{$exportertype.name}}-{{$config.name}}
       annotations:
         checksum/maia-templates-vcenter-exporter-configmap.yaml: {{ include "maia/templates/vcenter-exporter-configmap.yaml" $ | sha256sum }}
     spec:
@@ -38,14 +41,17 @@ spec:
           command:
             - python
           args:
-            - /vcenter-exporter.py
+            - /vcenter-exporter/vcenter-exporter.py
             - -c
-            - /maia-etc/{{$config.name}}.yaml
+            - /maia-etc/{{$config.name}}-{{$exportertype.name}}.yaml
+            - -t
+            - {{$exportertype.name}} 
           volumeMounts:
             - mountPath: /maia-etc
               name: maia-etc
           ports:
             - name: metrics
               containerPort: {{ $.Values.vcenter_exporter.listen_port }}
+{{ end -}}
 {{ end -}}
 {{ end -}}
