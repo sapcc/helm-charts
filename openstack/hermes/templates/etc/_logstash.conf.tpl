@@ -6,12 +6,12 @@ rabbitmq {
     host => {{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) | quote }}
     user => {{ $value.user | default $.Values.hermes.rabbitmq.user | quote }}
     password => {{ $value.password | quote }}
-    port => {{ $.Values.hermes.rabbitmq.port}}
+    port => {{ $.Values.hermes.rabbitmq.port }}
     queue => {{ $.Values.hermes.rabbitmq.queue_name | quote }}
     subscription_retry_interval_seconds => 60
     automatic_recovery => false
   }
-{{- end }}
+{{ end }}
 }
 
 
