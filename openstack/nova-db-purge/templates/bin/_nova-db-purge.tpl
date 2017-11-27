@@ -1,3 +1,4 @@
+{{- if .Values.nova.db_purge.enabled }}
 #!/bin/bash
 
 {{- if .Values.nova.db_purge.dry_run }}
@@ -12,4 +13,5 @@ echo -n " - "
 /var/lib/kolla/venv/bin/nova-manage db purge_deleted_instances --dry-run --older-than {{ .Values.nova.db_purge.older_than }} --max-number {{ .Values.nova.db_purge.max_number }}
 {{- else }}
 /var/lib/kolla/venv/bin/nova-manage db purge_deleted_instances --older-than {{ .Values.nova.db_purge.older_than }} --max-number {{ .Values.nova.db_purge.max_number }}
+{{- end }}
 {{- end }}

@@ -1,3 +1,4 @@
+{{- if .Values.cinder.db_purge.enabled }}
 #!/bin/bash
 
 function start_application {
@@ -19,3 +20,4 @@ function start_application {
 }
 
 start_application
+{{- end }}
