@@ -1,30 +1,13 @@
 input {
 
-# consume Keystone notifications
+{{ range $key, $value := .Values.hermes.rabbitmq.targets }}
 rabbitmq {
-    # only for keystone
-    id => "logstash_hermes_keystone"
-    host => "{{.Values.hermes.rabbitmq.keystone.host}}"
-    user => "{{.Values.hermes.rabbitmq.keystone.user}}"
-    password => "{{.Values.hermes.rabbitmq.keystone.password}}"
-    # the remaining parameters are equal
-    port => {{.Values.hermes.rabbitmq.port}}
-    queue => "{{.Values.hermes.rabbitmq.queue_name}}"
-    subscription_retry_interval_seconds => 60
-    automatic_recovery => false
-  }
-
-{{- if .Values.hermes.rabbitmq.nova.password }}
-# consume Nova notifications
-rabbitmq {
-    # only for nova
-    id => "logstash_hermes_nova"
-    host => "{{.Values.hermes.rabbitmq.nova.host}}"
-    password => "{{.Values.hermes.rabbitmq.nova.password}}"
-    # the remaining parameters are equal
-    user => "{{.Values.hermes.rabbitmq.user}}"
-    port => {{.Values.hermes.rabbitmq.port}}
-    queue => "{{.Values.hermes.rabbitmq.queue_name}}"
+    id => {{ printf "logstash_hermes_%s" $key | quote }}
+    host => {{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) | quote }}
+    user => {{ $value.user | default $.Values.hermes.rabbitmq.user | quote }}
+    password => {{ $value.password | quote }}
+    port => {{ $.Values.hermes.rabbitmq.port}}
+    queue => {{ $.Values.hermes.rabbitmq.queue_name | quote }}
     subscription_retry_interval_seconds => 60
     automatic_recovery => false
   }
