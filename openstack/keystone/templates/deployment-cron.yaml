@@ -49,7 +49,14 @@ spec:
               value: {{ .Release.Name }}-postgresql
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
+            {{- if .Values.sentry.dsn }}
               value: {{ .Values.sentry.dsn | quote}}
+            {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: keystone.DSN.python
+            {{- end }}
             {{- end }}
           volumeMounts:
             - mountPath: /etc/keystone/keystone.conf

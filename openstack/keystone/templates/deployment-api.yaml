@@ -73,7 +73,14 @@ spec:
               value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
+            {{- if .Values.sentry.dsn }}
               value: {{ .Values.sentry.dsn | quote}}
+            {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: keystone.DSN.python
+            {{- end }}
             {{- end }}
             {{- if .Values.api.metrics.enabled }}
             - name: STATSD_HOST
