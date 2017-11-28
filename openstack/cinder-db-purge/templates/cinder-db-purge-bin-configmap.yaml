@@ -1,0 +1,18 @@
+{{- if .Values.cinder.db_purge.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cinder-db-purge-bin
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: cinder-db-purge
+    component: cinder-db-purge
+
+data:
+  cinder-db-purge-start: |
+{{ include "cinder-db-purge/templates/bin/_cinder-db-purge-start.tpl" . | indent 4 }}
+  cinder-db-purge: |
+{{ include "cinder-db-purge/templates/bin/_cinder-db-purge.tpl" . | indent 4 }}
+{{- end }}
