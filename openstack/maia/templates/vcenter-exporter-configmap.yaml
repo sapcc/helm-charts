@@ -9,9 +9,13 @@ metadata:
     service: metrics
     component: configuration
 data:
-{{- range $config := .Values.vcenter_exporter.maia_vcenter_config }}
-  {{$config.name}}.yaml: |
+{{ $vcenters := .Values.vcenter_exporter.maia_vcenter_config -}}
+{{ $exporters := .Values.vcenter_exporter.exporter_types -}}
+{{- range $i, $config := $vcenters }}
+{{- range $j, $exportertype := $exporters }}
+  {{$config.name}}-{{$exportertype.name}}.yaml: |
     main:
+      availability_zone: '{{$.Values.vcenter_exporter.availability_zone}}'
       listen_port: '{{$.Values.vcenter_exporter.listen_port}}'
       host: '{{$config.vcenter_ip}}'
       user: '{{$config.username}}'
@@ -49,5 +53,6 @@ data:
       - 'virtualDisk.writeIOI.latest'
       - 'virtualDisk.totalReadLatency.average'
       - 'virtualDisk.totalWriteLatency.average'
+{{- end }}
 {{- end }}
 {{- end }}
