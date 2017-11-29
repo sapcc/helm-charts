@@ -3,10 +3,14 @@ use = egg:Paste#urlmap
 /: neutronversions
 /v2.0: neutronapi_v2_0
 
+{{- define "audit_pipe" -}}
+{{- if .Values.audit.enabled }} audit{{- end -}}
+{{- end }}
+
 [composite:neutronapi_v2_0]
 use = call:neutron.auth:pipeline_factory
 noauth = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id statsd catch_errors sentry extensions neutronapiapp_v2_0
-keystone = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id statsd catch_errors sentry authtoken keystonecontext extensions neutronapiapp_v2_0
+keystone = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id statsd catch_errors sentry authtoken keystonecontext extensions  {{- include "audit_pipe" . }} neutronapiapp_v2_0
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
@@ -54,3 +58,10 @@ level = ERROR
 
 [filter:osprofiler]
 paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
+
+{{ if .Values.audit.enabled }}
+[filter:audit]
+paste.filter_factory = auditmiddleware:filter_factory
+audit_map_file = /etc/neutron/neutron_audit_map.yaml
+ignore_req_list = GET
+{{- end }}
