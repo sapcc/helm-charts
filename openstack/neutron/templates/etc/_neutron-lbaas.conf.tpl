@@ -25,3 +25,5 @@ quota_listener=0
 quota_pool=0
 quota_member=0
 quota_healthmonitor=0
+
+{{- include "ini_sections.audit_middleware_notifications" . }}
