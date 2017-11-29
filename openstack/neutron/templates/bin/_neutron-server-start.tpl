@@ -29,6 +29,10 @@ function process_config {
 
     cp /neutron-etc-vendor/cisco-device-manager-plugin.ini   /etc/neutron/plugins/cisco/cisco_device_manager_plugin.ini
     cp /neutron-etc-vendor/cisco-router-plugin.ini   /etc/neutron/plugins/cisco/cisco_router_plugin.ini
+
+    {{- if .Values.audit.enabled }}
+    cp /neutron-etc/neutron_audit_map.yaml /etc/neutron/neutron_audit_map.yaml
+    {{- end }}
 }
 
 function _start_application {
