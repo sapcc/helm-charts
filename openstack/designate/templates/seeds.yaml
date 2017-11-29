@@ -1,0 +1,27 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: designate-seed
+  labels:
+    component: designate
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+
+  domains:
+  - name: ccadmin
+    projects:
+    - name: master
+      dns_quota:
+        api_export_size: 1000
+        recordset_records: 1000
+        zone_records: 500
+        zone_recordsets: 1000
+        zones: 100
+      dns_tsigkeys:
+      - name: '{{ .Values.tsig_key_name }}'
+        algorithm: hmac-sha256
+        secret: '{{ .Values.tsig_key }}' 
+        scope: POOL
+        resource_id: '{{ .Values.pool_id }}'
