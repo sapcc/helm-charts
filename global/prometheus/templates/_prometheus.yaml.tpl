@@ -30,7 +30,8 @@ scrape_configs:
       - '{__name__=~"^openstack_compute_instances_total$"}'
       - '{__name__=~"^vcenter_vcenter_node_info$"}'
       - '{__name__=~"^vcenter_esx_node_info$"}'
-      - '{__name__=~"^vice_president_remaining_tokens$"}'
+      - 'vice_president_remaining_tokens{region="eu-de-1"}'
+
 
   relabel_configs:
     - action: replace
