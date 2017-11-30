@@ -66,7 +66,7 @@ spec:
 
     config:
       identity:
-        driver: cc_ad
+        driver: {{ .Values.ldapDriver | default "cc_ad" }}
       ldap:
         page_size: 1000
         use_tls: false
@@ -106,9 +106,10 @@ spec:
         use_auth_pool: true
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
+{{- if eq "cc_ad" .Values.ldapDriver }}
       cc_ad:
         enable_ews_auth: False
         mirror_ews_passwords: false
         enable_lazy_user_creation: false
         cam_api_enabled: false
-
+{{- end }}

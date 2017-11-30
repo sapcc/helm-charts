@@ -1,0 +1,188 @@
+# Default values for designate.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+#
+debug: "True"
+
+sentry_dsn: DEFINE-IN-REGION-CHART
+
+global:
+  image_repository: DEFINED-IN-OPENSTACK-CHART
+  image_namespace: DEFINED-IN-OPENSTACK-CHART
+  designate_api_endpoint_protocol_admin: http
+  designate_api_endpoint_protocol_internal: http
+  designate_api_endpoint_protocol_public: https
+  designate_api_port_internal: '9001'
+  designate_api_port_admin: '9001'
+  designate_api_port_public: '443'
+  designate_metrics_port: '9102'
+  designate_mdns_port_public: '5354'
+  designate_mdns_external_ip: DEFINED-IN-REGION-CHART 
+  designate_mdns_akamai_ip:
+  designate_service_user: designate
+  designate_service_password: DEFINED-IN-REGION-CHART 
+
+pod:
+  replicas:
+    api: 2
+    central: 1
+    mdns: 1
+    poolmanager: 1
+    producer: 1
+    worker: 1
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+           max_unavailable: 0
+           max_surge: 1
+
+image_version_designate_api:  DEFINED-IN-REGION-CHART
+image_version_designate_central:  DEFINED-IN-REGION-CHART
+image_version_designate_mdns:  DEFINED-IN-REGION-CHART
+
+bind_pools:
+  - name: default
+    nameservers:
+      - hostname: DEFINED-IN-REGION-CHART
+        ip:  DEFINED-IN-REGION-CHART
+      - hostname: DEFINED-IN-REGION-CHART
+        ip:  DEFINED-IN-REGION-CHART
+      - hostname: DEFINED-IN-REGION-CHART
+        ip:  DEFINED-IN-REGION-CHART
+    options:
+      tsig_key_name: DEFINED-IN-REGION-CHART
+      tsig_key_secret: DEFINED-IN-REGION-CHART
+      tsig_key_algorithm: DEFINED-IN-REGION-CHART
+## Akamai Pool values if needed
+#akamai_pools:
+#  - name: akamai_pool
+#    nameservers:
+#      - hostname: DEFINED-IN-REGION-CHART
+#        ip: DEFINED-IN-REGION-CHART
+#    options:
+#      username: DEFINED-IN-REGION-CHART
+#      password: DEFINED-IN-REGION-CHART
+#      tsig_key_name: DEFINED-IN-REGION-CHART
+#      tsig_key_secret: DEFINED-IN-REGION-CHART
+#      tsig_key_algorithm: DEFINED-IN-REGION-CHART
+#    also_notifies:
+#      - host: DEFINED-IN-REGION-CHART
+#        port: DEFINED-IN-REGION-CHART
+
+rndc_keys:
+- name: DEFINED-IN-REGION-CHART
+  algorithm: DEFINED-IN-REGION-CHART
+  secret: DEFINED-IN-REGION-CHART 
+
+mariadb:
+  name: designate
+  initdb_configmap: designate-initdb
+  persistence_claim: db-designate-pvclaim 
+
+memcached:
+  ## default: {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
+  # host: memcached
+  port: 11211
+
+  metrics:
+    enabled: true
+
+rabbitmq:
+  ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
+  # host: rabbitmq
+  users:
+    default:
+      user: openstack
+      password: welcome
+    admin:
+      user: admin
+      password: secret
+
+mysql_metrics:
+  name: designate
+  db_name: designate
+  db_user: root
+  db_password: DEFINED-IN-REGION-CHART
+  customMetrics:
+    - name: openstack_designate_zones
+      help: "zones grouped by status and project"
+      labels:
+        - "zone_name"
+        - "status"
+        - "project_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                name AS zone_name,
+                status,
+                tenant_id AS project_id,
+                COUNT(*) AS count_gauge
+              FROM zones
+              GROUP BY
+                name,
+                status,
+                tenant_id
+          
+    - name: openstack_designate_records
+      help: "records count grouped by status"
+      labels:
+        - "status"
+        - "zone_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                zone_id,
+                status,
+                count(id) AS count_gauge
+              FROM records
+              GROUP BY
+                zone_id,
+                status
+
+logging:
+    formatters:
+        context:
+            class: oslo_log.formatters.ContextFormatter
+        default:
+            format: "%(message)s"
+    handlers:
+        stdout:
+            class: StreamHandler
+            args: "(sys.stdout,)"
+            formatter: context
+        "null":
+            class: logging.NullHandler
+            args: "()"
+            formatter: default
+        sentry:
+            class: raven.handlers.logging.SentryHandler
+            level: ERROR
+            args: "()"
+    loggers:
+        root:
+            handlers: stdout, sentry
+            level: WARNING
+        designate:
+            handlers: stdout, sentry
+            level: DEBUG
+        amqp:
+            handlers: stdout, sentry
+            level: WARNING
+        amqplib:
+            handlers: stdout, sentry
+            level: WARNING
+        boto:
+            handlers: stdout, sentry
+            level: WARNING
+        eventlet.wsgi.server:
+            handlers: stdout, sentry
+            level: INFO
+        sqlalchemy:
+            handlers: stdout, sentry
+            level: WARNING

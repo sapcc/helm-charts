@@ -44,7 +44,14 @@ spec:
               value: keystone-job-migration
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
+            {{- if .Values.sentry.dsn }}
               value: {{ .Values.sentry.dsn | quote}}
+            {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: keystone.DSN.python
+            {{- end }}
             {{- end }}
           volumeMounts:
             - name: etc-keystone

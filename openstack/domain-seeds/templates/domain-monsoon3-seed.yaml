@@ -77,7 +77,7 @@ spec:
 
     config:
       identity:
-        driver: cc_ad
+        driver: {{ .Values.ldapDriver | default "cc_ad" }}
       ldap:
         page_size: 1000
         use_tls: false
@@ -121,6 +121,7 @@ spec:
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
 
+{{- if eq "cc_ad" .Values.ldapDriver }}
       cc_ad:
         enable_ews_auth: True
         mirror_ews_passwords: True
@@ -131,3 +132,4 @@ spec:
         cam_password: {{ .Values.camPassword | quote }}
         cam_profile: 'CC Monsoon 3 Users'
         cam_group: MONSOON3_DOMAIN_USERS
+{{- end }}
