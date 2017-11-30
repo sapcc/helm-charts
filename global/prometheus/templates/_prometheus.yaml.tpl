@@ -28,6 +28,7 @@ scrape_configs:
       - '{__name__=~"^pg_database_size_bytes_gauge_average$"}'
       - '{__name__=~"^limes_consolidated_.+"}'
       - '{__name__=~"^openstack_compute_instances_total$"}'
+      - '{__name__=~"vice_president_remaining_tokens{region=\"eu-de-1\"}"}'
 
   relabel_configs:
     - action: replace
