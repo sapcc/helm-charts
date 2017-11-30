@@ -1,6 +1,117 @@
-service_type: 'networking'
+service_type: 'network'
 service_name: 'neutron'
-prefix: '/v2[0-9\.]*(/[0-9a-f\-]+)?'
+# this works for DevStack only
+prefix: '/v2.0'
 
 resources:
   networks:
+  ports:
+  segments:
+  trunks:
+  flavors:
+  floatingips:
+  network-ip-availabilities:
+  quotas:
+  rbac-policies:
+  routers:
+  security-groups:
+  security-group-rules:
+  service-profiles:
+  subnetpools:
+  subnets:
+  bgpvpn:
+    # BPG VPNs namespace
+    singleton: true
+    children:
+      bgpvpns:
+        type_uri: network/bgpvpns
+        children:
+          network_associations:
+            type_uri: network/bgpvpn/association/network
+          router_associations:
+            type_uri: network/bgpvpn/association/router
+          port_associations:
+            type_uri: network/bgpvpn/association/port
+  fw:
+    # FWaaS 1.0 namespace
+    singleton: true
+    children:
+      firewalls:
+        type_uri: network/firewalls
+      firewall_policies:
+        type_uri: network/firewall/policies
+        el_type_uri: network/firewall/policy
+      firewall_rules:
+        type_uri: network/firewall/rules
+  fwaas:
+    # FWaas 2.0 namespace (uses same logical resource uris as 1.0)
+    singleton: true
+    type_uri: network/firewalls
+    children:
+      firewall_groups:
+        type_uri: network/firewalls
+      firewall_policies:
+        type_uri: network/firewall/policies
+        el_type_uri: network/firewall/policy
+      firewall_rules:
+        type_uri: network/firewall/rules
+
+  lbaas:
+    # LBaaS 2.0 namespace
+    singleton: true
+    children:
+      healthmonitors:
+        type_uri: network/loadbalancer/healthmonitors
+      loadbalancers:
+        type_uri: network/loadbalancers
+        children:
+          statuses:
+            singleton: true
+      listeners:
+        type_uri: network/loadbalancer/listener
+      pools:
+        type_uri: network/loadbalancer/pools
+        children:
+          members:
+  log:
+    # logging extension namespace
+    singleton: true
+    children:
+      logs:
+      loggable-resources:
+        singleton: true
+  metering:
+    # metering namespace
+    singleton: true
+    children:
+      metering-labels:
+        type_uri: network/metering/labels
+      metering-label-rules:
+        type_uri: network/metering/label-rules
+  qos:
+    # qos namespace
+    singleton: true
+    children:
+      policies:
+        children:
+          bandwidth_limit_rules:
+            type_uri: network/qos/bandwidth-limit-rules
+          dscp_marking_rules:
+            type_uri: network/qos/dscp-marking-rules
+          minimum_bandwidth_rules:
+            type_uri: network/qos/minimum-bandwidth-rules
+      rule-types:
+  vpn:
+    # VPNaaS 2.0 namespace
+    singleton: true
+    children:
+      endpoint-groups:
+      ikepolicies:
+        type_uri: network/vpn/ike-policies
+        el_type_uri: network/vpn/ike-policy
+      ipsecpolicies:
+        type_uri: network/vpn/ipsec-policies
+        el_type_uri: network/vpn/ipsec-policy
+      ipsec-site-connections:
+      vpnservices:
+        type_uri: network/vpn/vpn-services
