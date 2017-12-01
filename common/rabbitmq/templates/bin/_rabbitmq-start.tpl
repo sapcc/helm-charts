@@ -35,5 +35,3 @@ function start_application {
 
 bootstrap
 start_application
-
-
