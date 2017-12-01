@@ -100,9 +100,15 @@ spec:
         user_enabled_mask: 2
         user_enabled_default: 512
         user_attribute_ignore: default_project_id
+{{- if eq "cc_ad" .Values.ldapDriver }}
         user_allow_create: True
         user_allow_delete: False
         user_allow_update: True
+{{ else }}
+        user_allow_create: False
+        user_allow_delete: False
+        user_allow_update: False
+{{- end }}
 
         group_tree_dn: OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
         group_objectclass: group
@@ -110,9 +116,9 @@ spec:
         group_name_attribute: name
         group_desc_attribute: description
         group_member_attribute: member
-        group_allow_create: True
+        group_allow_create: False
         group_allow_delete: False
-        group_allow_update: True
+        group_allow_update: False
 
         use_pool: true
         pool_size: 10
