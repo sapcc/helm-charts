@@ -42,7 +42,7 @@
     "identity:list_user_projects": "rule:owner or rule:admin_and_matching_domain_id",
     "identity:create_project": "rule:cloud_admin or rule:admin_and_matching_project_domain_id",
     "identity:update_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id",
-    "identity:delete_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id",
+    "identity:delete_project": "rule:cloud_admin",
 
     "admin_and_matching_target_user_domain_id": "rule:admin_required and domain_id:%(target.user.domain_id)s",
     "admin_and_matching_user_domain_id": "rule:admin_required and domain_id:%(user.domain_id)s",
@@ -50,7 +50,7 @@
     "identity:list_users": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:service_role",
     "identity:create_user": "rule:cloud_admin or rule:admin_and_matching_user_domain_id",
     "identity:update_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id",
-    "identity:delete_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id",
+    "identity:delete_user": "rule:cloud_admin",
 
     "admin_and_matching_target_group_domain_id": "rule:admin_required and domain_id:%(target.group.domain_id)s",
     "admin_and_matching_group_domain_id": "rule:admin_required and domain_id:%(group.domain_id)s",
@@ -59,7 +59,7 @@
     "identity:list_groups_for_user": "rule:cloud_admin or rule:owner or rule:admin_and_matching_target_user_domain_id or rule:service_role",
     "identity:create_group": "rule:cloud_admin or rule:admin_and_matching_group_domain_id",
     "identity:update_group": "rule:cloud_admin or rule:admin_and_matching_target_group_domain_id",
-    "identity:delete_group": "rule:cloud_admin or rule:admin_and_matching_target_group_domain_id",
+    "identity:delete_group": "rule:cloud_admin",
     "identity:list_users_in_group": "rule:cloud_admin or rule:admin_and_matching_target_group_domain_id or rule:service_role",
     "identity:remove_user_from_group": "rule:cloud_admin or rule:admin_and_matching_target_group_domain_id",
     "identity:check_user_in_group": "rule:cloud_admin or rule:admin_and_matching_target_group_domain_id",
