@@ -234,9 +234,8 @@ scrape_configs:
     replacement: ${1}:9100
   - source_labels: [mountpoint]
     target_label: mountpoint
-    regex: '/host(/.*)'
-    action: replace
-    replacement: ${1}
+    regex: '(/host/)(.+)'
+    replacement: '${1}'
 
 - job_name: 'kube-system/ntp'
   kubernetes_sd_configs:
