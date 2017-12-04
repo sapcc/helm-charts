@@ -28,7 +28,10 @@ scrape_configs:
       - '{__name__=~"^pg_database_size_bytes_gauge_average$"}'
       - '{__name__=~"^limes_consolidated_.+"}'
       - '{__name__=~"^openstack_compute_instances_total$"}'
-      - '{__name__=~"vice_president_remaining_tokens{region=\"eu-de-1\"}"}'
+      - '{__name__=~"^vcenter_vcenter_node_info$"}'
+      - '{__name__=~"^vcenter_esx_node_info$"}'
+      - 'vice_president_remaining_tokens{region="eu-de-1"}'
+
 
   relabel_configs:
     - action: replace
@@ -53,7 +56,7 @@ scrape_configs:
 
   params:
     'match[]':
-      - '{__name__=~"up{job=\"prometheus-collector\"}"}'
+      - 'up{job="prometheus-collector"}'
 
   relabel_configs:
     - action: replace
