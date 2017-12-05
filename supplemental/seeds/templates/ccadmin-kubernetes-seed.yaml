@@ -1,4 +1,4 @@
-apiVersion: "openstack.stable.sap.cc/v1"
+apiVersion: openstack.stable.sap.cc/v1
 kind: OpenstackSeed
 metadata:
   name: kubernetes-seed
@@ -6,6 +6,7 @@ metadata:
 spec:
   requires:
   - {{.Values.global.keystoneNamespace}}/keystone-seed
+  - monsoon3/domain-ccadmin-seed
 
   domains:
   - name: ccadmin
@@ -27,12 +28,14 @@ spec:
       networks:
       - name: default
         subnets:
-          name: kubernetes
-          cidr: 10.180.0.0/16
+         - name: kubernetes
+           cidr: 10.180.0.0/16
+           ip_version: 4
+      - name: FloatingIP-external-ccadmin
       routers:
       - name: default
         external_gateway_info:
-          network: {{required "missing .external_gateway_info.network" .Values.external_gateway_info.network}}
+          network: {{required "missing .external_gateway_info.network_id" .Values.external_gateway_info.network}}
         interfaces:
           - subnet: kubernetes
 
@@ -41,3 +44,15 @@ spec:
       roles:
       - project: kubernetes
         role: admin
+      - project: kubernetes
+        role: volume_admin
+      - project: kubernetes
+        role: compute_admin
+      - project: kubernetes
+        role: volume_admin
+      - project: kubernetes
+        role: network_admin
+      - project: kubernetes
+        role: resource_admin
+      - project: kubernetes
+        role: kubernetes_admin
