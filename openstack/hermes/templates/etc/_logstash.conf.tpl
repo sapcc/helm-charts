@@ -54,9 +54,9 @@ filter {
   # When scope is missing from initiator, get it from action-specific parameters
   if ![initiator][project_id] and ![initiator][domain_id] {
     if [project] {
-      mutate { rename => { "%{[project]}" => "%{[initiator][project_id]}" } }
+      mutate { add_field => { "%{[initiator][project_id]}" => "%{[project]}" } }
     } else if [domain] {
-      mutate { rename => { "%{[domain]}" => "%{[initiator][domain_id]}" } }
+      mutate { add_field => { "%{[initiator][domain_id]}" => "%{[domain]}" } }
     }
   }
 
@@ -95,7 +95,7 @@ filter {
   if [role] {
     ruby {
       code => "
-       attachments = event.get('[target][attachments]')
+        attachments = event.get('[target][attachments]')
         if attachments.nil?
           attachments = []
         end
@@ -122,11 +122,19 @@ filter {
     mutate { add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" } }
   }
 
-  # secondary index (keystone only)
-  if [project] {
-    mutate { add_field => { "[@metadata][index2]" => "%{[project]}" } }
-  } else if [domain] {
-    mutate { add_field => { "[@metadata][index2]" => "%{[domain]}" } }
+  # secondary index (for cross-project actions)
+  ruby {
+    code => "
+      attachments = event.get('[target][attachments]')
+      if !attachments.nil?
+        attachments.each {|a|
+          name = a['name']
+          if name == 'project_id' || name == 'domain_id'
+            event.set('[@metadata][index2]', a['content'])
+          end
+        }
+      end
+    "
   }
 
   # remove keystone specific fields after they have been mapped to standard attachments 
