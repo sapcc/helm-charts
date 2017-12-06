@@ -1,5 +1,6 @@
 {{- range $repo, $config := .Values.repos }}
 {{- if not ( and ($.Capabilities.APIVersions.Has "batch/v1beta1") $config.schedule ) }}
+{{- if not $config.disabled }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -67,5 +68,6 @@ spec:
           - mountPath: /etc/http-import/secret
             name: secret
 ---
+{{end}}
 {{end}}
 {{end}}
