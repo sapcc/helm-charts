@@ -5,15 +5,68 @@ metadata:
   name: designate-seed
   labels:
     component: designate
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
 spec:
   requires:
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
 
+  roles:
+  - cloud_dns_admin
+  - dns_admin
+  - dns_viewer
+
+  services:
+  - name: designate
+    type: dns
+    description: Openstack DNS
+    endpoints:
+    - interface: admin
+      region: {{ .Values.global.region }}
+      url: https://dns-3.{{.Values.global.region}}.{{.Values.global.tld}}
+    - interface: internal
+      region: {{ .Values.global.region }}
+      url: http://designate-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9001
+    - interface: public
+      region: {{ .Values.global.region }}
+      url: http://designate-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9001
+
   domains:
+  - name: Default
+    groups:
+    - name: administrators
+      roles:
+      - domain: Default
+        role: cloud_dns_admin
+      - project: admin
+        role: cloud_dns_admin
+    users:
+    - name: admin
+      roles:
+      - domain: Default
+        role: cloud_dns_admin
+      - project: admin
+        role: cloud_dns_admin
+    - name: designate
+      description: Designate Service User
+      password: {{ .Values.global.designate_service_password }}
+      roles:
+      - project: service
+        role: service
+
   - name: ccadmin
     projects:
+    - name: cloud_admin
+      roles:
+      - user: admin@Default
+        role: cloud_dns_admin
     - name: master
+      roles:
+      - user: admin@Default
+        role: cloud_dns_admin
       dns_quota:
         api_export_size: 1000
         recordset_records: 1000
@@ -26,4 +79,15 @@ spec:
         secret: '{{ .Values.tsig_key }}' 
         scope: POOL
         resource_id: '{{ .Values.pool_id }}'
+    groups:
+    - name: CCADMIN_CLOUD_ADMINS
+      roles:
+      - project: cloud_admin
+        role: cloud_dns_admin
+      - project: master
+        role: cloud_dns_admin
+    - name: CCADMIN_CLOUD_DNS_ADMINS
+      roles:
+      - project: master
+        role: cloud_dns_admin
 {{- end }}
