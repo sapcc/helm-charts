@@ -1,5 +1,6 @@
 {{- range $repo, $config := .Values.repos }}
 {{- if and ($.Capabilities.APIVersions.Has "batch/v1beta1") $config.schedule }}
+{{- if not $config.disabled }}
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
@@ -41,5 +42,6 @@ spec:
           - mountPath: /etc/http-import/secret
             name: secret
 ---
+{{end}}
 {{end}}
 {{end}}

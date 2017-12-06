@@ -10,6 +10,7 @@ metadata:
 data:
   # repo configs
 {{- range $repo, $config := .Values.repos }}
+{{- if not $config.disabled }}
   {{$repo}}.yaml: |
     swift:
       auth_url: {{$.Values.auth_url}}
@@ -23,14 +24,15 @@ data:
       hostname: {{$.Values.statsd_hostname}}
       port:     9125
       prefix:   repo.{{$repo}}
-    {{if $config.transfer_workers}}
+    {{ if $config.transfer_workers }}
     workers:
       transfer: {{$config.transfer_workers}}
-    {{end}}
+    {{ end }}
     jobs:
       {{- range $index, $job := $config.jobs}}
       - from:
           url:  {{$job.from.url}}
+          type: {{ coalesce $job.from.type "''" }}
           cert: {{ coalesce $job.from.cert $config.cert "''" }}
           key:  {{ coalesce $job.from.key $config.key "''" }}
           ca:   {{ coalesce $job.from.ca $config.ca "''" }}
@@ -40,5 +42,6 @@ data:
         except:    {{ coalesce $job.except $config.except "''" }}
         only:      {{ coalesce $job.only $config.only "''" }}
         immutable: {{ coalesce $job.immutable $config.immutable "''" }}
-      {{- end}}
-{{ end}}
+      {{- end }}
+{{ end }}
+{{ end }}
