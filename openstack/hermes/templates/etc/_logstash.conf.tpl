@@ -127,6 +127,7 @@ filter {
     code => "
       attachments = event.get('[target][attachments]')
       if !attachments.nil?
+        fixed_attachments = []
         attachments.each {|a|
           # replace pycadfs 'typeURI' with proper CADF name 'contentType'
           if a.has_key? 'typeURI'
@@ -137,8 +138,9 @@ filter {
           if a.has_key? 'name' && (a['name'] == 'project_id' || a['name'] == 'domain_id')
             event.set('[@metadata][index2]', a['content'])
           end
+          fixed_attachments << a
         }
-        event.set('[target][attachments]', attachments)
+        event.set('[target][attachments]', fixed_attachments)
       end
     "
   }
