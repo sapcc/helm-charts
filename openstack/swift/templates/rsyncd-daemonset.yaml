@@ -21,7 +21,7 @@ spec:
       {{- include "swift_daemonset_tolerations" . | indent 6 }}
       hostNetwork: true
       nodeSelector:
-        species: swift-storage
+        species: {{ .Values.species }}
       volumes:
         - name: swift-bin
           configMap:
@@ -34,7 +34,7 @@ spec:
             path: /srv/node
         - name: swift-drive-state
           hostPath:
-            path: /run/swift-storage/state
+            path: /run/{{ .Values.species }}/state
       containers:
         - name: server
           image: {{ include "swift_image" . }}

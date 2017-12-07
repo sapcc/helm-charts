@@ -18,7 +18,7 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_annotations" }}
-scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-storage"}]'
+scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":{{ .Values.species | quote }}}]'
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
@@ -27,7 +27,7 @@ scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"swift-sto
 tolerations:
 - key: "species"
   operator: "Equal"
-  value: "swift-storage"
+  value: {{ .Values.species | quote}}
   effect: "NoSchedule"
 {{- end }}
 {{- end -}}
@@ -124,9 +124,9 @@ When passed via `helm upgrade --set`, the image_version is misinterpreted as a f
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
     {{- if typeIs "float64" .Values.image_version -}}
-      {{.Values.global.imageRegistry}}/monsoon/swift-mitaka:{{.Values.image_version | printf "%0.f"}}
+      {{.Values.global.imageRegistry}}/monsoon/swift-{{.Values.release}}:{{.Values.image_version | printf "%0.f"}}
     {{- else -}}
-      {{.Values.global.imageRegistry}}/monsoon/swift-mitaka:{{.Values.image_version}}
+      {{.Values.global.imageRegistry}}/monsoon/swift-{{.Values.release}}:{{.Values.image_version}}
     {{- end -}}
   {{- end -}}
 {{- end }}
