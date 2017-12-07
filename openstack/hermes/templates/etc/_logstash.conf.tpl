@@ -130,7 +130,7 @@ filter {
         fixed_attachments = []
         attachments.each {|a|
           # look for target project
-          if a.has_key?('name') && (a['name'] == 'project_id' || (a['name'] == 'domain_id')
+          if a.has_key?('name') && (a['name'] == 'project_id' || a['name'] == 'domain_id')
             event.set('[@metadata][index2]', a['content'])
           end
           # replace pycadfs 'typeURI' with proper CADF name 'contentType'
