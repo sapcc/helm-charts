@@ -122,14 +122,19 @@ filter {
     mutate { add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" } }
   }
 
-  # secondary index (for cross-project actions)
+  # workaround pycadf wrong attribute naming and on that occasion identify secondary index (for cross-project actions)
   ruby {
     code => "
       attachments = event.get('[target][attachments]')
       if !attachments.nil?
         attachments.each {|a|
-          name = a['name']
-          if name == 'project_id' || name == 'domain_id'
+          # replace pycadfs 'typeURI' with proper CADF name 'contentType'
+          if a.has_key? 'typeURI'
+            a['contentType'] = a['typeURI']
+            a.delete('typeURI')
+          end
+          # look for target project
+          if n.has_key? 'name' && (n['name'] == 'project_id' || a['name'] == 'domain_id')
             event.set('[@metadata][index2]', a['content'])
           end
         }
