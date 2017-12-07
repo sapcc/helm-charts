@@ -134,10 +134,11 @@ filter {
             a.delete('typeURI')
           end
           # look for target project
-          if n.has_key? 'name' && (n['name'] == 'project_id' || a['name'] == 'domain_id')
+          if a.has_key? 'name' && (a['name'] == 'project_id' || a['name'] == 'domain_id')
             event.set('[@metadata][index2]', a['content'])
           end
         }
+        event.set('[target][attachments]', attachments)
       end
     "
   }
