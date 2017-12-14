@@ -2,7 +2,7 @@ groups:
 - name: openstack-swift.alerts
   rules:
   - alert: OpenstackSwiftFirstByteTiming
-    expr: (max(swift_proxy_firstbyte_timer{quantile="0.5",status="200"}) BY (os_cluster, type, instance) > 1000 OR max(swift_proxy_firstbyte{quantile="0.5",status="200"}) BY (os_cluster, type, instance) > 1000)
+    expr: max(swift_proxy_firstbyte{quantile="0.5",status="200"}) BY (os_cluster, type, instance) > 1000
     for: 15m
     labels:
       context: firtsbytetiming
@@ -16,7 +16,7 @@ groups:
         increased
 
   - alert: OpenstackSwiftServiceUnavailable
-    expr: (sum(irate(swift_proxy_timer_sum{policy="all",status="503"}[5m])) BY (os_cluster) > 100 OR sum(irate(swift_proxy_sum{policy="all",status="503"}[5m])) BY (os_cluster) > 100)
+    expr: sum(irate(swift_proxy_sum{policy="all",status="503"}[5m])) BY (os_cluster) > 100
     for: 5m
     labels:
       context: serviceunavailable
@@ -30,7 +30,7 @@ groups:
       summary: swift-service-unavailable
 
   - alert: OpenstackSwiftHealthCheck
-    expr: (avg(swift_health_statsd_exit_code_gauge) BY (region) > 0.2 OR avg(swift_health_statsd_exit_code) BY (region) > 0.2)
+    expr: avg(swift_health_statsd_exit_code) BY (region) > 0.2
     for: 5m
     labels:
       context: health
@@ -43,7 +43,7 @@ groups:
       summary: swift-health-check
 
   - alert: OpenstackSwiftMismatchedRings
-    expr: (swift_cluster_md5_ring_not_matched_gauge > 0 OR swift_cluster_md5_ring_not_matched > 0)
+    expr: swift_cluster_md5_ring_not_matched > 0
     for: 15m
     labels:
       context: mismatchedrings
@@ -52,11 +52,11 @@ groups:
       severity: warning
       tier: openstack
     annotations:
-      description: Alarm on mismatched rings
+      description: Rings are not equal on all nodes
       summary: swift-mismatched-rings
 
   - alert: OpenstackSwiftDisksUnmounted
-    expr: (sum(swift_cluster_drives_unmounted_gauge) BY (storage_ip) > 0 OR sum(swift_cluster_drives_unmounted) BY (storage_ip) > 0)
+    expr: sum(swift_cluster_drives_unmounted) BY (storage_ip) > 0
     for: 3m
     labels:
       context: drivesunmounted
@@ -69,7 +69,7 @@ groups:
       summary: swift disks unmounted on the server IP {{ $labels.storage_ip }}
 
   - alert: OpenstackSwiftDiskFailures
-    expr: (sum(swift_cluster_drives_audit_errors_gauge) BY (storage_ip) > 0 OR sum(swift_cluster_drives_audit_errors) BY (storage_ip) > 0)
+    expr: sum(swift_cluster_drives_audit_errors) BY (storage_ip) > 0
     for: 3m
     labels:
       context: drivefailures
@@ -82,7 +82,7 @@ groups:
       summary: swift disk failures on the server IP {{ $labels.storage_ip }}
 
   - alert: OpenstackSwiftAsyncPendings
-    expr: (sum(increase(swift_object_server_async_pendings_counter[5m])) > 2000 OR sum(increase(swift_object_server_async_pendings[5m])) > 2000)
+    expr: sum(increase(swift_object_server_async_pendings[5m])) > 2000
     for: 3m
     labels:
       context: asyncpendings
@@ -95,7 +95,7 @@ groups:
       summary: swift object server async pendings reached 2000
 
   - alert: OpenstackSwiftRateLimit1000
-    expr: (sum(increase(swift_proxy_timer_count{status="498"}[5m])) BY (os_cluster) > 1000 OR sum(increase(swift_proxy_count{status="498"}[5m])) BY (os_cluster) > 1000)
+    expr: sum(increase(swift_proxy_count{status="498"}[5m])) BY (os_cluster) > 1000
     for: 3m
     labels:
       context: ratelimit
@@ -108,7 +108,7 @@ groups:
       summary: swift rate limit hit in {{ $labels.os_cluster }}
 
   - alert: OpenstackSwiftRateLimit5000
-    expr: (sum(increase(swift_proxy_timer_count{status="498"}[5m])) BY (os_cluster) > 5000 OR sum(increase(swift_proxy_count{status="498"}[5m])) BY (os_cluster) > 5000)
+    expr: sum(increase(swift_proxy_count{status="498"}[5m])) BY (os_cluster) > 5000
     for: 3m
     labels:
       context: ratelimit
