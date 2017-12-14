@@ -43,7 +43,7 @@ groups:
       summary: swift-health-check
 
   - alert: OpenstackSwiftMismatchedRings
-    expr: swift_cluster_md5_ring_not_matched > 0
+    expr: (swift_cluster_md5_ring_not_matched - swift_cluster_md5_ring_errors) > 0
     for: 15m
     labels:
       context: mismatchedrings
@@ -54,6 +54,32 @@ groups:
     annotations:
       description: Rings are not equal on all nodes
       summary: swift-mismatched-rings
+
+  - alert: OpenstackSwiftMismatchedConfig
+    expr: (swift_cluster_md5_swiftconf_not_matched - swift_cluster_md5_swiftconf_errors) > 0
+    for: 15m
+    labels:
+      context: mismatchedconf
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Configuration is not equal on all nodes
+      summary: swift-mismatched-config
+
+  - alert: OpenstackSwifNodeError
+    expr: swift_cluster_md5_ring_errors > 0
+    for: 15m
+    labels:
+      context: nodeerror
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Swift node error. Nodes not reachable.
+        summary: swift-node-error
 
   - alert: OpenstackSwiftDisksUnmounted
     expr: sum(swift_cluster_drives_unmounted) BY (storage_ip) > 0
