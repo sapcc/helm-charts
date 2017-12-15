@@ -30,6 +30,12 @@
   },
   "sso_22b0_v1_0": {
     "lbaas_irule": ["cc_sso_22b0_v1_0"]
+  },
+  "sso_required_f544_v1_0": {
+    "lbaas_irule": ["cc_sso_required_f544_v1_0"]
+  },
+  "http_redirect_a26c_v1_0": {
+    "lbaas_irule": ["cc_http_redirect_a26c_v1_0"]
   }
 }
 {{- end -}}
