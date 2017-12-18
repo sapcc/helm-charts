@@ -105,6 +105,7 @@ spec:
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 10
+        {{- if $.Values.health_statsd }}
         - name: collector
           image: {{ include "swift_image" $ }}
           command:
@@ -133,6 +134,7 @@ spec:
               name: swift-container-ring
             - mountPath: /swift-rings/object
               name: swift-object-ring
+        {{- end}}
         {{- include "swift_statsd_exporter_container" $ | indent 8 }}
 
 ---
