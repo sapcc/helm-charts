@@ -91,7 +91,7 @@ auth_plugin = v3password
 auth_version = 3
 auth_uri = {{$cluster.keystone_auth_uri}}
 auth_url = {{$cluster.keystone_auth_url}}
-insecure = false
+insecure = {{$cluster.keystone_insecure | default false}}
 {{- /* TODO: Workaround - need to be removed */ -}}
 {{- if $cluster.endpoint_override }}
 endpoint_override = {{$cluster.endpoint_override}}
