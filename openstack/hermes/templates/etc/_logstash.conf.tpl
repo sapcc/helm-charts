@@ -46,7 +46,9 @@ filter {
         "action", "deleted\.", "delete/",
         "action", "updated\.", "create/",
         "action", "disabled\.", "disable/",
-        "action", "\.", "/"
+        "action", "\.", "/",
+        # fix the eventTime format to be ISO8601
+        "eventTime", '([+\-]\d\d)(\d\d)$', '\1:\2'
      ]
   }
 
