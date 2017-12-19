@@ -67,32 +67,6 @@ spec:
       roles:
       - project: service
         role: swiftoperator
-    - name: swift_caretaker
-      description: 'Swift Account Caretaker'
-      password: {{ $.Values.swift_account_caretaker.password }}
-      roles:
-      - project: service
-        role: service
-      - domain: Default
-        role: admin
-      - domain: ccadmin
-        role: admin
-      - domain: bn
-        role: admin
-      - domain: bs
-        role: admin
-      - domain: hcp03
-        role: admin
-      - domain: hcm
-        role: admin
-      - domain: hec
-        role: admin
-      - domain: monsoon3
-        role: admin
-      - domain: s4
-        role: admin
-      - domain: cc3test
-        role: admin
 
     groups:
     - name: administrators
@@ -110,7 +84,7 @@ spec:
         role: swiftreseller
       - group: CCADMIN_CLOUD_ADMINS
         role: swiftreseller
-    - name: master
+    - name: master # Swift account is enabled in swift-utils-seed
       roles:
       - group: CCADMIN_CLOUD_ADMINS
         role: swiftreseller
@@ -128,13 +102,6 @@ spec:
         role: swiftoperator
       - user: ironic@Default
         role: swiftoperator
-      swift:
-        enabled: true
-        containers:
-        - name: repo
-          metadata:
-            read: .r:*,.rlistings
-            meta-web-listings: 'true'
 
   - name: monsoon3
     projects:
@@ -149,25 +116,30 @@ spec:
       description: 'Swift Dispersion'
       password: {{ $.Values.dispersion_password }}
       roles:
+        # required for normal operation
       - project: swift_dispersion
         role: swiftoperator
+        # required to enable Swift accounts (see below)
+      - project: swift_dispersion
+        role: swiftreseller
+        # required to find project IDs from names (see below)
+      - project: swift_dispersion
+        role: service
     projects:
     - name: swift_test
-      description: 'swift test - mini_test'
-      roles:
-      - user: swift_caretaker@Default
-        role: swiftoperator
+      description: 'testing project for Swift and content-repo'
       swift:
         enabled: true
-        containers:
-        - name: caretaker
-          metadata:
-            read: .r:*,.rlistings
-            meta-web-listings: 'true'
+      # ^ Enabling the Swift account here does not work because when the
+      # openstack-operator applies this seed, Swift is not available yet.
+      # Instead, our CI has a post-deployment task which creates this Swift
+      # account, using the swift_dispersion service user. This is why the
+      # swift_dispersion user has the service and swiftreseller roles.
     - name: swift_dispersion
-      description: 'dispersion of objectes and containers'
+      description: 'dispersion of objects and containers'
       swift:
         enabled: true
+      # ^ Same as above.
     groups:
     - name: Administrators
       roles:
