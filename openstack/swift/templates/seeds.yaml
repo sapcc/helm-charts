@@ -115,41 +115,5 @@ spec:
     - name: swift_dispersion
       description: 'Swift Dispersion'
       password: {{ $.Values.dispersion_password }}
-      roles:
-        # required for normal operation
-      - project: swift_dispersion
-        role: swiftoperator
-        # required to enable Swift accounts (see below)
-      - project: swift_dispersion
-        role: swiftreseller
-        # required to find project IDs from names (see below)
-      - project: swift_dispersion
-        role: service
-    projects:
-    - name: swift_test
-      description: 'testing project for Swift and content-repo'
-      swift:
-        enabled: true
-      # ^ Enabling the Swift account here does not work because when the
-      # openstack-operator applies this seed, Swift is not available yet.
-      # Instead, our CI has a post-deployment task which creates this Swift
-      # account, using the swift_dispersion service user. This is why the
-      # swift_dispersion user has the service and swiftreseller roles.
-    - name: swift_dispersion
-      description: 'dispersion of objects and containers'
-      swift:
-        enabled: true
-      # ^ Same as above.
-    groups:
-    - name: Administrators
-      roles:
-      - project: swift_test
-        role: admin
-      - project: swift_test
-        role: member
-      - project: swift_dispersion
-        role: admin
-      - project: swift_dispersion
-        role: member
 {{- end }}
 {{- end }}
