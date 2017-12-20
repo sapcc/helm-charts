@@ -1,3 +1,18 @@
+{{define "db_url" }}
+    {{- if kindIs "map" . -}}
+postgresql://{{.Values.db_user}}:{{.Values.db_password}}@postgres-{{.Chart.Name}}.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.db_name}}
+    {{- else }}
+        {{- $envAll := index . 0 }}
+        {{- $name := index . 1 }}
+        {{- $user := index . 2 }}
+        {{- $password := index . 3 }}
+        {{- with $envAll -}}
+postgresql://{{$user}}:{{$password}}@postgres-{{.Chart.Name}}.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{$name}}
+        {{- end }}
+    {{- end -}}
+?connect_timeout=10&keepalives_idle=5&keepalives_interval=5&keepalives_count=10
+{{- end}}
+
 {{define "rabbitmq_host"}}rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "memcached_host"}}memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 

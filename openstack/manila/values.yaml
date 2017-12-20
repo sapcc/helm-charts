@@ -4,15 +4,18 @@
 # name: value
 
 global:
-  image_namespace: REQUIRED
-  image_repository: REQUIRED
+  image_namespace: monsoon
+  imageRegistry: DEFINED-IN-REGION-CHART
   manila_api_port_admin: '8786'
   manila_api_port_internal: '8786'
   manila_api_port_public: '443'
   pgbouncer:
-    enabled: false
+    enabled: true
 
+vice_president: true
+share_server_cleanup_interval: 60
 debug: "True"
+# port_metrics: '9102'
 
 pod:
   replicas:
@@ -26,9 +29,10 @@ pod:
            max_unavailable: 0
            max_surge: 1
 
-image_version_manila_api_m3: DEFINED-IN-REGION-CHART
-image_version_manila_scheduler_m3: DEFINED-IN-REGION-CHART
-image_version_manila_share_m3: DEFINED-IN-REGION-CHART
+image_version_manila_api: DEFINED-IN-REGION-CHART
+image_version_manila_scheduler: DEFINED-IN-REGION-CHART
+image_version_manila_share: DEFINED-IN-REGION-CHART
+sentry_dsn: DEFINED-IN-REGION-CHART
 
 # Dictionary mapping availability-zones to shares
 # shares:
@@ -46,17 +50,7 @@ image_version_manila_share_m3: DEFINED-IN-REGION-CHART
 
 shares: {}
 
-db_name: manila
-db_user: manila
-db_password: DEFINED-IN-REGION-CHART
-
-share_server_cleanup_interval: 60
-
-port_metrics: '9102'
-
-sentry_dsn: DEFINE-IN-REGION-CHART
-
-pg_metrics:
+pgmetrics:
   name: manila
   db_name: manila
   db_user: manila
@@ -137,8 +131,21 @@ pg_metrics:
         - max_duration_gauge:
             usage: "GAUGE"
             description: "Maximum duration of state"
-postgres:
-  name: manila
+
+postgresql:
+  postgresDatabase: manila
+  postgresUser: postgres
+  postgresPassword: DEFINED-IN-REGION-CHART
+  dbUser: manila
+  dbPassword: DEFINED-IN-REGION-CHART
+  dbInit: manila-db-init
+  dbMaintain: manila-db-maintain
+  pgbouncer:
+    enabled: false
+  persistence:
+    enabled: false
+  backup:
+    enabled: false
 
 logging:
     formatters:
