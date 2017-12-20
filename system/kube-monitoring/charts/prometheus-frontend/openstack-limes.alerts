@@ -1,6 +1,7 @@
 groups:
 - name: openstack-limes.alerts
   rules:
+
   - alert: OpenstackLimesFailedScrapes
     expr: sum(increase(limes_failed_scrapes[5m])) BY (service, service_name) > 0
     for: 1h
@@ -14,3 +15,32 @@ groups:
       description: Limes cannot scrape data from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
       summary: Limes cannot scrape {{ title $labels.service_name }}
+
+  - alert: OpenstackLimesFailedDomainDiscoveries
+    expr: sum(increase(limes_failed_domain_discoveries[5m])) BY (os_cluster) > 0
+    for: 30m
+    labels:
+      context: faileddiscoveries
+      dashboard: limes-overview
+      service: keystone
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Limes cannot discover domains for cluster {{ $labels.os_cluster }}.
+        Please check if "openstack domain list" is working.
+      summary: Limes cannot discover domains.
+
+  - alert: OpenstackLimesFailedProjectDiscoveries
+    expr: sum(increase(limes_failed_project_discoveries[5m])) BY (os_cluster, domain) > 0
+    for: 30m
+    labels:
+      context: faileddiscoveries
+      dashboard: limes-overview
+      service: keystone
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Limes cannot discover project in domain {{ $labels.domain }}
+        of cluster {{ $labels.os_cluster }}. Please check if "openstack project
+        list --domain {{ $labels.domain }}" is working.
+      summary: Limes cannot discover projects.
