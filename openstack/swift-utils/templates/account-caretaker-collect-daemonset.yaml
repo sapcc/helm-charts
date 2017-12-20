@@ -16,6 +16,7 @@ spec:
         from: daemonset
       annotations:
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":{{ quote .Values.species }}}]'
+        checksum/swift-utils.bin: {{ include "swift-utils/templates/bin-configmap.yaml" . | sha256sum }}
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
     spec:
       {{- if ge .Capabilities.KubeVersion.Minor "7" }}
@@ -33,9 +34,9 @@ spec:
         - name: caretaker-etc
           configMap:
             name: swift-account-caretaker
-        - name: swift-bin
+        - name: swift-utils-bin
           configMap:
-            name: swift-bin # NOTE: This comes from the "swift" chart.
+            name: swift-utils-bin
         - name: swift-drives
           hostPath:
             path: /srv/node
@@ -49,9 +50,9 @@ spec:
             - /usr/bin/dumb-init
           args:
             - /bin/bash
-            - /swift-bin/swift-start
+            - /swift-utils-bin/swift-utils-start
             - account-caretaker-collect
-          # privileged access required for /swift-bin/unmount-helper (TODO: use shared/slave mount namespace instead)
+          # privileged access required for /swift-utils-bin/unmount-helper (TODO: use shared/slave mount namespace instead)
           securityContext:
             privileged: true
           env:
@@ -60,8 +61,8 @@ spec:
           volumeMounts:
             - mountPath: /caretaker-etc
               name: caretaker-etc
-            - mountPath: /swift-bin
-              name: swift-bin
+            - mountPath: /swift-utils-bin
+              name: swift-utils-bin
             - mountPath: /srv/node
               name: swift-drives
             - mountPath: /swift-drive-state

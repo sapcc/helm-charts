@@ -21,15 +21,16 @@ spec:
       labels:
         component: swift-account-caretaker-mergify
       annotations:
+        checksum/swift-utils.bin: {{ include "swift-utils/templates/bin-configmap.yaml" . | sha256sum }}
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
     spec:
       volumes:
         - name: caretaker-etc
           configMap:
             name: swift-account-caretaker
-        - name: swift-bin
+        - name: swift-utils-bin
           configMap:
-            name: swift-bin # NOTE: This comes from the "swift" chart.
+            name: swift-utils-bin
       containers:
         - name: caretaker
           image: {{ include "swift_image" . }}
@@ -37,7 +38,7 @@ spec:
             - /usr/bin/dumb-init
           args:
             - /bin/bash
-            - /swift-bin/swift-start
+            - /swift-utils-bin/swift-utils-start
             - account-caretaker-mergify
           env:
             - name: DEBUG_CONTAINER
@@ -45,6 +46,6 @@ spec:
           volumeMounts:
             - mountPath: /caretaker-etc
               name: caretaker-etc
-            - mountPath: /swift-bin
-              name: swift-bin
+            - mountPath: /swift-utils-bin
+              name: swift-utils-bin
 {{- end }}
