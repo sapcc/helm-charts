@@ -3,6 +3,8 @@ global:
   region: local
 # specify the k8s keystone namespace if it differs from the current chart
   keystoneNamespace: monsoon3
+  pgbouncer:
+    enabled: false
 
 ## postgres image repository
 image: "postgres"
@@ -34,6 +36,7 @@ postgresUser: postgres
 # dbMaintain: name of a configmap that provides the db-maintain.sh script
 
 hba_cidr: 0.0.0.0/0
+auth_method: password
 
 ## Persist data to a persitent volume
 persistence:
@@ -44,6 +47,18 @@ persistence:
   # existingClaim: claimName
 
 replicas: 1
+
+pod:
+  replicas:
+    pgbouncer: 3
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: "RollingUpdate"
+        rolling_update:
+          max_unavailable: 1
+          max_surge: 1
 
 upgrades:
   revisionHistory: 3
@@ -102,3 +117,7 @@ backup:
   os_user_domain: Default
   os_project_name: master
   os_project_domain: ccadmin
+
+pgbouncer:
+  enabled: false
+  image_version: null
