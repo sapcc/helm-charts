@@ -41,38 +41,16 @@ quota_snapshots = 0
 quota_snapshot_gigabytes = 0
 quota_share_networks = 0
 
-[cinder]
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin }}/v3
-auth_plugin = v3password
-region_name = {{.Values.global.region}}
-username = {{ .Values.global.cinder_service_user }}
-password = {{ .Values.global.cinder_service_password }}
-user_domain_name = {{.Values.global.keystone_service_domain}}
-project_name = {{.Values.global.keystone_service_project}}
-project_domain_name = {{.Values.global.keystone_service_domain}}
-
-
-[nova]
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin }}/v3
-auth_plugin = v3password
-region_name = {{.Values.global.region}}
-username = {{ .Values.global.nova_service_user }}
-password = {{ .Values.global.nova_service_password }}
-user_domain_name = {{.Values.global.keystone_service_domain}}
-project_name = {{.Values.global.keystone_service_project}}
-project_domain_name = {{.Values.global.keystone_service_domain}}
-insecure = True
-
 [neutron]
-url = {{.Values.global.neutron_api_endpoint_protocol_internal}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal }}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin }}/v3
+url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
 auth_plugin = v3password
-username = {{ .Values.global.neutron_service_user }}
-password = {{ .Values.global.neutron_service_password }}
-user_domain_name = {{.Values.global.keystone_service_domain}}
+username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$"}}
+password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$"}}
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
-project_name = {{.Values.global.keystone_service_project}}
-project_domain_name = {{.Values.global.keystone_service_domain}}
+project_name = {{.Values.global.keystone_service_project |  default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 insecure = True
 
 {{include "oslo_messaging_rabbit" .}}
@@ -83,13 +61,14 @@ lock_path = /var/lib/manila/tmp
 {{- include "ini_sections.database" . }}
 
 [keystone_authtoken]
-auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal }}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin }}/v3
+auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
 auth_type = v3password
-username = {{ .Values.global.manila_service_user }}
-password = {{ .Values.global.manila_service_password }}
-user_domain_name = {{.Values.global.keystone_service_domain}}
-project_name = {{.Values.global.keystone_service_project}}
-project_domain_name = {{.Values.global.keystone_service_domain}}
-memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public}}
+username = {{ .Values.global.manila_service_user | default "manila" | replace "$" "$$" }}
+password = {{ .Values.global.manila_service_password | default "" | replace "$" "$$"}}
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+region_name = {{.Values.global.region}}
+project_name = {{.Values.global.keystone_service_project |  default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 insecure = True
