@@ -21,24 +21,24 @@ spec:
       labels:
         component: swift-account-caretaker-mergify
       annotations:
-        checksum/swift-utils.bin: {{ include "swift-utils/templates/bin-configmap.yaml" . | sha256sum }}
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
+        version/swift-common.bin: {{ index .Values "swift-common" "version" }}
     spec:
       volumes:
         - name: caretaker-etc
           configMap:
             name: swift-account-caretaker
-        - name: swift-utils-bin
+        - name: swift-common-bin
           configMap:
-            name: swift-utils-bin
+            name: {{ include "swift-common.bin_cm_name" . }}
       containers:
         - name: caretaker
-          image: {{ include "swift_image" . }}
+          image: {{ include "swift-common.image" . }}
           command:
             - /usr/bin/dumb-init
           args:
             - /bin/bash
-            - /swift-utils-bin/swift-utils-start
+            - /swift-common-bin/start
             - account-caretaker-mergify
           env:
             - name: DEBUG_CONTAINER
@@ -46,6 +46,6 @@ spec:
           volumeMounts:
             - mountPath: /caretaker-etc
               name: caretaker-etc
-            - mountPath: /swift-utils-bin
-              name: swift-utils-bin
+            - mountPath: /swift-common-bin
+              name: swift-common-bin
 {{- end }}

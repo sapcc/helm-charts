@@ -15,17 +15,11 @@ spec:
         component: swift-account-caretaker-collect
         from: daemonset
       annotations:
-        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":{{ quote .Values.species }}}]'
-        checksum/swift-utils.bin: {{ include "swift-utils/templates/bin-configmap.yaml" . | sha256sum }}
+        {{- include "swift-common.daemonset_annotations" . | indent 8 }}
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
+        version/swift-common.bin: {{ index .Values "swift-common" "version" }}
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
-      tolerations:
-      - key: "species"
-        operator: "Equal"
-        value: {{ quote .Values.species }}
-        effect: "NoSchedule"
-      {{- end }}
+      {{- include "swift-common.daemonset_tolerations" . | indent 6 }}
       # Run daemonset in Hostnetwork to get the real hostname
       hostNetwork: true
       nodeSelector:
@@ -34,9 +28,9 @@ spec:
         - name: caretaker-etc
           configMap:
             name: swift-account-caretaker
-        - name: swift-utils-bin
+        - name: swift-common-bin
           configMap:
-            name: swift-utils-bin
+            name: {{ include "swift-common.bin_cm_name" . }}
         - name: swift-drives
           hostPath:
             path: /srv/node
@@ -45,12 +39,12 @@ spec:
             path: /run/swift-storage/state
       containers:
         - name: caretaker
-          image: {{ include "swift_image" . }}
+          image: {{ include "swift-common.image" . }}
           command:
             - /usr/bin/dumb-init
           args:
             - /bin/bash
-            - /swift-utils-bin/swift-utils-start
+            - /swift-common-bin/start
             - account-caretaker-collect
           # privileged access required for /swift-utils-bin/unmount-helper (TODO: use shared/slave mount namespace instead)
           securityContext:
@@ -61,8 +55,8 @@ spec:
           volumeMounts:
             - mountPath: /caretaker-etc
               name: caretaker-etc
-            - mountPath: /swift-utils-bin
-              name: swift-utils-bin
+            - mountPath: /swift-common-bin
+              name: swift-common-bin
             - mountPath: /srv/node
               name: swift-drives
             - mountPath: /swift-drive-state
