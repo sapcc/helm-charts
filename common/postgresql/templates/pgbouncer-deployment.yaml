@@ -1,0 +1,71 @@
+{{- if or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: {{.Values.postgresDatabase}}-pgbouncer
+  namespace:  {{.Release.Namespace}}
+  labels:
+    system: openstack
+    component: {{.Values.postgresDatabase}}
+spec:
+  replicas: {{ .Values.pod.replicas.pgbouncer }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
+    {{- if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
+    {{- end }}
+  selector:
+   matchLabels:
+    name: {{.Values.postgresDatabase}}-pgbouncer
+  template:
+    metadata:
+      labels:
+        name: {{.Values.postgresDatabase}}-pgbouncer
+{{ tuple . .Values.postgresDatabase "pgbouncer" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
+        scheduler.alpha.kubernetes.io/affinity: >
+            {{ tuple . .Values.postgresDatabase "pgbouncer" | include "kubernetes_pod_anti_affinity" }}
+{{- end }}
+    spec:
+      terminationGracePeriodSeconds: 150
+      containers:
+        - name: pgbouncer
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/pgbouncer-k8s:{{.Values.pgbouncer.image_version | default .Values.global.pgbouncer.image_version | default "latest" }}
+          imagePullPolicy: IfNotPresent
+{{- if .Values.pgbouncer.debug }}
+          command: ["sleep", "inf"]
+{{- end }}
+          env:
+            - name: LABEL_SELECTOR
+              value: "name={{.Values.postgresDatabase}}-postgresql"
+            - name: LISTEN_PORT
+              value: "6543"
+            - name: LISTEN_BACKLOG
+              value: "{{.Values.pgbouncer.listen_backlog | default .Values.global.pgbouncer.listen_backlog | default 256 }}"
+            - name: MAX_CLIENT_CONN
+              value: "{{.Values.pgbouncer.max_client_conn | default .Values.global.pgbouncer.max_client_conn | default 16384 }}"
+            - name: MIN_POOL_SIZE
+              value: "{{.Values.pgbouncer.min_pool_size | default .Values.global.pgbouncer.min_pool_size | default 1 }}"
+            - name: DEFAULT_POOL_SIZE
+              value: "{{.Values.pgbouncer.default_pool_size | default .Values.global.pgbouncer.default_pool_size | default 4 }}"
+            - name: RESERVE_POOL_SIZE
+              value: "{{.Values.pgbouncer.reserve_pool_size | default .Values.global.pgbouncer.reserve_pool_size | default 4 }}"
+            - name: STATS_PASS
+              value: "{{.Values.pgbouncer.stats_pass | default .Values.global.pgbouncer.stats_pass | default (derivePassword 1 "long" "password" "stats_user" (print .Values.postgresDatabase "-postgresql." .Release.Namespace ".svc.kubernetes." .Values.global.region "." .Values.global.tld)) }}"
+{{- if not .Values.pgbouncer.debug }}
+          livenessProbe:
+            exec:
+              command:
+              - pgbouncer-k8s-liveness
+            initialDelaySeconds: 3
+            periodSeconds: 1
+            failureThreshold: 5
+{{- end }}
+          ports:
+            - name: pgbouncer
+              containerPort: 6543
+{{- end }}

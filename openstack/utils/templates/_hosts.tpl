@@ -1,3 +1,18 @@
+{{define "db_url" }}
+    {{- if kindIs "map" . -}}
+postgresql://{{.Values.postgresql.dbUser}}:{{.Values.postgresql.dbPassword}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
+    {{- else }}
+        {{- $envAll := index . 0 }}
+        {{- $name := index . 1 }}
+        {{- $user := index . 2 }}
+        {{- $password := index . 3 }}
+        {{- with $envAll -}}
+postgresql://{{$user}}:{{$password}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{$name}}
+        {{- end }}
+    {{- end -}}
+?connect_timeout=10&keepalives_idle=5&keepalives_interval=5&keepalives_count=10
+{{- end}}
+
 {{define "rabbitmq_host"}}rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "memcached_host"}}memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
@@ -46,7 +61,7 @@
 {{define "cinder_api_endpoint_host_internal"}}cinder-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "cinder_api_endpoint_host_public"}}volume-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
-{{define "manila_db_host"}}postgres-manila.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "manila_db_host"}}manila-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "manila_api_endpoint_host_admin"}}manila-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "manila_api_endpoint_host_internal"}}manila-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "manila_api_endpoint_host_public"}}share-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
