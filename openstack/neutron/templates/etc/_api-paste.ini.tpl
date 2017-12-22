@@ -64,4 +64,5 @@ paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
 paste.filter_factory = auditmiddleware:filter_factory
 audit_map_file = /etc/neutron/neutron_audit_map.yaml
 ignore_req_list = GET
+record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 {{- end }}
