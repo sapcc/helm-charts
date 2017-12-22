@@ -41,7 +41,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "postgres-manila,rabbitmq"
+              value: "manila-postgresql,manila-rabbitmq"
             - name: SENTRY_DSN
               value: {{.Values.sentry_dsn | quote}}
           volumeMounts:

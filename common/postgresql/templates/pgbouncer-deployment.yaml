@@ -34,14 +34,14 @@ spec:
       terminationGracePeriodSeconds: 150
       containers:
         - name: pgbouncer
-          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/pgbouncer-k8s:{{.Values.pgbouncer.image_version | default .Values.global.pgbouncer.image_version | default "latest" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/pgbouncer-k8s:{{.Values.pgbouncer.image_version | default .Values.global.pgbouncer.image_version | default "latest" }}
           imagePullPolicy: IfNotPresent
 {{- if .Values.pgbouncer.debug }}
           command: ["sleep", "inf"]
 {{- end }}
           env:
             - name: LABEL_SELECTOR
-              value: "name=postgres-{{.Values.name}}"
+              value: "name={{.Values.postgresDatabase}}-postgresql"
             - name: LISTEN_PORT
               value: "6543"
             - name: LISTEN_BACKLOG
@@ -55,7 +55,7 @@ spec:
             - name: RESERVE_POOL_SIZE
               value: "{{.Values.pgbouncer.reserve_pool_size | default .Values.global.pgbouncer.reserve_pool_size | default 4 }}"
             - name: STATS_PASS
-              value: "{{.Values.pgbouncer.stats_pass | default .Values.global.pgbouncer.stats_pass | default (derivePassword 1 "long" "password" "stats_user" (print "postgres-" .Values.name "." .Release.Namespace ".svc.kubernetes." .Values.global.region "." .Values.global.tld)) }}"
+              value: "{{.Values.pgbouncer.stats_pass | default .Values.global.pgbouncer.stats_pass | default (derivePassword 1 "long" "password" "stats_user" (print .Values.postgresDatabase "-postgresql." .Release.Namespace ".svc.kubernetes." .Values.global.region "." .Values.global.tld)) }}"
 {{- if not .Values.pgbouncer.debug }}
           livenessProbe:
             exec:
