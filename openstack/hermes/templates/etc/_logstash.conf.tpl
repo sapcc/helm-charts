@@ -70,39 +70,52 @@ filter {
     }
   }
 
-  # add target projects/domains as attachment
+  # normalize role-assignment call eventsi
+  # see https://sourcegraph.com/github.com/openstack/keystone@81f9fe6fed62ec629804c9367fbb9ebfd584388c/-/blob/keystone/notifications.py#L590
   if [project] {
-    ruby {
-      code => "
-        attachments = event.get('[target][attachments]')
-        if attachments.nil?
-          attachments = []
-        end
-        attachments << { 'name' => 'project_id', 'contentType' => '/data/security/project', 'content' => event.get('project') }
-        event.set('[target][attachments]', attachments)
-      "
+    mutate {
+      replace => { "[target][project_id]" => "%{[project]}" }
+      remove_field => ["[project]"]
     }
   } else if [domain] {
-    ruby {
-      code => "
-        attachments = event.get('[target][attachments]')
-        if attachments.nil?
-          attachments = []
-        end
-        attachments << { 'name' => 'domain_id', 'contentType' => '/data/security/domain', 'content' => event.get('domain') }
-        event.set('[target][attachments]', attachments)
-      "
+    mutate {
+      replace => { "[target][domain_id]" => "%{[domain]}" }
+      remove_field => ["[domain]"]
     }
   }
   if [role] {
     ruby {
       code => "
-        attachments = event.get('[target][attachments]')
+        attachments = event.get('[attachments]')
         if attachments.nil?
           attachments = []
         end
-        attachments << { 'name' => 'role_id', 'contentType' => '/data/security/role', 'content' => event.get('role') }
-        event.set('[target][attachments]', attachments)
+        attachments << { 'name' => 'role_id', 'typeURI' => '/data/security/role', 'content' => event.get('role') }
+        event.set('[attachments]', attachments)
+      "
+    }
+  }
+  if [group] {
+    ruby {
+      code => "
+        attachments = event.get('[attachments]')
+        if attachments.nil?
+          attachments = []
+        end
+        attachments << { 'name' => 'group_id', 'typeURI' => '/data/security/group', 'content' => event.get('group') }
+        event.set('[attachments]', attachments)
+      "
+    }
+  }
+  if [inherited_to_projects] {
+    ruby {
+      code => "
+        attachments = event.get('[attachments]')
+        if attachments.nil?
+          attachments = []
+        end
+        attachments << { 'name' => 'inherited_to_projects', 'typeURI' => 'xs:boolean', 'content' => event.get('inherited_to_projects') }
+        event.set('[attachments]', attachments)
       "
     }
   }
@@ -124,32 +137,16 @@ filter {
     mutate { add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" } }
   }
 
-  # workaround pycadf wrong attribute naming and on that occasion identify secondary index (for cross-project actions)
-  ruby {
-    code => "
-      attachments = event.get('[target][attachments]')
-      if !attachments.nil?
-        fixed_attachments = []
-        attachments.each {|a|
-          # look for target project
-          if a.has_key?('name') && (a['name'] == 'project_id' || a['name'] == 'domain_id')
-            event.set('[@metadata][index2]', a['content'])
-          end
-          # replace pycadfs 'typeURI' with proper CADF name 'contentType'
-          if a.has_key?('typeURI')
-            a['contentType'] = a['typeURI']
-            a.delete('typeURI')
-          end
-          fixed_attachments << a
-        }
-        event.set('[target][attachments]', fixed_attachments)
-      end
-    "
+  # secondary index
+  if [target][project_id] {
+    mutate { add_field => { "[@metadata][index2]" => "%{[target][project_id]}" } }
+  } else if [target][domain_id] {
+    mutate { add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" } }
   }
 
-  # remove keystone specific fields after they have been mapped to standard attachments 
+  # remove keystone specific fields after they have been mapped to standard attachments
   mutate {
-    remove_field => ["[domain]", "[project]", "[role]"] 
+    remove_field => ["[domain]", "[project]", "[user]", "[role]", "[group]", "[inherited_to_projects]"]
   }
 
   kv { source => "_source" }
