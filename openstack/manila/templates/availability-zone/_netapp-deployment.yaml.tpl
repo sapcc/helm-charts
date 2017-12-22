@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: manila-share-netapp-{{$share.name}}
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-manila-share:{{.Values.image_version_manila_share}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-manila-share:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
