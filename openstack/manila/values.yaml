@@ -6,51 +6,60 @@
 global:
   image_namespace: monsoon
   imageRegistry: DEFINED-IN-REGION-CHART
-  manila_api_port_admin: '8786'
-  manila_api_port_internal: '8786'
+  dbUser: manila
+  dbPassword: DEFINED-IN-REGION-CHART
   manila_api_port_public: '443'
 
-vice_president: true
-share_server_cleanup_interval: 60
+api_port_internal: '8786'
 debug: "True"
-# port_metrics: '9102'
-
-pod:
-  replicas:
-    api: 2
-  lifecycle:
-    upgrades:
-      deployments:
-        revision_history: 5
-        pod_replacement_strategy: RollingUpdate
-        rolling_update:
-           max_unavailable: 0
-           max_surge: 1
-
 image_version: DEFINED-IN-REGION-CHART
-sentry_dsn: DEFINED-IN-REGION-CHART
 
-# Dictionary mapping availability-zones to shares
-# shares:
-#   nova1:
-#     shares_netapp:
-#      - name: DEFINED-IN-REGION-CHART
-#        host: DEFINED-IN-REGION-CHART
-#        username: DEFINED-IN-REGION-CHART
-#        password: DEFINED-IN-REGION-CHART
-#        root_volume_aggregate: DEFINED-IN-REGION-CHART
-#        aggregate_search_pattern: DEFINED-IN-REGION-CHART
-#        port_search_pattern: DEFINED-IN-REGION-CHART
-#        physical_network: DEFINED-IN-REGION-CHART
-#        mtu: DEFINED-IN-REGION-CHART
-
-shares: {}
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: "raven.handlers.logging.SentryHandler"
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    manila:
+      handlers: stdout, sentry
+      level: DEBUG
+    amqp:
+      handlers: stdout, sentry
+      level: WARNING
+    amqplib:
+      handlers: stdout, sentry
+      level: WARNING
+    sqlalchemy:
+      handlers: stdout, sentry
+      level: WARNING
+    boto:
+      handlers: stdout, sentry
+      level: WARNING
+    suds:
+      handlers: stdout, sentry
+      level: INFO
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
 
 pgmetrics:
-  name: manila
-  db_name: manila
-  db_user: manila
-  db_password: DEFINED-IN-REGION-CHART
   customMetrics:
     openstack_manila_share_servers:
       query: "SELECT host, share_network_id, status, COUNT(*) AS count_gauge FROM share_servers GROUP BY host, share_network_id, status"
@@ -128,62 +137,46 @@ pgmetrics:
             usage: "GAUGE"
             description: "Maximum duration of state"
 
+pod:
+  replicas:
+    api: 2
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+           max_unavailable: 0
+           max_surge: 1
+
 postgresql:
   postgresDatabase: manila
-  postgresUser: postgres
   postgresPassword: DEFINED-IN-REGION-CHART
-  dbUser: manila
-  dbPassword: DEFINED-IN-REGION-CHART
   dbInit: manila-db-init
   dbMaintain: manila-db-maintain
   pgbouncer:
-    enabled: false
+    enabled: true
   persistence:
     enabled: false
   backup:
     enabled: false
 
-logging:
-    formatters:
-        context:
-            class: oslo_log.formatters.ContextFormatter
-        default:
-            format: "%(message)s"
-    handlers:
-        stdout:
-            class: StreamHandler
-            args: "(sys.stdout,)"
-            formatter: context
-        "null":
-            class: logging.NullHandler
-            formatter: default
-            args: "()"
-        sentry:
-            class: "raven.handlers.logging.SentryHandler"
-            level: ERROR
-            args: "()"
-    loggers:
-        root:
-            handlers: stdout, sentry
-            level: WARNING
-        manila:
-            handlers: stdout, sentry
-            level: DEBUG
-        amqp:
-            handlers: stdout, sentry
-            level: WARNING
-        amqplib:
-            handlers: stdout, sentry
-            level: WARNING
-        sqlalchemy:
-            handlers: stdout, sentry
-            level: WARNING
-        boto:
-            handlers: stdout, sentry
-            level: WARNING
-        suds:
-            handlers: stdout, sentry
-            level: INFO
-        eventlet.wsgi.server:
-            handlers: stdout, sentry
-            level: INFO
+sentry_dsn: DEFINED-IN-REGION-CHART
+
+# Dictionary mapping availability-zones to shares
+# shares:
+#   nova1:
+#     shares_netapp:
+#      - name: DEFINED-IN-REGION-CHART
+#        host: DEFINED-IN-REGION-CHART
+#        username: DEFINED-IN-REGION-CHART
+#        password: DEFINED-IN-REGION-CHART
+#        root_volume_aggregate: DEFINED-IN-REGION-CHART
+#        aggregate_search_pattern: DEFINED-IN-REGION-CHART
+#        port_search_pattern: DEFINED-IN-REGION-CHART
+#        physical_network: DEFINED-IN-REGION-CHART
+#        mtu: DEFINED-IN-REGION-CHART
+shares: {}
+
+share_server_cleanup_interval: 60
+vice_president: true

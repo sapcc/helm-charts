@@ -1,6 +1,6 @@
 {{define "db_url" }}
     {{- if kindIs "map" . -}}
-postgresql://{{.Values.postgresql.dbUser}}:{{.Values.postgresql.dbPassword}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
+postgresql://{{.Values.global.dbUser}}:{{.Values.global.dbPassword}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
     {{- else }}
         {{- $envAll := index . 0 }}
         {{- $name := index . 1 }}
