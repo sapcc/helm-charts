@@ -81,7 +81,7 @@ key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 
 [database]
-connection = postgresql://{{ default .Release.Name .Values.postgresql.dbUser }}:{{ .Values.postgresql.dbPassword }}@{{include "db_host" .}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
+connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@{{include "db_host" .}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
 
 [identity]
 default_domain_id = default
@@ -110,4 +110,3 @@ rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 
 [oslo_messaging_notifications]
 driver = messaging
-
