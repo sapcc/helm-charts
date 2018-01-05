@@ -1,9 +1,9 @@
 {{define "oslo_messaging_rabbit"}}
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "openstack"}}
-rabbit_password = {{ .Values.rabbitmq.users.default.password | .Values.global.rabbitmq_default_pass | default "openstack" }}
+rabbit_password = {{ .Values.rabbitmq.users.default.password | default .Values.global.rabbitmq_default_pass | default "openstack" }}
 rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}
-rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | .Values.global.rabbit_transient_queues_ttl | default 60 }}
+rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
 rabbit_virtual_host = {{ .Values.rabbitmq.virtual_host | default "/" }}
 {{end}}
 
