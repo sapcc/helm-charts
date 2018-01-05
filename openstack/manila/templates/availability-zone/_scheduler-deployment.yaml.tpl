@@ -41,8 +41,13 @@ spec:
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
               value: "manila-postgresql,manila-rabbitmq"
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: manila.DSN.python
+            {{- end }}
           volumeMounts:
             - name: etcmanila
               mountPath: /etc/manila
