@@ -35,6 +35,9 @@ spec:
         - name: tls-secret
           secret:
             secretName: tls-swift-{{$cluster.name}}
+        - name: swift-bin
+          configMap:
+            name: swift-bin
         - name: swift-etc
           configMap:
             name: swift-etc
@@ -57,12 +60,14 @@ spec:
             - /usr/bin/dumb-init
           args:
             - /bin/bash
-            - /usr/bin/swift-start
+            - /swift-bin/swift-start
             - proxy-server
           env:
             - name: DEBUG_CONTAINER
               value: "false"
           volumeMounts:
+            - mountPath: /swift-bin
+              name: swift-bin
             - mountPath: /swift-etc
               name: swift-etc
             - mountPath: /swift-etc-cluster
@@ -79,8 +84,10 @@ spec:
             - /usr/bin/dumb-init
           args:
             - /bin/sh
-            - /usr/bin/nginx-start
+            - /swift-bin/nginx-start
           volumeMounts:
+            - mountPath: /swift-bin
+              name: swift-bin
             - mountPath: /swift-etc
               name: swift-etc
             - mountPath: /swift-etc-cluster
@@ -105,7 +112,7 @@ spec:
             - /usr/bin/dumb-init
           args:
             - /bin/bash
-            - /usr/bin/swift-start
+            - /swift-bin/swift-start
             - health-statsd
           env:
             - name: DEBUG_CONTAINER
@@ -117,6 +124,8 @@ spec:
             - name: ADD_HOSTNAME_SUFFIX
               value: "true"
           volumeMounts:
+            - mountPath: /swift-bin
+              name: swift-bin
             - mountPath: /swift-etc
               name: swift-etc
             - mountPath: /swift-rings/account

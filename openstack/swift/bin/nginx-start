@@ -1,0 +1,40 @@
+#!/bin/sh
+
+cp -f /etc/nginx/nginx.conf  /etc/nginx/nginx.conf.orig
+cp -f /swift-etc-cluster/nginx.conf  /etc/nginx
+cp -f /swift-etc/dhparam.pem /etc/nginx
+
+mkdir -p /etc/nginx/ssl
+cp -f /tls-secret/tls.crt /etc/nginx/ssl
+cp -f /tls-secret/tls.key /etc/nginx/ssl
+
+# in a subshell, run a recurring check for new TLS secrets
+( while true; do
+
+  sleep 30
+
+  # do not attempt to install new cert if the certs are broken (e.g. because we catch
+  # k8s in the middle of mounting a new secret)
+  if ! grep -q 'END CERTIFICATE' /tls-secret/tls.crt; then
+    echo "$(date): cert watch: skipping reload because /tls-secret/tls.crt is broken"
+    continue
+  fi
+  if ! grep -q 'END RSA PRIVATE KEY' /tls-secret/tls.key; then
+    echo "$(date): cert watch: skipping reload because /tls-secret/tls.key is broken"
+    continue
+  fi
+
+  # only reload if secrets have changed
+  if diff -q /tls-secret/tls.crt /etc/nginx/ssl/tls.crt && diff -q /tls-secret/tls.key /etc/nginx/ssl/tls.key; then
+    : # nothing to do
+  else
+    cp -f /tls-secret/tls.crt /etc/nginx/ssl
+    cp -f /tls-secret/tls.key /etc/nginx/ssl
+    echo "$(date): cert watch: reloading nginx"
+    kill -HUP $(cat /var/run/nginx.pid)
+  fi
+
+done ) &
+
+[ "$DEBUG_CONTAINER" = true ] && exec tail -f /dev/null
+nginx -g 'daemon off;'
