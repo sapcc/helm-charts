@@ -8,11 +8,9 @@ global:
   imageRegistry: DEFINED-IN-REGION-CHART
   dbUser: manila
   dbPassword: DEFINED-IN-REGION-CHART
-  manila_api_port_public: '443'
 
-api_port_internal: '8786'
 debug: "True"
-image_version: DEFINED-IN-REGION-CHART
+image_version: '20171221.2'
 
 logging:
   formatters:
@@ -150,6 +148,7 @@ pod:
            max_surge: 1
 
 postgresql:
+  imageTag: '9.4.14'
   postgresDatabase: manila
   postgresPassword: DEFINED-IN-REGION-CHART
   dbInit: manila-db-init
@@ -157,9 +156,25 @@ postgresql:
   pgbouncer:
     enabled: true
   persistence:
-    enabled: false
+    enabled: true
+    existingClaim: db-manila-pvclaim
   backup:
-    enabled: false
+    enabled: true
+    metrics: true
+    imageTag: v0.5.12
+    os_password: DEFINED-IN-REGION-CHART
+
+rabbitmq:
+  users:
+    default:
+      password: DEFINED-IN-REGION-CHART
+    admin:
+      password: DEFINED-IN-REGION-CHART
+  persistence:
+    enabled: true
+    size: 50Gi
+  metrics:
+    password: DEFINED-IN-REGION-CHART
 
 sentry:
   enabled: true
@@ -177,7 +192,6 @@ sentry:
 #        port_search_pattern: DEFINED-IN-REGION-CHART
 #        physical_network: DEFINED-IN-REGION-CHART
 #        mtu: DEFINED-IN-REGION-CHART
-shares: {}
 
 share_server_cleanup_interval: 60
 vice_president: true
