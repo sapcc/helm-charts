@@ -70,6 +70,7 @@ ipv4_ptr_zone_prefix_size = 24
 lock_path = /var/lib/neutron/tmp
 
 {{include "oslo_messaging_rabbit" .}}
+rabbit_hosts = rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true

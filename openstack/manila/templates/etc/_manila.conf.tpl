@@ -54,6 +54,8 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 insecure = True
 
 {{include "oslo_messaging_rabbit" .}}
+rabbit_host = {{ include "rabbitmq_host" . }}
+rabbit_port = {{ .Values.rabbitmq.port | default 5672 }}
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
