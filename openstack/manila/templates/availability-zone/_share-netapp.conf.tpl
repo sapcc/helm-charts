@@ -1,7 +1,9 @@
 {{- define "share_netapp_conf" -}}
 {{- $context := index . 0 -}}
 {{- $share := index . 1 -}}
+{{- $az := index . 2 -}}
 [DEFAULT]
+storage_availability_zone = {{$az}}
 
 [netapp-multi]
 share_backend_name={{$share.backend_name | default "netapp-multi"}}

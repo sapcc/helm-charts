@@ -13,12 +13,12 @@ data:
     [DEFAULT]
     storage_availability_zone = {{$az}}
 ---
-{{ tuple $ $az | include "scheduler" }}
+{{ list $ $az | include "scheduler" }}
 ---
 {{- range $i, $share := $shares.shares_netapp -}}
-{{ tuple $ $share | include "share_netapp" }}
+{{ list $ $share $az | include "share_netapp" }}
 ---
-{{ tuple $ $share | include "share_netapp_configmap" }}
+{{ list $ $share $az | include "share_netapp_configmap" }}
 {{ if lt $i (sub (len $shares.shares_netapp) 1) }}
 ---
 {{end}}
