@@ -26,6 +26,7 @@ spec:
       labels:
         name: manila-scheduler-{{$az}}
       annotations:
+        pod.beta.kubernetes.io/hostname: manila-scheduler-{{$az}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
       containers:
