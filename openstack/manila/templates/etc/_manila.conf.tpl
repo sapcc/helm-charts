@@ -53,7 +53,14 @@ project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 insecure = True
 
-{{include "oslo_messaging_rabbit" .}}
+[oslo_messaging_rabbit]
+rabbit_userid = {{ .Values.rabbitmq.users.default.user }}
+rabbit_password = {{ .Values.rabbitmq.users.default.password }}
+rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}
+rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
+rabbit_virtual_host = {{ .Values.rabbitmq.virtual_host | default "/" }}
+rabbit_host = {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
+rabbit_port = {{ .Values.rabbitmq.port | default 5672 }}
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
