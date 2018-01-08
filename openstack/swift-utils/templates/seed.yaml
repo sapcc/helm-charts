@@ -1,0 +1,96 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: swift-utils-seed
+  labels:
+    app: {{ tuple .Release .Chart .Values | include "fullname" }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: objectstore
+    type: seed
+
+spec:
+  requires:
+    - swift/swift-seed #  and all its dependencies
+    - monsoon3/domain-default-seed
+    - monsoon3/domain-bn-seed
+    - monsoon3/domain-bs-seed
+    - monsoon3/domain-ccadmin-seed
+    - monsoon3/domain-hcp03-seed
+    - monsoon3/domain-hcm-seed
+    - monsoon3/domain-hec-seed
+    - monsoon3/domain-monsoon3-seed
+    - monsoon3/domain-s4-seed
+    - monsoon3/domain-cc3test-seed
+
+  domains:
+    - name: Default
+      users:
+      - name: swift_caretaker
+        description: 'Swift Account Caretaker'
+        password: {{ $.Values.swift_account_caretaker.password }}
+        roles:
+          - project: service
+            role: service
+          # needs to be admin in all domains to list projects
+          - domain: Default
+            role: admin
+          - domain: ccadmin
+            role: admin
+          - domain: bn
+            role: admin
+          - domain: bs
+            role: admin
+          - domain: hcp03
+            role: admin
+          - domain: hcm
+            role: admin
+          - domain: hec
+            role: admin
+          - domain: monsoon3
+            role: admin
+          - domain: s4
+            role: admin
+          - domain: cc3test
+            role: admin
+
+    # TODO: move this to the Glance/image-build/Ironic/Backup/whatever chart
+    - name: ccadmin
+      projects:
+        - name: master
+          swift:
+            enabled: true
+
+    - name: cc3test
+      projects:
+        - name: swift_dispersion
+          description: 'dispersion of objects and containers'
+          roles:
+            - user: swift_dispersion
+              role: swiftoperator
+          swift:
+            enabled: true
+        - name: swift_test
+          description: 'used by automatic tests for Swift and related components'
+          roles:
+            - user: swift_caretaker@Default
+              role: swiftoperator
+          swift:
+            enabled: true
+            containers:
+              - name: caretaker
+                metadata:
+                  read: .r:*,.rlistings
+                  meta-web-listings: 'true'
+      groups:
+        - name: Administrators
+          roles:
+            - project: swift_test
+              role: admin
+            - project: swift_test
+              role: swiftoperator
+            - project: swift_dispersion
+              role: admin
+            - project: swift_dispersion
+              role: swiftoperator

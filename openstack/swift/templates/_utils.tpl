@@ -41,7 +41,6 @@ prometheus.io/port: "9102"
 {{- /**********************************************************************************/ -}}
 {{- define "swift_conf_annotations" }}
 checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
-checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" . | sha256sum }}
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
@@ -53,9 +52,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_volumes" }}
-- name: swift-bin
-  configMap:
-    name: swift-bin
 - name: swift-etc
   configMap:
     name: swift-etc
@@ -90,17 +86,15 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     - /usr/bin/dumb-init
   args:
     - /bin/bash
-    - /swift-bin/swift-start
+    - /usr/bin/swift-start
     - {{ $service }}
-  # privileged access required for /swift-bin/unmount-helper (TODO: use shared/slave mount namespace instead)
+  # privileged access required for /usr/bin/unmount-helper (TODO: use shared/slave mount namespace instead)
   securityContext:
     privileged: true
   env:
     - name: DEBUG_CONTAINER
       value: "false"
   volumeMounts:
-    - mountPath: /swift-bin
-      name: swift-bin
     - mountPath: /swift-etc
       name: swift-etc
     - mountPath: /swift-rings/account

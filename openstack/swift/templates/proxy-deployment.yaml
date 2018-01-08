@@ -29,6 +29,7 @@ spec:
       annotations:
         checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
+        checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" $ | sha256sum }}
         {{- include "swift_ring_annotations" $ | indent 8 }}
     spec:
       volumes:
@@ -60,14 +61,12 @@ spec:
             - /usr/bin/dumb-init
           args:
             - /bin/bash
-            - /swift-bin/swift-start
+            - /usr/bin/swift-start
             - proxy-server
           env:
             - name: DEBUG_CONTAINER
               value: "false"
           volumeMounts:
-            - mountPath: /swift-bin
-              name: swift-bin
             - mountPath: /swift-etc
               name: swift-etc
             - mountPath: /swift-etc-cluster
@@ -112,7 +111,7 @@ spec:
             - /usr/bin/dumb-init
           args:
             - /bin/bash
-            - /swift-bin/swift-start
+            - /usr/bin/swift-start
             - health-statsd
           env:
             - name: DEBUG_CONTAINER
@@ -124,8 +123,6 @@ spec:
             - name: ADD_HOSTNAME_SUFFIX
               value: "true"
           volumeMounts:
-            - mountPath: /swift-bin
-              name: swift-bin
             - mountPath: /swift-etc
               name: swift-etc
             - mountPath: /swift-rings/account
