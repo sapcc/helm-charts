@@ -16,12 +16,6 @@ state_path = /var/lib/designate
 
 log_config_append = /etc/designate/logging.conf
 
-# Driver used for issuing notifications
-notification_driver = messaging
-
-# Notification Topics
-notification_topics = notifications
-
 # Use "sudo designate-rootwrap /etc/designate/rootwrap.conf" to use the real
 # root filter facility.
 # Change to "sudo" to skip the filtering and just run the command directly
@@ -56,6 +50,9 @@ max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size 
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 10 }}
 
 #transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}/{{ .Values.rabbitmq.virtual_host | default "/" }}
+
+[oslo_messaging_notifications]
+driver = noop
 
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
