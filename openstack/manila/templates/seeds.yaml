@@ -1,0 +1,94 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: manila-seed
+  labels:
+    component: manila
+    app: manila
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-monsoon3-seed
+
+  roles:
+  - cloud_sharedfilesystem_admin
+  - sharedfilesystem_admin
+  - sharedfilesystem_viewer
+
+  services:
+  - name: manila
+    type: share
+    description: OpenStack Shared Filesystems
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "manila_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v1/%(tenant_id)s'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "manila_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}/v1/%(tenant_id)s'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{include "manila_api_endpoint_host_public" .}}/v1/%(tenant_id)s'
+  - name: manilav2
+    type: sharev2
+    description: OpenStack Shared Filesystems
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "manila_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v2/%(tenant_id)s'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "manila_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v2/%(tenant_id)s'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{include "manila_api_endpoint_host_public" .}}/v2/%(tenant_id)s'
+
+  domains:
+  - name: Default
+    groups:
+    - name: administrators
+      roles:
+      - domain: Default
+        role: cloud_sharedfilesystem_admin
+      - project: admin
+        role: cloud_sharedfilesystem_admin
+    users:
+    - name: admin
+      roles:
+      - domain: Default
+        role: cloud_sharedfilesystem_admin
+      - project: admin
+        role: cloud_sharedfilesystem_admin
+    - name: manila
+      description: Manila Service
+      password: '{{.Values.global.manila_service_password}}'
+      roles:
+      - project: service
+        role: service
+      - project: service
+        role: cloud_network_admin
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      roles:
+      - user: admin@Default
+        role: cloud_sharedfilesystem_admin
+    groups:
+    - name: CCADMIN_CLOUD_ADMINS
+      roles:
+      - project: cloud_admin
+        role: cloud_sharedfilesystem_admin
+
+  - name: monsoon3
+    groups:
+    - name: MONSOON3_DOMAIN_ADMINS
+      roles:
+      - project: cc-demo
+        role: sharedfilesystem_admin
+{{- end }}
