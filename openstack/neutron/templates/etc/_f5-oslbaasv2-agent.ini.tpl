@@ -596,5 +596,19 @@ insecure = True
 # inherit settings from the parent you define. This must be an existing profile,
 # and if it does not exist on your BIG-IP system the agent will use the default
 # profile, clientssl.
+{{- if $loadbalancer.f5_parent_ssl_profile}}
+f5_parent_ssl_profile = {{$loadbalancer.f5_parent_ssl_profile}}
+{{- else }}
 f5_parent_ssl_profile = clientssl
+{{- end}}
+
+#
+# environment_group_number
+#
+{{- if $loadbalancer.environment_group_number}}
+environment_group_number = {{$loadbalancer.environment_group_number}}
+{{- else }}
+environment_group_number = 1
+{{- end}}
+
 {{- end -}}
