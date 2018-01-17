@@ -19,6 +19,9 @@
     "context_is_network_editor": "rule:context_is_network_network_admin or rule:network_member",
     "context_is_network_viewer":  "rule:context_is_network_editor or rule:network_viewer",
 
+    "compute_admin": "role:compute_admin and rule:owner",
+    "context_is_compute_admin": "role:cloud_compute_admin or rule:compute_admin",
+
     "shared": "field:networks:shared=True",
     "shared_firewalls": "field:firewalls:shared=True",
     "shared_firewall_policies": "field:firewall_policies:shared=True",
@@ -135,17 +138,17 @@
     "create_router:external_gateway_info:external_fixed_ips": "rule:context_is_network_admin",
     "update_router:external_gateway_info:external_fixed_ips": "rule:context_is_network_admin",
 
-    "create_security_group": "rule:context_is_editor",
+    "create_security_group": "rule:context_is_compute_admin or rule:context_is_network_admin",
     "get_security_group": "rule:context_is_viewer",
     "get_security_groups": "rule:context_is_viewer",
-    "update_security_group": "rule:context_is_editor",
-    "delete_security_group": "rule:context_is_editor",
+    "update_security_group": "rule:context_is_compute_admin or rule:context_is_network_admin",
+    "delete_security_group": "rule:context_is_compute_admin or rule:context_is_network_admin",
 
-    "create_security_group_rule": "rule:context_is_editor",
+    "create_security_group_rule": "rule:context_is_compute_admin or rule:context_is_network_admin",
     "get_security_group_rule": "rule:context_is_viewer",
     "get_security_group_rules": "rule:context_is_viewer",
-    "update_security_group_rule": "rule:context_is_editor",
-    "delete_security_group_rule": "rule:context_is_editor",
+    "update_security_group_rule": "rule:context_is_compute_admin or rule:context_is_network_admin",
+    "delete_security_group_rule": "rule:context_is_compute_admin or rule:context_is_network_admin",
 
     "create_firewall": "rule:context_is_admin",
     "get_firewall": "rule:context_is_admin",
