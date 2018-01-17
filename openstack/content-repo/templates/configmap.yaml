@@ -39,6 +39,12 @@ data:
         to:
           container: {{$job.to.container}}
           object_prefix: {{$job.to.object_prefix}}
+        {{- if $job.segmenting }}
+        segmenting:
+          min_bytes:     {{ $job.segmenting.min_bytes | printf "%0.f" }}
+          segment_bytes: {{ $job.segmenting.segment_bytes | printf "%0.f" }}
+          container:     {{ $job.segmenting.container }}
+        {{- end }}
         except:    {{ coalesce $job.except $config.except "''" }}
         only:      {{ coalesce $job.only $config.only "''" }}
         immutable: {{ coalesce $job.immutable $config.immutable "''" }}
