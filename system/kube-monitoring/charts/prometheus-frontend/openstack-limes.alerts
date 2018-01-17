@@ -2,6 +2,34 @@ groups:
 - name: openstack-limes.alerts
   rules:
 
+  - alert: OpenstackLimesHttpErrors
+    expr: http_requests_total{kubernetes_namespace="limes",code=~"5.*"} > 0
+    for: 5m
+    labels:
+      context: api
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      tier: openstack
+    annotations:
+      description: {{ $labels.kubernetes_name }} is producing HTTP responses
+        with 5xx status codes.
+      summary: Server errors on {{ $labels.kubernetes_name }}
+
+  - alert: OpenstackLimesNotScraping
+    expr: absent(rate(limes_successful_scrapes{os_cluster="ccloud"}[30m]))
+    for: 5m
+    labels:
+      context: failedscrapes
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      tier: openstack
+    annotations:
+      description: There have been no successful scrapes in the last hour in
+        the ccloud cluster, so limes-collect-ccloud is probably dead.
+      summary: Limes is not scraping
+
   - alert: OpenstackLimesFailedScrapes
     expr: sum(increase(limes_failed_scrapes[5m])) BY (service, service_name) > 0
     for: 1h
@@ -9,7 +37,7 @@ groups:
       context: failedscrapes
       dashboard: limes-overview
       service: '{{ $labels.service_name }}'
-      severity: warning
+      severity: info
       tier: openstack
     annotations:
       description: Limes cannot scrape data from {{ title $labels.service_name }}
