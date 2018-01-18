@@ -17,7 +17,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
-      maxSurge: 3
+      maxSurge: 1
   selector:
     matchLabels:
         name: manila-share-netapp-{{$share.name}}
@@ -69,6 +69,15 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
+          readinessProbe:
+            exec:
+              command:
+              - grep
+              - 'ready'
+              - /etc/manila/probe
+            timeoutSeconds: 3
+            periodSeconds: 5
+            initialDelaySeconds: 5
       volumes:
         - name: etcmanila
           emptyDir: {}
