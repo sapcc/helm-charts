@@ -60,7 +60,7 @@ scrape_configs:
     regex: true
   - action: keep
     source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_pod_annotation_prometheus_io_port]
-    regex: (9102;.*;.*)|(.*;metrics;.*)|(__meta_kubernetes_pod_annotation_prometheus_io_port;.*;.+)
+    regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
     target_label: __metrics_path__
     regex: (.+)
@@ -252,6 +252,34 @@ scrape_configs:
     target_label: __address__
     regex: ([^:]+)(:\d+)?
     replacement: ${1}:9101
+
+- job_name: 'blackbox-kubernikus-ingress'
+  metrics_path: /probe
+  params:
+    module: [http_2xx]  # Look for a HTTP 200 response.
+  kubernetes_sd_configs:
+  - role: ingress
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_ingress_path]
+    regex: /prometheus
+    action: drop
+  - source_labels: [__meta_kubernetes_ingress_scheme,__address__,__meta_kubernetes_ingress_path]
+    regex: (.+);k-(.+)\.admin\.cloud\.sap;(.+)
+    replacement: ${1}://kubernikus.${2}.cloud.sap${3}
+    target_label: __param_target
+  - target_label: __address__
+    replacement: blackbox-exporter.kubernikus-system.svc:9115
+  - source_labels: [__param_target]
+    target_label: instance
+  - action: labelmap
+    regex: __meta_kubernetes_ingress_label_(.+)
+  - source_labels: [__meta_kubernetes_namespace]
+    target_label: kubernetes_namespace
+  - source_labels: [__meta_kubernetes_ingress_name]
+    target_label: kubernetes_name
 
 # Static Targets 
 #
