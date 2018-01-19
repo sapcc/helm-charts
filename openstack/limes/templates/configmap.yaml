@@ -9,7 +9,7 @@ data:
 {{ .Files.Get "files/policy.json" | indent 4 }}
   limes.yaml: |
     database:
-      location: "postgres://postgres:{{.Values.postgresql.postgresPassword}}@limes-postgresql.{{.Release.Namespace}}.svc/limes?sslmode=disable"
+      location: "postgres://postgres:{{ .Values.postgresql.postgresPassword }}@limes-postgresql.{{ .Release.Namespace }}.svc/limes?sslmode=disable"
 
     api:
       listen: :80
@@ -18,7 +18,6 @@ data:
     collector:
       metrics: :8080
       data_metrics: true
-      auto_align_quotas: {{ .Values.limes.auto_align_quotas }}
 
     clusters:
 {{ toYaml .Values.limes.clusters | indent 6 }}
@@ -27,3 +26,8 @@ data:
     set -euo pipefail
     limes migrate /etc/limes/limes.yaml
     exec tail -f /dev/null
+
+{{- range $seed_name, $seed := .Values.limes.seeds }}
+  seed-{{ $seed_name }}.yaml: |
+{{ toYaml $seed | indent 4 }}
+{{- end }}
