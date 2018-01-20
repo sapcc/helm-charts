@@ -44,7 +44,7 @@ groups:
     expr: 100 * sum(container_memory_usage_bytes{pod_name!=""}) / sum(machine_memory_bytes)
 
   - record: cluster:cpu_allocation:percent
-    expr: 100 * sum(container_spec_cpu_shares{pod_name!=""}) / sum(container_spec_cpu_shares{id="/"} * ON(instance) machine_cpu_cores)
+    expr: 100 * sum(container_spec_cpu_shares{pod_name!=""}) / sum(container_spec_cpu_shares{id="/"} * ON(instance) group_left machine_cpu_cores)
 
   - record: cluster_resource_verb:apiserver_latency:quantile_seconds
     expr: histogram_quantile(0.99, sum(apiserver_request_latencies_bucket) BY (le, job, resource, verb)) / 1e+06
