@@ -70,6 +70,14 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /etc/manila/probe
+            timeoutSeconds: 3
+            periodSeconds: 10
+            initialDelaySeconds: 15
           readinessProbe:
             exec:
               command:
