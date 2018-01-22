@@ -3,7 +3,7 @@
 set -ex
 
 # seed just enough to have a functional v3 api
-keystone-manage-extension --config-file=/etc/keystone/keystone.conf bootstrap \
+keystone-manage --config-file=/etc/keystone/keystone.conf bootstrap \
     --bootstrap-username {{ .Values.api.adminUser }} \
     --bootstrap-password {{ .Values.api.adminPassword }} \
     --bootstrap-project-name {{ .Values.api.adminProjectName }} \
