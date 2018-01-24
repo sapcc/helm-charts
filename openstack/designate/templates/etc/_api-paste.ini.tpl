@@ -5,6 +5,10 @@ use = egg:Paste#urlmap
 /v2: osapi_dns_v2
 /admin: osapi_dns_admin
 
+{{- define "audit_pipe" -}}
+{{- if .Values.audit.enabled }} audit{{- end -}}
+{{- end }}
+
 [composite:osapi_dns_versions]
 use = call:designate.api.middleware:auth_pipeline_factory
 noauth = http_proxy_to_wsgi cors maintenance faultwrapper sentry osapi_dns_app_versions
@@ -82,3 +86,13 @@ use = egg:ops-middleware#statsd
 [filter:sentry]
 use = egg:ops-middleware#sentry
 level = ERROR
+
+# Converged Cloud audit middleware
+{{ if .Values.audit.enabled }}
+[filter:audit]
+paste.filter_factory = auditmiddleware:filter_factory
+audit_map_file = /etc/designate/designate_audit_map.yaml
+ignore_req_list = GET
+record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
+metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
+{{- end }}
