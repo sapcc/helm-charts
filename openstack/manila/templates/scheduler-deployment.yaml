@@ -1,11 +1,8 @@
-{{define "scheduler"}}
-{{$az := index . 1}}
-{{with index . 0}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: manila-scheduler-{{$az}}
+  name: manila-scheduler
   labels:
     system: openstack
     type: backend
@@ -20,13 +17,13 @@ spec:
       maxSurge: 3
   selector:
     matchLabels:
-      name: manila-scheduler-{{$az}}
+      name: manila-scheduler
   template:
     metadata:
       labels:
-        name: manila-scheduler-{{$az}}
+        name: manila-scheduler
       annotations:
-        pod.beta.kubernetes.io/hostname: manila-scheduler-{{$az}}
+        pod.beta.kubernetes.io/hostname: manila-scheduler
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
       containers:
@@ -38,7 +35,7 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "manila-scheduler --config-file /etc/manila/manila.conf --config-file /etc/manila/storage-availability-zone.conf"
+              value: "manila-scheduler --config-file /etc/manila/manila.conf"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
@@ -65,18 +62,9 @@ spec:
               mountPath: /etc/manila/logging.conf
               subPath: logging.conf
               readOnly: true
-            - name: manila-scheduler-etc
-              mountPath: /etc/manila/storage-availability-zone.conf
-              subPath: storage-availability-zone.conf
-              readOnly: true
       volumes:
         - name: etcmanila
           emptyDir: {}
         - name: manila-etc
           configMap:
             name: manila-etc
-        - name: manila-scheduler-etc
-          configMap:
-            name: manila-storage-availability-zone-{{$az}}
-{{ end }}
-{{ end }}
