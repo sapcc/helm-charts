@@ -87,6 +87,9 @@ spec:
             timeoutSeconds: 3
             periodSeconds: 5
             initialDelaySeconds: 5
+      {{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
+      hostname: manila-share-netapp-{{$share.name}}
+      {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}
