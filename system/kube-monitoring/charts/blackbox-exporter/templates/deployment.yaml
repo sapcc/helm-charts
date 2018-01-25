@@ -14,11 +14,20 @@ spec:
         app: {{ template "blackbox-exporter.name" . }}
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: {{ .Values.service.internalPort | quote }}
+        prometheus.io/port: {{ .Values.service.port | quote }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.internalPort }}
+            - containerPort: {{ .Values.service.port }}
+          args:
+            - --config.file=/etc/blackbox-exporter/blackbox.yml
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox-exporter
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Chart.Name }}
