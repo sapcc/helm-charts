@@ -130,7 +130,7 @@ api_port = {{.Values.global.designate_api_port_internal}}
 auth_strategy = keystone
 
 # Enable Version 1 API (deprecated)
-enable_api_v1 = True
+enable_api_v1 = False
 
 # Enabled API Version 1 extensions
 # Can be one or more of : diagnostics, quotas, reports, sync, touch
