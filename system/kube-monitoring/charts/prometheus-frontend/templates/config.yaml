@@ -4,7 +4,13 @@ metadata:
   name: prometheus-frontend
 
 data:
-  {{- range $path, $bytes := .Files.Glob "**.rules" }}
+  # add all rules
+  {{- range $path, $bytes := .Files.Glob "*.rules" }}
+  {{ printf "%s" $path }}: |
+{{ printf "%s" $bytes | indent 4 }}
+  {{ end -}}
+  # add alerts based on values
+  {{- range $path, $bytes := .Files.Glob "*.alerts" }}
   {{ printf "%s" $path }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{ end -}}
