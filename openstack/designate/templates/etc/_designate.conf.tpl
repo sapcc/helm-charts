@@ -52,7 +52,7 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 #transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}/{{ .Values.rabbitmq.virtual_host | default "/" }}
 
 [oslo_messaging_notifications]
-driver = noop
+driver = messaging
 
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
