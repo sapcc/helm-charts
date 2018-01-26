@@ -28,11 +28,11 @@ log_config_append = /etc/designate/logging.conf
 #supported_record_type = A, AAAA, CNAME, MX, SRV, TXT, SPF, NS, PTR, SSHFP, SOA
 
 # Setting SOA defaults
-default-soa-refresh-min = 3500
-default-soa-refresh-max = 3600
-default-soa-retry = 600
-default-soa-expire = 3600000
-default-soa-minimum = 300
+default_soa_refresh_min = 3500
+default_soa_refresh_max = 3600
+default_soa_retry = 600
+default_soa_expire = 3600000
+default_soa_minimum = 300
 
 # Setting default quotas
 # most default quotas are 0 to enforce usage of the Resource Management tool in Elektra
