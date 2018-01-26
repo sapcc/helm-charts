@@ -275,7 +275,7 @@ scrape_configs:
     replacement: ${1}://${2}${3}
     target_label: __param_target
   - target_label: __address__
-    replacement: blackbox-exporter.kube-system.svc:9115
+    replacement: blackbox-exporter.kube-monitoring.svc:9115
   - source_labels: [__param_target]
     target_label: instance
   - action: labelmap
