@@ -9,11 +9,21 @@ data:
   {{ printf "%s" $path }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{ end -}}
-  # add alerts based on values
-  {{- range $path, $bytes := .Files.Glob "*.alerts" }}
-  {{ printf "%s" $path }}: |
+{{- if .Values.alerting.enabled }}
+  # add kubernetes alerts
+  {{- if .Values.alerting.kubernetes }}
+    {{- range $path, $bytes := .Files.Glob "kubernetes-*.alerts" }}
+    {{ printf "%s" $path }}: |
 {{ printf "%s" $bytes | indent 4 }}
-  {{ end -}}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.alerting.openstack }}
+    {{- range $path, $bytes := .Files.Glob "openstack-*.alerts" }}
+    {{ printf "%s" $path }}: |
+{{ printf "%s" $bytes | indent 4 }}
+    {{- end }}
+  {{- end}}
+{{- end }}
 
   prometheus.yaml: |
     global:
