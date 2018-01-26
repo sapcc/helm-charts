@@ -41,8 +41,13 @@ spec:
           env:
             - name: DEBUG_CONTAINER
               value: "false"
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: designate.DSN.python
+            {{- end }}
           livenessProbe:
             tcpSocket:
               port: {{.Values.global.designate_mdns_port_public}}
@@ -64,4 +69,3 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
-

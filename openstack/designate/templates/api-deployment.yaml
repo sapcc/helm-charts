@@ -47,8 +47,13 @@ spec:
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: designate.DSN.python
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /
@@ -71,7 +76,7 @@ spec:
               containerPort: 9125
               protocol: UDP
             - name: metrics
-              containerPort: {{.Values.global.designate_metrics_port}} 
+              containerPort: {{.Values.global.designate_metrics_port}}
       volumes:
         - name: designate-etc
           configMap:

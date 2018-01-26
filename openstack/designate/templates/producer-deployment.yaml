@@ -44,8 +44,13 @@ spec:
               value: {{ .Release.Namespace }}
             - name: DEBUG_CONTAINER
               value: "false"
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: designate.DSN.python
+            {{- end }}
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc
