@@ -4,6 +4,11 @@ metadata:
   name: prometheus-frontend
 
 data:
+  {{- $files := .Files }}
+  {{ range tuple "ca.crt" }}
+  {{ . }}: |
+{{ $files.Get . | indent 4 }}
+  {{- end }}
   # add all rules
   {{- range $path, $bytes := .Files.Glob "*.rules" }}
   {{ printf "%s" $path }}: |
