@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
+LOCKFILE=/var/lib/rabbitmq/rabbitmq-server.lock
+echo "Starting RabbitMQ with lock ${LOCKFILE}"
+exec 9>${LOCKFILE}
+/usr/bin/flock -n 9
+
 function bootstrap {
    #Not especially proud of this, but it works (unlike the environment variable approach in the docs)
    chown -R rabbitmq:rabbitmq /var/lib/rabbitmq
@@ -30,10 +35,6 @@ function bootstrap {
 
 
 function start_application {
-  echo "Starting RabbitMQ with lock /var/lib/rabbitmq/rabbitmq-server.lock"
-  LOCKFILE=/var/lib/rabbitmq/rabbitmq-server.lock
-  exec 9>${LOCKFILE}
-  /usr/bin/flock -n 9
   exec gosu rabbitmq rabbitmq-server
 }
 
