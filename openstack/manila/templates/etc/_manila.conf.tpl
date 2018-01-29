@@ -32,7 +32,6 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 {{- include "ini_sections.database_options" . }}
 
 delete_share_server_with_last_share = false
-automatic_share_server_cleanup = true
 # Unallocated share servers reclamation time interval (minutes).
 unused_share_server_cleanup_interval = {{ .Values.share_server_cleanup_interval | default 10 }}
 

@@ -8,7 +8,9 @@ storage_availability_zone = {{$az}}
 [netapp-multi]
 share_backend_name={{$share.backend_name | default "netapp-multi"}}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
-driver_handles_share_servers=True
+driver_handles_share_servers = true
+automatic_share_server_cleanup = true
+
 netapp_storage_family=ontap_cluster
 netapp_server_hostname={{$share.host}}
 netapp_server_port=443
