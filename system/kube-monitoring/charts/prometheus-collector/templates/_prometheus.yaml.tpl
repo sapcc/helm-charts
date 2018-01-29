@@ -253,7 +253,8 @@ scrape_configs:
     regex: ([^:]+)(:\d+)?
     replacement: ${1}:9101
 
-- job_name: 'blackbox-ingress'
+{{- range $region := .Values.regions }}
+- job_name: 'blackbox-ingress-{{ $region }}'
   metrics_path: /probe
   params:
     # Look for a HTTP 200 response per default.
@@ -275,7 +276,7 @@ scrape_configs:
     replacement: ${1}://${2}${3}
     target_label: __param_target
   - target_label: __address__
-    replacement: blackbox-exporter.kube-monitoring.svc:9115
+    replacement: https://blackbox.{{ $region }}.cloud.sap
   - source_labels: [__param_target]
     target_label: instance
   - action: labelmap
@@ -284,6 +285,7 @@ scrape_configs:
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_ingress_name]
     target_label: kubernetes_name
+{{ end }}
 
 # Static Targets 
 #
