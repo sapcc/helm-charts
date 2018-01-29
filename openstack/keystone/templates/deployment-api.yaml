@@ -146,6 +146,11 @@ spec:
             - name: fernet
               mountPath: /fernet-keys
               readOnly: true
+{{- if not (eq .Values.release "mitaka") }}
+            - name: credential-keys
+              mountPath: /credential-keys
+              readOnly: true
+{{- end }}
             - name: keystone-bin
               mountPath: /scripts
               readOnly: true
@@ -195,3 +200,9 @@ spec:
           secret:
             secretName: keystone-fernet
             defaultMode: 0555
+{{- if not (eq .Values.release "mitaka") }}
+        - name: credential-keys
+          secret:
+            secretName: keystone-credential-keys
+            defaultMode: 0555
+{{- end}}

@@ -29,7 +29,7 @@
     "identity:update_endpoint": "rule:cloud_admin",
     "identity:delete_endpoint": "rule:cloud_admin",
 
-    "identity:get_domain": "rule:cloud_admin or rule:admin_and_matching_domain_id",
+    "identity:get_domain": "rule:cloud_admin or rule:admin_and_matching_domain_id or token.project.domain.id:%(target.domain.id)s",
     "identity:list_domains": "rule:cloud_admin or rule:service_role",
     "identity:create_domain": "rule:cloud_admin",
     "identity:update_domain": "rule:cloud_admin",
@@ -46,7 +46,7 @@
 
     "admin_and_matching_target_user_domain_id": "rule:admin_required and domain_id:%(target.user.domain_id)s",
     "admin_and_matching_user_domain_id": "rule:admin_required and domain_id:%(user.domain_id)s",
-    "identity:get_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id or rule:service_role",
+    "identity:get_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id or rule:owner or rule:service_role",
     "identity:list_users": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:service_role",
     "identity:create_user": "rule:cloud_admin or rule:admin_and_matching_user_domain_id",
     "identity:update_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id",
@@ -175,7 +175,7 @@
 
     "identity:create_identity_provider": "rule:cloud_admin",
     "identity:list_identity_providers": "rule:cloud_admin",
-    "identity:get_identity_providers": "rule:cloud_admin",
+    "identity:get_identity_provider": "rule:cloud_admin",
     "identity:update_identity_provider": "rule:cloud_admin",
     "identity:delete_identity_provider": "rule:cloud_admin",
 
@@ -201,8 +201,13 @@
     "identity:get_auth_projects": "",
     "identity:get_auth_domains": "",
 
+{{- if eq .Values.release "mitaka" }}
     "identity:list_projects_for_groups": "",
     "identity:list_domains_for_groups": "",
+{{ else }}
+    "identity:list_projects_for_user": "",
+    "identity:list_domains_for_user": "",
+{{- end }}
 
     "identity:list_revoke_events": "",
 
