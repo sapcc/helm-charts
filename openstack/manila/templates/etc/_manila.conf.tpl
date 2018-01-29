@@ -45,9 +45,6 @@ unused_share_server_cleanup_interval = {{ .Values.share_server_cleanup_interval 
 # invalid. (floating point value)
 max_over_subscription_ratio = {{ .Values.max_over_subscription_ratio | default 3.0 }}
 
-# The percentage of backend capacity reserved. Default 0 (integer value)
-reserved_share_percentage = {{ .Values.reserved_share_percentage | default 3 }}
-
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_shares = 0
 quota_gigabytes = 0

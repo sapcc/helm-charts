@@ -4,6 +4,8 @@
 {{- $az := index . 2 -}}
 [DEFAULT]
 storage_availability_zone = {{$az}}
+# The percentage of backend capacity reserved. Default 0 (integer value)
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 5 }}
 
 [netapp-multi]
 share_backend_name={{$share.backend_name | default "netapp-multi"}}
