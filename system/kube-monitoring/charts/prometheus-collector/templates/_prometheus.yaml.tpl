@@ -253,7 +253,7 @@ scrape_configs:
     regex: ([^:]+)(:\d+)?
     replacement: ${1}:9101
 
-{{- range $region := .Values.regions }}
+{{ range $region := .Values.global.regions }}
 - job_name: 'blackbox-ingress-{{ $region }}'
   metrics_path: /probe
   params:
