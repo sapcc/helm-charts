@@ -4,8 +4,6 @@
 {{- $az := index . 2 -}}
 [DEFAULT]
 storage_availability_zone = {{$az}}
-# The percentage of backend capacity reserved. Default 0 (integer value)
-reserved_share_percentage = {{ $share.reserved_share_percentage | default 5 }}
 
 [netapp-multi]
 share_backend_name={{$share.backend_name | default "netapp-multi"}}
@@ -28,4 +26,7 @@ netapp_port_name_search_pattern = {{$share.port_search_pattern}}
 
 neutron_physical_net_name={{$share.physical_network}}
 network_api_class=manila.network.neutron.neutron_network_plugin.NeutronBindNetworkPlugin
+
+# The percentage of backend capacity reserved. Default 0 (integer value)
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 5 }}
 {{- end -}}
