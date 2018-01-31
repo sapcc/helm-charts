@@ -5,7 +5,8 @@
 #
 debug: "True"
 
-sentry_dsn: DEFINE-IN-REGION-CHART
+sentry:
+  enabled: true
 
 global:
   image_repository: DEFINED-IN-OPENSTACK-CHART
@@ -18,10 +19,10 @@ global:
   designate_api_port_public: '443'
   designate_metrics_port: '9102'
   designate_mdns_port_public: '5354'
-  designate_mdns_external_ip: DEFINED-IN-REGION-CHART 
+  designate_mdns_external_ip: DEFINED-IN-REGION-CHART
   designate_mdns_akamai_ip:
   designate_service_user: designate
-  designate_service_password: DEFINED-IN-REGION-CHART 
+  designate_service_password: DEFINED-IN-REGION-CHART
 
 pod:
   replicas:
@@ -76,12 +77,12 @@ bind_pools:
 rndc_keys:
 - name: DEFINED-IN-REGION-CHART
   algorithm: DEFINED-IN-REGION-CHART
-  secret: DEFINED-IN-REGION-CHART 
+  secret: DEFINED-IN-REGION-CHART
 
 mariadb:
   name: designate
   initdb_configmap: designate-initdb
-  persistence_claim: db-designate-pvclaim 
+  persistence_claim: db-designate-pvclaim
 
 memcached:
   ## default: {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
@@ -127,7 +128,7 @@ mysql_metrics:
                 name,
                 status,
                 tenant_id
-          
+
     - name: openstack_designate_records
       help: "records count grouped by status"
       labels:

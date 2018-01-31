@@ -67,6 +67,14 @@ spec:
               name: keystone-etc
             - mountPath: /scripts
               name: keystone-bin
+            - name: fernet
+              mountPath: /fernet-keys
+              readOnly: true
+{{- if not (eq .Values.release "mitaka") }}
+            - name: credential-keys
+              mountPath: /credential-keys
+              readOnly: true
+{{- end }}
           {{- if .Values.cron.resources.enabled }}
           resources:
             limits:
@@ -80,10 +88,16 @@ spec:
         - name: keystone-etc
           configMap:
             name: keystone-etc
+        - name: keystone-bin
+          configMap:
+            name: keystone-bin
         - name: fernet
           secret:
             secretName: keystone-fernet
             defaultMode: 0755
-        - name: keystone-bin
-          configMap:
-            name: keystone-bin
+{{- if not (eq .Values.release "mitaka") }}
+        - name: credential-keys
+          secret:
+            secretName: keystone-credential-keys
+            defaultMode: 0555
+{{- end}}

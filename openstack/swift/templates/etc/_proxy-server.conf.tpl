@@ -23,8 +23,11 @@ log_level = INFO
 {{- end }}
 
 [pipeline:main]
+{{- if eq $context.release "mitaka" }}
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
-# pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap statsd container_sync bulk tempurl ratelimit authtoken keystone staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+{{- else }}
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+{{- end }}
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
 [app:proxy-server]
@@ -103,6 +106,8 @@ username = {{$cluster.swift_service_user}}
 password = {{$cluster.swift_service_password}}
 project_domain_name = {{$cluster.swift_service_project_domain}}
 project_name = {{$cluster.swift_service_project}}
+service_token_roles_required = true
+service_token_roles = service, admin
 {{- if $context.debug }}
 set log_level = DEBUG
 {{- end }}
@@ -144,6 +149,7 @@ use = egg:swift#tempurl
 
 [filter:staticweb]
 use = egg:swift#staticweb
+url_base = https:
 
 [filter:bulk]
 use = egg:swift#bulk
@@ -153,6 +159,9 @@ use = egg:swift#container_quotas
 
 [filter:account-quotas]
 use = egg:swift#account_quotas
+
+[filter:copy]
+use = egg:swift#copy
 
 # [filter:statsd]
 # use = egg:ops-middleware#statsd

@@ -1,11 +1,8 @@
-{{- define "share_netapp" -}}
-{{$share := index . 1 -}}
-{{$az := index . 2 -}}
-{{with index . 0}}
 kind: Deployment
 apiVersion: extensions/v1beta1
+
 metadata:
-  name: manila-share-netapp-{{$share.name}}
+  name: manila-scheduler
   labels:
     system: openstack
     type: backend
@@ -17,29 +14,28 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
-      maxSurge: 1
+      maxSurge: 3
   selector:
     matchLabels:
-        name: manila-share-netapp-{{$share.name}}
+      name: manila-scheduler
   template:
     metadata:
       labels:
-        name: manila-share-netapp-{{$share.name}}
+        name: manila-scheduler
       annotations:
-        pod.beta.kubernetes.io/hostname: manila-share-netapp-{{$share.name}}
+        pod.beta.kubernetes.io/hostname: manila-scheduler
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        configmap-netapp-hash: {{ list . $share $az | include "share_netapp_configmap" | sha256sum }}
     spec:
       containers:
-        - name: manila-share-netapp-{{$share.name}}
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-share:{{.Values.image_version}}
+        - name: manila-scheduler
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-scheduler:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "manila-share --config-file /etc/manila/manila.conf --config-file /etc/manila/backend.conf"
+              value: "manila-scheduler --config-file /etc/manila/manila.conf"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
@@ -66,27 +62,12 @@ spec:
               mountPath: /etc/manila/logging.conf
               subPath: logging.conf
               readOnly: true
-            - name: backend-config
-              mountPath: /etc/manila/backend.conf
-              subPath: backend.conf
-              readOnly: true
-          readinessProbe:
-            exec:
-              command:
-              - grep
-              - 'ready'
-              - /etc/manila/probe
-            timeoutSeconds: 3
-            periodSeconds: 5
-            initialDelaySeconds: 5
+      {{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
+      hostname: manila-scheduler
+      {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}
         - name: manila-etc
           configMap:
             name: manila-etc
-        - name: backend-config
-          configMap:
-            name: share-netapp-{{$share.name}}
-{{ end }}
-{{- end -}}

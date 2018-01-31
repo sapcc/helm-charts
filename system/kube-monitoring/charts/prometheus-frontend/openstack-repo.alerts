@@ -7,23 +7,23 @@ groups:
     labels:
       tier: openstack
       service: swift
-      severity: warning
+      severity: info
       context: repo
-      meta: "{{ $labels.repo }}"
+      meta: "repo {{ $labels.repo }} is outdated"
       dashboard: repo-sync?var-repo={{ $labels.repo }}
     annotations:
       description: Content repo {{ $labels.repo }} was not successful updated for at least 48h. Check the logs
       summary: Content repo {{ $labels.repo }} outdated
 
   - alert: OpenstackRepoEntitlementForbidden
-    expr: repo_sync_check_success_gauge == -1
+    expr: repo_sync_check_success == -1
     for: 1h
     labels:
       tier: openstack
       service: swift
-      severity: warning
+      severity: info
       context: repo-{{ $labels.repo }}-entitlement
-      meta: "{{ $labels.repo }}"
+      meta: "invalid entitlement for {{ $labels.repo }}"
       dashboard: repo-sync?var-repo={{ $labels.repo }}
       playbook: docs/support/playbook/repo_{{ $labels.repo }}_entitlement.html
     annotations:
@@ -31,14 +31,14 @@ groups:
       summary: Repo {{ $labels.repo }} entitlement lost
 
   - alert: OpenstackRepoEntitlement
-    expr: repo_sync_check_success_gauge == 0
+    expr: repo_sync_check_success == 0
     for: 1h
     labels:
       tier: openstack
       service: swift
-      severity: warning
+      severity: info
       context: repo-{{ $labels.repo }}-entitlement
-      meta: "{{ $labels.repo }}"
+      meta: "entitlement check failed for {{ $labels.repo }}"
       dashboard: repo-sync?var-repo={{ $labels.repo }}
     annotations:
       description: Repo {{ $labels.repo }} entitlement check failed. Check the logs
