@@ -256,7 +256,6 @@ scrape_configs:
 {{ range $region := .Values.global.regions }}
 - job_name: 'blackbox-ingress-{{ $region }}'
   metrics_path: /probe
-  region_probed_from: {{ $region }}
   params:
     # Look for a HTTP 200 response per default.
     # Can be overwritten by annotating the ingress resource with the expected return codes, e.g. `prometheus.io/probe_code: "4xx"`
@@ -286,6 +285,8 @@ scrape_configs:
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_ingress_name]
     target_label: ingress_name
+  - target_label: region_probed_from
+    replacement: {{ $region }}
 {{ end }}
 
 # Static Targets 
