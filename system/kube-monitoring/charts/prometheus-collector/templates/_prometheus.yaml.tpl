@@ -256,6 +256,7 @@ scrape_configs:
 {{ range $region := .Values.global.regions }}
 - job_name: 'blackbox-ingress-{{ $region }}'
   metrics_path: /probe
+  region_probed_from: {{ $region }}
   params:
     # Look for a HTTP 200 response per default.
     # Can be overwritten by annotating the ingress resource with the expected return codes, e.g. `prometheus.io/probe_code: "4xx"`
