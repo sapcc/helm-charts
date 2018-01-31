@@ -260,6 +260,7 @@ scrape_configs:
     # Look for a HTTP 200 response per default.
     # Can be overwritten by annotating the ingress resource with the expected return codes, e.g. `prometheus.io/probe_code: "4xx"`
     module: [http_2xx]
+  scheme: https
   kubernetes_sd_configs:
   - role: ingress
   relabel_configs:
@@ -276,7 +277,7 @@ scrape_configs:
     replacement: ${1}://${2}${3}
     target_label: __param_target
   - target_label: __address__
-    replacement: https://blackbox.{{ $region }}.cloud.sap
+    replacement: blackbox.{{ $region }}.cloud.sap
   - source_labels: [__param_target]
     target_label: instance
   - action: labelmap
