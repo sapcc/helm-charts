@@ -277,7 +277,7 @@ scrape_configs:
     replacement: ${1}://${2}${3}
     target_label: __param_target
   - target_label: __address__
-    replacement: blackbox.{{ $region }}.cloud.sap
+    replacement: prober.{{ $region }}.cloud.sap
   - source_labels: [__param_target]
     target_label: instance
   - action: labelmap
