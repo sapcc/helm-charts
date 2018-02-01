@@ -60,7 +60,7 @@ scrape_configs:
     regex: true
   - action: keep
     source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_pod_annotation_prometheus_io_port]
-    regex: (9102;.*;.*)|(.*;metrics;.*)|(__meta_kubernetes_pod_annotation_prometheus_io_port;.*;.+)
+    regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
     target_label: __metrics_path__
     regex: (.+)
@@ -252,6 +252,43 @@ scrape_configs:
     target_label: __address__
     regex: ([^:]+)(:\d+)?
     replacement: ${1}:9101
+
+{{ range $region := .Values.global.regions }}
+- job_name: 'blackbox-ingress-{{ $region }}'
+  metrics_path: /probe
+  params:
+    # Look for a HTTP 200 response per default.
+    # Can be overwritten by annotating the ingress resource with the expected return codes, e.g. `prometheus.io/probe_code: "4xx"`
+    module: [http_2xx]
+  scheme: https
+  kubernetes_sd_configs:
+  - role: ingress
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe]
+    action: keep
+    regex: true
+  # consider prometheus.io/probe_code annotation. mind below regex.
+  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_code]
+    regex: ^(\d).+
+    replacement: http_${1}xx
+    target_label: __param_module
+  - source_labels: [__meta_kubernetes_ingress_scheme,__address__,__meta_kubernetes_ingress_path]
+    regex: (.+);(.+);(.+)
+    replacement: ${1}://${2}${3}
+    target_label: __param_target
+  - target_label: __address__
+    replacement: blackbox.{{ $region }}.cloud.sap
+  - source_labels: [__param_target]
+    target_label: instance
+  - action: labelmap
+    regex: __meta_kubernetes_ingress_label_(.+)
+  - source_labels: [__meta_kubernetes_namespace]
+    target_label: kubernetes_namespace
+  - source_labels: [__meta_kubernetes_ingress_name]
+    target_label: ingress_name
+  - target_label: region_probed_from
+    replacement: {{ $region }}
+{{ end }}
 
 # Static Targets 
 #
