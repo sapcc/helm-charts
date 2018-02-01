@@ -1,10 +1,5 @@
 # Keystone PasteDeploy configuration file.
 
-{{- if .Values.cc_ad_enabled }}
-[filter:cc_ad]
-use = egg:keystone-extensions#cc_ad
-{{- end }}
-
 {{- if .Values.api.metrics.enabled }}
 [filter:statsd]
 use = egg:ops-middleware#statsd
@@ -94,10 +89,10 @@ use = egg:keystone#public_version_service
 use = egg:keystone#admin_version_service
 
 [pipeline:public_version_api]
-pipeline = healthcheck cors sizelimit {{ if not (eq .Values.release "mitaka") }} osprofiler {{ end }} url_normalize {{ if .Values.cc_ad_enabled }}cc_ad{{ end }} public_version_service
+pipeline = healthcheck cors sizelimit {{ if not (eq .Values.release "mitaka") }} osprofiler {{ end }} url_normalize public_version_service
 
 [pipeline:admin_version_api]
-pipeline = healthcheck cors sizelimit {{ if not (eq .Values.release "mitaka") }} osprofiler {{ end }} url_normalize {{ if .Values.cc_ad_enabled }}cc_ad{{ end }} admin_version_service
+pipeline = healthcheck cors sizelimit {{ if not (eq .Values.release "mitaka") }} osprofiler {{ end }} url_normalize admin_version_service
 
 [composite:main]
 use = egg:Paste#urlmap
