@@ -77,7 +77,7 @@ spec:
 
     config:
       identity:
-        driver: {{ .Values.ldapDriver | default "cc_ad" }}
+        driver: {{ .Values.ldapDriver | default "cc_ldap" }}
       ldap:
         page_size: 1000
         use_tls: false
@@ -100,15 +100,9 @@ spec:
         user_enabled_mask: 2
         user_enabled_default: 512
         user_attribute_ignore: default_project_id
-{{- if eq "cc_ad" .Values.ldapDriver }}
         user_allow_create: True
         user_allow_delete: False
         user_allow_update: True
-{{ else }}
-        user_allow_create: False
-        user_allow_delete: False
-        user_allow_update: False
-{{- end }}
         #user_filter: (|(memberOf=CN=MONSOON3_DOMAIN_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
 
         group_tree_dn: OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
@@ -127,18 +121,3 @@ spec:
         use_auth_pool: true
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
-
-{{- if eq "cc_ad" .Values.ldapDriver }}
-      cc_ad:
-        enable_ews_auth: True
-        mirror_ews_passwords: True
-{{- if .Values.camEnabled }}
-        enable_lazy_user_creation: True
-        cam_api_enabled: True
-        cam_url: {{ .Values.camApiUrl | quote }}
-        cam_username: {{ .Values.camUser | quote }}
-        cam_password: {{ .Values.camPassword | quote }}
-        cam_profile: 'CC Monsoon 3 Users'
-        cam_group: MONSOON3_DOMAIN_USERS
-{{- end }}
-{{- end }}

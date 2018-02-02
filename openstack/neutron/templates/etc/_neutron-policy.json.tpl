@@ -193,7 +193,7 @@
     "get_loadbalancer-hosting-agent": "rule:network_view_all",
 
     "create_floatingip": "rule:context_is_editor",
-    "create_floatingip:floating_ip_address": "rule:context_is_admin",
+    "create_floatingip:floating_ip_address": "rule:context_is_network_admin",
     "update_floatingip": "rule:context_is_editor",
     "delete_floatingip": "rule:context_is_editor",
     "get_floatingip": "rule:context_is_viewer",

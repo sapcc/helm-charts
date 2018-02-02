@@ -20,7 +20,6 @@ api_paste_config = /etc/manila/api-paste.ini
 
 rpc_backend = rabbit
 
-auth_strategy = keystone
 os_region_name = {{.Values.global.region}}
 
 osapi_share_listen = 0.0.0.0
@@ -32,7 +31,6 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 {{- include "ini_sections.database_options" . }}
 
 delete_share_server_with_last_share = false
-automatic_share_server_cleanup = true
 # Unallocated share servers reclamation time interval (minutes).
 unused_share_server_cleanup_interval = {{ .Values.share_server_cleanup_interval | default 10 }}
 
@@ -43,10 +41,7 @@ unused_share_server_cleanup_interval = {{ .Values.share_server_cleanup_interval 
 # physical capacity. A ratio of 1.0 means provisioned capacity cannot
 # exceed the total physical capacity. A ratio lower than 1.0 is
 # invalid. (floating point value)
-max_over_subscription_ratio = {{ .Values.max_over_subscription_ratio | default 3.0 }}
-
-# The percentage of backend capacity reserved. Default 0 (integer value)
-reserved_share_percentage = {{ .Values.reserved_share_percentage | default 3 }}
+max_over_subscription_ratio = {{ .Values.max_over_subscription_ratio | default 1.0 }}
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_shares = 0
@@ -56,9 +51,10 @@ quota_snapshot_gigabytes = 0
 quota_share_networks = 0
 
 [neutron]
+auth_strategy = keystone
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
-auth_plugin = v3password
+auth_type = v3password
 username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$"}}
 password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$"}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}

@@ -3,8 +3,9 @@ debug = {{.Values.debug}}
 insecure_debug = true
 verbose = true
 
-log_config_append = /etc/keystone/logging.conf
+max_token_size = 255
 
+log_config_append = /etc/keystone/logging.conf
 logging_context_format_string = %(process)d %(levelname)s %(name)s [%(request_id)s %(user_identity)s] %(instance)s%(message)s
 logging_default_format_string = %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
 logging_exception_prefix = %(process)d ERROR %(name)s %(instance)s
@@ -65,6 +66,17 @@ memcache_servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | d
 config_prefix = cache.keystone
 enabled = true
 
+{{- if not (eq .Values.release "mitaka") }}
+# Directory containing Fernet keys used to encrypt and decrypt credentials
+# stored in the credential backend. Fernet keys used to encrypt credentials
+# have no relationship to Fernet keys used to encrypt Fernet tokens. Both sets
+# of keys should be managed separately and require different rotation policies.
+# Do not share this repository with the repository used to manage keys for
+# Fernet tokens. (string value)
+[credential]
+key_repository = /credential-keys
+{{- end }}
+
 [memcache]
 {{- if .Values.memcached.host }}
 servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
@@ -75,6 +87,9 @@ servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11
 [token]
 provider = {{ .Values.api.token.provider | default "fernet" }}
 expiration = {{ .Values.api.token.expiration | default 3600 }}
+{{- if not (eq .Values.release "mitaka") }}
+cache_on_issue = true
+{{- end }}
 
 [fernet_tokens]
 key_repository = /fernet-keys
@@ -95,6 +110,8 @@ allow_redelegation = true
 [resource]
 admin_project_domain_name = {{ default "Default" .Values.api.cloudAdminDomainName }}
 admin_project_name = {{ default "admin" .Values.api.cloudAdminProjectName }}
+project_name_url_safe = new
+domain_name_url_safe = new
 
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
@@ -110,3 +127,6 @@ rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 
 [oslo_messaging_notifications]
 driver = messaging
+
+[oslo_middleware]
+enable_proxy_headers_parsing = true
