@@ -3,7 +3,7 @@ debug = {{.Values.debug}}
 insecure_debug = true
 verbose = true
 
-max_token_size = 255
+max_token_size = 512
 
 log_config_append = /etc/keystone/logging.conf
 logging_context_format_string = %(process)d %(levelname)s %(name)s [%(request_id)s %(user_identity)s] %(instance)s%(message)s
