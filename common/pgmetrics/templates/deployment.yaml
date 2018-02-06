@@ -61,7 +61,21 @@ spec:
             cpu: {{ .Values.resources.requests.cpu | quote }}
             memory: {{ .Values.resources.requests.memory | quote }}
         {{- end }}
-
+      {{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
+      {{- if .Values.dependencyJobs }}
+      initContainers:
+        - name: init
+          image: quay.io/stackanetes/kubernetes-entrypoint:v0.2.1
+          imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+          env:
+            - name: DEPENDENCY_JOBS
+              value: {{ .Values.dependencyJobs | quote }}
+            - name: COMMAND
+              value: "echo done"
+          command:
+            - kubernetes-entrypoint
+      {{- end }}
+      {{- end }}
       volumes:
       {{- if .Values.customMetrics }}
       - name: custom-metrics
