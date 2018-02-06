@@ -13,8 +13,8 @@ automatic_share_server_cleanup = true
 
 netapp_storage_family=ontap_cluster
 netapp_server_hostname={{$share.host}}
-netapp_server_port=443
-netapp_transport_type=https
+netapp_server_port={{ $share.port | default 443 }}
+netapp_transport_type={{ $share.protocol | default "https" }}
 netapp_login={{$share.username}}
 netapp_password={{$share.password}}
 netapp_mtu={{$share.mtu}}
