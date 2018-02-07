@@ -4,10 +4,15 @@ kind: Ingress
 
 metadata:
   name: grafana
-  {{- if .Values.grafana.vice_president }}
   annotations:
+  {{- if .Values.grafana.vice_president }}
     vice-president: "true"
   {{- end}}
+  {{- if .Values.grafana.tls_client_auth.enabled}}
+    nginx.ingress.kubernetes.io/auth-tls-secret: "{{.Release.Namespace}}/ca-{{.Values.grafana.endpoint.host.public | replace "." "-"}}"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+  {{ end }}
 
 spec:
   tls:

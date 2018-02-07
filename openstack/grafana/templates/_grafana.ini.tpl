@@ -150,8 +150,20 @@ verify_email_enabled = false
 # Background text for the user field on the login page
 login_hint = UserID[@domain]
 
-[auth.basic]
+{{- if .Values.grafana.tls_client_auth.enabled}}
+[auth.proxy]
 enabled = true
+header_name = X-REMOTE-USER
+header_property = username
+auto_sign_up = false
+
+[auth.basic]
+enabled = false 
+{{- else }}
+[auth.basic]
+enabled = true 
+{{- end }}
+
 
 #################################### Auth LDAP ##########################
 [auth.ldap]
