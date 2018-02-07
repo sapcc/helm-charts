@@ -2,7 +2,7 @@
 
 set -ex
 
-{{- if or (eq .Values.release "mitaka") (eq .Values.release "newton") }}
+{{- if eq .Values.release "newton" }}
 keystone-manage --config-file=/etc/keystone/keystone.conf db_sync
 {{ else }}
 state=$(keystone-manage --config-file=/etc/keystone/keystone.conf db_sync --check)

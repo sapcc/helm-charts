@@ -66,7 +66,6 @@ memcache_servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | d
 config_prefix = cache.keystone
 enabled = true
 
-{{- if not (eq .Values.release "mitaka") }}
 # Directory containing Fernet keys used to encrypt and decrypt credentials
 # stored in the credential backend. Fernet keys used to encrypt credentials
 # have no relationship to Fernet keys used to encrypt Fernet tokens. Both sets
@@ -75,7 +74,6 @@ enabled = true
 # Fernet tokens. (string value)
 [credential]
 key_repository = /credential-keys
-{{- end }}
 
 [memcache]
 {{- if .Values.memcached.host }}
@@ -87,9 +85,7 @@ servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11
 [token]
 provider = {{ .Values.api.token.provider | default "fernet" }}
 expiration = {{ .Values.api.token.expiration | default 3600 }}
-{{- if not (eq .Values.release "mitaka") }}
 cache_on_issue = true
-{{- end }}
 
 [fernet_tokens]
 key_repository = /fernet-keys

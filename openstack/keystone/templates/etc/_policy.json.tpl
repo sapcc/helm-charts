@@ -201,13 +201,8 @@
     "identity:get_auth_projects": "",
     "identity:get_auth_domains": "",
 
-{{- if eq .Values.release "mitaka" }}
-    "identity:list_projects_for_groups": "",
-    "identity:list_domains_for_groups": "",
-{{ else }}
     "identity:list_projects_for_user": "",
     "identity:list_domains_for_user": "",
-{{- end }}
 
     "identity:list_revoke_events": "",
 
