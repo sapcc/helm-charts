@@ -29,7 +29,7 @@ paste.app_factory = designate.api.v1:factory
 [composite:osapi_dns_v2]
 use = call:designate.api.middleware:auth_pipeline_factory
 noauth = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 noauthcontext maintenance normalizeuri osapi_dns_app_v2
-keystone = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 authtoken keystonecontext maintenance normalizeuri osapi_dns_app_v2
+keystone = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 authtoken keystonecontext {{- include "audit_pipe" . }} maintenance normalizeuri osapi_dns_app_v2
 
 [app:osapi_dns_app_v2]
 paste.app_factory = designate.api.v2:factory
