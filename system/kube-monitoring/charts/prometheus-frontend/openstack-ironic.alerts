@@ -1,0 +1,17 @@
+groups:
+- name: openstack-ironic.alerts
+  rules:
+
+  - alert: OpenstackIronicUnmatchedNodes
+    expr: limes_unmatched_ironic_nodes > 0
+    for: 1m # metric is measured every 15 minutes, so this is practically identical to "for: 15m" except it appears and resolves faster
+    labels:
+      meta: Some Ironic nodes do not match any Nova baremetal flavor
+      service: ironic
+      severity: info
+      tier: openstack
+    annotations:
+      description: Some active/available Ironic nodes do not match any Nova
+        baremetal flavor. Make sure that number of cores, RAM size and disk size
+        are set correctly, and that there is a flavor for each type of server.
+      summary: Some Ironic nodes do not match any Nova baremetal flavor.
