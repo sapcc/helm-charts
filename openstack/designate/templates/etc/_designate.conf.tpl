@@ -449,4 +449,9 @@ connection = mysql+pymysql://root:{{.Values.mariadb.root_password}}@designate-ma
 # [hook_point:designate.api.v2.controllers.zones.get_one]
 
 # Defines CADF Audit Middleware section
-{{- include "ini_sections.audit_middleware_notifications" . }}
+# this is for the cadf audit messaging
+[audit_middleware_notifications]
+topics = notifications
+driver = messagingv2
+transport_url = rabbit://rabbitmq:AHardPa55w0rd!@designate-rabbitmq-notifications:5672/
+mem_queue_size = 1000
