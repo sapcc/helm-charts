@@ -7,7 +7,10 @@ metadata:
       prometheus.io/scrape: "true"
       prometheus.io/port: "10254"
 spec:
-  type: ClusterIP 
+  type: ClusterIP
+{{- if or (ge .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "5") }}
+  externalTrafficPolicy: Local
+{{- end }}
   selector:
     app: nginx-ingress-controller
   ports: 
