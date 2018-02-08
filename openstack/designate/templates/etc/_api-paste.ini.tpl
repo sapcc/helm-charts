@@ -5,10 +5,6 @@ use = egg:Paste#urlmap
 /v2: osapi_dns_v2
 /admin: osapi_dns_admin
 
-{{- define "audit_pipe" -}}
-{{- if .Values.audit.enabled }} audit{{- end -}}
-{{- end }}
-
 [composite:osapi_dns_versions]
 use = call:designate.api.middleware:auth_pipeline_factory
 noauth = http_proxy_to_wsgi cors maintenance faultwrapper sentry osapi_dns_app_versions
@@ -28,8 +24,8 @@ paste.app_factory = designate.api.v1:factory
 
 [composite:osapi_dns_v2]
 use = call:designate.api.middleware:auth_pipeline_factory
-noauth = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 noauthcontext maintenance normalizeuri osapi_dns_app_v2
-keystone = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 authtoken keystonecontext maintenance normalizeuri {{- include "audit_pipe" . }} osapi_dns_app_v2
+noauth = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 noauthcontext maintenance normalizeuri audit osapi_dns_app_v2
+keystone = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 authtoken keystonecontext maintenance normalizeuri audit osapi_dns_app_v2
 
 [app:osapi_dns_app_v2]
 paste.app_factory = designate.api.v2:factory
