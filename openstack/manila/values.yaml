@@ -79,14 +79,11 @@ pgmetrics:
             usage: "GAUGE"
             description: "Number of share networks"
     openstack_manila_shares:
-      query: "SELECT coalesce(shares.share_type_id, 'N/A') AS share_type_id, shares.project_id, shares.id, share_instances.status, COUNT(*) AS count_gauge, SUM(size) size_gauge FROM shares INNER JOIN share_instances ON shares.id=share_instances.share_id GROUP BY shares.id, shares.project_id, shares.share_type_id, share_instances.status"
+      query: "SELECT shares.project_id, shares.id, share_instances.status, COUNT(*) AS count_gauge, SUM(size) size_gauge FROM shares INNER JOIN share_instances ON shares.id=share_instances.share_id GROUP BY shares.id, shares.project_id, share_instances.status"
       metrics:
         - project_id:
             usage: "LABEL"
             description: "Project ID"
-        - share_type_id:
-            usage: "LABEL"
-            description: "Type of the share"
         - id:
             usage: "LABEL"
             description: "Share ID"
@@ -100,7 +97,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "Size of shares"
     openstack_manila_snapshot:
-      query: "SELECT share_snapshots.project_id, share_snapshots.share_id, share_snapshots.id, share_snapshot_instances.status, COUNT(*) AS count_gauge, SUM(size) size_gauge FROM share_snapshots INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id GROUP BY share_snapshots.id, share_snapshots.project_id, share_snapshots.share_id, share_snapshot_instances.status"
+      query: "SELECT share_snapshots.project_id, share_snapshots.share_id, share_snapshots.id, share_snapshot_instances.status, COUNT(*) AS count_gauge, SUM(share_snapshots.size) size_gauge FROM share_snapshots INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id GROUP BY share_snapshots.id, share_snapshots.project_id, share_snapshots.share_id, share_snapshot_instances.status"
       metrics:
         - project_id:
             usage: "LABEL"
