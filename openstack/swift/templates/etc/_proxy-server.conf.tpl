@@ -129,7 +129,7 @@ container_listing_ratelimit_100 = 100
 [filter:cname_lookup]
 use = egg:swift#cname_lookup
 lookup_depth = 2
-storage_domain = {{$cluster.cname_lookup_storage_domain}}
+storage_domain = {{tuple $cluster $context | include "swift_endpoint_host"}}
 
 [filter:domain_remap]
 use = egg:swift#domain_remap
