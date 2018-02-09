@@ -107,13 +107,13 @@ pgmetrics:
             description: "Project ID"
         - share_id:
             usage: "LABEL"
-            description: "Type of the share"
+            description: "Share ID"
         - id:
             usage: "LABEL"
-            description: "Share ID"
+            description: "Snapshot ID"
         - status:
             usage: "LABEL"
-            description: "Share status"
+            description: "Snapshot status"
         - count_gauge:
             usage: "GAUGE"
             description: "Number of shares"
@@ -139,7 +139,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "Maximum duration of state"
     openstack_manila_snapshot_stuck: 
-      query: "SELECT share_snapshots.project_id, share_snapshots.share_id, share_snapshots.id, share_snapshot_instances.status, COUNT(*) FILTER (WHERE share_snapshot_instances.updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - share_snapshot_instances.updated_at)) FROM share_snapshots INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id WHERE share_snapshot_instances.status in ('deleting','creating') GROUP BY share_snapshots.id, share_snapshots.project_id, share_snapshots.share_id, share_snapshot_instances.status"
+      query: "SELECT share_snapshots.project_id, share_snapshots.share_id, share_snapshots.id, share_snapshot_instances.status, COUNT(*) FILTER (WHERE share_snapshot_instances.updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - share_snapshot_instances.updated_at)) AS max_duration_gauge FROM share_snapshots INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id WHERE share_snapshot_instances.status in ('deleting','creating') GROUP BY share_snapshots.id, share_snapshots.project_id, share_snapshots.share_id, share_snapshot_instances.status"
       metrics:
         - project_id:
             usage: "LABEL"
@@ -149,7 +149,7 @@ pgmetrics:
             description: "Share ID"
         - id:
             usage: "LABEL"
-            description: "Share ID"
+            description: "Snapshot ID"
         - status:
             usage: "LABEL"
             description: "Snapshot status"
