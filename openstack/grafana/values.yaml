@@ -44,8 +44,10 @@ persistence:
   name: storage-grafana-postgres-0
   accessMode: ReadWriteMany
   size: 10Gi
+
 ingress:
   enabled: false
+
 service:
   externalPort: 3000
 
@@ -65,8 +67,6 @@ grafana:
   image_version: 4.6.3
   seeding_enabled: true
   log_level: 'Info'
-  tls_client_auth:
-    enabled: false
   admin:
     user: 'grafana_admin'
     password: '@/cc/secrets'
@@ -89,5 +89,9 @@ grafana:
       public: '3000'
     host:
       public: '@/cc/secrets'
-# tls_client_auth:
-#   enabled: true
+  auth:
+    basic_auth:
+      enabled: true
+    tls_client_auth:
+      enabled: false
+      secret: "kube-system/ingress-cacrt"

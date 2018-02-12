@@ -5,13 +5,11 @@ kind: Ingress
 metadata:
   name: grafana
   annotations:
-  {{- if .Values.grafana.vice_president }}
-    vice-president: "true"
-  {{- end}}
-  {{- if .Values.grafana.tls_client_auth.enabled}}
-    ingress.kubernetes.io/auth-tls-secret: "kube-system/ingress-cacrt"
+    vice-president: {{ default false .Values.grafana.vice_president | quote }}
+  {{- if .Values.grafana.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.grafana.auth.tls_client_auth.secret }}
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
-    ingress.kubernetes.io/auth-tls-verify-client: "on"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
   {{ end }}
 
 spec:
