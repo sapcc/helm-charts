@@ -1,7 +1,7 @@
 apiVersion: openstack.stable.sap.cc/v1
 kind: OpenstackSeed
 metadata:
-  name: kubernikus-seed
+  name: {{ required "missing .name" .Values.name }}-seed
 
 spec:
   requires:
@@ -17,7 +17,7 @@ spec:
   - name: ccadmin
 
     projects:
-    - name: kubernikus
+    - name: {{ .Values.name }}
       description: 'Kubernikus Control-Plane'
       network_quota:
         router: 1
@@ -46,22 +46,22 @@ spec:
     groups:
     - name: CCADMIN_CLOUD_ADMINS
       roles:
-      - project: kubernikus
+      - project: {{ .Values.name }}
         role: admin
-      - project: kubernikus
+      - project: {{ .Values.name }}
         role: volume_admin
-      - project: kubernikus
+      - project: {{ .Values.name }}
         role: compute_admin
-      - project: kubernikus
+      - project: {{ .Values.name }}
         role: volume_admin
-      - project: kubernikus
+      - project: {{ .Values.name }}
         role: network_admin
-      - project: kubernikus
+      - project: {{ .Values.name }}
         role: resource_admin
 
   - name: Default
     users:
-    - name: kubernikus 
+    - name: {{ required "missing .openstack.auth_user_id" .Values.openstack.auth_user_id | quote }}
       description: 'Kubernikus Service User'
       password: {{ required "missing .openstack.auth_user_password" .Values.openstack.auth_user_password | quote }}
       roles:
@@ -85,10 +85,11 @@ spec:
         role: cloud_volume_admin
 
   services:
-  - name: {{ required "missing .openstack.auth_user_id" .Values.openstack.auth_user_id | quote }}
+  - name: {{ .Values.openstack.auth_user_id }}
     type: kubernikus
     description: 'Kubernikus Service'
     endpoints:
     - interface: public
       region: {{ required "missing .openstack.region" .Values.openstack.region | quote }}
       url: 'https://kubernikus.{{.Values.openstack.region}}.cloud.sap'
+
