@@ -16,6 +16,9 @@ state_path = /var/lib/designate
 
 log_config_append = /etc/designate/logging.conf
 
+# path to api-paste configuration
+api_paste_config = /etc/designate/api-paste.ini
+
 # Use "sudo designate-rootwrap /etc/designate/rootwrap.conf" to use the real
 # root filter facility.
 # Change to "sudo" to skip the filtering and just run the command directly
