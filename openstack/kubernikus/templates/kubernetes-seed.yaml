@@ -1,23 +1,19 @@
 apiVersion: openstack.stable.sap.cc/v1
 kind: OpenstackSeed
 metadata:
-  name: kubernikus-seed
+  name: kubernetes-seed
 
 spec:
   requires:
   - {{.Values.global.keystoneNamespace}}/keystone-seed
-  - monsoon3/domain-ccadmin-seed
-
-  roles:
-    - kubernetes_admin
-    - kubernetes_member
+  - {{.Values.global.keystoneNamespace}}/domain-ccadmin-seed
+  - {{.Values.global.keystoneNamespace}}/kubernikus-seed
 
   domains:
   - name: ccadmin
-
     projects:
-    - name: kubernikus
-      description: 'Regional Kubernikus Control-Plane'
+    - name: kubernetes
+      description: 'Regional Kubernetes Scale-Out Kluster'
       network_quota:
         router: 1
         network: 1
@@ -25,35 +21,37 @@ spec:
         port: 512
         security_group: 4 
         security_group_rule: 32
-        floatingip: 4
-        loadbalancer: 4
-        healthmonitor: 4
-        listener: 4
+        floatingip: 16
+        loadbalancer: 16
+        healthmonitor: 16
+        listener: 16
       networks:
-      - name: kubernikus
+      - name: default
         subnets:
-        - name: kubernikus
-          cidr: 198.18.0.0/24
-          ip_version: 4
+         - name: kubernetes
+           cidr: 10.180.0.0/16
+           ip_version: 4
       routers:
       - name: default
         external_gateway_info:
           network: {{required "missing .external_gateway_info.network_id" .Values.external_gateway_info.network}}
         interfaces:
-        - subnet: kubernikus
+          - subnet: kubernetes
 
     groups:
     - name: CCADMIN_CLOUD_ADMINS
       roles:
-      - project: kubernikus
+      - project: kubernetes
         role: admin
-      - project: kubernikus
+      - project: kubernetes
         role: volume_admin
-      - project: kubernikus
+      - project: kubernetes
         role: compute_admin
-      - project: kubernikus
+      - project: kubernetes
         role: volume_admin
-      - project: kubernikus
+      - project: kubernetes
         role: network_admin
-      - project: kubernikus
+      - project: kubernetes
         role: resource_admin
+      - project: kubernetes
+        role: kubernetes_admin
