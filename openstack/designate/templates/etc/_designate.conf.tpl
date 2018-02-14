@@ -11,6 +11,10 @@ verbose = True
 # Show debugging output in logs (sets DEBUG log level output)
 debug = {{ .Values.debug }}
 
+# pybasedir
+#
+pybasedir = /
+
 # Top-level directory for maintaining designate's state
 state_path = /var/lib/designate
 
@@ -18,6 +22,7 @@ log_config_append = /etc/designate/logging.conf
 
 # path to api-paste configuration
 api_paste_config = /etc/designate/api-paste.ini
+
 
 # Use "sudo designate-rootwrap /etc/designate/rootwrap.conf" to use the real
 # root filter facility.
