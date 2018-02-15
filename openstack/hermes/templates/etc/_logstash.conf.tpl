@@ -162,6 +162,7 @@ output {
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
         sniffing => true
+        sniffing_path => "/_nodes/_all/http"
     }
   } else {
     elasticsearch {
@@ -172,6 +173,7 @@ output {
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
         sniffing => true
+        sniffing_path => "/_nodes/_all/http"
     }
   }
   # cc the target tenant
@@ -184,6 +186,7 @@ output {
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
         sniffing => true
+        sniffing_path => "/_nodes/_all/http"
     }
   }
 }
