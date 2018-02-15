@@ -72,7 +72,9 @@ spec:
         use_tls: false
         tls_req_cert: allow
         query_scope: one
+{{- if eq .Values.keystoneRelease "newton" }}
         use_dumb_member: false
+{{- end }}
         url: {{ .Values.ldapUrl | quote }}
         user: {{ .Values.ldapUser | quote }}
         password: {{ .Values.ldapPassword | quote }}
@@ -87,18 +89,22 @@ spec:
         user_enabled_mask: 2
         user_enabled_default: 512
         user_attribute_ignore: default_project_id
+{{- if eq .Values.keystoneRelease "newton" }}
         user_allow_create: True
         user_allow_delete: True
         user_allow_update: True
+{{- end }}
         user_tree_dn: OU=Identities,OU=Testing,{{ .Values.ldapSuffix }}
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
         group_desc_attribute: description
         group_member_attribute: member
+{{- if eq .Values.keystoneRelease "newton" }}
         group_allow_create: True
         group_allow_delete: True
         group_allow_update: True
+{{- end }}
         group_tree_dn: OU=CCTEST,OU=OSDomains,OU=Testing,{{ .Values.ldapSuffix }}
         use_pool: true
         pool_size: 10

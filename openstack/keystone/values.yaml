@@ -43,13 +43,17 @@ api:
     # Note: exception for *authenticate* event types: the outcome has to be added as suffix to make this work
     # see https://github.com/openstack/keystone/blob/af4e98c770d771144463e6dd49cb4b559d48c403/keystone/notifications.py#L743
     - identity.authenticate.success
-    - identity.authenticate.failure
+    - identity.authenticate.failed
     - identity.authenticate.pending
 
   token:
     provider: fernet
     # lifetime of a token in seconds
     expiration: 3600
+    # how long an expired token can be validated with the allow_expired flag (in seconds)
+    allow_expired_window: 28800
+    # maximum size of a token (LDAP seems to go over the default 255)
+    max_token_size: 268
 
   fernet:
     maxActiveKeys: 3

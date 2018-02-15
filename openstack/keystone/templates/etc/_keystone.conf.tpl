@@ -3,14 +3,14 @@ debug = {{.Values.debug}}
 insecure_debug = true
 verbose = true
 
-max_token_size = 512
+max_token_size = {{ .Values.api.token.max_token_size | default 255 }}
 
 log_config_append = /etc/keystone/logging.conf
 logging_context_format_string = %(process)d %(levelname)s %(name)s [%(request_id)s %(user_identity)s] %(instance)s%(message)s
 logging_default_format_string = %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
 logging_exception_prefix = %(process)d ERROR %(name)s %(instance)s
 
-notification_format = {{ .Values.api.notifications.format | default "basic" | quote }}
+notification_format = {{ .Values.api.notifications.format | default "cadf" | quote }}
 {{ range $message_type := .Values.api.notifications.opt_out }}
 notification_opt_out = {{ $message_type }}
 {{ end }}
@@ -75,16 +75,12 @@ enabled = true
 [credential]
 key_repository = /credential-keys
 
-[memcache]
-{{- if .Values.memcached.host }}
-servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
-{{ else }}
-servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11211}}
-{{- end }}
-
 [token]
 provider = {{ .Values.api.token.provider | default "fernet" }}
 expiration = {{ .Values.api.token.expiration | default 3600 }}
+{{- if not (eq .Values.release "newton") }}
+allow_expired_window = {{ .Values.api.token.allow_expired_window | default 28800 }}
+{{- end }}
 cache_on_issue = true
 
 [fernet_tokens]
@@ -93,6 +89,9 @@ max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 
 [database]
 connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@{{include "db_host" .}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
+
+[assignment]
+driver = sql
 
 [identity]
 default_domain_id = default

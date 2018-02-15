@@ -87,8 +87,9 @@ spec:
         password: {{ .Values.ldapPassword | quote }}
         suffix: {{ .Values.ldapSuffix | quote }}
         query_scope: one
+{{- if eq .Values.keystoneRelease "newton" }}
         use_dumb_member: false
-
+{{- end }}
         user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
         user_objectclass: user
         user_id_attribute: cn
@@ -100,21 +101,23 @@ spec:
         user_enabled_mask: 2
         user_enabled_default: 512
         user_attribute_ignore: default_project_id
+{{- if eq .Values.keystoneRelease "newton" }}
         user_allow_create: True
         user_allow_delete: False
         user_allow_update: True
+{{- end }}
         #user_filter: (|(memberOf=CN=MONSOON3_DOMAIN_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})(memberOf=CN=MONSOON3_TECHNICAL_USERS,OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}))
-
         group_tree_dn: OU=MONSOON3,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
         group_desc_attribute: description
         group_member_attribute: member
+{{- if eq .Values.keystoneRelease "newton" }}
         group_allow_create: False
         group_allow_delete: False
         group_allow_update: True
-
+{{- end }}
         use_pool: true
         pool_size: 10
         pool_connection_lifetime: 60

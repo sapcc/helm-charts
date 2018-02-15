@@ -2,7 +2,7 @@
 {{- if .Values.debug }}
 keys = root
 {{- else }}
-keys = root, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, amqp, amqplib, oslo_messaging
+keys = root, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, amqp, amqplib, oslo_messaging {{ if .Values.sentry.enabled }}, raven{{ end }}
 {{- end }}
 
 [handlers]
@@ -142,12 +142,21 @@ class = logging.NullHandler
 formatter = default
 args = ()
 
-{{- if .Values.sentry.enabled }}
+{{ if .Values.sentry.enabled }}
+[logger_raven]
+level = ERROR
+{{- if .Values.debug }}
+handlers = null
+{{- else }}
+handlers = stdout
+{{- end }}
+qualname = raven
+
 [handler_sentry]
 class=raven.handlers.logging.SentryHandler
 level=ERROR
 args=()
-{{- end }}
+{{ end }}
 
 [formatter_context]
 class = oslo_log.formatters.ContextFormatter

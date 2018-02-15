@@ -1,6 +1,10 @@
 {
     "admin_required": "role:admin",
+{{- if eq .Values.release "newton" }}
     "cloud_admin": "role:admin and (token.is_admin_project:True or domain_id:default)",
+{{ else }}
+    "cloud_admin": "role:admin and (is_admin_project:True or domain_id:default)",
+{{- end }}
     "service_role": "role:service",
     "service_or_admin": "rule:admin_required or rule:service_role",
     "owner": "user_id:%(user_id)s or user_id:%(target.token.user_id)s",
@@ -94,13 +98,22 @@
     "list_domain_roles": "rule:domain_admin_matches_filter_on_list_domain_roles or rule:project_admin_matches_filter_on_list_domain_roles",
     "domain_admin_matches_filter_on_list_domain_roles": "rule:admin_required and domain_id:%(domain_id)s",
     "project_admin_matches_filter_on_list_domain_roles": "rule:admin_required and project_domain_id:%(domain_id)s",
+    "admin_and_matching_prior_role_domain_id": "rule:admin_required and domain_id:%(target.prior_role.domain_id)s",
+    "implied_role_matches_prior_role_domain_or_global": "(domain_id:%(target.implied_role.domain_id)s or None:%(target.implied_role.domain_id)s)",
 
+{{- if eq .Values.release "newton" }}
     "identity:get_implied_role": "rule:cloud_admin",
     "identity:list_implied_roles": "rule:cloud_admin",
     "identity:create_implied_role": "rule:cloud_admin",
     "identity:delete_implied_role": "rule:cloud_admin",
+{{ else }}
+    "identity:get_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id",
+    "identity:list_implied_roles": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id",
+    "identity:create_implied_role": "rule:cloud_admin or (rule:admin_and_matching_prior_role_domain_id and rule:implied_role_matches_prior_role_domain_or_global)",
+    "identity:delete_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id",
+{{- end }}
     "identity:list_role_inference_rules": "rule:cloud_admin",
-    "identity:check_implied_role": "rule:cloud_admin",
+    "identity:check_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id",
 
     "blacklist_roles": "'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s",
     "blacklist_projects": "'{{.Values.api.cloudAdminProjectId}}':%(target.project.id)s",
@@ -204,7 +217,7 @@
     "identity:list_projects_for_user": "",
     "identity:list_domains_for_user": "",
 
-    "identity:list_revoke_events": "",
+    "identity:list_revoke_events": "rule:service_or_admin",
 
     "identity:create_policy_association_for_endpoint": "rule:cloud_admin",
     "identity:check_policy_association_for_endpoint": "rule:cloud_admin",
@@ -220,6 +233,7 @@
 
     "identity:create_domain_config": "rule:cloud_admin",
     "identity:get_domain_config": "rule:cloud_admin",
+    "identity:get_security_compliance_domain_config": "",
     "identity:update_domain_config": "rule:cloud_admin",
     "identity:delete_domain_config": "rule:cloud_admin",
     "identity:get_domain_config_default": "rule:cloud_admin"

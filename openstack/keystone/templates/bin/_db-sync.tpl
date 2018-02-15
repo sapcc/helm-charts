@@ -2,8 +2,11 @@
 
 set -ex
 
-{{- if eq .Values.release "newton" }}
+{{- if not (eq .Values.release "pike") }}
 keystone-manage --config-file=/etc/keystone/keystone.conf db_sync
+{{- if eq .Values.release "ocata" }}
+keystone-manage-extension --config-file=/etc/keystone/keystone.conf drop_ocata_deprecated_ldap_domain_config
+{{- end }}
 {{ else }}
 state=$(keystone-manage --config-file=/etc/keystone/keystone.conf db_sync --check)
 case $state in
