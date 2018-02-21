@@ -1,7 +1,8 @@
 {{- define "proxy-server.conf" -}}
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
-{{- $release := index . 2 -}}
+{{- $helm_release := index . 2 -}}
+{{- $swift_release := include "swift_release_first_char" $context -}}
 [DEFAULT]
 bind_port = 8080
 # NOTE: value for prod, was 4 in staging before
@@ -23,10 +24,15 @@ log_level = INFO
 {{- end }}
 
 [pipeline:main]
-{{- if eq $context.release "mitaka" }}
+{{- if le $swift_release "M" }}
+# Mitaka pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
-{{- else }}
+{{- else if eq $swift_release "P" }}
+# Pike pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+{{- else if ge $swift_release "Q" }}
+# Queens or > pipeline
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
@@ -48,7 +54,7 @@ disable_path = /etc/swift/healthcheck/proxy.disabled
 
 [filter:cache]
 use = egg:swift#memcache
-memcache_servers = memcached.{{$release.Namespace}}.svc:11211
+memcache_servers = memcached.{{$helm_release.Namespace}}.svc:11211
 memcache_max_connections = 10
 
 [filter:catch_errors]
@@ -160,8 +166,17 @@ use = egg:swift#container_quotas
 [filter:account-quotas]
 use = egg:swift#account_quotas
 
+{{- if ge $swift_release "P" }}
+
 [filter:copy]
 use = egg:swift#copy
+{{- end}}
+
+{{- if ge $swift_release "Q" }}
+
+[filter:symlink]
+use = egg:swift#symlink
+{{- end}}
 
 # [filter:statsd]
 # use = egg:ops-middleware#statsd
