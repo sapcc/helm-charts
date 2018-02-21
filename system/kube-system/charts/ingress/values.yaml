@@ -12,6 +12,13 @@ controller:
     disable-ipv6: 'true'
     ssl-redirect: 'false'
     enable-vts-status: 'true'
+    http-snippet: |
+      map $ssl_client_s_dn $ssl_client_s_dn_cn {
+          default "anonymous";
+          ~CN=(?<CN>[^/,\"]+) $CN;
+      }
+    location-snippet: |
+      proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
   # nodeSelector for the controller DaemonSet
   nodeSelector:
     species: master
@@ -23,3 +30,11 @@ defaultBackend:
 external_service_ip: DEFINED-IN-REGION
 public_service: False
 external_public_service_ip: DEFINED-IN-REGION
+tls_client_auth:
+  enabled: true
+  #cacrt: |
+  #  -----BEGIN CERTIFICATE-----
+  #  MIIB+jCCAWOgAwIBAgIEAQAAADANBgkqhkiG9w0BAQUFADAvMQswCQYDVQQGEwJE
+  #  ...
+  #  vrEcgtBVIuzM+sVEp7RRM6Y+fL9u+69krtndZ8Ft
+  #  -----END CERTIFICATE-----

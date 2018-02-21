@@ -4,10 +4,13 @@ kind: Ingress
 
 metadata:
   name: grafana
-  {{- if .Values.grafana.vice_president }}
   annotations:
-    vice-president: "true"
-  {{- end}}
+    vice-president: {{ default false .Values.grafana.vice_president | quote }}
+  {{- if .Values.grafana.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.grafana.auth.tls_client_auth.secret }}
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+  {{ end }}
 
 spec:
   tls:
