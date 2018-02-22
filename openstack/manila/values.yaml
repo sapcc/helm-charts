@@ -14,6 +14,7 @@ global:
 api_port_internal: '8786'
 debug: "True"
 image_version: '20180122.1'
+image_version_manila_nanny: '20180208115647'
 
 logging:
   formatters:
@@ -59,6 +60,14 @@ logging:
     eventlet.wsgi.server:
       handlers: stdout, sentry
       level: INFO
+
+nanny:
+  enabled: True
+  debug: False
+  interval: 60
+  db_purge:
+    enabled: True
+    older_than: 30
 
 pgmetrics:
   dependencyJobs: "monsoon3:manila-migration"
@@ -138,7 +147,7 @@ pgmetrics:
         - max_duration_gauge:
             usage: "GAUGE"
             description: "Maximum duration of state"
-    openstack_manila_snapshot_stuck: 
+    openstack_manila_snapshot_stuck:
       query: "SELECT share_snapshots.project_id, share_snapshots.share_id, share_snapshots.id, share_snapshot_instances.status, COUNT(*) FILTER (WHERE share_snapshot_instances.updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - share_snapshot_instances.updated_at)) AS max_duration_gauge FROM share_snapshots INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id WHERE share_snapshot_instances.status in ('deleting','creating') GROUP BY share_snapshots.id, share_snapshots.project_id, share_snapshots.share_id, share_snapshot_instances.status"
       metrics:
         - project_id:
@@ -158,7 +167,7 @@ pgmetrics:
             description: "Number of shares"
         - max_duration_gauge:
             usage: "GAUGE"
-            description: "Maximum duration of state"            
+            description: "Maximum duration of state"
 
 pod:
   replicas:
