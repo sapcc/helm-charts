@@ -1,3 +1,4 @@
+{{- $probing := .Values.probing }}
 {{- range $index, $cluster := .Values.clusters }}
 {{- if not $cluster.tls_crt }}
 apiVersion: extensions/v1beta1
@@ -10,6 +11,11 @@ metadata:
     kubernetes.io/ingress.class: "noop.vice-president"
     # enable vice-president
     vice-president: "true"
+    {{- if $probing }}
+    # enable probing
+    prometheus.io/probe: "true"
+    prometheus.io/probe_path: "/info"
+    {{- end}}
 
 # workaround to enable the vice-president for non-ingress based swift.
 # the vp will only evaluate the following spec.tls section
