@@ -2,7 +2,7 @@
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
 {{- $helm_release := index . 2 -}}
-{{- $swift_release := include "swift_release_first_char" $context -}}
+{{- $swift_release := include "swift_release" $context -}}
 [DEFAULT]
 bind_port = 8080
 # NOTE: value for prod, was 4 in staging before
@@ -24,13 +24,13 @@ log_level = INFO
 {{- end }}
 
 [pipeline:main]
-{{- if le $swift_release "M" }}
+{{- if le $swift_release "mitaka" }}
 # Mitaka pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
-{{- else if eq $swift_release "P" }}
+{{- else if eq $swift_release "pike" }}
 # Pike pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
-{{- else if ge $swift_release "Q" }}
+{{- else if ge $swift_release "queens" }}
 # Queens or > pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
@@ -166,13 +166,13 @@ use = egg:swift#container_quotas
 [filter:account-quotas]
 use = egg:swift#account_quotas
 
-{{- if ge $swift_release "P" }}
+{{- if ge $swift_release "pike" }}
 
 [filter:copy]
 use = egg:swift#copy
 {{- end}}
 
-{{- if ge $swift_release "Q" }}
+{{- if ge $swift_release "queens" }}
 
 [filter:symlink]
 use = egg:swift#symlink

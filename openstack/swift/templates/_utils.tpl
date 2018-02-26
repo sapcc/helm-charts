@@ -121,9 +121,9 @@ When passed via `helm upgrade --set`, the image_version is misinterpreted as a f
   {{- end -}}
 {{- end }}
 
-{{- define "swift_release_first_char" -}}
-{{- if ne .Values.image_version "DEFINED_BY_PIPELINE" -}}
-    {{ $v := .image_version | split "-"}}{{ $v._0 | trunc 1 | upper }}
+{{- define "swift_release" -}}
+{{- if ne .image_version "DEFINED_BY_PIPELINE" -}}
+    {{ $v := .image_version | split "-"}}{{ $v._0 | lower }}
   {{- end -}}
 {{- end }}
 
