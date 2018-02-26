@@ -24,6 +24,8 @@ os_region_name = {{.Values.global.region}}
 
 osapi_share_listen = 0.0.0.0
 
+service_down_time = {{ .Values.service_down_time | default 60 }}
+
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
