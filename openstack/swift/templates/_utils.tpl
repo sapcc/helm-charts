@@ -114,14 +114,16 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- /**********************************************************************************/ -}}
 When passed via `helm upgrade --set`, the image_version is misinterpreted as a float64. So special care is needed to render it correctly.
 {{- define "swift_image" -}}
-  {{- if typeIs "string" .Values.image_version -}}
-    {{ required "This release should be installed by the deployment pipeline!" "" }}
+  {{- if ne .Values.image_version "DEFINED_BY_PIPELINE" -}}
+    {{ .Values.global.imageRegistry }}/{{ .Values.imageRegistry_org }}/{{ .Values.imageRegistry_repo }}:{{ .Values.image_version }}
   {{- else -}}
-    {{- if typeIs "float64" .Values.image_version -}}
-      {{.Values.global.imageRegistry}}/monsoon/swift-{{.Values.release}}:{{.Values.image_version | printf "%0.f"}}
-    {{- else -}}
-      {{.Values.global.imageRegistry}}/monsoon/swift-{{.Values.release}}:{{.Values.image_version}}
-    {{- end -}}
+    {{ required "This release should be installed by the deployment pipeline!" "" }}
+  {{- end -}}
+{{- end }}
+
+{{- define "swift_release" -}}
+{{- if ne .image_version "DEFINED_BY_PIPELINE" -}}
+    {{ $v := .image_version | split "-"}}{{ $v._0 | lower }}
   {{- end -}}
 {{- end }}
 
