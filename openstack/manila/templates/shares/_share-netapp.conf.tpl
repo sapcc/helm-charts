@@ -17,7 +17,6 @@ automatic_share_server_cleanup = true
 netapp_vserver_name_template = ma_%s
 {{- end }}
 
-
 netapp_storage_family=ontap_cluster
 netapp_server_hostname={{$share.host}}
 netapp_server_port={{ $share.port | default 443 }}
@@ -34,7 +33,9 @@ netapp_port_name_search_pattern = {{$share.port_search_pattern}}
 
 neutron_physical_net_name={{$share.physical_network}}
 network_api_class=manila.network.neutron.neutron_network_plugin.NeutronBindNetworkPlugin
-netapp_trace_flags=method
+{{- if $share.debug }}
+netapp_trace_flags={{$share.debug}}
+{{- end }}
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
 reserved_share_percentage = {{ $share.reserved_share_percentage | default 5 }}
