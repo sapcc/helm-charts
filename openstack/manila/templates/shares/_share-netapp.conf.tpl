@@ -6,10 +6,17 @@
 storage_availability_zone = {{$az}}
 
 [netapp-multi]
-share_backend_name={{$share.backend_name | default "netapp-multi"}}
+share_backend_name={{$share.backend_name | $share.vserver | default "netapp-multi"}}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
+{{- if $share.vserver }}
+driver_handles_share_servers = false
+netapp_vserver={{ $share.vserver }}
+{{- else}}
 driver_handles_share_servers = true
 automatic_share_server_cleanup = true
+netapp_vserver_name_template = ma_%s
+{{- end }}
+
 
 netapp_storage_family=ontap_cluster
 netapp_server_hostname={{$share.host}}
@@ -22,12 +29,12 @@ netapp_mtu={{$share.mtu}}
 netapp_root_volume_aggregate={{$share.root_volume_aggregate}}
 netapp_aggregate_name_search_pattern={{$share.aggregate_search_pattern}}
 
-netapp_vserver_name_template = ma_%s
 netapp_lif_name_template = os_%(net_allocation_id)s
 netapp_port_name_search_pattern = {{$share.port_search_pattern}}
 
 neutron_physical_net_name={{$share.physical_network}}
 network_api_class=manila.network.neutron.neutron_network_plugin.NeutronBindNetworkPlugin
+netapp_trace_flags=method
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
 reserved_share_percentage = {{ $share.reserved_share_percentage | default 5 }}
