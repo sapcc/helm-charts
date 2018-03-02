@@ -43,7 +43,7 @@ lock file = /var/lock/container.lock
 
 
 [object]
-max connections = 30
+max connections = 60
 path = /srv/node
 read only = false
 lock file = /var/lock/object.lock
