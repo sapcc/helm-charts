@@ -19,7 +19,6 @@ storage_availability_zone = {{.Values.global.default_availability_zone}}
 api_paste_config = /etc/manila/api-paste.ini
 
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
-rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}
 
 os_region_name = {{.Values.global.region}}
 
@@ -69,6 +68,7 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 insecure = True
 
 [oslo_messaging_rabbit]
+rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}
 rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
 
 [oslo_concurrency]
@@ -86,5 +86,5 @@ user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 insecure = True
