@@ -18,7 +18,8 @@ storage_availability_zone = {{.Values.global.default_availability_zone}}
 # rootwrap_config = /etc/manila/rootwrap.conf
 api_paste_config = /etc/manila/api-paste.ini
 
-rpc_backend = rabbit
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
+rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}
 
 os_region_name = {{.Values.global.region}}
 
@@ -33,8 +34,6 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 {{- include "ini_sections.database_options" . }}
 
 delete_share_server_with_last_share = false
-# Unallocated share servers reclamation time interval (minutes).
-unused_share_server_cleanup_interval = {{ .Values.share_server_cleanup_interval | default 10 }}
 
 # Float representation of the over subscription ratio when thin
 # provisioning is involved. Default ratio is 20.0, meaning provisioned
@@ -53,6 +52,8 @@ quota_gigabytes = 0
 quota_snapshots = 0
 quota_snapshot_gigabytes = 0
 quota_share_networks = 0
+quota_share_groups = 0
+quota_share_group_snapshots = 0
 
 [neutron]
 auth_strategy = keystone
@@ -68,13 +69,7 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 insecure = True
 
 [oslo_messaging_rabbit]
-rabbit_userid = {{ .Values.rabbitmq.users.default.user }}
-rabbit_password = {{ .Values.rabbitmq.users.default.password }}
-rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "true" }}
 rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
-rabbit_virtual_host = {{ .Values.rabbitmq.virtual_host | default "/" }}
-rabbit_host = {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-rabbit_port = {{ .Values.rabbitmq.port | default 5672 }}
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp

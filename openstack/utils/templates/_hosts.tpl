@@ -1,13 +1,13 @@
 {{define "db_url" }}
     {{- if kindIs "map" . -}}
-postgresql://{{.Values.global.dbUser}}:{{.Values.global.dbPassword}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
+postgresql+psycopg2://{{.Values.global.dbUser}}:{{.Values.global.dbPassword}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
     {{- else }}
         {{- $envAll := index . 0 }}
         {{- $name := index . 1 }}
         {{- $user := index . 2 }}
         {{- $password := index . 3 }}
         {{- with $envAll -}}
-postgresql://{{$user}}:{{$password}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{$name}}
+postgresql+psycopg2://{{$user}}:{{$password}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{$name}}
         {{- end }}
     {{- end -}}
 ?connect_timeout=10&keepalives_idle=5&keepalives_interval=5&keepalives_count=10

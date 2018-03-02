@@ -14,6 +14,8 @@ netapp_vserver={{ $share.vserver }}
 {{- else}}
 driver_handles_share_servers = true
 automatic_share_server_cleanup = true
+# Unallocated share servers reclamation time interval (minutes).
+unused_share_server_cleanup_interval = {{ $share.share_server_cleanup_interval | default 60 }}
 netapp_vserver_name_template = ma_%s
 {{- end }}
 
