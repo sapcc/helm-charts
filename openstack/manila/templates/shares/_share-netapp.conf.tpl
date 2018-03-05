@@ -6,7 +6,7 @@
 storage_availability_zone = {{$az}}
 
 [netapp-multi]
-share_backend_name={{$share.backend_name | $share.vserver | default "netapp-multi"}}
+share_backend_name={{$share.backend_name | default $share.vserver | default "netapp-multi"}}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
 {{- if $share.vserver }}
 driver_handles_share_servers = false
