@@ -19,6 +19,7 @@ function start_application {
   # install some plugins
   grafana-cli plugins install vonage-status-panel
   grafana-cli plugins install mtanda-histogram-panel
+  grafana-cli plugins install camptocamp-prometheus-alertmanager-datasource
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until grafana is up and write to stdout and logfile in parallel
   if [ -f /grafana-bin/grafana-initial-setup ]; then
