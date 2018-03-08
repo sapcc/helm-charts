@@ -56,6 +56,12 @@ issuer_attribute = {{ .Values.services.ingress.x509.issuer_attribute | default "
 protocol = x509
 {{- end }}
 
+{{ if .Values.api.oauth1 }}
+[oauth1]
+request_token_duration = {{ .Values.api.oauth1.request_token_duration | default "28800" }}
+access_token_duration = {{ .Values.api.oauth1.access_token_duration | default "0" }}
+{{- end }}
+
 [cache]
 backend = oslo_cache.memcache_pool
 {{- if .Values.memcached.host }}
