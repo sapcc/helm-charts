@@ -11,6 +11,7 @@ groups:
       service: '{{ $labels.service }}'
       severity: info
       tier: openstack
+      meta: 'Maia exporters lagging'
     annotations:
       description: Maia exporter {{ $labels.component }} is predicted to break the 60s limit for data collection 7 days from now.
       summary: Maia exporters lagging
@@ -25,12 +26,13 @@ groups:
       service: '{{ $labels.service }}'
       severity: info
       tier: openstack
+      meta: 'Maia API lags'
     annotations:
       description: Maia API does not fulfill the responsiveness goals (99% responses within 3 seconds)
       summary: Maia API lags
 
   - alert: OpenstackMaiaPrometheusAvail
-    expr: maia_tsdb_errors_count{service="metrics"} > 0
+    expr: sum(irate(maia_tsdb_errors_count{service="metrics"}[5m])) > 0
     for: 15m
     labels:
       component: '{{ $labels.component }}'
@@ -39,12 +41,13 @@ groups:
       service: '{{ $labels.service }}'
       severity: info
       tier: openstack
+      meta: 'Maia availability affected by Prometheus issues'
     annotations:
       description: Maia API is affected by errors when accessing the underlying Prometheus installation
       summary: Maia availability affected by Prometheus issues
 
   - alert: OpenstackMaiaKeystoneAvail
-    expr: maia_logon_errors_count{service="metrics"} > 0
+    expr: sum(irate(maia_logon_errors_count{service="metrics"}[5m])) > 0
     for: 15m
     labels:
       component: '{{ $labels.component }}'
@@ -53,6 +56,7 @@ groups:
       service: '{{ $labels.service }}'
       severity: info
       tier: openstack
+      meta: 'Maia availability affected by Prometheus issues'
     annotations:
       description: Maia API is affected by errors when accessing Keystone
       summary: Maia availability affected by Keystone issues
@@ -67,6 +71,7 @@ groups:
       service: '{{ $labels.service }}'
       severity: warn
       tier: openstack
+      meta: "Maia Is not available"
     annotations:
       description: Maia monitoring endpoint is down => Maia is down
       summary: Maia is not available
