@@ -112,6 +112,9 @@ scheduler_filters = {{ .Values.scheduler_filters }}
 # Enable host request headers
 #enable_host_header = False
 
+# Make Zone description field mandatory
+#description_field_mandatory = False
+
 # The base uri used in responses
 api_base_uri = https://{{ include "designate_api_endpoint_host_public" .}}:{{.Values.global.designate_api_port_public}}
 
