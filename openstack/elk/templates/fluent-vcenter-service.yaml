@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: fluent-vcenter
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+    component: fluent-vcenter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ prometheus_port }}"
+spec:
+  selector:
+    component: fluent-vcenter
+  ports:
+    - name: metrics
+      port: prometheus_port
+    - name: logs
+      port: syslog_port
