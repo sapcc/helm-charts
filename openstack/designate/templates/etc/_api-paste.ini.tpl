@@ -24,8 +24,8 @@ paste.app_factory = designate.api.v1:factory
 
 [composite:osapi_dns_v2]
 use = call:designate.api.middleware:auth_pipeline_factory
-noauth = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 noauthcontext maintenance normalizeuri osapi_dns_app_v2
-keystone = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 authtoken keystonecontext maintenance normalizeuri osapi_dns_app_v2
+noauth = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 noauthcontext maintenance normalizeuri audit osapi_dns_app_v2
+keystone = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 authtoken keystonecontext maintenance normalizeuri audit osapi_dns_app_v2
 
 [app:osapi_dns_app_v2]
 paste.app_factory = designate.api.v2:factory
@@ -82,3 +82,13 @@ use = egg:ops-middleware#statsd
 [filter:sentry]
 use = egg:ops-middleware#sentry
 level = ERROR
+
+# Converged Cloud audit middleware
+{{ if .Values.audit.enabled }}
+[filter:audit]
+paste.filter_factory = auditmiddleware:filter_factory
+audit_map_file = /etc/designate/designate_audit_map.yaml
+ignore_req_list = GET
+record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
+metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
+{{- end }}
