@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: logstash-etc
+  name: fluent-vcenter-etc
   labels:
     system: openstack
     service: logging
     component: configuration
 
 data:
-  prometheus_port: 24231,
-  syslog_port: 5410,
+  prometheus_port: {{.Values.fluent_vcenter.prometheus_port}},
+  syslog_port: {{.Values.fluent_vcenter.tcp_input_port}},
   fluentd.conf: |
-{{ include "elk/templates/etc/_logstash.conf.tpl" . | indent 4 }}
+{{ include "elk/templates/etc/_fluent_vcenter.conf.tpl" . | indent 4 }}
