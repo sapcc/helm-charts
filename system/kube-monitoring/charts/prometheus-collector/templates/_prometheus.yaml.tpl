@@ -312,6 +312,29 @@ scrape_configs:
     replacement: {{ $region }}
 {{ end }}
 
+{{ range $region := .Values.global.regions }}
+- job_name: 'blackbox-tcp-{{ $region }}'
+  metrics_path: /probe
+  scrape_interval: 15s
+  params:
+    module: [tcp_connect]
+  static_configs:
+    - targets:
+      {{- range $.Values.blackbox_exporter.tcp_probe_targets }}
+      - {{ . }}
+      {{- end }}
+  scheme: https
+  relabel_configs:
+  - source_labels: [__address__]
+    target_label: __param_target
+  - source_labels: [__param_target]
+    target_label: instance
+  - target_label: __address__
+    replacement: prober.{{ $region }}.cloud.sap
+  - target_label: region_probed_from
+    replacement: {{ $region }}
+{{ end }}
+
 # Static Targets 
 #
 - job_name: 'prometheus-collector'
