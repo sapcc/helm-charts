@@ -331,7 +331,7 @@ scrape_configs:
     target_label: instance
   - target_label: __address__
     replacement: prober.{{ $region }}.cloud.sap
-  - target_label: probed_from
+  - target_label: region_probed_from
     replacement: {{ $region }}
 {{ end }}
 
