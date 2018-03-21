@@ -11,10 +11,18 @@ verbose = True
 # Show debugging output in logs (sets DEBUG log level output)
 debug = {{ .Values.debug }}
 
+# pybasedir
+#
+pybasedir = /
+
 # Top-level directory for maintaining designate's state
 state_path = /var/lib/designate
 
 log_config_append = /etc/designate/logging.conf
+
+# path to api-paste configuration
+api_paste_config = /etc/designate/api-paste.ini
+
 
 # Use "sudo designate-rootwrap /etc/designate/rootwrap.conf" to use the real
 # root filter facility.
@@ -111,6 +119,9 @@ scheduler_filters = {{ .Values.scheduler_filters }}
 
 # Enable host request headers
 #enable_host_header = False
+
+# Make Zone description field mandatory
+#description_field_mandatory = False
 
 # The base uri used in responses
 api_base_uri = https://{{ include "designate_api_endpoint_host_public" .}}:{{.Values.global.designate_api_port_public}}
@@ -448,3 +459,10 @@ connection = mysql+pymysql://root:{{.Values.mariadb.root_password}}@designate-ma
 
 # [hook_point:designate.api.v2.controllers.zones.get_one]
 
+# Defines CADF Audit Middleware section
+# this is for the cadf audit messaging
+[audit_middleware_notifications]
+topics = notifications
+driver = messagingv2
+transport_url = rabbit://rabbitmq:AHardPa55w0rd!@designate-rabbitmq-notifications:5672/
+mem_queue_size = 1000

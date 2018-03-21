@@ -69,7 +69,7 @@ groups:
       summary: swift-mismatched-config
 
   - alert: OpenstackSwifNodeError
-    expr: swift_cluster_md5_ring_errors > 0
+    expr: max(swift_cluster_md5_ring_errors) by (region) > 0
     for: 15m
     labels:
       context: nodeerror
@@ -78,7 +78,7 @@ groups:
       severity: warning
       tier: openstack
     annotations:
-      description: Swift node error. Nodes not reachable.
+      description: Swift node error. {{ $value }} Node(s) not reachable.
       summary: swift-node-error
 
   - alert: OpenstackSwiftDisksUnmounted
