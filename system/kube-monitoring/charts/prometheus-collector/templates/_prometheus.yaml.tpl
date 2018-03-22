@@ -312,6 +312,8 @@ scrape_configs:
     replacement: {{ $region }}
 {{ end }}
 
+{{ if .Values.blackbox_exporter }}
+{{ if .Values.blackbox_exporter.tcp_probe_targets }}
 {{ range $region := .Values.global.regions }}
 - job_name: 'blackbox-tcp-{{ $region }}'
   metrics_path: /probe
@@ -333,6 +335,8 @@ scrape_configs:
     replacement: prober.{{ $region }}.cloud.sap
   - target_label: region_probed_from
     replacement: {{ $region }}
+{{ end }}
+{{ end }}
 {{ end }}
 
 # Static Targets 
