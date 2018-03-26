@@ -194,6 +194,13 @@ use = egg:swift#copy
 use = egg:swift#symlink
 {{- end}}
 
+# Swift3 - S3 support for swift 
+[filter:swift3]
+use = egg:swift3#swift3
+
+[filter:s3token]
+use = egg:swift3#s3token
+auth_uri = {{$cluster.keystone_auth_url}} 
 # [filter:statsd]
 # use = egg:ops-middleware#statsd
 # statsd_host = localhost
@@ -206,14 +213,3 @@ use = egg:swift#symlink
 # level = ERROR
 {{end}}
 
-# Swift3 - S3 support for swift 
-{{- if ge $swift_release "queens" }}
-
-[filter:swift3]
-use = egg:swift3#swift3
-
-[filter:s3token]
-use = egg:swift3#s3token
-auth_uri = {{$cluster.keystone_auth_url}} 
-
-{{end}
