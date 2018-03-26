@@ -32,7 +32,8 @@ pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup 
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 {{- else if ge $swift_release "queens" }}
 # Queens or > pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+# Swift3 config: Change keystone to keystoneauth, swift3 and s3token before between authtoken, and keystoneauth. Swift3 explicitly checks if keystoneauth is in the pipeline.
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken swift3 s3token keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
@@ -79,6 +80,21 @@ use = egg:swift#dlo
 
 [filter:gatekeeper]
 use = egg:swift#gatekeeper
+
+# Swift3 - The name changes to keystoneauth, going to duplicate while testing.
+# In reality, this is probably an if statement.
+#
+[filter:keystoneauth]
+use = egg:swift#keystoneauth
+operator_roles = admin, swiftoperator
+is_admin = false
+cache = swift.cache
+reseller_admin_role = swiftreseller
+default_domain_id = default
+{{- if $context.debug }}
+set log_level = DEBUG
+{{- end }}
+allow_overrides = true
 
 [filter:keystone]
 use = egg:swift#keystoneauth
@@ -189,3 +205,15 @@ use = egg:swift#symlink
 # dsn = {{$cluster.sentry_dsn}}
 # level = ERROR
 {{end}}
+
+# Swift3 - S3 support for swift 
+{{- if ge $swift_release "queens" }}
+
+[filter:swift3]
+use = egg:swift3#swift3
+
+[filter:s3token]
+use = egg:swift3#s3token
+auth_uri = {{$cluster.keystone_auth_url}} 
+
+{{end}
