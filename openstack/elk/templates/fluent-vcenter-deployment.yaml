@@ -24,7 +24,7 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: elk-etc
+        - name: fluent-vcenter-etc
           configMap:
             name: fluent-vcenter
       containers:
@@ -32,8 +32,11 @@ spec:
           image: {{.Values.docker_repo}}/fluent-vcenter:{{.Values.fluent_vcenter.image_version}}
           imagePullPolicy: IfNotPresent
           ports:
-            - name: syslog
+            - name: logs
               containerPort: {{.Values.fluent_vcenter.tcp_input_port}}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{.Values.fluent_vcenter.prometheus_port}}
               protocol: TCP
           env:
             - name: NAMESPACE
@@ -41,5 +44,5 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
           volumeMounts:
-            - name: elk-etc
+            - name: fluent-vcenter-etc
               mountPath: /etc
