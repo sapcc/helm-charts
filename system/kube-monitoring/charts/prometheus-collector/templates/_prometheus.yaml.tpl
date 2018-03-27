@@ -308,6 +308,8 @@ scrape_configs:
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_ingress_name]
     target_label: ingress_name
+  - source_labels: [__param_module]
+    target_label: module
   - target_label: region_probed_from
     replacement: {{ $region }}
 {{ end }}
@@ -333,6 +335,8 @@ scrape_configs:
     target_label: instance
   - target_label: __address__
     replacement: prober.{{ $region }}.cloud.sap
+  - source_labels: [__param_module]
+    target_label: module
   - target_label: region_probed_from
     replacement: {{ $region }}
 {{ end }}
