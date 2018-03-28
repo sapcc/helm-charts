@@ -182,7 +182,6 @@ use = egg:swift#copy
 use = egg:swift#symlink
 {{- end}}
 
-# Swift3 - S3 support for swift
 [filter:swift3]
 use = egg:swift3#swift3
 location = EU
@@ -191,7 +190,7 @@ force_swift_request_proxy_log = true
 
 [filter:s3token]
 use = egg:swift3#s3token
-auth_uri = {{$cluster.keystone_auth_url}} 
+auth_uri =  http://keystone.monsoon3.svc.kubernetes.qa-de-1.cloud.sap:5000/
 auth_version = 3
 
 # [filter:statsd]
