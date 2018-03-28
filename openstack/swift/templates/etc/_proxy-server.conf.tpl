@@ -182,7 +182,7 @@ use = egg:swift#copy
 use = egg:swift#symlink
 {{- end}}
 
-# Swift3 - S3 support for swift 
+# Swift3 - S3 support for swift
 [filter:swift3]
 use = egg:swift3#swift3
 location = EU
@@ -193,6 +193,7 @@ force_swift_request_proxy_log = true
 use = egg:swift3#s3token
 auth_uri = {{$cluster.keystone_auth_url}} 
 auth_version = 3
+
 # [filter:statsd]
 # use = egg:ops-middleware#statsd
 # statsd_host = localhost
@@ -204,4 +205,3 @@ auth_version = 3
 # dsn = {{$cluster.sentry_dsn}}
 # level = ERROR
 {{end}}
-
