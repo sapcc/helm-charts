@@ -39,7 +39,7 @@
 <match SR17595168510.**>
   @type prometheus
   <metric>
-    name SR17595168510 counter
+    name vcenter_SR17595168510
     type counter
     desc Found error pertaining to SR17595168510
     <labels>
@@ -52,7 +52,7 @@
 <match SR17629377811.**>
   @type prometheus
   <metric>
-    name SR17629377811 counter
+    name vcenter_SR17629377811
     type counter
     desc Found error pertaining to SR17629377811
     <labels>
@@ -65,7 +65,7 @@
 <match OOM.**>
   @type prometheus
   <metric>
-    name dVSwitch Out of Memory counter
+    name vcenter_dVSwitch_Out_of_Memory
     type counter
     desc Found Error that indicates long timeout on dvs calls
     <labels>
