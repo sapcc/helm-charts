@@ -1,6 +1,6 @@
 <source>
   @type syslog
-  bind {{.Values.fluent_vcenter.input_ip}}
+  bind {{default "0.0.0.0" .Values.fluent_vcenter.input_ip}}
   port {{.Values.fluent_vcenter.tcp_input_port}}
   protocol_type tcp
   tag vcenter
@@ -10,7 +10,7 @@
 
 <source>
   @type prometheus
-  bind {{.Values.fluent_vcenter.prometheus_ip}}
+  bind {{default "0.0.0.0" .Values.fluent_vcenter.prometheus_ip}}
   port {{.Values.fluent_vcenter.prometheus_port}}
 </source>
 
@@ -20,28 +20,28 @@
     @type rewrite_tag_filter
     <rule>
       key message
-      pattern success
-      tag success.${tag}
+      pattern AdapterServer\scaught\sexception:\soptional\svalue\snot\sset
+      tag SR17595168510.${tag}
     </rule>
     <rule>
       key message
-      pattern fail
-      tag fail.${tag}
+      pattern Error\sgetting\sdvport\slist\sfor.+Status\(bad0014\)=\sOut\sof\smemory
+      tag SR17629377811.${tag}
     </rule>
     <rule>
       key message
-      pattern .+
-      tag alltherest.${tag}
+      pattern ERROR.+networkSystem.+vim.host.NetworkSystem.invokeHostTransactionCall:\svmodl.fault.
+      tag OOM.${tag}
     </rule>
   </store>
 </match>
 
-<match success.**>
+<match SR17595168510.**>
   @type prometheus
   <metric>
-    name success counter
+    name SR17595168510 counter
     type counter
-    desc Found success event in vCenter log
+    desc Found error pertaining to SR17595168510
     <labels>
       tag ${tag}
       host ${host}
@@ -49,12 +49,25 @@
   </metric>
 </match>
 
-<match fail.**>
+<match SR17629377811.**>
   @type prometheus
   <metric>
-    name failure counter
+    name SR17629377811 counter
     type counter
-    desc Found a failure in vCenter log
+    desc Found error pertaining to SR17629377811
+    <labels>
+      tag ${tag} 
+      host ${host}
+    </labels>
+  </metric>
+</match>
+
+<match OOM.**>
+  @type prometheus
+  <metric>
+    name dVSwitch Out of Memory counter
+    type counter
+    desc Found Error that indicates long timeout on dvs calls
     <labels>
       tag ${tag} 
       host ${host}
