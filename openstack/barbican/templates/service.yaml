@@ -2,28 +2,15 @@ kind: Service
 apiVersion: v1
 
 metadata:
-  name: barbican
+  name: barbican-api
+  namespace: {{.Release.Namespace}} 
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api
     component: barbican
-{{- if .Values.metrics.enabled }}
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "{{.Values.metrics.port}}"
-{{- end }}
 spec:
   selector:
-    app: {{ template "fullname" . }}
-  type: {{ default "ClusterIP" .Values.services.type | quote }}
+    name: barbican-api
   ports:
-    - name: api
-      port: {{ default "9311" .Values.services.api.port }}
-      targetPort: 9311
-{{- if .Values.services.externalip }}
-  externalIPs: [
-    {{ .Values.services.externalip | quote }}
-    ]
-{{- end }}
+    - name: barbican-api
+      port: {{.Values.global.barbican_api_port_internal}}

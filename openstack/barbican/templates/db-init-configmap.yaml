@@ -1,22 +1,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: barbican-db-init
+  name: db-init-barbican
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: barbican
+    system: openstack
+    type: configuration
+    component: database
+
 data:
-  db-init.sh: |
-    #!/usr/bin/env bash
-    export PGUSER=postgres
-    psql <<- EOSQL
-        CREATE DATABASE {{ .Values.postgresql.postgresDatabase }};
-        CREATE ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.dbPassword }}' LOGIN;
-        GRANT ALL PRIVILEGES ON DATABASE {{ .Values.postgresql.postgresDatabase }} TO {{ .Values.postgresql.dbUser }};
-    EOSQL
-
-
-
+  db-init.sql: |
+    CREATE DATABASE {{.Values.db_name}};
+    CREATE ROLE {{.Values.db_user}}{{.Values.global.user_suffix}} WITH ENCRYPTED PASSWORD '{{.Values.db_password | default (tuple . .Values.db_user | include "postgres.password_for_user")}}' LOGIN;
+    GRANT ALL PRIVILEGES ON DATABASE {{.Values.db_name}} TO {{.Values.db_user}}{{.Values.global.user_suffix}};

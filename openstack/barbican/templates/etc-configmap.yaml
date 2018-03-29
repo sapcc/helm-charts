@@ -3,10 +3,8 @@ kind: ConfigMap
 metadata:
   name: barbican-etc
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: configuration
     component: barbican
 data:
   barbican-api-paste.ini: |
@@ -14,4 +12,6 @@ data:
   barbican.conf: |
 {{ include (print .Template.BasePath "/etc/_barbican.conf.tpl") . | indent 4 }}
   policy.json: |
-{{ include (print .Template.BasePath "/etc/_policy.json.tpl") . | indent 4 }}
+{{ include (print .Template.BasePath "/etc/_barbican-policy.json.tpl") . | indent 4 }}
+  logging.ini: |
+{{ include "loggerIni" .Values.logging | indent 4 }}

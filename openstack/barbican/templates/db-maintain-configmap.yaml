@@ -1,21 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: barbican-db-maintain
+  name: db-maintain-barbican
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: barbican
+    system: openstack
+    type: configuration
+    component: database
+
 data:
-  db-maintain.sh: |
-    #!/usr/bin/env bash
-    export PGUSER=postgres
-    psql <<- EOSQL
-        ALTER ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.dbPassword }}';
-        ALTER ROLE {{ .Values.postgresql.postgresUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.postgresPassword }}';
-    EOSQL
-
-
-
+  db-maintain.sql: |
+    ALTER ROLE {{.Values.db_user}}{{.Values.global.user_suffix}} WITH ENCRYPTED PASSWORD '{{.Values.db_password | default (tuple . .Values.db_user | include "postgres.password_for_user")}}';
+    ALTER ROLE {{.Values.postgres.user}} WITH ENCRYPTED PASSWORD '{{.Values.postgres.password | default (tuple . .Values.postgres.user | include "postgres.password_for_user")}}';
