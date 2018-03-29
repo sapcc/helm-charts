@@ -13,7 +13,7 @@ global:
 
 api_port_internal: '8786'
 debug: "True"
-image_version: pike-20180320.2
+image_version: pike-20180327.2
 image_version_manila_nanny: '20180319134013'
 
 logging:
@@ -97,11 +97,14 @@ pgmetrics:
             usage: "GAUGE"
             description: "Number of share networks"
     openstack_manila_shares:
-      query: "SELECT coalesce(share_instances.share_type_id, 'N/A') AS share_type_id, shares.project_id, shares.id, share_instances.status, COUNT(*) AS count_gauge, SUM(size) size_gauge FROM shares JOIN share_instances ON shares.id=share_instances.share_id GROUP BY shares.id, shares.project_id, share_instances.share_type_id, share_instances.status"
+      query: "SELECT coalesce(share_instances.share_type_id, 'N/A') AS share_type_id, share_instances.host, shares.project_id, shares.id, share_instances.status, COUNT(*) AS count_gauge, SUM(size) size_gauge FROM shares INNER JOIN share_instances ON shares.id=share_instances.share_id GROUP BY share_instances.share_type_id, share_instances.host, share_instances.status, shares.id, shares.project_id"
       metrics:
         - share_type_id:
             usage: "LABEL"
             description: "Type of the share"
+        - host:
+            usage: "LABEL"
+            description: "Host Name"
         - project_id:
             usage: "LABEL"
             description: "Project ID"

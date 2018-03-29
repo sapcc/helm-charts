@@ -48,6 +48,13 @@
     "identity:update_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id",
     "identity:delete_project": "rule:cloud_admin",
 
+    "identity:create_project_tag": "rule:admin_required",
+    "identity:delete_project_tag": "rule:admin_required",
+    "identity:get_project_tag": "rule:admin_required",
+    "identity:list_project_tags": "rule:admin_required",
+    "identity:delete_project_tags": "rule:admin_required",
+    "identity:update_project_tags": "rule:admin_required",
+
     "admin_and_matching_target_user_domain_id": "rule:admin_required and domain_id:%(target.user.domain_id)s",
     "admin_and_matching_user_domain_id": "rule:admin_required and domain_id:%(user.domain_id)s",
     "identity:get_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id or rule:owner or rule:service_role",
@@ -115,6 +122,16 @@
     "identity:list_role_inference_rules": "rule:cloud_admin",
     "identity:check_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id",
 
+    "identity:list_system_grants_for_user": "rule:admin_required",
+    "identity:check_system_grant_for_user": "rule:admin_required",
+    "identity:create_system_grant_for_user": "rule:admin_required",
+    "identity:revoke_system_grant_for_user": "rule:admin_required",
+
+    "identity:list_system_grants_for_group": "rule:admin_required",
+    "identity:check_system_grant_for_group": "rule:admin_required",
+    "identity:create_system_grant_for_group": "rule:admin_required",
+    "identity:revoke_system_grant_for_group": "rule:admin_required",
+
     "blacklist_roles": "'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s",
     "blacklist_projects": "'{{.Values.api.cloudAdminProjectId}}':%(target.project.id)s",
     "identity:check_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants",
@@ -154,6 +171,7 @@
     "identity:list_roles_for_trust": "",
     "identity:get_role_for_trust": "",
     "identity:delete_trust": "",
+    "identity:get_trust": "",
 
     "identity:create_consumer": "rule:admin_required",
     "identity:get_consumer": "rule:admin_required",
@@ -213,6 +231,7 @@
     "identity:get_auth_catalog": "",
     "identity:get_auth_projects": "",
     "identity:get_auth_domains": "",
+    "identity:get_auth_system": "",
 
     "identity:list_projects_for_user": "",
     "identity:list_domains_for_user": "",
@@ -236,5 +255,10 @@
     "identity:get_security_compliance_domain_config": "",
     "identity:update_domain_config": "rule:cloud_admin",
     "identity:delete_domain_config": "rule:cloud_admin",
-    "identity:get_domain_config_default": "rule:cloud_admin"
+    "identity:get_domain_config_default": "rule:cloud_admin",
+
+    "identity:get_application_credential": "rule:admin_or_owner",
+    "identity:list_application_credentials": "rule:admin_or_owner",
+    "identity:create_application_credential": "rule:admin_or_owner",
+    "identity:delete_application_credential": "rule:admin_or_owner"
 }

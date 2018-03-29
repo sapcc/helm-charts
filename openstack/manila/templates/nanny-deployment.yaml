@@ -50,6 +50,13 @@ spec:
               value: {{ .Values.nanny.db_purge.older_than | quote }}
             - name: MANILA_NANNY_INTERVAL
               value: {{ .Values.nanny.interval | quote }}
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: manila.DSN.python
+            {{- end }}
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
