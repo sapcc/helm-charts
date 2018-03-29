@@ -1,5 +1,6 @@
 <source>
   @type syslog
+  bind {{.Values.fluent_vcenter.input_ip}}
   port {{.Values.fluent_vcenter.tcp_input_port}}
   protocol_type tcp
   tag vcenter
@@ -9,6 +10,7 @@
 
 <source>
   @type prometheus
+  bind {{.Values.fluent_vcenter.prometheus_ip}}
   port {{.Values.fluent_vcenter.prometheus_port}}
 </source>
 
