@@ -30,6 +30,13 @@ spec:
         prometheus.io/port: {{.Values.metrics_port | quote}}
 {{- end}}
     spec:
+      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "master"
+        effect: "NoSchedule"
+      {{- end }}
       nodeSelector:
         species: master
       containers:
