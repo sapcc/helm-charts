@@ -1,0 +1,12 @@
+  ALERT InterconnectDown
+    IF count((count(probe_success != 1) by (region,region_probed_from) unless (count(probe_success == 1) by (region,region_probed_from) >= 1))) by (region)
+    FOR 1m
+    LABELS {
+      service = "interconnect",
+      severity = "notyetset",
+      tier = "openstack"
+    }
+    ANNOTATIONS {
+      description = "{{ $labels.region }} can’t be reached from {{ $values }} regions. False alerts are possible if prober or prometheus are down.",
+      summary = "{{ $labels.region }} can’t be reached from {{ $values }} regions."
+    }
