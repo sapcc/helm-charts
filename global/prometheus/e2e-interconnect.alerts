@@ -2,7 +2,7 @@ groups:
 - name: e2e-interconnect.alerts
   rules:
   - alert: InterconnectDown
-    expr: (count(up{job=~"blackbox-.*",region_probed_from!="lab"} == 0) by (region_probed_from) / count(up{job=~"blackbox-.*",region_probed_from!="lab"}) by (region_probed_from)) > 0.8 unless (count by (region_probed_from)((label_replace(count(probe_success{job=~"blackbox-.*"} == 1) by (region) / count (probe_success{job=~"blackbox-.*"}) by (region), "region_probed_from", "$1", "region", "(.*)")))> 0.2)
+    expr: (count(up{job=~"blackbox-.*"} == 0) by (region_probed_from) / count(up{job=~"blackbox-.*"}) by (region_probed_from)) > 0.8 unless (count by (region_probed_from)((label_replace(count(probe_success{job=~"blackbox-.*"} == 1) by (region) / count (probe_success{job=~"blackbox-.*"}) by (region), "region_probed_from", "$1", "region", "(.*)")))> 0.2)
     for: 1m
     labels:
       context: interconnect
