@@ -46,19 +46,6 @@ audit_map_file = /etc/barbican/api_audit_map.conf
 
 [filter:keystone_authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
-#need ability to re-auth a token, thus admin url
-identity_uri = {{.Values.global.keystone_api_endpoint_protocol_admin}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin }}
-admin_tenant_name = {{.Values.global.keystone_service_project}}
-admin_user = {{ .Values.global.barbican_service_user }}{{ .Values.global.user_suffix }}
-admin_password = {{ .Values.global.barbican_service_password | default (tuple . .Values.global.barbican_service_user | include "identity.password_for_user") | replace "$" "$$" }}
-auth_version = v3.0
-#delay failing perhaps to log the unauthorized request in barbican ..
-#delay_auth_decision = true
-# signing_dir is configurable, but the default behavior of the authtoken
-# middleware should be sufficient.  It will create a temporary directory
-# for the user the barbican process is running as.
-#signing_dir = /var/barbican/keystone-signing
-
 
 [filter:profile]
 use = egg:repoze.profile
@@ -72,4 +59,3 @@ unwind = false
 [filter:cors]
 paste.filter_factory = oslo_middleware.cors:filter_factory
 oslo_config_project = barbican
-
