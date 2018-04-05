@@ -33,16 +33,10 @@ Region is an implicit label that is automatically set by Prometheus. Do not over
    * `openstack`
    * `datapath`
    * `kubernikus`
-   * `e2e`
-
-`e2e` is special insofar as it does not refer to a single tier that is being
-tested, but rather to tests, that requires several tiers to work properly.
 
 ### Service
 
 The `service` label is used group alerts into logical sets. It should be a logical sub-system belonging to the `tier`. E.g. for `tier=openstack` we set `service=neutron`, `service=manila`, ...
-In the tier `e2e` those are not sub-systems but rather rough classes of tests,
-e.g `connectivity`.
 
 The label is used for grouping alerts. Grouping means that all alerts that appear roughly in the same (currently 5min) time will be combined into a single notification. Groups will be by `region`/`tier`/`service`.
 
@@ -122,7 +116,6 @@ For example:
   * `Kubernetes` `Scheduler` `ScrapeMissing`
   * `Openstack` `Nova` `StorageCrunchSoon`
   * `Datapath` `ACI` `PolutedNATTable`
-  * `E2e` `Connectivity` `TCPConnectFailed`
 
 ### Understandable Alerts
 
