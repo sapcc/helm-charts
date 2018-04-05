@@ -8,7 +8,7 @@ log_config_append = /etc/barbican/logging.ini
 bind_host = 0.0.0.0
 
 # Port to bind the API server to
-bind_port =  {{.Values.global.barbican_port_internal}}
+bind_port =  {{.Values.global.barbican_port_internal | default 9292}}
 
 # Host name, for use in HATEOAS-style references
 #  Note: Typically this would be the load balanced endpoint that clients would use
@@ -16,7 +16,7 @@ bind_port =  {{.Values.global.barbican_port_internal}}
 # If a deployment wants to derive host from wsgi request instead then make this
 # blank. Blank is needed to override default config value which is
 # 'http://localhost:9311'.
-host_href = {{.Values.global.barbican_api_endpoint_protocol_public}}://{{include "barbican_api_endpoint_host_public" .}}:{{.Values.global.barbican_api_port_public}}
+host_href = {{.Values.global.barbican_api_endpoint_protocol_public | default "https"}}://{{include "barbican_api_endpoint_host_public" .}}:{{.Values.global.barbican_api_port_public | default 443}}
 
 # Log to this file. Make sure you do not set the same log
 # file for both the API and registry servers!
