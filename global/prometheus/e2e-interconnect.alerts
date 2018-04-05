@@ -1,0 +1,13 @@
+  ALERT InterconnectDown
+    IF (count(up{job=~"blackbox-.*"} == 0) by (region_probed_from) / count(up{job=~"blackbox-.*"}) by (region_probed_from)) > 0.8 unless (count by (region_probed_from)((label_replace(count(probe_success{job=~"blackbox-.*"} == 1) by (region) / count (probe_success{job=~"blackbox-.*"}) by (region), "region_probed_from", "$1", "region", "(.*)")))> 0.2)
+    FOR 1m
+    LABELS {
+      context = "interconnect"
+      service = "interconnect"
+      severity = "notyetset"
+      tier = "e2e"
+    }
+    ANNOTATIONS {
+      description = "The connection between {{ $labels.region }} and {{ $labels.region_probed_from }} is down. False alerts are possible if prober and prometheus in the same region are simultaneously down."
+      sumary = "The connection between {{ $labels.region }} and {{ $labels.region_probed_from }} is down."
+    }
