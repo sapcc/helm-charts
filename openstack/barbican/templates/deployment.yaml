@@ -4,6 +4,10 @@ apiVersion: extensions/v1beta1
 metadata:
   name: barbican-api
   labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
     system: openstack
     type: api
     component: barbican
@@ -23,6 +27,7 @@ spec:
   template:
     metadata:
       labels:
+        app: {{ template "fullname" . }}
         name: barbican-api
 {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
@@ -80,11 +85,10 @@ spec:
               name: barbican-patches
               readOnly: true
       volumes:
-        - name: etcbarbican
-          emptyDir: {}
         - name: barbican-etc
           configMap:
             name: barbican-etc
-        - name: barbican-patches
+        - name: container-init
           configMap:
-            name: barbican-patches
+            name: barbican-bin
+            defaultMode: 0755

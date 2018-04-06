@@ -9,8 +9,7 @@ pipeline = cors versionapp
 
 # Use this pipeline for Barbican API - DEFAULT no authentication
 [pipeline:barbican_api]
-#pipeline = cors unauthenticated-context apiapp
-pipeline = keystone_authtoken context apiapp
+pipeline = cors unauthenticated-context apiapp
 
 #Use this pipeline to activate a repoze.profile middleware and HTTP port,
 #  to provide profiling information for the REST API processing.
@@ -19,11 +18,11 @@ pipeline = cors unauthenticated-context egg:Paste#cgitb egg:Paste#httpexceptions
 
 #Use this pipeline for keystone auth
 [pipeline:barbican-api-keystone]
-pipeline = cors keystone_authtoken context apiapp
+pipeline = cors authtoken context apiapp
 
 #Use this pipeline for keystone auth with audit feature
 [pipeline:barbican-api-keystone-audit]
-pipeline = keystone_authtoken context audit apiapp
+pipeline = authtoken context audit apiapp
 
 [app:apiapp]
 paste.app_factory = barbican.api.app:create_main_app
@@ -44,7 +43,7 @@ paste.filter_factory = barbican.api.middleware.context:ContextMiddleware.factory
 paste.filter_factory = keystonemiddleware.audit:filter_factory
 audit_map_file = /etc/barbican/api_audit_map.conf
 
-[filter:keystone_authtoken]
+[filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 
 [filter:profile]
