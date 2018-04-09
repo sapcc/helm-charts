@@ -51,27 +51,41 @@ postgresql:
     os_password: DEFINED-IN-REGION-CHART
 
 logging:
-    formatters:
-        context:
-            class: oslo_log.formatters.ContextFormatter
-        default:
-            format: "%(message)s"
-    handlers:
-        stdout:
-            class: StreamHandler
-            formatter: context
-            args: "(sys.stdout,)"
-        sentry:
-            class: raven.handlers.logging.SentryHandler
-            level: ERROR
-            args: "()"
-    loggers:
-        root:
-            handlers: stdout, sentry
-            level: WARNING
-        barbican:
-            handlers: stdout, sentry
-            level: INFO
-        eventlet.wsgi.server:
-            handlers: stdout, sentry
-            level: INFO
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      formatter: context
+      args: "(sys.stdout,)"
+  sentry:
+    class: raven.handlers.logging.SentryHandler
+    level: ERROR
+    args: "()"
+loggers:
+  root:
+    handlers: stdout, sentry
+    level: WARNING
+  barbican:
+    handlers: stdout, sentry
+    level: INFO
+  eventlet.wsgi.server:
+    handlers: stdout, sentry
+    level: INFO
+
+rabbitmq:
+  users:
+    default:
+      password: DEFINED-IN-REGION-CHART
+    admin:
+      password: DEFINED-IN-REGION-CHART
+  persistence:
+    enabled: false
+  metrics:
+    password: DEFINED-IN-REGION-CHART
+
+sentry:
+  enabled: true
