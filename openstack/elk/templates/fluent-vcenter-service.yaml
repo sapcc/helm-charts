@@ -1,0 +1,20 @@
+{{- if .Values.fluent_vcenter.enabled }}
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: fluent-vcenter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{.Values.fluent_vcenter_prometheus_port}}"
+
+spec:
+  selector:
+    component: fluent-vcenter
+  ports:
+    - name: metrics
+      port: {{.Values.fluent_vcenter.prometheus_port}}
+    - name: logs
+      port: {{.Values.fluent_vcenter.tcp_input_port}}
+  externalIPs: ["{{.Values.fluent_vcenter.external_ip}}"]
+{{- end }}
