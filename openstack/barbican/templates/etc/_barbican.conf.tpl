@@ -8,7 +8,7 @@ log_config_append = /etc/barbican/logging.ini
 bind_host = 0.0.0.0
 
 # Port to bind the API server to
-bind_port =  {{.Values.global.barbican_port_internal | default 9292}}
+bind_port =  {{.Values.global.barbican_port_internal | default 9311}}
 
 # Host name, for use in HATEOAS-style references
 #  Note: Typically this would be the load balanced endpoint that clients would use
@@ -34,6 +34,8 @@ max_allowed_secret_in_bytes = 10000
 max_allowed_request_size_in_bytes = 1000000
 
 sql_connection = {{ include "db_url" . }}
+
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
