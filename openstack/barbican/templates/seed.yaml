@@ -1,0 +1,56 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: barbican-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+
+  roles:
+  - keymanager_viewer
+  - keymanager_admin
+  - cloud_keymanager_admin
+
+  services:
+  - name: barbican
+    type: key-manager
+    description: Openstack Key Management
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "barbican_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v1/%(tenant_id)s'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "barbican_api_endpoint_host_public" .}}/v1/%(tenant_id)s'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "barbican_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}/v1/%(tenant_id)s'
+
+  domains:
+  - name: Default
+    users:
+    - name: admin
+      roles:
+      - domain: Default
+        role: cloud_keymanager_admin
+      - project: admin
+        role: cloud_keymanager_admin
+    - name: barbican
+      description: 'Barbican Service'
+      password: '{{.Values.global.barbican_service_password}}'
+      roles:
+      - project: service
+        role: service
+
+    groups:
+    - name: administrators
+      roles:
+      - domain: Default
+        role: cloud_keymanager_admin
+      - project: admin
+        role: cloud_keymanager_admin
