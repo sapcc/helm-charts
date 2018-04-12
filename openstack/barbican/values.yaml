@@ -66,8 +66,12 @@ logging:
     handlers:
         stdout:
             class: StreamHandler
-            formatter: context
             args: "(sys.stdout,)"
+            formatter: context
+        "null":
+            class: logging.NullHandler
+            formatter: default
+            args: "()"
         sentry:
             class: raven.handlers.logging.SentryHandler
             level: ERROR
@@ -82,7 +86,7 @@ logging:
         eventlet.wsgi.server:
             handlers: stdout, sentry
             level: INFO
-        sqlalchemy:
+        sqlalchemy.engine.base.Engine:
             handlers: stdout, sentry
             level: WARNING
 
