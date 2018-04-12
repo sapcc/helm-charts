@@ -1,17 +1,19 @@
 [asr1k]
 
 monitor = asr1k_neutron_l3.common.prometheus_monitor.PrometheusMonitor
-
+yang_connection_pool_size=10
 [asr1k_l3]
 
 fabric_asn = {{.Values.asr.fabric_asn}}
-max_requeue_attempts=10
-
-
+max_requeue_attempts=1
+sync_active = True
+sync_chunk_size = 10
+sync_interval = 60
+threadpool_maxsize=5
 
 [asr1k_l2]
 sync_active = True
-sync_chunk_size = 30
+sync_chunk_size = 20
 sync_interval = 60
 
 # These are Port-channelX
