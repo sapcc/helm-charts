@@ -21,8 +21,15 @@ ivs-ctl: CommandFilter, ivs-ctl, root
 mm-ctl: CommandFilter, mm-ctl, root
 dhcp_release: CommandFilter, dhcp_release, root
 
-# metadata proxy
+# haproxy
+haproxy: RegExpFilter, haproxy, root, haproxy, -f, .*
+kill_haproxy: KillFilter, root, haproxy, -15, -9, -HUP
+# DEPRECATED: metadata proxy
 metadata_proxy: CommandFilter, neutron-ns-metadata-proxy, root
+
+# TODO(dalvarez): Remove kill_metadata* filters in Q release since
+# neutron-ns-metadata-proxy is now replaced by haproxy. We keep them for now
+# for the migration process
 # RHEL invocation of the metadata proxy will report /usr/bin/python
 kill_metadata: KillFilter, root, python, -9
 kill_metadata7: KillFilter, root, python2.7, -9
