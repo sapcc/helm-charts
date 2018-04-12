@@ -10,6 +10,8 @@ max_requeue_attempts=1
 sync_active = True
 sync_chunk_size = 10
 sync_interval = 60
+# number of threads to spawn during router update, it must be < yang_connection_pool_size and if set higher
+# the driver will reduce to = yang_connection_pool_size
 threadpool_maxsize=5
 
 [asr1k_l2]
