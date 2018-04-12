@@ -14,7 +14,6 @@ global:
 api_port_internal: '8786'
 debug: "True"
 image_version: pike-20180329.1
-image_version_manila_nanny: '20180329150054'
 
 logging:
   formatters:
@@ -64,18 +63,28 @@ logging:
       handlers: stdout, sentry
       level: INFO
 
+image_version_manila_nanny: '20180329150054'
 nanny:
   enabled: True
+  # debug mode - no script run in the containers, just a sleep loop
   debug: False
+  # run the nanny every n minutes
   interval: 60
   db_purge:
     enabled: True
-    older_than: 30
+    # purge deleted db entries older than n days
+    older_than: 7
   quota_sync:
     enabled: True
+    # dry run mode, i.e. just check for consistency without fixing it
+    dry_run: True
+  consistency:
+    enabled: False
+    # dry run mode, i.e. just check for consistency without fixing it
     dry_run: True
   db_cleanup:
     enabled: False
+    # dry run mode, i.e. just check for consistency without fixing it
     dry_run: True
 
 pgmetrics:
