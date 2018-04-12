@@ -1,7 +1,8 @@
 [asr1k]
 
 monitor = asr1k_neutron_l3.common.prometheus_monitor.PrometheusMonitor
-yang_connection_pool_size=10
+yang_connection_pool_size=8
+legacy_connection_pool_size=5
 [asr1k_l3]
 
 fabric_asn = {{.Values.asr.fabric_asn}}
