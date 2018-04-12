@@ -32,19 +32,17 @@ spec:
 {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
 {{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity17" | indent 6 }}
 {{- end }}
       containers:
         - name: barbican-api
-          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-barbican-api:{{.Values.image_version_barbican | default .Values.image_version | required "Please set barbican.image_version or similar"}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{.Values.image_version_barbican | default .Values.image_version | required "Please set barbican.image_version or similar"}}
           imagePullPolicy: IfNotPresent
           command:
+            - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND
@@ -52,7 +50,14 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "postgres-barbican,rabbitmq"
+              value: "barbican-postgresql,barbican-rabbitmq"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: barbican.DSN.python
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /
@@ -81,13 +86,12 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
-            - mountPath: /barbican-patches
-              name: barbican-patches
-              readOnly: true
       volumes:
         - name: barbican-etc
           configMap:
             name: barbican-etc
+        - name: etcbarbican
+          emptyDir: {}
         - name: container-init
           configMap:
             name: barbican-bin
