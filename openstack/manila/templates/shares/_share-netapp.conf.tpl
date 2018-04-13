@@ -36,7 +36,7 @@ netapp_port_name_search_pattern = {{ $share.port_search_pattern  | default "(a0b
 neutron_physical_net_name={{$share.physical_network}}
 network_api_class=manila.network.neutron.neutron_network_plugin.NeutronBindNetworkPlugin
 {{- if $share.debug }}
-netapp_trace_flags={{$share.debug}}
+netapp_trace_flags=api,method
 {{- end }}
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
