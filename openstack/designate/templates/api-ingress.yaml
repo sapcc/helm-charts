@@ -7,10 +7,9 @@ metadata:
     system: openstack
     type: api
     component: designate
-  {{- if .Values.vice_president }}
   annotations:
-    vice-president: "true"
-  {{- end}}
+    vice-president: {{ default false .Values.vice_president | quote }}
+    prometheus.io/probe: "true"
 spec:
   tls:
     - secretName: tls-{{include "designate_api_endpoint_host_public" . | replace "." "-"}}

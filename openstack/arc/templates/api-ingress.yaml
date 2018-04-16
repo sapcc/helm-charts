@@ -18,10 +18,9 @@ metadata:
   name: arc-api
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-  {{- if .Values.api.ingress.vice_president }}
   annotations:
-    vice-president: "true"
-  {{- end }}
+    vice-president: {{ default false .Values.api.ingress.vice_president | quote }}
+    prometheus.io/probe: "true"
 spec:
   {{- if or .Values.api.ingress.tlsCertificate .Values.api.ingress.vice_president }}
   tls:

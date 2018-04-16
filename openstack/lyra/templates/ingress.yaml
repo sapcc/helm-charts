@@ -5,10 +5,9 @@ metadata:
   name: {{ .Release.Name }}
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-  {{- if .Values.ingress.vice_president }}
   annotations:
-    vice-president: "true"
-  {{- end }}
+    vice-president: {{ default false .Values.ingress.vice_president | quote }}
+    prometheus.io/probe: "true"
 spec:
   {{- if or .Values.ingress.tlsCertificate .Values.ingress.vice_president }}
   tls:
