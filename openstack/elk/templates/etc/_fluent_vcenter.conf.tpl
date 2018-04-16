@@ -65,7 +65,7 @@
 <match OOM.**>
   @type prometheus
   <metric>
-    name vcenter_dVSwitch_Out_of_Memory
+    name vcenter_dvswitch_out_of_memory
     type counter
     desc Found Error that indicates long timeout on dvs calls
     <labels>
