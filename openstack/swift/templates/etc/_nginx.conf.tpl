@@ -67,7 +67,7 @@ http {
     server {
         listen 80 default_server;
         server_name {{tuple $cluster $context | include "swift_endpoint_host"}};
-        return 301 https://$server_name$request_uri; # Redirect to https
+        return 301 https://$host$request_uri; # Redirect to https
     }
 
     {{- range $index, $san := $cluster.sans_http }}
