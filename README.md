@@ -72,3 +72,22 @@ release. Values are pulled in from a secret repository.
 ```
 helm upgrade dns ./system/dns --namespace dns --values ../secrets/staging/system/dns.yaml --install 
 ```
+
+### Usage as helm repository
+
+Simply use the 
+
+```
+$ helm repo add sapcc-helm-charts 'https://raw.githubusercontent.com/sapcc/helm-charts/master/'
+```
+followed by a 
+```
+$ helm repo update
+```
+to get the latest information about helm charts in the sapcc/helm-charts repository.
+
+```
+$ helm search vice-president
+NAME                              VERSION   DESCRIPTION                                        
+sapcc-helm-charts/vice-president  0.1.1     Automated certificate management by a kubernetes operator using the Symantec VICE API
+```
