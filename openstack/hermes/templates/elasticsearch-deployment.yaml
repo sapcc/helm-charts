@@ -51,9 +51,9 @@ spec:
           image: docker.elastic.co/elasticsearch/elasticsearch:{{.Values.hermes_image_version_elasticsearch}}
           imagePullPolicy: IfNotPresent
           command:
-            - elasticsearch
+            - "/bin/bash"
           args:
-            - "-Epath.conf=/hermes-etc"
+            - "-c", "cp /hermes-etc/jvm.options /usr/share/elasticsearch/config && elasticsearch -Epath.conf=/hermes-etc"
           env:
 #            - name: COMMAND
 #              value: " elasticsearch -Epath.conf=/hermes-etc/ "
@@ -61,8 +61,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: ES_JAVA_OPTS
-              value: "-Xms8192m -Xmx8192m"
+#            - name: ES_JAVA_OPTS
+#              value: "-Xms8192m -Xmx8192m"
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
