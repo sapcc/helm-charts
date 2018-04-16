@@ -59,38 +59,28 @@ http {
         ssl_ciphers 'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS';
         ssl_prefer_server_ciphers on;
 
-        {{- if $cluster.rate_limit_connections }}
-        # Rate Limit Connections
-        limit_conn conn_limit {{ $cluster.rate_limit_connections }};
-        limit_conn_status 429;
-        {{- end }}
-        {{- if $cluster.rate_limit_requests }}
-        # Rate Limit Requests
-        limit_req zone=req_limit burst={{ $cluster.rate_limit_burst }} nodelay;
-        limit_req_status 429;
-        {{- end }}
-
-        location / {
-            # NOTE: It's imperative that the argument to proxy_pass does not
-            # have a trailing slash. Swift needs to see the original request
-            # URL for its domain-remap and staticweb functionalities.
-            proxy_pass        http://127.0.0.1:8080;
-            proxy_set_header  Host               $host;
-            proxy_set_header  X-Real_IP          $remote_addr;
-            proxy_set_header  X-Forwarded-For    $proxy_add_x_forwarded_for;
-            proxy_set_header  X-Forwarded-Host   $host:$server_port;
-            proxy_set_header  X-Forwarded-Server $host;
-            proxy_pass_header Date;
-
-            # buffering must be disabled since GET response or PUT request bodies can be *very* large
-            # based on http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering
-            # http 1.1 must be enabled when chunked transfer encoding is used to avoid request buffering
-            proxy_http_version      1.1;
-            proxy_buffering         off;
-            proxy_request_buffering off;
-            # accept large PUT requests (5 GiB is the limit for a single object in Swift)
-            client_max_body_size    5g;
-        }
+        {{ tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
+        {{ include "swift_nginx_location" . | indent 8}}
     }
+
+    # Only allow non ssl for allowed sans, otherwise redirect
+    server {
+        listen 80 default_server;
+        server_name {{tuple $cluster $context | include "swift_endpoint_host"}};
+        return 301 https://$host$request_uri; # Redirect to https
+    }
+
+    {{- range $index, $san := $cluster.sans_http }}
+    server {
+        # TODO http/2 support
+        # This could not be enabled as there were issues with high latency connections
+        # and large file downloads
+        #listen 80 http2;
+        listen 80;
+        server_name {{$san}}.{{$context.global.region}}.{{$context.global.tld}};
+        {{ tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
+        {{ include "swift_nginx_location" . | indent 8}}
+    }
+    {{- end }}
 }
 {{end}}
