@@ -9,13 +9,16 @@ spec:
       labels:
         app: sysctl
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
+          minReadySeconds: 5
       tolerations:
       - key: "species"
         operator: "Equal"
         value: "network"
         effect: "NoSchedule"
-      {{- end }}
       containers:
         - image: sapcc/sysctl:latest
           name: sysctl

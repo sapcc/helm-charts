@@ -8,12 +8,15 @@ spec:
       labels:
         app: node-problem-detector
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
+          minReadySeconds: 5
       tolerations:
       - key: "species"
         operator: "Exists"
         effect: "NoSchedule"
-      {{- end }}
       containers:
       - name: node-problem-detector
         command:
