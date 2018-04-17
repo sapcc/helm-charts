@@ -21,17 +21,25 @@ spec:
       labels:
         component: elasticsearch
       annotations:
-#        checksum/logstash-etc-configmap.yaml: {{ include "hermes/templates/elasticsearch-etc-configmap.yaml" . | sha256sum }}
+        checksum/elasticsearch-etc-configmap.yaml: {{ include "hermes/templates/elasticsearch-etc-configmap.yaml" . | sha256sum }}
+# better delete the deployment before redeploying this after changes to the init section to make sure it really gets updated
+# copy the config to some real dir as elasticsearch seems to have problems with a kube mounted configmap as -Epath.conf
+# use the data volume for this as it will survive the init container run
+# the scripts subdir is created as otherwise elasticsearch will complain about it being missing
         pod.alpha.kubernetes.io/init-containers: '[
         {
             "name": "init",
             "image": "busybox",
             "imagePullPolicy": "IfNotPresent",
-            "command": ["sh", "-c", "chown 1000:1000 /data/"],
+            "command": ["sh", "-c", "chown 1000:1000 /data/ && rm -rf /data/es-config && mkdir /data/es-config && cp /hermes-etc/* /data/es-config && mkdir /data/es-config/scripts"],
             "volumeMounts": [
                 {
                   "name": "data",
                   "mountPath": "/data"
+                },
+                {
+                  "name": "hermes-etc",
+                  "mountPath": "/hermes-etc"
                 }
             ]
         }
@@ -51,23 +59,17 @@ spec:
           image: docker.elastic.co/elasticsearch/elasticsearch:{{.Values.hermes_image_version_elasticsearch}}
           imagePullPolicy: IfNotPresent
           command:
-            - /bin/bash
-#            - elasticsearch
+            - elasticsearch
           args:
-            - "-c"
-            - "cp /hermes-etc/jvm.options /usr/share/elasticsearch/config && elasticsearch -Epath.conf=/hermes-etc"
-#            - "-Epath.conf=/hermes-etc"
-#          env:
-#            - name: COMMAND
-#              value: " elasticsearch -Epath.conf=/hermes-etc/ "
-#            - name: NAMESPACE
-#              valueFrom:
-#                fieldRef:
-#                  fieldPath: metadata.namespace
-#            - name: ES_JAVA_OPTS
-#              value: "-Xms12g -Xmx12g"
+            # read the config from the provided real config
+            - "-Epath.conf=/data/es-config/"
+          env:
+            # we still have to tell elasticsearch where to find out jvm.options
+            - name: ES_JVM_OPTIONS
+              value: "/data/es-config/jvm.options"
           volumeMounts:
-            - name: hermes-etc
-              mountPath: /hermes-etc
+# this is not needed anymore as we copy the contents to the data volume in the init container already
+#            - name: hermes-etc
+#              mountPath: /hermes-etc
             - name: data
               mountPath: /data
