@@ -84,7 +84,7 @@ spec:
                   name: sentry
                   key: neutron.DSN.python
           ports:
-            - name: neutron-api
+            - name: neutron-api{{- tuple .Values.api.override | include "utils.snippets.debug.debuggable_port" }}
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}
           volumeMounts:
             - mountPath: /development
@@ -106,6 +106,7 @@ spec:
               protocol: UDP
             - name: metrics
               containerPort: {{.Values.port_metrics}}
+{{- tuple . .Values.api.override "neutron-api" | include "utils.snippets.debug.debug_port_container" | indent 8 }}
       volumes:
         - name: neutron-etc
           configMap:
@@ -123,3 +124,4 @@ spec:
           configMap:
             name: neutron-bin
             defaultMode: 0755
+{{- default 9696 .Values.global.neutron_api_port_internal | tuple . .Values.api.override "neutron-api" | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}

@@ -8,89 +8,90 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    system: openstack
     type: api
     component: barbican
 spec:
-  replicas: {{ .Values.replicas }}
-  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  replicas: {{ .Values.pod.replicas.api }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
   strategy:
-    type: {{ .Values.upgrades.podReplacementStrategy }}
-    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
     rollingUpdate:
-      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
-      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
     {{ end }}
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      name: barbican-api
   template:
     metadata:
       labels:
         app: {{ template "fullname" . }}
-        name: barbican
+        name: barbican-api
+{{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        chart-version: {{.Chart.Version}}
-        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        checksum/bin-configmap.conf: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
+{{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity17" | indent 6 }}
+{{- end }}
       containers:
-        - name: barbican
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}
-          imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
-          securityContext:
-            privileged: true
+        - name: barbican-api
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{.Values.image_version_barbican | default .Values.image_version | required "Please set barbican.image_version or similar"}}
+          imagePullPolicy: IfNotPresent
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+            - dumb-init
+            - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "bash /container.init/barbican-api-start"
+              value: "/barbican/bin/barbican-api"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
-            - name: DEBUG_CONTAINER
-              value: "false"
+              value: "barbican-postgresql,barbican-rabbitmq"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{ .Values.sentry.dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: barbican.DSN.python
             {{- end }}
-            {{- if .Values.metrics.enabled }}
-            - name: STATSD_HOST
-              value: "127.0.0.1"
-            - name: STATSD_PORT
-              value: "9125"
-            - name: STATSD_PREFIX
-              value: {{ .Values.metrics.prefix | default "openstack" | quote }}
-            {{- end }}
-          ports:
-            - name: api
-              containerPort: 9311
           livenessProbe:
             httpGet:
               path: /
-              port: 9311
+              port: {{.Values.global.barbican_api_port_internal}}
             initialDelaySeconds: 15
             timeoutSeconds: 5
-          {{- if .Values.api.resources.enabled }}
-          resources:
-            limits:
-              cpu: {{ .Values.api.resources.limits.cpu | quote }}
-              memory: {{ .Values.api.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.api.resources.requests.cpu | quote }}
-              memory: {{ .Values.api.resources.requests.memory | quote }}
-          {{- end }}
-
+          ports:
+            - name: barbican-api
+              containerPort: {{.Values.global.barbican_api_port_internal}}
           volumeMounts:
-            - mountPath: /barbican-etc
-              name: barbican-etc
-            - mountPath: /container.init
-              name: container-init
-
+            - name: etcbarbican
+              mountPath: /etc/barbican
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican.conf
+              subPath: barbican.conf
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican-api-paste.ini
+              subPath: barbican-api-paste.ini
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/policy.json
+              subPath: policy.json
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/logging.ini
+              subPath: logging.ini
+              readOnly: true
       volumes:
         - name: barbican-etc
           configMap:
             name: barbican-etc
+        - name: etcbarbican
+          emptyDir: {}
         - name: container-init
           configMap:
             name: barbican-bin

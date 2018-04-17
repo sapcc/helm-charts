@@ -43,7 +43,7 @@ groups:
       summary: ApiServers failed to be scraped
 
   - alert: KubernetesApiServerLatency
-    expr: max(histogram_quantile(0.99, sum without (instance,node,resource) (apiserver_request_latencies_bucket{verb!~"CONNECT|WATCHLIST|WATCH|LIST"})) / 1e6 > 2.0)
+    expr: max(histogram_quantile(0.99, sum without (instance,node,resource) (apiserver_request_latencies_bucket{verb!~"CONNECT|WATCHLIST|WATCH|LIST",subresource!="log"})) / 1e6 > 2.0)
     for: 1h
     labels:
       tier: kubernetes

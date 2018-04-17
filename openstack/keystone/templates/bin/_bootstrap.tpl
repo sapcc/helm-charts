@@ -17,5 +17,9 @@ keystone-manage --config-file=/etc/keystone/keystone.conf bootstrap \
 {{- else }}
     --bootstrap-public-url {{.Values.services.public.scheme}}://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.services.public.port}}/v3 \
 {{- end }}
+{{- if .Values.global.clusterDomain }}
+    --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3 \
+{{- else }}
     --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
+{{- end }}
     --bootstrap-region-id {{ .Values.global.region }}

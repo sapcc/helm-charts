@@ -22,14 +22,14 @@ spec:
     description: Openstack Key Management
     endpoints:
     - interface: admin
-      region: {{ .Values.global.region | quote }}
-      url: '{{ .Values.services.api.scheme }}://{{ .Values.services.api.host }}:{{ .Values.services.api.port }}'
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "barbican_api_endpoint_host_admin" .}}:{{.Values.global.barbican_api_port_internal}}'
     - interface: public
-      region: {{ .Values.global.region | quote }}
-      url: '{{ .Values.services.api.scheme }}://{{ .Values.services.api.host }}:{{ .Values.services.api.port }}'
+      region: '{{.Values.global.region}}'
+      url: 'https://{{include "barbican_api_endpoint_host_public" .}}'
     - interface: internal
-      region: {{ .Values.global.region | quote }}
-      url: 'http://barbican.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.services.api.port }}'
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "barbican_api_endpoint_host_internal" .}}:{{.Values.global.barbican_api_port_internal}}'
 
   domains:
   - name: Default
@@ -42,7 +42,7 @@ spec:
         role: cloud_keymanager_admin
     - name: barbican
       description: 'Barbican Service'
-      password: {{.Values.keystone.password | quote }}
+      password: '{{.Values.global.barbican_service_password}}'
       roles:
       - project: service
         role: service

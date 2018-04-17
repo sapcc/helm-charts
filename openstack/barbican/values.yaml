@@ -1,94 +1,95 @@
 # Default values for barbican.
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+#
+#
 global:
-  tld: cloud.sap
-  region: local
-# imageRegistry: hub.global.cloud.sap
-# specify the k8s keystone namespace if it differs from the current chart
-  #keystoneNamespace: keystone
+  imageNamespace: monsoon
+  imageRegistry: DEFINED-IN-REGION-CHART
+  barbican_service_user: barbican
+  barbican_api_port_internal: '9311'
+  dbUser: barbican
+  dbPassword: DEFINED-IN-REGION-CHART
+  pgbouncer:
+    enabled: true
 
-api:
-  image: "monsoon/ubuntu-source-barbican-m3"
-  imageTag: "20170507075527"
+pod:
+  replicas:
+    api: 2
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+           max_unavailable: 0
+           max_surge: 1
 
-  ## Specify a imagePullPolicy
-  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
-  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-  ##
-  # imagePullPolicy:
-
-  crypto_kek: OTFmWERNNWhzYzQ4UDg5NzZERkdxWTVqa2w3eWNFdGY=
-
-  debug: False
-
-  resources:
-    enabled: false
-    limits:
-      memory: 128Mi
-      cpu: 500m
-    requests:
-      memory: 128Mi
-      cpu: 500m
-
-
-services:
-  type: ClusterIP
-#  externalip: "192.168.1.100"
-
-  ingress:
-    enabled: false
-    # see https://github.com/kubernetes/ingress/blob/74d57c950282484885a74c92d3413110e3b95c69/controllers/nginx/configuration.md#rate-limiting
-  # limitRps: 100
-  # limitConnections: 100
-
-  api:
-    scheme: http
-    host: barbican.local.cloud.sap
-    port: 9311
-    #tlsCertificate:
-    #tlsKey:
-
-memcached:
-  port: 11211
-
-keystone:
-# authUrl: http://identity.cluster.cloud.sap/v3
-  identityApiVersion: 3
-  username: barbican
-  password: secret
-  userDomainId: default
-# userDomainName: Default
-  projectName: service
-  projectDomainId: default
-# projectDomainName: Default
-
-replicas: 1
-
-upgrades:
-  revisionHistory: 3
-  podReplacementStrategy: RollingUpdate
-  rollingUpdate:
-    maxUnavailable: 1
-    maxSurge: 3
-
-sentry:
-  enabled: false
-# dsn: put-your-sentry-dsn-here
+image_version: DEFINED-IN-REGION-CHART
+debug: "True"
 
 postgresql:
+  imageTag: '9.4.14'
   postgresDatabase: barbican
-  postgresUser: postgres
-  postgresPassword: secret
-
-  dbUser: barbican
-  dbPassword: anotherSecret
-
+  postgresPassword: DEFINED-IN-REGION-CHART
   dbInit: barbican-db-init
   dbMaintain: barbican-db-maintain
+  pgbouncer:
+    enabled: true
+  persistence:
+    enabled: true
+    existingClaim: db-barbican-pvclaim
+  backup:
+    enabled: true
+    metrics: true
+    imageTag: v0.5.12
+    os_password: DEFINED-IN-REGION-CHART
 
+rabbitmq:
+  users:
+    default:
+      password: DEFINED-IN-REGION-CHART
+    admin:
+      password: DEFINED-IN-REGION-CHART
   persistence:
     enabled: false
+  metrics:
+    password: DEFINED-IN-REGION-CHART
 
-  backup:
-    enabled: false
+logging:
+    formatters:
+        context:
+            class: oslo_log.formatters.ContextFormatter
+        default:
+            format: "%(message)s"
+    handlers:
+        stdout:
+            class: StreamHandler
+            args: "(sys.stdout,)"
+            formatter: context
+        "null":
+            class: logging.NullHandler
+            formatter: default
+            args: "()"
+        sentry:
+            class: raven.handlers.logging.SentryHandler
+            level: ERROR
+            args: "()"
+    loggers:
+        root:
+            handlers: stdout, sentry
+            level: WARNING
+        barbican:
+            handlers: stdout, sentry
+            level: INFO
+        eventlet.wsgi.server:
+            handlers: stdout, sentry
+            level: INFO
+        sqlalchemy.engine.base.Engine:
+            handlers: stdout, sentry
+            level: WARNING
+
+sentry:
+  enabled: true
+vice_president: true

@@ -142,3 +142,44 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     - mountPath: /swift-etc
       name: swift-etc
 {{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_nginx_location" }}
+location / {
+    # NOTE: It's imperative that the argument to proxy_pass does not
+    # have a trailing slash. Swift needs to see the original request
+    # URL for its domain-remap and staticweb functionalities.
+    proxy_pass        http://127.0.0.1:8080;
+    proxy_set_header  Host               $host;
+    proxy_set_header  X-Real_IP          $remote_addr;
+    proxy_set_header  X-Forwarded-For    $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Host   $host:$server_port;
+    proxy_set_header  X-Forwarded-Server $host;
+    proxy_pass_header Date;
+
+    # buffering must be disabled since GET response or PUT request bodies can be *very* large
+    # based on http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering
+    # http 1.1 must be enabled when chunked transfer encoding is used to avoid request buffering
+    proxy_http_version      1.1;
+    proxy_buffering         off;
+    proxy_request_buffering off;
+    # accept large PUT requests (5 GiB is the limit for a single object in Swift)
+    client_max_body_size    5g;
+}
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_nginx_ratelimit" }}
+{{- $cluster := index . 0 -}}
+{{- $context := index . 1 -}}
+{{- if $cluster.rate_limit_connections }}
+# Rate Limit Connections
+limit_conn conn_limit {{ $cluster.rate_limit_connections }};
+limit_conn_status 429;
+{{- end }}
+{{- if $cluster.rate_limit_requests }}
+# Rate Limit Requests
+limit_req zone=req_limit burst={{ $cluster.rate_limit_burst }} nodelay;
+limit_req_status 429;
+{{- end }}
+{{- end -}}

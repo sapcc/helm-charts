@@ -162,7 +162,7 @@
   "share_group_types_spec:index": "rule:context_is_admin",
   "share_group_types_spec:delete": "rule:context_is_admin",
 
-  "message:delete": "rule:context_is_admin",
-  "message:get": "rule:context_is_admin",
-  "message:get_all": "rule:context_is_admin"
+  "message:delete": "rule:context_is_sharedfilesystem_admin",
+  "message:get": "rule:context_is_viewer",
+  "message:get_all": "rule:context_is_viewer"
 }

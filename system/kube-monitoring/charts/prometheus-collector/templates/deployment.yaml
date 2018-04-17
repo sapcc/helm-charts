@@ -5,6 +5,7 @@ metadata:
   name: prometheus-collector
 
 spec:
+  revisionHistoryLimit: 5
   replicas: 1
   selector:
     matchLabels:
@@ -19,13 +20,14 @@ spec:
       terminationGracePeriodSeconds: 300
       containers:
         - name: prometheus
-          image: "{{.Values.prometheus.image}}:{{.Values.prometheus.tag}}"
+          image: "{{.Values.global.prometheus.image}}:{{.Values.global.prometheus.tag}}"
           args:
             - --config.file=/etc/prometheus/prometheus.yaml
             - --storage.tsdb.path=/prometheus
             - --storage.tsdb.retention={{.Values.retention}}
             - --web.console.libraries=/etc/prometheus/console_libraries
             - --web.console.templates=/etc/prometheus/consoles
+            - --web.enable-admin-api
             - --log.level={{ default "info" .Values.log_level }}
           ports:
             - name: http

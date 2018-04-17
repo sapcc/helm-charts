@@ -464,5 +464,5 @@ connection = mysql+pymysql://root:{{.Values.mariadb.root_password}}@designate-ma
 [audit_middleware_notifications]
 topics = notifications
 driver = messagingv2
-transport_url = rabbit://rabbitmq:AHardPa55w0rd!@designate-rabbitmq-notifications:5672/
+transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@designate-rabbitmq-notifications:5672/
 mem_queue_size = 1000

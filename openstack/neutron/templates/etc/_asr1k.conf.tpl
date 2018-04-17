@@ -1,17 +1,22 @@
 [asr1k]
 
 monitor = asr1k_neutron_l3.common.prometheus_monitor.PrometheusMonitor
-
+yang_connection_pool_size=8
+legacy_connection_pool_size=5
 [asr1k_l3]
 
 fabric_asn = {{.Values.asr.fabric_asn}}
-max_requeue_attempts=10
-
-
+max_requeue_attempts=1
+sync_active = True
+sync_chunk_size = 10
+sync_interval = 60
+# number of threads to spawn during router update, it must be < yang_connection_pool_size and if set higher
+# the driver will reduce to = yang_connection_pool_size
+threadpool_maxsize=5
 
 [asr1k_l2]
 sync_active = True
-sync_chunk_size = 30
+sync_chunk_size = 20
 sync_interval = 60
 
 # These are Port-channelX
