@@ -9,12 +9,15 @@ spec:
       labels:
         app: ntp-exporter
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
+          minReadySeconds: 5
       tolerations:
       - key: "species"
         operator: "Exists"
         effect: "NoSchedule"
-      {{- end }}
       containers:
         - name:  ntp-exporter
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
