@@ -26,13 +26,13 @@ log_level = INFO
 [pipeline:main]
 {{- if le $swift_release "mitaka" }}
 # Mitaka pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if $cluster.s3api_enabled }} swift3 s3token{{ end }} keystoneauth sysmeta-domain-override staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 {{- else if eq $swift_release "pike" }}
 # Pike pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if $cluster.s3api_enabled }} swift3 s3token{{ end }} keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 {{- else if ge $swift_release "queens" }}
 # Queens or > pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystone sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if $cluster.s3api_enabled }} swift3 s3token{{ end }} keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
@@ -80,7 +80,8 @@ use = egg:swift#dlo
 [filter:gatekeeper]
 use = egg:swift#gatekeeper
 
-[filter:keystone]
+# swift3 requires keystoneauth with exact name
+[filter:keystoneauth]
 use = egg:swift#keystoneauth
 operator_roles = admin, swiftoperator
 is_admin = false
@@ -181,6 +182,17 @@ use = egg:swift#copy
 [filter:symlink]
 use = egg:swift#symlink
 {{- end}}
+
+[filter:swift3]
+use = egg:swift3#swift3
+location = {{ $context.global.region }}
+# The standard swift proxy logging is needed,
+force_swift_request_proxy_log = true
+
+[filter:s3token]
+use = egg:swift3#s3token
+auth_uri = {{$cluster.keystone_auth_uri}}
+auth_version = 3
 
 # [filter:statsd]
 # use = egg:ops-middleware#statsd
