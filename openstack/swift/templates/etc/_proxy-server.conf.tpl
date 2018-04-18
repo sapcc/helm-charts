@@ -89,7 +89,11 @@ use = egg:swift#keystoneauth
 operator_roles = admin, swiftoperator
 is_admin = false
 cache = swift.cache
-reseller_admin_role = swiftreseller
+{{- if $cluster.seed }}
+reseller_admin_role = {{ $cluster.reseller_admin_role | default "swiftreseller" }}
+{{- else }}
+reseller_admin_role = {{ required "A valid cluster.reseller_admin_role entry required!" $cluster.reseller_admin_role }}
+{{- end }}
 default_domain_id = default
 {{- if $context.debug }}
 set log_level = DEBUG
