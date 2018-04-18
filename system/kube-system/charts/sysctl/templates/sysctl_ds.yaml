@@ -4,18 +4,18 @@ metadata:
   name: sysctl
   namespace: kube-system
 spec:
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: sysctl
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
       - key: "species"
         operator: "Equal"
         value: "network"
         effect: "NoSchedule"
-      {{- end }}
       containers:
         - image: sapcc/sysctl:latest
           name: sysctl
