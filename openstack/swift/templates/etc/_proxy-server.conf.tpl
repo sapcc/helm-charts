@@ -26,14 +26,13 @@ log_level = INFO
 [pipeline:main]
 {{- if le $swift_release "mitaka" }}
 # Mitaka pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystoneauth sysmeta-domain-override staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if $cluster.s3api_enabled }} swift3 s3token{{ end }} keystoneauth sysmeta-domain-override staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 {{- else if eq $swift_release "pike" }}
 # Pike pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if $cluster.s3api_enabled }} swift3 s3token{{ end }} keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
 {{- else if ge $swift_release "queens" }}
 # Queens or > pipeline
-# Swift3 config: Change keystone to keystoneauth, swift3 and s3token before between authtoken, and keystoneauth. Swift3 explicitly checks if keystoneauth is in the pipeline.
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken swift3 s3token keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if $cluster.s3api_enabled }} swift3 s3token{{ end }} keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
@@ -81,9 +80,7 @@ use = egg:swift#dlo
 [filter:gatekeeper]
 use = egg:swift#gatekeeper
 
-# Swift3 - The name changes to keystoneauth, going to duplicate while testing.
-# In reality, this is probably an if statement.
-#
+# swift3 requires keystoneauth with exact name
 [filter:keystoneauth]
 use = egg:swift#keystoneauth
 operator_roles = admin, swiftoperator
@@ -188,13 +185,13 @@ use = egg:swift#symlink
 
 [filter:swift3]
 use = egg:swift3#swift3
-location = EU
-#for testing, remove in prod
+location = {{ $context.global.region }}
+# The standard swift proxy logging is needed,
 force_swift_request_proxy_log = true
 
 [filter:s3token]
 use = egg:swift3#s3token
-auth_uri =  http://keystone.monsoon3.svc.kubernetes.qa-de-1.cloud.sap:5000/
+auth_uri = {{$cluster.keystone_auth_uri}}
 auth_version = 3
 
 # [filter:statsd]
