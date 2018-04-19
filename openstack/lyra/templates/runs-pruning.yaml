@@ -1,0 +1,31 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: runs-pruning
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: runs-pruning
+    spec:
+      containers:
+        - name: pruning
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          args:
+            - sh
+            - -ec
+            - |
+              while true; do
+                if [ $(date '+%H%M') = '{{ .Values.session_cleanup_time }}' ]; then
+                  bin/rake run:cleanup
+                  echo "bin/rake run:cleanup exited"
+                fi
+                sleep 55
+              done
+          env:
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
