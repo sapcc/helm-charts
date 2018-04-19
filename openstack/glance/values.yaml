@@ -33,6 +33,8 @@ store:
 
     multi_tenant: true
 
+api_port_internal: '9292'
+vice_president: true
 
 api:
   image: "monsoon/ubuntu-source-glance-api-m3"
@@ -88,13 +90,6 @@ services:
   # limitRps: 100
   # limitConnections: 100
 
-  api:
-    scheme: http
-    host: glance.local.cloud.sap
-    port: 9292
-    #tlsCertificate:
-    #tlsKey:
-
 memcached:
   port: 11211
 
@@ -136,7 +131,7 @@ metrics:
       cpu: 500m
 
 sentry:
-  enabled: false
+  enabled: true
 # dsn: put-your-sentry-dsn-here
 
 postgresql:
@@ -155,3 +150,51 @@ postgresql:
 
   backup:
     enabled: false
+
+logging:
+    formatters:
+        context:
+            class: oslo_log.formatters.ContextFormatter
+        default:
+            format: "%(message)s"
+    handlers:
+        stdout:
+            class: StreamHandler
+            args: "(sys.stdout,)"
+            formatter: context
+        "null":
+            class: logging.NullHandler
+            args: "()"
+            formatter: default
+        sentry:
+            class: raven.handlers.logging.SentryHandler
+            level: ERROR
+            args: "()"
+    loggers:
+        root:
+            handlers: "null"
+            level: WARNING
+        glance:
+            handlers: stdout, sentry
+            level: DEBUG
+        glance_store:
+            handlers: stdout, sentry
+            level: DEBUG
+        amqp:
+            handlers: stdout, sentry
+            level: WARNING
+        amqplib:
+            handlers: stdout, sentry
+            level: WARNING
+        boto:
+            handlers: stdout, sentry
+            level: WARNING
+        eventlet.wsgi.server:
+            handlers: stdout, sentry
+            level: INFO
+        sqlalchemy:
+            handlers: stdout, sentry
+            level: WARNING
+        suds:
+            handlers: stdout, sentry
+            level: WARNING
