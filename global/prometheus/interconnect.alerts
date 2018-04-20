@@ -1,12 +1,29 @@
-  ALERT InterconnectDown
+  ALERT RegionInterconnectDown
     IF count((count(probe_success != 1) by (region,region_probed_from) unless (count(probe_success == 1) by (region,region_probed_from) >= 1))) by (region)
     FOR 5m
     LABELS {
+      meta = "{{ $value }} region(s) can’t reach the region",
+      context = "interconnect",
       service = "interconnect",
-      severity = "notyetset",
+      severity = "warning",
       tier = "openstack"
     }
     ANNOTATIONS {
       description = "{{ $labels.region }} can’t be reached from {{ $value }} regions. False alerts are possible if prober or prometheus are down.",
+      summary = "{{ $labels.region }} can’t be reached from {{ $value }} regions."
+    }
+
+  ALERT RegionInterconnectDown80%
+    IF ( (count( (count(probe_success != 1) by (region,region_probed_from) unless (count(probe_success == 1) by (region,region_probed_from) >= 1)) ) by (region)) ) > (0.8 * count(count(probe_success) by (region,region_probed_from)) by (region))
+    FOR 5m
+    LABELS {
+      meta = "{{ $value }} region(s) can’t reach the region",
+      context = "interconnect",
+      service = "interconnect",
+      severity = "notyetcritical",
+      tier = "openstack"
+    }
+    ANNOTATIONS {
+      description = "{{ $labels.region }} can’t be reached from {{ $value }} regions. False alerts are possible if the regional prometheus or many probers are down.",
       summary = "{{ $labels.region }} can’t be reached from {{ $value }} regions."
     }
