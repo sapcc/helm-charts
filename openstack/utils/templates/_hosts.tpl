@@ -1,6 +1,6 @@
 {{define "db_url" }}
     {{- if kindIs "map" . -}}
-postgresql+psycopg2://{{.Values.global.dbUser}}:{{.Values.global.dbPassword}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
+postgresql+psycopg2://{{.Values.global.dbUser}}:{{.Values.global.dbPassword | default (tuple . .Values.global.dbUser | include "postgres.password_for_user")}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
     {{- else }}
         {{- $envAll := index . 0 }}
         {{- $name := index . 1 }}
@@ -90,4 +90,16 @@ postgresql+psycopg2://{{$user}}:{{$password}}@{{.Chart.Name}}-postgresql.{{.Rele
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) | include "utils.password_for_fixed_user_and_host" }}
+{{- end }}
+
+{{- define "postgres.password_for_fixed_user"}}
+    {{- $envAll := index . 0 }}
+    {{- $user := index . 1 }}
+    {{- tuple $envAll $user ( include "db_host" $envAll ) | include "utils.password_for_fixed_user_and_host" }}
+{{- end }}
+
+{{- define "postgres.password_for_user"}}
+    {{- $envAll := index . 0 }}
+    {{- $user := index . 1 }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "postgres.password_for_fixed_user" }}
 {{- end }}

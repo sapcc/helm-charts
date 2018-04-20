@@ -33,7 +33,6 @@ rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-{{- include "ini_sections.database_options" . }}
 
 delete_share_server_with_last_share = false
 
