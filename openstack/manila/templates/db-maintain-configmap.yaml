@@ -8,10 +8,6 @@ metadata:
     component: database
 
 data:
-  db-maintain.sh: |
-    #!/usr/bin/env bash
-    export PGUSER=postgres
-    psql <<- EOSQL
-        ALTER ROLE {{ .Values.global.dbUser }} WITH ENCRYPTED PASSWORD '{{.Values.global.dbPassword | default (tuple . .Values.global.dbUser | include "postgres.password_for_user")}}';
-        ALTER ROLE {{ .Values.postgresql.postgresUser }} WITH ENCRYPTED PASSWORD '{{.Values.postgresql.postgresPassword | default (tuple . .Values.postgresql.postgresUser | include "postgres.password_for_user")}}';
-    EOSQL
+  db-maintain.sql: |
+    ALTER ROLE {{ .Values.global.dbUser }} WITH ENCRYPTED PASSWORD '{{.Values.global.dbPassword | default (tuple . .Values.global.dbUser | include "postgres.password_for_user")}}';
+    ALTER ROLE {{ .Values.postgresql.postgresUser }} WITH ENCRYPTED PASSWORD '{{.Values.postgresql.postgresPassword | default (tuple . .Values.postgresql.postgresUser | include "postgres.password_for_user")}}';
