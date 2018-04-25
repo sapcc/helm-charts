@@ -26,14 +26,8 @@ spec:
         name: {{.Values.postgresDatabase}}-pgbouncer
 {{ tuple . .Values.postgresDatabase "pgbouncer" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . .Values.postgresDatabase "pgbouncer" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
-{{ tuple . .Values.postgresDatabase "pgbouncer" | include "kubernetes_pod_anti_affinity17" | indent 6 }}
-{{- end }}
+{{ tuple . .Values.postgresDatabase "pgbouncer" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       terminationGracePeriodSeconds: 150
       containers:
         - name: pgbouncer
