@@ -1,0 +1,47 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: domain-tempest-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - {{.Values.global.keystoneNamespace}}/keystone-seed
+
+  domains:
+  - name: tempest
+    description: 'Converged Cloud Tempest Testing'
+
+    projects:
+    - name: admin
+      description: 'Administration'
+    - name: service
+      description: 'Services'
+
+    users:
+    - name: admin
+      description: 'Tempest Administrator'
+      password: {{ .Values.tempestAdminPassword | quote }}
+      roles:
+      - project: admin
+        role: admin
+      - project: service
+        role: admin
+      - domain: tempest
+        role: admin
+
+    groups:
+    - name: administrators
+      description: 'Administrators'
+      users:
+      - admin
+      roles:
+      - project: admin
+        role: admin
+      - project: service
+        role: admin
+      - domain: tempest
+        role: admin
