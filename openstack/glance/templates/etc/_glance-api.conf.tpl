@@ -61,12 +61,12 @@ flavor = keystone
 enable_proxy_headers_parsing = true
 
 [glance_store]
-stores = {{ .Values.store.stores | default "file" | quote }}
-default_store = {{ .Values.store.default | default "file" | quote }}
+stores = {{ .Values.stores | default "file" | quote }}
+default_store = {{ .Values.default | default "file" | quote }}
 
 filesystem_store_datadir = /glance_store
 
-{{- if .Values.store.swift.enabled }}
+{{- if .Values.swift.enabled }}
 swift_store_region={{.Values.global.region}}
 swift_store_auth_insecure = True
 swift_store_create_container_on_put = True
