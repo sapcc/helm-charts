@@ -78,7 +78,9 @@ spec:
                   name: sentry
                   key: neutron.DSN.python
             - name: PGAPPNAME
-              value: neutron-server
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           ports:
             - name: neutron-api{{- tuple .Values.api.override | include "utils.snippets.debug.debuggable_port" }}
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}
