@@ -44,6 +44,8 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 
 api_workers = {{ .Values.api_workers | default .Values.global.api_workers | default 8 }}
 
+{{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
+
 [nova]
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
 auth_plugin = v3password
