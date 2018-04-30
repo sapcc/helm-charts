@@ -63,9 +63,9 @@ url =  {{.Values.global.designate_api_endpoint_protocol_admin | default "http"}}
 admin_auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v2.0
 admin_username = {{ .Values.global.designate_service_user | default "designate" | replace "$" "$$"}}
 admin_password = {{ .Values.global.designate_service_password | default "" | replace "$" "$$"}}
-admin_tenant_name = {{.Values.global.keystone_service_project | default "service"}}
+admin_tenant_name = {{.Values.global.keystone_service_project | default "master"}}
 insecure=True
-allow_reverse_dns_lookup = False
+allow_reverse_dns_lookup = {{.Values.global.designate_allow_reverse_dns_lookup | default "False"}}
 ipv4_ptr_zone_prefix_size = 24
 
 
