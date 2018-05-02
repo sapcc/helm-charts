@@ -14,7 +14,6 @@ postgresql+psycopg2://{{$user}}:{{$password}}@{{.Chart.Name}}-postgresql.{{.Rele
 {{- end}}
 
 {{define "rabbitmq_host"}}rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "release_rabbitmq_host"}}{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "memcached_host"}}memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
 {{define "nova_db_host"}}postgres-nova.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
@@ -103,16 +102,4 @@ postgresql+psycopg2://{{$user}}:{{$password}}@{{.Chart.Name}}-postgresql.{{.Rele
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "postgres.password_for_fixed_user" }}
-{{- end }}
-
-{{- define "rabbitmq.password_for_fixed_user"}}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- tuple $envAll $user ( include "release_rabbitmq_host" $envAll ) | include "utils.password_for_fixed_user_and_host" }}
-{{- end }}
-
-{{- define "rabbitmq.password_for_user"}}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "rabbitmq.password_for_fixed_user" }}
 {{- end }}
