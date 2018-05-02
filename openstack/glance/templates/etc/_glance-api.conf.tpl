@@ -49,6 +49,9 @@ project_domain_name = {{ .Values.keystone.projectDomainName }}
 {{- if .Values.keystone.projectDomainId }}
 project_domain_id = {{ .Values.keystone.projectDomainId }}
 {{- end }}
+{{- if .Values.memcached }}
+memcache_servers = {{include "memcached_host" .}}:{{.Values.memcached.port}}
+{{- end}}
 insecure = True
 
 [paste_deploy]
