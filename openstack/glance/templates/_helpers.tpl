@@ -16,5 +16,4 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{define "db_host"}}{{.Release.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-{{define "memcached_host"}}{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "keystone_url"}}http://keystone.{{default .Release.Namespace .Values.global.keystoneNamespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000{{end}}
