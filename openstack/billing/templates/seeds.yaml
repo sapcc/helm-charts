@@ -46,38 +46,25 @@ spec:
         enabled: true
 
   - name: cc3test
+    roles:
+    - user: {{ .Values.cc3testBillingDomainAdmUser | quote }}
+      role: admin
+    - user: {{ .Values.cc3testBillingDomainUsrUser | quote }}
+      role: member
+
     projects:
     - name: billing_test
       description: 'project for used for testing the billing service'
-    users:
-    - name: billing_domain_adm
-      description: 'user for changing cost-center assignment to domains'
-      password: {{ .Values.cc3testBillingDomainAdmPassword | quote }}
       roles:
-      - domain: cc3test
+      - user: {{ .Values.cc3testBillingProjectAdmUser | quote }}
         role: admin
-    - name: billing_domain_usr
-      description: 'user for displaying accumulated costs on a domain'
-      password: {{ .Values.cc3testBillingDomainUsrPassword | quote }}
-      roles:
-      - domain: cc3test
+      - user: {{ .Values.cc3testBillingProjectUsrUser | quote }}
         role: member
-    - name: billing_project_adm
-      description: 'user for changing cost-center assignment to projects'
-      password: {{ .Values.cc3testBillingProjectAdmPassword | quote }}
-      roles:
-      - project: billing_test
-        role: admin
-    - name: billing_project_usr
-      description: 'user for displaying accumulated costs on a project'
-      password: {{ .Values.cc3testBillingProjectUsrPassword | quote }}
-      roles:
-      - project: billing_test
-        role: member
-      - project: billing_test
+      - user: {{ .Values.cc3testBillingProjectUsrUser | quote }}
         role: swiftoperator
+
     groups:
-    - name: Administrators
+    - name: CC3TEST_DOMAIN_ADMINS
       roles:
       - project: billing_test
         role: admin
