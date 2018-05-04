@@ -21,16 +21,8 @@ max_overflow = {{ .Values.max_overflow | default 10 }}
 connection = postgresql://{{ .Values.postgresql.dbUser }}:{{ .Values.postgresql.dbPassword }}@{{include "db_host" .}}:5432/{{.Values.postgresql.postgresDatabase}}
 
 [keystone_authtoken]
-{{- if .Values.keystone.authUri }}
-auth_uri = {{.Values.keystone.authUri }}
-{{- else }}
-auth_uri = {{include "keystone_url" .}}
-{{- end }}
-{{- if .Values.keystone.authUrl }}
-auth_url = {{.Values.keystone.authUrl }}
-{{- else }}
-auth_url = {{include "keystone_url" .}}/v3
-{{- end }}
+auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
 auth_type = v3password
 username = {{ .Values.keystone.username | default "glance" | quote}}
 password = {{ .Values.keystone.password }}
