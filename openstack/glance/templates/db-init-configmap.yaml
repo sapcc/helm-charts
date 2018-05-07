@@ -13,7 +13,7 @@ data:
     #!/usr/bin/env bash
     export PGUSER=postgres
     psql <<- EOSQL
-        CREATE DATABASE {{ .Values.postgresql.postgresDatabase }};
-        CREATE ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.global.dbPassword }}' LOGIN;
-        GRANT ALL PRIVILEGES ON DATABASE {{ .Values.postgresql.postgresDatabase }} TO {{ .Values.postgresql.dbUser }};
+        CREATE DATABASE {{.Values.postgresql.postgresDatabase}};
+        CREATE ROLE {{.Values.global.dbUser}} WITH ENCRYPTED PASSWORD '{{.Values.global.dbPassword | default (tuple . .Values.global.dbUser | include "postgres.password_for_user")}}' LOGIN;
+        GRANT ALL PRIVILEGES ON DATABASE {{.Values.postgresql.postgresDatabase}} TO {{.Values.global.dbUser}};
     EOSQL
