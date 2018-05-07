@@ -1,0 +1,17 @@
+{{- if .Values.tlsHostname -}}
+kind: Secret
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: noop.vice-president
+    vice-president: "true"
+  name: {{ template "fullname" . }}
+spec:
+  backend:
+    serviceName: {{ template "fullname" . }}
+    servicePort: 9090
+  tls:
+  - hosts: [ {{ .Values.tlsHostname }} ]
+    secretName: {{ template "fullname" . }}
+{{- end -}}

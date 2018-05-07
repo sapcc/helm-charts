@@ -11,7 +11,9 @@ spec:
       labels:
         app: {{ template "fullname" . }}
       annotations:
+{{- if .Values.tlsCertificate }}
         checksum/secrets: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
+{{- end }}
     spec:
       containers:
       - name: {{ .Chart.Name }}
@@ -28,7 +30,7 @@ spec:
         env:
           - name: REGISTRY_PROXY_REMOTEURL
             value: {{ .Values.remoteURL }}
-{{- if .Values.tlsCertificate }}
+{{- if or .Values.tlsHostname .Values.tlsCertificate }}
           - name: REGISTRY_HTTP_TLS_CERTIFICATE
             value: /conf/tls.crt
           - name: REGISTRY_HTTP_TLS_KEY
@@ -39,17 +41,17 @@ spec:
         readinessProbe:
           httpGet:
             path: /
-            scheme: {{ if .Values.tlsCertificate }}HTTPS{{ else }}HTTP{{ end }}
+            scheme: {{ if or .Values.tlsHostname .Values.tlsCertificate }}HTTPS{{ else }}HTTP{{ end }}
             port: {{ .Values.service.internalPort }}
         volumeMounts:
         - name: data
           mountPath: /var/lib/registry
-{{- if .Values.tlsCertificate }}
+{{- if or .Values.tlsHostname .Values.tlsCertificate }}
         - name: secrets
           mountPath: /conf
 {{- end }}
       volumes:
-{{- if .Values.tlsCertificate }}
+{{- if or .Values.tlsHostname .Values.tlsCertificate }}
         - name: secrets
           secret:
             secretName: {{ template "fullname" . }}
