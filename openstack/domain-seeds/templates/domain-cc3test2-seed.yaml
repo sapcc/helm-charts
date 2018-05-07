@@ -14,29 +14,32 @@ spec:
   domains:
   - name: cc3test2
     description: 'Converged Cloud Testing - Domain 2'
+    roles:
+    - user: {{ .Values.cc3testAdminUser }}
+      role: admin
+    - user: {{ .Values.cc3testAdminUser }}
+      role: member
+    - user: {{ .Values.cc3testMemberUser }}
+      role: member
 
     projects:
     - name: admin
       description: 'Administrators Project'
+      roles:
+      - user: {{ .Values.cc3testAdminUser }}
+        role: admin
+      - user: {{ .Values.cc3testAdminUser }}
+        role: member
     - name: test
       description: 'Test Project'
-
-    users:
-    - name: test_admin
-      description: CC-Test Administrator
-      password: {{ .Values.cc3testAdminPassword | quote }}
-    - name: test_member
-      description: CC-Test Member
-      password: {{ .Values.cc3testMemberPassword | quote }}
-    - name: test_user
-      description: CC-Test User
-      password: {{ .Values.cc3testUserPassword | quote }}
+      roles:
+      - user: {{ .Values.cc3testAdminUser }}
+        role: admin
+      - user: {{ .Values.cc3testAdminUser }}
+        role: member
 
     groups:
-    - name: Administrators
-      description: 'Test Administrators'
-      users:
-      - test_admin
+    - name: CC3TEST_DOMAIN_ADMINS
       roles:
       - domain: cc3test2
         role: admin
@@ -50,10 +53,7 @@ spec:
         role: admin
       - project: test
         role: member
-    - name: Members
-      description: 'Test Members'
-      users:
-        - test_member
+    - name: CC3TEST_DOMAIN_MEMBERS
       roles:
       - domain: cc3test2
         role: member
@@ -84,22 +84,23 @@ spec:
         user_enabled_default: 512
         user_attribute_ignore: default_project_id
 {{- if eq .Values.keystoneRelease "newton" }}
-        user_allow_create: True
-        user_allow_delete: True
-        user_allow_update: True
+        user_allow_create: False
+        user_allow_delete: False
+        user_allow_update: False
 {{- end }}
-        user_tree_dn: OU=Identities,OU=Testing,{{ .Values.ldapSuffix }}
+        user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
+        user_filter: (memberOf=CN=CC3TEST_DOMAIN_USERS,OU=CC3TEST,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})
         group_objectclass: group
         group_id_attribute: cn
         group_name_attribute: name
         group_desc_attribute: description
         group_member_attribute: member
 {{- if eq .Values.keystoneRelease "newton" }}
-        group_allow_create: True
-        group_allow_delete: True
-        group_allow_update: True
+        group_allow_create: False
+        group_allow_delete: False
+        group_allow_update: False
 {{- end }}
-        group_tree_dn: OU=CCTEST,OU=OSDomains,OU=Testing,{{ .Values.ldapSuffix }}
+        group_tree_dn: OU=CC3TEST,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
         use_pool: true
         pool_size: 10
         pool_connection_lifetime: 60

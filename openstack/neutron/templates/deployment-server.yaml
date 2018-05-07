@@ -29,14 +29,8 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
-{{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity17" | indent 6 }}
-{{- end }}
+{{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: neutron-server
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{.Values.image_name}}:{{.Values.image_tag}}
@@ -83,6 +77,10 @@ spec:
                 secretKeyRef:
                   name: sentry
                   key: neutron.DSN.python
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           ports:
             - name: neutron-api{{- tuple .Values.api.override | include "utils.snippets.debug.debuggable_port" }}
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}
@@ -98,7 +96,7 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: statsd
-          image: prom/statsd-exporter
+          image: prom/statsd-exporter:v0.4.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: statsd

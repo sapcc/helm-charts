@@ -34,9 +34,7 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
-{{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity17" | indent 6 }}
-{{- end }}
+{{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: barbican-api
           image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{.Values.image_version_barbican | default .Values.image_version | required "Please set barbican.image_version or similar"}}
@@ -61,12 +59,12 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: {{.Values.global.barbican_api_port_internal}}
+              port: {{.Values.api_port_internal}}
             initialDelaySeconds: 15
             timeoutSeconds: 5
           ports:
             - name: barbican-api
-              containerPort: {{.Values.global.barbican_api_port_internal}}
+              containerPort: {{.Values.api_port_internal}}
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican

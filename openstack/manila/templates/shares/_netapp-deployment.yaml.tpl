@@ -26,7 +26,6 @@ spec:
       labels:
         name: manila-share-netapp-{{$share.name}}
       annotations:
-        pod.beta.kubernetes.io/hostname: manila-share-netapp-{{$share.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share $az | include "share_netapp_configmap" | sha256sum }}
     spec:
@@ -89,9 +88,7 @@ spec:
             timeoutSeconds: 3
             periodSeconds: 5
             initialDelaySeconds: 5
-      {{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
       hostname: manila-share-netapp-{{$share.name}}
-      {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}

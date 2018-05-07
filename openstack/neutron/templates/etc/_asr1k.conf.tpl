@@ -1,23 +1,23 @@
 [asr1k]
 
 monitor = asr1k_neutron_l3.common.prometheus_monitor.PrometheusMonitor
-yang_connection_pool_size=8
-legacy_connection_pool_size=5
+yang_connection_pool_size={{.Values.asr.netconf_yang_pool_size | default 8}}
+legacy_connection_pool_size={{.Values.asr.netconf_legacy_pool_size | default 5}}
 [asr1k_l3]
 
 fabric_asn = {{.Values.asr.fabric_asn}}
 max_requeue_attempts=1
-sync_active = True
-sync_chunk_size = 10
-sync_interval = 60
+sync_active = {{.Values.asr.l3_sync_active | default "True"}}
+sync_chunk_size = {{.Values.asr.l3_sync_chunk_size | default 10}}
+sync_interval = {{.Values.asr.l3_sync_interval | default 60}}
 # number of threads to spawn during router update, it must be < yang_connection_pool_size and if set higher
 # the driver will reduce to = yang_connection_pool_size
-threadpool_maxsize=5
+threadpool_maxsize={{.Values.asrl3_threadpool_pool_size | default 8}}
 
 [asr1k_l2]
-sync_active = True
-sync_chunk_size = 20
-sync_interval = 60
+sync_active = {{.Values.asr.l2_sync_active | default "True"}}
+sync_chunk_size = {{.Values.asr.l2_sync_chunk_size | default 20}}
+sync_interval = {{.Values.asr.l2_sync_interval | default 60}}
 
 # These are Port-channelX
 external_interface = 1
@@ -28,8 +28,8 @@ loopback_internal_interface = 3
 {{ range $i, $hosting_device := .Values.asr.hosting_devices}}
 [asr1k_device:{{$hosting_device.name}}]
 host = {{$hosting_device.ip}}
-user_name = {{$.Values.asr.credential_1_user_name}}
-password = {{$.Values.asr.credential_1_password}}
+user_name = {{$hosting_device.user_name}}
+password = {{$hosting_device.password}}
 {{end}}
 
 

@@ -1,0 +1,53 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: teagent
+
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: teagent
+    spec:
+      hostname: {{.Values.teagent.hostname}}
+      containers:
+        - name: teagent
+          image: thousandeyes/enterprise-agent:latest
+          securityContext:
+            privileged: true
+          command:
+            - /sbin/my_init
+          env:
+          - name: TEAGENT_INET
+            value: "4"
+          - name: TEAGENT_ACCOUNT_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: teagent
+                key: account_token
+          ports:
+            - name: vl-metrics
+              containerPort: 49152
+              protocol: UDP
+            - name: a2a-udp
+              containerPort: 49153
+              protocol: UDP
+            - name: a2a-tcp
+              containerPort: 49153
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/te-agent
+              name: agent
+            - mountPath: /var/lib/te-browserbot
+              name: browserbot
+            - mountPath: /var/log/agent
+              name: logs
+      volumes:
+      - name: agent
+        emptyDir: {}
+      - name: browserbot
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}

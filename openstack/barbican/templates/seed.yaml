@@ -10,6 +10,9 @@ metadata:
 spec:
   requires:
   - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-monsoon3-seed
 
   roles:
   - keymanager_viewer
@@ -23,13 +26,13 @@ spec:
     endpoints:
     - interface: admin
       region: '{{.Values.global.region}}'
-      url: 'http://{{include "barbican_api_endpoint_host_admin" .}}:{{.Values.global.barbican_api_port_internal}}'
+      url: 'http://{{include "barbican_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}'
     - interface: public
       region: '{{.Values.global.region}}'
       url: 'https://{{include "barbican_api_endpoint_host_public" .}}'
     - interface: internal
       region: '{{.Values.global.region}}'
-      url: 'http://{{include "barbican_api_endpoint_host_internal" .}}:{{.Values.global.barbican_api_port_internal}}'
+      url: 'http://{{include "barbican_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}'
 
   domains:
   - name: Default
@@ -54,3 +57,22 @@ spec:
         role: cloud_keymanager_admin
       - project: admin
         role: cloud_keymanager_admin
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      roles:
+      - user: admin@Default
+        role: cloud_keymanager_admin
+    groups:
+    - name: CCADMIN_CLOUD_ADMINS
+      roles:
+      - project: cloud_admin
+        role: cloud_keymanager_admin
+
+  - name: monsoon3
+    groups:
+    - name: MONSOON3_DOMAIN_ADMINS
+      roles:
+      - project: cc-demo
+        role: keymanager_admin

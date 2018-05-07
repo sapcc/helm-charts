@@ -156,10 +156,10 @@ enabled = true
 header_name = X-REMOTE-USER
 header_property = username
 auto_sign_up = false
+{{- end }}
 
 [auth.basic]
 enabled = {{ default true .Values.grafana.auth.basic_auth.enabled }}
-{{- end }}
 
 
 #################################### Auth LDAP ##########################

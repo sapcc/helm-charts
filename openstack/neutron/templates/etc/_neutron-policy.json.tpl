@@ -86,8 +86,9 @@
     "delete_segment": "rule:context_is_admin",
 
     "network_device": "field:port:device_owner=~^network:",
+    "share_device": "field:port:device_owner=~^manila:",
     "create_port": "rule:default",
-    "create_port:device_owner": "not rule:network_device or rule:context_is_network_editor",
+    "create_port:device_owner": "(not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "create_port:mac_address": "rule:context_is_network_editor",
     "create_port:fixed_ips": "rule:default",
     "create_port:port_security_enabled": "rule:context_is_network_editor",
@@ -104,7 +105,7 @@
     "get_port:binding:profile": "rule:context_is_network_viewer",
     "get_port:binding:vnic_type": "rule:context_is_network_viewer",
     "update_port": "rule:context_is_editor",
-    "update_port:device_owner": "not rule:network_device or rule:context_is_network_editor",
+    "update_port:device_owner": "(not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "update_port:mac_address": "rule:context_is_admin",
     "update_port:fixed_ips": "rule:context_is_editor",
     "update_port:port_security_enabled": "rule:context_is_network_editor",
@@ -113,7 +114,7 @@
     "update_port:binding:vnic_type": "rule:context_is_network_admin",
     "update_port:mac_learning_enabled": "rule:context_is_network_editor",
     "update_port:allowed_address_pairs": "rule:context_is_network_editor",
-    "delete_port": "rule:context_is_network_editor",
+    "delete_port": "(not rule:network_device and not rule:share_device and rule:context_is_network_editor) or rule:context_is_admin",
 
     "get_router:ha": "rule:context_is_admin",
     "create_router": "rule:context_is_network_admin",

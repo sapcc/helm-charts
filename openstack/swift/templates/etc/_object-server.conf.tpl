@@ -28,11 +28,11 @@ use = egg:swift#object
 allowed_headers = Content-Disposition, Content-Encoding, X-Delete-At, X-Object-Manifest, X-Static-Large-Object, Cache-Control
 
 [object-replicator]
-concurrency = 2
+concurrency = {{ .Values.object_replicator_concurrency }}
 
 [object-updater]
 interval = 60
-concurrency = 2
+concurrency = {{ .Values.object_updater_concurrency }}
 
 [object-auditor]
 

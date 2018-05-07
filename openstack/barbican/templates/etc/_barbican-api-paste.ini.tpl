@@ -49,8 +49,8 @@ paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 #need ability to re-auth a token, thus admin url
 identity_uri = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357 }}
 admin_tenant_name = {{.Values.global.keystone_service_project | default "service"}}
-admin_user = {{ .Values.global.barbican_service_user }}{{ .Values.global.user_suffix }}
-admin_password = {{ .Values.global.barbican_service_password | default (tuple . .Values.global.barbican_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+admin_user = {{ .Release.Name }}{{ .Values.global.user_suffix }}
+admin_password = {{ .Values.global.barbican_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "$$" }}
 auth_version = v3.0
 #delay failing perhaps to log the unauthorized request in barbican ..
 #delay_auth_decision = true

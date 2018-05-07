@@ -9,6 +9,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
+  - monsoon3/barbican-seed
   - monsoon3/domain-default-seed
   - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
@@ -19,6 +20,7 @@ spec:
   - monsoon3/domain-hec-seed
   - monsoon3/domain-monsoon3-seed
   - monsoon3/domain-s4-seed
+  - monsoon3/domain-wbs-seed
 
   roles:
   - network_admin
@@ -59,6 +61,8 @@ spec:
         role: cloud_network_admin
       - project: service
         role: cloud_compute_admin
+      - project: service
+        role: cloud_keymanager_admin
       - project: l3admin
         role: admin
       - project: l3admin
@@ -180,4 +184,15 @@ spec:
       - project: s4-net-infra
         role: cloud_network_admin
       - project: s4-shared-infra
+        role: network_admin
+
+  - name: wbs
+    groups:
+    - name: WBS_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: wbs-net-infra
+        role: network_admin
+      - project: wbs-net-infra
+        role: cloud_network_admin
+      - project: wbs-shared-infra
         role: network_admin

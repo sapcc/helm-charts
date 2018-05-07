@@ -1,12 +1,31 @@
-  ALERT InterconnectDown
-    IF count((count(probe_success != 1) by (region,region_probed_from) unless (count(probe_success == 1) by (region,region_probed_from) >= 1))) by (region)
-    FOR 5m
-    LABELS {
-      service = "interconnect",
-      severity = "notyetset",
-      tier = "openstack"
-    }
-    ANNOTATIONS {
-      description = "{{ $labels.region }} can’t be reached from {{ $value }} regions. False alerts are possible if prober or prometheus are down.",
-      summary = "{{ $labels.region }} can’t be reached from {{ $value }} regions."
-    }
+ALERT RegionInterconnectDown
+  IF count((count(probe_success != 1) by (region,region_probed_from) unless (count(probe_success == 1) by (region,region_probed_from) >= 1))) by (region)
+  FOR 5m
+  LABELS {
+    meta = "{{ $value }} region(s) can’t reach the region",
+    context = "interconnect",
+    service = "interconnect",
+    severity = "info",
+    tier = "openstack",
+    dashboard = "region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All"
+  }
+  ANNOTATIONS {
+    description = "{{ $labels.region }} can’t be reached from {{ $value }} regions. False alerts are possible if prober or prometheus are down.",
+    summary = "{{ $labels.region }} can’t be reached from {{ $value }} regions."
+  }
+
+ALERT RegionInterconnectDown80Percent
+  IF ( (count( (count(probe_success != 1) by (region,region_probed_from) unless (count(probe_success == 1) by (region,region_probed_from) >= 1)) ) by (region)) ) > (0.8 * count(count(probe_success) by (region,region_probed_from)) by (region))
+  FOR 5m
+  LABELS {
+    meta = "{{ $value }} region(s) can’t reach the region",
+    context = "interconnect",
+    service = "interconnect",
+    severity = "critical",
+    tier = "openstack",
+    dashboard = "region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All"
+  }
+  ANNOTATIONS {
+    description = "{{ $labels.region }} can’t be reached from {{ $value }} regions. False alerts are possible if the regional prometheus or many probers are down.",
+    summary = "{{ $labels.region }} can’t be reached from {{ $value }} regions."
+}

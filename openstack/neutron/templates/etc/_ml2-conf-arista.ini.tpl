@@ -1,7 +1,8 @@
 # Defines configuration options specific for Arista ML2 Mechanism driver
 
 [ml2_arista]
-eapi_host ={{.Values.arista.eapi_host}}
+api_type = {{ .Values.arista.api_type | default "EAPI" }}
+eapi_host = {{.Values.arista.eapi_host}}
 eapi_username = {{.Values.arista.eapi_username}}
 eapi_password = {{.Values.arista.eapi_password}}
 
