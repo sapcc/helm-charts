@@ -36,7 +36,7 @@ spec:
       containers:
         - name: api
           image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{.Values.image_version}}
-          imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+          imagePullPolicy: IfNotPresent
           livenessProbe:
             httpGet:
               path: /healthcheck
@@ -82,7 +82,7 @@ spec:
           {{- end }}
           ports:
             - name: api
-              containerPort: 9292
+              containerPort: {{.Values.api_port_internal}}
           volumeMounts:
             - mountPath: /glance-etc
               name: glance-etc
@@ -92,7 +92,7 @@ spec:
               name: glance-bin
         - name: registry
           image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-registry:{{.Values.image_version}}
-          imagePullPolicy: {{ .Values.registry.imagePullPolicy | default "IfNotPresent" | quote }}
+          imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/kubernetes-entrypoint
           livenessProbe:
