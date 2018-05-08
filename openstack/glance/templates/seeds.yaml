@@ -3,7 +3,7 @@ kind: "OpenstackSeed"
 metadata:
   name: glance-seed
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "name" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -23,13 +23,13 @@ spec:
     endpoints:
     - interface: admin
       region: {{ .Values.global.region | quote }}
-      url: '{{ .Values.services.api.scheme }}://{{ .Values.services.api.host }}:{{ .Values.services.api.port }}'
+      url: http://{{include "glance_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}
     - interface: public
       region: {{ .Values.global.region | quote }}
-      url: '{{ .Values.services.api.scheme }}://{{ .Values.services.api.host }}:{{ .Values.services.api.port }}'
+      url: https://{{include "glance_api_endpoint_host_public" .}}
     - interface: internal
       region: {{ .Values.global.region | quote }}
-      url: 'http://glance.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.services.api.port }}'
+      url: http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}
 
   domains:
   - name: Default
@@ -42,7 +42,7 @@ spec:
         role: cloud_image_admin
     - name: glance
       description: 'Glance Service'
-      password: {{.Values.keystone.password | quote }}
+      password: '{{.Values.global.glance_service_password}}'
       roles:
       - project: service
         role: service

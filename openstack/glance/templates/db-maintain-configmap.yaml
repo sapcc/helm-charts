@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: glance-db-maintain
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "name" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -13,6 +13,6 @@ data:
     #!/usr/bin/env bash
     export PGUSER=postgres
     psql <<- EOSQL
-        ALTER ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.dbPassword }}';
+        ALTER ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.global.dbPassword }}';
         ALTER ROLE {{ .Values.postgresql.postgresUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.postgresPassword }}';
     EOSQL

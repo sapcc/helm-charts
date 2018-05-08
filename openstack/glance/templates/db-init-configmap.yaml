@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: glance-db-init
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "name" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -14,6 +14,6 @@ data:
     export PGUSER=postgres
     psql <<- EOSQL
         CREATE DATABASE {{ .Values.postgresql.postgresDatabase }};
-        CREATE ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.dbPassword }}' LOGIN;
+        CREATE ROLE {{ .Values.postgresql.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.global.dbPassword }}' LOGIN;
         GRANT ALL PRIVILEGES ON DATABASE {{ .Values.postgresql.postgresDatabase }} TO {{ .Values.postgresql.dbUser }};
     EOSQL
