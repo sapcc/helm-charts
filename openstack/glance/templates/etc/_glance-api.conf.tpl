@@ -14,36 +14,20 @@ rpc_response_timeout = {{ .Values.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default 1 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default 100 }}
-max_pool_size = {{ .Values.max_pool_size | default 5 }}
-max_overflow = {{ .Values.max_overflow | default 10 }}
 
-[database]
-connection = postgresql://{{ .Values.postgresql.dbUser }}:{{ .Values.postgresql.dbPassword }}@{{include "db_host" .}}:5432/{{.Values.postgresql.postgresDatabase}}
+{{- include "ini_sections.database" . }}
 
 [keystone_authtoken]
 auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
 auth_type = v3password
-username = {{ .Values.keystone.username | default "glance" | quote}}
-password = {{ .Values.keystone.password }}
-{{- if .Values.keystone.userDomainName }}
-user_domain_name = {{ .Values.keystone.userDomainName }}
-{{- end }}
-{{- if .Values.keystone.userDomainId }}
-user_domain_id = {{ .Values.keystone.userDomainId }}
-{{- end }}
-{{- if .Values.keystone.projectName }}
-project_name = {{ .Values.keystone.projectName }}
-{{- end }}
-{{- if .Values.keystone.projectDomainName }}
-project_domain_name = {{ .Values.keystone.projectDomainName }}
-{{- end }}
-{{- if .Values.keystone.projectDomainId }}
-project_domain_id = {{ .Values.keystone.projectDomainId }}
-{{- end }}
-{{- if .Values.memcached }}
-memcache_servers = {{include "memcached_host" .}}:{{.Values.memcached.port}}
-{{- end}}
+username = {{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
+password = {{ .Values.global.glance_service_password | default "" | replace "$" "$$"}}
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+region_name = {{.Values.global.region}}
+project_name = {{.Values.global.keystone_service_project |  default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+memcached_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 insecure = True
 
 [paste_deploy]
@@ -54,7 +38,7 @@ enable_proxy_headers_parsing = true
 
 [glance_store]
 stores = {{ .Values.stores | default "file" | quote }}
-default_store = {{ .Values.default | default "file" | quote }}
+default_store = {{ .Values.default_store | default "file" | quote }}
 
 filesystem_store_datadir = /glance_store
 
@@ -62,9 +46,15 @@ filesystem_store_datadir = /glance_store
 swift_store_region={{.Values.global.region}}
 swift_store_auth_insecure = True
 swift_store_create_container_on_put = True
-swift_store_multi_tenant = {{.Values.store.swift.multi_tenant}}
+{{- if .Values.swift.multi_tenant }}
+swift_store_multi_tenant = True
+{{- else }}
 default_swift_reference = swift-global
 swift_store_config_file=/etc/glance/swift-store.conf
+{{- end }}
+{{- if .Values.swift.store_large_object_size }}
+swift_store_large_object_size = {{.Values.swift.store_large_object_size}}
+{{- end }}
 swift_store_use_trusts=True
 {{- end }}
 
