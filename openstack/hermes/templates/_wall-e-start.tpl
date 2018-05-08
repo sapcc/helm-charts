@@ -14,6 +14,15 @@ function start_application {
   export STDERR_LOC=${STDERR_LOC:-/proc/1/fd/2}
   unset http_proxy https_proxy all_proxy no_proxy
   
+  echo "INFO: setting up audit, .kibana, .monitoring-data-2 and .monitoring-es-2 templates without replicas for a green status"
+  curl -XPUT 'http://elasticsearch:9200/_template/.kibana' -d@/wall-e-etc/dot-kibana.json
+  curl -XPUT 'http://elasticsearch:9200/_template/.monitoring-data-2' -d@/wall-e-etc/dot-monitoring-data-2.json
+  curl -XPUT 'http://elasticsearch:9200/_template/.monitoring-es-2' -d@/wall-e-etc/dot-monitoring-es-2.json
+  # delete them, so that they will be recreated from the proper new template
+  curl -XDELETE 'http://elasticsearch:9200/.kibana'
+  curl -XDELETE 'http://elasticsearch:9200/.monitoring-data-2'
+  curl -XDELETE 'http://elasticsearch:9200/.monitoring-es-2'
+
   # run the creation of the index patterns and the index retention cleanup deletion once on startup and put them into cron to run once per night afterwards
   echo "INFO: creating the audit indexes in kibana"
   . /wall-e-bin/create-kibana-indexes.sh
