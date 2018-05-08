@@ -17,6 +17,36 @@
 <match vcenter.**>
   @type copy
   <store>
+    @type elasticsearch
+    host es-client
+    port 9200
+    user admin
+    password jqz5WVEZMpS9m47t
+    index_name vcenter
+    type_name fluentd
+    logstash_prefix vcenter
+    logstash_format true
+    time_as_integer false
+    @log_level info
+    buffer_type "memory"
+    buffer_chunk_limit 96m
+    buffer_queue_limit 256
+    buffer_queue_full_action exception
+    slow_flush_log_threshold 40.0
+    flush_interval 3s
+    retry_wait 2s
+    include_tag_key true
+    logstash_format true
+    max_retry_wait 10s
+    disable_retry_limit
+    request_timeout 60s
+    reload_connections true
+    reload_on_failure true
+    resurrect_after 120
+    reconnect_on_error true
+    num_threads 8
+  </store>
+  <store>
     @type rewrite_tag_filter
     <rule>
       key message
