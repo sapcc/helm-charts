@@ -1,54 +1,26 @@
-{{- if .Values.services.ingress.enabled }}
-{{- if .Values.services.api.tlsCertificate}}
-kind: Secret
-apiVersion: v1
-
-metadata:
-  name: tls-{{.Values.services.api.host | replace "." "-" }}
-  labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: glance
-    type: config
-data:
-  tls.crt: {{ .Values.services.api.tlsCertificate | b64enc }}
-  tls.key: {{ .Values.services.api.tlsKey | b64enc }}
----
-{{- end }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 
 metadata:
   name: glance
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: glance
+    system: openstack
     type: api
+    component: glance
   annotations:
-    {{- if .Values.services.ingress.limitRps }}
-    ingress.kubernetes.io/limit-rps: {{ .Values.services.ingress.limitRps | quote }}
-    {{- end }}
-    {{- if .Values.services.ingress.limitConnections }}
-    ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
-    {{- end }}
+     ingress.kubernetes.io/proxy-request-buffering: "off"
+     {{- if .Values.vice_president }}
+     vice-president: "true"
+     {{- end }}
 spec:
   tls:
-  {{- if .Values.services.api.tlsCertificate }}
-     - secretName: tls-{{.Values.services.api.host | replace "." "-" }}
-       hosts: [{{ .Values.services.api.host }}]
-  {{- end }}
-
+    - secretName: tls-{{ include "glance_api_endpoint_host_public" . | replace "." "-" }}
+      hosts: [{{include "glance_api_endpoint_host_public" .}}]
   rules:
-    - host: {{.Values.services.api.host}}
+    - host: {{include "glance_api_endpoint_host_public" .}}
       http:
         paths:
         - path: /
           backend:
             serviceName: glance
-            servicePort: {{ default "9292" .Values.services.api.port }}
-{{- end }}
+            servicePort: {{.Values.api_port_internal}}
