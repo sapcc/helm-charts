@@ -48,11 +48,9 @@ swift_store_auth_insecure = True
 swift_store_create_container_on_put = True
 {{- if .Values.swift.multi_tenant }}
 swift_store_multi_tenant = True
-default_swift_reference =
-{{- else }}
+{{- end }}
 default_swift_reference = swift-global
 swift_store_config_file = /etc/glance/swift-store.conf
-{{- end }}
 {{- if .Values.swift.store_large_object_size }}
 swift_store_large_object_size = {{.Values.swift.store_large_object_size}}
 {{- end }}
