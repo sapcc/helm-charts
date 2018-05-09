@@ -48,9 +48,15 @@ swift_store_auth_insecure = True
 swift_store_create_container_on_put = True
 {{- if .Values.swift.multi_tenant }}
 swift_store_multi_tenant = True
-{{- end }}
-default_swift_reference = swift-global
+# the following are deprecated but needed here https://github.com/openstack/glance_store/blob/stable/queens/glance_store/_drivers/swift/utils.py#L128-L145
+swift_store_user = service:{{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
+swift_store_key = {{ .Values.global.glance_service_password | default (tuple . .Values.global.glance_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+swift_store_auth_version = 3
+swift_store_auth_address = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+{{- else }}
 swift_store_config_file = /etc/glance/swift-store.conf
+default_swift_reference = swift-global
+{{- end }}
 {{- if .Values.swift.store_large_object_size }}
 swift_store_large_object_size = {{.Values.swift.store_large_object_size}}
 {{- end }}
