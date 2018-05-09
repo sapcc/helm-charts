@@ -1,4 +1,4 @@
-{{- if .Values.swift.enabled}}
+{{- if and .Values.swift.enabled (not .Values.swift.multi_tenant)}}
 [swift-global]
 auth_version = 3
 project_domain_name = {{.Values.swift.projectDomainName}}
