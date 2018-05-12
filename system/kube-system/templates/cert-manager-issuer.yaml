@@ -1,0 +1,25 @@
+{{ if and .Values.cert_issuer .Values.cert_issuer.enabled -}}
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Issuer
+metadata:
+  name: acme-cert-issuer
+  namespace: kube-system
+spec:
+  acme:
+    server: {{ required "missing acme server" .Values.cert_issuer.acme.server }}
+    email: {{ required "missing acme email" .Values.cert_issuer.acme.email }}
+    dns01:
+      # list of DNS-01 providers that can solve DNS challenges
+      providers:
+      - name: designate
+        designate:
+          authURL: {{ required "missing openstack authURL" .Values.cert_issuer.designate.authURL }}
+          regionName: {{ required "missing openstack regionName" .Values.cert_issuer.designate.regionName }}
+          userName: {{ required "missing openstack userName" .Values.cert_issuer.designate.userName }}
+          userDomainName: {{ required "missing openstack userDomainName" .Values.cert_issuer.designate.userDomainName }}
+          projectName: {{ required "missing openstack projectName" .Values.cert_issuer.designate.projectName }}
+          projectDomainName: {{ required "missing openstack projectDomainName" .Values.cert_issuer.designate.projectDomainName }}
+          authPasswordSecretRef:
+            name: cert-manager-issuer-secret
+            key: authPassword
+{{- end }}
