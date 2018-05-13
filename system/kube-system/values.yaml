@@ -2,38 +2,45 @@ ingress:
   external_service_ip: DEFINED-AS-VALUE
 
 cert-manager:
-  # TODO: remove once testing is done
-  replicaCount: 0
-
   image:
     repository: sapcc/cert-manager-controller
     # TODO: fix tag, pullPolicy after testing
     tag: build
     pullPolicy: Always
 
-#  ingressShim:
+  serviceAccount:
+    create: false
+    name: default
+
+  rbac:
+    create: false
+
+  ingressShim:
+    image:
+      tag: v0.2.5
 #    extraArgs:
 #      - --default-issuer-name=letsencrypt-staging
 #      - --default-issuer-kind=ClusterIssuer
 
-
 cert_issuer:
   enabled: false
-#  acme:
-#    # ACME server URL
-#    server:
-#    # EMail address used for ACME registration
-#    email:
-#    # Optional name of the secret, in which ACME account private key is stored
-#    secretName:
-#
-#  define parameters for designate issuer. (DNS-01 challenge only)
-#  designate:
-#    authURL:
-#    regionName:
-#    userName:
-#    userDomainName:
-#    password:
-#    projectName:
-#    projectDomainName:
-#    zoneName:
+  # issuers:
+  # - name: letsencrypt-staging
+  #  acme:
+  #    # ACME server URL
+  #    server:
+  #    # EMail address used for ACME registration
+  #    email:
+  #    # Optional name of the secret, in which ACME account private key is stored. will equal issuer name if not set.
+  #    secretName:
+  #
+  #  define parameters for designate issuer. (DNS-01 challenge only)
+  #  designate:
+  #    authURL:
+  #    regionName:
+  #    userName:
+  #    userDomainName:
+  #    password:
+  #    projectName:
+  #    projectDomainName:
+  #    zoneName:

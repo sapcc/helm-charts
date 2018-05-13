@@ -1,28 +1,35 @@
 {{ if and .Values.cert_issuer .Values.cert_issuer.enabled -}}
+{{ range $issuer := .Values.cert_issuer.issuers }}
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Issuer
 metadata:
-  name: acme-cert-issuer
+  name: acme-{{ $issuer.name }}
   namespace: kube-system
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
 spec:
   acme:
-    server: {{ required "missing acme server" .Values.cert_issuer.acme.server | quote }}
-    email: {{ required "missing acme email" .Values.cert_issuer.acme.email | quote }}
+    server: {{ required "missing acme server" $issuer.acme.server | quote }}
+    email: {{ required "missing acme email" $issuer.acme.email | quote }}
     privateKeySecretRef:
-      name: {{ default "cert-manager-secret" .Values.cert_issuer.acme.secretName | quote }}
+      name: {{ default (printf "cert-manager-secret-%s" $issuer.name) $issuer.acme.secretName }}
     dns01:
       # list of DNS-01 providers that can solve DNS challenges
       providers:
       - name: designate
         designate:
-          authURL: {{ required "missing openstack authURL" .Values.cert_issuer.designate.authURL | quote }}
-          regionName: {{ required "missing openstack regionName" .Values.cert_issuer.designate.regionName | quote }}
-          userName: {{ required "missing openstack userName" .Values.cert_issuer.designate.userName | quote }}
-          userDomainName: {{ required "missing openstack userDomainName" .Values.cert_issuer.designate.userDomainName | quote }}
-          projectName: {{ required "missing openstack projectName" .Values.cert_issuer.designate.projectName | quote }}
-          projectDomainName: {{ required "missing openstack projectDomainName" .Values.cert_issuer.designate.projectDomainName | quote }}
-          zoneName: {{ required "missing openstack zoneName" .Values.cert_issuer.designate.zoneName | quote }}
+          authURL: {{ required "missing openstack authURL" $issuer.designate.authURL | quote }}
+          regionName: {{ required "missing openstack regionName" $issuer.designate.regionName | quote }}
+          userName: {{ required "missing openstack userName" $issuer.designate.userName | quote }}
+          userDomainName: {{ required "missing openstack userDomainName" $issuer.designate.userDomainName | quote }}
+          projectName: {{ required "missing openstack projectName" $issuer.designate.projectName | quote }}
+          projectDomainName: {{ required "missing openstack projectDomainName" $issuer.designate.projectDomainName | quote }}
+          zoneName: {{ required "missing openstack zoneName" $issuer.designate.zoneName | quote }}
           authPasswordSecretRef:
-            name: cert-manager-issuer-secret
+            name: cert-manager-issuer-secret-{{ $issuer.name }}
             key: authPassword
+---
+{{- end }}
 {{- end }}
