@@ -90,3 +90,5 @@ project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 memcached_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 insecure = True
+
+{{- include "ini_sections.audit_middleware_notifications" . }}
