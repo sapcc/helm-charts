@@ -27,7 +27,7 @@ http {
 
 {{- if $context.swift_client_timeout }}
     keepalive_timeout     {{ $context.swift_client_timeout }};
-    client_body_timeout   {{ $context.swift_client_timeout }};;
+    client_body_timeout   {{ $context.swift_client_timeout }};
     client_header_timeout {{ $context.swift_client_timeout }};
 {{- else }}
     keepalive_timeout     65;
