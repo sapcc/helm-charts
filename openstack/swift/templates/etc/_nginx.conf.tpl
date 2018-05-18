@@ -25,12 +25,17 @@ http {
 
     access_log  /var/log/nginx/access.log  main;
 
-    sendfile            on;
-    keepalive_timeout   65;
+{{- if $context.swift_client_timeout }}
+    keepalive_timeout     {{ $context.swift_client_timeout }};
+    client_body_timeout   {{ $context.swift_client_timeout }};;
+    client_header_timeout {{ $context.swift_client_timeout }};
+{{- else }}
+    keepalive_timeout     65;
+{{- end }}
     # non default - default was: not set
-    tcp_nopush          on;
-    tcp_nodelay         on;
-    types_hash_max_size 2048;
+    tcp_nopush            on;
+    tcp_nodelay           on;
+    types_hash_max_size   2048;
 
     {{- if $cluster.rate_limit_connections }}
     limit_conn_zone $binary_remote_addr zone=conn_limit:10m;
@@ -60,7 +65,7 @@ http {
         ssl_prefer_server_ciphers on;
 
         {{ tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
-        {{ include "swift_nginx_location" . | indent 8}}
+        {{ tuple $context | include "swift_nginx_location" | indent 8 }}
     }
 
     # Only allow non ssl for allowed sans, otherwise redirect
@@ -79,7 +84,7 @@ http {
         listen 80;
         server_name {{$san}}.{{$context.global.region}}.{{$context.global.tld}};
         {{ tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
-        {{ include "swift_nginx_location" . | indent 8}}
+        {{ tuple $context | include "swift_nginx_location" | indent 8 }}
     }
     {{- end }}
 }

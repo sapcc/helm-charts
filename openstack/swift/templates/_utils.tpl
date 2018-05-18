@@ -145,6 +145,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_nginx_location" }}
+{{- $context := index . 0 }}
 location / {
     # NOTE: It's imperative that the argument to proxy_pass does not
     # have a trailing slash. Swift needs to see the original request
@@ -165,6 +166,10 @@ location / {
     proxy_request_buffering off;
     # accept large PUT requests (5 GiB is the limit for a single object in Swift)
     client_max_body_size    5g;
+{{- if $context.swift_client_timeout }}
+    proxy_send_timeout      {{ $context.swift_client_timeout }};
+    proxy_read_timeout      {{ $context.swift_client_timeout }};
+{{- end }}
 }
 {{- end -}}
 
