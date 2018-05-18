@@ -1,0 +1,120 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: ironic-inspector
+  labels:
+    system: openstack
+    type: backend
+    component: none
+spec:
+  replicas: {{ .Values.pod.replicas.inspector }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: ironic-inspector
+  template:
+    metadata:
+      labels:
+        name: ironic-inspector
+{{ tuple . "ironic" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-inspector-etc-hash: {{ include (print $.Template.BasePath "/inspector-etc-configmap.yaml") . | sha256sum }}
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
+        scheduler.alpha.kubernetes.io/affinity: >
+            {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" }}
+{{- end }}
+    spec:
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
+{{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{- end }}
+      containers:
+        - name: ironic-inspector
+          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-inspector:{{.Values.imageVersionIronicInspector | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "ironic-inspector --config-file /etc/ironic/ironic.conf"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "ironic-api,rabbitmq"
+{{- if .Values.logging.handlers.sentry }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+{{- end }}
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - mountPath: /etc/ironic
+              name: etcironic
+            - mountPath: /etc/ironic/ironic.conf
+              name: ironic-inspector-etc
+              subPath: ironic.conf
+              readOnly: true
+            - mountPath: /etc/ironic/policy.json
+              name: ironic-etc
+              subPath: policy.json
+              readOnly: true
+            - mountPath: /etc/ironic/rootwrap.conf
+              name: ironic-etc
+              subPath: rootwrap.conf
+              readOnly: true
+            - mountPath: /etc/ironic/logging.ini
+              name: ironic-etc
+              subPath: logging.ini
+              readOnly: true
+{{- if and .Values.global.ironictftpIP .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
+        - name: dhcp
+          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-staticdhcpd:{{.Values.imageVersion_staticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - staticDHCPd
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          ports:
+            - name: dhcp
+              protocol: UDP
+              containerPort: {{.Values.inspector.dhcp.port}}
+            - name: dhcp-proxy
+              protocol: UDP
+              containerPort: {{.Values.inspector.dhcp.proxy_port}}
+          volumeMounts:
+            - mountPath: /conf
+              name: dhcp-config
+{{- end }}
+      volumes:
+        - name: etcironic
+          emptyDir: {}
+        - name: ironic-etc
+          configMap:
+            name: ironic-etc
+            defaultMode: 0444
+        - name: ironic-inspector-etc
+          configMap:
+            name: ironic-inspector-etc
+            defaultMode: 0444
+{{- if and .Values.global.ironictftpIP .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
+        - name: dhcp-config
+          configMap:
+            name: ironic-inspector-dhcp
+            defaultMode: 0444
+{{- end }}
