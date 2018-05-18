@@ -1,0 +1,169 @@
+# Default values for ironic.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+#
+global:
+  image_namespace: REQUIRED
+  image_repository: REQUIRED
+  ironicApiPortInternal: '6385'
+  ironictftpIP: null
+  ironictftpPortPublic: '69'
+  osprofiler: {}
+  fernetRouter:
+    imageVersion: 'latest'
+
+osprofiler:
+    enabled: false
+
+pod:
+  replicas:
+    api: 2
+    inspector: 1
+    pxe: 1
+  lifecycle:
+    upgrades:
+      deployments:
+        revisionHistory: 5
+        podReplacementStrategy: RollingUpdate
+        rollingupdate:
+           maxUnavailable: 0
+           maxSurge: 1
+
+imageVersion: null
+imageVersionIronicApi: null
+imageVersionIronicConductor: null
+imageVersionIronicInspector: null
+imageVersionIronicPXE: null
+swift_multi_tenant: True
+
+debug: "True"
+dbName: ironic
+dbUser: ironic
+dbPassword: null
+
+inspectordbName: ironic_inspector
+inspectordbUser: ironic_inspector
+inspectordbPassword: null
+
+api:
+  override: {}
+
+inspector:
+  port_internal: '5050'
+  dhcp:
+    port: '67'
+    proxy_port: '4011'
+    ip: null
+    range: null
+    options:
+      router: null
+
+conductor:
+  hosts: []
+  deploy:
+    protocol: 'http'
+    port: 8088
+
+agent:
+  deploy_logs:
+    collect: "on_failure"
+    storage_backend: "local"
+    swift_days_to_expire: 30
+
+console:
+  secret: null
+
+tftp_ip: null
+tftp_files:
+  undionly.kpxe: http://boot.ipxe.org/undionly.kpxe
+
+portmetrics: '9102'
+
+network_management_uuid: DEFINE_IN_REGION_CHART
+network_cleaning_uuid: DEFINE_IN_REGION_CHART
+swift_account: null
+swift_tempurl: null
+
+pgmetrics:
+  name: ironic
+
+postgresql:
+  imageTag: '9.4.14'
+  postgresDatabase: ironic
+  dbInit: ironic-db-init
+  dbMaintain: ironic-db-maintain
+  users:
+    ironic: {}
+    ironicInspector: {}
+  persistence:
+    enabled: true
+    existingClaim: db-ironic-pvclaim
+  backup:
+    enabled: true
+    metrics: true
+    imageTag: v0.5.12
+    osPassword: null
+
+sentry:
+  enabled: true
+vice_president: true
+
+rabbitmq:
+  users:
+    default:
+      password: null
+    admin:
+      password: null
+  persistence:
+    enabled: false
+  metrics:
+    password: null
+
+logging:
+    formatters:
+        context:
+            class: oslo_log.formatters.ContextFormatter
+        default:
+            format: "%(message)s"
+    handlers:
+        stdout:
+            class: StreamHandler
+            args: "(sys.stdout,)"
+            formatter: context
+        sentry:
+            class: raven.handlers.logging.SentryHandler
+            level: ERROR
+            args: "()"
+        "null":
+            class: logging.NullHandler
+            formatter: default
+            args: "()"
+    loggers:
+        root:
+            handlers: stdout, sentry
+            level: WARNING
+        ironic:
+            handlers: stdout, sentry
+            level: DEBUG
+        eventlet.wsgi.server:
+            handlers: stdout, sentry
+            level: INFO
+        amqp:
+            handlers: stdout, sentry
+            level: WARNING
+        amqplib:
+            handlers: stdout, sentry
+            level: WARNING
+        sqlalchemy:
+            handlers: stdout, sentry
+            level: WARNING
+        boto:
+            handlers: stdout, sentry
+            level: WARNING
+        suds:
+            handlers: stdout, sentry
+            level: INFO
+        eventlet.wsgi.server:
+            handlers: stdout, sentry
+            level: INFO
