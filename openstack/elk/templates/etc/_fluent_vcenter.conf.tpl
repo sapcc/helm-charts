@@ -20,8 +20,8 @@
     @type elasticsearch
     host es-client
     port 9200
-    user admin
-    password jqz5WVEZMpS9m47t
+    user {{.Values.elk_elasticsearch_admin_user}}
+    password {{.Values.elk_elasticsearch_admin_password}}
     index_name vcenter
     type_name fluentd
     logstash_prefix vcenter
