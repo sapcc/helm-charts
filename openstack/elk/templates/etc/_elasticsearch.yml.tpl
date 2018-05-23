@@ -36,6 +36,11 @@ readonlyrest:
       actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
       indices: ["jump-*"]
       auth_key: {{.Values.elk_elasticsearch_jump_user}}:{{.Values.elk_elasticsearch_jump_password}}
+       
+    - name: vcenter
+      actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+      indices: ["vcenter-*"]
+      auth_key: {{.Values.elk_elasticsearch_vcenter_user}}:{{.Values.elk_elasticsearch_vcenter_password}}
 
     - name: Monsoon (read only, but can create dashboards)
       kibana_access: ro
