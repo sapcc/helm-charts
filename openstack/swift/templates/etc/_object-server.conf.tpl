@@ -28,7 +28,11 @@ pipeline = healthcheck recon object-server
 
 [app:object-server]
 use = egg:swift#object
-allowed_headers = Content-Disposition, Content-Encoding, X-Delete-At, X-Object-Manifest, X-Static-Large-Object, Cache-Control
+{{- if .Values.s3api_enabled }}
+allowed_headers = Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Expires, X-Delete-At, X-Object-Manifest, X-Robots-Tag, X-Static-Large-Object
+{{- else}}
+allowed_headers = Content-Disposition, Content-Encoding, X-Delete-At, X-Object-Manifest, X-Static-Large-Object
+{{- end}}
 
 [object-replicator]
 concurrency = {{ .Values.object_replicator_concurrency }}
