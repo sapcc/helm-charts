@@ -9,32 +9,30 @@ metadata:
     type: configuration
     component: designate
 spec:
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-        - name: designate-tempest
-          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-rally:{{.Values.image_version_designate_tempest}}
-          imagePullPolicy: IfNotPresent
-          command:
-            - /usr/local/bin/kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "/container.init/designate-tempest-start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: designate-api
-          volumeMounts:
-            - mountPath: /designate-etc
-              name: designate-etc
-            - mountPath: /container.init
-              name: container-init
-      volumes:
-        - name: designate-etc
-          configMap:
-            name: designate-etc
-        - name: container-init
-          configMap:
-            name: designate-bin
-            defaultMode: 0755
+  restartPolicy: Never
+  containers:
+    - name: designate-tempest
+      image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-rally:{{.Values.image_version_designate_tempest}}
+      imagePullPolicy: IfNotPresent
+      command:
+        - /usr/local/bin/kubernetes-entrypoint
+      env:
+        - name: COMMAND
+          value: "/container.init/designate-tempest-start"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: designate-api
+      volumeMounts:
+        - mountPath: /designate-etc
+          name: designate-etc
+        - mountPath: /container.init
+          name: container-init
+  volumes:
+    - name: designate-etc
+      configMap:
+        name: designate-etc
+    - name: container-init
+      configMap:
+        name: designate-bin
+        defaultMode: 0755
