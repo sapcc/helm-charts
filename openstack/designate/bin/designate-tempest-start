@@ -3,25 +3,16 @@
 set -e
 set -x
 
-function process_config {
-    mkdir -p /etc/designate/
-    cp /designate-etc/tempest_accounts.yaml /etc/designate/tempest_accounts.yaml
-    cp /designate-etc/tempest_deployment_config.json /etc/designate/tempest_deployment_config.json
-    cp /designate-etc/tempest_extra_options /etc/designate/tempest_extra_options
-}
-
-
 function start_tempest_tests {
     echo "\n === CONFIGURING TEMPEST === \n"
     rally-manage db ensure
-    rally deployment create --file /etc/designate/tempest_deployment_config.json --name tempest_deployment
+    rally deployment create --file /designate-etc/tempest_deployment_config.json --name tempest_deployment
     rally deployment check
     rally --debug verify create-verifier --type tempest --name designate-tempest-verifier --system-wide --source https://github.com/sapcc/tempest
-    rally --debug verify configure-verifier --extend /etc/designate/tempest_extra_options
+    rally --debug verify configure-verifier --extend /designate-etc/tempest_extra_options
+    sleep 30
     echo "\n === STARTING TEMPEST TESTS FOR DESIGNATE === \n"
     rally --debug verify start --concurrency 1  --pattern designate_tempest_plugin.
 }
 
-process_config
-sleep 30
 start_tempest_tests

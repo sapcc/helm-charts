@@ -1,7 +1,7 @@
 [auth]
 use_dynamic_credentials = false
 create_isolated_networks = false
-test_accounts_file = /etc/designate/tempest_accounts.yaml
+test_accounts_file = /designate-etc/tempest_accounts.yaml
 admin_username = admin
 admin_password = {{ .Values.tempestAdminPassword }}
 admin_project_name = admin
