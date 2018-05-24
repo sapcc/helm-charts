@@ -2,7 +2,7 @@
   @type syslog
   bind {{default "0.0.0.0" .Values.fluent_vcenter.input_ip}}
   port {{.Values.fluent_vcenter.tcp_input_port}}
-  protocol_type tcp
+  protocol_type udp
   tag vcenter
   message_format auto
   with_priority true
