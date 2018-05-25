@@ -16,7 +16,7 @@ function process_config {
 }
 
 
-function start_application {
+function _start_application {
 
     exec  neutron-metadata-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/metadata_agent.ini
 }
