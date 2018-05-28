@@ -34,13 +34,28 @@ groups:
     expr: blackbox_datapath_status_gauge == 1
     for: 15m
     labels:
-      context: '{{ $labels.check }}'
+      severity: critical
+      tier: datapath
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
       meta: '{{ $labels.check }}'
       sentry: blackbox
-      playbook: docs/support/playbook/neutron/dhcp_down.html
-      severity: critical
-      tier: openstack
+    annotations:
+      description: Datapath {{ $labels.check }} is down for 15 times in a row.
+      summary: Blackbox datapath test
+
+  - alert: OpenstackDatapathPartiallyDown
+    expr: blackbox_datapath_status_gauge == 0.5
+    for: 15m
+    labels:
+      severity: warning
+      tier: datapath
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: '{{ $labels.check }}'
+      sentry: blackbox
     annotations:
       description: Datapath {{ $labels.check }} is down for 15 times in a row.
       summary: Blackbox datapath test
@@ -48,12 +63,13 @@ groups:
   - alert: OpenstackDatapathFlapping
     expr: changes(blackbox_datapath_status_gauge[30m]) > 8
     labels:
-      context: '{{ $labels.check }}'
+      severity: warning
+      tier: datapath
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
       meta: '{{ $labels.check }}'
       sentry: blackbox
-      severity: warning
-      tier: openstack
     annotations:
       description: Datapath {{ $labels.check }} is flapping for 30 minutes.
       summary: Blackbox datapath test
@@ -123,6 +139,7 @@ groups:
     annotations:
       description: Api metrics are down for 15 times in a row.
       summary: Blackbox api metrics
+
   - alert: BlackboxDatapathMetricsDown
     expr: absent(up{kubernetes_name="blackbox-tests-datapath",kubernetes_namespace="blackbox"}) == 1
     for: 15m
