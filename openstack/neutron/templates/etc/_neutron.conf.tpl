@@ -10,6 +10,7 @@ api_paste_config = /etc/neutron/api-paste.ini
 
 allow_pagination = true
 allow_sorting = true
+pagination_max_limit = 500
 
 interface_driver = neutron.agent.linux.interface.OVSInterfaceDriver
 
