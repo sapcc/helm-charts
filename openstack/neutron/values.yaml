@@ -226,6 +226,18 @@ pgmetrics:
         - count:
             usage: "GAUGE"
             description: "Estimate on number of filter rules"
+    openstack_neutron_monitor_agents:
+      query: "SELECT host, agent_type, EXTRACT(EPOCH FROM (now() - heartbeat_timestamp)) as heartbeat_seconds FROM agents WHERE admin_state_up"
+      metrics:
+      - host:
+          usage: "LABEL"
+          description: "Name of the agents host"
+      - agent_type:
+          usage: "LABEL"
+          description: "Type of the agent"
+      - heartbeat_seconds:
+          usage: "GAUGE"
+          description: "Seconds since the last heartbeat"
 
 postgresql:
   postgresDatabase: neutron
