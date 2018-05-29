@@ -1,0 +1,117 @@
+kind: Deployment
+apiVersion: extensions/v1beta1 
+
+metadata:
+  name: blackbox-tests-api
+
+spec:
+  replicas: {{.Values.global.replicaCount}}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: blackbox-tests-integrity
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: blackbox-tests-integrity
+          persistentVolumeClaim:
+            claimName: blackbox-tests-integrity
+      containers:
+        - name: pytest
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - "-n 4"
+            - "--timeout 60"
+            - "--disable-pytest-warnings"
+            - "-r a"
+            - "-m integrity"
+          volumeMounts:
+            - name: blackbox-tests-integrity
+              mountPath: /opt/logs
+              readOnly: false
+          env:
+            - name: OS_AUTH_URL
+              value: {{ .Values.global.openstack.auth_url | quote }}
+            - name: OS_IDENTITY_API_VERSION
+              value: {{ .Values.global.openstack.identity_api_version | quote }}
+            - name: OS_USERNAME
+              value: {{ .Values.global.openstack.users.admin.username | quote }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.user_domain_name | quote }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.global.openstack.users.admin.project_name | quote }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.project_domain_name | quote }}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.openstack.region_name | quote }}
+            - name: CC_USERNAME
+              value: {{ .Values.global.openstack.users.ccadmin.username | quote }}
+            - name: CC_USER_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.ccadmin.user_domain_name | quote }}
+            - name: CC_PROJECT_NAME
+              value: {{ .Values.global.openstack.users.ccadmin.project_name | quote }}
+            - name: CC_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.ccadmin.project_domain_name | quote }}
+            - name: STATSD_HOST
+              value: "localhost"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: "blackbox-integrity"
+            - name: SLEEP_ITERATE
+              value: {{ .Values.sleep.iterate | quote }}
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-integrity
+                  key: os.password
+            - name: CC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-integrity
+                  key: cc.password
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: blackbox.DSN
+
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
+        - name: statsd
+          image: prom/statsd-exporter:v0.5.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.port_metrics}}
