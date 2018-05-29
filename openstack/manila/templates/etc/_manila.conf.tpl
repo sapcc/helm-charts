@@ -43,7 +43,7 @@ delete_share_server_with_last_share = false
 # physical capacity. A ratio of 1.0 means provisioned capacity cannot
 # exceed the total physical capacity. A ratio lower than 1.0 is
 # invalid. (floating point value)
-max_over_subscription_ratio = {{ .Values.max_over_subscription_ratio | default 3.0 }}
+max_over_subscription_ratio = {{ .Values.max_over_subscription_ratio | default 2.0 }}
 
 scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter
 
