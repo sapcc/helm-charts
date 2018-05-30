@@ -12,6 +12,17 @@ spec:
       annotations:
         checksum/bind.config: {{ include "bind/templates/config.yaml" . | sha256sum }}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    {{ if eq .Values.name (printf "bind1-%s" (.Values.global.region)) }}- bind2-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind2-%s" (.Values.global.region)) }}- bind1-{{.Values.global.region}}{{ end }}
+              topologyKey: "kubernetes.io/hostname"
       nodeSelector:
         failure-domain.beta.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.failure_domain_zone}}
       containers:
