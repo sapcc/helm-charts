@@ -1,11 +1,19 @@
 <source>
   @type syslog
-  bind {{default "0.0.0.0" .Values.fluent_vcenter.input_ip}}
-  port {{.Values.fluent_vcenter.tcp_input_port}}
-  protocol_type udp
+  bind {{default "0.0.0.0" .Values.fluent_vcenter.vcenter_logs_in_ip}}
+  port {{.Values.fluent_vcenter.vcenter_logs_in_port}}
+  protocol_type {{.Values.fluent_vcenter.vcenter_logs_in_proto}}
   tag vcenter
   message_format auto
   with_priority true
+</source>
+
+<source>
+  @type udp
+  tag vcenter
+  format /^(?<time>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*) (?:\[(?<pid1>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$/
+  port {{.Values.fluent_vcenter.esx_logs_in_port}}
+  bind {{default "0.0.0.0" .Values.fluent_vcenter.esx_logs_in_ip}}
 </source>
 
 <source>

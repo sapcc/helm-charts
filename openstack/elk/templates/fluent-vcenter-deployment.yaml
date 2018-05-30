@@ -33,9 +33,12 @@ spec:
           image: {{.Values.docker_repo}}/fluentd-vcenter-prometheus:{{.Values.fluent_vcenter.image_version}}
           imagePullPolicy: IfNotPresent
           ports:
-            - name: logs
-              containerPort: {{.Values.fluent_vcenter.tcp_input_port}}
-              protocol: UDP
+            - name: vclogs
+              containerPort: {{.Values.fluent_vcenter.vcenter_logs_in_port}}
+              protocol: {{.Values.fluent_vcenter.vcenter_logs_in_proto | upper}}
+            - name: esxlogs
+              containerPort: {{.Values.fluent_vcenter.esx_logs_in_port}}
+              protocol: {{.Values.fluent_vcenter.esx_logs_in_proto | upper}}
             - name: metrics
               containerPort: {{.Values.fluent_vcenter.prometheus_port}}
               protocol: TCP
