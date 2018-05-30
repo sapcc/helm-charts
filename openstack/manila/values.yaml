@@ -13,7 +13,7 @@ global:
 
 api_port_internal: '8786'
 debug: "True"
-image_version: pike-20180430.1
+image_version: pike-20180518.1
 
 logging:
   formatters:
@@ -60,6 +60,9 @@ logging:
       handlers: stdout, sentry
       level: INFO
     eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    auditmiddleware:
       handlers: stdout, sentry
       level: INFO
 
@@ -247,3 +250,14 @@ sentry:
 #        reserved_share_percentage: 0
 
 vice_president: true
+
+audit:
+  enabled: false
+  # do by default not attach the request payloads of create/update calls to the event
+  record_payloads: false
+  metrics_enabled: true
+  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
+  mem_queue_size: 1000
+
+rabbitmq_notifications:
+  name: manila

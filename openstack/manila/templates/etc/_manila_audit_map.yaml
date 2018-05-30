@@ -1,0 +1,148 @@
+service_type: 'storage/share'
+service_name: 'manila'
+
+# capture the target project (e.g. for cross-project calls)
+prefix: '/v[0-9\.]*/(?P<project_id>[0-9a-f\-]+)'
+
+resources:
+  availability-zones:
+  messages:
+  quota-sets:
+      children:
+          defaults:
+              singleton: true
+          detail:
+              singleton: true
+  quota-class-sets:
+  scheduler-stats:
+    singleton: true
+    children:
+      pools:
+  security-services:
+    # model details listing a action
+    custom_actions:
+      detail: read/list/details
+  services:
+    singleton: true
+    custom_actions:
+      disable: disable
+      enable: enable
+  shares:
+    custom_actions:
+      access_list: null
+      os-access_list: null
+      allow_access: allow
+      deny_access: deny
+      # model details listing a action
+      detail: read/list/details
+      extend: update/extend
+      force_delete: delete/forced
+      # according to documentation this is a GET request (probably that is wrong and it is POST)
+      manage: deploy
+      # legacy migration API
+      os-migrate_share: update/migrate
+      migrate_share: update/migrate
+      # current migration API since 2.14
+      migrate-start: update/migrate
+      reset_status: update/set/status
+      revert: restore
+      shrink: update/shrink
+      unmanage: undeploy
+    children:
+      export-locations:
+        api_name: export_locations
+      metadata:
+        singleton: true
+  share-groups:
+    custom_actions:
+      reset_status: update/set/status
+  share-group-types:
+    children:
+      group-specs:
+        singleton: true
+    custom_actions:
+      reset_status: update/set/status
+      # model details listing a action
+      default: read/list/default
+      addProjectAccess: allow/project-access
+      removeProjectAccess: deny/project-access
+      share_type_access: read/acl
+    custom_attributes:
+      project: data/security/project
+  share-group-snapshots:
+    children:
+      members:
+        type_name: share_group_snapshot_members
+        # list only
+    custom_actions:
+      reset_status: update/set/status
+      detail: read/list/details
+  # somehow support legacy API versions which break support design patterns
+  shares-legacy-1:
+    api_name: os-share-manage
+    type_name: shares
+    type_uri: storage/share/shares
+  shares-legacy-2:
+    api_name: os-share-unmanage
+    type_name: shares
+    type_uri: storage/share/shares
+    custom_actions:
+      unmanage: undeploy
+  share-instances:
+    # for some reason underscores are used here
+    api_name: share_instances
+    custom_actions:
+      # model details listing a action
+      detail: read/list/details
+      force_delete: delete/forced
+      reset_status: update/set/status
+    children:
+      export-locations:
+        api_name: export_locations
+  share-networks:
+    custom_actions:
+      # model details listing a action
+      detail: read/list/details
+      add_security_service: update/add/security-service
+      remove_security_service: update/remove/security-service
+    custom_attributes:
+      security_service_id: storage/share/security-service
+  share-replicas:
+    custom_actions:
+      force_delete: delete/forced
+      promote: update/promote
+      resync: update/resync
+      reset_status: update/set/status
+      reset_replica_state: update/set/replica-state
+    custom_attributes:
+      # put the share ID right into the event
+      share_id: storage/share/share
+  share-servers:
+      # model details listing a action
+      detail: read/list/details
+  snapshots:
+    custom_actions:
+      # model details listing a action
+      detail: read/list/details
+      force_delete: delete/forced
+      manage: deploy
+      reset_status: update/set/status
+      unmanage: undeploy
+  snapshot-instances:
+    custom_actions:
+      # model details listing a action
+      detail: read/list/details
+      reset_status: update/set/status
+  types:
+    custom_actions:
+      # model details listing a action
+      default: read/list/default
+      addProjectAccess: allow/project-access
+      removeProjectAccess: deny/project-access
+      share_type_access: read/acl
+    custom_attributes:
+      project: data/security/project
+    children:
+      extra-specs:
+        api_name: extra_specs
+        singleton: true
