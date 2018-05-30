@@ -12,9 +12,7 @@ expose_info = true
 # NOTE: value for prod, was 512 in staging before
 max_clients = 1024
 backlog = 4096
-{{- if $context.swift_client_timeout }}
-client_timeout = {{ $context.swift_client_timeout }}
-{{- end }}
+client_timeout = {{ $context.client_timeout }}
 log_statsd_host = localhost
 log_statsd_port = 9125
 log_statsd_default_sample_rate = 1.0
