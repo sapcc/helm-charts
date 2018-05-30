@@ -12,6 +12,17 @@ spec:
       annotations:
         checksum/unbound.config: {{ include "unbound/templates/config.yaml" . | sha256sum }}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    {{ if eq .Values.name "unbound1" }}- unbound2{{ end }}
+                    {{ if eq .Values.name "unbound2" }}- unbound1{{ end }}
+              topologyKey: "kubernetes.io/hostname"
       nodeSelector:
         failure-domain.beta.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.unbound.failure_domain_zone}}
       containers:
