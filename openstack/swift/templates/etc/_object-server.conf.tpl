@@ -9,9 +9,7 @@ bind_port = 6000
 workers = 12
 max_clients = 1024
 backlog = 8192
-{{- if .Values.swift_client_timeout }}
-client_timeout = {{ .Values.swift_client_timeout }}
-{{- end }}
+client_timeout = {{ .Values.client_timeout }}
 log_statsd_host = localhost
 log_statsd_port = 9125
 log_statsd_default_sample_rate = 1.0

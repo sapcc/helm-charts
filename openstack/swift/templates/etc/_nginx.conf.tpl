@@ -28,13 +28,10 @@ http {
 
     access_log  /var/log/nginx/access.log  main;
 
-{{- if $context.swift_client_timeout }}
-    keepalive_timeout     {{ $context.swift_client_timeout }};
-    client_body_timeout   {{ $context.swift_client_timeout }};
-    client_header_timeout {{ $context.swift_client_timeout }};
-{{- else }}
-    keepalive_timeout     65;
-{{- end }}
+    keepalive_timeout     {{ $context.client_timeout }};
+    client_body_timeout   {{ $context.client_timeout }};
+    client_header_timeout {{ $context.client_timeout }};
+
     # non default - default was: not set
     tcp_nopush            on;
     tcp_nodelay           on;
