@@ -11,6 +11,10 @@ data:
   {{- end }}
   prometheus.yaml: |
 {{ include "kube-monitoring/charts/prometheus-collector/templates/_prometheus.yaml.tpl" . | indent 4 }}
+  {{- if .Values.extra_scrape_config }}
+{{ tpl .Values.extra_scrape_config . | indent 4 }}
+  {{- end}}
+
 {{- if .Values.bind3_static_target }}
   static_targets.json: |
     [
