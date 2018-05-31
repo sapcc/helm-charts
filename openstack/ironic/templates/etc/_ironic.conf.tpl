@@ -57,7 +57,7 @@ auth_section = service_catalog
 glance_api_servers = {{.Values.global.glance_api_endpoint_protocol_internal | default "http"}}://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default 9292}}
 swift_temp_url_duration=1200
 # No terminal slash, it will break the url signing scheme
-swift_endpoint_url={{.Values.global.swift_endpoint_protocol | default "http"}}://{{include "swift_endpoint_host" .}}:{{ .Values.global.swift_api_port_public }}
+swift_endpoint_url={{.Values.global.swift_endpoint_protocol | default "http"}}://{{include "swift_endpoint_host" .}}:{{ .Values.global.swift_api_port_public | default 443}}
 swift_api_version=v1
 {{- if .Values.swift_store_multi_tenant }}
 swift_store_multi_tenant = True
@@ -77,9 +77,11 @@ swift_set_temp_url_key = True
 
 [neutron]
 auth_section = service_catalog
-url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal }}
+url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
 cleaning_network_uuid = {{ .Values.network_cleaning_uuid }}
 provisioning_network_uuid = {{ .Values.network_management_uuid }}
+url_timeout = {{ .Values.neutron_url_timeout }}
+port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 
 {{include "oslo_messaging_rabbit" .}}
 
