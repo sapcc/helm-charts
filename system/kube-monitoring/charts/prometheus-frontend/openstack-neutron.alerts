@@ -15,3 +15,18 @@ groups:
         possibly get exhausted soon. This is not an exact warning, but a heads up
         to check the current FIP situation.'
       summary: 'STILL IN TEST MODE: Floating IP''s possibly soon exhausted'
+
+  - alert: OpenstackNeutronDhcpAgentLostNetworks
+    expr: blackbox_integrity_status_gauge{check=~"dhcp_agent-.+"} == 1
+    for: 30m
+    labels:
+      severity: info
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: '{{ $labels.text }}'
+      playbook: docs/support/playbook/neutron/dhcp_down.html
+      sentry: blackbox
+    annotations:
+      description: {{ $labels.text }} over 30min
+      summary: Openstack Neutron DHCP Agent lost private networks

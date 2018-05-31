@@ -137,3 +137,18 @@ groups:
     annotations:
       description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.host }}
       summary: Openstack Nova Instance Stuck in Rebooting state metric
+
+  - alert: OpenstackNovaComputeServiceStatus
+    expr: blackbox_integrity_status_gauge{check=~"compute_service_status-.+"} == 1
+    for: 30m
+    labels:
+      severity: info
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: nova-overview
+      meta: '{{ $labels.text }}'
+      sentry: blackbox
+    annotations:
+      description: {{ $labels.text }} over 30min
+      summary: Openstack Nova Compute Service Status Check metric
