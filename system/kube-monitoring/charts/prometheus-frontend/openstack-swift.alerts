@@ -172,3 +172,31 @@ groups:
       description: Autopilot {{ $labels.kubernetes_pod_name }} does not perform its
         consistency checks on schedule. Please check if it's having a bad time.
       summary: No consistency checks performed
+
+  - alert: OpenstackSwiftAccountReplicationCheck
+    expr: max(swift_cluster_accounts_replication_age) by (storage_ip) > 3600
+    labels:
+      context: accountrepl
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: The last successful account replication age on {{ $labels.storage_ip }}
+        is older than 1 hour. Check the affected node. A restart of the replicator
+        daemonset might be necessary.
+        summary: Account replication older than 1 hour
+
+  - alert: OpenstackSwiftContainerReplicationCheck
+    expr: max(swift_cluster_containers_replication_age) by (storage_ip) > 3600
+    labels:
+      context: containerrepl
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: openstack
+    annotations:
+      description: The last successful container replication age on {{ $labels.storage_ip }}
+        is older than 1 hour. Check the affected node. A restart of the replicator
+        daemonset might be necessary.
+      summary: Container replication older than 1 hour
