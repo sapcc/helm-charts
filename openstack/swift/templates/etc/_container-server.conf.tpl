@@ -28,6 +28,9 @@ use = egg:swift#container
 allow_versions = true
 
 [container-replicator]
+{{- if .Values.container_replicator_debug }}
+log_level = DEBUG
+{{- end }}
 
 [container-updater]
 
