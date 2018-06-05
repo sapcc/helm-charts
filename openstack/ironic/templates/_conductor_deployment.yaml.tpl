@@ -35,7 +35,7 @@ spec:
       hostname: ironic-conductor-{{$conductor.name}}
       containers:
         - name: ironic-conductor
-          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-conductor:{{.Values.imageVersionIronicConductor | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-conductor:{{.Values.imageVersionIronicConductor | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
         {{- if $conductor.debug }}
           securityContext:

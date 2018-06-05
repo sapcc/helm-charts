@@ -14,7 +14,7 @@ spec:
 {{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "6") }}
         pod.beta.kubernetes.io/init-containers: '[{
           "name": "kubernetes-entrypoint",
-          "image": "{{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}",
+          "image": "{{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}",
           "imagePullPolicy": "IfNotPresent",
           "command": ["kubernetes-entrypoint"],
           "env": [{"name": "NAMESPACE", "value": {{ .Release.Namespace | quote }}},
@@ -26,7 +26,7 @@ spec:
 {{- if or (gt .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "6") }}
       initContainers:
       - name: "kubernetes-entrypoint"
-        image: "{{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}"
+        image: "{{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}"
         imagePullPolicy: "IfNotPresent"
         command: ["kubernetes-entrypoint"]
         env:
@@ -40,7 +40,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: ironic-dbsync
-        image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         command:
         - bash
