@@ -2,8 +2,9 @@
 
 function process_config {
 
-  cp /grafana-etc/grafana.ini /etc/grafana/grafana.ini
-  cp /grafana-etc/ldap.toml /etc/grafana/ldap.toml
+  mkdir /var/lib/grafana/etc
+  cp /grafana-etc/grafana.ini /var/lib/grafana/etc/grafana.ini
+  cp /grafana-etc/ldap.toml /var/lib/grafana/etc/ldap.toml
 
 }
 
@@ -23,11 +24,13 @@ function start_application {
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until grafana is up and write to stdout and logfile in parallel
   if [ -f /grafana-bin/grafana-initial-setup ]; then
-    (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana-initial-setup.log &
+  # no ss commnd in the new grafana container, so we have to use curl to check ...
+  #    (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
+       (while [ `curl -s http://localhost:3000 > /dev/null ; echo $?` != "0" ]; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
   fi
   # strange log config to get no file logging according to https://github.com/grafana/grafana/issues/5018
   cd /usr/share/grafana
-  exec /usr/sbin/grafana-server -config /etc/grafana/grafana.ini cfg:default.log.mode=console
+  exec /usr/share/grafana/bin/grafana-server -config /var/lib/grafana/etc/grafana.ini --homepath /usr/share/grafana cfg:default.log.mode=console
 
 }
 
