@@ -6,13 +6,16 @@ metadata:
   name: neutron-agents
   labels:
     system: openstack
-    type: agent
-    component: neutron
+    application: neutron
+    component: agent
 spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
+  selector:
+    matchLabels:
+      component: agent
   template:
     metadata:
       labels:
@@ -31,27 +34,7 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: neutron-dhcp-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.agent.image_name}}:{{.Values.agent.image_tag}}
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-          command: ["/container.init/neutron-dhcp-agent-start"]
-          env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
-            - name: DEBUG_CONTAINER
-              value: "false"
-          readinessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - neutron-dhcp-agent-ready > /dev/null 2>&1
-            initialDelaySeconds: 5
-            timeoutSeconds: 10
+{{ tuple . "neutron-dhcp-agent" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -59,18 +42,11 @@ spec:
               name: neutron-etc
             - mountPath: /container.init
               name: container-init
+            - mountPath: /run/netns
+              name: host-run-netns
+              mountPropagation: Bidirectional
         - name: neutron-metadata-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.agent.image_name}}:{{.Values.agent.image_tag}}
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-          command: ["/container.init/neutron-metadata-agent-start"]
-          env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+{{ tuple . "neutron-metadata-agent" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -79,17 +55,7 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: neutron-l3-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.agent.image_name}}:{{.Values.agent.image_tag}}
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-          command: ["/container.init/neutron-l3-agent-start"]
-          env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+{{ tuple . "neutron-l3-agent" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -101,17 +67,7 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: neutron-ovs-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.agent.image_name}}:{{.Values.agent.image_tag}}
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-          command: ["/container.init/neutron-ovs-agent-start"]
-          env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+{{ tuple . "neutron-ovs-agent" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -122,21 +78,8 @@ spec:
               name: neutron-etc
             - mountPath: /container.init
               name: container-init
-
         - name: ovs
-          image: {{.Values.global.imageRegistry}}/{{.Values.agent.image_name}}:{{.Values.agent.image_tag}}
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-          command: ["/container.init/neutron-ovs-start"]
-          env:
-            - name: DEBUG_CONTAINER
-              value: "false"
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+{{ tuple . "neutron-ovs" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -146,11 +89,7 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: ovs-db
-          image: {{.Values.global.imageRegistry}}/{{.Values.agent.image_name}}:{{.Values.agent.image_tag}}
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-          command: ["/container.init/neutron-ovs-db-start"]
+{{ tuple . "neutron-ovs-db" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /lib/modules
               name: modules
@@ -172,4 +111,7 @@ spec:
           configMap:
             name: neutron-bin
             defaultMode: 0744
+        - name: host-run-netns
+          hostPath:
+            path: /run/netns
 {{ end }}

@@ -18,6 +18,12 @@ function process_config {
 
 
 function start_application {
+    until ! pgrep -f /var/lib/openstack/bin/neutron-l3-agent; do
+      echo "Waiting to be the only highlander"
+      sleep 5
+    done
+    touch /var/lib/neutron/neutron-l3-agent-ready
+
     exec  neutron-l3-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/l3_agent.ini --config-file /etc/neutron/plugins/ml2/ml2_conf.ini
 }
 

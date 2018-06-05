@@ -48,6 +48,10 @@ function _start_application {
         exit 1
     fi
 
+    until ! pgrep -f /var/lib/openstack/bin/neutron-dhcp-agent; do
+      echo "Waiting to be the only highlander"
+      sleep 5
+    done
 
     exec neutron-dhcp-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/dhcp_agent.ini
 }
