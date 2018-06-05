@@ -291,6 +291,9 @@ scrape_configs:
     regex: ^(\d).+
     replacement: http_${1}xx
     target_label: __param_module
+  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_module]
+    regex: (.+)
+    target_label: __param_module
   - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_path]
     regex: ^(\/.+)
     target_label: __meta_kubernetes_ingress_path
