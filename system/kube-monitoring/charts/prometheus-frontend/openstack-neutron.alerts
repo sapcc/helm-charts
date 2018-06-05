@@ -30,3 +30,16 @@ groups:
     annotations:
       description: '{{ $labels.text }} over 30min'
       summary: Openstack Neutron DHCP Agent lost private networks
+      
+  - alert: OpenstackNeutronMonitorAgentHeartbeat
+    expr: max(openstack_neutron_monitor_agents_heartbeat_seconds) by (agent_type) > 75
+    for: 10m
+    labels:
+      context: Agent Heartbeat
+      dashboard: Neutron
+      service: Neutron
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Agent {{ $labels.agent_type }} Heartbeat is above 75secs in {{ $labels.host }} 
+      summary: Openstack Neutron Metric to monitor Agents Heartbeat
