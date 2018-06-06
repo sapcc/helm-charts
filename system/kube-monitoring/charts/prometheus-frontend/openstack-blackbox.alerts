@@ -116,6 +116,19 @@ groups:
       description: Certificate {{ $labels.check }} expires in the near future.
       summary: Certificates
 
+  - alert: sslLabsCertificateRatingDegraded
+    expr: blackbox_certificates_status_gauge{check="ssllabs"} == 1
+    for: 1d
+    labels:
+      context: '{{ $labels.check }}'
+      meta: 'sslLabs certificate rating for cc3test.global.cloud.sap degrades from A'
+      sentry: blackbox
+      severity: warning
+      tier: openstack
+    annotations:
+      description: sslLabs certificate rating for cc3test.global.cloud.sap degrades from A
+      summary: sslLabs certificate rating
+
   - alert: OpenstackCertificateExpiresSoon
     expr: blackbox_certificates_status_gauge == 1
     for: 15d
