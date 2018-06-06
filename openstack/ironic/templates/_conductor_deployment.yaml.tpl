@@ -121,7 +121,7 @@ spec:
               name: development
         {{- end }}
         - name: console
-          image: {{.Values.imageVersion_nginx | default "nginx:stable-alpine"}}
+          image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
           imagePullPolicy: IfNotPresent
           ports:
             - name: ironic-console
