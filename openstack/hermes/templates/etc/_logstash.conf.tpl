@@ -161,6 +161,8 @@ output {
         template_overwrite => true
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
+        # retry_max_interval default 64
+        retry_max_interval => 10
     }
   } else {
     elasticsearch {
@@ -170,6 +172,8 @@ output {
         template_overwrite => true
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
+        # retry_max_interval default 64
+        retry_max_interval => 10
     }
   }
   # cc the target tenant
@@ -181,6 +185,8 @@ output {
         template_overwrite => true
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
+        # retry_max_interval default 64
+        retry_max_interval => 10
     }
   }
 }
