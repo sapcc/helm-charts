@@ -17,6 +17,11 @@ function process_config {
 
 
 function _start_application {
+    until ! pgrep -f /var/lib/openstack/bin/neutron-metadata-agent; do
+      echo "Waiting to be the only highlander"
+      sleep 5
+    done
+    touch /var/lib/neutron/neutron-metadata-agent-ready
 
     exec  neutron-metadata-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/metadata_agent.ini
 }
