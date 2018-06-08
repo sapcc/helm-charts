@@ -79,7 +79,7 @@ lock_path = /var/lib/neutron/tmp
 enable_proxy_headers_parsing = true
 
 [agent]
-{{ if .Values.rootwrap_daemon }}
+{{ if .Values.agent.rootwrap_daemon }}
 root_helper = sudo
 root_helper_daemon = neutron-rootwrap-daemon /etc/neutron/rootwrap.conf
 {{ else }}
