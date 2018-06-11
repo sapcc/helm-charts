@@ -1,11 +1,10 @@
-{{- if not .Values.custom_configmap }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "fullname" . }}-etc
+  name: manila-postgresql-etc
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: manila-postgresql
+    chart: postgresql-0.3.0
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: database
@@ -14,8 +13,7 @@ data:
 {{ include (print .Template.BasePath "/etc/_postgresql.conf.tpl") . | indent 4 }}
   pg-hba.conf: |
 {{ include (print .Template.BasePath "/etc/_pg_hba.conf.tpl") . | indent 4 }}
-{{- if .Values.metrics.customMetrics }}
+{{- if .Values.postgresql.metrics.customMetrics }}
   custom-metrics.yaml: |
-{{ toYaml .Values.metrics.customMetrics | indent 4}}
-{{- end}}
+{{ toYaml .Values.postgresql.metrics.customMetrics | indent 4}}
 {{- end}}
