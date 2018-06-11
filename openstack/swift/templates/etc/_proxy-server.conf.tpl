@@ -198,8 +198,8 @@ auth_version = 3
 
 [filter:watcher]
 use = egg:watcher-middleware#watcher
-service_name = storage/object
-keystone_service_type = object-store
+service_type = object-store
+cadf_service_name = service/storage/object
 project_id_from_path = {{$cluster.watcher_project_id_from_path | default true}}
 project_id_from_service_catalog = {{$cluster.watcher_project_id_from_service_catalog | default false }}
 config_file = /swift-etc/watcher.yaml
