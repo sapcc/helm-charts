@@ -40,6 +40,8 @@ auth_section = service_catalog
 auth_uri = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
 memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 
+{{- include "ini_sections.audit_middleware_notifications" . }}
+
 [service_catalog]
 auth_section = service_catalog
 insecure = True
