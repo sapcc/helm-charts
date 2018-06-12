@@ -187,7 +187,7 @@ use = egg:swift#symlink
 [filter:swift3]
 use = egg:swift3#swift3
 location = {{ $context.global.region }}
-# The standard swift proxy logging is needed,
+# The standard swift proxy logging is needed
 force_swift_request_proxy_log = true
 
 [filter:s3token]
