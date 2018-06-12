@@ -1,0 +1,14 @@
+groups:
+- name: openstack-nanny.alerts
+  rules:
+  - alert: OpenstackVcenterNannyGhostVolume
+    expr: sum(vcenter_nanny_ghost_volumes)  by (kubernetes_name) > 0
+    for: 5m
+    labels:
+      context: nanny
+      service: cinder
+      severity: info
+      tier: openstack
+    annotations:
+      description: The {{ $labels.kubernetes_name }} discovered a ghost volume. a good opportunity to search for the underlying bug now ...
+      summary: Vcenter nanny detected a ghost volume
