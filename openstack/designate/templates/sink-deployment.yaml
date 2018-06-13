@@ -1,0 +1,75 @@
+{{- if .Values.sink_enabled }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: designate-sink
+  labels:
+    system: openstack
+    type: backend
+    component: designate
+spec:
+  replicas: {{ .Values.pod.replicas.sink }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: designate-sink
+  template:
+    metadata:
+      labels:
+        app: designate-sink
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - designate-sink
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: designate-sink
+          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-designate-sink:{{.Values.image_version_designate_sink}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/container.init/designate-sink-start"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEBUG_CONTAINER
+              value: "false"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: designate.DSN.python
+            {{- end }}
+          volumeMounts:
+            - mountPath: /designate-etc
+              name: designate-etc
+            - mountPath: /container.init
+              name: container-init
+      volumes:
+        - name: designate-etc
+          configMap:
+            name: designate-etc
+        - name: container-init
+          configMap:
+            name: designate-bin
+            defaultMode: 0755
+{{- end }}
