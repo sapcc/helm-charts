@@ -42,3 +42,17 @@ groups:
     annotations:
       description: Cinder Volumes taking more than 10s to detach in {{ $labels.host }}
       summary: Cinder Volumes taking more than 10s to detach
+
+  - alert: OpenstackCinderVvolSizeIsZero
+    expr: blackbox_integrity_status_gauge{check=~"vvol_datastore-.+"} == 1
+    for: 15m
+    labels:
+      severity: error
+      tier: openstack
+      service: cinder
+      context: datastore
+      meta: '{{ $labels.text }}'
+      sentry: blackbox
+    annotations:
+      description: '{{ $labels.text }} over 30min'
+      summary: VVOL datastore reports zero size
