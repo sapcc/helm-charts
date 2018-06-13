@@ -29,6 +29,7 @@ image_version: newton-20180327.1
 debug: "True"
 
 postgresql:
+  custom_configmap: true
   imageTag: '9.4.14'
   postgresDatabase: barbican
   postgresPassword: null
@@ -44,6 +45,42 @@ postgresql:
     metrics: true
     imageTag: v0.5.12
     os_password: null
+  metrics:
+    customMetrics:
+      pg_database:
+        query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+        metrics:
+          - datname:
+              usage: "LABEL"
+              description: "Name of the database"
+          - size_bytes:
+              usage: "GAUGE"
+              description: "Size of the database in bytes"
+
+pgmetrics:
+  customMetrics:
+    openstack_barbican_secrets:
+      query: "select secrets.id, secrets.status, secrets.name, projects.external_id AS project_id, secrets.secret_type from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false'"
+      metrics:
+        - id:
+            usage: "LABEL"
+            description: "Secret ID"
+        - status:
+            usage: "LABEL"
+            description: "Secret state"
+        - name:
+            usage: "LABEL"
+            description: "Secret name"
+        - external_id:
+            usage: "LABEL"
+            description: "Project_id of the secret"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the secret"
+        - secret_type:
+            usage: "LABEL"
+            description: "Type of secret"
+
 
 rabbitmq:
   users:
