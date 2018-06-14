@@ -212,7 +212,7 @@ pod:
            max_surge: 1
 
 postgresql:
-  custom_configmap: true
+  custom_configmap: false
   imageTag: '9.4.14'
   postgresDatabase: manila
   dbInit: manila-db-init
@@ -227,17 +227,17 @@ postgresql:
     metrics: true
     imageTag: v0.5.12
     os_password: null
-  metrics:
-    customMetrics:
-      pg_database:
-        query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
-        metrics:
-          - datname:
-              usage: "LABEL"
-              description: "Name of the database"
-          - size_bytes:
-              usage: "GAUGE"
-              description: "Size of the database in bytes"
+  # metrics:
+  #   customMetrics:
+  #     pg_database:
+  #       query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+  #       metrics:
+  #         - datname:
+  #             usage: "LABEL"
+  #             description: "Name of the database"
+  #         - size_bytes:
+  #             usage: "GAUGE"
+  #             description: "Size of the database in bytes"
 
 rabbitmq:
   persistence:
