@@ -56,3 +56,17 @@ groups:
     annotations:
       description: '{{ $labels.text }} over 30min'
       summary: vVOL datastore reports zero size
+
+  - alert: OpenstackCinderVvol90PercentFull
+    expr: blackbox_integrity_status_gauge{check=~"vvol_datastore-.+"} == 0.5
+    for: 15m
+    labels:
+      severity: warning
+      tier: openstack
+      service: cinder
+      context: datastore
+      meta: '{{ $labels.text }}'
+      sentry: blackbox
+    annotations:
+      description: '{{ $labels.text }} over 30min'
+      summary: vVOL datastore is more than 90 percent full
