@@ -272,7 +272,7 @@ scrape_configs:
       replacement: /api/v1/nodes/${1}:4194/proxy/metrics
 {{ end -}}
 
-{{ range $region := .Values.global.regions }}
+{{- range $region := .Values.global.regions }}
 - job_name: 'blackbox-ingress-{{ $region }}'
   metrics_path: /probe
   params:
@@ -315,19 +315,19 @@ scrape_configs:
     target_label: module
   - target_label: region_probed_from
     replacement: {{ $region }}
-{{ end }}
+{{- end }}
 
-{{ if .Values.blackbox_exporter }}
-{{ if .Values.blackbox_exporter.static_targets }}
-{{ range $region := .Values.global.regions }}
-- job_name: 'blackbox-http-ca-{{ $region }}'
+{{ $root := .Values }}
+{{- if .Values.blackbox_exporter }}
+{{- if .Values.blackbox_exporter.static_config }}
+{{- range $module, $module_config := .Values.blackbox_exporter.static_config }}
+- job_name: 'blackbox-static-targets-{{ $module }}'
   metrics_path: /probe
-  scrape_interval: 15s
   params:
-    module: [http_ca]
+    module: [{{ $module }}]
   static_configs:
     - targets:
-      {{- range $.Values.blackbox_exporter.static_targets }}
+      {{- range  $module_config.targets }}
       - {{ . }}
       {{- end }}
   scheme: https
@@ -337,18 +337,16 @@ scrape_configs:
   - source_labels: [__param_target]
     target_label: instance
   - target_label: __address__
-    replacement: prober.{{ $region }}.cloud.sap
+    replacement: prober.{{ $root.global.region }}.cloud.sap
   - source_labels: [__param_module]
     target_label: module
   - target_label: region_probed_from
-    replacement: {{ $region }}
-{{ end }}
+    replacement: {{ $root.global.region }}
 {{ end }}
 {{ end }}
 
-{{ if .Values.blackbox_exporter }}
-{{ if .Values.blackbox_exporter.tcp_probe_targets }}
-{{ range $region := .Values.global.regions }}
+{{- if .Values.blackbox_exporter.tcp_probe_targets }}
+{{- range $region := .Values.global.regions }}
 - job_name: 'blackbox-tcp-{{ $region }}'
   metrics_path: /probe
   scrape_interval: 15s
@@ -366,14 +364,14 @@ scrape_configs:
   - source_labels: [__param_target]
     target_label: instance
   - target_label: __address__
-    replacement: prober.{{ $region }}.cloud.sap
+    replacement: prober.{{ $root.global.region }}.cloud.sap
   - source_labels: [__param_module]
     target_label: module
   - target_label: region_probed_from
-    replacement: {{ $region }}
-{{ end }}
-{{ end }}
-{{ end }}
+    replacement: {{ $root.global.region }}
+{{- end }}
+{{- end }}
+{{- end }}
 
 # Static Targets 
 #

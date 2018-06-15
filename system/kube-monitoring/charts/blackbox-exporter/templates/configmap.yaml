@@ -7,63 +7,12 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
 
 data:
-  blackbox.yml: |
-    modules:
-      http_ca:
-        prober: http
-        http:
-          method: GET
-          preferred_ip_protocol: ip4
-          tls_config:
-            ca_file: "/SAPNetCA_G2.crt"
-      https_2xx:
-        prober: http
-        http:
-          fail_if_not_ssl: true
-          preferred_ip_protocol: "ip4"
-          no_follow_redirects: false
-      http_401:
-        prober: http
-        http:
-          fail_if_not_ssl: true
-          preferred_ip_protocol: "ip4"
-          valid_status_codes: [401]
-      http_post_4xx:
-        prober: http
-        http:
-          fail_if_not_ssl: true
-          preferred_ip_protocol: "ip4"
-          method: POST
-      http_403:
-        prober: http
-        http:
-          no_follow_redirects: false
-          valid_status_codes: [403]
-          tls_config:
-            insecure_skip_verify: true
-      https_403:
-        prober: http
-        http:
-          no_follow_redirects: false
-          fail_if_not_ssl: true
-          valid_status_codes: [403]
-      icmp:
-        prober: icmp
-        icmp:
-          preferred_ip_protocol: "ip4"
-      tcp_connect:
-        prober: tcp
-        timeout: 10s
-        tcp:
-          preferred_ip_protocol: "ip4"
-      sentry:
-        prober: http
-        http:
-          fail_if_not_ssl: true
-          preferred_ip_protocol: "ip4"
-          no_follow_redirects: false
-          fail_if_not_matches_regexp:
-            - '"WarningStatusCheck":true'
-            - '"CeleryAppVersionCheck":true'
-            - '"CeleryAliveCheck":true'
-            - '"problems":\[\]'
+  blackbox.yaml: |
+{{ include "kube-monitoring/charts/blackbox-exporter/templates/_blackbox.yaml.tpl" . | indent 4 }}
+{{- if .Values.additional_modules }}
+{{ tpl .Values.additional_modules . | indent 6 }}
+{{- end}}
+
+{{- if .Values.additional_files }}
+{{ .Values.additional_files | toYaml | indent 2 }}
+{{- end }}
