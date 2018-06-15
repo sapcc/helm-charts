@@ -1,0 +1,76 @@
+{{- $domains := list "ccadmin" "bs" "hcm" "hcp03" "hec" "monsoon3" "s4" "wbs"}}
+{{- if .Values.limes.clusters.ccloud -}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: limes-support-seed
+
+spec:
+  requires:
+  - limes/limes-seed
+  {{- range $domains }}
+  - monsoon3/domain-{{ . | lower }}-seed
+  {{- end }}
+
+  domains:
+    {{- range $domains }}
+    - name: {{ . | lower }}
+      groups:
+      - name: {{ . | upper }}_API_SUPPORT
+        roles:
+        - project: api_support
+          role: resource_admin
+        {{- if eq . "ccadmin" }}
+        - project: api_tools
+          role: resource_admin
+        {{- end }}
+        # Inherit read-only role within domain
+        - domain: {{ . | lower }}
+          role: resource_viewer
+          inherited: true
+      - name: {{ . | upper }}_COMPUTE_SUPPORT
+        roles:
+        - project: compute_support
+          role: resource_admin
+        {{- if eq . "ccadmin" }}
+        - project: compute_tools
+          role: resource_admin
+        {{- end }}
+        # Inherit read-only role within domain
+        - domain: {{ . | lower }}
+          role: resource_viewer
+          inherited: true
+      - name: {{ . | upper }}_NETWORK_SUPPORT
+        roles:
+        - project: network_support
+          role: resource_admin
+        {{- if eq . "ccadmin" }}
+        - project: network_tools
+          role: resource_admin
+        {{- end }}
+        # Inherit read-only role within domain
+        - domain: {{ . | lower }}
+          role: resource_viewer
+          inherited: true
+      - name: {{ . | upper }}_STORAGE_SUPPORT
+        roles:
+        - project: storage_support
+          role: resource_admin
+        {{- if eq . "ccadmin" }}
+        - project: storage_tools
+          role: resource_admin
+        {{- end }}
+        # Inherit read-only role within domain
+        - domain: {{ . | lower }}
+          role: resource_viewer
+          inherited: true
+      - name: {{ . | upper }}_SERVICE_DESK
+        roles:
+        - project: service_desk
+          role: resource_admin
+        # Inherit read-only role within domain
+        - domain: {{ . | lower }}
+          role: resource_viewer
+          inherited: true
+    {{- end }}
+{{- end }}
