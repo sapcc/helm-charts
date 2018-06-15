@@ -318,6 +318,35 @@ scrape_configs:
 {{ end }}
 
 {{ if .Values.blackbox_exporter }}
+{{ if .Values.blackbox_exporter.static_targets }}
+{{ range $region := .Values.global.regions }}
+- job_name: 'blackbox-http-ca-{{ $region }}'
+  metrics_path: /probe
+  scrape_interval: 15s
+  params:
+    module: [http_ca]
+  static_configs:
+    - targets:
+      {{- range $.Values.blackbox_exporter.static_targets }}
+      - {{ . }}
+      {{- end }}
+  scheme: https
+  relabel_configs:
+  - source_labels: [__address__]
+    target_label: __param_target
+  - source_labels: [__param_target]
+    target_label: instance
+  - target_label: __address__
+    replacement: prober.{{ $region }}.cloud.sap
+  - source_labels: [__param_module]
+    target_label: module
+  - target_label: region_probed_from
+    replacement: {{ $region }}
+{{ end }}
+{{ end }}
+{{ end }}
+
+{{ if .Values.blackbox_exporter }}
 {{ if .Values.blackbox_exporter.tcp_probe_targets }}
 {{ range $region := .Values.global.regions }}
 - job_name: 'blackbox-tcp-{{ $region }}'
