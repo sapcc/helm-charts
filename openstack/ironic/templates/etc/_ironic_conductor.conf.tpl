@@ -7,7 +7,7 @@
 enabled_drivers = {{ $conductor.enabled_drivers | default "pxe_ipmitool,agent_ipmitool" }}
 
 [conductor]
-api_url = {{ .Values.openstack.global.ironic_api_endpoint_protocol_public}}://{{include "ironic_api_endpoint_host_public" .}}:{{ .Values.openstack.global.ironic_api_port_public }}
+api_url = {{ .Values.global.ironic_api_endpoint_protocol_public | default "https" }}://{{include "ironic_api_endpoint_host_public" .}}:{{ .Values.global.ironic_api_port_public | default "443" }}
 clean_nodes = {{ $conductor.clean_nodes | default "False" }}
 automated_clean = {{ $conductor.automated_clean | default "False" }}
 
