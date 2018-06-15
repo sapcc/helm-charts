@@ -41,6 +41,7 @@
     "count_tenants": "rule:admin",
 
     "create_zone": "rule:context_is_dns_admin",
+    "create_sub_zone": "rule:context_is_editor",
     "get_zones": "rule:context_is_viewer",
     "get_zone": "rule:context_is_viewer",
     "get_zone_servers": "rule:context_is_viewer",
