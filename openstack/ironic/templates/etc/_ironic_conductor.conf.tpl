@@ -1,8 +1,8 @@
 {{- define "ironic_conductor_conf" -}}
 {{- $conductor :=  index . 1 -}}
 {{- with index . 0 -}}
-{{- $tftp_ip :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironictftpIP  }}
-{{- $deploy_port :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironictftpIP  }}
+{{- $tftp_ip :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
+{{- $deploy_port :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 [DEFAULT]
 enabled_drivers = {{ $conductor.enabled_drivers | default "pxe_ipmitool,agent_ipmitool" }}
 
