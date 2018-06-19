@@ -87,6 +87,13 @@ data:
           tier: openstack
           region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$|admin
       {{- end }}
+      - receiver: pagerduty
+        continue: true
+        routes:
+        - receiver: 'pagerduty'
+          continue: true
+          match:
+            severity: critical
 
     receivers:
     {{- range tuple "dev-null" "kubernetes-info" "kubernetes-warning" "kubernetes-critical" }}
@@ -128,6 +135,9 @@ data:
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         send_resolved: true 
     {{- end }}
+    - name: pagerduty
+      pagerduty_configs:
+      - service_key: 694749bcc6db4e0e932ed470ea14049b 
 
   {{- $files := .Files }}
   {{ range tuple "slack.tmpl" }}
