@@ -25,6 +25,12 @@ discovery.zen.minimum_master_nodes: 2
 readonlyrest:
     enable: true
     response_if_req_forbidden: <h1>Forbidden</h1>
+    
+    proxy_auth_configs:
+
+    - name: "ingress"
+      user_id_header: "X-Remote-User"
+
     access_control_rules:
 
     - name: data
@@ -44,6 +50,9 @@ readonlyrest:
 
     - name: Admin
       auth_key: {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}
+
+#    - name: Everyone
+#      type: allow
 
     - name: LDAP auth
       type: allow
