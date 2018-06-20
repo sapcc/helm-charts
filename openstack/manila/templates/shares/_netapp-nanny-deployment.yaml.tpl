@@ -5,7 +5,7 @@
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: manila-netapp-{{$share.name}}-nanny
+  name: manila-share-netapp-{{$share.name}}-nanny
   labels:
     system: openstack
     type: nanny
@@ -20,11 +20,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-        name: manila-netapp-{{$share.name}}-nanny
+        name: manila-share-netapp-{{$share.name}}-nanny
   template:
     metadata:
       labels:
-        name: manila-netapp-{{$share.name}}-nanny
+        name: manila-share-netapp-{{$share.name}}-nanny
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share $az | include "share_netapp_configmap" | sha256sum }}
@@ -71,7 +71,6 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
-      hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila
           emptyDir: {}
