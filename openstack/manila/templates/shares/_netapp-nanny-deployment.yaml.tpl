@@ -44,7 +44,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-              value: "manila-api,manila-postgresql,manila-share-netapp-{{$share.name}}"
+              value: "manila-api,manila-postgresql"
             - name: MANILA_NETAPP_NANNY_INTERVAL
               value: {{ .Values.nanny.netapp.interval | quote }}
             {{- if .Values.sentry.enabled }}
