@@ -4,6 +4,7 @@
 {{- $az := index . 2 -}}
 [DEFAULT]
 storage_availability_zone = {{$az}}
+host = manila-share-netapp-{{$share.name}}
 
 [netapp-multi]
 share_backend_name={{$share.backend_name | default $share.vserver | default "netapp-multi"}}
