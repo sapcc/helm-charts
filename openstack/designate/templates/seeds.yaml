@@ -13,6 +13,7 @@ spec:
   requires:
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-tempest-seed
 
   roles:
   - cloud_dns_admin
@@ -92,4 +93,48 @@ spec:
       roles:
       - project: master
         role: cloud_dns_admin
+
+  - name: tempest
+    dns_quota:
+      api_export_size: 2000
+      recordset_records: 2000
+      zone_records: 10000
+      zone_recordsets: 10000
+      zones: 1000
+    projects:
+    - name: tempest1
+      roles:
+        - user: admin@Default
+          role: cloud_dns_admin
+      dns_quota:
+        api_export_size: 2000
+        recordset_records: 2000
+        zone_records: 2000
+        zone_recordsets: 2000
+        zones: 200
+    - name: tempest2
+      roles:
+        - user: admin@Default
+          role: cloud_dns_admin
+      dns_quota:
+        api_export_size: 2000
+        recordset_records: 2000
+        zone_records: 2000
+        zone_recordsets: 2000
+        zones: 200
+    users:
+    - name: tempestuser1
+      roles:
+      - project: tempest1
+        role: dns_admin
+      - domain: tempest
+        role: dns_admin
+    - name: tempestuser2
+      roles:
+      - project: tempest2
+        role: dns_admin
+      - domain: tempest
+        role: dns_admin
+
+
 {{- end }}
