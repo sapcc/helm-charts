@@ -1,0 +1,51 @@
+{{- $domains := list "ccadmin" "bs" "hcm" "hcp03" "hec" "monsoon3" "s4" "wbs"}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ required "missing .name" .Values.name }}-support-seed
+spec:
+  requires:
+  - {{ .Release.Namespace}}/{{ required "missing .name" .Values.name }}-seed
+  {{- range $domains }}
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{ . | lower }}-seed
+  {{- end }}
+
+  domains:
+    {{- range $domains }}
+    - name: {{ . | lower }}
+      groups:
+      - name: {{ . | upper }}_API_SUPPORT
+        roles:
+        - domain: {{ . | lower }}
+          role: kubernetes_admin
+          inherited: true
+      - name: {{ . | upper }}_COMPUTE_SUPPORT
+        roles:
+        - project: compute_support
+          role: kubernetes_admin
+        - domain: {{ . | lower }}
+          role: kubernetes_member
+          inherited: true
+      - name: {{ . | upper }}_NETWORK_SUPPORT
+        roles:
+        - project: network_support
+          role: kubernetes_admin
+        - domain: {{ . | lower }}
+          role: kubernetes_member
+          inherited: true
+      - name: {{ . | upper }}_STORAGE_SUPPORT
+        roles:
+        - project: storage_support
+          role: kubernetes_admin
+        - domain: {{ . | lower }}
+          role: kubernetes_member
+          inherited: true
+      - name: {{ . | upper }}_SERVICE_DESK
+        roles:
+        - project: service_desk
+          role: kubernetes_admin
+        - domain: {{ . | lower }}
+          role: kubernetes_member
+          inherited: true
+{{- end }}
+
