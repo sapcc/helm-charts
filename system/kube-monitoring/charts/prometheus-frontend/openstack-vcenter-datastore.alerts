@@ -1,27 +1,93 @@
 groups:
 - name: datastore.alerts
   rules:
-  - alert: VCenterDatastoreOverallStatusRed
-    expr: vcenter_datastore_overallstatus == 2 AND vcenter_datastore_maintenancemode == 0
-    for: 5m
+  - alert: VVOLDatastoreNotAccessible
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+", score=~"1"} == 1
+    for: 15m
     labels:
+      severity: critical
       tier: openstack
-      service: datastore
-      severity: info
-      meta: "{{ $labels.datastore_name }}"
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore is not accessible: {{ $labels.text }}'
     annotations:
-      description: Overall status of {{ $labels.datastore_name }} is RED
-      summary: Overall status of {{ $labels.datastore_name }} is RED
-  - alert: VCenterDatastoreOverallStatusYellow
-    expr: vcenter_datastore_overallstatus == 1 AND vcenter_datastore_maintenancemode == 0
-    for: 10m
-    labels:
-      tier: openstack
-      service: datastore
-      severity: info
-      meta: "{{ $labels.datastore_name }}"
-    annotations:
-      description: Overall status of {{ $labels.datastore_name }} is YELLOW
-      summary: Overall status of {{ $labels.datastore_name }} is YELLOW
+      description: 'Datastore is not accessible for 15 min: {{ $labels.text }}'
+      summary: vVOL Datastore accessibility check
 
-    
+  - alert: VVOLDatastoreNotAccessibleFromHost
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+", score=~"2"} == 1
+    for: 15m
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore is not accessible from host: {{ $labels.text }} '
+    annotations:
+      description: 'Datastore is not accessible from host for 15 min: {{ $labels.text }}'
+      summary: vVOL Datastore accessibility check from host
+
+  - alert: VVOLDatastoreOverallStatusRed
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+", score=~"3"} == 1
+    for: 15m
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore has overall status red: {{ $labels.text }} '
+    annotations:
+      description: 'Datastore has overall status red for 15 min: {{ $labels.text }}'
+      summary: vVOL Datastore overall status check
+
+  - alert: VVOLDatastoreZeroCapacity
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+", score=~"5"} == 1
+    for: 15m
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore has zero capacity: {{ $labels.text }} '
+    annotations:
+      description: 'Datastore has zero capacity for 15 min: {{ $labels.text }}'
+      summary: vVOL Datastore capacity check
+
+  - alert: VVOLDatastoreZeroFreeSpace
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+", score=~"6"} == 1
+    for: 15m
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore has no free space: {{ $labels.text }} '
+    annotations:
+      description: 'Datastore has no free space for 15 min: {{ $labels.text }}'
+      summary: vVOL Datastore free space check
+
+  - alert: VVOLDatastore80PercentFull
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+", score=~"7"} == 1
+    for: 15m
+    labels:
+      severity: info
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore is 80 percent full: {{ $labels.text }} '
+    annotations:
+      description: 'Datastore is 80 percent full for 15 min: {{ $labels.text }}'
+      summary: vVOL Datastore 80 percent full check
+
+  - alert: VVOLDatastore90PercentFull
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+", score=~"8"} == 1
+    for: 15m
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore is 90 percent full: {{ $labels.text }} '
+    annotations:
+      description: 'Datastore is 90 percent full for 15 min: {{ $labels.text }}'
+      summary: vVOL Datastore 90 percent full check
