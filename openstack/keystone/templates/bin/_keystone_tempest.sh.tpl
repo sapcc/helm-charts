@@ -20,9 +20,9 @@ function start_tempest_tests {
     rally verify configure-verifier --extend /etc/keystone/tempest_extra_options
 
     # run the actual tempest api tests for keystone
-    rally --debug verify start --concurrency 1 --detailed --pattern tempest.api.identity.v3.
-    rally --debug verify start --concurrency 1 --detailed --pattern tempest.api.identity.admin.v3.
-    rally --debug verify start --concurrency 1 --detailed --pattern keystone_tempest_plugin.
+    rally verify start --concurrency 1 --detailed --pattern tempest.api.identity.v3.
+    rally verify start --concurrency 1 --detailed --pattern tempest.api.identity.admin.v3.
+    #rally verify start --concurrency 1 --detailed --pattern keystone_tempest_plugin.
 }
 
 start_tempest_tests
