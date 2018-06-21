@@ -45,6 +45,28 @@ postgresql:
     imageTag: v0.5.12
     os_password: null
 
+pgmetrics:
+  customMetrics:
+    openstack_barbican_secrets:
+      query: "select secrets.id, secrets.status, secrets.name, projects.external_id AS project_id, secrets.secret_type from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false'"
+      metrics:
+        - id:
+            usage: "LABEL"
+            description: "Secret ID"
+        - status:
+            usage: "LABEL"
+            description: "Secret state"
+        - name:
+            usage: "LABEL"
+            description: "Secret name"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the secret"
+        - secret_type:
+            usage: "LABEL"
+            description: "Type of secret"
+
+
 rabbitmq:
   users:
     default:
