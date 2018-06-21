@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: keystone-tempest
+  annotations:
+    "helm.sh/hook": test-success
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: keystone
+    type: test
+
+spec:
+  restartPolicy: Never
+  containers:
+    - name: keystone-tempest
+      image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.tempest.image }}:{{ .Values.tempest.imageTag }}
+      imagePullPolicy: {{ default "IfNotPresent" .Values.tempest.imagePullPolicy | quote }}
+      command:
+        - /usr/local/bin/kubernetes-entrypoint
+      env:
+        - name: COMMAND
+          value: "/scripts/keystone-tempest.sh"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: keystone
+      volumeMounts:
+        - name: etc-keystone
+          mountPath: /etc/keystone
+        - name: keystone-etc
+          mountPath: /etc/keystone/tempest_accounts.yaml
+          subPath: tempest_accounts.yaml
+          readOnly: true
+        - name: keystone-etc
+          mountPath: /etc/keystone/tempest_deployment_config.json
+          subPath: tempest_deployment_config.json
+          readOnly: true
+        - name: keystone-etc
+          mountPath: /etc/keystone/tempest_extra_options
+          subPath: tempest_extra_options
+          readOnly: true
+        - name: keystone-bin
+          mountPath: /scripts
+          readOnly: true
+  volumes:
+    - name: etc-keystone
+      emptyDir: {}
+    - name: keystone-etc
+      configMap:
+        name: keystone-etc
+        defaultMode: 0444
+    - name: keystone-bin
+      configMap:
+        name: keystone-bin
+        defaultMode: 0555
