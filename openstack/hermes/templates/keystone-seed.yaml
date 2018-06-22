@@ -2,7 +2,8 @@ apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
 metadata:
   name: hermes-seed
-
+  labels:
+    component: hermes
 spec:
   requires:
   - monsoon3/domain-default-seed
@@ -37,9 +38,64 @@ spec:
           - project: admin
             role: audit_viewer
       groups:
-      - name: Administrators
-        roles:
-          - domain: Default
-            role: audit_viewer
-          - project: admin
-            role: audit_viewer
+        - name: Administrators
+          roles:
+            - domain: Default
+              role: audit_viewer
+            - project: admin
+              role: audit_viewer
+
+        - name: ccadmin
+          projects:
+          - name: master
+            roles:
+            - group: CCADMIN_CLOUD_ADMINS
+              role: audit_viewer
+            - group: CCADMIN_DOMAIN_ADMINS
+              role: audit_viewer
+            - group: CCADMIN_MONITORING_USERS
+              role: audit_viewer
+          groups:
+          - name: CCADMIN_API_SUPPORT
+            roles:
+            - project: api_support
+              role: audit_viewer
+            - project: api_tools
+              role: audit_viewer
+            - domain: ccadmin
+              role: audit_viewer
+              inherited: true
+          - name: CCADMIN_COMPUTE_SUPPORT
+            roles:
+            - project: compute_support
+              role: audit_viewer
+            - project: compute_tools
+              role: audit_viewer
+            - domain: ccadmin
+              role: audit_viewer
+              inherited: true
+          - name: CCADMIN_NETWORK_SUPPORT
+            roles:
+            - project: network_support
+              role: audit_viewer
+            - project: network_tools
+              role: audit_viewer
+            - domain: ccadmin
+              role: audit_viewer
+              inherited: true
+          - name: CCADMIN_STORAGE_SUPPORT
+            roles:
+            - project: storage_support
+              role: audit_viewer
+            - project: storage_tools
+              role: audit_viewer
+            - domain: ccadmin
+              role: audit_viewer
+              inherited: true
+          - name: CCADMIN_SERVICE_DESK
+            roles:
+            - project: service_desk
+              role: audit_viewer
+            - domain: ccadmin
+              role: audit_viewer
+              inherited: true
