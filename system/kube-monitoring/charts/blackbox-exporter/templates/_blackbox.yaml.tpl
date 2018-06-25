@@ -1,4 +1,12 @@
 modules:
+  http_2xx:
+    prober: http
+    http:
+      fail_if_not_ssl: false
+      preferred_ip_protocol: "ip4"
+      no_follow_redirects: false
+      tls_config:
+        insecure_skip_verify: true
   https_2xx:
     prober: http
     http:

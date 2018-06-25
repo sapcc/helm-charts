@@ -364,11 +364,11 @@ scrape_configs:
   - source_labels: [__param_target]
     target_label: instance
   - target_label: __address__
-    replacement: prober.{{ $root.global.region }}.cloud.sap
+    replacement: prober.{{ $region }}.cloud.sap
   - source_labels: [__param_module]
     target_label: module
   - target_label: region_probed_from
-    replacement: {{ $root.global.region }}
+    replacement: {{ $region }}
 {{- end }}
 {{- end }}
 {{- end }}
