@@ -50,7 +50,7 @@ auth_type = v3password
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironic_service_user | include "identity.password_for_user")  | replace "$" "$$" }}
+password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 
