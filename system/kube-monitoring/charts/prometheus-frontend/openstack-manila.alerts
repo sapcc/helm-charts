@@ -45,8 +45,20 @@ groups:
       description: Manila Shares taking more than 2 minutes to delete in {{ $labels.host }}
       summary: Manila Shares taking more than 2 minutes to delete
 
-  - alert: OpenstackManilaSSLCertExpiringIn30days
+  - alert: OpenstackManilaNetAppSSLCertExpiringIn30days
     expr: probe_ssl_earliest_cert_expiry{instance=~".*stnp.*|.*ma.*"} - time() < 60 * 60 *24 * 30
+    for: 10m
+    labels:
+      tier: openstack
+      service: certificate
+      severity: info
+      context: availability
+    annotations:
+      description: Certificate will expire in 30days
+      summary: Certificate for {{ $labels.instance }} will expire in {{ $value | humanizeDuration }}
+
+  - alert: OpenstackManilaNetAppSSLCertExpiringIn7days
+    expr: probe_ssl_earliest_cert_expiry{instance=~".*stnp.*|.*ma.*"} - time() < 60 * 60 *24 * 7
     for: 10m
     labels:
       tier: openstack
@@ -54,17 +66,18 @@ groups:
       severity: warning
       context: availability
     annotations:
-      description: Certificate will expire in 30days
-      summary: Certificate for {{ $labels.instance }} will expire in {{ $value | humanizeDuration }}
-
-  - alert: OpenstackManilaSSLCertExpiringIn7days
-    expr: probe_ssl_earliest_cert_expiry{instance=~".*stnp.*|.*ma.*"} - time() < 60 * 60 *24 * 7
-    for: 10m
-    labels:
-      tier: openstack
-      service: certificate
-      severity: critical
-      context: availability
-    annotations:
       description: Certificate will expire in 7days
       summary: Certificate for {{ $labels.instance }} will expire in {{ $value | humanizeDuration }}
+
+  - alert: OpenstackManilaProbeSuccessValueIs0
+    expr: probe_success{instance=~".*stnp.*|.*ma.*"} == 0
+    for: 5m
+    labels:
+      tier: openstack
+      service: Prober
+      severity: warning
+      context: availability
+    annotations:
+      description: Probe Success Value of instance is 0
+      summary: Probe Success Value {{ $labels.instance }} is 0. Click the below link to view the logs:
+               https://prober.{{ $labels.region }}.cloud.sap/probe?target={{ $labels.instance }}.cc.{{ $labels.region }}.cloud.sap&module=http_ca_sapnetcag2&debug=true
