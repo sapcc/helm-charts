@@ -45,32 +45,6 @@ groups:
       description: Manila Shares taking more than 2 minutes to delete in {{ $labels.host }}
       summary: Manila Shares taking more than 2 minutes to delete
 
-  - alert: OpenstackManilaNetAppSSLCertExpiringIn30days
-    expr: probe_ssl_earliest_cert_expiry{instance=~".*stnp.*|.*ma.*"} - time() < 60 * 60 *24 * 30
-    for: 10m
-    labels:
-      tier: openstack
-      meta: 'Certificate for {{ $labels.instance }} will expire'
-      service: manila
-      severity: info
-      context: availability
-    annotations:
-      description: Certificate will expire in 30days
-      summary: Certificate for {{ $labels.instance }} will expire in {{ $value | humanizeDuration }}
-
-  - alert: OpenstackManilaNetAppSSLCertExpiringIn7days
-    expr: probe_ssl_earliest_cert_expiry{instance=~".*stnp.*|.*ma.*"} - time() < 60 * 60 *24 * 7
-    for: 10m
-    labels:
-      tier: openstack
-      meta: 'Certificate for {{ $labels.instance }} will expire'
-      service: manila
-      severity: warning
-      context: availability
-    annotations:
-      description: Certificate will expire in 7days
-      summary: Certificate for {{ $labels.instance }} will expire in {{ $value | humanizeDuration }}
-
   - alert: OpenstackManilaProbeSuccessValueIs0
     expr: probe_success{instance=~".*stnp.*|.*ma.*"} == 0
     for: 5m
