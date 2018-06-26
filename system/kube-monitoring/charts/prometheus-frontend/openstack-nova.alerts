@@ -29,7 +29,7 @@ groups:
       summary: security group latency goes over 1 minute
 
   - alert: OpenstackNovaMaxDiskUsagePerc
-    expr: 1 - max(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"} / openstack_compute_nodes_local_gb_gauge) BY (availability_zone) > 0.9
+    expr: (sum(avg(openstack_compute_nodes_local_gb_used_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) / (sum(avg(openstack_compute_nodes_local_gb_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) > 0.95
     for: 8h
     labels:
       context: diskspace
@@ -39,11 +39,11 @@ groups:
       severity: critical
       tier: openstack
     annotations:
-      description: Nova Maximum Disk Usage is above 90%
+      description: Nova {{ $labels.availability_zone }} Disk Usage is above 90%
       summary: Nova Maximum Disk Usage percentage metric
 
   - alert: OpenstackNovaMaxRAMUsagePerc
-    expr: 1 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*",availability_zone!~"true|false"} / openstack_compute_nodes_memory_mb_gauge) BY (availability_zone) > 0.95
+    expr: (sum(avg(openstack_compute_nodes_memory_mb_used_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) / (sum(avg(openstack_compute_nodes_memory_mb_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) > 0.95
     for: 8h
     labels:
       context: diskspace
@@ -53,7 +53,7 @@ groups:
       severity: warning
       tier: openstack
     annotations:
-      description: Nova Maximum RAM Usage is above 95%.
+      description: Nova {{ $labels.availability_zone }} total RAM Usage is above 95%.
       summary: Nova Maximum RAM Usage percentage metric
 
   - alert: OpenstackNovaInstanceStuckBuilding
