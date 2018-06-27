@@ -5,6 +5,11 @@ apiVersion: extensions/v1beta1
 metadata:
   name: {{.Values.postgresDatabase}}-pgbouncer
   namespace:  {{.Release.Namespace}}
+  {{- if .Values.pgbouncer.prometheus }}
+  annotations:
+    prometheus.io/scrape: true
+    prometheus.io/port: 9200
+  {{- end }}
   labels:
     system: openstack
     component: {{.Values.postgresDatabase}}
