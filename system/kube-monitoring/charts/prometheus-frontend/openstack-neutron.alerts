@@ -18,17 +18,17 @@ groups:
 
   - alert: OpenstackNeutronDhcpAgentLostNetworks
     expr: blackbox_integrity_status_gauge{check=~"dhcp_agent-.+"} == 1
-    for: 30m
+    for: 15
     labels:
       severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: '{{ $labels.text }}'
+      context: '{{ $labels.context }}'
+      meta: 'DHCP agent has less subnets than subnets with dhcp enabled: {{ $labels.check }}'
+      sentry: blackbox/?query=test_{{ $labels.check }}
       playbook: docs/support/playbook/neutron/dhcp_down.html
-      sentry: blackbox
     annotations:
-      description: '{{ $labels.text }} over 30min'
+      description: 'DHCP agent has less subnets than subnets with dhcp enabled for 15 min: {{ $labels.check }}'
       summary: Openstack Neutron DHCP Agent lost private networks
       
   - alert: OpenstackNeutronMonitorAgentHeartbeat
