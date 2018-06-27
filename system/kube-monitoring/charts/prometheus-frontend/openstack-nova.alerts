@@ -138,17 +138,30 @@ groups:
       description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.host }}
       summary: Openstack Nova Instance Stuck in Rebooting state metric
 
-  - alert: OpenstackNovaComputeServiceStatus
-    expr: blackbox_integrity_status_gauge{check=~"compute_service_status-.+"} == 1
-    for: 30m
+  - alert: OpenstackNovaComputeServiceHypervisorDown
+    expr: blackbox_integrity_status_gauge{check=~"compute_service_status-.+"} == 2
+    for: 15m
     labels:
       severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: nova-overview
-      meta: '{{ $labels.text }}'
+      context: '{{ $labels.context }}'
+      meta: 'nova-compute service on host is enabled but hypervisor is down'
       sentry: blackbox
     annotations:
-      description: '{{ $labels.text }} over 30min'
+      description: 'nova-compute service on host is enabled but hypervisor is down over 15min'
+      summary: Openstack Nova Compute Service Status Check metric
+
+  - alert: OpenstackNovaComputeServiceDisabled
+    expr: blackbox_integrity_status_gauge{check=~"compute_service_status-.+"} == 3
+    for: 15m
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'nova-compute service on host is disabled without reason'
+      sentry: blackbox
+    annotations:
+      description: 'nova-compute service on host is disabled without reason over 15min'
       summary: Openstack Nova Compute Service Status Check metric
