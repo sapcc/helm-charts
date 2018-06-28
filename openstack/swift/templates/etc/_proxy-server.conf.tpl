@@ -195,14 +195,14 @@ use = egg:swift3#s3token
 auth_uri = {{$cluster.keystone_auth_uri}}
 auth_version = 3
 
-{{ if $cluster.watcher_enabled }}
+{{ if $cluster.watcher_enabled -}}
 [filter:watcher]
 use = egg:watcher-middleware#watcher
 service_type = object-store
 cadf_service_name = service/storage/object
 target_project_id_from_path = {{$cluster.watcher_project_id_from_path | default true}}
 config_file = /swift-etc/watcher.yaml
-{{ end }}
+{{- end }}
 
 # [filter:statsd]
 # use = egg:ops-middleware#statsd
