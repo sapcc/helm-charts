@@ -16,32 +16,45 @@ spec:
       annotations:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        checksum/bin-configmap.conf: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: glance-migration
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{.Values.image_version}}
-          imagePullPolicy: IfNotPresent
-          command:
-            - /usr/local/bin/kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "bash /container.init/db-migrate"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: {{ .Release.Name }}-postgresql
-          volumeMounts:
-            - mountPath: /glance-etc
-              name: glance-etc
-            - mountPath: /container.init
-              name: glance-bin
-              defaultMode: 0755
-      volumes:
-        - name: glance-etc
-          configMap:
+      - name: glance-migration
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "dumb-init glance-manage db_sync"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: {{ .Release.Name }}-postgresql
+        - name: PGAPPNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+          - mountPath: /etc/glance
+            name: etcglance
+          - mountPath: /etc/glance/glance.conf
             name: glance-etc
-        - name: glance-bin
-          configMap:
-            name: glance-bin
+            subPath: glance-api.conf
+            readOnly: true
+          {{- if not .Values.swift_multi_tenant }}
+          - mountPath: /etc/glance/swift-store.conf
+            name: glance-etc
+            subPath: swift-store.conf
+            readOnly: true
+          {{- end }}
+          - mountPath: /etc/glance/logging.ini
+            name: glance-etc
+            subPath: logging.ini
+            readOnly: true
+      volumes:
+      - name: etcglance
+        emptyDir: {}
+      - name: glance-etc
+        configMap:
+          name: glance-etc

@@ -31,138 +31,193 @@ spec:
       annotations:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        checksum/bin-configmap.conf: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+      initContainers:
+      - name: permissions
+        securityContext:
+          runAsUser: 0
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /glance_store
+          name: image-store
+        command:
+        - dumb-init
+        - bash
+        args:
+        - -xc
+        - |
+          chown -R glance:glance /glance_store
       containers:
-        - name: api
-          securityContext:
-            runAsUser: 0
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{.Values.image_version}}
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            httpGet:
-              path: /healthcheck
-              port: {{.Values.api_port_internal}}
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
-          readinessProbe:
-            httpGet:
-              path: /healthcheck
-              port: {{.Values.api_port_internal}}
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
-          command:
-            - /usr/local/bin/kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "bash /scripts/glance-api-start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: "glance-migration-job"
-            - name: DEPENDENCY_SERVICE
-              value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
-            - name: DEBUG_CONTAINER
-              value: "false"
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: glance.DSN.python
-            {{- end }}
-            {{- if .Values.metrics.enabled }}
-            - name: STATSD_HOST
-              value: "127.0.0.1"
-            - name: STATSD_PORT
-              value: "9125"
-            - name: STATSD_PREFIX
-              value: {{ .Values.metrics.prefix | default "openstack" | quote }}
-            {{- end }}
-          {{- if .Values.api.resources.enabled }}
-          resources:
-            limits:
-              cpu: {{ .Values.api.resources.limits.cpu | quote }}
-              memory: {{ .Values.api.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.api.resources.requests.cpu | quote }}
-              memory: {{ .Values.api.resources.requests.memory | quote }}
-          {{- end }}
-          ports:
-            - name: api
-              containerPort: {{.Values.api_port_internal}}
-          volumeMounts:
-            - mountPath: /glance-etc
-              name: glance-etc
-            - mountPath: /glance_store
-              name: image-store
-            - mountPath: /scripts
-              name: glance-bin
-        - name: registry
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-registry:{{.Values.image_version}}
-          imagePullPolicy: IfNotPresent
-          command:
-            - /usr/local/bin/kubernetes-entrypoint
-          livenessProbe:
-            httpGet:
-              path: /healthcheck
-              port: 9191
-          env:
-            - name: COMMAND
-              value: "bash /scripts/glance-registry-start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "glance"
-            - name: DEBUG_CONTAINER
-              value: "false"
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: glance.DSN.python
-            {{- end }}
-          {{- if .Values.registry.resources.enabled }}
-          resources:
-            limits:
-              cpu: {{ .Values.registry.resources.limits.cpu | quote }}
-              memory: {{ .Values.registry.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.registry.resources.requests.cpu | quote }}
-              memory: {{ .Values.registry.resources.requests.memory | quote }}
-          {{- end }}
-          ports:
-            - name: registry
-              containerPort: 9191
-          volumeMounts:
-            - mountPath: /glance-etc
-              name: glance-etc
-            - mountPath: /scripts
-              name: glance-bin
-        {{- if .Values.metrics.enabled }}
-        - name: statsd
-          image: prom/statsd-exporter:v0.5.0
-          imagePullPolicy: {{ .Values.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
-          ports:
-            - name: statsd
-              containerPort: 9125
-              protocol: UDP
-            - name: metrics
-              containerPort: {{ .Values.metrics.port }}
+      - name: api
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: {{.Values.api_port_internal}}
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: {{.Values.api_port_internal}}
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        command:
+        - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "dumb-init glance-api"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_JOBS
+          value: "glance-migration-job"
+        - name: DEPENDENCY_SERVICE
+          value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
+        - name: DEBUG_CONTAINER
+          value: "false"
+        - name: PGAPPNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: glance.DSN.python
         {{- end }}
-      volumes:
-        - name: image-store
-        {{- if .Values.file.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ if .Values.file.persistence.existingClaim }}{{ .Values.file.persistence.existingClaim }}{{- else }}{{ .Release.Name }}-pvc{{- end }}
-        {{- else }}
-          emptyDir: {}
+        {{- if .Values.metrics.enabled }}
+        - name: STATSD_HOST
+          value: "127.0.0.1"
+        - name: STATSD_PORT
+          value: "9125"
+        - name: STATSD_PREFIX
+          value: {{ .Values.metrics.prefix | default "openstack" | quote }}
+        {{- end }}
+        {{- if .Values.api.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.api.resources.limits.cpu | quote }}
+            memory: {{ .Values.api.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.api.resources.requests.cpu | quote }}
+            memory: {{ .Values.api.resources.requests.memory | quote }}
+        {{- end }}
+        ports:
+        - name: api
+          containerPort: {{.Values.api_port_internal}}
+        volumeMounts:
+        - name: etcglance
+          mountPath: /etc/glance
+        - name: glance-etc
+          mountPath: /etc/glance/glance-api.conf
+          subPath: glance-api.conf
+          readOnly: true
+        {{- if not .Values.swift_multi_tenant }}
+        - name: glance-etc
+          mountPath: /etc/glance/swift-store.conf
+          subPath: swift-store.conf
+          readOnly: true
         {{- end }}
         - name: glance-etc
-          configMap:
-            name: glance-etc
-        - name: glance-bin
-          configMap:
-            name: glance-bin
-            defaultMode: 0755
+          mountPath: /etc/glance/policy.json
+          subPath: policy.json
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/glance-api-paste.ini
+          subPath: glance-api-paste.ini
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/logging.ini
+          subPath: logging.ini
+          readOnly: true
+        - mountPath: /glance_store
+          name: image-store
+      - name: registry
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-registry:{{.Values.imageVersionGlanceRegistry | default .Values.imageVersion | default .Values.image_version }}
+        imagePullPolicy: IfNotPresent
+        command:
+          - kubernetes-entrypoint
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 9191
+        env:
+        - name: COMMAND
+          value: "dumb-init glance-registry"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: "glance"
+        - name: DEBUG_CONTAINER
+          value: "false"
+        {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: glance.DSN.python
+        {{- end }}
+        {{- if .Values.registry.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.registry.resources.limits.cpu | quote }}
+            memory: {{ .Values.registry.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.registry.resources.requests.cpu | quote }}
+            memory: {{ .Values.registry.resources.requests.memory | quote }}
+        {{- end }}
+        ports:
+        - name: registry
+          containerPort: 9191
+        volumeMounts:
+        - name: etcglance
+          mountPath: /etc/glance
+        - name: glance-etc
+          mountPath: /etc/glance/glance-registry.conf
+          subPath: glance-registry.conf
+          readOnly: true
+        {{- if not .Values.swift_multi_tenant }}
+        - name: glance-etc
+          mountPath: /etc/glance/swift-store.conf
+          subPath: swift-store.conf
+          readOnly: true
+        {{- end }}
+        - name: glance-etc
+          mountPath: /etc/glance/policy.json
+          subPath: policy.json
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/glance-registry-paste.ini
+          subPath: glance-registry-paste.ini
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/logging.ini
+          subPath: logging.ini
+          readOnly: true
+      {{- if .Values.metrics.enabled }}
+      - name: statsd
+        image: prom/statsd-exporter:v0.5.0
+        imagePullPolicy: {{ .Values.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
+        ports:
+        - name: statsd
+          containerPort: 9125
+          protocol: UDP
+        - name: metrics
+          containerPort: {{ .Values.metrics.port }}
+      {{- end }}
+      volumes:
+      - name: etcglance
+        emptyDir: {}
+      - name: image-store
+      {{- if .Values.file.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ if .Values.file.persistence.existingClaim }}{{ .Values.file.persistence.existingClaim }}{{- else }}{{ .Release.Name }}-pvc{{- end }}
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
+      - name: glance-etc
+        configMap:
+          name: glance-etc

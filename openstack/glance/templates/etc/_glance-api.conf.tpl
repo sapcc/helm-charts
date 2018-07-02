@@ -3,7 +3,7 @@ debug = {{.Values.api.debug}}
 
 registry_host = 127.0.0.1
 
-log_config_append = /etc/glance/logging.conf
+log_config_append = /etc/glance/logging.ini
 
 show_image_direct_url= True
 
