@@ -136,6 +136,7 @@ spec:
           readOnly: true
         - mountPath: /glance_store
           name: image-store
+      {{- if (or .Values.imageVersionGlanceRegistry .Values.imageVersion .Values.image_version) }}
       - name: registry
         image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-registry:{{.Values.imageVersionGlanceRegistry | default .Values.imageVersion | default .Values.image_version }}
         imagePullPolicy: IfNotPresent
@@ -199,6 +200,7 @@ spec:
           mountPath: /etc/glance/logging.ini
           subPath: logging.ini
           readOnly: true
+      {{- end }}
       {{- if .Values.metrics.enabled }}
       - name: statsd
         image: prom/statsd-exporter:v0.5.0
