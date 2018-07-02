@@ -39,7 +39,7 @@ spec:
           openstack security group rule list -f csv --quote none $security_group_id | grep $security_group_id | cut -d, -f1 | xargs -r openstack security group rule delete
 
           if [ "`openstack security group rule list --ingress -f csv --quote none $security_group_id | grep -E ',,,,|,,0.0.0.0/0,,' | wc -l`" -eq 0 ]; then
-              openstack security group rule create --project $project_id --ingress --ethertype IPv4 --protocol any $security_group_id
+              openstack security group rule create --project $project_id --ingress --ethertype IPv4 --protocol any $security_group_id || echo "Requires sufficiently recent openstack-cli"
           fi
         volumeMounts:
         - mountPath: /etc/ironic
