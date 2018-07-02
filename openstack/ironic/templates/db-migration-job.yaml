@@ -9,21 +9,7 @@ metadata:
     component: ironic
 spec:
   template:
-    metadata:
-      annotations:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "6") }}
-        pod.beta.kubernetes.io/init-containers: '[{
-          "name": "kubernetes-entrypoint",
-          "image": "{{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}",
-          "imagePullPolicy": "IfNotPresent",
-          "command": ["kubernetes-entrypoint"],
-          "env": [{"name": "NAMESPACE", "value": {{ .Release.Namespace | quote }}},
-                  {"name": "DEPENDENCY_SERVICE", "value": "ironic-postgresql"},
-                  {"name": "COMMAND", "value": "true"}]
-          }]'
-{{- end }}
     spec:
-{{- if or (gt .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "6") }}
       initContainers:
       - name: "kubernetes-entrypoint"
         image: "{{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}"
@@ -36,13 +22,13 @@ spec:
           value: "ironic-postgresql"
         - name: "COMMAND"
           value: "true"
-{{- end }}
       restartPolicy: OnFailure
       containers:
       - name: ironic-dbsync
         image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         command:
+        - dumb-init
         - bash
         args:
         - -c

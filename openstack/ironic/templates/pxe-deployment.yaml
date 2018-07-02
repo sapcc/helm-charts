@@ -29,40 +29,40 @@ spec:
         configmap-pxe-hash: {{ include (print $.Template.BasePath "/pxe-configmap.yaml") . | sha256sum }}
     spec:
       containers:
+      - name: ironic-tftp
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-pxe:{{.Values.imageVersionIronicPxe | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        imagePullPolicy: IfNotPresent
+        command: ["ptftpd", "-v", "-d", "/tftpmap.py:handle", "eth0", "/tftpboot"]
+        ports:
         - name: ironic-tftp
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-pxe:{{.Values.imageVersionIronicPxe | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
-          imagePullPolicy: IfNotPresent
-          command: ["ptftpd", "-v", "-d", "/tftpmap.py:handle", "eth0", "/tftpboot"]
-          ports:
-            - name: ironic-tftp
-              protocol: UDP
-              containerPort: {{.Values.global.ironic_pxe_port_public}}
-          volumeMounts:
-            - mountPath: /tftpboot
-              name: ironic-tftp
+          protocol: UDP
+          containerPort: {{.Values.global.ironic_pxe_port_public}}
+        volumeMounts:
+        - mountPath: /tftpboot
+          name: ironic-tftp
+      - name: ironic-ipxe
+        image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
+        imagePullPolicy: IfNotPresent
+        ports:
         - name: ironic-ipxe
-          image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: ironic-ipxe
-              protocol: TCP
-              containerPort: 80
-          volumeMounts:
-            - mountPath: /srv/tftpboot
-              name: ironic-tftp
-            - mountPath: /etc/nginx/conf.d
-              name: ironic-pxe
-          livenessProbe:
-            httpGet:
-              path: /tftpboot
-              port: ironic-ipxe
-            initialDelaySeconds: 5
-            periodSeconds: 3
+          protocol: TCP
+          containerPort: 80
+        volumeMounts:
+        - mountPath: /srv/tftpboot
+          name: ironic-tftp
+        - mountPath: /etc/nginx/conf.d
+          name: ironic-pxe
+        livenessProbe:
+          httpGet:
+            path: /tftpboot
+            port: ironic-ipxe
+          initialDelaySeconds: 5
+          periodSeconds: 3
       volumes:
-        - name: ironic-tftp
-          persistentVolumeClaim:
-            claimName: ironic-tftp-pvclaim
-        - name: ironic-pxe
-          configMap:
-            name: ironic-pxe
-            defaultMode: 0444
+      - name: ironic-tftp
+        persistentVolumeClaim:
+          claimName: ironic-tftp-pvclaim
+      - name: ironic-pxe
+        configMap:
+          name: ironic-pxe
+          defaultMode: 0444
