@@ -65,10 +65,11 @@ spec:
           initialDelaySeconds: 15
           timeoutSeconds: 5
         command:
+        - dumb-init
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "dumb-init glance-api"
+          value: "glance-api"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_JOBS
@@ -139,14 +140,15 @@ spec:
         image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-registry:{{.Values.imageVersionGlanceRegistry | default .Values.imageVersion | default .Values.image_version }}
         imagePullPolicy: IfNotPresent
         command:
-          - kubernetes-entrypoint
+        - dumb-init
+        - kubernetes-entrypoint
         livenessProbe:
           httpGet:
             path: /healthcheck
             port: 9191
         env:
         - name: COMMAND
-          value: "dumb-init glance-registry"
+          value: "glance-registry"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
