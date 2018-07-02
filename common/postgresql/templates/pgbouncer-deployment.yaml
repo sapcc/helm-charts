@@ -5,11 +5,6 @@ apiVersion: extensions/v1beta1
 metadata:
   name: {{.Values.postgresDatabase}}-pgbouncer
   namespace:  {{.Release.Namespace}}
-  {{- if $opts.prometheus }}
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "9200"
-  {{- end }}
   labels:
     system: openstack
     component: {{.Values.postgresDatabase}}
@@ -32,6 +27,10 @@ spec:
         name: {{.Values.postgresDatabase}}-pgbouncer
 {{ tuple . .Values.postgresDatabase "pgbouncer" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        {{- if $opts.prometheus }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9200"
+        {{- end }}
     spec:
 {{ tuple . .Values.postgresDatabase "pgbouncer" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       terminationGracePeriodSeconds: 150
