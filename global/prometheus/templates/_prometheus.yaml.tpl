@@ -72,6 +72,27 @@ scrape_configs:
       - "prometheus-collector.{{ $region }}.cloud.sap"
 {{- end }}
 
+- job_name: prometheus-kubernikus-regions-federation
+  honor_labels: true
+  params:
+    match[]:
+    - '{__name__=~"^ALERTS$"}'
+    - '{__name__=~"up"}'
+  scrape_interval: 30s
+  scrape_timeout: 25s
+  metrics_path: /federate
+  scheme: https
+  {{- if .Values.kubernikus.authentication.enabled }}
+  tls_config:
+    cert_file: /etc/secrets/prometheus_sso.crt
+    key_file: /etc/secrets/prometheus_sso.key
+  {{- end }}
+  static_configs:
+  - targets:
+{{- range $region := .Values.kubernikus.regions }}
+    - "prometheus.kubernikus.{{ $region }}.cloud.sap"
+{{- end }}
+
 alerting:
   alertmanagers:
   - scheme: https
