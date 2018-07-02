@@ -73,3 +73,6 @@ elasticsearch.requestTimeout: 60000
 
 # Set this to true to log all events, including system usage information and all requests.
 # logging.verbose: false
+
+# whitelist the headers we want to transfer from the ingress to elasticsearch
+elasticsearch.requestHeadersWhitelist: [ "X-Remote-User" ]

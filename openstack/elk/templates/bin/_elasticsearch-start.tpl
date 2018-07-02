@@ -2,6 +2,7 @@
 
 function process_config {
   cp -f /es-etc/elasticsearch.yml /elasticsearch/config/elasticsearch.yml
+  cp -f /es-etc/readonlyrest.yml /elasticsearch/config/readonlyrest.yml
   cp -f /es-etc/log4j2.properties /elasticsearch/config/log4j2.properties
   cp -f /es-etc/jvm.options /elasticsearch/config/jvm.options
 }

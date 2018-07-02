@@ -93,6 +93,9 @@ allow_expired_window = {{ .Values.api.token.allow_expired_window | default 28800
 {{- end }}
 cache_on_issue = true
 
+[revoke]
+expiration_buffer = 0
+
 [fernet_tokens]
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}

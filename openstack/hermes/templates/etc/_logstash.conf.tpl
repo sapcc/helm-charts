@@ -9,7 +9,7 @@ rabbitmq {
     port => {{ $.Values.hermes.rabbitmq.port }}
     queue => {{ $.Values.hermes.rabbitmq.queue_name | quote }}
     subscription_retry_interval_seconds => 60
-    automatic_recovery => false
+    automatic_recovery => true
   }
 {{ end }}
 }

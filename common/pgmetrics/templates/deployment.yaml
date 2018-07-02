@@ -38,11 +38,17 @@ spec:
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         env:
+        {{- $db_user := default "postgres" .Values.global.dbUser }}
         # we need support for password overrides in case passwords have a / in them (that breaks the go pq url connection parser)
-        # hence we need special sauce for it (a %2F replacement just to please go)
+        # hence we need special sauce for it (a %2F replacement for the / will help to please go)
+        # PLEASE DO NOT REMOVE THIS AGAIN
+        {{- if .Values.db_password }}
         - name: DATA_SOURCE_NAME
-          {{- $db_user := default "postgres" .Values.global.dbUser }}
+          value: postgresql://{{ $db_user }}:{{ .Values.db_password }}@{{include "db_host" .}}:{{ default 5432 .Values.db_port }}/{{ default .Release.Name .Values.db_name}}?sslmode=disable
+        {{ else }}
+        - name: DATA_SOURCE_NAME
           value: postgresql://{{ $db_user }}:{{ .Values.global.dbPassword | default (tuple . $db_user | include "postgres.password_for_user") }}@{{include "db_host" .}}:{{ default 5432 .Values.db_port }}/{{ default .Release.Name .Values.db_name}}?sslmode=disable
+        {{- end }}
         ports:
           - name: metrics
             containerPort: {{ default 9187 .Values.port }}

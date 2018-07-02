@@ -27,78 +27,73 @@ spec:
 {{ tuple . "ironic" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
       containers:
-        - name: ironic-api
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicApi | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
-          imagePullPolicy: IfNotPresent
-          command:
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "ironic-api"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: "ironic-db-migration"
-            - name: DEPENDENCY_SERVICE
-              value: "ironic-postgresql,rabbitmq"
-{{- if .Values.logging.handlers.sentry }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-{{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-          livenessProbe:
-            httpGet:
-              path: /
-              port: {{.Values.global.ironicApiPortInternal}}
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
-          ports:
-            - name: ironic-api{{- tuple .Values.api.override | include "utils.snippets.debug.debuggable_port" }}
-              containerPort: {{.Values.global.ironicApiPortInternal}}
-          volumeMounts:
-            - mountPath: /etc/ironic
-              name: etcironic
-            - mountPath: /etc/ironic/ironic.conf
-              name: ironic-etc
-              subPath: ironic.conf
-              readOnly: true
-            - mountPath: /etc/ironic/policy.json
-              name: ironic-etc
-              subPath: policy.json
-              readOnly: true
-            - mountPath: /etc/ironic/pxe_config.template
-              name: ironic-etc
-              subPath: pxe_config.template
-              readOnly: true
-            - mountPath: /etc/ironic/rootwrap.conf
-              name: ironic-etc
-              subPath: rootwrap.conf
-              readOnly: true
-            - mountPath: /etc/ironic/logging.ini
-              name: ironic-etc
-              subPath: logging.ini
-              readOnly: true
+      - name: ironic-api
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicApi | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - dumb-init
+          - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "ironic-api"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_JOBS
+          value: "ironic-db-migration"
+        - name: DEPENDENCY_SERVICE
+          value: "ironic-postgresql,rabbitmq"
+        {{- if .Values.logging.handlers.sentry }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN.python
+        {{- end }}
+        - name: PGAPPNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{.Values.global.ironicApiPortInternal}}
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        ports:
+        - name: ironic-api{{- tuple .Values.api.override | include "utils.snippets.debug.debuggable_port" }}
+          containerPort: {{.Values.global.ironicApiPortInternal}}
+        volumeMounts:
+        - mountPath: /etc/ironic
+          name: etcironic
+        - mountPath: /etc/ironic/ironic.conf
+          name: ironic-etc
+          subPath: ironic.conf
+          readOnly: true
+        - mountPath: /etc/ironic/policy.json
+          name: ironic-etc
+          subPath: policy.json
+          readOnly: true
+        - mountPath: /etc/ironic/pxe_config.template
+          name: ironic-etc
+          subPath: pxe_config.template
+          readOnly: true
+        - mountPath: /etc/ironic/rootwrap.conf
+          name: ironic-etc
+          subPath: rootwrap.conf
+          readOnly: true
+        - mountPath: /etc/ironic/logging.ini
+          name: ironic-etc
+          subPath: logging.ini
+          readOnly: true
 {{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 8 }}
       volumes:
-        - name: etcironic
-          emptyDir: {}
-        - name: ironic-etc
-          configMap:
-            name: ironic-etc
-            defaultMode: 0444
+      - name: etcironic
+        emptyDir: {}
+      - name: ironic-etc
+        configMap:
+          name: ironic-etc
+          defaultMode: 0444
 {{- tuple . .Values.api.override "ironic-api" .Values.global.ironicApiPortInternal | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}

@@ -1,0 +1,175 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: domain-fsn-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - {{.Values.global.keystoneNamespace}}/keystone-seed
+
+  domains:
+  - name: fsn
+    description: Financial Service Network
+
+    projects:
+    - name: admin
+      description: 'FSN Administrators Project'
+    - name: fsn-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the fsn domain'
+    - name: fsn-shared-infra
+      description: 'Home of private networks, backup networks and routers for the fsn domain'
+    - name: support
+      description: 'Support Teams'
+    - name: api_support
+      description: 'Core API Support'
+      parent: support
+    - name: compute_support
+      description: 'Compute Support'
+      parent: support
+    - name: storage_support
+      description: 'Storage Support'
+      parent: support
+    - name: network_support
+      description: 'Network Support'
+      parent: support
+    - name: service_desk
+      description: 'Service Desk'
+      parent: support
+
+    groups:
+    - name: FSN_API_SUPPORT
+      roles:
+      - domain: fsn
+        role: admin
+      - domain: fsn
+        role: cloud_identity_viewer
+        inherited: true
+      - project: api_support
+        role: admin
+      - project: api_support
+        role: member
+
+    - name: FSN_COMPUTE_SUPPORT
+      roles:
+      - domain: fsn
+        role: cloud_identity_viewer
+        inherited: true
+      - project: compute_support
+        role: admin
+      - project: compute_support
+        role: member
+
+    - name: FSN_STORAGE_SUPPORT
+      roles:
+      - domain: fsn
+        role: cloud_identity_viewer
+        inherited: true
+      - project: storage_support
+        role: admin
+      - project: storage_support
+        role: member
+
+    - name: FSN_NETWORK_SUPPORT
+      roles:
+      - domain: fsn
+        role: cloud_identity_viewer
+        inherited: true
+      - project: network_support
+        role: admin
+      - project: network_support
+        role: member
+
+    - name: FSN_SERVICE_DESK
+      roles:
+      - domain: fsn
+        role: cloud_identity_viewer
+        inherited: true
+      - project: service_desk
+        role: admin
+      - project: service_desk
+        role: member
+
+    - name: FSN_DOMAIN_MEMBERS
+      roles:
+      - domain: fsn
+        role: member
+
+    - name: FSN_DOMAIN_ADMINS
+      roles:
+      - domain: fsn
+        role: admin
+      - domain: fsn
+        role: member
+      - project: admin
+        role: admin
+      - project: admin
+        role: member
+      - project: support
+        role: member
+      - project: support
+        role: admin
+
+    - name: FSN_DOMAIN_NETWORK_ADMINS
+      roles:
+      - project: fsn-net-infra
+        role: admin
+      - project: fsn-shared-infra
+        role: admin
+    - name: FSN_DOMAIN_RESOURCE_ADMINS
+      roles:
+      - domain: fsn
+        role: admin
+
+    config:
+      identity:
+        driver: {{ .Values.ldapDriver | default "cc_ldap" }}
+      ldap:
+        page_size: 1000
+        use_tls: false
+        tls_req_cert: allow
+        url: {{ .Values.ldapUrl | quote }}
+        user: {{ .Values.ldapUser | quote }}
+        password: {{ .Values.ldapPassword | quote }}
+        suffix: {{ .Values.ldapSuffix | quote }}
+        query_scope: one
+{{- if eq .Values.keystoneRelease "newton" }}
+        use_dumb_member: false
+{{- end }}
+        user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
+        user_objectclass: user
+        user_id_attribute: cn
+        user_name_attribute: name
+        user_mail_attribute: mail
+        user_pass_attribute: userPassword
+        user_description_attribute: displayName
+        user_enabled_attribute: userAccountControl
+        user_enabled_mask: 2
+        user_enabled_default: "512"
+        user_attribute_ignore: default_project_id
+{{- if eq .Values.keystoneRelease "newton" }}
+        user_allow_create: False
+        user_allow_delete: False
+        user_allow_update: False
+{{- end }}
+        user_filter: (memberOf=CN=FSN_DOMAIN_USERS,OU=FSN,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})
+        group_objectclass: group
+        group_id_attribute: cn
+        group_name_attribute: name
+        group_desc_attribute: description
+        group_member_attribute: member
+{{- if eq .Values.keystoneRelease "newton" }}
+        group_allow_create: False
+        group_allow_delete: False
+        group_allow_update: False
+{{- end }}
+        group_tree_dn: OU=FSN,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        use_pool: true
+        pool_size: 10
+        pool_connection_lifetime: 60
+        use_auth_pool: true
+        auth_pool_size: 100
+        auth_pool_connection_lifetime: 60

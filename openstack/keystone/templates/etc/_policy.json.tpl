@@ -1,13 +1,13 @@
 {
     "admin_required": "role:admin",
 {{- if eq .Values.release "newton" }}
-    "cloud_admin": "role:admin and (token.is_admin_project:True or domain_id:default)",
+    "cloud_admin": "role:admin and ((token.is_admin_project:True or domain_id:default) or domain_id:{{.Values.tempest.domainId}})",
 {{ else }}
-    "cloud_admin": "role:admin and (is_admin_project:True or domain_id:default)",
+    "cloud_admin": "role:admin and ((is_admin_project:True or domain_id:default) or domain_id:{{.Values.tempest.domainId}})",
 {{- end }}
     "service_role": "role:service",
     "service_or_admin": "rule:admin_required or rule:service_role",
-    "cloud_viewer": "role:cloud_identity_viewer or rule:service_role",
+    "cloud_viewer": "role:cloud_identity_viewer or rule:service_role or rule:cloud_admin",
     "owner": "user_id:%(user_id)s or user_id:%(target.token.user_id)s",
     "admin_or_owner": "(rule:admin_required and domain_id:%(target.token.user.domain.id)s) or rule:owner",
     "admin_and_matching_domain_id": "rule:admin_required and domain_id:%(domain_id)s",
@@ -44,7 +44,7 @@
     "admin_and_matching_project_domain_id": "rule:admin_required and domain_id:%(project.domain_id)s",
     "identity:get_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id or project_id:%(target.project.id)s or rule:cloud_viewer",
     "identity:list_projects": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:cloud_viewer",
-    "identity:list_user_projects": "rule:owner or rule:admin_and_matching_domain_id",
+    "identity:list_user_projects": "rule:owner or rule:admin_and_matching_domain_id or rule:cloud_viewer",
     "identity:create_project": "rule:cloud_admin or rule:admin_and_matching_project_domain_id",
     "identity:update_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id",
     "identity:delete_project": "rule:cloud_admin",

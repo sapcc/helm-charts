@@ -44,3 +44,16 @@ groups:
     annotations:
       description: Manila Shares taking more than 2 minutes to delete in {{ $labels.host }}
       summary: Manila Shares taking more than 2 minutes to delete
+
+  - alert: OpenstackManilaProbeSuccessValueIs0
+    expr: probe_success{instance=~".*stnp.*|.*ma.*"} == 0
+    for: 5m
+    labels:
+      tier: openstack
+      meta: '{{ $labels.instance }} probe_success value is 0'
+      service: manila
+      severity: warning
+      context: availability
+    annotations:
+      description: Probe Success Value of instance is 0
+      summary: Probe Success Value {{ $labels.instance }} is 0. Click the link https://prober.{{ $labels.region }}.cloud.sap/probe?target={{ $labels.instance }}&module=http_ca_sapnetcag2&debug=true

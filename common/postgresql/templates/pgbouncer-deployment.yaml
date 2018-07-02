@@ -5,6 +5,11 @@ apiVersion: extensions/v1beta1
 metadata:
   name: {{.Values.postgresDatabase}}-pgbouncer
   namespace:  {{.Release.Namespace}}
+  {{- if $opts.prometheus }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9200"
+  {{- end }}
   labels:
     system: openstack
     component: {{.Values.postgresDatabase}}
@@ -73,4 +78,8 @@ spec:
           ports:
             - name: pgbouncer
               containerPort: {{ $opts.config.listen_port }}
+            {{- if $opts.prometheus }}
+            - name: metrics
+              containerPort: 9200
+            {{- end }}
 {{- end }}

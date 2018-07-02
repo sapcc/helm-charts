@@ -23,6 +23,11 @@ spec:
         - name: secrets
           secret:
             secretName: arc
+{{- if .Values.api.tls.enabled }}
+        - name: tls-secrets
+          secret:
+            secretName: arc-api-ingress
+{{- end }}
       containers:
         - name: api
           image: {{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}
@@ -53,6 +58,12 @@ spec:
               value: /secrets/ca.crt
             - name: ARC_PKI_CA_KEY
               value: /secrets/ca.key
+{{- if .Values.api.tls.enabled }}
+            - name: ARC_TLS_SERVER_CERT
+              value: /tls/tls.crt
+            - name: ARC_TLS_SERVER_KEY
+              value: /tls/tls.key
+{{- end }}
             - name: ARC_LOG_LEVEL
               value: {{ .Values.logLevel }}
 {{- if .Values.agentUpdateURL }}
@@ -77,5 +88,10 @@ spec:
             - name: secrets
               mountPath: /secrets
               readOnly: true
+{{- if .Values.api.tls.enabled }}
+            - name: tls-secrets
+              mountPath: /tls
+              readOnly: true
+{{- end }}
 
 

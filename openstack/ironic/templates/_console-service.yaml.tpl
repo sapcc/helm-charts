@@ -14,7 +14,7 @@ spec:
   selector:
     name: ironic-conductor-{{$conductor.name}}
   ports:
-    - name: ironic-console
-      port: 80
+  - name: ironic-console
+    port: 80
     {{- end }}
 {{- end }}

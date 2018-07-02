@@ -89,11 +89,10 @@ data:
       {{- end }}
       - receiver: pagerduty
         continue: true
-        routes:
-        - receiver: 'pagerduty'
-          continue: true
-          match:
-            severity: critical
+        match_re:
+          region: ^[a-p,r-zA-P,R-Z]+\-[a-zA-Z]+\-[0-9]$|admin
+        match:
+          severity: critical
 
     receivers:
     {{- range tuple "dev-null" "kubernetes-info" "kubernetes-warning" "kubernetes-critical" }}
