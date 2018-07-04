@@ -1,15 +1,50 @@
-{{- if .Values.rbac.create }}
-#TODO: create full-blown rbac rules
+{{- if .Values.rbac.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: keystone-runtime
+rules:
+- apiGroups:
+  - openstack.stable.sap.cc
+  resources:
+  - openstackseeds
+  verbs:
+  - "*"
+- apiGroups:
+  - "*"
+  resources:
+  - services
+  - endpoints
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  - extensions
+  resources:
+  - jobs
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: keystone-admin-rb
+  name: keystone
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cluster-admin
+  name: keystone-runtime
 subjects:
   - kind: ServiceAccount
-    name: default
+    name: keystone
     namespace: {{ .Release.Namespace }}
+
 {{- end }}

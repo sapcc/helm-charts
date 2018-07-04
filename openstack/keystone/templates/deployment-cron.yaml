@@ -30,6 +30,9 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: keystone
+{{- end }}
       containers:
         - name: keystone-cron
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ .Values.cron.imageTag }}
