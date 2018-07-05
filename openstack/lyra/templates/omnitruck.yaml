@@ -1,0 +1,48 @@
+{{- if .Values.omnitruck.enabled }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: {{ .Release.Name }}-omnitruck
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+
+spec:
+  revisionHistoryLimit: 3
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-omnitruck
+      #We scrape the request metrics via annotion on the lyra service
+      #This annotation is for the puma metrics exporter
+      annotations:
+        checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: proxy
+          args:
+            - -cache-backend=swift
+          image: {{ .Values.omnitruck.image.repository }}:{{ .Values.omnitruck.image.tag }}
+          imagePullPolicy: {{ .Values.omnitruck.image.pullPollicy }}
+          env:
+            - name: OS_AUTH_URL
+              value: {{ .Values.auth.endpoint }}
+            - name: OS_USERNAME
+              value: {{ .Values.auth.userID }}
+            - name: OS_DOMAIN_NAME
+              value: {{ .Values.auth.userDomainName }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.auth.swift.projectName }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.auth.swift.projectDomainName }}
+            - name: OS_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ .Release.Name }}, key: auth.password } }
+            - name: OS_CONTAINER
+              value: omnitruck-cache
+{{- end }}

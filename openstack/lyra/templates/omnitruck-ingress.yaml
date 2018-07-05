@@ -1,0 +1,25 @@
+{{- if and .Values.omnitruck.enabled .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-omnitruck
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  {{- if .Values.ingress.vice_president }}
+  annotations:
+    vice-president: "true"
+  {{- end }}
+spec:
+  tls:
+    - secretName: {{ .Release.Name }}-omnitruck
+      hosts: [{{ required ".Values.omnitruck.host missing" .Values.omnitruck.host }}]
+  rules:
+    - host: {{ .Values.omnitruck.host }}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: {{ .Release.Name }}-omnitruck
+            servicePort: {{ .Values.omnitruck.internalPort }}
+{{- end }}
+

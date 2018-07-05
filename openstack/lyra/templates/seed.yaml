@@ -34,12 +34,17 @@ spec:
         role: service
       - project: {{ .Values.auth.swift.projectName }}@{{ .Values.auth.swift.projectDomainName }}
         role: swiftoperator
-  - name: ccadmin
+  - name: {{ .Values.auth.swift.projectDomainName }}
     projects:
-    - name: master
+    - name: {{ .Values.auth.swift.projectName }}
       swift:
         enabled: true
         containers:
         - name: automation-artifacts
           metadata:
             meta-temp-url-key: {{ .Values.auth.swift.tempURLKey }}
+{{- if .Values.omnitruck.enabled }}
+        - name: omnitruck-cache
+          metadata:
+            read: .r:*,.rlistings
+{{- end }}
