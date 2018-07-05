@@ -45,4 +45,10 @@ spec:
               valueFrom: { secretKeyRef: { name: {{ .Release.Name }}, key: auth.password } }
             - name: OS_CONTAINER
               value: omnitruck-cache
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{.Values.omnitruck.internalPort}}
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
 {{- end }}
