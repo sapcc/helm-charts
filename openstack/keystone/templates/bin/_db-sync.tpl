@@ -9,7 +9,6 @@ keystone-manage --config-file=/etc/keystone/keystone.conf db_sync
 {{- if eq .Values.release "queens" }}
 keystone-manage-extension --config-file=/etc/keystone/keystone.conf drop_ocata_deprecated_ldap_domain_config
 {{- end }}
-set +ex
 keystone-manage --config-file=/etc/keystone/keystone.conf db_sync --check
 case $? in
     0)
@@ -44,7 +43,7 @@ keystone-manage --config-file=/etc/keystone/keystone.conf db_version
 
 keystone-manage --config-file=/etc/keystone/keystone.conf doctor
 
-# don't let the doctor break stuff (as usual not qualified enough and needs another opinion :P )
+# don't let the doctor break stuff (as usual not qualified enough and you allways need another opinion :P )
 exit 0
 
 
