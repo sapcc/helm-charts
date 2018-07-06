@@ -56,3 +56,17 @@ ALERT KubernetesPrometheusFederationRegions
     summary = "Global Prometheus Federation is having trouble",
     description = "Prometheus Global can't federate data from {{ $labels.region }}. Alerting will be unavailable! This could mean the region is partly down!",
   }
+
+ALERT KubernikusPrometheusFederationRegions
+  IF absent(up{job="prometheus-kubernikus-regions-federation",region!=""}) or up{job="prometheus-kubernikus-regions-federation",region!=""} == 0
+  FOR 15m
+  LABELS {
+    service = "prometheus",
+    severity = "critical",
+    context = "availability-global",
+    tier = "kubernikus",
+  }
+  ANNOTATIONS {
+    summary = "Global Prometheus Federation is having trouble",
+    description = "Prometheus Global can't federate data from kubernikus-{{ $labels.region }}. Alerting will be unavailable! This could mean the region is partly down!",
+  }
