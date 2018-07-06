@@ -33,6 +33,7 @@ loopback_internal_interface = 3
 host = {{$hosting_device.ip}}
 user_name = {{$hosting_device.user_name}}
 password = {{$hosting_device.password}}
+nc_timeout = {{$hosting_device.nc_timeout | default 20}}
 {{end}}
 
 
