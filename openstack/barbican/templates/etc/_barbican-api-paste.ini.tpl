@@ -51,7 +51,7 @@ identity_uri = {{.Values.global.keystone_api_endpoint_protocol_admin | default "
 admin_tenant_name = {{.Values.global.keystone_service_project | default "service"}}
 admin_user = {{ .Release.Name }}{{ .Values.global.user_suffix }}
 admin_password = {{ .Values.global.barbican_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "$$" }}
-auth_version = 3
+auth_version = v3
 #delay failing perhaps to log the unauthorized request in barbican ..
 #delay_auth_decision = true
 # signing_dir is configurable, but the default behavior of the authtoken
