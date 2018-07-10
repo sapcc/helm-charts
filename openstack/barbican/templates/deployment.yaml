@@ -32,7 +32,6 @@ spec:
 {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
@@ -90,7 +89,3 @@ spec:
             name: barbican-etc
         - name: etcbarbican
           emptyDir: {}
-        - name: container-init
-          configMap:
-            name: barbican-bin
-            defaultMode: 0755
