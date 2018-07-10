@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackApiDown
     expr: blackbox_api_status_gauge == 1
-    for: 15m
+    for: 20m
     labels:
       severity: critical
       tier: openstack
@@ -12,10 +12,10 @@ groups:
       dashboard: ccloud-health-blackbox-details
       meta: '{{ $labels.check }}'
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/blackbox/api/play.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_api'
     annotations:
-      description: Api {{ $labels.check }} is down for 15 times in a row.
-      summary: Blackbox api test
+      description: API {{ $labels.check }} is down for 15 times in a row.
+      summary: API Test
 
   - alert: OpenstackApiFlapping
     expr: changes(blackbox_api_status_gauge[30m]) > 8
@@ -27,10 +27,10 @@ groups:
       dashboard: ccloud-health-blackbox-details
       meta: '{{ $labels.check }}'
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/blackbox/api/play.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_api'
     annotations:
-      description: Api {{ $labels.check }} is flapping for 30 minutes.
-      summary: Blackbox api test
+      description: API {{ $labels.check }} is flapping for 30 minutes.
+      summary: API Test
 
   - alert: OpenstackDatapathDown
     expr: blackbox_datapath_status_gauge{service!="designate"} == 1
