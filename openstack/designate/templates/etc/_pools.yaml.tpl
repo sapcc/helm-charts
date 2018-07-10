@@ -35,7 +35,7 @@
         rndc_host: {{ $srv.ip }}
         rndc_port: {{ $pool.rndc_port }}
         rndc_key_file: {{ $pool.rndc_key_file }}
-        clean_zonefile: {{ $pool.clean_zonefile | default False }}
+        clean_zonefile: {{ $pool.clean_zonefile | default "False" }}
     {{- end}}
 {{- end }}
 {{- range $pool := .Values.akamai_pools }}
