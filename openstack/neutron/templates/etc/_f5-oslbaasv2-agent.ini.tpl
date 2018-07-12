@@ -111,8 +111,17 @@ service_resync_interval = 180
 #
 # You can specify one or multiple metrics.
 #
+{{- if $loadbalancer.capacity_policy}}
+capacity_policy = {{$loadbalancer.capacity_policy}}
+{{- else }}
 # capacity_policy = throughput:1000000000, active_connections: 250000, route_domain_count: 512, tunnel_count: 2048
+{{- end}}
+
 #
+# ccloud - environment_group_number
+#
+environment_group_number = {{$loadbalancer.environment_group_number | default 1}}
+
 ###############################################################################
 #  Static Agent Configuration Setting
 ###############################################################################
@@ -603,12 +612,13 @@ f5_parent_ssl_profile = clientssl
 {{- end}}
 
 #
-# environment_group_number
+# Enable orphan checking
 #
-{{- if $loadbalancer.environment_group_number}}
-environment_group_number = {{$loadbalancer.environment_group_number}}
-{{- else }}
-environment_group_number = 1
-{{- end}}
+# Setting this to a positive value enables the F5 Agent to cleanup objects from F5 which do not exist in
+# neutron LBaaS anymore.
+# Interval unit is hours and has to be between 0 and 24
+#
+ccloud_orphans_cleanup_interval = {{$context.Values.f5.ccloud_orphans_cleanup_interval | default 1}}
+ccloud_orphans_cleanup_testrun = {{$context.Values.f5.ccloud_orphans_cleanup_testrun | default "True"}}
 
 {{- end -}}
