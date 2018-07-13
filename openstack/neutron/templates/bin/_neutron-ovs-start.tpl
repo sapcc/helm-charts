@@ -36,9 +36,9 @@ function _start_application {
     prepare_ovs
 
     if command -v dumb-init >/dev/null 2>&1; then
-        exec  dumb-init /usr/sbin/ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:emer -vsyslog:info -vfile:info --mlockall
+        exec  dumb-init /usr/sbin/ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:warn -vsyslog:info -vfile:info --mlockall
     else
-        exec  /usr/sbin/ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:emer -vsyslog:info -vfile:info --mlockall
+        exec  /usr/sbin/ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:warn -vsyslog:info -vfile:info --mlockall
     fi
 }
 
