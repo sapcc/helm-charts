@@ -47,8 +47,26 @@ postgresql:
 
 pgmetrics:
   customMetrics:
+    openstack_barbican_containers:
+      query: "SELECT containers.name, containers.type, containers.id, containers.status, projects.external_id AS project_id from containers INNER JOIN projects on containers.project_id=projects.id where containers.deleted='false'"
+      metrics:
+        - id:
+            usage: "LABEL"
+            description: "Container ID"
+        - status:
+            usage: "LABEL"
+            description: "Container state"
+        - name:
+            usage: "LABEL"
+            description: "Container name"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the container"
+        - type:
+            usage: "LABEL"
+            description: "Type of container"
     openstack_barbican_secrets:
-      query: "SELECT secrets.id, secrets.status, secrets.name, projects.external_id AS project_id, secrets.secret_type from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='False'"
+      query: "SELECT secrets.id, secrets.status, secrets.name, projects.external_id AS project_id, secrets.secret_type from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false'"
       metrics:
         - id:
             usage: "LABEL"
@@ -65,7 +83,6 @@ pgmetrics:
         - secret_type:
             usage: "LABEL"
             description: "Type of secret"
-
 
 rabbitmq:
   users:
