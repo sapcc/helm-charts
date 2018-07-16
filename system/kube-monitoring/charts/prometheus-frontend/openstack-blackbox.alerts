@@ -10,11 +10,11 @@ groups:
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-blackbox-details
-      meta: '{{ $labels.check }}'
+      meta: 'API is down: {{ $labels.check }}. See Sentry for details.'
       sentry: blackbox/?query=test_{{ $labels.check }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_api'
     annotations:
-      description: API {{ $labels.check }} is down for 15 times in a row.
+      description: 'API is down for 20 min: {{ $labels.check }}. See Sentry for details.'
       summary: API Test
 
   - alert: OpenstackApiFlapping
@@ -25,7 +25,7 @@ groups:
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-blackbox-details
-      meta: '{{ $labels.check }}'
+      meta: 'API is flapping: {{ $labels.check }}'
       sentry: blackbox/?query=test_{{ $labels.check }}
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_api'
     annotations:
