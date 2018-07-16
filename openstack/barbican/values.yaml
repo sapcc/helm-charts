@@ -50,7 +50,7 @@ pgmetrics:
   db_name: barbican
   customMetrics:
     openstack_barbican_containers:
-      query: "SELECT containers.name, containers.type, containers.id, containers.status, projects.external_id AS project_id from containers INNER JOIN projects on containers.project_id=projects.id where containers.deleted='false'"
+      query: "SELECT containers.name, containers.type, containers.id, containers.status, projects.external_id AS project_id, COUNT(*) AS count_gauge from containers INNER JOIN projects on containers.project_id=projects.id where containers.deleted='false' GROUP BY containers.name, containers.type, containers.id, containers.status, projects.external_id"
       metrics:
         - id:
             usage: "LABEL"
@@ -67,8 +67,11 @@ pgmetrics:
         - type:
             usage: "LABEL"
             description: "Type of container"
+        - count_gauge:
+            usage: "GAUGE"
+            description: "Number of containers"
     openstack_barbican_secrets:
-      query: "SELECT secrets.id, secrets.status, secrets.name, projects.external_id AS project_id, secrets.secret_type from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false'"
+      query: "SELECT secrets.id, secrets.status, secrets.name, projects.external_id AS project_id, secrets.secret_type, COUNT(*) AS count_gauge from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false' GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type"
       metrics:
         - id:
             usage: "LABEL"
@@ -85,6 +88,9 @@ pgmetrics:
         - secret_type:
             usage: "LABEL"
             description: "Type of secret"
+        - count_gauge:
+            usage: "GAUGE"
+            description: "Number of secrets"
 
 rabbitmq:
   users:
