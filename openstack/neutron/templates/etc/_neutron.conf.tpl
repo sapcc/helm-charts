@@ -22,7 +22,7 @@ service_plugins={{.Values.service_plugins}}
 default_router_type = {{.Values.default_router_type}}
 router_scheduler_driver = {{.Values.router_scheduler_driver}}
 
-max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 10}}
+max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 25}}
 
 dhcp_agent_notification = true
 network_auto_schedule = True
