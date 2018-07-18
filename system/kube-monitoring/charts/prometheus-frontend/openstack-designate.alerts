@@ -74,145 +74,191 @@ groups:
       description: '{{ $value }} Designate Zones in Error State.'
       summary: Designate Zones in Error State
 
-  - alert: OpenstackDesignateDatapathBindDown
+  - alert: OpenstackDesignateBindDown
     expr: blackbox_datapath_status_gauge{check=~"bind"} == 1
     for: 15m
     labels:
       severity: critical
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: bind
       meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15m. See Sentry for details.'
-      dashboard: ccloud-health-canary-details
+      dashboard: ccloud-health-datapath-details
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/alert/{{ $labels.service }}/test_{{ $labels.check }}.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15m. See Sentry for details.'
       summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
 
-  - alert: OpenstackDesignateDatapathUnboundDown
+  - alert: OpenstackDesignateUnboundDown
     expr: blackbox_datapath_status_gauge{check=~"unbound-.+"} == 1
     for: 15m
     labels:
       severity: critical
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: unbound
       meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15m. See Sentry for details.'
-      dashboard: ccloud-health-canary-details
+      dashboard: ccloud-health-datapath-details
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/alert/{{ $labels.service }}/test_{{ $labels.check }}.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15m. See Sentry for details.'
       summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
 
-  - alert: OpenstackDesignateDatapathDnsServerDown
+  - alert: OpenstackDesignateDnsServerDown
     expr: blackbox_datapath_status_gauge{check=~"dns_server"} == 1
     for: 15m
     labels:
       severity: critical
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: dns_server
       meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15m. See Sentry for details.'
-      dashboard: ccloud-health-canary-details
+      dashboard: ccloud-health-datapath-details
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/alert/{{ $labels.service }}/test_{{ $labels.check }}.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15m. See Sentry for details.'
       summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
 
-  - alert: OpenstackDesignateDatapathDnsAxfrDown
+  - alert: OpenstackDesignateDnsAxfrDown
     expr: blackbox_datapath_status_gauge{check=~"dns_axfr"} == 1
     for: 30m
     labels:
       severity: critical
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: dns_axfr
       meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15m. See Sentry for details.'
-      dashboard: ccloud-health-canary-details
+      dashboard: ccloud-health-datapath-details
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/alert/{{ $labels.service }}/test_{{ $labels.check }}.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15m. See Sentry for details.'
       summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
 
-  - alert: OpenstackDesignateDatapathBindPartiallyDown
+  - alert: OpenstackDesignateBindHalfDown
     expr: blackbox_datapath_status_gauge{check=~"bind"} == 0.5
     for: 15m
     labels:
       severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: bind
       meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is partially down for 15m. See Sentry for details.'
-      dashboard: ccloud-health-canary-details
+      dashboard: ccloud-health-datapath-details
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/alert/{{ $labels.service }}/test_{{ $labels.check }}.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is partially down for 15m. See Sentry for details.'
       summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
 
-  - alert: OpenstackDesignateDatapathUnboundPartiallyDown
+  - alert: OpenstackDesignateUnboundHalfDown
     expr: blackbox_datapath_status_gauge{check=~"unbound-.+"} == 0.5
     for: 15m
     labels:
       severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: unbound
       meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is partially down for 15m. See Sentry for details.'
-      dashboard: ccloud-health-canary-details
+      dashboard: ccloud-health-datapath-details
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/alert/{{ $labels.service }}/test_{{ $labels.check }}.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is partially down for 15m. See Sentry for details.'
       summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
 
-  - alert: OpenstackDesignateDatapathDnsServerPartallyDown
+  - alert: OpenstackDesignateDnsServerHalfDown
     expr: blackbox_datapath_status_gauge{check=~"dns_server"} == 0.5
     for: 15m
     labels:
       severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: dns_server
       meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is partially down for 15m. See Sentry for details.'
-      dashboard: ccloud-health-canary-details
+      dashboard: ccloud-health-datapath-details
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/alert/{{ $labels.service }}/test_{{ $labels.check }}.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is partially down for 15m. See Sentry for details.'
       summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
 
-  - alert: OpenstackDesignateDatapathDnsAxfrPartiallyDown
+  - alert: OpenstackDesignateDnsAxfrHalfDown
     expr: blackbox_datapath_status_gauge{check=~"dns_axfr"} == 0.5
     for: 15m
     labels:
       severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: dns_axfr
       meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is partially down for 15m. See Sentry for details.'
-      dashboard: ccloud-health-canary-details
+      dashboard: ccloud-health-datapath-details
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/alert/{{ $labels.service }}/test_{{ $labels.check }}.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is partially down for 15m. See Sentry for details.'
       summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
 
-  - alert: OpenstackDesignateDatapathFlapping
-    expr: changes(blackbox_datapath_status_gauge{service=~"designate"}[30m]) > 8
+  - alert: OpenstackDesignateBindFlapping
+    expr: changes(blackbox_datapath_status_gauge{check=~"bind"}[30m]) > 8
     labels:
       severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      context: bind
       meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 m. See Sentry for details.'
       dashboard: ccloud-health-datapath-details
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/devops/alert/{{ $labels.service }}/test_{{ $labels.check }}.html
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30m. See Sentry for details.'
       summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
+
+  - alert: OpenstackDesignateUnboundFlapping
+    expr: changes(blackbox_datapath_status_gauge{check=~"unbound-.+"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: unbound
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 m. See Sentry for details.'
+      dashboard: ccloud-health-datapath-details
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30m. See Sentry for details.'
+      summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
+
+  - alert: OpenstackDesignateDnsServerFlapping
+    expr: changes(blackbox_datapath_status_gauge{check=~"dns_server"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: dns_server
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 m. See Sentry for details.'
+      dashboard: ccloud-health-datapath-details
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30m. See Sentry for details.'
+      summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
+
+  - alert: OpenstackDesignateDnsAxfrFlapping
+    expr: changes(blackbox_datapath_status_gauge{check=~"dns_axfr}[30m]) > 8
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: dns_axfr
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 m. See Sentry for details.'
+      dashboard: ccloud-health-datapath-details
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30m. See Sentry for details.'
+      summary: 'Designate datapath check: {{ $labels.service }} {{ $labels.check }}'
+
