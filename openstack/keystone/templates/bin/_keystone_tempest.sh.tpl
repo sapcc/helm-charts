@@ -3,7 +3,7 @@
 set -e
 set -x
 
-function start_tempest_tests {
+function start_rally_tests {
     # ensure rally db is present
     rally db ensure
 
@@ -16,8 +16,8 @@ function start_tempest_tests {
     # create tempest verifier fetched from our repo
     rally verify create-verifier --type tempest --name keystone-tempest-verifier --system-wide --source https://github.com/sapcc/tempest --version ccloud
 
-    # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
-    rally verify configure-verifier --extend /etc/keystone/tempest_extra_options
+    # configure tempest verifier
+    rally verify configure-verifier --extend /etc/tempest/tempest.conf
 
     # run the actual tempest api tests for keystone
     rally verify start --concurrency 1 --detailed --pattern tempest.api.identity.v3.
@@ -25,4 +25,4 @@ function start_tempest_tests {
     #rally verify start --concurrency 1 --detailed --pattern keystone_tempest_plugin.
 }
 
-start_tempest_tests
+start_rally_tests
