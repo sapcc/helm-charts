@@ -1,33 +1,7 @@
 groups:
-- name: openstack-elektra.alerts
+- name: openstack-lbaas.alerts
   rules:
-  - alert: OpenstackElektraPostgresDatabasesize
-    expr: max(pg_database_size_bytes{app="elektra-postgresql"}) BY (region) >= 8.589934592e+09
-    for: 3m
-    labels:
-      context: databasesize
-      dashboard: elektra-postgres-capacity
-      service: elektra
-      severity: warning
-      tier: openstack
-    annotations:
-      description: 'The database size for Elektra >= 8 Gb : {{ $value }} bytes.'
-      summary: Elektra Database size too large
-
-  - alert: OpenstackElektraPumaRequestBacklog
-    expr: sum(puma_request_backlog{name="elektra"}) BY (region) > 1
-    for: 3m
-    labels:
-      context: openstack
-      dashboard: elektra-details
-      service: elektra
-      severity: warning
-      tier: openstack
-    annotations:
-      description: 'Number of puma waiting requests for Elektra > 0 : {{ $value }}.'
-      summary: Elektra puma waiting requests
-
-  - alert: OpenstackElektraApiDown
+  - alert: OpenstackLbaasApiDown
     expr: 'blackbox_api_status_gauge{check=~"{{ $labels.check }}"} == 1'
     for: 20m
     labels:
@@ -43,7 +17,7 @@ groups:
       description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
       summary: '{{ $labels.check }} API down'
 
-  - alert: OpenstackElektraApiFlapping
+  - alert: OpenstackLbaasApiFlapping
     expr: 'changes(blackbox_api_status_gauge{check=~"{{ $labels.check }}"}[30m]) > 8'
     labels:
       severity: critical

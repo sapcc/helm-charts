@@ -197,3 +197,34 @@ groups:
     annotations:
       description: SAP Exchange webservice is not responding to ping.
       summary: SAP autodiscover.sap.com is down
+
+  - alert: OpenstackKeystoneApiDown
+    expr: 'blackbox_api_status_gauge{check=~"{{ $labels.check }}"} == 1'
+    for: 20m
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is down. See Sentry for details.'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
+      summary: '{{ $labels.check }} API down'
+
+  - alert: OpenstackKeystoneApiFlapping
+    expr: 'changes(blackbox_api_status_gauge{check=~"{{ $labels.check }}"}[30m]) > 8'
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is flapping'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.check }} API is flapping for 30 minutes.'
+      summary: '{{ $labels.check }} API flapping'

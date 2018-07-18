@@ -1,7 +1,6 @@
 groups:
 - name: openstack-ironic.alerts
   rules:
-
   - alert: OpenstackIronicUnmatchedNodes
     expr: max(limes_unmatched_ironic_nodes) by (os_cluster) > 0
     for: 1m # metric is measured every 15 minutes, so this is practically identical to "for: 15m" except it appears and resolves faster
@@ -16,3 +15,34 @@ groups:
         are set correctly, and that there is a flavor for each type of server.
         Grep 'Ironic' in the limes-collect-ccloud log for the node names/IDs."
       summary: "{{ $value }} Ironic nodes do not match any Nova baremetal flavor."
+
+  - alert: OpenstackIronicApiDown
+    expr: 'blackbox_api_status_gauge{check=~"{{ $labels.check }}"} == 1'
+    for: 20m
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is down. See Sentry for details.'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
+      summary: '{{ $labels.check }} API down'
+
+  - alert: OpenstackIronicApiFlapping
+    expr: 'changes(blackbox_api_status_gauge{check=~"{{ $labels.check }}"}[30m]) > 8'
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is flapping'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.check }} API is flapping for 30 minutes.'
+      summary: '{{ $labels.check }} API flapping'
