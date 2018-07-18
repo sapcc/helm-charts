@@ -2,7 +2,7 @@ groups:
 - name: blackbox.alerts
   rules:
   - alert: OpenstackApiDown
-    expr: blackbox_api_status_gauge{check!="arc"} == 1
+    expr: blackbox_api_status_gauge{check!="arc", check!="barbican", check!="billing", check!="cinder", check!="designate"} == 1
     for: 20m
     labels:
       severity: critical
@@ -18,7 +18,7 @@ groups:
       summary: 'API {{ $labels.check }} down'
 
   - alert: OpenstackApiFlapping
-    expr: changes(blackbox_api_status_gauge{check!="arc"}[30m]) > 8
+    expr: changes(blackbox_api_status_gauge{check!="arc", check!="barbican", check!="billing", check!="cinder", check!="designate"}[30m]) > 8
     labels:
       severity: critical
       tier: openstack
