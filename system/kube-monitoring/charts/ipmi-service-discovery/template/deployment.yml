@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ipmi-sd-deployment
+  labels:
+    app: ipmi-sd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ipmi-sd
+  template:
+    metadata:
+      labels:
+        app: ipmi-sd
+    spec:
+      containers:
+      - name: ipmi-sd
+        image: ipmi_sd:v2
+        env:
+        - name: APP_ENV
+          value: "{{.Values.app_env}}"
+        - name: OS_AUTH_URL
+          value: "{{.Values.os_auth_url}}"
+        - name: OS_USERNAME
+          value: "{{.Values.os_username}}"
+        - name: OS_PASSWORD
+          value: "{{.Values.os_password}}"
+        - name: OS_USER_DOMAIN_NAME
+          value: "{{.Values.os_user_domain_name}}"
+        - name: OS_PROJECT_NAME
+          value: "{{.Values.os_project_name}}"
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: "{{.Values.os_project_domain_name}}"
+        ports:
+        - containerPort: 9200
