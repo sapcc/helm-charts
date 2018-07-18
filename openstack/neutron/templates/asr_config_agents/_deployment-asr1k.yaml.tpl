@@ -88,7 +88,7 @@ spec:
                   name: sentry
                   key: neutron.DSN.python
             - name: METRICS_PORT
-              value: {{$context.Values.port_l2_metrics |  default 9102}}
+              value: "{{$context.Values.port_l2_metrics |  default 9102}}"
           volumeMounts:
             - mountPath: /development
               name: development
