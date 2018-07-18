@@ -1,6 +1,5 @@
 [asr1k]
 
-monitor = asr1k_neutron_l3.common.prometheus_monitor.PrometheusMonitor
 wsma_adapter={{.Values.asr.wsma_adapter | default "asr1k_neutron_l3.models.wsma_adapters.SshWsmaAdapter"}}
 
 [asr1k_l3]

@@ -30,7 +30,8 @@ spec:
       annotations:
         pod.beta.kubernetes.io/hostname:  {{ $config_agent.hostname }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{$context.Values.port_metrics}}"
+        prometheus.io/port: "{{$context.Values.port_l3_metrics |  default 9103}}"
+        prometheus.io/port_1: "{{$context.Values.port_l2_metrics |  default 9102}}"
     spec:
       {{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
       hostname:  {{ $config_agent.hostname }}
@@ -54,7 +55,7 @@ spec:
                   name: sentry
                   key: neutron.DSN.python
             - name: METRICS_PORT
-              value: "{{$context.Values.port_metrics}}"
+              value: "{{$context.Values.port_l3_metrics |  default 9103 }}"
           volumeMounts:
             - mountPath: /development
               name: development
@@ -65,7 +66,7 @@ spec:
             - mountPath: /container.init
               name: container-init
           ports:
-            - containerPort: {{$context.Values.port_metrics}}
+            - containerPort: {{$context.Values.port_l3_metrics |  default 9103}}
               name: metrics
               protocol: TCP
 
@@ -87,7 +88,7 @@ spec:
                   name: sentry
                   key: neutron.DSN.python
             - name: METRICS_PORT
-              value: "9103"
+              value: {{$context.Values.port_l2_metrics |  default 9102}}
           volumeMounts:
             - mountPath: /development
               name: development
@@ -98,7 +99,7 @@ spec:
             - mountPath: /container.init
               name: container-init
           ports:
-            - containerPort: 9103
+            - containerPort: {{$context.Values.port_l2_metrics |  default 9102}}
               name: metrics
               protocol: TCP
       volumes:
