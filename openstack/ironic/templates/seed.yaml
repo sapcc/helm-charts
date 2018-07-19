@@ -172,11 +172,16 @@ spec:
         role: cloud_image_admin
       - project: service
         role: swiftreseller
+    - name: {{ .Values.global.ipmi_exporter_user }}{{ .Values.global.user_suffix | default "" }}
+      description: Ironic Service
+      password: {{ .Values.global.ipmi_exporter_user_passwd | default (tuple . .Values.global.ipmi_exporter_user_passwd | include "identity.password_for_user") | quote }}
   - name: ccadmin
     projects:
     - name: master
       roles:
       - user: image-build@Default
+        role: cloud_baremetal_admin
+      - user: {{ .Values.global.ipmi_exporter_user }}{{ .Values.global.user_suffix | default "" }}
         role: cloud_baremetal_admin
     groups:
     - name: CCADMIN_CLOUD_ADMINS
