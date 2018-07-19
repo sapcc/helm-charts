@@ -30,7 +30,7 @@ backend = oslo_cache.memcache_pool
 {{- if .Values.memcached.host }}
 memcache_servers = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 11211 }}
 {{- else }}
-memcache_servers = {{ include "memcached_host" . }}:{{ .Values.memcached.port | default 11211 }}
+memcache_servers = {{ .Chart.Name }}-memcached:{{ .Values.memcached.memcached.port | default 11211 }}
 {{- end }}
 config_prefix = cache.{{ .Chart.Name }}
 enabled = true
