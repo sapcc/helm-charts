@@ -18,7 +18,8 @@ function start_application {
   export GRAFANA_LOCAL_PASSWORD={{.Values.grafana.local.password}}
   # install some plugins
   grafana-cli plugins install vonage-status-panel
-  grafana-cli plugins install mtanda-histogram-panel
+  # since grafana version 4.6.2 the histogram feature is part of the normal graph in the axes tab, so this plugin is no longer needed
+  # grafana-cli plugins install mtanda-histogram-panel
   grafana-cli plugins install camptocamp-prometheus-alertmanager-datasource
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until grafana is up and write to stdout and logfile in parallel
