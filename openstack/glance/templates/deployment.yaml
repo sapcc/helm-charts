@@ -136,6 +136,13 @@ spec:
           readOnly: true
         - mountPath: /glance_store
           name: image-store
+        {{- if .Values.watcher.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/watcher.yaml
+          subPath: watcher.yaml
+          readOnly: true
+        {{- end }}
+
       {{- if (or .Values.imageVersionGlanceRegistry .Values.imageVersion .Values.image_version) }}
       - name: registry
         image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-registry:{{.Values.imageVersionGlanceRegistry | default .Values.imageVersion | default .Values.image_version }}
@@ -200,6 +207,12 @@ spec:
           mountPath: /etc/glance/logging.ini
           subPath: logging.ini
           readOnly: true
+        {{- if .Values.watcher.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/watcher.yaml
+          subPath: watcher.yaml
+          readOnly: true
+        {{- end }}
       {{- end }}
       {{- if .Values.metrics.enabled }}
       - name: statsd

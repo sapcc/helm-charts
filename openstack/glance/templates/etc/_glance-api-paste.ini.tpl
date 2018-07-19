@@ -12,15 +12,15 @@ pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation {{ if .Values.
 
 # Use this pipeline for keystone auth
 [pipeline:glance-api-keystone]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation {{ if .Values.metrics.enabled }}statsd{{ end }} osprofiler authtoken context {{ if .Values.sentry.enabled }}sentry{{ end }} rootapp
+pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation {{ if .Values.metrics.enabled }}statsd{{ end }} osprofiler authtoken context {{ if .Values.sentry.enabled }}sentry{{ end }} {{ if .Values.watcher.enabled }}watcher{{ end }} rootapp
 
 # Use this pipeline for keystone auth with image caching
 [pipeline:glance-api-keystone+caching]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation {{ if .Values.metrics.enabled }}statsd{{ end }} osprofiler authtoken context {{ if .Values.sentry.enabled }}sentry{{ end }} cache rootapp
+pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation {{ if .Values.metrics.enabled }}statsd{{ end }} osprofiler authtoken context {{ if .Values.sentry.enabled }}sentry{{ end }} {{ if .Values.watcher.enabled }}watcher{{ end }} cache rootapp
 
 # Use this pipeline for keystone auth with caching and cache management
 [pipeline:glance-api-keystone+cachemanagement]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation {{ if .Values.metrics.enabled }}statsd{{ end }} osprofiler authtoken context {{ if .Values.sentry.enabled }}sentry{{ end }} cache cachemanage rootapp
+pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation {{ if .Values.metrics.enabled }}statsd{{ end }} osprofiler authtoken context {{ if .Values.sentry.enabled }}sentry{{ end }} {{ if .Values.watcher.enabled }}watcher{{ end }} cache cachemanage rootapp
 
 # Use this pipeline for authZ only. This means that the registry will treat a
 # user as authenticated without making requests to keystone to reauthenticate
@@ -102,4 +102,11 @@ use = egg:ops-middleware#statsd
 [filter:sentry]
 use = egg:ops-middleware#sentry
 level = ERROR
+{{- end }}
+
+{{- if .Values.watcher.enabled }}
+[filter:watcher]
+use = egg:watcher-middleware#watcher
+service_type = image
+config_file = /etc/glance/watcher.yaml
 {{- end }}
