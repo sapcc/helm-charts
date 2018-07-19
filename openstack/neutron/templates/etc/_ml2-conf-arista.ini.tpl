@@ -9,7 +9,7 @@
 {{- if .Values.arista.physnet }}
 managed_physnets = {{ .Values.arista.physnet }}
 {{- end }}
-coordinator_url = memcached://neutron-memcached:{{ .Values.memcached.memcached.port }}
+coordinator_url = memcached://neutron-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port }}
 
 region_name = {{ .Values.global.region }}
 switch_info = {{ range $i, $switch := .Values.arista.switches }}
