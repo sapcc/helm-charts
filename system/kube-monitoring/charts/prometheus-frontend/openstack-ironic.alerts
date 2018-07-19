@@ -17,7 +17,7 @@ groups:
       summary: "{{ $value }} Ironic nodes do not match any Nova baremetal flavor."
 
   - alert: OpenstackIronicApiDown
-    expr: 'blackbox_api_status_gauge{check=~"{{ $labels.check }}"} == 1'
+    expr: blackbox_api_status_gauge{check=~"ironic"} == 1
     for: 20m
     labels:
       severity: critical
@@ -33,7 +33,7 @@ groups:
       summary: '{{ $labels.check }} API down'
 
   - alert: OpenstackIronicApiFlapping
-    expr: 'changes(blackbox_api_status_gauge{check=~"{{ $labels.check }}"}[30m]) > 8'
+    expr: changes(blackbox_api_status_gauge{check=~"ironic"}[30m]) > 8
     labels:
       severity: critical
       tier: openstack

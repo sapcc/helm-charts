@@ -2,7 +2,7 @@ groups:
 - name: openstack-designate.alerts
   rules:
   - alert: OpenstackDesignateApiDown
-    expr: 'blackbox_api_status_gauge{check=~"{{ $labels.check }}"} == 1'
+    expr: blackbox_api_status_gauge{check=~"designate"} == 1
     for: 20m
     labels:
       severity: critical
@@ -18,7 +18,7 @@ groups:
       summary: '{{ $labels.check }} API down'
 
   - alert: OpenstackDesignateApiFlapping
-    expr: 'changes(blackbox_api_status_gauge{check=~"{{ $labels.check }}"}[30m]) > 8'
+    expr: changes(blackbox_api_status_gauge{check=~"designate"}[30m]) > 8
     labels:
       severity: critical
       tier: openstack
