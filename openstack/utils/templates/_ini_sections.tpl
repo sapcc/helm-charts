@@ -23,6 +23,19 @@ connection = {{ include "db_url" . }}
 {{- include "ini_sections.database_options" . }}
 {{- end }}
 
+{{- define "ini_sections.cache" }}
+
+[cache]
+backend = oslo_cache.memcache_pool
+{{- if .Values.memcached.host }}
+memcache_servers = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 11211 }}
+{{- else }}
+memcache_servers = {{ include "memcached_host" . }}:{{ .Values.memcached.port | default 11211 }}
+{{- end }}
+config_prefix = cache.{{ .Chart.Name }}
+enabled = true
+{{- end }}
+
 {{- define "ini_sections.audit_middleware_notifications"}}
     {{- if .Values.audit }}
         {{- if .Values.audit.enabled }}
