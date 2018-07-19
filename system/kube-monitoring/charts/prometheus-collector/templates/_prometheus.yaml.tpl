@@ -441,8 +441,8 @@ scrape_configs:
 
 {{- if .Values.ipmi_exporter.enabled }}
 - job_name: 'ipmi-{{ .Values.global.region }}'
-  scrape_interval: 200s
-  scrape_timeout: 200s
+  scrape_interval: 120s
+  scrape_timeout: 120s
   file_sd_configs:
       - files :
         - ipmi_targets.json
