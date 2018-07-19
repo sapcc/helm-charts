@@ -1,6 +1,6 @@
 #!/var/lib/openstack/bin/dumb-init bash
 
-set -e
+set -e -x
 
 . /container.init/common.sh
 

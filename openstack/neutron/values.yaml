@@ -50,6 +50,7 @@ l2_port_metrics: '9102'
 l3_port_metrics: '9103'
 
 image_tag: mitaka
+f5_image_tag: mitaka
 image_name: neutron
 
 service_plugins: neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2,networking_cisco.plugins.cisco.service_plugins.cisco_device_manager_plugin.CiscoDeviceManagerPlugin,networking_cisco.plugins.cisco.service_plugins.cisco_router_plugin.CiscoRouterPlugin
@@ -176,7 +177,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "lbaas Count"
     openstack_neutron_SAP_IP_status:
-      query: "SELECT floatingips.floating_network_id, networks.name AS network_name, floatingips.status, COUNT(*) AS gauge FROM floatingips INNER JOIN networks ON floatingips.tenant_id=networks.tenant_id WHERE floating_ip_address LIKE '10%' GROUP BY floatingips.floating_network_id, floatingips.status, networks.name"
+      query: "SELECT floatingips.floating_network_id, networks.name AS network_name, floatingips.status, COUNT(*) AS gauge FROM floatingips INNER JOIN networks ON floatingips.project_id=networks.project_id WHERE floating_ip_address LIKE '10%' GROUP BY floatingips.floating_network_id, floatingips.status, networks.name"
       metrics:
         - floating_network_id:
             usage: "LABEL"
@@ -191,7 +192,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "Count of Floating IP by status"
     openstack_neutron_ext_IP_status:
-      query: "SELECT floatingips.floating_network_id, networks.name AS network_name, floatingips.status, COUNT(*) AS gauge FROM floatingips INNER JOIN networks ON floatingips.tenant_id=networks.tenant_id WHERE floating_ip_address LIKE '15%' GROUP BY floatingips.floating_network_id, floatingips.status, networks.name"
+      query: "SELECT floatingips.floating_network_id, networks.name AS network_name, floatingips.status, COUNT(*) AS gauge FROM floatingips INNER JOIN networks ON floatingips.project_id=networks.project_id WHERE floating_ip_address LIKE '15%' GROUP BY floatingips.floating_network_id, floatingips.status, networks.name"
       metrics:
         - floating_network_id:
             usage: "LABEL"
