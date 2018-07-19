@@ -1,38 +1,38 @@
+{{- if .Values.ipmi_service_discovery.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: ipmi-sd-deployment
-  labels:
-    app: ipmi-sd
+  name: ipmi-service-discovery
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: ipmi-sd
+      type: prometheus
   template:
     metadata:
       labels:
         app: ipmi-sd
+        type: prometheus
     spec:
       containers:
       - name: ipmi-sd
-        image: ipmi_sd:v2
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.ipmi_service_discovery.image }}:{{ .Values.ipmi_service_discovery.tag }}"
         env:
         - name: APP_ENV
-          value: "{{.Values.app_env}}"
+          value: "{{ .Values.ipmi_service_discovery.app_env }}"
         - name: OS_AUTH_URL
-          value: "{{.Values.os_auth_url}}"
+          value: "{{ .Values.ipmi_service_discovery.os_auth_url }}"
         - name: OS_USERNAME
-          value: "{{.Values.os_username}}"
+          value: "{{ .Values.ipmi_service_discovery.os_username }}"
         - name: OS_PASSWORD
-          value: "{{.Values.os_password}}"
+          value: "{{ .Values.ipmi_service_discovery.os_password }}"
         - name: OS_USER_DOMAIN_NAME
-          value: "{{.Values.os_user_domain_name}}"
+          value: "{{ .Values.ipmi_service_discovery.os_user_domain_name }}"
         - name: OS_PROJECT_NAME
-          value: "{{.Values.os_project_name}}"
+          value: "{{ .Values.ipmi_service_discovery.os_project_name }}"
         - name: OS_PROJECT_DOMAIN_NAME
-          value: "{{.Values.os_project_domain_name}}"
+          value: "{{ .Values.ipmi_service_discovery.os_project_domain_name }}"
         - name: OS_PROM_CONFIGMAP_NAME
-          value: "{{.Values.os_project_domain_name}}"
-        ports:
-        - containerPort: 9200
+          value: "{{ .Values.global.prometheus-collector.configmap_name }}"
+{{- end }}
