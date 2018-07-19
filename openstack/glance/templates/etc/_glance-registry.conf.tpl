@@ -31,3 +31,5 @@ flavor = keystone
 
 [oslo_messaging_notifications]
 driver = noop
+
+{{- include "ini_sections.cache" . }}
