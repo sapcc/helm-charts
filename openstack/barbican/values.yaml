@@ -71,7 +71,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "Number of containers"
     openstack_barbican_secrets:
-      query: "SELECT secrets.id, secrets.status, secrets.name, projects.external_id AS project_id, secrets.secret_type, COUNT(*) AS count_gauge from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false' GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type"
+      query: "SELECT secrets.id, secrets.status, secrets.name, secrets.expiration, projects.external_id AS project_id, secrets.secret_type, COUNT(*) AS count_gauge from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false' GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type"
       metrics:
         - id:
             usage: "LABEL"
@@ -82,6 +82,9 @@ pgmetrics:
         - name:
             usage: "LABEL"
             description: "Secret name"
+        - expiration:
+            usage: "LABEL"
+            description: "Secret Expiration time"
         - project_id:
             usage: "LABEL"
             description: "Project ID of the secret"
