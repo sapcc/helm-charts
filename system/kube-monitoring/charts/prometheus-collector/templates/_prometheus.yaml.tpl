@@ -453,7 +453,7 @@ scrape_configs:
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: impi_exporter.{{.Values.global.region}}.{{.Values.global.domain}}:9290
+      replacement: impi-exporter.{{.Values.global.region}}.{{.Values.global.domain}}:9290
 {{- end }}
 
 # Static Targets 
