@@ -129,3 +129,5 @@ quota_security_group_rule = 4
 {{- include "osprofiler" . }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
+
+{{- include "ini_sections.cache" . }}
