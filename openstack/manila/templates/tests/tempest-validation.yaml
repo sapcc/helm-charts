@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: manila-tempest
+  annotations:
+    "helm.sh/hook": test-success
+  labels:
+    system: openstack
+    type: configuration
+    component: manila
+spec:
+  restartPolicy: Never
+  containers:
+    - name: manila-tempest
+      image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-rally:{{.Values.image_version_manila_tempest}}
+      imagePullPolicy: IfNotPresent
+      command:
+        - /usr/local/bin/kubernetes-entrypoint
+      env:
+        - name: COMMAND
+          value: "/container.init/manila-tempest-start"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: manila-api
+      volumeMounts:
+        - mountPath: /manila-etc
+          name: manila-etc
+        - mountPath: /container.init
+          name: container-init
+  volumes:
+    - name: manila-etc
+      configMap:
+        name: manila-etc
+    - name: container-init
+      configMap:
+        name: manila-bin
+        defaultMode: 0755
