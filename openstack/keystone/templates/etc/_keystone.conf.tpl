@@ -66,15 +66,7 @@ request_token_duration = {{ .Values.api.oauth1.request_token_duration | default 
 access_token_duration = {{ .Values.api.oauth1.access_token_duration | default "0" }}
 {{- end }}
 
-[cache]
-backend = oslo_cache.memcache_pool
-{{- if .Values.memcached.host }}
-memcache_servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
-{{ else }}
-memcache_servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11211}}
-{{- end }}
-config_prefix = cache.keystone
-enabled = true
+{{- include "ini_sections.cache" . }}
 
 # Directory containing Fernet keys used to encrypt and decrypt credentials
 # stored in the credential backend. Fernet keys used to encrypt credentials
