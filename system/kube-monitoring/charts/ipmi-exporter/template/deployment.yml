@@ -1,0 +1,30 @@
+{{- if .Values.ipmi_exporter.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ipmi-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ipmi-exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: ipmi-exporter
+        type: exporter
+    spec:
+      containers:
+      - name: ipmi-exporter
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.ipmi_exporter.image }}:{{ .Values.ipmi_exporter.tag }}"
+        env:
+        - name: APP_ENV
+          value: "{{ .Values.ipmi_exporter.app_env }}"
+        - name: IPMI_USER
+          value: "{{ .Values.ipmi_exporter.os_ipmi_username }}"
+        - name: IPMI_PASSWORD
+          value: "{{ .Values.ipmi_exporter.os_ipmi_password }}"
+        ports:
+        - containerPort: 9290
+{{- end }}
