@@ -78,3 +78,50 @@ groups:
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: OpenstackLbaasCanaryDown
+    expr: blackbox_canary_status_gauge{service=~"lbaas"} == 1
+    for: 1h
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
+
+  - alert: OpenstackLbaasCanaryTimeout
+    expr: blackbox_canary_status_gauge{service=~"lbaas"} == 0.5
+    for: 1h
+    labels:
+      severity: info
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
+
+  - alert: OpenstackLbaasCanaryFlapping
+    expr: changes(blackbox_canary_status_gauge{service=~"lbaas"}[2h]) > 8
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
