@@ -22,6 +22,9 @@
 -Xms16g
 -Xmx16g
 
+## Force the JVM to use IPv4 stack
+-Djava.net.preferIPv4Stack=true
+
 ################################################################
 ## Expert settings
 ################################################################
