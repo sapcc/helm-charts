@@ -37,6 +37,10 @@ spec:
               mountPath: /prometheus
             - name: config
               mountPath: /etc/prometheus
+            {{- if .Values.ipmi_service_discovery.enabled }}
+            - name: ipmi-sd-config
+              mountPath: /custom_targets
+            {{- end }}
       volumes:
         - name: data
           emptyDir:
@@ -44,3 +48,8 @@ spec:
         - name: config
           configMap:
             name: prometheus-collector
+        {{- if .Values.ipmi_service_discovery.enabled }}
+        - name: ipmi-sd-config
+          configMap:
+            name: {{ .Values.ipmi_service_discovery.configmap_name }}
+        {{- end }}

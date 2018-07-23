@@ -439,6 +439,23 @@ scrape_configs:
 {{- end }}
 {{- end }}
 
+{{- if .Values.ipmi_exporter.enabled }}
+- job_name: 'ipmi-{{ .Values.global.region }}'
+  scrape_interval: 120s
+  scrape_timeout: 120s
+  file_sd_configs:
+      - files :
+        - custom_targets/ipmi_targets.json
+  metrics_path: /ipmi
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: impi-exporter.{{.Values.global.region}}.{{.Values.global.domain}}:9290
+{{- end }}
+
 # Static Targets 
 #
 - job_name: 'prometheus-collector'
