@@ -1,0 +1,77 @@
+{{- if .Values.pg_cluster.enabled }}
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: barbican-postgresql-cluster
+spec:
+  # seems to be a required setting. its full impact is unclear though (also used in dns namings)
+  teamId: "barbican"
+
+  enableMasterLoadBalancer: false
+  enableReplicaLoadBalancer: false
+
+  allowedSourceRanges: # load balancers' source ranges for both master and replica services
+  - 127.0.0.1/32
+
+  # postgresql describes PostgreSQL version and pairs of configuration parameter name - values
+  postgresql:
+    # postgres version
+    version: "9.5"
+    # postgres parameters
+    parameters:
+      max_connections: "100"
+      log_statement: "all"
+
+  # patroni contains Patroni-specific configuration
+  patroni:
+    initdb:
+      encoding: "UTF8"
+      locale: "en_US.UTF-8"
+      data-checksums: "true"
+
+    # pg_hba overrides
+    pg_hba:
+    - hostssl all all 0.0.0.0/0 md5
+    - host    all all 0.0.0.0/0 md5
+    - hostnossl all all 0.0.0.0/0 md5
+
+    # leader ttl lock duration?
+    ttl: 30
+    # wait time in seconds for the leader-election running loop iterations
+    loop_wait: &loop_wait 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 33554432
+
+  # pv settings
+  volume:
+    size: 2Gi
+
+  # number of postgres instances
+  numberOfInstances: 3
+
+  # database users per database
+  users:
+    # database owner
+    barbican:
+    - superuser
+    - createdb
+
+  #databases: name->owner
+  databases:
+    barbican: barbican
+
+  # database metrics prometheus exporter
+  postgres_exporter:
+    image: "hub.global.cloud.sap/monsoon/postgres-exporter:20180511084212"
+    configmap_name: "barbican-pg-cluster-exporter"
+    cpu_request: "100m"
+    memory_request: "50Mi"
+    database: barbican
+
+  wale_backup:
+    WAL_S3_BUCKET: "db-backup-pgcluster"
+    BACKUP_SCHEDULE: "* * * * *"
+    AWS_ACCESS_KEY_ID: "ccbaa643ef0f4184a1f045b15bcf5c95"
+    AWS_SECRET_ACCESS_KEY: "f2abac607dbd45108075bbc9dbce18e3"
+    AWS_REGION: "ap-sa-1"
+{{- end }}
