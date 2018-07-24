@@ -445,7 +445,7 @@ scrape_configs:
   scrape_timeout: 120s
   file_sd_configs:
       - files :
-        - custom_targets/ipmi_targets.json
+        - ./custom_targets/ipmi_targets.json
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [__address__]
