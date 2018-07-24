@@ -20,6 +20,7 @@ use = egg:raven#raven
 {{ else }}
 use = egg:ops-middleware#sentry
 {{- end }}
+level = ERROR
 {{- end }}
 
 [filter:debug]
