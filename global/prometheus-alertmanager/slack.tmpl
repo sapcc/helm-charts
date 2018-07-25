@@ -6,13 +6,18 @@
 {{ define "slack.sapcc.text" }}
 {{ if eq .Status "firing" }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
 {{ if eq .Status "resolved" }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
-  *[{{ .CommonLabels.region | toUpper }}]* {{ if .CommonLabels.dashboard }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }} 
+  *[{{ .CommonLabels.region | toUpper }}]* {{ if .CommonLabels.dashboard }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }}{{ if .CommonAnnotations.summary }} - {{ .CommonAnnotations.summary }}{{ end }}
 
 {{ if eq .Status "firing" -}}
+{{ $commonLabels := .CommonLabels }}
 {{ range .Alerts.Firing -}}
   {{ if eq .Labels.severity "warning" }}:warning: {{ end -}}
-  {{ if eq .Labels.severity "critical" }}:fire: {{ end -}} 
+  {{ if eq .Labels.severity "critical" }}:fire: {{ end -}}
   {{ .Annotations.description }} (<{{ .GeneratorURL }}|Graph>)
+  {{ if and .Labels.sentry (not $commonLabels.sentry) }}*<https://sentry.{{ $commonLabels.region }}.cloud.sap/monsoon/{{ .Labels.sentry }}|Sentry>* {{ end -}}
+  {{ if and .Labels.playbook (not $commonLabels.playbook) }}*<https://operations.global.cloud.sap/{{ .Labels.playbook }}|Playbook>* {{ end -}}
+  {{ if and .Labels.dashboard (not $commonLabels.dashboard) }}*<https://grafana.{{ $commonLabels.region }}.cloud.sap/dashboard/db/{{ .Labels.dashboard }}|Grafana>* {{ end -}}
+  {{ println "\n" }}
 {{ end -}}
 {{ end -}}
 {{ if eq .Status "resolved" -}}
