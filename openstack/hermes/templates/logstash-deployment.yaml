@@ -53,3 +53,19 @@ spec:
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
+
+        - name: logstash-exporter
+          image: bonniernews/logstash_exporter:v0.1.2
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          ## Delay start of logstash-exporter to give logstash more time to come online.
+          args:
+            - >-
+              sleep 120;
+              exec /logstash_exporter
+                --logstash.endpoint=http://localhost:9600
+                --web.listen-address=:9198
+          ports:
+            - name: ls-exporter
+              containerPort: 9198
+              protocol: TCP
