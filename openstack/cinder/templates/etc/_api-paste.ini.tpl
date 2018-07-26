@@ -1,3 +1,4 @@
+{{- $mitaka := hasPrefix "mitaka" (default .Values.imageVersion .Values.imageVersionCinderApi) -}}
 #############
 # OpenStack #
 #############
@@ -5,7 +6,9 @@
 [composite:osapi_volume]
 use = call:cinder.api:root_app_factory
 /: apiversions
+{{- if $mitaka }}
 /v1: openstack_volume_api_v1
+{{- end }}
 /v2: openstack_volume_api_v2
 /v3: openstack_volume_api_v3
 
@@ -17,11 +20,13 @@ use = call:cinder.api:root_app_factory
 {{- if .Values.watcher.enabled }} watcher{{- end -}}
 {{- end }}
 
+{{- if $mitaka }}
 [composite:openstack_volume_api_v1]
 use = call:cinder.api.middleware.auth:pipeline_factory
 noauth = cors http_proxy_to_wsgi request_id faultwrap sizelimit {{- include "osprofiler_pipe" . }} noauth apiv1
 keystone = cors http_proxy_to_wsgi request_id statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv1
 keystone_nolimit = cors http_proxy_to_wsgi request_id statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv1
+{{ end }}
 
 [composite:openstack_volume_api_v2]
 use = call:cinder.api.middleware.auth:pipeline_factory
@@ -55,15 +60,17 @@ paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
 paste.filter_factory = cinder.api.middleware.auth:NoAuthMiddleware.factory
 
 [filter:sizelimit]
-paste.filter_factory = cinder.api.middleware.sizelimit:RequestBodySizeLimiter.factory
+paste.filter_factory =  oslo_middleware.sizelimit:RequestBodySizeLimiter.factory
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
 backends = disable_by_file
 disable_by_file_path = /etc/cinder/healthcheck_disable
 
+{{- if $mitaka }}
 [app:apiv1]
 paste.app_factory = cinder.api.v1.router:APIRouter.factory
+{{- end }}
 
 [app:apiv2]
 paste.app_factory = cinder.api.v2.router:APIRouter.factory
