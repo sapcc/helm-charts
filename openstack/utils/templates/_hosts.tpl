@@ -4,7 +4,7 @@
 
 {{define "db_url" }}
     {{- if kindIs "map" . -}}
-postgresql+psycopg2://{{.Values.global.dbUser}}:{{.Values.global.dbPassword | default (tuple . .Values.global.dbUser | include "postgres.password_for_user")}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
+postgresql+psycopg2://{{default .Values.dbUser .Values.global.dbUser}}:{{.Values.global.dbPassword | default (tuple . (default .Values.dbUser .Values.global.dbUser) | include "postgres.password_for_user")}}@{{.Chart.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5432/{{.Values.postgresql.postgresDatabase}}
     {{- else }}
         {{- $envAll := index . 0 }}
         {{- $name := index . 1 }}
