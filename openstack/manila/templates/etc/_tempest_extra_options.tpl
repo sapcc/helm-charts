@@ -14,3 +14,5 @@ run_multiple_share_replicas_tests = false
 default_share_type_name = default
 catalog_type = sharev2
 max_api_microversion = 2.43
+[identity]
+auth_version = v3
