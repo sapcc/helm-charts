@@ -63,18 +63,18 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: {{.Values.cinderApiPortInternal}}
+              port: cinder-api
             initialDelaySeconds: 15
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /healthcheck
-              port: {{.Values.cinderApiPortInternal}}
+              port: cinder-api
             initialDelaySeconds: 15
             timeoutSeconds: 5
           ports:
             - name: cinder-api
-              containerPort: {{.Values.cinderApiPortInternal}}
+              containerPort: {{.Values.cinderApiPortInternal | quote }}
           volumeMounts:
             - name: etccinder
               mountPath: /etc/cinder
@@ -112,7 +112,7 @@ spec:
               containerPort: 9125
               protocol: UDP
             - name: metrics
-              containerPort: {{.Values.port_metrics}}
+              containerPort: {{ .Values.port_metrics }}
       volumes:
         - name: etccinder
           emptyDir: {}
