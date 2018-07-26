@@ -1,6 +1,23 @@
 groups:
 - name: openstack-neutron.alerts
   rules:
+  - alert: OpenstackNeutronIntegrityHostDisabled
+    expr: blackbox_integrity_status_gauge{context="Floating-IP"} == 1
+    for: 15m
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Floating IPs network: {{ $labels.check }} exhausted soon'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/support/playbook/neutron/fip_exhausted.html
+    annotations:
+      description: 'The Floating IPs on {{ $labels.check }} might
+        get exhausted soon as utilized more then 90% of fips. This is heads up
+        to check the current FIPs network situation and add new subnet to network soon'
+      summary: Floating IPs possibly soon exhausted
+
   - alert: OpenstackNeutronPredictOutOfFIP
     expr: predict_linear(snmp_asr_cnatAddrBindNumberOfEntries[1d], 3600 * 24 * 4) > 800
     for: 10m
