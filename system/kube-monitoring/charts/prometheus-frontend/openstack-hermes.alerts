@@ -106,15 +106,15 @@ groups:
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
 
   - alert: OpenstackHermesRabbitMQUnack
-    expr: sum(rabbitmq_queue_messages_unacknowledged{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 100
+    expr: sum(rabbitmq_queue_messages_unacknowledged{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 2000
     labels:
       severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-canary-details
-      meta: '{{ $labels.service }} {{ $labels.check }} has over 100 unacknowledged messages in {{ $labels.kubernetes_name }}.'
+      meta: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}.'
       playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
     annotations:
-      description: '{{ $labels.service }} {{ $labels.check }} has over 100 unacknowledged messages in {{ $labels.kubernetes_name }}.'
+      description: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}.'
       summary: 'RabbitMQ unacknowledged messages count'
