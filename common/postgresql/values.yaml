@@ -38,10 +38,25 @@ global:
 
 custom_configmap: false
 
+## Variables for postgres configuration file
 extensions:
   pg_stat_statements:
     max: 1000
     track: all
+
+# The default postgres settings are too conservative for our use case
+shared_buffers: "4GB"
+temp_buffers: "32MB"
+work_mem: "64MB"
+maintenance_work_mem: "256MB"
+# Ideally we would want to run 'ulimit -s' to determine the optimal max_stack_depth value
+max_stack_depth: "8MB"
+effective_cache_size: "16GB"
+# We want autovacuum to run more often
+# This will make each run finish faster
+autovacuum_analyze_scale_factor: 0.02
+autovacuum_vacuum_scale_factor: 0.01
+
 
 ## postgres image repository
 image: "postgres"
