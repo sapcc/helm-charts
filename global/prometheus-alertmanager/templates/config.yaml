@@ -8,7 +8,7 @@ data:
     global:
       resolve_timeout: 16m
 
-    templates:
+    templates: 
       - ./*.tmpl
 
     inhibit_rules:
@@ -87,13 +87,6 @@ data:
           tier: openstack
           region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$|admin
       {{- end }}
-      - receiver: infraops-warning
-        continue: true
-        match_re:
-          region: ^[a-p,r-zA-P,R-Z]+\-[a-zA-Z]+\-[0-9]$|admin
-        match:
-          severity: warning
-          service: vcenter
       - receiver: pagerduty_hypervisor
         continue: false
         match_re:
@@ -146,19 +139,8 @@ data:
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
         pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true
+        send_resolved: true 
     {{- end }}
-    - name: infraops-warning
-      slack_configs:
-      - api_url: {{ default "MISSING" $.Values.slack_webhook_url | quote }}
-        username: "OpenStack Control Plane"
-        channel: "infraopsalerts"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true
     - name: pagerduty
       pagerduty_configs:
       - service_key: {{ default "" .Values.pagerduty.service_key }}
