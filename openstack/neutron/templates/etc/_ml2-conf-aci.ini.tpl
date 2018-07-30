@@ -5,6 +5,7 @@ tenant_ring_size =  60
 tenant_items_managed =  1:60
 tenant_prefix =  {{.Values.aci.apic_tenant_name}}
 
+support_remote_mac_clear={{.Values.aci.support_remote_mac_clear  | default "True"}}
 
 polling_interval=60
 sync_batch_size=15
