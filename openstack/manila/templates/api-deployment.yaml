@@ -93,6 +93,15 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+        - name: statsd
+          image: prom/statsd-exporter:v0.6.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.metrics_port }}
       volumes:
         - name: etcmanila
           emptyDir: {}
