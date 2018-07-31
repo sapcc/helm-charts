@@ -53,7 +53,7 @@ pgmetrics:
   db_name: barbican
   customMetrics:
     openstack_barbican_containers:
-      query: "SELECT containers.name, containers.type, containers.id, containers.status, projects.external_id AS project_id, COUNT(*) AS count_gauge from containers INNER JOIN projects on containers.project_id=projects.id where containers.deleted='false' GROUP BY containers.name, containers.type, containers.id, containers.status, projects.external_id"
+      query: "SELECT containers.name AS container_name, containers.type, containers.id, containers.status, projects.external_id AS project_id, COUNT(*) AS count_gauge from containers INNER JOIN projects on containers.project_id=projects.id where containers.deleted='false' GROUP BY containers.name, containers.type, containers.id, containers.status, projects.external_id"
       metrics:
         - id:
             usage: "LABEL"
@@ -61,7 +61,7 @@ pgmetrics:
         - status:
             usage: "LABEL"
             description: "Container state"
-        - name:
+        - container_name:
             usage: "LABEL"
             description: "Container name"
         - project_id:
@@ -74,7 +74,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "Number of containers"
     openstack_barbican_secrets:
-      query: "SELECT secrets.id, secrets.status, secrets.name, secrets.expiration, projects.external_id AS project_id, secrets.secret_type, COUNT(*) AS count_gauge from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false' GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type"
+      query: "SELECT secrets.id, secrets.status, secrets.name AS secret_name, secrets.expiration, projects.external_id AS project_id, secrets.secret_type, COUNT(*) AS count_gauge from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false' GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type"
       metrics:
         - id:
             usage: "LABEL"
@@ -82,7 +82,7 @@ pgmetrics:
         - status:
             usage: "LABEL"
             description: "Secret state"
-        - name:
+        - secret_name:
             usage: "LABEL"
             description: "Secret name"
         - expiration:
