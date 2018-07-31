@@ -26,7 +26,7 @@ spec:
           set -e
           kubernetes-entrypoint
           psql {{ include "db_url" . | replace "+psycopg2:" ":" | splitList "?" | first | squote }}  <<-EOT
-          UPDATE services SET deleted=True WHERE NOT deleted AND (updated_at IS NULL OR updated_at < now() - interval '30 minutes');
+          UPDATE services SET deleted_at=now(), deleted=True WHERE NOT deleted AND (updated_at IS NULL OR updated_at < now() - interval '30 minutes');
           EOT
           echo "Cleanup finished"
         env:
