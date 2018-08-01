@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -e
+set -x
+
+function cleanup_tempest_resources {
+  for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila delete ${share}; done
+  for net in $(manila share-network-list | grep -E 'None' | awk '{ print $2 }'); do manila share-network-delete ${net}; done
+  for ss in $(manila security-service-list | grep -E 'tempest|None' | awk '{ print $2 }'); do manila security-service-delete ${ss}; done
+}
+
+cleanup_tempest_resources

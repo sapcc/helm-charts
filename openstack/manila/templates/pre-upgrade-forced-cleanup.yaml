@@ -1,0 +1,67 @@
+{{ if .Values.tempest.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: manila-tempest-cleanup
+  labels:
+    system: openstack
+    type: configuration
+    component: manila
+  annotations:
+    "helm.sh/hook": "pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+spec:
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      containers:
+      - name: manila-tempest-cleanup
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-rally:{{.Values.imageVersionRally}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /usr/local/bin/kubernetes-entrypoint
+        env:
+          - name: COMMAND
+            value: "/container.init/manila-tempest-cleanup"
+          - name: NAMESPACE
+            value: {{ .Release.Namespace }}
+          - name: DEPENDENCY_SERVICE
+            value: manila-api
+          - name: OS_REGION_NAME
+            value: {{ .Values.global.region }}
+          - name: OS_USER_DOMAIN_NAME
+            value: "tempest"
+          - name: OS_PROJECT_DOMAIN_NAME
+            value: "tempest"
+          - name: OS_INTERFACE
+            value: "public"
+          - name: OS_ENDPOINT_TYPE
+            value: "publicURL"
+          - name: OS_TENANT_NAME
+            value: "tempest2"
+          - name: OS_PROJECT_NAME
+            value: "tempest2"
+          - name: OS_USERNAME
+            value: "tempestuser2"
+          - name: OS_PASSWORD
+            value: {{ .Values.tempestAdminPassword | quote }}
+          - name: OS_IDENTITY_API_VERSION
+            value: "3"
+          - name: OS_AUTH_URL
+            value: "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3"
+        volumeMounts:
+          - mountPath: /manila-etc
+            name: manila-etc
+          - mountPath: /container.init
+            name: container-init
+      restartPolicy: Never
+      volumes:
+        - name: manila-etc
+          configMap:
+            name: manila-etc
+        - name: container-init
+          configMap:
+            name: manila-bin
+            defaultMode: 0755
+{{ end }}
