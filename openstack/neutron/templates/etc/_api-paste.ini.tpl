@@ -17,7 +17,7 @@ use = egg:Paste#urlmap
 
 [composite:neutronapi_v2_0]
 use = call:neutron.auth:pipeline_factory
-noauth = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id  {{- include "sentry_pipe" . }} {{- include "watcher_pipe" . }} catch_errors sentry extensions neutronapiapp_v2_0
+noauth = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id  {{- include "watcher_pipe" . }} catch_errors {{- include "sentry_pipe" . }} extensions neutronapiapp_v2_0
 keystone = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id catch_errors {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} extensions neutronapiapp_v2_0
 
 [filter:healthcheck]
