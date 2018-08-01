@@ -13,12 +13,13 @@ function process_config {
     cp /neutron-etc/rootwrap.conf  /etc/neutron/rootwrap.conf
 
     cp /neutron-etc-vendor/cisco-cfg-agent.ini /etc/neutron/plugins/cisco/cisco_cfg_agent.ini
+    cp /neutron-etc-vendor/cisco-device-manager-plugin.ini /etc/neutron/plugins/cisco/cisco_device_manager_plugin.ini
 }
 
 
 
 function _start_application {
-    exec neutron-cisco-cfg-agent --config-file /etc/neutron/plugins/cisco/cisco_cfg_agent.ini --config-file /etc/neutron/neutron.conf --log-file /var/log/neutron/cisco-cfg-agent.log
+    exec neutron-cisco-cfg-agent --config-file /etc/neutron/plugins/cisco/cisco_cfg_agent.ini --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/cisco/cisco_device_manager_plugin.ini --log-file /var/log/neutron/cisco-cfg-agent.log
 }
 
 

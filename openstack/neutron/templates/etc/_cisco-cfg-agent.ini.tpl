@@ -1,3 +1,7 @@
+[DEFAULT]
+
+rpc_response_timeout = 120
+
 [cfg_agent]
 # (IntOpt) Interval in seconds for processing of service updates.
 # That is when the config agent's process_services() loop executes

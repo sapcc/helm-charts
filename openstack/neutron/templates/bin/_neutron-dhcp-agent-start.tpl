@@ -13,8 +13,11 @@ function process_config {
     cp /neutron-etc/dhcp-agent.ini  /etc/neutron/dhcp_agent.ini
     cp /neutron-etc/dnsmasq.conf  /etc/neutron/dnsmasq.conf
     cp /neutron-etc/rootwrap.conf  /etc/neutron/rootwrap.conf
+    mkdir -p /etc/neutron/rootwrap.d/
     cp /neutron-etc/dhcp.filters   /etc/neutron/rootwrap.d/dhcp.filters
     cp /neutron-etc/neutron-policy.json  /etc/neutron/policy.json
+    cp /neutron-etc/sudoers /etc/sudoers
+    chmod 440 /etc/sudoers
 }
 
 

@@ -33,7 +33,7 @@ spec:
       {{- end }}
       containers:
         - name: neutron-f5agent-{{ $loadbalancer.name }}
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.f5_image_tag | default $context.Values.image_tag}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
