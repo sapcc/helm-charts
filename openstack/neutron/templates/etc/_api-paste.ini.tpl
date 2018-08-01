@@ -11,10 +11,14 @@ use = egg:Paste#urlmap
 {{- if .Values.watcher.enabled }} watcher{{- end -}}
 {{- end }}
 
+{{- define "sentry_pipe" -}}
+{{- if .Values.sentry.enabled }} raven{{- end -}}
+{{- end }}
+
 [composite:neutronapi_v2_0]
 use = call:neutron.auth:pipeline_factory
-noauth = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id statsd {{- include "watcher_pipe" . }} catch_errors sentry extensions neutronapiapp_v2_0
-keystone = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id statsd catch_errors sentry authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} extensions neutronapiapp_v2_0
+noauth = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id  {{- include "sentry_pipe" . }} {{- include "watcher_pipe" . }} catch_errors sentry extensions neutronapiapp_v2_0
+keystone = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id catch_errors {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} extensions neutronapiapp_v2_0
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
@@ -52,16 +56,14 @@ paste.app_factory = neutron.api.v2.router:APIRouter.factory
 [pipeline:neutronversions]
 pipeline = http_proxy_to_wsgi healthcheck neutronversionsapp
 
-# Converged Cloud statsd & sentry middleware
-[filter:statsd]
-use = egg:ops-middleware#statsd
-
-[filter:sentry]
-use = egg:ops-middleware#sentry
-level = ERROR
-
 [filter:osprofiler]
 paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
+
+{{- if .Values.sentry.enabled }}
+[filter:raven]
+use = egg:raven#raven
+level = ERROR
+{{- end }}
 
 {{ if .Values.audit.enabled }}
 [filter:audit]
