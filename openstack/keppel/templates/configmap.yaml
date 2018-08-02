@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: keppel
+
+data:
+  policy.json: |
+    {
+      "cloud_rw": "role:cloud_registry_admin",
+      "cloud_ro": "role:cloud_registry_viewer or rule:cloud_rw",
+      "project_rw": "role:registry_admin",
+      "project_ro": "role:registry_viewer or rule:project_rw",
+      "any_rw": "rule:cloud_rw or rule:project_rw",
+      "any_ro": "rule:cloud_ro or rule:project_ro",
+
+      "account_matches_scope": "rule:cloud_ro or project_id:%(account_project_id)s",
+
+      "account:list": "rule:any_ro",
+      "account:show": "rule:any_ro and rule:account_matches_scope",
+      "account:edit": "rule:any_rw and rule:account_matches_scope"
+    }
+
+  keppel-api.yaml: |
+    api:
+      listen_address: :80
+      public_url: https://keppel.{{.Values.global.region}}.{{.Values.global.tld}}
+
+    db:
+      url: postgres://postgres:{{.Values.postgresql.postgresPassword}}@keppel-postgresql/keppel?sslmode=disable
+
+    openstack:
+      auth:
+        auth_url: https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3
+        user_name: keppel
+        user_domain_name: Default
+        password: {{.Values.keppel.service_password}}
+        project_name: service
+        project_domain_name: Default
+      local_role: swiftoperator
+      policy_path: /etc/keppel/policy.json
+      user_id: {{.Values.keppel.service_user_id}}
+
+    trust:
+      issuer_key: /etc/keppel/issuer-key.pem
+      issuer_cert: /etc/keppel/issuer-cert.pem
+
+  issuer-key.pem:  {{ index .Values.keppel.issuer "key.pem" | quote }}
+  issuer-cert.pem: {{ index  .Values.keppel.issuer "cert.pem" | quote }}
