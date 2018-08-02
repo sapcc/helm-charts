@@ -14,6 +14,7 @@ function process_config {
     cp /neutron-etc/l3-agent.ini  /etc/neutron/l3_agent.ini
     cp /neutron-etc/rootwrap.conf /etc/neutron/rootwrap.conf
     cp /neutron-etc/l3.filters    /etc/neutron/rootwrap.d/l3.filters
+    cp /neutron-etc/sudoers       /etc/sudoers
 }
 
 

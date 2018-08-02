@@ -16,6 +16,8 @@ function process_config {
     mkdir -p /etc/neutron/rootwrap.d/
     cp /neutron-etc/dhcp.filters   /etc/neutron/rootwrap.d/dhcp.filters
     cp /neutron-etc/neutron-policy.json  /etc/neutron/policy.json
+    cp /neutron-etc/sudoers /etc/sudoers
+    chmod 440 /etc/sudoers
 }
 
 

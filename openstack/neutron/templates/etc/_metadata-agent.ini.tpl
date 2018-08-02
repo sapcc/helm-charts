@@ -5,6 +5,7 @@ debug = {{.Values.debug}}
 #endpoint_type = internalURL
 
 nova_metadata_ip = {{include "nova_api_endpoint_host_internal" .}}
+nova_metadata_host = {{include "nova_api_endpoint_host_internal" .}}
 nova_metadata_protocol = {{.Values.global.nova_api_endpoint_protocol_internal | default "http"}}
 nova_metadata_port = {{ .Values.global.nova_metadata_port_internal | default 8775 }}
 
