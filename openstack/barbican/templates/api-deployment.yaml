@@ -13,13 +13,13 @@ metadata:
     component: barbican
 spec:
   replicas: {{ .Values.pod.replicas.api }}
-  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
-    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
-    {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
     rollingUpdate:
-      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
-      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
     {{ end }}
   selector:
     matchLabels:
@@ -36,7 +36,7 @@ spec:
 {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: barbican-api
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{.Values.image_version_barbican | default .Values.image_version | required "Please set barbican.image_version or similar"}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{.Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -46,6 +46,8 @@ spec:
               value: "/barbican/bin/barbican-api"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "barbican-migration"
             - name: DEPENDENCY_SERVICE
               value: "barbican-postgresql,barbican-rabbitmq"
             {{- if .Values.sentry.enabled }}
@@ -61,6 +63,12 @@ spec:
               port: {{.Values.api_port_internal}}
             initialDelaySeconds: 15
             timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{.Values.api_port_internal}}
+            initialDelaySeconds: 15
+            imeoutSeconds: 5
           ports:
             - name: barbican-api
               containerPort: {{.Values.api_port_internal}}

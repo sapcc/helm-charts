@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: barbican-migration
+  labels:
+    system: openstack
+    type: configuration
+    component: barbican
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: barbican-migration
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{.Values.imageVersionBarbicanApi}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "barbican-manage db upgrade"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "barbican-postgresql"
+          volumeMounts:
+            - name: etcbarbican
+              mountPath: /etc/barbican
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican.conf
+              subPath: barbican.conf
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/policy.json
+              subPath: policy.json
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/logging.ini
+              subPath: logging.ini
+              readOnly: true
+      volumes:
+        - name: etcbarbican
+          emptyDir: {}
+        - name: barbican-etc
+          configMap:
+            name: barbican-etc
