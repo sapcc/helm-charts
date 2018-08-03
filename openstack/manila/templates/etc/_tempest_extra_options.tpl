@@ -10,16 +10,19 @@ admin_domain_scope = True
 default_credentials_domain_name = tempest
 
 [share]
+share_network_id = {{ .Values.tempest.share_network_id }}
+alt_share_network_id = {{ .Values.tempest.alt_share_network_id }}
+admin_share_network_id = {{ .Values.tempest.admin_share_network_id }}
 run_revert_to_snapshot_tests = {{ .Values.tempest.revert_to_snapshot_tests }}
 run_multiple_share_replicas_tests = False
 run_share_group_tests = False
+run_quota_tests = False
 default_share_type_name = default
 catalog_type = sharev2
 max_api_microversion = 2.43
 suppress_errors_in_cleanup = True
-enable_ip_rules_for_protocols = ['nfs']
-# no cifs, don't even go there
-enable_protocols = ['nfs']
+enable_ip_rules_for_protocols = nfs
+enable_protocols = nfs
 endpoint_type = internalURL
 v3_endpoint_type = internalURL
 region = {{ .Values.global.region }}
@@ -39,8 +42,9 @@ project_tags = True
 application_credentials = True
 
 [service_available]
+manila = True
+neutron = True
 cinder = False
 glance = False
-neutron = True
 nova = False
 swift = False
