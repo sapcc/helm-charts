@@ -24,7 +24,7 @@ start_rally_tests() {
     rally verify start --concurrency 1 --detailed --pattern set=identity
 
     # evaluate the overall test result
-    rally verify list --status failed | grep 'failed' && exit 1
+    rally verify list --status failed | grep -c 'failed' && exit 1 || exit 0
 }
 
 cleanup_tempest_leftovers() {
