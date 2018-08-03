@@ -1,9 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
-set -e
 set -x
 
-function start_rally_tests {
+start_rally_tests() {
+    set -e
+
     # ensure rally db is present
     rally db ensure
 
@@ -19,10 +20,23 @@ function start_rally_tests {
     # configure tempest verifier
     rally verify configure-verifier --extend /etc/tempest/tempest.conf
 
-    # run the actual tempest api tests for keystone
-    rally verify start --concurrency 1 --detailed --pattern tempest.api.identity.v3.
-    rally verify start --concurrency 1 --detailed --pattern tempest.api.identity.admin.v3.
-    #rally verify start --concurrency 1 --detailed --pattern keystone_tempest_plugin.
+    # run the tempest tests for keystone
+    rally verify start --concurrency 1 --detailed --pattern set=identity
+
+    # evaluate the overall test result
+    rally verify list --status failed | grep 'failed' && exit 1
 }
 
-start_rally_tests
+cleanup_tempest_leftovers() {
+    for service in $(openstack service list | grep -E 'tempest-service' | awk '{ print $2 }'); do openstack service delete ${service}; done
+}
+
+main() {
+    start_rally_tests &
+    wait $!
+    exit_code=$?
+    cleanup_tempest_leftovers
+    return $exit_code
+}
+
+main

@@ -4,6 +4,9 @@ metadata:
   name: keystone-tempest
   annotations:
     "helm.sh/hook": test-success
+    chart-version: {{.Chart.Version}}
+    configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+    configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -31,6 +34,26 @@ spec:
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
           value: keystone
+        - name: OS_IDENTITY_API_VERSION
+          value: "3"
+        - name: OS_AUTH_URL
+{{- if .Values.global.clusterDomain }}
+          value:  http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3
+{{- else }}
+          value: http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
+{{- end }}
+        - name: OS_REGION_NAME
+          value: {{ .Values.global.region }}
+        - name: OS_USERNAME
+          value: "admin"
+        - name: OS_PASSWORD
+          value: {{ .Values.tempest.adminPassword | quote }}
+        - name: OS_USER_DOMAIN_NAME
+          value: "tempest"
+        - name: OS_DOMAIN_NAME
+          value: "tempest"
+        - name: OS_INTERFACE
+          value: "internal"
       volumeMounts:
         - name: etc-keystone
           mountPath: /etc/keystone
