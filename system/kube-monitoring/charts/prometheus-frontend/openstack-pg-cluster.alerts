@@ -3,7 +3,7 @@ groups:
   rules:
 
   - alert: OpenstackPgClusterBackupMissing
-    expr: sum (pg_cluster_wale_backup_success == 1) by (team) < 3
+    expr: count(pg_cluster_wale_backup_success{spilo_role="master"} == 0) by (team)
     for: 30m
     labels:
       context: backupsuccess
