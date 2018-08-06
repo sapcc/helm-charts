@@ -2,15 +2,15 @@ groups:
 - name: openstack-pg-cluster.alerts
   rules:
 
-  - alert: OpenstackPgClusterBackupMissingBarbican
-    expr: pg_cluster_wale_backup_success{team="barbican"} == 0
+  - alert: OpenstackPgClusterBackupMissing
+    expr: sum (pg_cluster_wale_backup_success == 1) by (team) < 3
     for: 30m
     labels:
       context: backupsuccess
       dashboard: pg_cluster
-      service: pg_cluster_backup
+      service: {{ $labels.team }}
       severity: warning
       tier: openstack
     annotations:
-      description: Barbican pg-cluster backup missing. Please check pg cluster container.
-      summary: Barbican pg-cluster backup missing
+      description: {{ $labels.team }} pg-cluster backup missing. Please check pg cluster container.
+      summary: {{ $labels.team }} pg-cluster backup missing
