@@ -46,3 +46,30 @@ groups:
     annotations:
       description: '{{ $labels.check }} API is flapping for 30 minutes.'
       summary: '{{ $labels.check }} API flapping'
+      
+      
+  - alert: OpenstackIronicSensorWarning
+    expr: sum(ipmi_sensor_state == 1) by (instance)
+    for: 30m
+    labels:
+      severity: warning
+      tier: openstack
+      service: ironic
+      context: '{{ $labels.instance }}'
+      dashboard: #TODO
+    annotations:
+      description: ironic node: '{{ $labels.instance }} hardware sensor throws warnings for 30 minutes.'
+      summary: '{{ $labels.instance }} Sensor Warning'
+      
+  - alert: OpenstackIronicSensorCritical
+    expr: sum(ipmi_sensor_state == 2) by (instance)
+    for: 5m
+    labels:
+      severity: warning
+      tier: openstack
+      service: ironic
+      context: '{{ $labels.instance }}'
+      dashboard: #TODO
+    annotations:
+      description: ironic node: '{{ $labels.instance }} hardware sensor critical state for 5 minutes.'
+      summary: '{{ $labels.instance }} Sensor Critical'
