@@ -1,20 +1,11 @@
-custom_actions:
-  images:
-    - method: GET
-      action_type: read/list
+path_keywords:
+  - images
+  - members
+  - schemas
+  - stores
+  - tags
+  - tasks
 
-    - image:
-        - members:
-            - method: POST
-              action_type: update
-            - method: GET
-              action_type: read/list
-
-  shared-images:
-    member:
-      - method: GET
-        action_type: read/list
-
-  tasks:
-    - method: GET
-      action_type: read/list
+keyword_exclusions:
+  - member
+  - task
