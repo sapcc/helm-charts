@@ -16,3 +16,26 @@ global:
   # placeholder. the full list of regions is set via the pipeline
   regions:
     - "staging"
+
+prometheus-node-exporter:
+  image:
+    repository: quay.io/prometheus/node-exporter
+    tag: v0.16.0
+
+  serviceAccount:
+    create: false
+    name: default
+
+  rbac:
+    create: false
+
+  extraArgs:
+    - --collector.filesystem.ignored-mount-points=\"^/(sys|proc|dev|host|etc)($|/)\"
+
+  resources:
+    requests:
+      memory: 30Mi
+      cpu: 100m
+    limits:
+      memory: 50Mi
+      cpu: 200m
