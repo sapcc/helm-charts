@@ -1,0 +1,40 @@
+{{- if .Values.ingress.enabled -}}
+{{- $serviceName := include "fullname" . -}}
+{{- $servicePort := .Values.service.externalApiPort -}}
+
+{{- if not .Values.ingress.vice_president }}
+{{- if .Values.ingress.tls_crt }}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: clair
+data:
+  tls.crt: {{ .Values.ingress.tls_crt | b64enc }}
+  tls.key: {{ .Values.ingress.tls_key | b64enc }}
+---
+{{- end }}
+{{- end }}
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: clair
+  annotations:
+    vice-president: {{ default false .Values.ingress.vice_president | quote }}
+    {{- range $key, $value := .Values.ingress.annotations }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  rules:
+    - host: {{.Values.ingress.host}}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: {{ $serviceName }}
+              servicePort: {{ $servicePort }}
+  tls:
+    - secretName: clair
+      hosts: [{{ .Values.ingress.host }}]
+{{- end -}}
