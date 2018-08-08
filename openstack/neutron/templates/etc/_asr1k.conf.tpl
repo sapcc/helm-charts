@@ -15,6 +15,10 @@ threadpool_maxsize={{.Values.asrl3_threadpool_pool_size | default 5}}
 yang_connection_pool_size={{.Values.asr.netconf_yang_pool_size | default 5}}
 legacy_connection_pool_size={{.Values.asr.netconf_legacy_pool_size | default 5}}
 
+#snat mode, either 'pool' or 'interface'
+snat_mode = {{.Values.asr.snat_mode | default 'pool'}}
+
+
 
 [asr1k_l2]
 sync_active = {{.Values.asr.l2_sync_active | default "True"}}
