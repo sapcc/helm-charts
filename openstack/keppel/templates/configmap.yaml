@@ -29,8 +29,9 @@ data:
     db:
       url: postgres://postgres:{{.Values.postgresql.postgresPassword}}@keppel-postgresql/keppel?sslmode=disable
 
-    openstack:
-      auth:
+    auth:
+      driver: keystone
+      service_user:
         auth_url: https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3
         user_name: keppel
         user_domain_name: Default
@@ -40,6 +41,9 @@ data:
       local_role: swiftoperator
       policy_path: /etc/keppel/policy.json
       user_id: {{.Values.keppel.service_user_id}}
+
+    storage:
+      driver: swift
 
     trust:
       issuer_key: /etc/keppel/issuer-key.pem
