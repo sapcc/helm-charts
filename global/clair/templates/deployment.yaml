@@ -9,6 +9,14 @@ metadata:
     component: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistory }}
+  strategy:
+    type: {{ .Values.podReplacementStrategy }}
+    {{ if eq .Values.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.rollingUpdate.maxSurge }}
+    {{ end }}
   template:
     metadata:
       labels:
