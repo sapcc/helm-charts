@@ -45,8 +45,8 @@ groups:
       description: Node readiness is flapping
       summary: Node {{$labels.node}} is flapping between Ready and NotReady
 
-  - alert: KubernetesNodeScrapeMissing
-    expr: absent(up{job="endpoints",kubernetes_name="kube-state-metrics"})
+  - alert: KubernetesKubeStateMetricsScrapeFailed
+    expr: absent(up{app="kube-state-metrics"})
     for: 1h
     labels:
       tier: kubernetes
@@ -54,10 +54,9 @@ groups:
       severity: ignore-warning
       context: node
       dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_scrape_missing.html
     annotations:
-      description: Node status cannot be scraped
-      summary: Node status failed to be scraped
+      description: Failed to scrape kube-state-metrics. Metrics on the cluster state might be outdated
+      summary: Kube state metrics scrape failed
 
   - alert: KubernetesPodRestartingTooMuch
     expr: rate(kube_pod_container_status_restarts[15m]) > 0
