@@ -90,6 +90,13 @@ port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 [oslo_middleware]
 enable_proxy_headers_parsing = True
 
+{{- if .Values.watcher.enabled }}
+[watcher]
+enabled = true
+service_type = baremetal
+config_file = /etc/ironic/watcher.yaml
+{{ end }}
+
 {{- include "osprofiler" . }}
 
 {{- include "ini_sections.cache" . }}

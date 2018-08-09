@@ -88,6 +88,12 @@ spec:
           name: ironic-etc
           subPath: logging.ini
           readOnly: true
+        {{- if .Values.watcher.enabled }}
+        - name: ironic-etc
+          mountPath: /etc/ironic/watcher.yaml
+          subPath: watcher.yaml
+          readOnly: true
+        {{- end }}
 {{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 8 }}
       volumes:
       - name: etcironic
