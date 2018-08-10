@@ -89,7 +89,7 @@ scrape_configs:
       source_labels: [__address__]
       target_label: region
       regex: prometheus.kubernikus.(.+).cloud.sap
-      replacement: $1
+      replacement: k-$1
 
   {{- if .Values.kubernikus.authentication.enabled }}
   tls_config:
