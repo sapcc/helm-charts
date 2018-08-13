@@ -31,11 +31,22 @@ data:
     jobs:
       {{- range $index, $job := $config.jobs}}
       - from:
+          {{- if $job.from.url }}
           url:  {{$job.from.url}}
           type: {{ coalesce $job.from.type "''" }}
           cert: {{ coalesce $job.from.cert $config.cert "''" }}
           key:  {{ coalesce $job.from.key $config.key "''" }}
           ca:   {{ coalesce $job.from.ca $config.ca "''" }}
+          {{- else if $job.from.auth_url }}
+          auth_url:            {{ $job.from.auth_url }}
+          user_name:           {{ $job.from.user_name }}
+          user_domain_name:    {{ $job.from.user_domain_name }}
+          project_name:        {{ $job.from.project_name }}
+          project_domain_name: {{ $job.from.project_domain_name }}
+          password:            {{ $job.from.password }}
+          container:           {{ $job.from.container }}
+          object_prefix:       {{ $job.from.object_prefix | default "''" }}
+          {{- end }}
         to:
           container: {{$job.to.container}}
           object_prefix: {{$job.to.object_prefix}}
