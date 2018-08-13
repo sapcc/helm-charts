@@ -3,26 +3,30 @@ use = egg:Paste#urlmap
 /: barbican_version
 /v1: barbican-api-keystone
 
+{{- define "watcher_pipe" -}}
+{{- if .Values.watcher.enabled }} watcher{{- end -}}
+{{- end }}
+
 # Use this pipeline for Barbican API - versions no authentication
 [pipeline:barbican_version]
 pipeline = cors versionapp
 
 # Use this pipeline for Barbican API - DEFAULT no authentication
 [pipeline:barbican_api]
-pipeline = cors unauthenticated-context apiapp
+pipeline = cors unauthenticated-context {{- include "watcher_pipe" . }} apiapp
 
 #Use this pipeline to activate a repoze.profile middleware and HTTP port,
 #  to provide profiling information for the REST API processing.
 [pipeline:barbican-profile]
-pipeline = cors unauthenticated-context egg:Paste#cgitb egg:Paste#httpexceptions profile apiapp
+pipeline = cors unauthenticated-context egg:Paste#cgitb egg:Paste#httpexceptions profile {{- include "watcher_pipe" . }} apiapp
 
 #Use this pipeline for keystone auth
 [pipeline:barbican-api-keystone]
-pipeline = cors keystone_authtoken context apiapp
+pipeline = cors keystone_authtoken context {{- include "watcher_pipe" . }} apiapp
 
 #Use this pipeline for keystone auth with audit feature
 [pipeline:barbican-api-keystone-audit]
-pipeline = keystone_authtoken context audit apiapp
+pipeline = keystone_authtoken context {{- include "watcher_pipe" . }} audit apiapp
 
 [app:apiapp]
 paste.app_factory = barbican.api.app:create_main_app
@@ -58,3 +62,10 @@ unwind = false
 [filter:cors]
 paste.filter_factory = oslo_middleware.cors:filter_factory
 oslo_config_project = barbican
+
+{{ if .Values.watcher.enabled -}}
+[filter:watcher]
+use = egg:watcher-middleware#watcher
+service_type = key-manager
+config_file = /etc/barbican/watcher.yaml
+{{- end }}
