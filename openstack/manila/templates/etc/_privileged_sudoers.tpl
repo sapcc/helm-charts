@@ -1,0 +1,1 @@
+manila ALL=(ALL) NOPASSWD:ALL
