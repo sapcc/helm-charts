@@ -9,7 +9,7 @@ use = egg:Paste#urlmap
 
 # Use this pipeline for Barbican API - versions no authentication
 [pipeline:barbican_version]
-pipeline = cors versionapp
+pipeline = cors healthcheck versionapp
 
 # Use this pipeline for Barbican API - DEFAULT no authentication
 [pipeline:barbican_api]
@@ -42,6 +42,11 @@ paste.filter_factory = barbican.api.middleware.context:UnauthenticatedContextMid
 
 [filter:context]
 paste.filter_factory = barbican.api.middleware.context:ContextMiddleware.factory
+
+[filter:healthcheck]
+paste.filter_factory = oslo_middleware:Healthcheck.factory
+backends = disable_by_file
+disable_by_file_path = /etc/barbican/healthcheck_disable
 
 [filter:audit]
 paste.filter_factory = keystonemiddleware.audit:filter_factory
