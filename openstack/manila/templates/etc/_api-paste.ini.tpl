@@ -47,7 +47,7 @@ paste.app_factory = manila.api.v1.router:APIRouter.factory
 paste.app_factory = manila.api.v2.router:APIRouter.factory
 
 [pipeline:apiversions]
-pipeline = cors faultwrap http_proxy_to_wsgi osshareversionapp
+pipeline = cors healthcheck faultwrap http_proxy_to_wsgi osshareversionapp
 
 [app:osshareversionapp]
 paste.app_factory = manila.api.versions:VersionsRouter.factory
@@ -68,6 +68,11 @@ oslo_config_project = manila
 
 [filter:osprofiler]
 paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
+
+[filter:healthcheck]
+paste.filter_factory = oslo_middleware:Healthcheck.factory
+backends = disable_by_file
+disable_by_file_path = /etc/manila/healthcheck_disable
 
 {{ if .Values.audit.enabled -}}
 [filter:audit]
