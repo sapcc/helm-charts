@@ -1,9 +1,22 @@
 groups:
 - name: openstack-pgbouncer.alerts
   rules:
-  - alert: OpenstackPgBouncerWarning
+  - alert: OpenstackPgBouncerCritical
     expr: sum(pgbouncer_pools_client_waiting_connections) by (name) > 0
     for: 5m
+    labels:
+      dashboard: PgBouncer
+      meta: {{ $labels.name }} client waiting connections
+      service: {{ reReplaceAll "(.*)-(.*)" "${0}" $labels.name }}
+      severity: critical
+      tier: openstack
+    annotations:
+      description: Clients have to wait to get a connection for {{ $labels.name }} since 5 mins.
+      summary: Clients waiting connections > 0 since 5 minutes
+
+  - alert: OpenstackPgBouncerWarning
+    expr: sum(pgbouncer_pools_client_waiting_connections) by (name) > 0
+    for: 30s
     labels:
       dashboard: PgBouncer
       meta: {{ $labels.name }} client waiting connections
@@ -11,5 +24,5 @@ groups:
       severity: warning
       tier: openstack
     annotations:
-      description: Clients have to wait to get a connection for {{ $labels.name }} since 5 mins.
-      summary: Clients waiting connections > 0 since 5 minutes
+      description: Clients have to wait to get a connection for {{ $labels.name }} since 30 sec.
+      summary: Clients waiting connections > 0 since 30 seconds
