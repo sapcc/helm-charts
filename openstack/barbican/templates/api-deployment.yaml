@@ -97,6 +97,15 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+        - name: statsd
+          image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.statsd.port }}
       volumes:
         - name: barbican-etc
           configMap:
