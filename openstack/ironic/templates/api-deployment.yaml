@@ -94,6 +94,15 @@ spec:
           subPath: watcher.yaml
           readOnly: true
         {{- end }}
+      - name: statsd
+        image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: statsd
+            containerPort: 9125
+            protocol: UDP
+          - name: metrics
+            containerPort: {{ .Values.statsd.port }}
 {{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 8 }}
       volumes:
       - name: etcironic
