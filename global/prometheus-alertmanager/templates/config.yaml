@@ -37,53 +37,29 @@ data:
         continue: true
         match_re:
           region: staging
-      - receiver: kubernetes-info
+      # routing per tier to <tier>-{info, warning, critical}
+      {{- range $tier := .Values.tiers }}
+      - receiver: {{ $tier }}-info
         continue: true
         match_re:
-          tier: kubernetes
+          tier: {{ $tier }}
           region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$|admin
         routes:
-        - receiver: 'kubernetes-warning'
+        - receiver: '{{ $tier }}-warning'
           continue: true
           match:
             severity: warning
-        - receiver: 'kubernetes-critical'
+        - receiver: '{{ $tier }}-critical'
           continue: true
           match:
             severity: critical
-      - receiver: kubernikus-info
+      {{- end }}
+      # routing per service to openstack-<service>
+      {{- range $service := .Values.openstack_services }}
+      - receiver: openstack-{{ $service }}
         continue: true
         match_re:
-          tier: kubernikus
-          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$|admin
-        routes:
-        - receiver: 'kubernikus-warning'
-          continue: true
-          match:
-            severity: warning
-        - receiver: 'kubernikus-critical'
-          continue: true
-          match:
-            severity: critical
-      - receiver: openstack-info
-        continue: true
-        match_re:
-          tier: openstack
-          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$|admin
-        routes:
-        - receiver: 'openstack-warning'
-          continue: true
-          match:
-            severity: warning
-        - receiver: 'openstack-critical'
-          continue: true
-          match:
-            severity: critical
-      {{- range tuple "arc" "backup" "cinder" "designate" "elektra" "elk" "ironic" "keystone" "limes" "lyra" "maia" "manila" "neutron" "nova" "swift" "barbican" }}
-      - receiver: openstack-{{ . }}
-        continue: true
-        match_re:
-          service: {{ . }}
+          service: {{ $service }}
           tier: openstack
           region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$|admin
       {{- end }}
@@ -102,25 +78,26 @@ data:
           severity: critical
 
     receivers:
-    {{- range tuple "dev-null" "kubernetes-info" "kubernetes-warning" "kubernetes-critical" }}
-    - name: {{ . }}
+    - name: dev-null
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack.webhook_url | quote }}
         username: "Kubernetes Control Plane"
-        channel: "#{{ . }}"
+        channel: "#dev-null"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
         pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         send_resolved: true
-    {{- end }}
-    {{- range tuple "kubernikus-info" "kubernikus-warning" "kubernikus-critical" }}
-    - name: {{ . }}
+
+    # <tier>-{info, warning, critical} receiver
+    {{- range $tier := .Values.tiers }}
+    {{- range $severtity := tuple "info" "warning" "critical" }}
+    - name: {{ $tier }}-{{ $severtity }}
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack.webhook_url | quote }}
-        username: "Kubernikus Control Plane"
-        channel: "#{{ . }}"
+        username: "{{ $tier | title }} Control Plane"
+        channel: "#{{ $tier }}-{{ $severtity }}"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -128,7 +105,10 @@ data:
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         send_resolved: true
     {{- end }}
-    {{- range tuple "info" "warning" "critical" "arc" "backup" "cinder" "designate" "elektra" "elk" "ironic" "keystone" "limes" "lyra" "maia" "manila" "neutron" "nova" "swift" "barbican" }}
+    {{- end }}
+
+    # openstack-<service> receivers
+    {{- range .Values.openstack_services }}
     - name: openstack-{{ . }}
       slack_configs:
       - api_url: {{ default "MISSING" $.Values.slack.webhook_url | quote }}
@@ -139,7 +119,7 @@ data:
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
         pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true 
+        send_resolved: true
     {{- end }}
     - name: pagerduty
       pagerduty_configs:
