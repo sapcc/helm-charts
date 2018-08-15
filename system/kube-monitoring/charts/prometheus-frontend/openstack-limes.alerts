@@ -103,3 +103,16 @@ groups:
     annotations:
       description: '{{ $labels.check }} API is flapping for 30 minutes.'
       summary: '{{ $labels.check }} API flapping'
+
+  - alert: OpenstackLimesAuditEventPublishFailing
+    expr: sum(increase(limes_failed_auditevent_publish[10m])) > 0
+    for: 1h
+    labels:
+      context: auditeventpublish
+      dashboard: limes-overview
+      service: limes
+      severity: info
+      tier: openstack
+    annotations:
+      description: "Audit events could not be published to the RabbitMQ server."
+      summary: "Audit events publish failing"
