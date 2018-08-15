@@ -456,6 +456,23 @@ scrape_configs:
       replacement: ipmi-exporter:9290
 {{- end }}
 
+{{- if .Values.global.arista_exporter.enabled }}
+- job_name: 'arista-{{ .Values.global.region }}'
+  scrape_interval: 30s
+  scrape_timeout: 120s
+  file_sd_configs:
+      - files :
+        - /custom_targets/arista_targets.json
+  metrics_path: /arista
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: arista-exporter:9200
+{{- end }}
+
 # Static Targets 
 #
 - job_name: 'prometheus-collector'
