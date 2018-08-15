@@ -1,27 +1,27 @@
 groups:
-- name: baremetal.alerts
+- name: baremetal-ironic.alerts
   rules:
-  - alert: BaremetalSensorWarning
+  - alert: BaremetalIronicSensorWarning
     expr: sum(ipmi_sensor_state == 1) by (instance, type)
     for: 5m
     labels:
       severity: warning
       tier: baremetal
-      service: "{{ $labels.instance }}"
-      context: "{{ $labels.type }}"
+      service: ironic
+      context: "{{ $labels.instance }}"
       dashboard: #TODO
     annotations:
       description: ironic node {{ $labels.instance }} hardware sensor warning ({{ $labels.type }}) for 5 minutes.
       summary: Sensor Warning for instance {{ $labels.instance }}
       
-  - alert: BaremetalSensorCritical
+  - alert: BaremetalIronicSensorCritical
     expr: sum(ipmi_sensor_state == 2) by (instance, type)
     for: 2m
     labels:
       severity: critical
       tier: baremetal
-      service: "{{ $labels.instance }}"
-      context: "{{ $labels.type }}"
+      service: ironic
+      context: "{{ $labels.instance }}"
       dashboard: #TODO
     annotations:
       description: ironic node {{ $labels.instance }} hardware sensor critical ({{ $labels.type }}) for 2 minutes.
