@@ -12,7 +12,7 @@ sync_interval = {{.Values.asr.l3_sync_interval | default 120}}
 # number of threads to spawn during router update, it must be < yang_connection_pool_size and if set higher
 # the driver will reduce to = yang_connection_pool_size
 threadpool_maxsize={{.Values.asrl3_threadpool_pool_size | default 5}}
-yang_connection_pool_size={{.Values.asr.netconf_yang_pool_size | default 5}}
+yang_connection_pool_size={{.Values.asr.netconf_yang_pool_size | default 10}}
 legacy_connection_pool_size={{.Values.asr.netconf_legacy_pool_size | default 5}}
 
 # snat mode, either "pool" or "interface"
