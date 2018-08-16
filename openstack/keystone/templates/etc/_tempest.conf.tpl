@@ -38,10 +38,8 @@ api_v3 = true
 trust = true
 domain_specific_drivers = true
 security_compliance = false
-{{- if not (eq .Values.release "newton") }}
 project_tags = true
 application_credentials = true
-{{- end }}
 
 [service_available]
 cinder = False

@@ -17,11 +17,7 @@ notification_opt_out = {{ $message_type }}
 
 {{- if .Values.api.auth }}
 [auth]
-{{- if eq .Values.release "queens" }}
 methods = {{ .Values.api.auth.methods | default "password,token,application_credential" }}
-{{ else }}
-methods = {{ .Values.api.auth.methods | default "password,token" }}
-{{- end }}
 {{ if .Values.api.auth.external }}external = {{ .Values.api.auth.external }}{{ end }}
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
@@ -88,9 +84,7 @@ key_repository = /credential-keys
 [token]
 provider = {{ .Values.api.token.provider | default "fernet" }}
 expiration = {{ .Values.api.token.expiration | default 3600 }}
-{{- if not (eq .Values.release "newton") }}
 allow_expired_window = {{ .Values.api.token.allow_expired_window | default 28800 }}
-{{- end }}
 cache_on_issue = true
 
 [revoke]

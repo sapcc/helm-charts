@@ -1,10 +1,6 @@
 {
     "admin_required": "role:admin",
-{{- if eq .Values.release "newton" }}
-    "cloud_admin": "role:admin and ((token.is_admin_project:True or domain_id:default) or domain_id:{{.Values.tempest.domainId}})",
-{{ else }}
     "cloud_admin": "role:admin and ((is_admin_project:True or domain_id:default) or domain_id:{{.Values.tempest.domainId}})",
-{{- end }}
     "service_role": "role:service",
     "service_or_admin": "rule:admin_required or rule:service_role",
     "cloud_viewer": "role:cloud_identity_viewer or rule:service_role or rule:cloud_admin",
@@ -109,17 +105,10 @@
     "admin_and_matching_prior_role_domain_id": "rule:admin_required and domain_id:%(target.prior_role.domain_id)s",
     "implied_role_matches_prior_role_domain_or_global": "(domain_id:%(target.implied_role.domain_id)s or None:%(target.implied_role.domain_id)s)",
 
-{{- if eq .Values.release "newton" }}
-    "identity:get_implied_role": "rule:cloud_admin or rule:cloud_viewer",
-    "identity:list_implied_roles": "rule:cloud_admin or rule:cloud_viewer",
-    "identity:create_implied_role": "rule:cloud_admin",
-    "identity:delete_implied_role": "rule:cloud_admin",
-{{ else }}
     "identity:get_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id or rule:cloud_viewer",
     "identity:list_implied_roles": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id or rule:cloud_viewer",
     "identity:create_implied_role": "rule:cloud_admin or (rule:admin_and_matching_prior_role_domain_id and rule:implied_role_matches_prior_role_domain_or_global)",
     "identity:delete_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id",
-{{- end }}
     "identity:list_role_inference_rules": "rule:cloud_admin or rule:cloud_viewer",
     "identity:check_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id or rule:cloud_viewer",
 
