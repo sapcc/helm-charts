@@ -3,6 +3,16 @@
 {{ define "slack.sapcc.titlelink" }}{{ end }}
 {{ define "slack.sapcc.pretext" }} {{- end }}
 
+{{- define "alert_link_sentry" -}}
+{{- if and .Labels.sentry (not $commonLabels.sentry) }} *<https://sentry.{{ $commonLabels.region }}.cloud.sap/monsoon/{{ .Labels.sentry }}|Sentry>* {{ end -}}
+{{- end }}
+{{- define "alert_link_playbook" -}}
+{{- if and .Labels.playbook (not $commonLabels.playbook) }} *<https://operations.global.cloud.sap/{{ .Labels.playbook }}|Playbook>* {{ end -}}
+{{- end }}
+{{- define "alert_link_grafana" -}}
+{{- if and .Labels.dashboard (not $commonLabels.dashboard) }} *<https://grafana.{{ $commonLabels.region }}.cloud.sap/dashboard/db/{{ .Labels.dashboard }}|Grafana>* {{ end -}}
+{{- end }}
+
 {{ define "slack.sapcc.text" }}
 {{ if eq .Status "firing" }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
 {{ if eq .Status "resolved" }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
@@ -13,6 +23,9 @@
   {{ if eq .Labels.severity "warning" }}:warning: {{ end -}}
   {{ if eq .Labels.severity "critical" }}:fire: {{ end -}}
   {{ .Annotations.description }} (<{{ .GeneratorURL }}|Graph>)
+  {{- include "alert_link_sentry" . }}
+  {{- include "alert_link_grafana" . }}
+  {{- include "alert_link_playbook" . }}
 {{ end -}}
 {{ end -}}
 {{ if eq .Status "resolved" -}}
