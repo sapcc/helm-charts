@@ -441,8 +441,8 @@ scrape_configs:
 
 {{- if .Values.global.ipmi_exporter.enabled }}
 - job_name: 'ipmi-{{ .Values.global.region }}'
-  scrape_interval: 30s
-  scrape_timeout: 120s
+  scrape_interval: 60s
+  scrape_timeout: 55s
   file_sd_configs:
       - files :
         - /custom_targets/ipmi_targets.json
@@ -458,8 +458,8 @@ scrape_configs:
 
 {{- if .Values.global.arista_exporter.enabled }}
 - job_name: 'arista-{{ .Values.global.region }}'
-  scrape_interval: 30s
-  scrape_timeout: 120s
+  scrape_interval: 60s
+  scrape_timeout: 55s
   file_sd_configs:
       - files :
         - /custom_targets/arista_targets.json
