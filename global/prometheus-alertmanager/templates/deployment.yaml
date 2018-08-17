@@ -31,6 +31,7 @@ spec:
             - --cluster.peer-timeout={{ .Values.cluster.peer_timeout }}
             - --cluster.probe-timeout={{ .Values.cluster.probe_timeout }}
             - --cluster.tcp-timeout={{ .Values.cluster.tcp_timeout }}
+            - --storage.path=/data
             {{- range .Values.cluster.peers }}
             - --cluster.peer={{ . }}
             {{- end }}
@@ -44,7 +45,21 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/alertmanager
+            - name: storage-volume
+              mountPath: /data
+        - name: prometheus-alertmanager-configmap-reloader
+          image: "{{ .Values.configmap_reload.image.repository }}:{{ .Values.configmap_reload.image.tag }}"
+          args:
+            - --volume-dir=/etc/config
+            - --webhook-url=http://localhost:9093/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/config
+              readOnly: true
       volumes:
         - name: config
           configMap:
             name: prometheus-alertmanager
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.name | quote }}
