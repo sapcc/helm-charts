@@ -22,7 +22,11 @@ propagate=0
 
 {{- define "osprofiler_url" }}
     {{- $options := merge .Values.osprofiler .Values.global.osprofiler -}}
+    {{- if $options.redis -}}
 redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
+    {{- else if $options.jaeger -}}
+jaeger://{{ $options.jaeger.svc_name }}.{{ $options.jaeger.namespace | default "monsoon3" }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6831
+    {{- end -}}
 {{- end }}
 
 {{- define "osprofiler" }}
