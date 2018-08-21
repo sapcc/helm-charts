@@ -41,6 +41,10 @@ spec:
             - name: ipmi-sd-config
               mountPath: /custom_targets
             {{- end }}
+            {{- if .Values.global.arista_exporter.enabled }}
+            - name: arista-sd-config
+              mountPath: /custom_targets
+            {{- end }}
       volumes:
         - name: data
           emptyDir:
@@ -52,4 +56,9 @@ spec:
         - name: ipmi-sd-config
           configMap:
             name: {{ .Values.global.ipmi_service_discovery.configmap_name }}
+        {{- end }}
+        {{- if .Values.global.arista_exporter.enabled }}
+        - name: arista-sd-config
+          configMap:
+            name: {{ .Values.global.arista_exporter.configmap_name }}
         {{- end }}
