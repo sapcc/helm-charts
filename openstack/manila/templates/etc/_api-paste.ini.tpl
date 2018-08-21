@@ -24,9 +24,9 @@ keystone_nolimit = cors faultwrap http_proxy_to_wsgi sizelimit authtoken keyston
 
 [composite:openstack_share_api_v2]
 use = call:manila.api.middleware.auth:pipeline_factory
-noauth = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit noauth {{- include "watcher_pipe" . }} apiv2
-keystone = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
-keystone_nolimit = cors {{- include "osprofiler_pipe" . }} faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
+noauth = cors faultwrap http_proxy_to_wsgi sizelimit noauth {{- include "watcher_pipe" . }} apiv2
+keystone = cors faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
+keystone_nolimit = cors faultwrap http_proxy_to_wsgi sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
 
 [filter:faultwrap]
 paste.filter_factory = manila.api.middleware.fault:FaultWrapper.factory
@@ -65,9 +65,6 @@ paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 [filter:cors]
 paste.filter_factory = oslo_middleware.cors:filter_factory
 oslo_config_project = manila
-
-[filter:osprofiler]
-paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
