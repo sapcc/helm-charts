@@ -3,7 +3,7 @@ debug = {{.Values.api.debug}}
 
 registry_host = 127.0.0.1
 
-log_config_append = /etc/glance/logging.conf
+log_config_append = /etc/glance/logging.ini
 
 show_image_direct_url= True
 
@@ -65,3 +65,5 @@ swift_store_use_trusts=True
 
 [oslo_messaging_notifications]
 driver = noop
+
+{{- include "ini_sections.cache" . }}

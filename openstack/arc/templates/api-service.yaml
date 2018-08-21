@@ -14,5 +14,14 @@ spec:
     targetPort: {{ .Values.api.service.internalPort }}
     protocol: TCP
     name: {{ .Values.api.service.name }}
+{{- if .Values.api.tls.enabled }}
+  - port: {{ .Values.api.service.externalTLSPort }}
+    targetPort: {{ .Values.api.service.internalTLSPort }}
+    protocol: TCP
+    name: {{ .Values.api.service.name }}-tls
+{{- end }}
   selector:
     app: arc-api
+{{- if .Values.api.service.externalIP}}
+  externalIPs: [ {{.Values.api.service.externalIP | quote }} ]
+{{- end }}

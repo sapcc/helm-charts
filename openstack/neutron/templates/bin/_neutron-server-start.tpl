@@ -34,6 +34,10 @@ function process_config {
     {{- if .Values.audit.enabled }}
     cp /neutron-etc/neutron_audit_map.yaml /etc/neutron/neutron_audit_map.yaml
     {{- end }}
+
+    {{- if .Values.watcher.enabled }}
+    cp /neutron-etc/watcher.yaml /etc/neutron/watcher.yaml
+    {{- end }}
 }
 
 function _start_application {

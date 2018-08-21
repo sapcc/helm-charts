@@ -46,6 +46,7 @@ delete_share_server_with_last_share = false
 max_over_subscription_ratio = {{ .Values.max_over_subscription_ratio | default 2.0 }}
 
 scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter
+scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_shares = 0
@@ -91,4 +92,8 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 memcached_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 insecure = True
 
+{{- include "osprofiler" . }}
+
 {{- include "ini_sections.audit_middleware_notifications" . }}
+
+{{- include "ini_sections.cache" . }}

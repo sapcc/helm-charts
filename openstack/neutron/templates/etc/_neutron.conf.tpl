@@ -22,7 +22,7 @@ service_plugins={{.Values.service_plugins}}
 default_router_type = {{.Values.default_router_type}}
 router_scheduler_driver = {{.Values.router_scheduler_driver}}
 
-max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 10}}
+max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 25}}
 
 dhcp_agent_notification = true
 network_auto_schedule = True
@@ -79,7 +79,7 @@ lock_path = /var/lib/neutron/tmp
 enable_proxy_headers_parsing = true
 
 [agent]
-{{ if .Values.rootwrap_daemon }}
+{{ if .Values.agent.rootwrap_daemon }}
 root_helper = sudo
 root_helper_daemon = neutron-rootwrap-daemon /etc/neutron/rootwrap.conf
 {{ else }}
@@ -129,3 +129,5 @@ quota_security_group_rule = 4
 {{- include "osprofiler" . }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
+
+{{- include "ini_sections.cache" . }}

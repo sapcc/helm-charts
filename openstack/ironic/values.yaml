@@ -7,7 +7,7 @@ global:
   image_namespace: REQUIRED
   imageRegistry: REQUIRED
   ironicApiPortInternal: '6385'
-  ironictftpIP: null
+  ironic_tftp_ip: null
   ironictftpPortPublic: '69'
   ironic_pxe_port_public: '69'
   osprofiler: {}
@@ -18,6 +18,12 @@ global:
 
 osprofiler:
     enabled: false
+
+statsd:
+  port: 9102
+  image:
+    repository:  prom/statsd-exporter
+    tag: v0.5.0
 
 pod:
   replicas:
@@ -37,7 +43,7 @@ imageVersion: null
 imageVersionIronicApi: null
 imageVersionIronicConductor: null
 imageVersionIronicInspector: null
-imageVersionIronicPXE: null
+imageVersionIronicPxe: null
 swift_multi_tenant: True
 
 debug: "True"
@@ -84,7 +90,7 @@ portmetrics: '9102'
 
 network_management_uuid: DEFINE_IN_REGION_CHART
 network_cleaning_uuid: DEFINE_IN_REGION_CHART
-neutron_url_timeout: 60
+neutron_url_timeout: 210
 neutron_port_setup_delay: 0
 
 swift_account: null
@@ -107,8 +113,9 @@ postgresql:
   backup:
     enabled: true
     metrics: true
-    imageTag: v0.5.12
     osPassword: null
+  shared_preload_libraries: pg_stat_statements
+  track_activity_query_size: 2048
 
 sentry:
   enabled: true
@@ -147,3 +154,9 @@ logging:
     eventlet.wsgi.server:
       handlers: stdout, sentry
       level: INFO
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
+
+watcher:
+  enabled: false

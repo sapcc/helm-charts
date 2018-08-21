@@ -11,19 +11,9 @@ spec:
   requires:
   - {{.Values.global.keystoneNamespace}}/keystone-seed
 
-  roles:
-  - dns_admin
-  - cloud_dns_admin
-
   domains:
   - name: tempest
     description: 'Converged Cloud Tempest Testing'
-    dns_quota:
-      api_export_size: 2000
-      recordset_records: 2000
-      zone_records: 10000
-      zone_recordsets: 10000
-      zones: 1000
 
     projects:
     - name: admin
@@ -32,26 +22,8 @@ spec:
       description: 'Services'
     - name: tempest1
       description: 'Tempest Test Project 1'
-      roles:
-        - user: admin@Default
-          role: cloud_dns_admin
-      dns_quota:
-        api_export_size: 2000
-        recordset_records: 2000
-        zone_records: 2000
-        zone_recordsets: 2000
-        zones: 200
     - name: tempest2
       description: 'Tempest Test Project 2'
-      roles:
-        - user: admin@Default
-          role: cloud_dns_admin
-      dns_quota:
-        api_export_size: 2000
-        recordset_records: 2000
-        zone_records: 2000
-        zone_recordsets: 2000
-        zones: 200
 
     users:
     - name: admin
@@ -60,26 +32,18 @@ spec:
       roles:
       - project: admin
         role: admin
-      - project: service
-        role: admin
-      - domain: tempest
-        role: admin
     - name: tempestuser1
       description: 'Tempest Test User 1'
       password: {{ .Values.tempestAdminPassword | quote }}
       roles:
       - project: tempest1
-        role: dns_admin
-      - domain: tempest
-        role: dns_admin
+        role: admin
     - name: tempestuser2
       description: 'Tempest Test User 2'
       password: {{ .Values.tempestAdminPassword | quote }}
       roles:
       - project: tempest2
-        role: dns_admin
-      - domain: tempest
-        role: dns_admin
+        role: admin
 
     groups:
     - name: administrators
@@ -93,3 +57,6 @@ spec:
         role: admin
       - domain: tempest
         role: admin
+      - domain: tempest
+        role: admin
+        inherited: true

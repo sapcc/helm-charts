@@ -1,0 +1,114 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: barbican-api
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api
+    component: barbican
+spec:
+  replicas: {{ .Values.pod.replicas.api }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: barbican-api
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        name: barbican-api
+{{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+    spec:
+{{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      containers:
+        - name: barbican-api
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{.Values.imageVersionBarbicanApi}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/barbican/bin/barbican-api"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "barbican-migration"
+            - name: DEPENDENCY_SERVICE
+              value: "barbican-postgresql,barbican-rabbitmq"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: barbican.DSN.python
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.api_port_internal}}
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{.Values.api_port_internal}}
+            initialDelaySeconds: 15
+            imeoutSeconds: 5
+          ports:
+            - name: barbican-api
+              containerPort: {{.Values.api_port_internal}}
+          volumeMounts:
+            - name: etcbarbican
+              mountPath: /etc/barbican
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican.conf
+              subPath: barbican.conf
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican-api-paste.ini
+              subPath: barbican-api-paste.ini
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/policy.json
+              subPath: policy.json
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            {{- if .Values.watcher.enabled }}
+            - name: barbican-etc
+              mountPath: /etc/barbican/watcher.yaml
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
+        - name: statsd
+          image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.statsd.port }}
+      volumes:
+        - name: barbican-etc
+          configMap:
+            name: barbican-etc
+        - name: etcbarbican
+          emptyDir: {}

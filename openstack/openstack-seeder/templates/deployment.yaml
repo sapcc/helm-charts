@@ -29,6 +29,9 @@ spec:
       annotations:
         checksum/bin-configmap.conf: {{ include (print $.Chart.Name "/templates/bin-configmap.yaml") . | sha256sum }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: openstack-seeder
+{{- end }}
       containers:
         - name: operator
 {{- if typeIs "float64" .Values.imageTag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}

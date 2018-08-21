@@ -7,8 +7,7 @@
 global:
   imageNamespace: monsoon
   imageRegistry: DEFINED-IN-REGION-CHART
-  dbUser: barbican
-  dbPassword: null
+  master_password: ""
   pgbouncer:
     enabled: true
 
@@ -18,15 +17,31 @@ pod:
   lifecycle:
     upgrades:
       deployments:
-        revision_history: 5
-        pod_replacement_strategy: RollingUpdate
-        rolling_update:
-           max_unavailable: 0
-           max_surge: 1
+        revisionHistory: 5
+        podReplacementStrategy: RollingUpdate
+        rollingUpdate:
+           maxUnavailable: 0
+           maxSurge: 1
 
 api_port_internal: '9311'
-image_version: newton-20180327.1
 debug: "True"
+
+dbUser: barbican
+dbName: barbican
+dbPassword: null
+
+statsd:
+  port: 9102
+  image:
+    repository:  prom/statsd-exporter
+    tag: v0.5.0
+
+pg_cluster:
+    enabled: false
+    aws_access_key_id: "ccbaa643ef0f4184a1f045b15bcf5c95"
+    aws_secret_access_key: "f2abac607dbd45108075bbc9dbce18e3"
+    wal_s3_bucket: "db-backup-pgcluster"
+    backup_schedule: "* * * * *"
 
 postgresql:
   imageTag: '9.4.14'
@@ -42,8 +57,72 @@ postgresql:
   backup:
     enabled: true
     metrics: true
-    imageTag: v0.5.12
     os_password: null
+
+pgmetrics:
+  name: barbican
+  db_name: barbican
+  customMetrics:
+    openstack_barbican_containers:
+      query: "SELECT containers.name AS container_name, containers.type, containers.id, containers.status, projects.external_id AS project_id, COUNT(*) AS count_gauge from containers INNER JOIN projects on containers.project_id=projects.id where containers.deleted='false' GROUP BY containers.name, containers.type, containers.id, containers.status, projects.external_id"
+      metrics:
+        - id:
+            usage: "LABEL"
+            description: "Container ID"
+        - status:
+            usage: "LABEL"
+            description: "Container state"
+        - container_name:
+            usage: "LABEL"
+            description: "Container name"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the container"
+        - type:
+            usage: "LABEL"
+            description: "Type of container"
+        - count_gauge:
+            usage: "GAUGE"
+            description: "Number of containers"
+    openstack_barbican_secrets:
+      query: "SELECT secrets.id, secrets.status, secrets.name AS secret_name, secrets.expiration, projects.external_id AS project_id, secrets.secret_type, COUNT(*) AS count_gauge from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false' GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type"
+      metrics:
+        - id:
+            usage: "LABEL"
+            description: "Secret ID"
+        - status:
+            usage: "LABEL"
+            description: "Secret state"
+        - secret_name:
+            usage: "LABEL"
+            description: "Secret name"
+        - expiration:
+            usage: "LABEL"
+            description: "Secret Expiration time"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the secret"
+        - secret_type:
+            usage: "LABEL"
+            description: "Type of secret"
+        - count_gauge:
+            usage: "GAUGE"
+            description: "Number of secrets"
+    openstack_barbican_certificate:
+      query: "SELECT secrets.status, secrets.expiration AS expiration_date, secrets.name AS certificate_name, projects.external_id AS project_id from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false' AND secret_type='certificate' GROUP BY secrets.status, secrets.name, projects.external_id, secrets.expiration"
+      metrics:
+        - status:
+            usage: "LABEL"
+            description: "Secret state"
+        - certificate_name:
+            usage: "LABEL"
+            description: "Secret name"
+        - expiration_date:
+            usage: "GAUGE"
+            description: "Secret Expiration time"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the secret"
 
 rabbitmq:
   users:
@@ -92,3 +171,7 @@ logging:
 sentry:
   enabled: true
 vice_president: true
+
+# sapcc/openstack-watcher-middleware
+watcher:
+  enabled: false

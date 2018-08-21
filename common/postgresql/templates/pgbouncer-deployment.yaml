@@ -27,12 +27,16 @@ spec:
         name: {{.Values.postgresDatabase}}-pgbouncer
 {{ tuple . .Values.postgresDatabase "pgbouncer" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        {{- if $opts.prometheus }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9200"
+        {{- end }}
     spec:
 {{ tuple . .Values.postgresDatabase "pgbouncer" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       terminationGracePeriodSeconds: 150
       containers:
         - name: pgbouncer
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/pgbouncer-k8s:{{.Values.pgbouncer.image_version | default .Values.global.pgbouncer.image_version | default "latest" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/pgbouncer-k8s:{{.Values.global.pgbouncer.imageTag | default .Values.pgbouncer.image_version | default .Values.global.pgbouncer.imageTag | default .Values.global.pgbouncer.image_version | default "latest" }}
           imagePullPolicy: IfNotPresent
 {{- if $opts.debug }}
           command: ["sleep", "inf"]
@@ -73,4 +77,8 @@ spec:
           ports:
             - name: pgbouncer
               containerPort: {{ $opts.config.listen_port }}
+            {{- if $opts.prometheus }}
+            - name: metrics
+              containerPort: 9200
+            {{- end }}
 {{- end }}

@@ -31,7 +31,6 @@ Region is an implicit label that is automatically set by Prometheus. Do not over
 
    * `kubernetes`
    * `openstack`
-   * `datapath`
    * `kubernikus`
 
 ### Service

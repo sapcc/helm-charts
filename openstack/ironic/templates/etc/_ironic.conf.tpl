@@ -1,5 +1,5 @@
 [DEFAULT]
-log-config-append = /etc/ironic/logging.ini
+log_config_append = /etc/ironic/logging.ini
 pybasedir = /ironic/ironic
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
@@ -40,6 +40,8 @@ auth_section = service_catalog
 auth_uri = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
 memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 
+{{- include "ini_sections.audit_middleware_notifications" . }}
+
 [service_catalog]
 auth_section = service_catalog
 insecure = True
@@ -48,16 +50,16 @@ auth_type = v3password
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironic_service_user | include "identity.password_for_user")  | replace "$" "$$" }}
+password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 
 [glance]
 auth_section = service_catalog
 glance_api_servers = {{.Values.global.glance_api_endpoint_protocol_internal | default "http"}}://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default 9292}}
-swift_temp_url_duration=1200
+swift_temp_url_duration=3600
 # No terminal slash, it will break the url signing scheme
-swift_endpoint_url={{.Values.global.swift_endpoint_protocol | default "http"}}://{{include "swift_endpoint_host" .}}:{{ .Values.global.swift_api_port_public | default 443}}
+swift_endpoint_url={{.Values.global.swift_endpoint_protocol | default "https"}}://{{include "swift_endpoint_host" .}}:{{ .Values.global.swift_api_port_public | default 443}}
 swift_api_version=v1
 {{- if .Values.swift_store_multi_tenant }}
 swift_store_multi_tenant = True
@@ -88,4 +90,13 @@ port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 [oslo_middleware]
 enable_proxy_headers_parsing = True
 
+{{- if .Values.watcher.enabled }}
+[watcher]
+enabled = true
+service_type = baremetal
+config_file = /etc/ironic/watcher.yaml
+{{ end }}
+
 {{- include "osprofiler" . }}
+
+{{- include "ini_sections.cache" . }}

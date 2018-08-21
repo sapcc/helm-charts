@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 
-set -ex
+echo "DB Version before migration:"
+keystone-manage --config-file=/etc/keystone/keystone.conf db_version
 
-{{- if not (eq .Values.release "pike") }}
-keystone-manage --config-file=/etc/keystone/keystone.conf db_sync
-{{- if eq .Values.release "ocata" }}
-keystone-manage-extension --config-file=/etc/keystone/keystone.conf drop_ocata_deprecated_ldap_domain_config
-{{- end }}
-{{ else }}
-state=$(keystone-manage --config-file=/etc/keystone/keystone.conf db_sync --check)
-case $state in
+keystone-manage --config-file=/etc/keystone/keystone.conf db_sync --check
+case $? in
     0)
         echo "No migration required. Database is up-2-date."
         ;;
@@ -35,4 +30,13 @@ case $state in
         echo "Duno what state the database is in. grrrr"
         ;;
 esac
-{{- end }}
+
+echo "DB Version after migration:"
+keystone-manage --config-file=/etc/keystone/keystone.conf db_version
+
+keystone-manage --config-file=/etc/keystone/keystone.conf doctor
+
+# don't let the doctor break stuff (as usual not qualified enough and you allways need another opinion :P )
+exit 0
+
+

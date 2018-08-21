@@ -32,7 +32,7 @@ spec:
 {{ tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: manila-api
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-api:{{.Values.image_version}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-api:{{.Values.imageVersionManilaApi}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -59,6 +59,12 @@ spec:
               port: {{.Values.api_port_internal}}
             initialDelaySeconds: 15
             timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: manila-api
+            initialDelaySeconds: 5
+            imeoutSeconds: 5
           ports:
             - name: manila-api
               containerPort: {{.Values.api_port_internal}}
@@ -87,6 +93,21 @@ spec:
               subPath: manila_audit_map.yaml
               readOnly: true
             {{- end }}
+            {{- if .Values.watcher.enabled }}
+            - name: manila-etc
+              mountPath: /etc/manila/watcher.yaml
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
+        - name: statsd
+          image: prom/statsd-exporter:v0.6.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.metrics_port }}
       volumes:
         - name: etcmanila
           emptyDir: {}

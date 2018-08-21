@@ -14,15 +14,21 @@ data:
 {{ include (print .Template.BasePath "/etc/_glance-api.conf.tpl") . | indent 4 }}
   glance-api-paste.ini: |
 {{ include (print .Template.BasePath "/etc/_glance-api-paste.ini.tpl") . | indent 4 }}
+{{- if (or .Values.imageVersionGlanceRegistry .Values.imageVersion .Values.image_version) }}
   glance-registry.conf: |
 {{ include (print .Template.BasePath "/etc/_glance-registry.conf.tpl") . | indent 4 }}
   glance-registry-paste.ini: |
 {{ include (print .Template.BasePath "/etc/_glance-registry-paste.ini.tpl") . | indent 4 }}
+{{- end }}
   policy.json: |
 {{ include (print .Template.BasePath "/etc/_glance-policy.json.tpl") . | indent 4 }}
-  logging.conf: |
-{{ include (print .Template.BasePath "/etc/_logging.conf.tpl") . | indent 4 }}
+  logging.ini: |
+{{ include "loggerIni" .Values.logging | indent 4 }}
 {{- if and .Values.swift.enabled (not .Values.swift.multi_tenant)}}
   swift-store.conf: |
 {{ include (print .Template.BasePath "/etc/_swift-store.conf.tpl") . | indent 4 }}
+{{- end }}
+{{- if .Values.watcher.enabled }}
+  watcher.yaml: |
+{{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
 {{- end }}

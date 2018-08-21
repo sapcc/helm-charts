@@ -1,0 +1,68 @@
+{{- $domains := list "cc3test" "bs" "fsn" "hcm" "hcp03" "hec" "monsoon3" "s4" "wbs" }}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: keppel-seed
+
+spec:
+  requires:
+  - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  {{- range $domains }}
+  - monsoon3/domain-{{.}}-seed
+  {{- end }}
+
+  # TODO:
+  # - service catalog entry
+  # - support seed
+
+  roles:
+    - cloud_registry_admin
+    - cloud_registry_viewer
+    - registry_admin
+    - registry_viewer
+
+  domains:
+    - name: Default
+      users:
+        - name: keppel
+          description: Keppel Service
+          password: '{{.Values.keppel.service_password}}'
+          roles:
+            - project: service
+              role:    service
+        - name: admin
+          roles:
+          - domain: Default
+            role: cloud_registry_admin
+          - project: admin
+            role: cloud_registry_admin
+      groups:
+        - name: Administrators
+          roles:
+            - domain: Default
+              role: cloud_registry_admin
+            - project: admin
+              role: cloud_registry_admin
+
+    - name: ccadmin
+      groups:
+        - name: CCADMIN_CLOUD_ADMINS
+          roles:
+            - project: cloud_admin
+              role: cloud_registry_admin
+        - name: CCADMIN_DOMAIN_REGISTRY_ADMINS
+          roles:
+            - domain: ccadmin
+              role: registry_admin
+
+    {{- range $domains }}
+    - name: {{.}}
+      groups:
+        - name: {{. | upper}}_DOMAIN_REGISTRY_ADMINS
+          roles:
+            - domain: {{.}}
+              role: registry_admin
+    {{- end }}

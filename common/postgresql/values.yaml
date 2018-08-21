@@ -8,6 +8,7 @@ global:
   master_password: ""
   pgbouncer:
     enabled: false
+    prometheus: false
     config:
       stats_users: "stats_user"
       admin_users: "admin_user"
@@ -16,12 +17,15 @@ global:
       reserve_pool_size: 4
       min_pool_size: 1
       default_pool_size: 4
+      max_db_connections: 8
+      server_idle_timeout: 10
       server_check_delay: 30
       unix_socket_dir: "/tmp"
       listen_addr: "0.0.0.0"
       listen_port: 6543
       listen_backlog: 256
       auth_type: "md5"
+      server_tls_sslmode: "prefer"
       tcp_keepalive: 1
       tcp_keepcnt: 10
       tcp_keepidle: 5
@@ -31,6 +35,13 @@ global:
       log_disconnections: 0
       pool_mode: "transaction"
       application_name_add_host: 1
+
+custom_configmap: false
+
+extensions:
+  pg_stat_statements:
+    max: 1000
+    track: all
 
 ## postgres image repository
 image: "postgres"
@@ -84,7 +95,7 @@ pod:
         pod_replacement_strategy: "RollingUpdate"
         rolling_update:
           max_unavailable: 1
-          max_surge: 1
+          max_surge: 0
 
 upgrades:
   revisionHistory: 3
@@ -105,7 +116,7 @@ resources:
 metrics:
   enabled: false
   image: "wrouesnel/postgres_exporter"
-  imageTag: v0.2.1
+  imageTag: v0.4.6
   imagePullPolicy: IfNotPresent
 
   port: 9187
@@ -131,7 +142,7 @@ metrics:
 backup:
   enabled: false
   image: monsoon/backup-tools
-  imageTag: v0.5.10
+  imageTag: v0.5.15
   interval_full: 1 hours
 #  os_auth_url: DEFINED-IN-REGION-SECRETS
 #  os_region_name: DEFINED-IN-REGION-SECRETS

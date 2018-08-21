@@ -32,9 +32,15 @@ data:
 {{ include (print .Template.BasePath "/etc/_dhcp.filters.tpl") . | indent 4 }}
   l3.filters: |
 {{ include (print .Template.BasePath "/etc/_l3.filters.tpl") . | indent 4 }}
+  sudoers: |
+{{ include (print .Template.BasePath "/etc/_sudoers.tpl") . | indent 4 }}
   logging.conf: |
 {{ include "loggerIni" .Values.logging | indent 4 }}
 {{- if .Values.audit.enabled }}
   neutron_audit_map.yaml: |
 {{ include (print .Template.BasePath "/etc/_neutron_audit_map.yaml") . | indent 4 }}
+{{- end }}
+{{- if .Values.watcher.enabled }}
+  watcher.yaml: |
+{{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
 {{- end }}

@@ -27,14 +27,21 @@ function prepare_ovs {
 
 
 function _start_application {
+    until ! pgrep -f /usr/sbin/ovs-vswitchd; do
+      echo "Waiting to be the only highlander"
+      sleep 5
+    done
+    touch /var/lib/neutron/neutron-ovs-ready
+
+    prepare_ovs
+
     if command -v dumb-init >/dev/null 2>&1; then
-        exec  dumb-init /usr/sbin/ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:emer -vsyslog:info -vfile:info --mlockall
+        exec  dumb-init /usr/sbin/ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:warn -vsyslog:info -vfile:info --mlockall --pidfile
     else
-        exec  /usr/sbin/ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:emer -vsyslog:info -vfile:info --mlockall
+        exec  /usr/sbin/ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:warn -vsyslog:info -vfile:info --mlockall --pidfile
     fi
 }
 
-prepare_ovs
 
 start_application
 

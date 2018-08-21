@@ -148,7 +148,14 @@ dynamic_shared_memory_type = posix	# the default is the first option
 
 #max_files_per_process = 1000		# min 25
                     # (change requires restart)
-#shared_preload_libraries = ''		# (change requires restart)
+
+shared_preload_libraries = '{{ keys .Values.extensions | join ","}}'		# (change requires restart)
+
+{{- range $k, $v := .Values.extensions }}
+{{- range $k2, $v2 := $v }}
+{{$k}}.{{$k2}} = {{$v2}}
+{{- end }}
+{{- end }}
 
 # - Cost-Based Vacuum Delay -
 
@@ -290,7 +297,7 @@ dynamic_shared_memory_type = posix	# the default is the first option
 # - Planner Cost Constants -
 
 #seq_page_cost = 1.0			# measured on an arbitrary scale
-#random_page_cost = 4.0			# same scale as above
+random_page_cost = 1.1			# same scale as above
 #cpu_tuple_cost = 0.01			# same scale as above
 #cpu_index_tuple_cost = 0.005		# same scale as above
 #cpu_operator_cost = 0.0025		# same scale as above
@@ -420,7 +427,7 @@ dynamic_shared_memory_type = posix	# the default is the first option
 #log_duration = off
 #log_error_verbosity = default		# terse, default, or verbose messages
 #log_hostname = off
-#log_line_prefix = ''			# special values:
+log_line_prefix = '%t'			# special values:
                     #   %a = application name
                     #   %u = user name
                     #   %d = database name
@@ -466,7 +473,7 @@ log_timezone = 'UTC'
 #track_counts = on
 #track_io_timing = off
 #track_functions = none			# none, pl, all
-#track_activity_query_size = 1024	# (change requires restart)
+track_activity_query_size = {{.Values.track_activity_query_size | default 1024 }}	# (change requires restart)
 #stats_temp_directory = 'pg_stat_tmp'
 
 

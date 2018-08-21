@@ -29,7 +29,7 @@ groups:
       summary: security group latency goes over 1 minute
 
   - alert: OpenstackNovaMaxDiskUsagePerc
-    expr: 1 - max(openstack_compute_nodes_free_disk_gb_gauge{host!~".*ironic.*"} / openstack_compute_nodes_local_gb_gauge) BY (availability_zone) > 0.9
+    expr: (sum(avg(openstack_compute_nodes_local_gb_used_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) / (sum(avg(openstack_compute_nodes_local_gb_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) > 0.95
     for: 8h
     labels:
       context: diskspace
@@ -39,11 +39,11 @@ groups:
       severity: critical
       tier: openstack
     annotations:
-      description: Nova Maximum Disk Usage is above 90%
+      description: Nova {{ $labels.availability_zone }} Disk Usage is above 90%
       summary: Nova Maximum Disk Usage percentage metric
 
   - alert: OpenstackNovaMaxRAMUsagePerc
-    expr: 1 - min(openstack_compute_nodes_free_ram_mb_gauge{host!~".*ironic.*",availability_zone!~"true|false"} / openstack_compute_nodes_memory_mb_gauge) BY (availability_zone) > 0.95
+    expr: (sum(avg(openstack_compute_nodes_memory_mb_used_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) / (sum(avg(openstack_compute_nodes_memory_mb_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) > 0.95
     for: 8h
     labels:
       context: diskspace
@@ -53,7 +53,7 @@ groups:
       severity: warning
       tier: openstack
     annotations:
-      description: Nova Maximum RAM Usage is above 95%.
+      description: Nova {{ $labels.availability_zone }} total RAM Usage is above 95%.
       summary: Nova Maximum RAM Usage percentage metric
 
   - alert: OpenstackNovaInstanceStuckBuilding
@@ -138,17 +138,168 @@ groups:
       description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.host }}
       summary: Openstack Nova Instance Stuck in Rebooting state metric
 
-  - alert: OpenstackNovaComputeServiceStatus
-    expr: blackbox_integrity_status_gauge{check=~"compute_service_status-.+"} == 1
-    for: 30m
+  - alert: OpenstackNovaApiDown
+    expr: blackbox_api_status_gauge{check=~"nova"} == 1
+    for: 20m
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is down. See Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
+      summary: '{{ $labels.check }} API down'
+
+  - alert: OpenstackNovaApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"nova"}[30m]) > 8
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is flapping'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.check }} API is flapping for 30 minutes.'
+      summary: '{{ $labels.check }} API flapping'
+
+  - alert: OpenstackNovaDatapathDown
+    expr: blackbox_datapath_status_gauge{service=~"nova"} == 1
+    for: 15m
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is down'
+
+  - alert: OpenstackNovaDatapathHalfDown
+    expr: blackbox_datapath_status_gauge{service=~"nova"} == 0.5
+    for: 15m
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
+
+  - alert: OpenstackNovaDatapathFlapping
+    expr: changes(blackbox_datapath_status_gauge{service=~"nova"}[30m]) > 8
     labels:
       severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      dashboard: nova-overview
-      meta: '{{ $labels.text }}'
-      sentry: blackbox
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
     annotations:
-      description: '{{ $labels.text }} over 30min'
-      summary: Openstack Nova Compute Service Status Check metric
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: OpenstackNovaCanaryDown
+    expr: blackbox_canary_status_gauge{service=~"nova"} == 1
+    for: 1h
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
+
+  - alert: OpenstackNovaCanaryTimeout
+    expr: blackbox_canary_status_gauge{service=~"nova"} == 0.5
+    for: 1h
+    labels:
+      severity: info
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
+
+  - alert: OpenstackNovaCanaryFlapping
+    expr: changes(blackbox_canary_status_gauge{service=~"nova"}[2h]) > 8
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: OpenstackNovaIntegrityHypervisorDown
+    expr: blackbox_integrity_status_gauge{check=~"host_status-.+"} == 1
+    for: 20m
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: '{{ $labels.check }}: host is enabled but hypervisor is down for 20 minutes. See Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }}: host is enabled but hypervisor is down for 20 minutes. See Sentry for details.'
+      summary: '{{ $labels.check }}: host is enabled but hypervisor is down'
+
+  - alert: OpenstackNovaIntegrityHostDisabled
+    expr: blackbox_integrity_status_gauge{check=~"host_status-.+"} == 2
+    for: 20m
+    labels:
+      severity: info
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+    annotations:
+      description: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
+      summary: '{{ $labels.check }}: host is disabled without reason'
+
+
+
+
+
+
+
+
+
+
+
+
+

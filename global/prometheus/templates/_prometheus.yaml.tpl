@@ -33,7 +33,6 @@ scrape_configs:
       - '{__name__=~"^vcenter_esx_node_info$"}'
       - 'vice_president_remaining_tokens{region="eu-de-1"}'
 
-
   relabel_configs:
     - action: replace
       source_labels: [__address__]
@@ -70,6 +69,38 @@ scrape_configs:
     - targets:
 {{- range $region := .Values.regions }}
       - "prometheus-collector.{{ $region }}.cloud.sap"
+{{- end }}
+
+- job_name: prometheus-kubernikus-regions-federation
+  scrape_interval: 30s
+  scrape_timeout: 25s
+  scheme: https
+
+  honor_labels: true
+  metrics_path: /federate
+
+  params:
+    match[]:
+    - '{__name__=~"^ALERTS$"}'
+    - '{__name__=~"up"}'
+
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region
+      regex: prometheus.kubernikus.(.+).cloud.sap
+      replacement: k-$1
+
+  {{- if .Values.kubernikus.authentication.enabled }}
+  tls_config:
+    cert_file: /etc/secrets/prometheus_sso.crt
+    key_file: /etc/secrets/prometheus_sso.key
+  {{- end }}
+
+  static_configs:
+  - targets:
+{{- range $region := .Values.kubernikus.regions }}
+    - "prometheus.kubernikus.{{ $region }}.cloud.sap"
 {{- end }}
 
 alerting:

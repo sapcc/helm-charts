@@ -1,13 +1,9 @@
 {
     "admin_required": "role:admin",
-{{- if eq .Values.release "newton" }}
-    "cloud_admin": "role:admin and (token.is_admin_project:True or domain_id:default)",
-{{ else }}
-    "cloud_admin": "role:admin and (is_admin_project:True or domain_id:default)",
-{{- end }}
+    "cloud_admin": "role:admin and ((is_admin_project:True or domain_id:default) or domain_id:{{.Values.tempest.domainId}})",
     "service_role": "role:service",
     "service_or_admin": "rule:admin_required or rule:service_role",
-    "cloud_viewer": "role:cloud_identity_viewer or rule:service_role",
+    "cloud_viewer": "role:cloud_identity_viewer or rule:service_role or rule:cloud_admin",
     "owner": "user_id:%(user_id)s or user_id:%(target.token.user_id)s",
     "admin_or_owner": "(rule:admin_required and domain_id:%(target.token.user.domain.id)s) or rule:owner",
     "admin_and_matching_domain_id": "rule:admin_required and domain_id:%(domain_id)s",
@@ -44,7 +40,7 @@
     "admin_and_matching_project_domain_id": "rule:admin_required and domain_id:%(project.domain_id)s",
     "identity:get_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id or project_id:%(target.project.id)s or rule:cloud_viewer",
     "identity:list_projects": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:cloud_viewer",
-    "identity:list_user_projects": "rule:owner or rule:admin_and_matching_domain_id",
+    "identity:list_user_projects": "rule:owner or rule:admin_and_matching_domain_id or rule:cloud_viewer",
     "identity:create_project": "rule:cloud_admin or rule:admin_and_matching_project_domain_id",
     "identity:update_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id",
     "identity:delete_project": "rule:cloud_admin",
@@ -109,17 +105,10 @@
     "admin_and_matching_prior_role_domain_id": "rule:admin_required and domain_id:%(target.prior_role.domain_id)s",
     "implied_role_matches_prior_role_domain_or_global": "(domain_id:%(target.implied_role.domain_id)s or None:%(target.implied_role.domain_id)s)",
 
-{{- if eq .Values.release "newton" }}
-    "identity:get_implied_role": "rule:cloud_admin or rule:cloud_viewer",
-    "identity:list_implied_roles": "rule:cloud_admin or rule:cloud_viewer",
-    "identity:create_implied_role": "rule:cloud_admin",
-    "identity:delete_implied_role": "rule:cloud_admin",
-{{ else }}
     "identity:get_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id or rule:cloud_viewer",
     "identity:list_implied_roles": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id or rule:cloud_viewer",
     "identity:create_implied_role": "rule:cloud_admin or (rule:admin_and_matching_prior_role_domain_id and rule:implied_role_matches_prior_role_domain_or_global)",
     "identity:delete_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id",
-{{- end }}
     "identity:list_role_inference_rules": "rule:cloud_admin or rule:cloud_viewer",
     "identity:check_implied_role": "rule:cloud_admin or rule:admin_and_matching_prior_role_domain_id or rule:cloud_viewer",
 
@@ -133,7 +122,7 @@
     "identity:create_system_grant_for_group": "rule:admin_required",
     "identity:revoke_system_grant_for_group": "rule:admin_required",
 
-    "blacklist_roles": "'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s or 'cloud_identity_viewer':%(target.role.name)s",
+    "blacklist_roles": "'cloud_registry_admin':%(target.role.name)s or 'cloud_registry_viewer':%(target.role.name)s or 'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s or 'cloud_identity_viewer':%(target.role.name)s",
     "blacklist_projects": "'{{.Values.api.cloudAdminProjectId}}':%(target.project.id)s",
     "identity:check_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants",
     "identity:list_grants": "rule:cloud_admin or rule:domain_admin_for_list_grants or rule:project_admin_for_list_grants",

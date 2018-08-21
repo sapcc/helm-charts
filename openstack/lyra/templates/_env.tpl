@@ -27,6 +27,10 @@
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.password } }
 - name: MONSOON_SWIFT_TEMP_URL_KEY
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.swift.tempURLKey } }
+{{- if .Values.omnitruck.enabled }}
+- name: OMNITRUCK_URL
+  value: https://{{ required ".Values.omnitruck.host missing" .Values.omnitruck.host }}
+{{- end }}
 {{- if .Values.sentryDSN }}
 - name: SENTRY_DSN
 {{- if eq .Values.sentryDSN "auto" }}

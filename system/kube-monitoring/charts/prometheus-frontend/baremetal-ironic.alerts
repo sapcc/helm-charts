@@ -1,0 +1,41 @@
+groups:
+- name: baremetal-ironic.alerts
+  rules:
+  - alert: BaremetalIronicSensorWarning
+    expr: sum(ipmi_sensor_state == 1) by (instance, type, name)
+    for: 5m
+    labels:
+      severity: warning
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.name }}"
+      dashboard: #TODO
+    annotations:
+      description: ironic node {{ $labels.instance }} hardware sensor warning ({{ $labels.name }}, {{ $labels.type }}) for 5 minutes.
+      summary: Sensor Warning for instance {{ $labels.instance }}
+      
+  - alert: BaremetalIronicSensorCritical
+    expr: sum(ipmi_sensor_state == 2) by (instance, type, name)
+    for: 2m
+    labels:
+      severity: critical
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.name }}"
+      dashboard: #TODO
+    annotations:
+      description: ironic node {{ $labels.instance }} hardware sensor critical ({{ $labels.name }}, {{ $labels.type }}) for 2 minutes.
+      summary: Sensor Critical for instance {{ $labels.instance }}
+      
+  - alert: BaremetalIronicDown
+    expr: sum(ipmi_up == 0) by (instance)
+    for: 2m
+    labels:
+      severity: critical
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.instance }}"
+      dashboard: #TODO
+    annotations:
+      description: ipmi metrics are down for instance {{ $labels.instance }}.
+      summary: ipmi metrics are down for instance {{ $labels.instance }}

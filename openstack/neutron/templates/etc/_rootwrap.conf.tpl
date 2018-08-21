@@ -4,7 +4,7 @@
 [DEFAULT]
 # List of directories to load filter definitions from (separated by ',').
 # These directories MUST all be only writeable by root !
-filters_path=/etc/neutron/rootwrap.d,/usr/share/neutron/rootwrap
+filters_path=/etc/neutron/rootwrap.d,/usr/share/neutron/rootwrap,/var/lib/openstack/etc/neutron/rootwrap.d
 
 # List of directories to search executables in, in case filters do not
 # explicitely specify a full path (separated by ',')

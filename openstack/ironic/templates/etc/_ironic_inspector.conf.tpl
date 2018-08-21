@@ -1,5 +1,5 @@
 [DEFAULT]
-log-config-append = /etc/ironic/logging.ini
+log_config_append = /etc/ironic/logging.ini
 
 enabled_drivers = {{.Values.enabled_drivers | default "pxe_ipmitool,agent_ipmitool"}}
 enabled_network_interfaces = noop,flat,neutron
@@ -38,6 +38,8 @@ enroll_node_driver = agent_ipmitool
 [database]
 connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectordbPassword | include "db_url" }}
 {{- include "ini_sections.database_options" . }}
+
+{{- include "ini_sections.audit_middleware_notifications" . }}
 
 [keystone_authtoken]
 auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}

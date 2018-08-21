@@ -1,0 +1,216 @@
+kind: Deployment
+apiVersion: extensions/v1beta1 
+
+metadata:
+  name: blackbox-tests-regression
+
+spec:
+  replicas: {{.Values.global.replicaCount}}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: blackbox-tests-regression
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: blackbox-tests-regression
+          persistentVolumeClaim:
+            claimName: blackbox-tests-regression
+        - name: blackbox-jump-key
+          secret:
+            secretName: blackbox-tests-regression
+            items:
+              - key: jump.key
+                path: authorized_keys.health
+                mode: 0600
+      containers:
+        - name: pytest
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - "-n 4"
+            - "--timeout 5400"
+            - "--disable-pytest-warnings"
+            - "-r a"
+            - "tests/test_ironic.py"
+            - "-k test_create_bm_server"
+          volumeMounts:
+            - name: blackbox-tests-regression
+              mountPath: /opt/logs
+              readOnly: false
+            - name: blackbox-jump-key
+              mountPath: /opt/keys
+              readOnly: true
+          env:
+            - name: OS_AUTH_URL
+              value: {{ .Values.global.openstack.auth_url | quote }}
+            - name: OS_IDENTITY_API_VERSION
+              value: {{ .Values.global.openstack.identity_api_version | quote }}
+            - name: OS_VOLUME_API_VERSION
+              value: {{ .Values.global.openstack.volume_api_version | quote }}
+            - name: OS_USERNAME
+              value: {{ .Values.global.openstack.users.admin.username | quote }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.user_domain_name | quote }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.global.openstack.users.admin.project_name | quote }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.project_domain_name | quote }}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.openstack.region_name | quote }}
+            - name: CC_USERNAME
+              value: {{ .Values.global.openstack.users.ccadmin.username | quote }}
+            - name: CC_USER_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.ccadmin.user_domain_name | quote }}
+            - name: CC_PROJECT_NAME
+              value: {{ .Values.global.openstack.users.ccadmin.project_name | quote }}
+            - name: CC_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.ccadmin.project_domain_name | quote }}
+            - name: JUMP_URL
+              value: {{ .Values.global.jump.url | quote }}
+            - name: JUMP_USER
+              value: {{ .Values.global.jump.user | quote }}
+            - name: STATSD_HOST
+              value: "localhost"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: "blackbox-regression"
+            - name: REGRESSION_PROJECT_ID
+              value: {{ .Values.project_id | quote }}
+            - name: REGRESSION_PROJECT_NAME
+              value: {{ .Values.project_name | quote }}
+            - name: REGRESSION_PROJECT_DOMAIN
+              value: {{ .Values.project_domain | quote }}
+            - name: REGRESSION_FIXED_NETWORK_ID
+              value: {{ .Values.fixed_network_id | quote }}
+            - name: REGRESSION_FLOAT_NETWORK_ID
+              value: {{ .Values.float_network_id | quote }}
+            - name: REGRESSION_JUMP_HOST_FLOAT_IPS
+              value: {{ .Values.jump_host_ips | quote }}
+            - name: REGRESSION_BM_IMAGE_NAME
+              value: {{ .Values.baremetal.image_name | quote }}
+            - name: REGRESSION_BM_FLAVOR_NAME
+              value: {{ .Values.baremetal.flavor_name | quote }}
+            - name: REGRESSION_BM_NODES
+              value: {{ .Values.baremetal.nodes | quote }}
+            - name: REGRESSION_BM_TIMEOUT
+              value: {{ .Values.baremetal.timeout | quote }}
+            - name: TIMEOUT
+              value: {{ .Values.timeout | quote }}
+            - name: SLEEP_ITERATE
+              value: {{ .Values.sleep.iterate | quote }}
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-regression
+                  key: os.password
+            - name: CC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-regression
+                  key: cc.password
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: blackbox.DSN
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
+        - name: purger
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+{{- end }}
+          args:
+            - "purge"
+            - "python helper/purge_resources.py"
+            - "-t baremetal"
+            - "-r 3600"
+            - "server"
+          volumeMounts:
+            - name: blackbox-tests-regression
+              mountPath: /opt/logs
+              readOnly: false
+          env:
+            - name: OS_AUTH_URL
+              value: {{ .Values.global.openstack.auth_url | quote }}
+            - name: OS_IDENTITY_API_VERSION
+              value: {{ .Values.global.openstack.identity_api_version | quote }}
+            - name: OS_USERNAME
+              value: {{ .Values.global.openstack.users.admin.username | quote }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.user_domain_name | quote }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.global.openstack.users.admin.project_name | quote }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.project_domain_name | quote }}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.openstack.region_name | quote }}
+            - name: REGRESSION_PROJECT_ID
+              value: {{ .Values.project_id | quote }}
+            - name: REGRESSION_PROJECT_NAME
+              value: {{ .Values.project_name | quote }}
+            - name: REGRESSION_PROJECT_DOMAIN
+              value: {{ .Values.project_domain | quote }}
+            - name: SLEEP_PURGE
+              value: {{ .Values.sleep.purge | quote }}
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-regression
+                  key: os.password
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
+        - name: statsd
+          image: prom/statsd-exporter:v0.5.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.port_metrics}}

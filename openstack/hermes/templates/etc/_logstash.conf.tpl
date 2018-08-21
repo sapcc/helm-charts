@@ -7,9 +7,10 @@ rabbitmq {
     user => {{ $value.user | default $.Values.hermes.rabbitmq.user | quote }}
     password => {{ $value.password | quote }}
     port => {{ $.Values.hermes.rabbitmq.port }}
-    queue => {{ $.Values.hermes.rabbitmq.queue_name | quote }}
+    queue => {{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name | quote }}
     subscription_retry_interval_seconds => 60
-    automatic_recovery => false
+    automatic_recovery => true
+    durable => {{ $value.durable | default false }}
   }
 {{ end }}
 }
@@ -161,6 +162,8 @@ output {
         template_overwrite => true
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
+        # retry_max_interval default 64
+        retry_max_interval => 10
     }
   } else {
     elasticsearch {
@@ -170,6 +173,8 @@ output {
         template_overwrite => true
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
+        # retry_max_interval default 64
+        retry_max_interval => 10
     }
   }
   # cc the target tenant
@@ -181,6 +186,8 @@ output {
         template_overwrite => true
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
         flush_size => 500
+        # retry_max_interval default 64
+        retry_max_interval => 10
     }
   }
 }

@@ -54,6 +54,9 @@ spec:
           }
 {{- end }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: keystone
+{{- end }}
       containers:
         - name: keystone-api
           image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
@@ -135,6 +138,12 @@ spec:
               mountPath: /etc/keystone/sso_callback_template.html
               subPath: sso_callback_template.html
               readOnly: true
+            {{- if .Values.watcher.enabled }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/watcher.yaml
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
             - name: keystone-etc
               mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
               subPath: wsgi-keystone.conf

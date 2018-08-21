@@ -35,6 +35,7 @@ pod:
 
 agent:
   enable_daemonset: false
+  disable_deployments: false
   image_tag: mitaka
   image_name: neutron
 
@@ -45,6 +46,8 @@ api:
 debug: "True"
 
 port_metrics: '9102'
+l2_port_metrics: '9102'
+l3_port_metrics: '9103'
 
 image_tag: mitaka
 image_name: neutron
@@ -60,9 +63,13 @@ aci:
   apic_password: DEFINED-IN-REGION-CHART
   apic_tenant_name: DEFINED-IN-REGION-CHART
   apic_application_profile: converged_cloud_openstack
-
+  support_remote_mac_clear: 'True'
+  
 arista:
-  physnet: DEFINED-IN-REGION-CHART
+  api_type: nocvx
+  sync_interval: 60
+  conn_timeout: 30
+  lossy_consolidation_limit: 50
   eapi_host: DEFINED-IN-REGION-CHART
   eapi_username: DEFINED-IN-REGION-CHART
   eapi_password: DEFINED-IN-REGION-CHART
@@ -72,6 +79,7 @@ arista:
       password: DEFINED-IN-REGION-CHART
 
 asr:
+  snat_mode: pool
   config_agents: []
 
 f5:
@@ -95,7 +103,6 @@ cisco_ucsm_bm:
     user: DEFINED-IN-REGION-CHART
     password: DEFINED-IN-REGION-CHART
     physical_network: DEFINED-IN-REGION-CHART
-    password: DEFINED-IN-REGION-CHART
     vnic_paths: DEFINED-IN-REGION-CHART
 
 
@@ -258,6 +265,10 @@ postgresql:
 
   backup:
     enabled: false
+    image_version: v0.5.15
+
+sentry:
+  enabled: true
 
 audit:
   enabled: false 
@@ -269,3 +280,11 @@ audit:
 
 rabbitmq_notifications:
   name: neutron
+
+secgroup_entanglement_exporter:
+  image_tag: DEFINED_IN_VALUES_FILE
+  release:   DEFINED_IN_VALUES_FILE # Neutron release in lower case, e.g. "queens"
+
+# openstack-watcher-middleware
+watcher:
+  enabled: false

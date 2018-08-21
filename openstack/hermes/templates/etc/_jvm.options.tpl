@@ -19,8 +19,11 @@
 # Xms represents the initial size of total heap space
 # Xmx represents the maximum size of total heap space
 
--Xms12g
--Xmx12g
+-Xms16g
+-Xmx16g
+
+## Force the JVM to use IPv4 stack
+-Djava.net.preferIPv4Stack=true
 
 ################################################################
 ## Expert settings

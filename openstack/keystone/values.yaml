@@ -20,11 +20,11 @@ run_db_migration: False
 skipRepairRoleAssignments: False
 
 # current keystone release
-release: newton
+release: queens
 
 api:
   image: "monsoon/loci-keystone"
-  imageTag: newton-20180201082553
+  imageTag: queens-20180814091359
 
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
@@ -73,7 +73,7 @@ api:
 
   auth:
   # Allowed authentication methods. (list value)
-    methods: password,token,totp,external,oauth1
+    methods: password,token,totp,external,oauth1,application_credential
     password: cc_password   # CCloud password auth method with EWS mirroring
     totp: cc_radius         # SecurID via totp auth method/plugin
     external: cc_x509       # x509 client certificate based authentication
@@ -104,11 +104,11 @@ api:
     access_token_duration: 0
 
   metrics:
-    enabled: false
+    enabled: true
     port: '9102'
 
     image: prom/statsd-exporter
-    imageTag: v0.4.0
+    imageTag: v0.5.0
     prefix: openstack
 
     resources:
@@ -143,7 +143,7 @@ api:
 
 cron:
   image: "monsoon/loci-keystone"
-  imageTag: newton-20180201082553
+  imageTag: queens-20180814091359
 
   cronSchedule: "0 * * * *"
 
@@ -159,14 +159,20 @@ cron:
       memory: "1024Mi"
       cpu: "2000m"
 
-  replicas: 1
-
   upgrades:
     revisionHistory: 3
     podReplacementStrategy: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
       maxSurge: 3
+
+tempest:
+  image: "monsoon/ubuntu-source-rally"
+  imageTag: "queens-latest"
+  adminPassword: DEFINE_IN_REGION_VALUES
+  userPassword: DEFINE_IN_REGION_VALUES
+# tempest domain-id  -- do not set in production environments!
+  domainId: not_set_this_in_production
 
 sentry:
   enabled: false
@@ -218,7 +224,6 @@ rabbitmq:
     enabled: true
     password: openstack
 
-
 memcached:
   ## default: {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
   # host: memcached
@@ -240,20 +245,12 @@ postgresql:
 
   backup:
     enabled: false
+    imageTag: v0.5.15
 
 pgmetrics:
   db_name: keystone
 
   customMetrics:
-    pg_database:
-      query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
-      metrics:
-        - datname:
-            usage: "LABEL"
-            description: "Name of the database"
-        - size_bytes:
-            usage: "GAUGE"
-            description: "Size of the database in bytes"
     openstack_roles_total:
       query: "SELECT COUNT(*) as gauge FROM role"
       metrics:
@@ -298,4 +295,7 @@ pgmetrics:
             description: "Total keystone token revocation count"
 
 rbac:
-  create: false
+  enabled: false
+
+watcher:
+  enabled: true

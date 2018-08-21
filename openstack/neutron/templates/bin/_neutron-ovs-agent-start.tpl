@@ -64,14 +64,19 @@ function configure_bridge {
 
 
 function _start_application {
+    until ! pgrep -f /var/lib/openstack/bin/neutron-openvswitch-agent; do
+      echo "Waiting to be the only highlander"
+      sleep 5
+    done
+    touch /var/lib/neutron/neutron-ovs-agent-ready
+
+    configure_bridge
 
     exec  neutron-openvswitch-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini
 }
 
 
 process_config
-
-configure_bridge
 
 start_application
 

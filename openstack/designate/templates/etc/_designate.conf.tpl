@@ -250,10 +250,10 @@ insecure = True
 #-----------------------
 [service:mdns]
 # Number of mdns worker processes to spawn
-#workers = None
+workers = 1
 
 # Number of mdns greenthreads to spawn
-#threads = 1000
+threads = 1000
 
 # mDNS Bind Host
 host = 0.0.0.0
@@ -321,10 +321,10 @@ query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 enabled = {{.Values.worker_enabled}}
 
 # Number of Worker processes to spawn
-#workers = None
+workers = 1
 
 # Number of Worker greenthreads to spawn
-#threads = 1000
+threads = 1000
 
 # The percentage of servers requiring a successful update for a zone change
 # to be considered active

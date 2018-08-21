@@ -7,10 +7,18 @@ use = egg:Paste#urlmap
 {{- if .Values.audit.enabled }} audit{{- end -}}
 {{- end }}
 
+{{- define "watcher_pipe" -}}
+{{- if .Values.watcher.enabled }} watcher{{- end -}}
+{{- end }}
+
+{{- define "sentry_pipe" -}}
+{{- if .Values.sentry.enabled }} raven{{- end -}}
+{{- end }}
+
 [composite:neutronapi_v2_0]
 use = call:neutron.auth:pipeline_factory
-noauth = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id statsd catch_errors sentry extensions neutronapiapp_v2_0
-keystone = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id statsd catch_errors sentry authtoken keystonecontext {{- include "audit_pipe" . }} extensions neutronapiapp_v2_0
+noauth = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id  {{- include "watcher_pipe" . }} catch_errors {{- include "sentry_pipe" . }} extensions neutronapiapp_v2_0
+keystone = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id catch_errors {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} extensions neutronapiapp_v2_0
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
@@ -48,16 +56,14 @@ paste.app_factory = neutron.api.v2.router:APIRouter.factory
 [pipeline:neutronversions]
 pipeline = http_proxy_to_wsgi healthcheck neutronversionsapp
 
-# Converged Cloud statsd & sentry middleware
-[filter:statsd]
-use = egg:ops-middleware#statsd
-
-[filter:sentry]
-use = egg:ops-middleware#sentry
-level = ERROR
-
 [filter:osprofiler]
 paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
+
+{{- if .Values.sentry.enabled }}
+[filter:raven]
+use = egg:raven#raven
+level = ERROR
+{{- end }}
 
 {{ if .Values.audit.enabled }}
 [filter:audit]
@@ -66,4 +72,11 @@ audit_map_file = /etc/neutron/neutron_audit_map.yaml
 ignore_req_list = GET
 record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
+{{- end }}
+
+{{ if .Values.watcher.enabled }}
+[filter:watcher]
+use = egg:watcher-middleware#watcher
+service_type = network
+config_file = /etc/neutron/watcher.yaml
 {{- end }}

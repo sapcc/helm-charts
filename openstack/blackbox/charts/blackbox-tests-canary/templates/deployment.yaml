@@ -41,7 +41,7 @@ spec:
             - "iterate"
             - "pytest"
             - "-n 4"
-            - "--timeout 360"
+            - "--timeout 600"
             - "--disable-pytest-warnings"
             - "-r a"
             - "-m canary"
@@ -82,6 +82,8 @@ spec:
               value: {{ .Values.global.jump.url | quote }}
             - name: JUMP_USER
               value: {{ .Values.global.jump.user | quote }}
+            - name: VC_USERNAME
+              value: {{ .Values.global.vcenter.username | quote }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
@@ -94,6 +96,8 @@ spec:
               value: {{ .Values.project_name | quote }}
             - name: CANARY_PROJECT_DOMAIN
               value: {{ .Values.project_domain | quote }}
+            - name: CANARY_JUMP_HOST_FLOAT_IPS
+              value: {{ .Values.jump_host_ips | quote }}
             - name: CANARY_IMAGE_NAME
               value: {{ .Values.image_name | quote }}
             - name: CANARY_FLAVOR_ID
@@ -124,11 +128,18 @@ spec:
                 secretKeyRef:
                   name: blackbox-tests-canary
                   key: cc.password
+            - name: VC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-canary
+                  key: vc.password
+{{- if .Values.osprofiler  }}
             - name: OS_PROFILER_HMACS
               valueFrom:
                 secretKeyRef:
                   name: blackbox-tests-canary
                   key: os.profiler.hmacs
+{{- end }}
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
@@ -161,7 +172,7 @@ spec:
             - "purge"
             - "python helper/purge_resources.py"
             - "-n c_blackbox"
-            - "-r 300"
+            - "-r 600"
             - "all"
           volumeMounts:
             - name: blackbox-tests-canary

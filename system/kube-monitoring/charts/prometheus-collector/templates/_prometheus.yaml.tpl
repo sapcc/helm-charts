@@ -43,7 +43,42 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_service_name]
     target_label: kubernetes_name
 
-# Example scrape config for pods
+# Scrape config for endpoints with an additional port for metrics via `prometheus.io/port_1` annotation.
+#
+# * `prometheus.io/scrape`: Only scrape pods that have a value of `true`
+# * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
+# * `prometheus.io/port_1`: Scrape the pod on the indicated port instead of the default of `9102`.
+- job_name: 'endpoints_metric_port_1'
+  kubernetes_sd_configs:
+  - role: endpoints
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+    regex: true
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port_1]
+    regex: \d+
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_service_annotation_prometheus_io_port_1]
+    regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
+  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+    target_label: __scheme__
+    regex: (https?)
+  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port_1]
+    target_label: __address__
+    regex: ([^:]+)(?::\d+);(\d+)
+    replacement: $1:$2
+  - action: labelmap
+    regex: __meta_kubernetes_service_label_(.+)
+  - source_labels: [__meta_kubernetes_namespace]
+    target_label: kubernetes_namespace
+  - source_labels: [__meta_kubernetes_service_name]
+    target_label: kubernetes_name
+
+# Scrape config for pods
 #
 # The relabeling allows the actual pod scrape endpoint to be configured via the
 # following annotations:
@@ -75,6 +110,37 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
 
+# Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
+#
+# * `prometheus.io/scrape`: Only scrape pods that have a value of `true`
+# * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
+# * `prometheus.io/port_1`: Scrape the pod on the indicated port instead of the default of `9102`.
+- job_name: 'pods_metric_port_1'
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+    regex: true
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port_1]
+    regex: \d+
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_pod_annotation_prometheus_io_port_1]
+    regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port_1]
+    target_label: __address__
+    regex: ([^:]+)(?::\d+);(\d+)
+    replacement: ${1}:${2}
+  - action: labelmap
+    regex: __meta_kubernetes_pod_label_(.+)
+  - source_labels: [__meta_kubernetes_namespace]
+    target_label: kubernetes_namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    target_label: kubernetes_pod_name
 
 - job_name: 'kube-system/etcd'
   kubernetes_sd_configs:
@@ -272,7 +338,7 @@ scrape_configs:
       replacement: /api/v1/nodes/${1}:4194/proxy/metrics
 {{ end -}}
 
-{{ range $region := .Values.global.regions }}
+{{- range $region := .Values.global.regions }}
 - job_name: 'blackbox-ingress-{{ $region }}'
   metrics_path: /probe
   params:
@@ -290,6 +356,9 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_code]
     regex: ^(\d).+
     replacement: http_${1}xx
+    target_label: __param_module
+  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_module]
+    regex: (.+)
     target_label: __param_module
   - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_path]
     regex: ^(\/.+)
@@ -312,11 +381,38 @@ scrape_configs:
     target_label: module
   - target_label: region_probed_from
     replacement: {{ $region }}
+{{- end }}
+
+{{ $root := .Values }}
+{{- if .Values.blackbox_exporter }}
+{{- if .Values.blackbox_exporter.static_config }}
+{{- range $module, $module_config := .Values.blackbox_exporter.static_config }}
+- job_name: 'blackbox-static-targets-{{ $module }}'
+  metrics_path: /probe
+  params:
+    module: [{{ $module }}]
+  static_configs:
+    - targets:
+      {{- range  $module_config.targets }}
+      - {{ . }}
+      {{- end }}
+  scheme: https
+  relabel_configs:
+  - source_labels: [__address__]
+    target_label: __param_target
+  - source_labels: [__param_target]
+    target_label: instance
+  - target_label: __address__
+    replacement: prober.{{ $root.global.region }}.cloud.sap
+  - source_labels: [__param_module]
+    target_label: module
+  - target_label: region_probed_from
+    replacement: {{ $root.global.region }}
+{{ end }}
 {{ end }}
 
-{{ if .Values.blackbox_exporter }}
-{{ if .Values.blackbox_exporter.tcp_probe_targets }}
-{{ range $region := .Values.global.regions }}
+{{- if .Values.blackbox_exporter.tcp_probe_targets }}
+{{- range $region := .Values.global.regions }}
 - job_name: 'blackbox-tcp-{{ $region }}'
   metrics_path: /probe
   scrape_interval: 15s
@@ -339,9 +435,43 @@ scrape_configs:
     target_label: module
   - target_label: region_probed_from
     replacement: {{ $region }}
-{{ end }}
-{{ end }}
-{{ end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.global.ipmi_exporter.enabled }}
+- job_name: 'ipmi-{{ .Values.global.region }}'
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /custom_targets/ipmi_targets.json
+  metrics_path: /ipmi
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: ipmi-exporter:9290
+{{- end }}
+
+{{- if .Values.global.arista_exporter.enabled }}
+- job_name: 'arista-{{ .Values.global.region }}'
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /custom_targets/arista_targets.json
+  metrics_path: /arista
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: arista-exporter:9200
+{{- end }}
 
 # Static Targets 
 #

@@ -30,7 +30,7 @@ redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubern
     {{- if $options.enabled }}
 
 [profiler]
-osprofiler_connect_string = {{ include "osprofiler_url" . }}
+connection_string = {{ include "osprofiler_url" . }}
         {{- range $key, $value := $options }}
             {{- if not (kindIs "map" $value) }}
 {{ $key }} = {{ $value }}

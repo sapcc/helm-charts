@@ -11,6 +11,7 @@ groups:
       context: node
       meta: "{{ $labels.instance }}"
       dashboard: kubernetes-health
+      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
     annotations:
       description: Many Nodes are NotReady
       summary: Many ({{$value}}) nodes are NotReady for more than an hour
@@ -21,11 +22,11 @@ groups:
     labels:
       tier: kubernetes
       service: k8s
-      severity: critical
+      severity: warning
       context: node
       meta: "{{ $labels.instance }}"
       dashboard: kubernetes-node?var-server={{$labels.instance}}
-      playbook: docs/support/playbook/k8s_node_not_ready.html
+      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
     annotations:
       description: Node status is NotReady
       summary: Node {{$labels.node}} is NotReady for more than an hour
@@ -36,7 +37,7 @@ groups:
     labels:
       tier: kubernetes
       service: k8s
-      severity: critical
+      severity: warning
       context: node
       meta: "{{ $labels.instance }}"
       dashboard: "kubernetes-node?var-server={{$labels.instance}}"
@@ -44,18 +45,18 @@ groups:
       description: Node readiness is flapping
       summary: Node {{$labels.node}} is flapping between Ready and NotReady
 
-  - alert: KubernetesNodeScrapeMissing
-    expr: absent(up{job="endpoints",kubernetes_name="kube-state-metrics"})
+  - alert: KubernetesKubeStateMetricsScrapeFailed
+    expr: absent(up{app="kube-state-metrics"})
     for: 1h
     labels:
       tier: kubernetes
       service: k8s
-      severity: critical
+      severity: warning
       context: node
       dashboard: kubernetes-health
     annotations:
-      description: Node status cannot be scraped
-      summary: Node status failed to be scraped
+      description: Failed to scrape kube-state-metrics. Metrics on the cluster state might be outdated. Check the kube-monitoring/kube-state-metrics deployment.
+      summary: Kube state metrics scrape failed
 
   - alert: KubernetesPodRestartingTooMuch
     expr: rate(kube_pod_container_status_restarts[15m]) > 0
@@ -102,25 +103,12 @@ groups:
     labels:
       tier: kubernetes
       service: k8s
-      severity: critical
+      severity: warning
       context: scheduler
       dashboard: kubernetes-health
     annotations:
       description: Scheduler in failed to be scraped
       summary: Scheduler cannot be scraped
-
-  - alert: KubernetesControllerManagerDown
-    expr: count(up{job="kube-system/controller-manager"} == 1) == 0
-    for: 5m
-    labels:
-      tier: kubernetes
-      service: k8s
-      severity: critical
-      context: controller-manager
-      dashboard: kubernetes-health
-    annotations:
-      description: No controller-manager is running. Deployments and replication controllers are not making progress
-      summary: Controller manager is down
 
   - alert: KubernetesControllerManagerDown
     expr: count(up{job="kube-system/controller-manager"} == 1) == 0
@@ -141,7 +129,7 @@ groups:
     labels:
       tier: kubernetes
       service: k8s
-      severity: critical
+      severity: warning
       context: controller-manager
       dashboard: kubernetes-health
     annotations:
@@ -182,6 +170,7 @@ groups:
       service: deployment
       severity: info
       context: deployment
+      meta: "{{ $labels.deployment }}"
     annotations:
       description: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has {{ $value }} replica available, which is less then desired
       summary: Deployment has less than desired replicas since 10m

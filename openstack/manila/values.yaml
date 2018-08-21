@@ -10,10 +10,12 @@ global:
   master_password: ""
   pgbouncer:
     enabled: true
+  metrics_port: 9102
+  osprofiler: {}
 
 api_port_internal: '8786'
 debug: "True"
-image_version: pike-20180518.1
+imageVersionManilaApi: pike-20180809.1
 
 logging:
   formatters:
@@ -33,6 +35,7 @@ logging:
     sentry:
       class: "raven.handlers.logging.SentryHandler"
       level: ERROR
+      transport: ThreadedRequestsHTTPTransport
       args: "()"
   loggers:
     root:
@@ -70,7 +73,9 @@ memcached:
   metrics:
     enabled: true
 
-image_version_manila_nanny: '20180412140924'
+imageVersionManilaNanny: pike-20180814080537
+imageVersionRally: queens-20180726.1
+imageVersionNetappManilaNanny: pike-20180627131707
 nanny:
   enabled: true
   # debug mode - no script run in the containers, just a sleep loop
@@ -93,6 +98,10 @@ nanny:
     enabled: false
     # dry run mode, i.e. just check for objects without valid project without fixing it
     dry_run: true
+  netapp:
+    interval: 240
+
+osprofiler: {}
 
 pgmetrics:
   dependencyJobs: "monsoon3:manila-migration"
@@ -210,6 +219,7 @@ pod:
            max_surge: 1
 
 postgresql:
+  custom_configmap: false
   imageTag: '9.4.14'
   postgresDatabase: manila
   dbInit: manila-db-init
@@ -222,8 +232,18 @@ postgresql:
   backup:
     enabled: true
     metrics: true
-    imageTag: v0.5.12
     os_password: null
+  # metrics:
+  #   customMetrics:
+  #     pg_database:
+  #       query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
+  #       metrics:
+  #         - datname:
+  #             usage: "LABEL"
+  #             description: "Name of the database"
+  #         - size_bytes:
+  #             usage: "GAUGE"
+  #             description: "Size of the database in bytes"
 
 rabbitmq:
   persistence:
@@ -231,6 +251,17 @@ rabbitmq:
 
 sentry:
   enabled: true
+
+tempest:
+  domain_id: null
+  enabled: false
+  revert_to_snapshot_tests: false
+  share_network_id: null
+  alt_share_network_id: null
+  admin_share_network_id: null
+
+unittest:
+  enabled: false
 
 # Dictionary mapping availability-zones to shares
 # shares:
@@ -261,3 +292,7 @@ audit:
 
 rabbitmq_notifications:
   name: manila
+
+# openstack-watcher-middleware
+watcher:
+  enabled: true

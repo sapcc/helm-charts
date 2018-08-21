@@ -22,6 +22,11 @@ function prepare_system {
 
 
 function _start_application {
+    until ! pgrep -f /usr/sbin/ovsdb-server; do
+      echo "Waiting to be the only highlander"
+      sleep 5
+    done
+    touch /var/lib/neutron/neutron-ovs-db-ready
 
     if command -v dumb-init >/dev/null 2>&1; then
         exec dumb-init /usr/sbin/ovsdb-server /etc/openvswitch/conf.db -vconsole:emer -vsyslog:err -vfile:info --remote=punix:/var/run/openvswitch/db.sock --pidfile=/var/run/openvswitch/ovsdb-server.pid

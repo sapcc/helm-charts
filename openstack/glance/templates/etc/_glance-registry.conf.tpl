@@ -1,7 +1,7 @@
 [DEFAULT]
 debug = {{.Values.registry.debug}}
 
-log_config_append = /etc/glance/logging.conf
+log_config_append = /etc/glance/logging.ini
 
 #disable default admin rights for role 'admin'
 admin_role = ''
@@ -31,3 +31,5 @@ flavor = keystone
 
 [oslo_messaging_notifications]
 driver = noop
+
+{{- include "ini_sections.cache" . }}

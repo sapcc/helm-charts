@@ -1,4 +1,7 @@
+{{/* only deploy this seed if Ironic is installed in this region */}}
 {{- if .Values.limes.clusters.ccloud -}}
+{{- range .Values.limes.clusters.ccloud.capacitors -}}
+{{- if eq .id "sapcc-ironic" -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -17,4 +20,7 @@ spec:
         roles:
           - user: limes@Default
             role: cloud_baremetal_admin
+
+{{- end -}}
+{{- end -}}
 {{- end -}}

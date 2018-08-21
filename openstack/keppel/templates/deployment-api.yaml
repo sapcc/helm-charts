@@ -1,0 +1,53 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: keppel-api
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      app: keppel-api
+  template:
+    metadata:
+      labels:
+        app: keppel-api
+      annotations:
+        checksum: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: keppel
+      containers:
+        - name: api
+          image: {{include "keppel_image" .}}
+          imagePullPolicy: {{.Values.keppel.image_pull_policy}}
+          command: [ /usr/bin/keppel-api ]
+          args: [ /etc/keppel/keppel-api.yaml ]
+          env:
+            - name: KEPPEL_DEBUG
+              value: '0'
+          volumeMounts:
+            - mountPath: /etc/keppel
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5

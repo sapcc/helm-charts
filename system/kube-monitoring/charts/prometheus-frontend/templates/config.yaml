@@ -28,6 +28,13 @@ data:
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
   {{- end}}
+  # add baremetal alerts
+  {{- if .Values.alerting.baremetal }}
+  {{- range $path, $bytes := .Files.Glob "baremetal-*.alerts" }}
+  {{ printf "%s" $path }}: |
+{{ printf "%s" $bytes | indent 4 }}
+  {{- end }}
+  {{- end }}
 {{- end }}
 
   prometheus.yaml: |
@@ -85,21 +92,25 @@ data:
           - '{__name__=~"^http_.+"}'
           - '{__name__=~"^inframonitor_.+"}'
           - '{__name__=~"^ingress_.+"}'
+          - '{__name__=~"^ipmi_.+"}'
           - '{__name__=~"^keystone_.+"}'
           - '{__name__=~"^kube_.+"}'
           - '{__name__=~"^kubelet_.+"}'
           - '{__name__=~"^limes_.+"}'
+          - '{__name__=~"^logstash_.+"}'
           - '{__name__=~"^machine_cpu_cores"}'
           - '{__name__=~"^machine_memory_bytes"}'
           - '{__name__=~"^maia_.+"}'
           - '{__name__=~"^memcached.+"}'
           - '{__name__=~"^metrics_.+"}'
+          - '{__name__=~"^neutron_asr1k.+"}'
           - '{__name__=~"^nginx_.+"}'
           - '{__name__=~"^node_.+"}'
           - '{__name__=~"^nova_nanny_.+"}'
           - '{__name__=~"^ntp_drift_seconds$"}'
           - '{__name__=~"^openstack_.+"}'
           - '{__name__=~"^pg_.+"}'
+          - '{__name__=~"^pgbouncer_.+"}'
           - '{__name__=~"^probe_success$"}'
           - '{__name__=~"^probe_dns_lookup_time_seconds$"}'
           - '{__name__=~"^probe_duration_seconds$"}'
@@ -122,7 +133,16 @@ data:
           - '{__name__=~"^unbound_.+"}'
           - '{__name__=~"^up"}'
           - '{__name__=~"^vice_president_.+"}'
-          - '{__name__=~"^vcenter_.+"}'
+          - '{__name__=~"^vcenter_datastore_.+$"}'
+          - '{__name__=~"^vcenter_vcenter_api_session_info$"}'
+          - '{__name__=~"^vcenter_disk_numberWrite_summation$"}'
+          - '{__name__=~"^vcenter_nanny.*"}'
+          - '{__name__=~"^vcenter_esx_node_info$"}'
+          - '{__name__=~"^vcenter_vcenter_node_info$"}'
+          - '{__name__=~"^vcenter_SR17629377811$"}'
+          - '{__name__=~"^vcenter_dvswitch_out_of_memory$"}'
+          - '{__name__=~"^vcenter_SR17595168510$"}'
+          - '{__name__=~"^webhook_.+"}'
           - '{__name__=~"^admission|daemonset|deployment|disruption|endpoint|job|namespace|petset|replicaset|serviceaccount.+"}'
           - '{job="dns-sd"}'
 

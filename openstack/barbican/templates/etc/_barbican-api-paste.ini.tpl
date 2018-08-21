@@ -1,29 +1,32 @@
 [composite:main]
 use = egg:Paste#urlmap
 /: barbican_version
-/v1: barbican_api
+/v1: barbican-api-keystone
+
+{{- define "watcher_pipe" -}}
+{{- if .Values.watcher.enabled }} watcher{{- end -}}
+{{- end }}
 
 # Use this pipeline for Barbican API - versions no authentication
 [pipeline:barbican_version]
-pipeline = cors versionapp
+pipeline = cors healthcheck versionapp
 
 # Use this pipeline for Barbican API - DEFAULT no authentication
 [pipeline:barbican_api]
-#pipeline = cors unauthenticated-context apiapp
-pipeline = keystone_authtoken context apiapp
+pipeline = cors unauthenticated-context {{- include "watcher_pipe" . }} apiapp
 
 #Use this pipeline to activate a repoze.profile middleware and HTTP port,
 #  to provide profiling information for the REST API processing.
 [pipeline:barbican-profile]
-pipeline = cors unauthenticated-context egg:Paste#cgitb egg:Paste#httpexceptions profile apiapp
+pipeline = cors unauthenticated-context egg:Paste#cgitb egg:Paste#httpexceptions profile {{- include "watcher_pipe" . }} apiapp
 
 #Use this pipeline for keystone auth
 [pipeline:barbican-api-keystone]
-pipeline = cors keystone_authtoken context apiapp
+pipeline = cors keystone_authtoken context {{- include "watcher_pipe" . }} apiapp
 
 #Use this pipeline for keystone auth with audit feature
 [pipeline:barbican-api-keystone-audit]
-pipeline = keystone_authtoken context audit apiapp
+pipeline = keystone_authtoken context {{- include "watcher_pipe" . }} audit apiapp
 
 [app:apiapp]
 paste.app_factory = barbican.api.app:create_main_app
@@ -40,25 +43,17 @@ paste.filter_factory = barbican.api.middleware.context:UnauthenticatedContextMid
 [filter:context]
 paste.filter_factory = barbican.api.middleware.context:ContextMiddleware.factory
 
+[filter:healthcheck]
+paste.filter_factory = oslo_middleware:Healthcheck.factory
+backends = disable_by_file
+disable_by_file_path = /etc/barbican/healthcheck_disable
+
 [filter:audit]
 paste.filter_factory = keystonemiddleware.audit:filter_factory
 audit_map_file = /etc/barbican/api_audit_map.conf
 
 [filter:keystone_authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
-#need ability to re-auth a token, thus admin url
-identity_uri = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357 }}
-admin_tenant_name = {{.Values.global.keystone_service_project | default "service"}}
-admin_user = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-admin_password = {{ .Values.global.barbican_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "$$" }}
-auth_version = v3.0
-#delay failing perhaps to log the unauthorized request in barbican ..
-#delay_auth_decision = true
-# signing_dir is configurable, but the default behavior of the authtoken
-# middleware should be sufficient.  It will create a temporary directory
-# for the user the barbican process is running as.
-#signing_dir = /var/barbican/keystone-signing
-
 
 [filter:profile]
 use = egg:repoze.profile
@@ -72,3 +67,10 @@ unwind = false
 [filter:cors]
 paste.filter_factory = oslo_middleware.cors:filter_factory
 oslo_config_project = barbican
+
+{{ if .Values.watcher.enabled -}}
+[filter:watcher]
+use = egg:watcher-middleware#watcher
+service_type = key-manager
+config_file = /etc/barbican/watcher.yaml
+{{- end }}
