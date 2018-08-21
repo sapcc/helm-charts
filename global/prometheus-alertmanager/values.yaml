@@ -27,12 +27,6 @@ configmap_reload:
 slack:
   webhook_url: DEFINED-IN-SECRETS
 
-pagerduty:
-  service_key: DEFINED-IN-SECRETS
-
-pagerduty_hypervisor:
-  service_key: DEFINED-IN-SECRETS
-
 # creates <tier>-{info, warning, critical} routing and receivers
 tiers:
   - kubernetes
@@ -58,3 +52,18 @@ openstack_services:
   - neutron
   - nova
   - swift
+
+# creates routing and channel for pagerduty
+# the order matters, as an alert is only send to the first matching pagerduty instance (matches by service, tier label)
+pagerduty_services:
+  # name of the pagerduty receiver
+  - name: pagerduty
+    # pagerduty service key
+    service_key: DEFINED-IN-SECRETS
+    # limit alerts to this receiver to the following labels
+    # `severity: critical` is always set
+    match:
+      # limit to alerts with this service label (optional)
+      service: SERVICE-TYPE
+      # limit to alerts with this tier label (optional)
+      tier: SERVICE-TIER
