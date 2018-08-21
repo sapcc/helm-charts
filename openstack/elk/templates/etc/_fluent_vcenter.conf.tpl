@@ -1,12 +1,12 @@
 <source>                                                                                          
-  @type udp                                                                                       
+  @type {{default "udp" .Values.fluent_vcenter.vcenter_logs_in_proto}}                                                                                       
   tag "vcenter"                                                                                   
   format /^(?<message>.*?)$/                                                                      
   bind {{default "0.0.0.0" .Values.fluent_vcenter.vcenter_logs_in_ip}}
   port {{.Values.fluent_vcenter.vcenter_logs_in_port}}                                                                                
 </source> 
 <source>
-  @type udp
+  @type {{default "udp" .Values.fluent_vcenter.esx_logs_in_proto}}
   tag "vcenter"
   format /^(?<message>.*?)$/
   bind {{default "0.0.0.0" .Values.fluent_vcenter.esx_logs_in_ip}}
