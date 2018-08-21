@@ -35,6 +35,14 @@ spec:
           env:
             - name: KEPPEL_DEBUG
               value: '0'
+          {{- if eq .Values.global.region "staging" }}
+            # preparations for quickly enabling mitmproxy for debugging
+            # (see also templates/staging-only.yaml)
+            - name: KEPPEL_INSECURE
+              value: '0'
+            - name: _HTTP_PROXY
+              value: 'http://dev-toolbox:8080'
+          {{- end }}
           volumeMounts:
             - mountPath: /etc/keppel
               name: config
