@@ -18,6 +18,7 @@ scrape_configs:
   params:
     'match[]':
       - '{__name__=~"^ALERTS$"}'
+      - '{__name__=~"^alertmanager_.+"}'
       - '{__name__=~"^blackbox_.+"}'
       - '{__name__=~"^canary_.+"}'
       - '{__name__=~"^datapath_.+"}'
