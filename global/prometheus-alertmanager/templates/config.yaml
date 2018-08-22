@@ -34,7 +34,7 @@ data:
 
       routes:
       - receiver: dev-null
-        continue: true
+        continue: false
         match_re:
           region: staging
       # routing per tier to <tier>-{info, warning, critical}
@@ -43,7 +43,6 @@ data:
         continue: true
         match_re:
           tier: {{ $tier }}
-          region: ([a-zA-Z]\-)?[a-zA-Z]+\-[a-zA-Z]+\-[0-9]|admin
         routes:
         - receiver: '{{ $tier }}-warning'
           continue: true
@@ -61,19 +60,16 @@ data:
         match_re:
           service: {{ $service }}
           tier: openstack
-          region: ^[a-zA-Z]+\-[a-zA-Z]+\-[0-9]$|admin
       {{- end }}
       - receiver: pagerduty_hypervisor
         continue: false
         match_re:
-          region: ^[a-p,r-zA-P,R-Z]+\-[a-zA-Z]+\-[0-9]$|admin
         match:
           severity: critical
           service: vcenter
       - receiver: pagerduty_baremetal
         continue: false
         match_re:
-          region: ^[a-p,r-zA-P,R-Z]+\-[a-zA-Z]+\-[0-9]$|admin
         match:
           severity: critical
           service: ironic
@@ -81,7 +77,6 @@ data:
       - receiver: pagerduty
         continue: true
         match_re:
-          region: ^[a-p,r-zA-P,R-Z]+\-[a-zA-Z]+\-[0-9]$|admin
         match:
           severity: critical
 
