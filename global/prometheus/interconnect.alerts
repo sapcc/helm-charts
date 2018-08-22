@@ -31,7 +31,7 @@ ALERT RegionalInterconnectDown
 }
 
 ALERT RegionalInterconnectOutgoingDownQA
-  IF(count(up{job="prometheus-regions-federation"})) - ignoring (region)  group_right() ( count(count(probe_success{region="qa-de-1"}) by (region, region_probed_from)) by (region))
+  IF (count(up{job="prometheus-regions-federation"})) - ignoring(region)  group_right() (count(count(probe_success{region="qa-de-1"}) by (region,region_probed_from)) by (region)) != 0
   FOR 1h
   LABELS {
     meta = "{{ $labels.region }} could not reach {{ $value }} other regions.",
@@ -47,7 +47,7 @@ ALERT RegionalInterconnectOutgoingDownQA
 }
 
 ALERT RegionalInterconnectOutgoingDown
-  IF (count(up{job="prometheus-regions-federation",region!~"qa-de-1|admin"})) - ignoring (region)  group_right() ( count(count(probe_success{region!~"qa-de-1|admin",region_probed_from!~"qa-de-1|admin"}) by (region, region_probed_from)) by (region))
+  IF (count(up{job="prometheus-regions-federation",region!~"qa-de-1|admin"})) - ignoring(region) group_right() (count(count(probe_success{region!~"qa-de-1|admin",region_probed_from!~"qa-de-1|admin"}) by (region, region_probed_from)) by (region)) != 0
   FOR 10m
   LABELS {
     meta = "{{ $labels.region }} could not reach {{ $value }} other regions.",
