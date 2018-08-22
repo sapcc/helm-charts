@@ -17,6 +17,12 @@ readonlyrest:
       indices: ["jump-*"]
       auth_key: {{.Values.elk_elasticsearch_jump_user}}:{{.Values.elk_elasticsearch_jump_password}}
 
+    # access for jaeger to write traces indexes
+    - name: jaeger
+      actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+      indices: ["jaeger-*"]
+      auth_key: {{.Values.elk_elasticsearch_jaeger_user}}:{{.Values.elk_elasticsearch_jaeger_password}}
+
     - name: Monsoon (read only, but can create dashboards)
       kibana_access: ro
       auth_key: {{.Values.elk_elasticsearch_monsoon_user}}:{{.Values.elk_elasticsearch_monsoon_password}}
