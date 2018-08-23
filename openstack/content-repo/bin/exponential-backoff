@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -euo pipefail
+
+timeout=1
+attempt=1
+
+# Run the command immediately
+# Run until completed succesful or 10 failed attempts in a row
+until "$@"; do
+  if [ $attempt -gt 10 ]; then
+    echo "Too many failed attempts. Exiting..."
+    exit 1
+  fi
+  attempt=$(( attempt + 1 ))
+
+  # Exponential Backoff
+  timeout=$(( timeout * 2 ))
+  echo "Retry in $timeout seconds..."
+  sleep $timeout
+done
