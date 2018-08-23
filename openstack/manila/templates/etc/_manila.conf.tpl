@@ -25,6 +25,7 @@ transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.ra
 os_region_name = {{.Values.global.region}}
 
 osapi_share_listen = 0.0.0.0
+osapi_share_base_URL = https://{{include "manila_api_endpoint_host_public" .}}
 
 # seconds between state report
 report_interval = {{ .Values.report_interval | default 10 }}
