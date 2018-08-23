@@ -21,6 +21,8 @@ function start_application {
   # since grafana version 4.6.2 the histogram feature is part of the normal graph in the axes tab, so this plugin is no longer needed
   # grafana-cli plugins install mtanda-histogram-panel
   grafana-cli plugins install camptocamp-prometheus-alertmanager-datasource
+  # pagetduty datasource plugin
+  grafana-cli --pluginUrl https://github.com/xginn8/grafana-pagerduty/archive/master.zip plugins install grafana-pagerduty
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until grafana is up and write to stdout and logfile in parallel
   if [ -f /grafana-bin/grafana-initial-setup ]; then
