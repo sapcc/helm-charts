@@ -11,7 +11,7 @@ glance_api_servers = {{.Values.global.glance_api_endpoint_protocol_internal | de
 glance_api_version = 2
 
 os_region_name = {{.Values.global.region}}
-osapi_volume_base_URL = https://{{include "cinder_api_endpoint_host_public" .}}:{{.Values.cinderApiPortPublic}}
+public_endpoint = https://{{include "cinder_api_endpoint_host_public" .}}:{{.Values.cinderApiPortPublic}}
 
 default_availability_zone={{.Values.global.default_availability_zone}}
 default_volume_type = vmware
