@@ -4,6 +4,7 @@ pybasedir = /ironic/ironic
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
+public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
