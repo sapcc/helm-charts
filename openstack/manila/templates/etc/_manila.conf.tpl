@@ -4,6 +4,8 @@ debug = {{.Values.debug }}
 log_config_append = /etc/manila/logging.ini
 
 use_forwarded_for = true
+# rate limiting is handled outside
+api_rate_limit = false
 
 # Following opt is used for definition of share backends that should be enabled.
 # Values are conf groupnames that contain per manila-share service opts.
