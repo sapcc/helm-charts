@@ -5,6 +5,8 @@
 [filter:watcher]
 use = egg:watcher-middleware#watcher
 service_type = identity
+include_initiator_user_id_in_metric = true
+include_target_project_id_in_metric = false
 config_file = /etc/keystone/watcher.yaml
 {{- end }}
 
