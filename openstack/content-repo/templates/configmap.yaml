@@ -31,11 +31,22 @@ data:
     jobs:
       {{- range $index, $job := $config.jobs}}
       - from:
+          {{- if $job.from.url }}
           url:  {{$job.from.url}}
           type: {{ coalesce $job.from.type "''" }}
           cert: {{ coalesce $job.from.cert $config.cert "''" }}
           key:  {{ coalesce $job.from.key $config.key "''" }}
           ca:   {{ coalesce $job.from.ca $config.ca "''" }}
+          {{- else if $job.from.auth_url }}
+          auth_url:            {{ $job.from.auth_url }}
+          user_name:           {{ $job.from.user_name }}
+          user_domain_name:    {{ $job.from.user_domain_name }}
+          project_name:        {{ $job.from.project_name }}
+          project_domain_name: {{ $job.from.project_domain_name }}
+          password:            {{ $job.from.password }}
+          container:           {{ $job.from.container }}
+          object_prefix:       {{ $job.from.object_prefix | default "''" }}
+          {{- end }}
         to:
           container: {{$job.to.container}}
           object_prefix: {{$job.to.object_prefix}}
@@ -44,6 +55,13 @@ data:
           min_bytes:     {{ $job.segmenting.min_bytes | printf "%0.f" }}
           segment_bytes: {{ $job.segmenting.segment_bytes | printf "%0.f" }}
           container:     {{ $job.segmenting.container }}
+        {{- end }}
+        {{- if $job.expiration }}
+        expiration:
+          enabled:       {{ not $job.expiration.disabled }}
+          {{- if $job.expiration.delay_seconds }}
+          delay_seconds: {{ $job.expiration.delay_seconds | printf "%0.f" }}
+          {{- end }}
         {{- end }}
         {{- if $config.cleanup_strategy }}
         cleanup:
