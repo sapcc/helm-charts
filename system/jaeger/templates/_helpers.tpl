@@ -18,6 +18,10 @@ Expand the name of the chart.
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "fqdn.suffix" -}}
+{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+{{- end }}
+
 {{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec)
@@ -91,7 +95,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- if .Values.agent.collector.host }}
 {{- printf "%s:%s" .Values.agent.collector.host (default .Values.collector.service.tchannelPort .Values.agent.collector.port | toString) }}
 {{- else }}
-{{- printf "%s:%s" (include "jaeger.collector.name" .) (default .Values.collector.service.tchannelPort .Values.agent.collector.port | toString) }}
+{{- printf "%s.%s:%s" (include "jaeger.collector.name" .) (include "fqdn.suffix" .) (default .Values.collector.service.tchannelPort .Values.agent.collector.port | toString) }}
 {{- end -}}
 {{- end -}}
 

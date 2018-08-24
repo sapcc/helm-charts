@@ -40,6 +40,9 @@ connection_string = {{ include "osprofiler_url" . }}
 {{ $key }} = {{ $value }}
             {{- end }}
         {{- end }}
+    {{- else }}
+[profiler]
+enabled = false
     {{- end }}
 {{- end }}
 
