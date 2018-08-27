@@ -2,7 +2,7 @@ groups:
 - name: baremetal-ironic.alerts
   rules:
   - alert: BaremetalIronicSensorWarning
-    expr: count(ipmi_sensor_state == 1) by (instance, type, name)
+    expr: count(ipmi_sensor_state == 1) by (instance, type, name, manufacturer, model)
     for: 5m
     labels:
       severity: warning
@@ -15,7 +15,7 @@ groups:
       summary: Sensor Warning for instance {{ $labels.instance }}
       
   - alert: BaremetalIronicSensorCritical
-    expr: count(ipmi_sensor_state == 2) by (instance, type, name)
+    expr: count(ipmi_sensor_state == 2) by (instance, type, name, manufacturer, model)
     for: 2m
     labels:
       severity: critical
@@ -28,7 +28,7 @@ groups:
       summary: Sensor Critical for instance {{ $labels.instance }}
       
   - alert: BaremetalIronicDown
-    expr: count(ipmi_up == 0) by (instance)
+    expr: count(ipmi_up == 0) by (instance, manufacturer, model)
     for: 2m
     labels:
       severity: critical
