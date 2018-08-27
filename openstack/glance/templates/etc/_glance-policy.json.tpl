@@ -26,10 +26,11 @@
 
     "manage_image_cache": "rule:context_is_admin",
 
-    "get_task": "rule:context_is_admin",
-    "get_tasks": "rule:context_is_admin",
-    "add_task": "rule:context_is_admin",
-    "modify_task": "rule:context_is_admin",
+    "get_task": "",
+    "get_tasks": "",
+    "add_task": "",
+    "modify_task": "",
+    "tasks_api_access": "role:admin",
 
     "deactivate": "",
     "reactivate": "",
