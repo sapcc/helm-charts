@@ -10,6 +10,7 @@ workers = 12
 max_clients = 1024
 backlog = 8192
 client_timeout = {{ .Values.client_timeout }}
+
 log_statsd_host = localhost
 log_statsd_port = 9125
 log_statsd_default_sample_rate = 1.0
@@ -20,6 +21,8 @@ log_level = DEBUG
 {{- else -}}
 log_level = INFO
 {{- end }}
+
+fallocate_reserve = {{ .Values.fallocate_reserve }}
 
 [pipeline:main]
 pipeline = healthcheck recon object-server

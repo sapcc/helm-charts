@@ -9,6 +9,7 @@ bind_port = 6002
 workers = 4
 max_clients = 1024
 backlog = 4096
+
 log_statsd_host = localhost
 log_statsd_port = 9125
 log_statsd_default_sample_rate = 1.0
@@ -19,6 +20,8 @@ log_level = DEBUG
 {{- else -}}
 log_level = INFO
 {{- end }}
+
+fallocate_reserve = {{ .Values.fallocate_reserve }}
 
 [pipeline:main]
 pipeline = healthcheck recon account-server
