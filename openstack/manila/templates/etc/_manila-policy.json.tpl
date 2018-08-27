@@ -104,8 +104,8 @@
   "security_service:get_all_security_services": "rule:context_is_admin",
 
   "share_server:index": "rule:context_is_admin",
-  "share_server:show": "rule:context_is_sharedfilesystem_admin",
-  "share_server:details": "rule:context_is_sharedfilesystem_admin",
+  "share_server:show": "rule:context_is_admin",
+  "share_server:details": "rule:context_is_admin",
   "share_server:delete": "rule:context_is_admin",
 
   "share_network:create": "rule:context_is_sharedfilesystem_admin",
