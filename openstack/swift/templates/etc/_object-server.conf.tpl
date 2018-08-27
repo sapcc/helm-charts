@@ -37,6 +37,7 @@ allowed_headers = Content-Disposition, Content-Encoding, X-Delete-At, X-Object-M
 
 [object-replicator]
 concurrency = {{ .Values.object_replicator_concurrency }}
+replicator_workers = {{ .Values.object_replicator_workers }}
 
 [object-updater]
 interval = 60
