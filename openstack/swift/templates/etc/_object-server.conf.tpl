@@ -42,6 +42,7 @@ replicator_workers = {{ .Values.object_replicator_workers }}
 [object-updater]
 interval = 60
 concurrency = {{ .Values.object_updater_concurrency }}
+updater_workers = {{ .Values.object_updater_workers }}
 
 [object-auditor]
 
