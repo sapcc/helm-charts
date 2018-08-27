@@ -18,6 +18,7 @@ run_multiple_share_replicas_tests = False
 run_share_group_tests = False
 run_quota_tests = False
 run_public_tests = False
+create_networks_when_multitenancy_enabled = False
 default_share_type_name = default
 catalog_type = sharev2
 max_api_microversion = 2.43
