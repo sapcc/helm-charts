@@ -25,15 +25,12 @@ log_level = INFO
 {{- end }}
 
 [pipeline:main]
-{{- if le $swift_release "mitaka" }}
-# Mitaka pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
-{{- else if eq $swift_release "pike" }}
-# Pike pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes proxy-logging proxy-server
-{{- else if ge $swift_release "queens" }}
-# Queens or > pipeline
+{{- if le $swift_release "queens" }}
+# Queens pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+{{- else }}
+# > Queens pipeline
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
@@ -104,7 +101,7 @@ delay_auth_decision = true
 include_service_catalog = false
 auth_plugin = v3password
 auth_version = 3
-auth_uri = {{$cluster.keystone_auth_uri}}
+www_authenticate_uri = {{$cluster.keystone_auth_uri}}
 auth_url = {{$cluster.keystone_auth_url}}
 insecure = {{$cluster.keystone_insecure | default false}}
 {{- /* TODO: Workaround - need to be removed */ -}}
@@ -172,20 +169,21 @@ use = egg:swift#container_quotas
 [filter:account-quotas]
 use = egg:swift#account_quotas
 
-{{- if ge $swift_release "pike" }}
-
 [filter:copy]
 use = egg:swift#copy
-{{- end}}
-
-{{- if ge $swift_release "queens" }}
 
 [filter:symlink]
 use = egg:swift#symlink
-{{- end}}
+
+{{- if le $swift_release "queens" }}
 
 [filter:swift3]
 use = egg:swift3#swift3
+{{- else}}
+
+[filter:s3api]
+use = egg:swift#s3api
+{{- end}}
 location = {{ $context.global.region }}
 # The standard swift proxy logging is needed
 force_swift_request_proxy_log = true
