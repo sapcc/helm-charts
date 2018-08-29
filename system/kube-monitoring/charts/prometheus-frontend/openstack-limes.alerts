@@ -29,6 +29,21 @@ groups:
         the ccloud cluster, so limes-collect-ccloud is probably dead.
       summary: Limes is not scraping
 
+  - alert: OpenstackLimesFailedCapacityScrapes
+    expr: sum(increase(limes_failed_capacity_scrapes[5m])) BY (capacitor) > 0
+    for: 1h
+    labels:
+      context: failedcapacityscrapes
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      tier: openstack
+    annotations:
+      description: Limes cannot scrape capapcity from {{ title $labels.capacitor }}
+        for more than an hour.
+        The log for limes-collect-{{ $labels.os_cluster }} contains additional info.
+      summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
+      
   - alert: OpenstackLimesFailedScrapes
     expr: sum(increase(limes_failed_scrapes[5m])) BY (service, service_name) > 0
     for: 1h
