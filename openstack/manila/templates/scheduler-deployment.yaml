@@ -48,6 +48,23 @@ spec:
                   name: sentry
                   key: manila.DSN.python
             {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /etc/manila/probe
+            timeoutSeconds: 3
+            periodSeconds: 10
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - grep
+              - 'ready'
+              - /etc/manila/probe
+            timeoutSeconds: 3
+            periodSeconds: 5
+            initialDelaySeconds: 5
           volumeMounts:
             - name: etcmanila
               mountPath: /etc/manila
