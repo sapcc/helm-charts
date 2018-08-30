@@ -200,8 +200,7 @@ force_swift_request_proxy_log = true
 
 [filter:s3token]
 use = egg:swift#s3token
-auth_uri = {{$cluster.keystone_auth_uri}}
-auth_version = 3
+auth_uri = {{$cluster.keystone_auth_ur}}
 {{- end}}
 
 {{ if $context.watcher_enabled -}}
