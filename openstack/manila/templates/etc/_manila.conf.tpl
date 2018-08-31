@@ -22,8 +22,6 @@ api_paste_config = /etc/manila/api-paste.ini
 
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password | default (tuple . .Values.rabbitmq.users.default.user | include "rabbitmq.password_for_user") }}@{{ include "release_rabbitmq_host" .}}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
 
-os_region_name = {{.Values.global.region}}
-
 osapi_share_listen = 0.0.0.0
 osapi_share_base_URL = https://{{include "manila_api_endpoint_host_public" .}}
 
