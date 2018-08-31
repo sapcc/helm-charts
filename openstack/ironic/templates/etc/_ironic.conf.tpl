@@ -81,8 +81,8 @@ swift_set_temp_url_key = True
 [neutron]
 auth_section = service_catalog
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
-cleaning_network_uuid = {{ .Values.network_cleaning_uuid }}
-provisioning_network_uuid = {{ .Values.network_management_uuid }}
+cleaning_network = {{ .Values.network_cleaning_uuid }}
+provisioning_network = {{ .Values.network_management_uuid }}
 url_timeout = {{ .Values.neutron_url_timeout }}
 port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 
