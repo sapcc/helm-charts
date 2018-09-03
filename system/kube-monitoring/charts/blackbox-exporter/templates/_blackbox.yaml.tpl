@@ -38,6 +38,13 @@ modules:
       no_follow_redirects: false
       fail_if_not_ssl: true
       valid_status_codes: [403]
+  # used for probing kubernikus kluster api
+  http_200_403:
+    prober: http
+    http:
+      no_follow_redirects: false
+      fail_if_not_ssl: true
+      valid_status_codes: [200,403]
   icmp:
     prober: icmp
     icmp:
