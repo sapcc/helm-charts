@@ -1,0 +1,26 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: nova-api
+  labels:
+    system: openstack
+    type: api
+    component: nova
+  annotations:
+    prometheus.io/scrape: "true"
+    maia.io/scrape: "true"
+    prometheus.io/port: "{{.Values.portMetrics}}"
+
+spec:
+  selector:
+    name: nova-api
+  ports:
+    - name: nova-api
+      port: {{.Values.global.novaApiPortInternal}}
+    - name: nova-metadata
+      port: {{.Values.global.novaMetadataPortInternal}}
+#    - name: statsd-listen
+#      port: 9125
+#    - name: metrics-listen
+#      port: 9202
