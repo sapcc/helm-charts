@@ -3,6 +3,7 @@
     "admin": "rule:context_is_cloud_admin or is_admin:True",
     "primary_zone": "target.zone_type:SECONDARY",
     "owner": "tenant:%(tenant_id)s",
+    "dns_admin": "role:dns_admin and rule:owner",
     "member": "role:member and rule:owner",
     "viewer": "role:dns_viewer and rule:owner",
 
@@ -11,8 +12,7 @@
     "context_is_zonemaster": "rule:context_is_dns_support or (role:dns_zonemaster and rule:owner)",
     "context_is_hostmaster": "rule:context_is_dns_support or (role:dns_hostmaster and rule:owner)",
     "context_is_mailmaster": "rule:context_is_dns_support or (role:dns_mailmaster and rule:owner)",
-    "context_is_webmaster": "rule:context_is_dns_support or rule:context_is_mailmaster or rule:context_is_hostmaster or (role:dns_webmaster and rule:owner)",
-    "context_is_dns_admin": "rule:context_is_webmaster or (role:dns_admin and rule:owner)",
+    "context_is_webmaster": "rule:context_is_dns_support or rule:context_is_mailmaster or rule:context_is_hostmaster or rule:dns_admin or (role:dns_webmaster and rule:owner)",
     "context_is_editor": "rule:context_is_master or rule:member",
     "context_is_viewer": "rule:context_is_master or rule:viewer",
 
