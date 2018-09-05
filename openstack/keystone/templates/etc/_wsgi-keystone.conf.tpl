@@ -13,7 +13,9 @@
 # limitations under the License.
 
 Listen 0.0.0.0:5000
+{{- if eq .Values.release "queens" }}
 Listen 0.0.0.0:35357
+{{- end }}
 
 ErrorLog /dev/stdout
 
@@ -42,6 +44,7 @@ CustomLog /dev/stdout proxy env=forwarded
     CustomLog /dev/stdout proxy env=forwarded
 </VirtualHost>
 
+{{- if eq .Values.release "queens" }}
 <VirtualHost *:35357>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
     WSGIDaemonProcess keystone-admin processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP}
@@ -59,6 +62,7 @@ CustomLog /dev/stdout proxy env=forwarded
     CustomLog /dev/stdout combined env=!forwarded
     CustomLog /dev/stdout proxy env=forwarded
 </VirtualHost>
+{{- end }}
 
 Alias /identity /var/www/cgi-bin/keystone/keystone-wsgi-public
 <Location /identity>
@@ -70,6 +74,7 @@ Alias /identity /var/www/cgi-bin/keystone/keystone-wsgi-public
     WSGIPassAuthorization On
 </Location>
 
+{{- if eq .Values.release "queens" }}
 Alias /identity_admin /var/www/cgi-bin/keystone/keystone-wsgi-admin
 <Location /identity_admin>
     SetHandler wsgi-script
@@ -79,3 +84,4 @@ Alias /identity_admin /var/www/cgi-bin/keystone/keystone-wsgi-admin
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
 </Location>
+{{- end }}

@@ -10,12 +10,16 @@ keystone-manage --config-file=/etc/keystone/keystone.conf bootstrap \
 {{- if eq .Values.services.admin.scheme "https" }}
     --bootstrap-admin-url https://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}/v3 \
 {{- else }}
-    --bootstrap-admin-url {{.Values.services.admin.scheme}}://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.services.admin.port}}/v3 \
+{{- if eq .Values.release "queens" }}
+    --bootstrap-admin-url {{.Values.services.admin.scheme}}://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:35357/v3 \
+{{- else }}
+    --bootstrap-admin-url {{.Values.services.admin.scheme}}://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
+{{- end }}
 {{- end }}
 {{- if eq .Values.services.public.scheme "https" }}
     --bootstrap-public-url https://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}/v3 \
 {{- else }}
-    --bootstrap-public-url {{.Values.services.public.scheme}}://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.services.public.port}}/v3 \
+    --bootstrap-public-url {{.Values.services.public.scheme}}://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
 {{- end }}
 {{- if .Values.global.clusterDomain }}
     --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3 \

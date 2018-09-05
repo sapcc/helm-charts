@@ -5,11 +5,11 @@
         "region_name": "{{ .Values.global.region }}",
         "endpoint_type": "internal",
         "admin": {
-            "username": "admin",
-            "password": {{ .Values.tempest.adminPassword | quote }},
-            "user_domain_name": "tempest",
+            "username": {{ .Values.api.adminUser | quote }},
+            "password": {{ .Values.api.adminPassword | quote }},
+            "user_domain_name": "Default",
             "project_name": "admin",
-            "project_domain_name": "tempest"
+            "project_domain_name": "Default"
     },
     "users": [
         {

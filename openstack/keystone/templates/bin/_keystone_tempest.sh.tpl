@@ -9,13 +9,13 @@ start_rally_tests() {
     rally db ensure
 
     # configure deployment for current region with existing users
-    rally deployment create --file /etc/keystone/tempest_deployment_config.json --name tempest_deployment
+    rally deployment create --file /etc/keystone/rally_deployment_config.json --name rally_deployment
 
     # check if we can reach openstack endpoints
     rally deployment check
 
     # create tempest verifier fetched from our repo
-    rally verify create-verifier --type tempest --name keystone-tempest-verifier --system-wide --source https://github.com/sapcc/tempest --version ccloud
+    rally verify create-verifier --type tempest --name keystone-tempest-verifier --version 19.0.0
 
     # configure tempest verifier
     rally verify configure-verifier --extend /etc/tempest/tempest.conf
@@ -29,6 +29,7 @@ start_rally_tests() {
 
 cleanup_tempest_leftovers() {
     for service in $(openstack service list | grep -E 'tempest-service' | awk '{ print $2 }'); do openstack service delete ${service}; done
+    for region in $(openstack region list | grep -E 'tempest-region' | awk '{ print $2 }'); do openstack region delete ${region}; done
 }
 
 main() {

@@ -45,21 +45,23 @@ spec:
         - name: OS_REGION_NAME
           value: {{ .Values.global.region }}
         - name: OS_USERNAME
-          value: "admin"
+          value: {{ .Values.api.adminUser | quote }}
         - name: OS_PASSWORD
-          value: {{ .Values.tempest.adminPassword | quote }}
+          value: {{ .Values.api.adminPassword | quote }}
         - name: OS_USER_DOMAIN_NAME
-          value: "tempest"
-        - name: OS_DOMAIN_NAME
-          value: "tempest"
+          value: "Default"
+        - name: OS_PROJECT_NAME
+          value: "admin"
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: "Default"
         - name: OS_INTERFACE
           value: "internal"
       volumeMounts:
         - name: etc-keystone
           mountPath: /etc/keystone
         - name: keystone-etc
-          mountPath: /etc/keystone/tempest_deployment_config.json
-          subPath: tempest_deployment_config.json
+          mountPath: /etc/keystone/rally_deployment_config.json
+          subPath: rally_deployment_config.json
           readOnly: true
         - name: keystone-bin
           mountPath: /scripts
