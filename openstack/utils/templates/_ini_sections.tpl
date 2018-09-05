@@ -46,7 +46,7 @@ enabled = true
 [audit_middleware_notifications]
 # topics = notifications
 driver = messagingv2
-transport_url = rabbit://{{ .Values.rabbitmq_notifications.users.default.user }}:{{ .Values.rabbitmq_notifications.users.default.password | default (tuple . .Values.rabbitmq_notifications.users.default.user | include "rabbitmq.password_for_user")}}@{{ .Chart.Name }}-rabbitmq-notifications:{{ .Values.rabbitmq_notifications.ports.public }}/
+transport_url = rabbit://{{ .Values.rabbitmq_notifications.users.default.user }}:{{ .Values.rabbitmq_notifications.users.default.password | default (tuple . .Values.rabbitmq_notifications.users.default.user | include "rabbitmq.password_for_user") | urlquery}}@{{ .Chart.Name }}-rabbitmq-notifications:{{ .Values.rabbitmq_notifications.ports.public }}/
 mem_queue_size = {{ .Values.audit.mem_queue_size }}
                 {{- end }}
             {{- end }}
