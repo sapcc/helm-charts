@@ -2,7 +2,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: backup-replication-{{ $source_region }}
+  name: backup-replication-from-{{ $source_region }}
   labels:
     component: backup-replication
 spec:
@@ -12,11 +12,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      component: backup-replication-{{ $source_region }}
+      component: backup-replication-from-{{ $source_region }}
   template:
     metadata:
       labels:
-        component: backup-replication-{{ $source_region }}
+        component: backup-replication-from-{{ $source_region }}
       annotations:
         checksum/bin: {{ include "backup-replication/templates/bin-configmap.yaml" $ | sha256sum }}
         checksum/config: {{ include "backup-replication/templates/replication-configmap.yaml" $ | sha256sum }}
