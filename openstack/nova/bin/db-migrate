@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-psql `cat /etc/nova/nova.conf  | grep 'nova:' | grep postgresql | cut -d'=' -f2- | xargs` <<-EOT
+psql `cat /etc/nova/nova.conf  | grep 'nova:' | grep postgresql | cut -d'=' -f2- | sed 's/\+psycopg2//' | sed 's/?.*//' | xargs` <<-EOT
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 UPDATE services SET deleted=id, deleted_at=now() WHERE updated_at IS NULL OR updated_at < now() - interval '30 minutes';
 UPDATE compute_nodes
