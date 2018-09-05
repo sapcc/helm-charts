@@ -1,96 +1,28 @@
 apiVersion: openstack.stable.sap.cc/v1
 kind: OpenstackSeed
 metadata:
-  name: {{ required "missing .name" .Values.name }}-seed
+  name: kubernikus-seed
 
 spec:
   requires:
-  - {{.Values.global.keystoneNamespace}}/keystone-seed
-  - {{.Values.global.keystoneNamespace}}/domain-ccadmin-seed
-  - {{.Values.global.keystoneNamespace}}/domain-default-seed
-
-  roles:
-  - kubernetes_admin
-  - kubernetes_member
+  - monsoon3/keystone-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-default-seed
 
   domains:
-  - name: ccadmin
-
-    projects:
-    - name: {{ .Values.name }}
-      description: 'Kubernikus Control-Plane'
-      network_quota:
-        router: 1
-        network: 1
-        subnet: 1
-        port: 512
-        security_group: 4 
-        security_group_rule: 32
-        floatingip: 4
-        loadbalancer: 4
-        healthmonitor: 4
-        listener: 4
-      networks:
-      - name: kubernikus
-        subnets:
-        - name: kubernikus
-          cidr: 198.18.0.0/24
-          ip_version: 4
-      routers:
-      - name: default
-        external_gateway_info:
-          network: {{required "missing .external_gateway_info.network_id" .Values.external_gateway_info.network}}
-        interfaces:
-        - subnet: kubernikus
-
-    groups:
-    - name: CCADMIN_CLOUD_ADMINS
-      roles:
-      - project: {{ .Values.name }}
-        role: admin
-      - project: {{ .Values.name }}
-        role: volume_admin
-      - project: {{ .Values.name }}
-        role: compute_admin
-      - project: {{ .Values.name }}
-        role: volume_admin
-      - project: {{ .Values.name }}
-        role: network_admin
-      - project: {{ .Values.name }}
-        role: resource_admin
-
   - name: Default
     users:
-    - name: {{ required "missing .openstack.auth_user_id" .Values.openstack.auth_user_id | quote }}
-      description: 'Kubernikus Service User'
-      password: {{ required "missing .openstack.auth_user_password" .Values.openstack.auth_user_password | quote }}
+    - name: kubernikus-terraform
+      description: "Kubernikus Terraform User" 
+      password: {{ required "missing .kubernikus_terraform_password" .Values.kubernikus_terraform_password | quote }}
       roles:
       - project: cloud_admin@ccadmin
         role: admin
-      - project: cloud_admin@ccadmin
-        role: cloud_compute_admin
-      - project: cloud_admin@ccadmin
-        role: cloud_dns_admin
-      - project: cloud_admin@ccadmin
-        role: cloud_image_admin
-      - project: cloud_admin@ccadmin
-        role: cloud_keymanager_admin
       - project: cloud_admin@ccadmin
         role: cloud_network_admin
       - project: cloud_admin@ccadmin
         role: cloud_resource_admin
-      - project: cloud_admin@ccadmin
-        role: cloud_sharedfilesystem_admin
-      - project: cloud_admin@ccadmin
-        role: cloud_volume_admin
-
-  services:
-  - name: {{ .Values.name }}
-    type: {{ .Values.name }}
-    description: 'Kubernikus Service'
-    endpoints:
-    - interface: public
-      region: {{ required "missing .openstack.region" .Values.openstack.region | quote }}
-      url: 'https://{{ .Values.name }}.{{.Values.openstack.region}}.cloud.sap'
-
-
+      - project: master@ccadmin
+        role: cloud_dns_admin
+      - project: master@ccadmin
+        role: swiftoperator 
