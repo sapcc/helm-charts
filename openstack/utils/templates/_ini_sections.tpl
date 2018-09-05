@@ -7,6 +7,11 @@ rabbit_ha_queues = {{ .Values.rabbitmq_ha_queues | .Values.global.rabbitmq_ha_qu
 rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
 {{end}}
 
+
+{{- define "ini_sections.default_transport_url" }}
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
+{{- end }}
+
 {{- define "ini_sections.database_options" }}
     {{- if or .Values.postgresql.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}

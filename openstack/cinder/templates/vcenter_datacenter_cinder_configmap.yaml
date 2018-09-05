@@ -17,15 +17,18 @@ template: |{{`
     cinder-volume.conf: |
       [DEFAULT]
       enabled_backends = vmware
-      storage_availability_zone = {{ availability_zone | quote }}
+
+      [backend_defaults]
+      volume_driver = cinder.volume.drivers.vmware.vmdk.VMwareVcVmdkDriver
+      backend_availability_zone = {{ availability_zone | quote }}`}}
+      {{- range $key, $value := .Values.backend_defaults}}
+      {{ $key }} = {{ $value }}
+      {{- end }}{{`
 
       [vmware]
       volume_backend_name = vmware
-      volume_driver = cinder.volume.drivers.vmware.vmdk.VMwareVcVmdkDriver
       vmware_host_ip = {{ host }}
       vmware_host_username = {{ username | quote }}
       vmware_host_password = {{ password | quote }}
-      vmware_insecure = True
-      vmware_storage_profile = cinder-vvol
 `}}
 {{- end }}
