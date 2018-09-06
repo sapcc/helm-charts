@@ -132,8 +132,7 @@ password = {{ .Values.global.placement_service_password | default (tuple . .Valu
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = service
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
-os_interface = internal
-os_region_name = {{.Values.global.region}}
+valid_interfaces = internal
 region_name = {{.Values.global.region}}
 {{- end }}
 

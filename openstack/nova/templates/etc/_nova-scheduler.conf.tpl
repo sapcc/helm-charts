@@ -9,3 +9,6 @@ scheduler_default_filters = {{ .Values.scheduler.default_filters}}
 ram_weight_multiplier = {{ .Values.scheduler.ram_weight_multiplier }}
 disk_weight_multiplier =  {{ .Values.scheduler.disk_weight_multiplier }}
 scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instance_changes }}
+
+[scheduler]
+discover_hosts_in_cells_interval = 60
