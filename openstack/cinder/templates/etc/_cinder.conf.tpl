@@ -13,7 +13,7 @@ glance_api_version = 2
 os_region_name = {{.Values.global.region}}
 public_endpoint = https://{{include "cinder_api_endpoint_host_public" .}}:{{.Values.cinderApiPortPublic}}
 
-default_availability_zone={{.Values.global.default_availability_zone}}
+default_availability_zone = {{.Values.global.default_availability_zone}}
 default_volume_type = vmware
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "cinder" }}
