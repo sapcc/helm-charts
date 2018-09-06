@@ -18,7 +18,7 @@ start_rally_tests() {
     rally --debug verify create-verifier --type tempest --name keystone-tempest-verifier --version 19.0.0
 
     # configure tempest verifier
-    rally --debug verify configure-verifier --extend /etc/tempest/tempest.conf
+    rally --debug verify configure-verifier --override /etc/tempest/tempest.conf --show
 
     # run the tempest tests for keystone
     rally --debug verify start --concurrency 1 --detailed --pattern set=identity
