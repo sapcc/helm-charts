@@ -1,10 +1,16 @@
 {{- define "ironic_conductor_conf" -}}
+{{- $envAll    :=  index . 0 -}}
 {{- $conductor :=  index . 1 -}}
-{{- with index . 0 -}}
+{{- with $envAll -}}
 {{- $tftp_ip :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 {{- $deploy_port :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 [DEFAULT]
-enabled_drivers = {{ $conductor.enabled_drivers | default "pxe_ipmitool,agent_ipmitool" }}
+{{- if $conductor.enabled_drivers }}
+enabled_drivers = {{ $conductor.enabled_drivers}}
+{{- end }}
+{{- range $k, $v :=  $conductor.default }}
+{{ $k }} = {{ $v }}
+{{- end }}
 
 [conductor]
 api_url = {{ .Values.global.ironic_api_endpoint_protocol_public | default "https" }}://{{include "ironic_api_endpoint_host_public" .}}:{{ .Values.global.ironic_api_port_public | default "443" }}
