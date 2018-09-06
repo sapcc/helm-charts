@@ -27,10 +27,10 @@ log_level = INFO
 [pipeline:main]
 {{- if le $swift_release "queens" }}
 # Queens pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{- if not $cluster.sapcc_ratelimit_enabled }} ratelimit{{ end }} authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} keystoneauth {{- if $context.watcher_enabled }} watcher {{ end -}} {{- if $cluster.sapcc_ratelimit_enabled }}sapcc-ratelimit {{ end -}} sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- else }}
 # Rocky or higher pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{- if not $cluster.sapcc_ratelimit_enabled }} ratelimit{{ end }} authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} keystoneauth {{- if $context.watcher_enabled }} watcher {{ end -}} {{- if $cluster.sapcc_ratelimit_enabled }}sapcc-ratelimit {{ end -}} sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
@@ -129,11 +129,11 @@ use = egg:swift#ratelimit
 set log_name = proxy-ratelimit
 max_sleep_time_seconds = 20
 log_sleep_time_seconds = 18
-account_ratelimit = 10
-container_ratelimit_0 = 50
-container_ratelimit_100 = 50
-container_listing_ratelimit_0 = 100
-container_listing_ratelimit_100 = 100
+account_ratelimit = 1
+container_ratelimit_0 = 1
+container_ratelimit_100 = 1
+container_listing_ratelimit_0 = 1
+container_listing_ratelimit_100 = 1
 
 [filter:cname_lookup]
 use = egg:swift#cname_lookup
@@ -210,6 +210,12 @@ service_type = object-store
 cadf_service_name = service/storage/object
 target_project_id_from_path = {{$context.watcher_project_id_from_path | default true}}
 config_file = /swift-etc/watcher.yaml
+{{- end }}
+
+{{ if $cluster.sapcc_ratelimit_enabled -}}
+[filter:sapcc-ratelimit]
+use = egg:rate-limit-middleware#rate-limit
+config_file = /swift-etc/sapcc-ratelimit.yaml
 {{- end }}
 
 # [filter:statsd]

@@ -1,0 +1,43 @@
+# rate limit by target project uid (aka account uid) (as found in request path)
+rate_limit_by: target_project_id
+
+# custom rate limit response
+ratelimit_response:
+  status: 498 Rate Limited
+  body: Rate Limit Exceeded
+
+# custom blacklist response
+blacklist_response:
+  status: 497 Blacklisted
+  body: Account has been blacklisted
+
+rates:
+  # global rate limits counted across all projects
+  global:
+    account/container:
+      - action: update
+        limit: 50r/m
+      - action: create
+        limit: 50r/m
+
+    account/container/object:
+      - action: create
+        limit: 50r/m
+
+  # default local rate limits applied to each project
+  default:
+    account/container:
+      - action: update
+        limit: 2r/m
+        strategy: slidingwindow
+      - action: create
+        limit: 5r/30m
+        strategy: slidingwindow
+
+    account/container/object:
+      - action: update
+        limit: 2r/m
+      - action: read
+        limit: 2r/5m
+      - action: create
+        limit: 2r/m
