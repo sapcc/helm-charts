@@ -5,6 +5,7 @@ network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
 
+{{- include "ini_sections.default_transport_url" . }}
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
@@ -85,8 +86,6 @@ cleaning_network = {{ .Values.network_cleaning_uuid }}
 provisioning_network = {{ .Values.network_management_uuid }}
 url_timeout = {{ .Values.neutron_url_timeout }}
 port_setup_delay = {{ .Values.neutron_port_setup_delay }}
-
-{{include "oslo_messaging_rabbit" .}}
 
 [oslo_middleware]
 enable_proxy_headers_parsing = True
