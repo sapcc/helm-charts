@@ -440,7 +440,7 @@ scrape_configs:
 {{- end }}
 
 {{- if .Values.global.ipmi_exporter.enabled }}
-- job_name: 'ipmi-{{ .Values.global.region }}'
+- job_name: 'baremetal/ironic'
   scrape_interval: 60s
   scrape_timeout: 55s
   file_sd_configs:
