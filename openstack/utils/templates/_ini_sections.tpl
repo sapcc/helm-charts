@@ -9,7 +9,7 @@ rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Va
 
 
 {{- define "ini_sections.default_transport_url" }}
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password | urlquery}}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
 {{- end }}
 
 {{- define "ini_sections.database_options" }}
@@ -23,6 +23,7 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 {{- end }}
 
 {{- define "ini_sections.database" }}
+
 [database]
 connection = {{ include "db_url" . }}
 {{- include "ini_sections.database_options" . }}
