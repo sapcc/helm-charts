@@ -17,6 +17,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{define "release_rabbitmq_host"}}{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
+{{define "rabbitmq.transport_url"}}rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password | default (tuple . .Values.rabbitmq.users.default.user | include "rabbitmq.password_for_user")  | urlquery}}@{{ include "release_rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}{{end}}
+
 {{- define "rabbitmq.password_for_fixed_user_and_host" }}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}

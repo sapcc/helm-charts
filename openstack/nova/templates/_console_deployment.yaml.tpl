@@ -42,7 +42,7 @@ spec:
           name: nova-etc
       containers:
       - name: nova-console-{{ $name }}
-        image: {{ .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-{{ $name }}proxy:{{index .Values (print "imageVersionNova" (title $name) "proxy") | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+        image: {{ tuple . (printf "%sproxy" $name) | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
@@ -57,6 +57,16 @@ spec:
 {{- if .Values.python_warnings }}
         - name: PYTHONWARNINGS
           value: {{ .Values.python_warnings | quote }}
+{{- end }}
+{{- if $config.inject_nova_credentials }}
+        - name: OS_USERNAME
+          value: {{ .Values.global.nova_service_user | default "nova" }}
+        - name: OS_PASSWORD
+          value: {{ .Values.global.nova_service_password | default (tuple . .Values.global.nova_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+        - name: OS_PROJECT_NAME
+          value: {{.Values.global.keystone_service_project | default "service" }}
+        - name: OS_AUTH_URL
+          value: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- end }}
         ports:
         - name: {{ $name }}

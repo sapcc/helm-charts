@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nova-migration
+  name: nova-online-migration
   labels:
     system: openstack
     type: configuration
@@ -21,9 +21,11 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/container.init/db-migrate"
+              value: "/container.init/db-online-migrate"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "nova-migration"
             - name: DEPENDENCY_SERVICE
               value: "nova-postgresql"
             - name: PGAPPNAME
@@ -36,24 +38,6 @@ spec:
             - mountPath: /etc/nova/nova.conf
               name: nova-etc
               subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/nova-api.conf
-              name: nova-etc
-              subPath: nova-api.conf
-              readOnly: true
-            - mountPath: /etc/nova/api-paste.ini
-              name: nova-etc
-              subPath: api-paste.ini
-              readOnly: true
-{{- if .Values.audit.enabled }}
-            - mountPath: /etc/nova/nova_audit_map.yaml
-              name: nova-etc
-              subPath: nova_audit_map.yaml
-              readOnly: true
-{{- end }}
-            - mountPath: /etc/nova/policy.json
-              name: nova-etc
-              subPath: policy.json
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc

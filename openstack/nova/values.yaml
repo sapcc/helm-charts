@@ -3,7 +3,6 @@
 # Declare name/value pairs to be passed into your templates.
 # name: value
 global:
-  dbUser: nova
   novaApiPortAdmin: '8774'
   novaApiPortInternal: '8774'
   novaApiPortPublic: '443'
@@ -76,7 +75,12 @@ pod:
 debug: "True"
 
 dbName: nova
+dbUser: nova
 dbPassword: null
+
+cell0dbName: nova_cell0
+cell0dbUser: nova_cell0
+cell0dbPassword: null
 
 apidbName: nova_api
 apidbUser: nova_api
@@ -86,13 +90,22 @@ portMetrics: '9102'
 
 sentry_dsn: DEFINE_IN_REGION_CHART
 
+loci:
+  nova: false
+  openvswitch: false
+  # neutron images use loci by default
+
 #TODO we need to move to global or find another way to share image versions
+imageNameNeutron: loci-neutron
 imageVersionNeutronServer: null
 imageVersionNeutronOpenvswitchAgent: null
+
+imageNameOpenvswitch: loci-neutron
 imageVersionOpenvswitchVswitchd: null
 imageVersionOpenvswitchDbServer: null
 
-imageVersion: null
+imageNameNova: loci-nova
+imageVersionNova: null
 imageVersionNovaApi: null
 imageVersionNovaCompute: null
 imageVersionNovaLibvirt: null
@@ -103,6 +116,23 @@ imageVersionNovaShellinaboxproxy: null
 imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
 imageVersionNovaPlacementApi: null
+
+vspc:
+  enabled: false
+  telnet:
+    portInternal: 1333
+    portExternal: 1333
+  web:
+    portInternal: 1334
+    portExternal: 1334
+  nodeIP: null
+  url: vmware-vspc
+  version: "20181123173748"
+  pvc:
+    existingClaim: null
+    accessMode: ReadWriteMany
+    size: 10Gi
+
 
 # I would move all that to the neutron deployment
 neutron: {}
@@ -118,9 +148,9 @@ consoles:
     portInternal: '6083'
   shellinabox:
     portInternal: '6084'
-
-vspc:
-  enabled: false
+# enable mksproxy if upgraded all regions to queens
+#  mks:
+#    portInternal: '6085'
 
 scheduler:
   driver: "filter_scheduler"
@@ -448,6 +478,9 @@ logging:
         root:
             handlers: stdout, sentry
             level: WARNING
+        migrate:
+            handlers: stdout, sentry
+            level: INFO
         nova:
             handlers: stdout, sentry
             level: INFO
@@ -455,6 +488,9 @@ logging:
             handlers: stdout, sentry
             level: INFO
         eventlet.wsgi.server:
+            handlers: stdout, sentry
+            level: INFO
+        oslo.privsep:
             handlers: stdout, sentry
             level: INFO
         suds:

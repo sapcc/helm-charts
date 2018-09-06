@@ -1,4 +1,4 @@
-{{- if .Values.placement.enabled }}
+{{- if hasPrefix "queens" .Values.imageVersionNova }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -38,7 +38,7 @@ spec:
 {{- end }}
       containers:
         - name: nova-placement
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-placement-api:{{.Values.imageVersionNovaPlacementApi | default .Values.imageVersion | required "Please set placement version or similar"}}
+          image: {{ tuple . "placement-api" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init

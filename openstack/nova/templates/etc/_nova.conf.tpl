@@ -74,13 +74,19 @@ port = {{ .Values.consoles.shellinabox.portInternal }}
 base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/shellinabox
 proxyclient_url = https://{{include "ironic_console_endpoint_host_public" .}}
 
+{{- if .Values.consoles.mks }}
+[mks]
+enabled = True
+mksproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/mks/vnc_auto.html
+{{- end }}
+
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
 
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
 
 [glance]
-api_servers = http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default "9292" }}/v2
+api_servers = http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default "9292" }}
 num_retries = 10
 
 [cinder]
@@ -132,14 +138,20 @@ password = {{ .Values.global.placement_service_password | default (tuple . .Valu
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = service
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
-os_interface = internal
-os_region_name = {{.Values.global.region}}
+valid_interfaces = internal
 region_name = {{.Values.global.region}}
 {{- end }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
 {{- include "ini_sections.cache" . }}
+
+{{- if .Values.vspc.enabled }}
+# TODO: Move me to vmware vcenter operator configmap
+[vmware]
+serial_log_dir = /opt/vspc
+serial_log_uri = http://{{ .Values.vspc.nodeIP }}:{{ .Values.vspc.web.portExternal }}
+{{- end }}
 
 [barbican]
 backend = barbican

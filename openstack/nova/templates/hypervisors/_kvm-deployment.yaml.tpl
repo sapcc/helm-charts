@@ -43,9 +43,16 @@ spec:
         value: "hypervisor"
         effect: "NoSchedule"
       {{- end }}
+      initContainers:
+        - name: fix-permssion-instance-volume
+          image: busybox
+          command: ["sh", "-c", "chown -R 42436:42436 /var/lib/nova"]
+          volumeMounts:
+            - mountPath: /var/lib/nova/instances
+              name: instances
       containers:
         - name: nova-compute
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -92,8 +99,12 @@ spec:
               readOnly: true
             - mountPath: /nova-patches
               name: nova-patches
+            - mountPath: /etc/nova/rootwrap.conf
+              name: nova-etc
+              subPath: rootwrap.conf
+              readOnly: true
         - name: nova-libvirt
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ tuple . "libvirt" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -139,7 +150,7 @@ spec:
             - mountPath: /container.init
               name: nova-container-init
         - name: nova-virtlog
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ tuple . "libvirt" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -185,7 +196,7 @@ spec:
             - mountPath: /container.init
               name: nova-container-init
         - name: neutron-ovs-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-neutron-openvswitch-agent:{{.Values.imageVersionNeutronOpenvswitchAgent | default .Values.imageVersionNeutron | default .Values.imageVersion | required "Please set .imageVersion" }}
+          image: {{ tuple . "openvswitch-agent" | include "container_image_neutron" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -202,7 +213,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-vswitchd:{{ .Values.imageVersionOpenvswitchVswitchd | default .Values.imageVersionNeutron | default .Values.imageVersion | required "Please set .imageVersion" }}
+          image: {{ tuple . "vswitchd" | include "container_image_openvswitch" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -217,7 +228,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs-db
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-db-server:{{ .Values.imageVersionOpenvswitchDbServer | default .Values.imageVersionNeutron | default .Values.imageVersion | required "Please set .imageVersion" }}
+          image: {{ tuple . "db-server" | include "container_image_openvswitch" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

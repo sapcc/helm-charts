@@ -1,7 +1,6 @@
 {{- define "ironic_deployment" -}}
 {{- $hypervisor := index . 1 -}}
 {{- with index . 0 -}}
-{{- $compute_hypervisor_name := printf "compute-%s" $hypervisor.name -}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -34,7 +33,7 @@ spec:
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       containers:
         - name: nova-compute
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init

@@ -1,0 +1,44 @@
+{{- if .Values.migrate_queens_dry_run }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nova-queens-dry-run
+  labels:
+    system: openstack
+    type: configuration
+    component: nova
+spec:
+  template:
+    metadata:
+      annotations:
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: queens-dry-run
+          image: hub.global.cloud.sap/monsoon/ubuntu-source-nova-api:queens-20181129.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+          command:
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/container.init/queens-dry-run"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "nova-migration"
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - mountPath: /container.init
+              name: container-init
+      volumes:
+        - name: container-init
+          configMap:
+            name: nova-bin
+            defaultMode: 0755
+{{- end }}

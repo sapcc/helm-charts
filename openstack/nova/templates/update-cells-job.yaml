@@ -1,7 +1,8 @@
+{{- if hasPrefix "queens" .Values.imageVersionNova }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nova-migration
+  name: nova-update-cells
   labels:
     system: openstack
     type: configuration
@@ -14,18 +15,20 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: nova-migration
+        - name: nova-update-cells
           image: {{ tuple . "api" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/container.init/db-migrate"
+              value: "/container.init/db-update-cells"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "nova-migration"
             - name: DEPENDENCY_SERVICE
-              value: "nova-postgresql"
+              value: "nova-postgresql,nova-rabbitmq"
             - name: PGAPPNAME
               valueFrom:
                 fieldRef:
@@ -36,24 +39,6 @@ spec:
             - mountPath: /etc/nova/nova.conf
               name: nova-etc
               subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/nova-api.conf
-              name: nova-etc
-              subPath: nova-api.conf
-              readOnly: true
-            - mountPath: /etc/nova/api-paste.ini
-              name: nova-etc
-              subPath: api-paste.ini
-              readOnly: true
-{{- if .Values.audit.enabled }}
-            - mountPath: /etc/nova/nova_audit_map.yaml
-              name: nova-etc
-              subPath: nova_audit_map.yaml
-              readOnly: true
-{{- end }}
-            - mountPath: /etc/nova/policy.json
-              name: nova-etc
-              subPath: policy.json
               readOnly: true
             - mountPath: /etc/nova/logging.ini
               name: nova-etc
@@ -71,3 +56,4 @@ spec:
           configMap:
             name: nova-bin
             defaultMode: 0755
+{{- end }}
