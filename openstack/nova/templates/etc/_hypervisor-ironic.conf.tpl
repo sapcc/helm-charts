@@ -10,15 +10,16 @@ scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instan
 scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_interval }}
 
 [ironic]
-#TODO: this should be V3 also?
+{{ $user := print (coalesce .Values.global.ironicServiceUser .Values.global.ironic_service_user "ironic") (default "" .Values.global.user_suffix) }}
+admin_url = {{ default "http" .Values.global.keystone_api_endpoint_protocol_admin}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default "35357" }}/v3
+admin_username = {{ $user }}
+admin_user_domain_name = {{ default "Default" .Values.global.keystone_service_domain }}
+admin_password = {{ coalesce .Values.global.ironicServicePassword .Values.global.ironic_service_password  (tuple . $user | include "identity.password_for_user")  | replace "$" "$$" }}
+admin_tenant_name = {{ default "service" .Values.global.keystone_service_project }}
+admin_project_domain_name = {{ default "Default" .Values.global.keystone_service_domain }}
+api_endpoint = {{ default "http" .Values.global.ironic_api_endpoint_protocol_admin }}://{{ include "ironic_api_endpoint_host_internal" .}}:{{ .Values.global.ironic_api_port_internal | default "6385" }}/v1
 
-admin_username={{.Values.global.ironic_service_user }}{{ .Values.global.user_suffix }}
-admin_password={{ .Values.global.ironic_service_password | default (tuple . .Values.global.ironic_service_user | include "identity.password_for_user")  | replace "$" "$$" }}
-admin_url = {{.Values.global.keystone_api_endpoint_protocol_admin}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default "35357" }}/v3
-admin_tenant_name={{.Values.global.keystone_service_project}}
-admin_project_domain_name={{.Values.global.keystone_service_domain}}
-admin_user_domain_name={{.Values.global.keystone_service_domain}}
-api_endpoint=http://{{include "ironic_api_endpoint_host_internal" .}}:{{ .Values.global.ironic_api_port_internal | default "6385" }}/v1
-serial_console_state_timeout=10
+serial_console_state_timeout = 10
+
 {{- end }}
 {{- end }}
