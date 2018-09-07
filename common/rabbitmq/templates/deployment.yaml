@@ -8,8 +8,6 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: rabbitmq
-  annotations:
-    checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -28,7 +26,7 @@ spec:
       labels:
         app: {{ template "fullname" . }}
       annotations:
-        pod.beta.kubernetes.io/hostname: {{ template "fullname" . }}
+        checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
       hostname: {{ template "fullname" . }}
       containers:
