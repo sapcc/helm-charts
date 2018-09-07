@@ -6,17 +6,16 @@ server {
   server_name  {{ $channel.name }} default;
 
   location / {
-    proxy_buffering off;
-    proxy_ssl_verify_depth 0;
     proxy_pass {{ $.Values.updatesProxy.storageUrl | trimSuffix "/" }}/{{ $channel.container }}/;
     proxy_redirect ~^https?://{{ $.Values.updatesProxy.storageUrl | trimSuffix "/" | trimPrefix "https://" | trimPrefix "http://"}}/{{ $channel.container }}/(.*)$ /$1;
     proxy_set_header X-Forwarded-For        $proxy_add_x_forwarded_for;
 
-    proxy_cache my_cache;
+    proxy_cache {{ if $.Values.updatesProxy.cache }}my_cache{{else}}off{{end}};
     proxy_cache_revalidate on;
     proxy_cache_lock on;
     proxy_cache_valid 200 10m;
     proxy_cache_valid any 0;
+    add_header X-Cache-Status $upstream_cache_status;
   }
 
 }
