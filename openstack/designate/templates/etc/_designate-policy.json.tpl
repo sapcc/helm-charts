@@ -16,7 +16,7 @@
     "context_is_editor": "rule:dns_admin or rule:member",
     "context_is_viewer": "rule:context_is_master or rule:context_is_editor or rule:viewer",
 
-    "context_is_master": "rule:context_is_dns_support or rule:context_is_zonemaster or rule:context_is_hostmaster or rule:context_is_mailmaster or rule:context_is_webmaster",
+    "context_is_master": "rule:context_is_dns_support or rule:context_is_zonemaster or rule:context_is_hostmaster or rule:context_is_mailmaster or rule:context_is_webmaster or rule:context_is_editor",
 
     "zone_primary_or_dns_ops": "('PRIMARY':%(zone_type)s and rule:context_is_dns_ops) or ('SECONDARY':%(zone_type)s and is_admin:True)",
 
