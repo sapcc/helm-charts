@@ -9,6 +9,9 @@ server {
     proxy_pass {{ $.Values.updatesProxy.storageUrl | trimSuffix "/" }}/{{ $channel.container }}/;
     proxy_redirect ~^https?://{{ $.Values.updatesProxy.storageUrl | trimSuffix "/" | trimPrefix "https://" | trimPrefix "http://"}}/{{ $channel.container }}/(.*)$ /$1;
     proxy_set_header X-Forwarded-For        $proxy_add_x_forwarded_for;
+    proxy_hide_header x-openstack-request-id;
+    proxy_hide_header strict-transport-security;
+    proxy_hide_header x-trans-id;
 
     proxy_cache {{ if $.Values.updatesProxy.cache }}my_cache{{else}}off{{end}};
     proxy_cache_revalidate on;
