@@ -9,17 +9,25 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
-    # ?? what is required ??
-    #- monsoon3/keystone-seed
-    #- monsoon3/domain-cc3test-seed
-    #- swift/swift-seed
-    #- limes/limes-seed
+  - monsoon3/domain-ccadmin-seed
 
   domains:
   - name: ccadmin
     projects:    
     - name: octobus
       description: 'data collection, monitoring, analytics, event processing and storage infrastructure https://wiki.wdf.sap.corp/wiki/x/mqygd'
+      networks:
+      - name: default
+        subnets:
+         - name: octobus_private
+           cidr: 10.180.0.0/16
+           ip_version: 4
+      routers:
+      - name: default
+        external_gateway_info:
+          network: FloatingIP-external-ccadmin-monitoring@ccadmin-net-infra@ccadmin
+        interfaces:
+        - subnet: octobus_private
       - group: CCADMIN_OCTOBUS-ADM
         role: admin
       - group: CCADMIN_OCTOBUS-ADM
