@@ -14,7 +14,7 @@
     "context_is_mailmaster": "rule:context_is_dns_support or (role:dns_mailmaster and rule:owner)",
     "context_is_webmaster": "rule:context_is_dns_support or rule:context_is_mailmaster or rule:context_is_hostmaster or (role:dns_webmaster and rule:owner)",
     "context_is_editor": "rule:dns_admin or rule:member",
-    "context_is_viewer": "rule:context_is_master or rule:viewer",
+    "context_is_viewer": "rule:context_is_master or rule:context_is_editor or rule:viewer",
 
     "context_is_master": "rule:context_is_dns_support or rule:context_is_zonemaster or rule:context_is_hostmaster or rule:context_is_mailmaster or rule:context_is_webmaster",
 
