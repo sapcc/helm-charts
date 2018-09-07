@@ -16,7 +16,7 @@ server {
     proxy_cache_revalidate on;
     proxy_cache_lock on;
     proxy_cache_valid 200 10m;
-    proxy_cache_any any 0;
+    proxy_cache_valid any 0;
   }
 
 }
