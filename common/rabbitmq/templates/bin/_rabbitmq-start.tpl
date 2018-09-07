@@ -23,15 +23,15 @@ function bootstrap {
    rabbitmqctl trace_on
 {{- end }}
 
-   upsert_user {{ .Values.users.default.user }} {{ .Values.users.default.password | default (tuple . .Values.users.default.user | include "rabbitmq.password_for_user") | replace `$` `\$` | quote }}
+   upsert_user {{ .Values.users.default.user | quote }} "{{ .Values.users.default.password | default (tuple . .Values.users.default.user | include "rabbitmq.password_for_user") | replace `"` `\"` | replace `$` `\$` | replace "`" (print `\` "`") }}"
 
-   upsert_user {{ .Values.users.admin.user }} {{ .Values.users.admin.password | default (tuple . .Values.users.admin.user | include "rabbitmq.password_for_user") | replace `$` `\$` | quote }} administrator
+   upsert_user {{ .Values.users.admin.user | quote }} "{{ .Values.users.admin.password | default (tuple . .Values.users.admin.user | include "rabbitmq.password_for_user") | replace `"` `\"` | replace `$` `\$` | replace `$` (print `\` "`") }}" administrator
 
 {{- if .Values.metrics.enabled }}
-   upsert_user {{ .Values.metrics.user }} {{ .Values.metrics.password | default (tuple . .Values.metrics.user | include "rabbitmq.password_for_user") | replace `$` `\$` | quote }} monitoring
+   upsert_user {{ .Values.metrics.user | quote }} "{{ .Values.metrics.password | default (tuple . .Values.metrics.user | include "rabbitmq.password_for_user") |replace `"` `\"` | replace `$` `\$` | replace "`" (print `\` "`") }}" monitoring
 {{- end }}
 
-   rabbitmqctl change_password guest {{ .Values.users.default.password | default (tuple . .Values.users.default.user | include "rabbitmq.password_for_user") | replace `$` `\$` | quote }} || true
+   rabbitmqctl change_password guest "{{ .Values.users.default.password | default (tuple . .Values.users.default.user | include "rabbitmq.password_for_user") | replace `"` `\"` | replace `$` `\$` | replace "`" (print `\` "`")  }}" || true
    rabbitmqctl set_user_tags guest monitoring || true
    /etc/init.d/rabbitmq-server stop
 }
