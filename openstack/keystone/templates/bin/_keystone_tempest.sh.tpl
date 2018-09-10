@@ -9,19 +9,19 @@ start_rally_tests() {
     rally db ensure
 
     # configure deployment for current region with existing users
-    rally --debug deployment create --file /etc/keystone/rally_deployment_config.json --name rally_deployment
+    rally deployment create --file /etc/keystone/rally_deployment_config.json --name rally_deployment
 
     # check if we can reach openstack endpoints
-    rally --debug deployment check
+    rally deployment check
 
     # create tempest verifier fetched from our repo
-    rally --debug verify create-verifier --type tempest --name keystone-tempest-verifier --version 19.0.0
+    rally verify create-verifier --type tempest --name keystone-tempest-verifier --version 19.0.0
 
     # configure tempest verifier
-    rally --debug verify configure-verifier --override /etc/tempest/tempest.conf --show
+    rally verify configure-verifier --extend /etc/tempest/tempest.conf --show
 
     # run the tempest tests for keystone
-    rally --debug verify start --concurrency 1 --detailed --pattern set=identity
+    rally verify start --concurrency 1 --detailed --pattern set=identity
 
     # evaluate the overall test result
     rally verify list --status failed | grep -c 'failed' && exit 1 || exit 0
