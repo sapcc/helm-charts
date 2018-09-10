@@ -45,6 +45,7 @@ spec:
   # pv settings
   volume:
     size: 2Gi
+  use_local_storage: true
 
   # number of postgres instances
   numberOfInstances: 3
@@ -74,4 +75,10 @@ spec:
     AWS_ACCESS_KEY_ID: "{{ .Values.pg_cluster.aws_access_key_id }}"
     AWS_SECRET_ACCESS_KEY: "{{ .Values.pg_cluster.aws_secret_access_key }}"
     AWS_REGION: "{{ .Values.global.region }}"
+  {{- if .Values.pg_cluster.clone.enabled }}  
+  clone:
+    cluster: barbican-postgresql-cluster
+    timestamp: {{ .Values.pg_cluster.clone.timestamp }}
+    uid: {{ .Values.pg_cluster.clone.uid }}
+  {{- end }}
 {{- end }}
