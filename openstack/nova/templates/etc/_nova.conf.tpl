@@ -96,7 +96,7 @@ cross_az_attach={{.Values.cross_az_attach}}
 url = http://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default "9696" }}
 metadata_proxy_shared_secret = {{ .Values.global.nova_metadata_secret }}
 service_metadata_proxy = true
-auth_url = http://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default "35357" }}/v3
+auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
 auth_plugin = v3password
 username = {{ .Values.global.neutron_service_user | default "neutron" }}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.neutron_service_password | default (tuple . .Values.global.neutron_service_user | include "identity.password_for_user") | replace "$" "$$" }}
@@ -107,7 +107,7 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 
 [keystone_authtoken]
 auth_uri = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}
-auth_url = http://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default "35357" }}/v3
+auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
 auth_type = v3password
 username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.nova_service_password | default (tuple . .Values.global.nova_service_user | include "identity.password_for_user") | replace "$" "$$" }}

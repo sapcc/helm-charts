@@ -11,7 +11,7 @@ scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_
 
 [ironic]
 {{ $user := print (coalesce .Values.global.ironicServiceUser .Values.global.ironic_service_user "ironic") (default "" .Values.global.user_suffix) }}
-admin_url = {{ default "http" .Values.global.keystone_api_endpoint_protocol_admin}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default "35357" }}/v3
+admin_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 admin_username = {{ $user }}
 admin_user_domain_name = {{ default "Default" .Values.global.keystone_service_domain }}
 admin_password = {{ coalesce .Values.global.ironicServicePassword .Values.global.ironic_service_password  (tuple . $user | include "identity.password_for_user")  | replace "$" "$$" }}

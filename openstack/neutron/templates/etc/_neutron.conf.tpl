@@ -48,7 +48,7 @@ api_workers = {{ .Values.api_workers | default .Values.global.api_workers | defa
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
 
 [nova]
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
 auth_plugin = v3password
 region_name = {{.Values.global.region}}
 username = {{ .Values.global.nova_service_user | default "nova" | replace "$" "$$" }}
@@ -61,7 +61,7 @@ endpoint_type = internal
 
 [designate]
 url =  {{.Values.global.designate_api_endpoint_protocol_admin | default "http"}}://{{include "designate_api_endpoint_host_admin" .}}:{{ .Values.global.designate_api_port_admin| default 9001 }}/v2
-admin_auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v2.0
+admin_auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
 admin_username = {{ .Values.global.designate_service_user | default "designate" | replace "$" "$$"}}
 admin_password = {{ .Values.global.designate_service_password | default "" | replace "$" "$$"}}
 admin_tenant_name = {{.Values.global.keystone_service_project | default "master"}}
@@ -99,7 +99,7 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 
 [keystone_authtoken]
 auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357 }}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
 auth_type = v3password
 username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
 password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}

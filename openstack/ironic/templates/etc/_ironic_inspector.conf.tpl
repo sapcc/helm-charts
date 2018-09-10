@@ -7,7 +7,7 @@ default_network_interface = neutron
 
 [ironic]
 os_region = {{.Values.global.region}}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
@@ -43,7 +43,7 @@ connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectord
 
 [keystone_authtoken]
 auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser| include "identity.password_for_user") }}
