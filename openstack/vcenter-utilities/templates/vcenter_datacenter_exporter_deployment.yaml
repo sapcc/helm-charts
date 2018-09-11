@@ -1,19 +1,18 @@
 {{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+{{- if .Values.vcenter_exporter.enabled }}
+{{- if .Values.vcenter_exporter.datacenter_exporter_types }}
 apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
-apiVersion: extensions/v1beta1
 metadata:
   name: 'vcenter-datacenter-exporter-deployment'
   scope: 'datacenter'
-  {% if ((vcenter_exporter is defined) and
-       (vcenter_exporter['enabled'] == "true")) %}
-  {% for exporter_type in vcenter_exporter['datacenter_exporter_types'] %}
+{{- range $exporter_type_name, $exporter_type_collector, $exporter_type_vc_polling_interval vcenter_exporter.exporter_types }}
 template: |{{`
   ---
   apiVersion: extensions/v1beta1
   kind: Deployment
   metadata:
-    name: vcenter-exporter-{{ name }}-{{ exporter_type['name'] }}
+    name: vcenter-exporter-{{ name }}-{{ $exporter_type_name }}
     namespace: monsoon3
     labels:
       system: openstack
@@ -29,34 +28,35 @@ template: |{{`
     template:
       metadata:
         labels:
-          component: vcenter-exporter-{{ name }}-{{ exporter_type['name'] }}
+          component: vcenter-exporter-{{ name }}-{{ $exporter_type_name }}
       spec:
         nodeSelector:
           zone: farm
         volumes:
           - name: maia-etc
             configMap:
-              name: vcenter-exporter-{{ name }}-{{ exporter_type['name'] }}
+              name: vcenter-exporter-{{ name }}-{{ $exporter_type_name }}
         containers:
           - name: vcenter-exporter
             # remove the "string:" prefix which is used to prevent helm's --set option from reformatting plain numbers into floats in scientific notation
-            image: {{ vcenter_exporter['docker_repo']}}/vcenter-exporter:{{ vcenter_exporter['image_version'] | replace ("string:", "") }}
+            image: `}}{{ .Values.vcenter_exporter.docker_repo }}/vcenter-exporter:{{ .Values.vcenter_exporter.image_version | replace ("string:", "") }}{{'
             imagePullPolicy: IfNotPresent
             command:
               - python
             args:
               - /vcenter-exporter/vcenter-exporter.py
               - -c
-              - /maia-etc/config-{{ name }}-{{ exporter_type['name'] }}.yaml
+              - /maia-etc/config-{{ name }}-{{ $exporter_type_name }}.yaml
               - -t
-              - {{ exporter_type['name'] }}
+              - {{ $exporter_type_name }}
             volumeMounts:
               - mountPath: /maia-etc
                 name: maia-etc
             ports:
               - name: metrics
-                containerPort: {{ vcenter_exporter['prometheus_port'] }}
-  {% endfor %}
-  {% endif %}
+                containerPort: `}}{{ .Values.vcenter_exporter.prometheus_port }}{{`
 `}}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
