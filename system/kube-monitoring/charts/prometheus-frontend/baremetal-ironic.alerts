@@ -1,19 +1,6 @@
 groups:
 - name: baremetal-ironic.alerts
-  rules:
-  - alert: BaremetalIronicSensorWarning
-    expr: count(ipmi_sensor_state == 1) by (instance, type, name, manufacturer, model)
-    for: 5m
-    labels:
-      severity: warning
-      tier: baremetal
-      service: ironic
-      context: "{{ $labels.name }}"
-      dashboard: #TODO
-    annotations:
-      description: ironic node {{ $labels.instance }} hardware sensor warning ({{ $labels.name }}, {{ $labels.type }}) for 5 minutes.
-      summary: Sensor Warning for instance {{ $labels.instance }}
-      
+  rules:      
   - alert: BaremetalIronicSensorCritical
     expr: count(ipmi_sensor_state{type="Power Supply"} == 2) by (instance, type, name, manufacturer, model)
     for: 2m
