@@ -1,5 +1,5 @@
+{{- if eq .Values.release "queens" }}
 # Keystone PasteDeploy configuration file.
-
 
 {{- if .Values.watcher.enabled }}
 [filter:watcher]
@@ -108,3 +108,5 @@ use = egg:Paste#urlmap
 /v2.0 = admin_api
 /v3 = api_v3
 / = admin_version_api
+
+{{- end }}

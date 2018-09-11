@@ -32,6 +32,8 @@ api:
     #tlsKey:
 
 updatesProxy:
+  cache: true
+  createContainers: false
   replicaCount: 2
   #storageUrl: https://objectstore.example.com/v1/AUTH_asdadadad/
   #ingress:
@@ -41,4 +43,19 @@ updatesProxy:
   #channels:
   #  - name: stable.arc.example.con
   #    container: arc-releases-stable
+
+postgresql:
+  metrics:
+    database: arc_production
+    customMetrics:
+      arc:
+        query: "select split_part(facts->>'arc_version', ' ', 1) as arc_version, facts->>'platform_family' as os, count(*) AS active_agents FROM agents where facts->>'online'='true' AND updated_at > now() - INTERVAL '1 hour' group by 1, facts->>'platform_family' order by arc_version;"
+        metrics:
+          - active_agents:
+              usage: GAUGE
+              description: "Online agents"
+          - arc_version:
+              usage: LABEL
+          - os:
+              usage: LABEL
 

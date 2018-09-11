@@ -106,7 +106,6 @@ domain_specific_drivers_enabled = true
 domain_configurations_from_database = true
 
 [trust]
-enabled = true
 allow_redelegation = true
 
 [resource]

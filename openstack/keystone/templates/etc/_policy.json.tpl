@@ -30,6 +30,21 @@
     "identity:update_endpoint": "rule:cloud_admin",
     "identity:delete_endpoint": "rule:cloud_admin",
 
+{{- if not (eq .Values.release "queens") }}
+    "identity:get_registered_limit": "",
+    "identity:list_registered_limits": "",
+    "identity:create_registered_limits": "rule:admin_required",
+    "identity:update_registered_limit": "rule:admin_required",
+    "identity:delete_registered_limit": "rule:admin_required",
+
+    "identity:get_limit_model": "",
+    "identity:get_limit": "",
+    "identity:list_limits": "",
+    "identity:create_limits": "rule:admin_required",
+    "identity:update_limit": "rule:admin_required",
+    "identity:delete_limit": "rule:admin_required",
+{{- end }}
+
     "identity:get_domain": "rule:cloud_admin or rule:admin_and_matching_domain_id or token.project.domain.id:%(target.domain.id)s or rule:cloud_viewer",
     "identity:list_domains": "rule:cloud_admin or rule:cloud_viewer",
     "identity:create_domain": "rule:cloud_admin",

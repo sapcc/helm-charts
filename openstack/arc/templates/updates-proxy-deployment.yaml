@@ -19,12 +19,16 @@ spec:
         - name: nginx-config
           configMap:
             name: arc-updates-proxy
+        - name: cache
+          emptyDir: {}
       containers:
         - name: proxy
           image: nginx:1.11-alpine
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
+            - name: cache
+              mountPath: /nginx-cache
           ports:
             - name: proxy
               containerPort: 80

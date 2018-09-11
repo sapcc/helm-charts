@@ -29,7 +29,7 @@ log_level = INFO
 # Queens pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- else }}
-# > Queens pipeline
+# Rocky or higher pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
 # TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
@@ -182,11 +182,6 @@ use = egg:swift#listing_formats
 
 [filter:swift3]
 use = egg:swift3#swift3
-{{- else}}
-
-[filter:s3api]
-use = egg:swift#s3api
-{{- end}}
 location = {{ $context.global.region }}
 # The standard swift proxy logging is needed
 force_swift_request_proxy_log = true
@@ -195,6 +190,18 @@ force_swift_request_proxy_log = true
 use = egg:swift3#s3token
 auth_uri = {{$cluster.keystone_auth_uri}}
 auth_version = 3
+{{- else}}
+
+[filter:s3api]
+use = egg:swift#s3api
+location = {{ $context.global.region }}
+# The standard swift proxy logging is needed
+force_swift_request_proxy_log = true
+
+[filter:s3token]
+use = egg:swift#s3token
+auth_uri = {{ $cluster.keystone_auth_url }}
+{{- end}}
 
 {{ if $context.watcher_enabled -}}
 [filter:watcher]

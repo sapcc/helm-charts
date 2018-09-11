@@ -5,6 +5,7 @@ network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
 
+{{- include "ini_sections.default_transport_url" . }}
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
@@ -38,7 +39,7 @@ region = {{ .Values.global.region }}
 
 [keystone_authtoken]
 auth_section = service_catalog
-auth_uri = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
+auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
@@ -48,7 +49,7 @@ auth_section = service_catalog
 insecure = True
 # auth_section
 auth_type = v3password
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
@@ -81,12 +82,10 @@ swift_set_temp_url_key = True
 [neutron]
 auth_section = service_catalog
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
-cleaning_network_uuid = {{ .Values.network_cleaning_uuid }}
-provisioning_network_uuid = {{ .Values.network_management_uuid }}
+cleaning_network = {{ .Values.network_cleaning_uuid }}
+provisioning_network = {{ .Values.network_management_uuid }}
 url_timeout = {{ .Values.neutron_url_timeout }}
 port_setup_delay = {{ .Values.neutron_port_setup_delay }}
-
-{{include "oslo_messaging_rabbit" .}}
 
 [oslo_middleware]
 enable_proxy_headers_parsing = True

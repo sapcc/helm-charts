@@ -4,8 +4,13 @@ rabbit_userid = {{ .Values.rabbitmq_user | default .Values.global.rabbitmq_defau
 rabbit_password = {{ .Values.rabbitmq_pass | default .Values.global.rabbitmq_default_pass | default "openstack" }}
 rabbit_hosts =  {{include "rabbitmq_host" .}}
 rabbit_ha_queues = {{ .Values.rabbitmq_ha_queues | .Values.global.rabbitmq_ha_queues | default "true" }}
-rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | .Values.global.rabbit_transient_queues_ttl | default 60 }}
+rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
 {{end}}
+
+
+{{- define "ini_sections.default_transport_url" }}
+transport_url = rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password | default (tuple . .Values.rabbitmq.users.default.user | include "rabbitmq.password_for_user")  | urlquery}}@{{ include "release_rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
+{{- end }}
 
 {{- define "ini_sections.database_options" }}
     {{- if or .Values.postgresql.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
@@ -18,6 +23,7 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 {{- end }}
 
 {{- define "ini_sections.database" }}
+
 [database]
 connection = {{ include "db_url" . }}
 {{- include "ini_sections.database_options" . }}
@@ -46,10 +52,12 @@ enabled = true
 [audit_middleware_notifications]
 # topics = notifications
 driver = messagingv2
-transport_url = rabbit://{{ .Values.rabbitmq_notifications.users.default.user }}:{{ .Values.rabbitmq_notifications.users.default.password | default (tuple . .Values.rabbitmq_notifications.users.default.user | include "rabbitmq.password_for_user")}}@{{ .Chart.Name }}-rabbitmq-notifications:{{ .Values.rabbitmq_notifications.ports.public }}/
+transport_url = rabbit://{{ .Values.rabbitmq_notifications.users.default.user }}:{{ .Values.rabbitmq_notifications.users.default.password | default (tuple . .Values.rabbitmq_notifications.users.default.user | include "rabbitmq.password_for_user") | urlquery}}@{{ .Chart.Name }}-rabbitmq-notifications:{{ .Values.rabbitmq_notifications.ports.public }}/
 mem_queue_size = {{ .Values.audit.mem_queue_size }}
                 {{- end }}
             {{- end }}
         {{- end }}
     {{- end }}
 {{- end }}
+
+{{- define "oslo_messaging_rabbit_url" }}rabbit://{{ default "" .Values.global.user_suffix | print (default .Values.global.rabbitmq_default_user .Values.rabbitmq_user) }}:{{ .Values.rabbitmq_pass | default .Values.global.rabbitmq_default_pass | default (tuple . (default .Values.global.rabbitmq_default_user .Values.rabbitmq_user) "rabbitmq" | include "svc.password_for_user_and_service" | urlquery ) }}@{{ include "rabbitmq_host" . }}{{- end }}

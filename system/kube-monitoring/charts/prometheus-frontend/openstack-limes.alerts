@@ -43,7 +43,26 @@ groups:
         for more than an hour.
         The log for limes-collect-{{ $labels.os_cluster }} contains additional info.
       summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
-      
+
+  - alert: OpenstackLimesMissingCapacity
+    # note: this ignores baremetal capacity ("compute/instances_<flavorname>")
+    # since many of these are zero legitimately (we do not have all BM server
+    # types in all regions)
+    expr: limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0
+    for: 1h
+    labels:
+      context: failedcapacityscrapes
+      dashboard: limes-overview
+      service: limes
+      severity: info
+      tier: openstack
+    annotations:
+      description: Limes reports no capacity for {{ $labels.full_resource }}.
+        This usually means that the backend service reported weirdly-shaped data
+        to Limes' capacity scanner.
+        The log for limes-collect-{{ $labels.os_cluster }} may contain additional info.
+      summary: Limes reports zero capacity for {{ $labels.full_resource }}
+
   - alert: OpenstackLimesFailedScrapes
     expr: sum(increase(limes_failed_scrapes[5m])) BY (os_cluster, service, service_name) > 0
     for: 1h

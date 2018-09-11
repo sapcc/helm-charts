@@ -185,7 +185,7 @@ enabled_extensions_v2 = quotas, reports
 #-----------------------
 [keystone_authtoken]
 auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.global.keystone_api_port_admin | default 35357 }}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
 username = {{ .Values.global.designate_service_user }}
 password = {{ .Values.global.designate_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}

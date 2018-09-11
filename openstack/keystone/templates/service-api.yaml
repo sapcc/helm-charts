@@ -22,12 +22,14 @@ spec:
   ports:
     - name: public
       protocol: "TCP"
-      port: {{ default "5000" .Values.services.public.port }}
+      port: 5000
       targetPort: 5000
+{{- if eq .Values.release "queens" }}
     - name: admin
       protocol: "TCP"
-      port: {{ default "35357" .Values.services.admin.port }}
+      port: 35357
       targetPort: 35357
+{{- end }}
 {{- if .Values.services.externalip }}
   externalIPs: [
     {{ .Values.services.externalip | quote }}

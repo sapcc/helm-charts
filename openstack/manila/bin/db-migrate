@@ -4,4 +4,10 @@ set -e
 
 . /container.init/common.sh
 
+psql `cat /etc/manila/manila.conf  | grep 'manila:' | grep postgresql | cut -d'=' -f2- | sed 's/\+psycopg2//' | sed 's/?.*//' | xargs` <<-EOT
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+UPDATE services SET deleted=id, deleted_at=now() WHERE updated_at IS NULL OR updated_at < now() - interval '30 minutes';
+UPDATE alembic_version SET version_num='829a09b0ddd4' WHERE version_num='097fad24d2fc';
+EOT
+
 manila-manage db sync

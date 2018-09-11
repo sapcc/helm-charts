@@ -35,6 +35,7 @@ data:
   tls.key: {{ .Values.services.public.tlsKey | b64enc }}
 ---
 {{- end }}
+{{- if eq .Values.release "queens" }}
 {{- if .Values.services.admin.tlsCertificate}}
 kind: Secret
 apiVersion: v1
@@ -52,6 +53,7 @@ data:
   tls.crt: {{ .Values.services.admin.tlsCertificate | b64enc }}
   tls.key: {{ .Values.services.admin.tlsKey | b64enc }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
 apiVersion: extensions/v1beta1
@@ -92,9 +94,11 @@ spec:
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
     {{- end }}
+    {{- if eq .Values.release "queens" }}
     {{- if .Values.services.admin.tlsCertificate }}
     - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{- end }}
     {{- end }}
     {{- end }}
 
@@ -105,12 +109,14 @@ spec:
         - path: /
           backend:
             serviceName: keystone
-            servicePort: {{ default "5000"  .Values.services.public.port }}
+            servicePort: 5000
+{{- if eq .Values.release "queens" }}
     - host: {{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
         - path: /
           backend:
             serviceName: keystone
-            servicePort: {{ default "35357" .Values.services.admin.port }}
+            servicePort: 35357
+{{- end }}
 {{- end }}

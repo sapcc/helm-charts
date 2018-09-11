@@ -16,4 +16,18 @@ spec:
       - interface: public
         region: '{{.Values.region}}'
         url: 'https://arc.{{.Values.region}}.cloud.sap'
- 
+{{- if .Values.updatesProxy.createContainers }}
+  domains:
+  - name: ccadmin
+    projects:
+    - name: master
+      swift:
+        enabled: true
+        containers:
+{{- range $channel := .Values.updatesProxy.channels  }}
+        - name: {{ $channel.container }}
+          metadata:
+            meta-web-listings: 'true'
+            read: .r:*,.rlistings
+{{- end }}
+{{- end }}

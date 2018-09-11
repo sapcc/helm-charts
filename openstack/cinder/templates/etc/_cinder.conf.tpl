@@ -1,10 +1,10 @@
 [DEFAULT]
-debug = {{ .Values.debug}}
-
 log_config_append = /etc/cinder/logging.ini
 
-enable_v1_api=True
-enable_v3_api=true
+{{- template "ini_sections.default_transport_url" . }}
+
+enable_v2_api = True
+enable_v3_api = True
 volume_name_template = '%s'
 
 glance_api_servers = {{.Values.global.glance_api_endpoint_protocol_internal | default "http"}}://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default "9292"}}
@@ -13,7 +13,7 @@ glance_api_version = 2
 os_region_name = {{.Values.global.region}}
 public_endpoint = https://{{include "cinder_api_endpoint_host_public" .}}:{{.Values.cinderApiPortPublic}}
 
-default_availability_zone={{.Values.global.default_availability_zone}}
+default_availability_zone = {{.Values.global.default_availability_zone}}
 default_volume_type = vmware
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "cinder" }}
@@ -45,8 +45,7 @@ use_default_quota_class=false
 
 
 [keystone_authtoken]
-auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_admin | default "http"}}://{{include "keystone_api_endpoint_host_admin" .}}:{{ .Values.global.keystone_api_port_admin | default 35357}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
 username = {{ .Values.global.cinder_service_user | default "cinder"}}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.cinder_service_password | default (tuple . .Values.global.cinder_service_user | include "identity.password_for_user") | replace "$" "$$" }}
@@ -59,8 +58,6 @@ insecure = True
 
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp
-
-{{include "oslo_messaging_rabbit" .}}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
