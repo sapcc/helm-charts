@@ -43,11 +43,19 @@ spec:
         # hence we need special sauce for it (a %2F replacement for the / will help to please go)
         # PLEASE DO NOT REMOVE THIS AGAIN
         {{- if .Values.db_password }}
-        - name: DATA_SOURCE_NAME
-          value: postgresql://{{ $db_user }}:{{ .Values.db_password }}@{{include "db_host" .}}:{{ default 5432 .Values.db_port }}/{{ default .Release.Name .Values.db_name}}?sslmode=disable
+        - name: DATA_SOURCE_URI
+          value: {{include "db_host" .}}:{{ default 5432 .Values.db_port }}/{{ default .Release.Name .Values.db_name}}?sslmode=disable
+        - name: DATA_SOURCE_USER
+          value: $db_user
+        - name: DATA_SOURCE_PASS
+          value: {{ .Values.db_password }}
         {{ else }}
-        - name: DATA_SOURCE_NAME
-          value: postgresql://{{ $db_user }}:{{ .Values.global.dbPassword | default (tuple . $db_user | include "postgres.password_for_user") }}@{{include "db_host" .}}:{{ default 5432 .Values.db_port }}/{{ default .Release.Name .Values.db_name}}?sslmode=disable
+        - name: DATA_SOURCE_URI
+          value: {{include "db_host" .}}:{{ default 5432 .Values.db_port }}/{{ default .Release.Name .Values.db_name}}?sslmode=disable
+        - name: DATA_SOURCE_USER
+          value: $db_user
+        - name: DATA_SOURCE_PASS
+          value: {{ .Values.global.dbPassword | default (tuple . $db_user | include "postgres.password_for_user") }}
         {{- end }}
         ports:
           - name: metrics
