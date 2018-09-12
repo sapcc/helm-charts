@@ -13,6 +13,8 @@ Prometheus alerts can be enriched with metadata using labels. Using these labels
   * Playbook
   * Meta
 
+**Note**: Label and annotation values are strings. If they contain special characters like `{` the whole string has to be quoted: `meta: "meta information for instance {{ $labels.instance}}"`
+
 We are using the following conventions.
 
 ### Region
@@ -22,6 +24,7 @@ Region is an implicit label that is automatically set by Prometheus. Do not over
 ### Severity
 
   * `critical` Human action required. Situation requires attention as soon as possible.
+      **Note**: Critical alerts will page the managed service colleagues at any time.
   * `warning` Human action required. Situation requires attention but can wait for regular business hours.
   * `info` Alert does not require immediate attention.
 
@@ -29,9 +32,10 @@ Region is an implicit label that is automatically set by Prometheus. Do not over
 
 `tier` groups the alerts coarsly. We use:
 
+   * `baremetal`
    * `kubernetes`
-   * `openstack`
    * `kubernikus`
+   * `openstack`
 
 ### Service
 
