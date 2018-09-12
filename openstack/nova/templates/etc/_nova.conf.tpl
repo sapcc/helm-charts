@@ -126,6 +126,20 @@ driver = noop
 [oslo_middleware]
 enable_proxy_headers_parsing = true
 
+{{- if .Values.placement.enabled }}
+[placement]
+auth_type = password
+auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
+username = {{.Values.global.placement_service_user}}
+password = {{ .Values.global.placement_service_password | default (tuple . .Values.global.placement_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
+project_name = service
+project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
+os_interface = internal
+os_region_name = {{.Values.global.region}}
+region_name = {{.Values.global.region}}
+{{- end }}
+
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
 {{- include "ini_sections.cache" . }}

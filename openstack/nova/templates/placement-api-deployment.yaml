@@ -1,0 +1,89 @@
+{{- if .Values.placement.enabled }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: nova-placement-api
+  labels:
+    system: openstack
+    type: api
+    component: nova
+spec:
+  replicas: {{ .Values.pod.replicas.placement }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: nova-placement-api
+  template:
+    metadata:
+      labels:
+        name: nova-placement-api
+{{ tuple . "nova" "placement-api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
+        scheduler.alpha.kubernetes.io/affinity: >
+            {{ tuple . "nova" "placement-api" | include "kubernetes_pod_anti_affinity" }}
+{{- end }}
+    spec:
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
+{{ tuple . "nova" "placement-api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{- end }}
+      containers:
+        - name: nova-placement
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-placement-api:{{.Values.imageVersionPlacementApi | default .Values.imageVersion | required "Please set placement version or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "nova-placement-api -p {{.Values.global.placementApiPortInternal}}"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "nova-migration"
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,rabbitmq"
+              # plus soft-dependency to nova-rabbitmq-notifications
+{{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+{{- end }}
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - name: placement-api
+              containerPort: {{.Values.global.placementApiPortInternal}}
+          volumeMounts:
+            - mountPath: /etc/nova
+              name: etcnova
+            - mountPath: /etc/nova/nova.conf
+              name: nova-etc
+              subPath: nova.conf
+              readOnly: true
+            - mountPath: /etc/nova/policy.json
+              name: nova-etc
+              subPath: policy.json
+              readOnly: true
+            - mountPath: /etc/nova/logging.ini
+              name: nova-etc
+              subPath: logging.ini
+              readOnly: true
+      volumes:
+        - name: etcnova
+          emptyDir: {}
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+{{- end }}
+
