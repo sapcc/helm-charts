@@ -1,35 +1,42 @@
 {{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
 {{- if .Values.vcenter_exporter.enabled }}
-{{- if .Values.vcenter_exporter.datacenter_exporter_types }}
+{{- if .Values.vcenter_exporter.exporter_types }}
 apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
   name: 'vcenter-datacenter-exporter-service'
   scope: 'datacenter'
-{{- range $exporter_type_name, $exporter_type_collector, $exporter_type_vc_polling_interval vcenter_exporter.exporter_types }}
+{{ $global_values := .Values }}
+{{- range $exporter_type_values := .Values.vcenter_exporter.exporter_types }}
 template: |{{`
-  ---
   kind: Service
   apiVersion: v1
   metadata:
-    name: vcenter-exporter-{{ name }}-{{ $exporter_type_name }}
+    name: vcenter-exporter-{{ name }}-`}}{{ $exporter_type_values.name }}{{`
     namespace: monsoon3
     labels:
       system: openstack
       service: metrics
-      component: vcenter-exporter-{{ name }}-{{ $exporter_type_name }}
-  {% if exporter_type['collector'] is defined and exporter_type['collector'] != None %}
+      component: vcenter-exporter-{{ name }}-`}}{{ $exporter_type_values.name }}
+{{ if $exporter_type_values.collector }}
     annotations:
-      maia.io/scrape: {% if 'maia' in exporter_type['collector'] %}"true"{% else %}"false"{% endif %}
-      maia.io/port: "`}}{{ .Values.vcenter_exporter.prometheus_port }}{{`"
-      prometheus.io/scrape: {% if 'prometheus' in exporter_type['collector'] %}"true"{% else %}"false"{% endif %}
-      prometheus.io/port: "`}}{{ .Values.vcenter_exporter.prometheus_port }}{{`" {% endif %}
+      {{- range $collector := $exporter_type_values.collector }}
+      {{- if eq $collector "maia" }}
+      maia.io/scrape: "true"
+      maia.io/port: "{{ $global_values.vcenter_exporter.prometheus_port }}"
+      {{- end }}
+      {{- if eq $collector "prometheus" }}
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "{{ $global_values.vcenter_exporter.prometheus_port }}"
+      {{- end }}
+      {{- end }}
+{{ end }}{{`
   spec:
     selector:
-      component: vcenter-exporter-{{ name }}-{{ exporter_type_name }}
+      component: vcenter-exporter-{{ name }}-`}}{{ $exporter_type_values.name }}{{`
     ports:
       - name: metrics
-        port: `}}{{ .Values.vcenter_exporter.prometheus_port }}{{`
+        port: `}}{{ $global_values.vcenter_exporter.prometheus_port }}{{`
 `}}
 {{- end }}
 {{- end }}
