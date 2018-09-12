@@ -3,12 +3,13 @@ groups:
   rules:      
   - alert: BaremetalIronicSensorCritical
     expr: count(ipmi_sensor_state{type="Power Supply"} == 2) by (instance, type, name, manufacturer, model)
-    for: 2m
+    for: 5m
     labels:
       severity: critical
       tier: baremetal
       service: ironic
       context: "{{ $labels.name }}"
+      meta: ironic node {{ $labels.instance }} has hardware sensor issue: ({{ $labels.name }}, {{ $labels.type }}).
       dashboard: #TODO
     annotations:
       description: ironic node {{ $labels.instance }} hardware sensor critical ({{ $labels.name }}, {{ $labels.type }}) for 2 minutes.
@@ -22,6 +23,7 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
+      meta: ipmi metrics cannot be fetched from instance {{ $labels.instance }}
       dashboard: #TODO
     annotations:
       description: ipmi metrics are down for instance {{ $labels.instance }}.
