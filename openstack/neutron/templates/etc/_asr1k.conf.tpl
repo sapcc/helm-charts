@@ -20,7 +20,7 @@ sync_interval = {{$config_agent.l3_sync_interval | default 120}}
 # the driver will reduce to = yang_connection_pool_size
 threadpool_maxsize={{$config_agent.asrl3_threadpool_pool_size | default 5}}
 yang_connection_pool_size={{$config_agent.netconf_yang_pool_size | default 10}}
-legacy_connection_pool_size={{$config_agent.netconf_legacy_pool_size | default 5}}
+legacy_connection_pool_size={{$config_agent.netconf_legacy_pool_size | default 0}}
 
 # snat mode, either "pool" or "interface"
 snat_mode = {{ $config_agent.snat_mode | default "interface"}}
