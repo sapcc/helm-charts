@@ -34,7 +34,7 @@ template: |{{`
               name: nova-etc
         containers:
           - name: vcenter-cleanup
-            image: `}}{{ .Values.vcenter_nanny.image }}{{`
+            image: `}}{{ .Values.vcenter_nanny.docker_repo }}/vcenter-nanny:{{ .Values.vcenter_nanny.image_version | replace "string:" "" }}{{`
             imagePullPolicy: IfNotPresent
             command:
               - dumb-init
@@ -47,7 +47,7 @@ template: |{{`
                   fieldRef:
                     fieldPath: metadata.namespace
               - name: DEPENDENCY_SERVICE
-                value: "postgres-nova,nova-api"
+                value: "nova-postgresql,nova-api"
               - name: VCENTER_CLEANUP_ENABLED
                 value: "`}}{{ .Values.vcenter_nanny.enabled }}{{`"
               - name: VCENTER_CLEANUP_DRY_RUN
