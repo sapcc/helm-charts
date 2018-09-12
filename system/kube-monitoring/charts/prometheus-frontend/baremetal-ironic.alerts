@@ -21,8 +21,22 @@ groups:
       severity: warning
       tier: baremetal
       service: ironic
-      context: "{{ $labels.instance }}"
+      context: "ipmi_up"
       meta: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
     annotations:
       description: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
       summary: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
+      
+  - alert: BaremetallIronicMetricsDownMany
+    expr: count(ipmi_up == 0) > 5
+    for: 5m
+    labels:
+      severity: warning
+      tier: baremetal
+      service: ironic
+      context: "ipmi_up"
+      meta: "moipmi metrics cannot be fetched from more than 5 nodes"
+    annotations:
+      description: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
+
