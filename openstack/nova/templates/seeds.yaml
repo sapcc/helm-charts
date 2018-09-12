@@ -50,6 +50,21 @@ spec:
     - interface: public
       region: '{{ .Values.global.region }}'
       url: 'https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}/v2/%(tenant_id)s'
+{{- if .Values.placement.enabled }}
+  - name: placement
+    type: placement
+    description: Openstack Placement API
+    endpoints:
+    - interface: admin
+      region: '{{ .Values.global.region }}'
+      url: 'http://{{include "placement_api_endpoint_host_admin" .}}:{{.Values.global.placementApiPortAdmin}}'
+    - interface: internal
+      region: '{{ .Values.global.region }}'
+      url: 'http://{{include "placement_api_endpoint_host_internal" .}}:{{.Values.global.placementApiPortInternal}}'
+    - interface: public
+      region: '{{ .Values.global.region }}'
+      url: 'https://{{include "placement_api_endpoint_host_public" .}}:{{.Values.global.placementApiPortPublic}}'
+{{- end }}
 
   domains:
   - name: Default
@@ -75,6 +90,14 @@ spec:
     - name: nova_nanny{{ .Values.global.user_suffix | default "" }}
       description: Nova Nanny
       password: {{ tuple . "nova_nanny" | include "identity.password_for_user" | quote }}
+{{- if .Values.placement.enabled }}
+    - name: placement
+      description: Placement API Service User
+      password: {{ .Values.global.placement_service_password | default (tuple . .Values.global.placement_service_user | include "identity.password_for_user") | quote }}
+      roles:
+      - project: service
+        role: service
+{{- end }}
     groups:
     - name: administrators
       roles:
