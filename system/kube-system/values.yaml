@@ -1,2 +1,158 @@
+# ingress related but independent values
 ingress:
-  external_service_ip: DEFINED-AS-VALUE
+  tls_client_auth:
+    enabled: false
+    cacrt: |
+      -----BEGIN CERTIFICATE-----
+      -----END CERTIFICATE-----
+
+# values for stable/nginx-ingress chart
+nginx-ingress:
+  revisionHistoryLimit: 5
+  rbac:
+    create: false
+  serviceAccount:
+    create: false
+    name: default
+
+  controller:
+    image:
+      repository: sapcc/nginx-ingress-controller
+      tag: "0.19.0"
+
+    defaultBackendService: "kube-system/kube-system-nginx-ingress-default-backend"
+    kind: Deployment
+    replicaCount: 3
+
+    minReadySeconds: 60
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+
+    config:
+      http-snippet: |
+        map $ssl_client_s_dn $ssl_client_s_dn_cn {
+            default "anonymous";
+            ~CN=(?<CN>[^/,\"]+) $CN;
+        }
+      location-snippet: |
+        proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
+      proxy-read-timeout: '300'
+      proxy-body-size: '0'
+      server-name-hash-bucket-size: '128'
+      map-hash-bucket-size: '128'
+      worker-processes: '8'
+      disable-ipv6: 'true'
+      ssl-redirect: 'false'
+      enable-underscores-in-headers: "true"
+
+    extraArgs:
+      enable-dynamic-configuration:
+      # disabled until https://github.com/kubernetes/ingress-nginx/issues/3034 is fixed
+      #enable-dynamic-certificates:
+      annotations-prefix: ingress.kubernetes.io
+      sync-period: 5m0s
+
+    stats:
+      enabled: true
+
+    metrics:
+      enabled: true
+      service:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/probe: "10254"
+
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "10254"
+
+      targetPorts:
+        http: http
+        https: https
+
+      # set in regional values
+      externalIPs:
+        - DEFINED-AS-VALUE
+
+    # ingress controller only on master nodes
+    nodeSelector:
+      species: master
+
+    affinity:
+      # don't co-locate replicas of the ingress controller on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - app: nginx-ingress
+                key: component
+                operator: In
+                values:
+                - controller
+
+#    resources:
+#      limits:
+#        cpu: 100m
+#        memory: 64Mi
+#      requests:
+#        cpu: 100m
+#        memory: 64Mi
+
+#  statsExporter:
+#    resources:
+#      limits:
+#        cpu: 10m
+#        memory: 20Mi
+#      requests:
+#        cpu: 10m
+#        memory: 20Mi
+
+  defaultBackend:
+    enabled: true
+    replicaCount: 2
+    minAvailable: 1
+
+    image:
+      repository: sapcc/defaultbackend
+      tag: '1.4'
+      pullPolicy: IfNotPresent
+
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "8080"
+
+    # ingress backend only on master nodes
+    nodeSelector:
+      species: master
+
+    affinity:
+      # don't co-locate replicas of the ingress backend on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - app: nginx-ingress
+                key: component
+                operator: In
+                values:
+                - default-backend
+
+#    resources:
+#      limits:
+#        cpu: 10m
+#        memory: 20Mi
+#      requests:
+#        cpu: 10m
+#        memory: 20Mi
