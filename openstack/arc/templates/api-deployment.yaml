@@ -80,12 +80,23 @@ spec:
 {{- end }}
             - name: COMMON_NAME # use pod name as common name
               valueFrom: { fieldRef: { fieldPath: metadata.name } }
+{{- if .Values.pg_cluster.enabled }}
+            - name: DBUSER
+              valueFrom: { secretKeyRef:    { name: arc-postgresql-cluster.arc.credentials, key: username } }
+            - name: DBHOST
+              value: arc-postgresql-cluster
+            - name: DBPASSWORD
+              valueFrom: { secretKeyRef:    { name: arc-postgresql-cluster.arc.credentials, key: password } }
+            - name: SSLMODE
+              value: require
+{{- else }}
             - name: DBUSER
               value: postgres
             - name: DBHOST
               value: {{ template "postgresql.fullname" . }}
             - name: DBPASSWORD
               valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
+{{- end }}
             - name: ARC_KEYSTONE_ENDPOINT
               value: {{ .Values.keystoneEndpoint }}
           volumeMounts:
