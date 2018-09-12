@@ -9,13 +9,12 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.name }}"
-      meta: ironic node "{{ $labels.instance }}" has hardware issue. Type: "{{ $labels.type }}" name: "{{ $labels.name }}"
-      dashboard: #TODO
+      meta: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }}"
     annotations:
-      description: ironic node "{{ $labels.instance }}" has hardware issue. Type: "{{ $labels.type }}" name: "{{ $labels.name }}" for 5 min.
-      summary: Sensor Critical for instance "{{ $labels.instance }}"
+      description: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
+      summary: "Sensor Critical for instance {{ $labels.instance }}"
       
-  - alert: BaremetalIronicDown
+  - alert: BaremetalIronicMetricsDown
     expr: count(ipmi_up == 0) by (instance, manufacturer, model)
     for: 5m
     labels:
@@ -23,8 +22,7 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: ipmi metrics cannot be fetched from node "{{ $labels.instance }}"
-      dashboard: #TODO
+      meta: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
     annotations:
-      description: ipmi metrics cannot be fetched from node "{{ $labels.instance }}"
-      summary: ipmi metrics cannot be fetched from node "{{ $labels.instance }}"
+      description: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
