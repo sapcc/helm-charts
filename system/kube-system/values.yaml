@@ -20,6 +20,9 @@ nginx-ingress:
       repository: sapcc/nginx-ingress-controller
       tag: "0.19.0"
 
+    livenessProbe:
+      initialDelaySeconds: 30
+
     defaultBackendService: "kube-system/kube-system-nginx-ingress-default-backend"
     kind: Deployment
     replicaCount: 3
@@ -40,7 +43,7 @@ nginx-ingress:
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
       proxy-read-timeout: '300'
-      proxy-body-size: '0'
+      proxy-body-size: '0k'
       server-name-hash-bucket-size: '128'
       map-hash-bucket-size: '128'
       worker-processes: '8'
@@ -49,11 +52,12 @@ nginx-ingress:
       enable-underscores-in-headers: "true"
 
     extraArgs:
-      enable-dynamic-configuration:
+      enable-dynamic-configuration: "false"
       # disabled until https://github.com/kubernetes/ingress-nginx/issues/3034 is fixed
-      #enable-dynamic-certificates:
+      enable-dynamic-certificates: "false"
       annotations-prefix: ingress.kubernetes.io
       sync-period: 5m0s
+      v: 99
 
     stats:
       enabled: true
