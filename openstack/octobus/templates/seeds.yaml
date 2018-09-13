@@ -13,7 +13,7 @@ spec:
 
   domains:
   - name: ccadmin
-    projects:    
+    projects:
     - name: octobus
       description: 'data collection, monitoring, analytics, event processing and storage infrastructure https://wiki.wdf.sap.corp/wiki/x/mqygd'
       networks:
@@ -22,13 +22,14 @@ spec:
          - name: octobus_private
            cidr: 10.180.0.0/16
            ip_version: 4
-      # Disabled because configuring subnets (instead of the parent network) during the seeding is not yet implemented
-      #routers:
-      #- name: default
-      #  external_gateway_info:
-      #    network: FloatingIP-sap-ccadmin-monitoring-01@FloatingIP-external-ccadmin-monitoring@ccadmin-net-infra@ccadmin
-      #  interfaces:
-      #  - subnet: octobus_private
+      routers:
+      - name: default
+        external_gateway_info:
+         network: FloatingIP-external-ccadmin-monitoring@ccadmin-net-infra@ccadmin
+        external_fixed_ips:
+        - subnet: FloatingIP-sap-ccadmin-monitoring-01@ccadmin-net-infra@ccadmin
+        interfaces:
+        - subnet: octobus_private
       dns_zones:
       - name: o.c.{{ .Values.global.region }}.cloud.sap.
         email: DL_5A845AB15F99B7F201000019@exchange.sap.corp
