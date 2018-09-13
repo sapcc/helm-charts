@@ -99,7 +99,7 @@ service_type = image
 config_file = /etc/glance/watcher.yaml
 {{- end }}
 
-{{ if .Values.sapcc_ratelimit_enabled -}}
+{{ if .Values.ratelimit.enabled -}}
 [filter:ratelimit]
 use = egg:rate-limit-middleware#rate-limit
 config_file = /etc/glance/ratelimit.yaml
