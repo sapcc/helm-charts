@@ -69,16 +69,19 @@ vncserver_listen = $my_ip
 vncserver_proxyclient_address = $my_ip
 novncproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/novnc/vnc_auto.html?path=/novnc/websockify
 novncproxy_host = 0.0.0.0
-novncproxy_port = {{ .Values.global.novaNovncPortInternal }}
+novncproxy_port = {{ .Values.consoles.novnc.portInternal }}
 
 [serial_console]
 enabled = True
 base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/serial
-shellinaboxproxy_host = 0.0.0.0
-shellinaboxproxy_port = {{ .Values.global.novaShellinaboxPortInternal }}
-shellinabox_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/shellinabox
 
-{{include "oslo_messaging_rabbit" .}}
+[shellinabox]
+host = 0.0.0.0
+port = {{ .Values.consoles.shellinabox.portInternal }}
+base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/shellinabox
+proxyclient_url = https://{{include "ironic_console_endpoint_host_public" .}}
+
+{{ include "oslo_messaging_rabbit" .}}
 
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp

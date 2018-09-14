@@ -14,25 +14,21 @@ metadata:
     {{- end }}
 spec:
   tls:
-     - secretName: tls-{{include "nova_console_endpoint_host_public" . | replace "." "-" }}
-       hosts: [{{include "nova_console_endpoint_host_public" .}}]
+  - secretName: tls-{{include "nova_console_endpoint_host_public" . | replace "." "-" }}
+    hosts: [{{include "nova_console_endpoint_host_public" .}}]
   rules:
-    - host: {{include "nova_console_endpoint_host_public" .}}
-      http:
-        paths:
-        - path: /novnc
-          backend:
-            serviceName: nova-console
-            servicePort: novnc
-        - path: /spicehtml5
-          backend:
-            serviceName: nova-console
-            servicePort: spicehtml5
-        - path: /serial
-          backend:
-            serviceName: nova-console
-            servicePort: serial
-        - path: /shellinabox
-          backend:
-            serviceName: nova-console
-            servicePort: shellinabox
+  - host: {{include "nova_console_endpoint_host_public" .}}
+    http:
+      paths:
+      {{- range $name, $config := .Values.consoles }}
+      - path: /{{ $name }}
+        backend:
+          serviceName: nova-console-{{ $name }}
+          servicePort: {{ $name }}
+      {{- end }}
+
+{{ $envAll := . }}
+{{- range $name, $config := .Values.consoles }}
+---
+{{ tuple $envAll $name $config | include "nova.console_service"  }}
+{{- end }}
