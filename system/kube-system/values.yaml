@@ -192,5 +192,21 @@ metallb:
     nodeSelector:
       species: master
 
+    affinity:
+      # don't co-locate replicas of the speaker on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - app: metallb
+                key: component
+                operator: In
+                values:
+                - speaker
+
   # configInline:
   # defined in region secrets
