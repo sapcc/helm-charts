@@ -2,7 +2,7 @@ groups:
 - name: baremetal-ironic.alerts
   rules:      
   - alert: BaremetalIronicSensorCritical
-    expr: count(ipmi_sensor_state{type="Power Supply"} == 2) by (instance, type, name, manufacturer, model)
+    expr: count(ipmi_sensor_state{type="Memory", maintenance="false"} == 2) by (instance, type, name, manufacturer, model)
     for: 5m
     labels:
       severity: critical
@@ -12,6 +12,19 @@ groups:
       meta: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }}"
     annotations:
       description: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
+      summary: "Sensor Critical for instance {{ $labels.instance }}"
+      
+  - alert: BaremetalIronicSensorInfo
+    expr: count(ipmi_sensor_state{type="Memory", maintenance="true"} == 2) by (instance, type, name, manufacturer, model)
+    for: 5m
+    labels:
+      severity: info
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.instance }}"
+      meta: "ironic node {{ $labels.instance }} (maintenance=true) has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }}"
+    annotations:
+      description: "ironic node {{ $labels.instance }} (maintenance=true) has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
       summary: "Sensor Critical for instance {{ $labels.instance }}"
       
   - alert: BaremetalIronicMetricsDown
