@@ -187,14 +187,10 @@ metallb:
     image:
       tag: v0.7.3
 
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-            - matchExpressions:
-              - key: "species"
-                operator: NotIn
-                values: ["master"]
+    # if speaker is run on master nodes the metallb may only be run in l2 mode.
+    # bgp announcements are done by the sapcc/kube-parrot.
+    nodeSelector:
+      species: master
 
   # configInline:
   # defined in region secrets
