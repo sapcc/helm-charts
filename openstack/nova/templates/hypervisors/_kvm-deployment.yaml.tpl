@@ -200,7 +200,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-vswitchd:{{.Values.imageVersionNeutronVswitchd}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-vswitchd:{{.Values.imageVersionOpenvswitchVswitchd}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -215,7 +215,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs-db
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-db-server:{{.Values.imageVersionNeutronVswitchdb}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-db-server:{{.Values.imageVersionOpenvswitchDbServer}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
