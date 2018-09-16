@@ -1,16 +1,16 @@
 # Use this pipeline for no auth - DEFAULT
 [pipeline:glance-registry]
-pipeline = healthcheck http_proxy_to_wsgi osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} registryapp
+pipeline = healthcheck http_proxy_to_wsgi osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher {{ end -}} {{- if .Values.ratelimit.enabled }}ratelimit {{ end -}} registryapp
 
 # Use this pipeline for keystone auth
 [pipeline:glance-registry-keystone]
-pipeline = healthcheck http_proxy_to_wsgi osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} registryapp
+pipeline = healthcheck http_proxy_to_wsgi osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher {{ end -}} {{- if .Values.ratelimit.enabled }}ratelimit {{ end -}} registryapp
 
 # Use this pipeline for authZ only. This means that the registry will treat a
 # user as authenticated without making requests to keystone to reauthenticate
 # the user.
 [pipeline:glance-registry-trusted-auth]
-pipeline = healthcheck http_proxy_to_wsgi osprofiler context {{ if .Values.watcher.enabled }}watcher{{ end }} registryapp
+pipeline = healthcheck http_proxy_to_wsgi osprofiler context {{ if .Values.watcher.enabled }}watcher {{ end -}} {{- if .Values.ratelimit.enabled }}ratelimit {{ end -}} registryapp
 
 [app:registryapp]
 paste.app_factory = glance.registry.api:API.factory
@@ -37,9 +37,16 @@ enabled = yes  #DEPRECATED
 [filter:http_proxy_to_wsgi]
 paste.filter_factory = oslo_middleware:HTTPProxyToWSGI.factory
 
-{{- if .Values.watcher.enabled }}
+{{ if .Values.watcher.enabled -}}
 [filter:watcher]
 use = egg:watcher-middleware#watcher
 service_type = image
 config_file = /etc/glance/watcher.yaml
+{{- end }}
+
+{{ if .Values.ratelimit.enabled -}}
+[filter:ratelimit]
+use = egg:rate-limit-middleware#rate-limit
+config_file = /etc/glance/ratelimit.yaml
+memcache_host = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}

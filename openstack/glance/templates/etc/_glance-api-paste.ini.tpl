@@ -103,4 +103,5 @@ config_file = /etc/glance/watcher.yaml
 [filter:ratelimit]
 use = egg:rate-limit-middleware#rate-limit
 config_file = /etc/glance/ratelimit.yaml
+memcache_host = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}
