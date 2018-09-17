@@ -34,9 +34,9 @@ groups:
 
   - alert: ESXiHostWithAssociatedVMsNotResponding
     expr: blackbox_integrity_status_gauge{check=~"esxi_hs-.+"} == 1
-    for: 20m
+    for: 30m
     labels:
-      severity: warning
+      severity: critical
       tier: openstack
       service: '{{ $labels.service }}'
       context: '{{ $labels.context }}'
@@ -45,13 +45,13 @@ groups:
       playbook: docs/devops/alert/vcenter/#test_esxi_hs_1
     annotations:
       description: 'ESXi host {{ $labels.check }}. See Sentry for details.'
-      summary: ESXi Host has associated VMs and is not responding for 20 min
+      summary: ESXi Host has associated VMs and is not responding for 30 min
 
   - alert: ESXiHostNotResponding
     expr: blackbox_integrity_status_gauge{check=~"esxi_hs-.+"} == 2
-    for: 20m
+    for: 30m
     labels:
-      severity: info
+      severity: warning
       tier: openstack
       service: '{{ $labels.service }}'
       context: '{{ $labels.context }}'
@@ -60,4 +60,4 @@ groups:
       playbook: docs/devops/alert/vcenter/#test_esxi_hs_2
     annotations:
       description: 'ESXi host {{ $labels.check }}. See Sentry for details.'
-      summary: ESXi Host has no associated VMs and is not responding for 20 min
+      summary: ESXi Host has no associated VMs and is not responding for 30 min
