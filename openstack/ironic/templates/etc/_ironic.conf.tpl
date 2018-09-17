@@ -5,6 +5,10 @@ network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
 
+{{- if eq .Values.global.region "staging" }}
+debug = true
+{{- end }}
+
 {{- include "ini_sections.default_transport_url" . }}
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
