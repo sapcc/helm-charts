@@ -98,15 +98,16 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 
 
 [keystone_authtoken]
-auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
-auth_type = v3password
+auth_plugin = v3password
+auth_version = v3
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
 password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 insecure = True
 
 [oslo_messaging_notifications]

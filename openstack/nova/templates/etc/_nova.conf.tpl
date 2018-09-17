@@ -109,15 +109,16 @@ project_name = {{.Values.global.keystone_service_project | default "service" }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
 
 [keystone_authtoken]
-auth_uri = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}
-auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
-auth_type = v3password
+auth_plugin = v3password
+auth_version = v3
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.nova_service_password | default (tuple . .Values.global.nova_service_user | include "identity.password_for_user") | replace "$" "$$" }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
-memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default "11211" }}
+memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 insecure = True
 
 #[upgrade_levels]
