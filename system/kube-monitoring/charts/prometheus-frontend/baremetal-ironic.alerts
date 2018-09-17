@@ -2,7 +2,7 @@ groups:
 - name: baremetal-ironic.alerts
   rules:      
   - alert: BaremetalIronicSensorCritical
-    expr: count(ipmi_sensor_state{type="Memory", maintenance="false"} == 2) by (instance, type, name, manufacturer, model, provision_state)
+    expr: count(ipmi_sensor_state{type="Memory", maintenance="false", provision_state!="enroll"} == 2) by (instance, type, name, manufacturer, model, provision_state)
     for: 5m
     labels:
       severity: critical
