@@ -76,10 +76,16 @@ spec:
         - mountPath: /db/data
           name: mariadb-persistent-storage
           readOnly: true
+        - mountPath: /etc/mysql/conf.d/mariadb.cnf
+          name: mariadb-etc
+          subPath: mariadb.cnf
         - mountPath: /db/socket
           name: db-socket
 {{- end }}
       volumes:
+        - name: mariadb-etc
+          configMap:
+            name: mariadb-etc
 {{- if .Values.persistence_claim }}
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
