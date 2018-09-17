@@ -19,7 +19,7 @@ groups:
     expr: count(ipmi_sensor_state{type="Memory", maintenance="false", provision_state="enroll"} == 2) by (instance, type, name, manufacturer, model, provision_state)
     for: 5m
     labels:
-      severity: critical
+      severity: warning
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
@@ -27,7 +27,7 @@ groups:
       playbook: docs/devops/alert/baremetal
     annotations:
       description: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
-      summary: "Sensor Critical for instance {{ $labels.instance }}"
+      summary: "Sensor Warning for instance {{ $labels.instance }}"
       
   - alert: BaremetalIronicSensorInfo
     expr: count(ipmi_sensor_state{type="Memory", maintenance="true"} == 2) by (instance, type, name, manufacturer, model, provision_state)
