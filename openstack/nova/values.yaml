@@ -250,8 +250,9 @@ pgmetrics:
          - in_24hrs_gauge:
              usage: "GAUGE"
              description: "Name of host"
+
      openstack_compute_nodes:
-       query: "SELECT compute_nodes.host, compute_nodes.uuid, aggregate_metadata.value AS availability_zone, compute_nodes.hypervisor_type, compute_nodes.free_disk_gb AS free_disk_gb_gauge, compute_nodes.local_gb AS local_gb_gauge, compute_nodes.local_gb_used AS local_gb_used_gauge, compute_nodes.free_ram_mb AS free_ram_mb_gauge, compute_nodes.memory_mb AS memory_mb_gauge, compute_nodes.memory_mb_used AS memory_mb_used_gauge, compute_nodes.vcpus_used AS vcpus_used_gauge, compute_nodes.vcpus AS vcpus_gauge, compute_nodes.running_vms AS running_vms_gauge from compute_nodes join aggregate_hosts on compute_nodes.host=aggregate_hosts.host join aggregate_metadata on aggregate_hosts.aggregate_id=aggregate_metadata.aggregate_id WHERE compute_nodes.deleted = 0"
+       query: "SELECT compute_nodes.host, compute_nodes.uuid, aggregate_metadata.value AS availability_zone, compute_nodes.hypervisor_type, compute_nodes.free_disk_gb AS free_disk_gb_gauge, compute_nodes.local_gb AS local_gb_gauge, compute_nodes.local_gb_used AS local_gb_used_gauge, compute_nodes.free_ram_mb AS free_ram_mb_gauge, compute_nodes.memory_mb AS memory_mb_gauge, compute_nodes.memory_mb_used AS memory_mb_used_gauge, compute_nodes.vcpus_used AS vcpus_used_gauge, compute_nodes.vcpus AS vcpus_gauge, compute_nodes.running_vms AS running_vms_gauge from compute_nodes join aggregate_hosts on compute_nodes.host=aggregate_hosts.host join aggregate_metadata on aggregate_hosts.aggregate_id=aggregate_metadata.aggregate_id WHERE compute_nodes.deleted = 0 AND aggregate_hosts.deleted=0 AND aggregate_metadata.deleted=0 AND aggregate_metadata.key='availability_zone'"
        metrics:
          - availability_zone:
              usage: "LABEL"
@@ -292,6 +293,7 @@ pgmetrics:
          - running_vms_gauge:
              usage: "GAUGE"
              description: "Number of VMs running"
+
 
 postgresql:
   imageTag: '9.4.14'
