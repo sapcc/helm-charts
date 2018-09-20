@@ -1,0 +1,88 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: octobus-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-ccadmin-seed
+
+  domains:
+  - name: ccadmin
+    projects:
+    - name: octobus
+      description: 'data collection, monitoring, analytics, event processing and storage infrastructure https://wiki.wdf.sap.corp/wiki/x/mqygd'
+      networks:
+      - name: default
+        subnets:
+         - name: octobus_private
+           cidr: 10.180.0.0/16
+           ip_version: 4
+      #routers:
+      #- name: default
+      #  external_gateway_info:
+      #   network: FloatingIP-external-ccadmin-monitoring@ccadmin-net-infra@ccadmin
+      #   external_fixed_ips:
+      #   - subnet: FloatingIP-sap-ccadmin-monitoring-01@ccadmin-net-infra@ccadmin
+      #  interfaces:
+      #  - subnet: octobus_private
+      #dns_zones:
+      #- name: o.c.{{ .Values.global.region }}.cloud.sap.
+      #  email: DL_5A845AB15F99B7F201000019@exchange.sap.corp
+      #  type: PRIMARY
+      #  ttl: 7200
+      #  description: Octobus productive domain.
+
+    groups:
+    - name: CCADMIN_OCTOBUS-ADM
+      roles:
+      - project: octobus
+        role: admin
+      - project: octobus
+        role: compute_admin
+      - project: octobus
+        role: dns_webmaster
+      - project: octobus
+        role: keymanager_admin
+      - project: octobus
+        role: kubernetes_admin
+      - project: octobus
+        role: member
+      - project: octobus
+        role: monitoring_viewer
+      - project: octobus
+        role: network_admin
+      - project: octobus
+        role: resource_admin
+      - project: octobus
+        role: sharedfilesystem_admin
+      - project: octobus
+        role: swiftoperator
+      - project: octobus
+        role: volume_admin
+    - name: CCADMIN_OCTOBUS-MEMBER
+      roles:
+      - project: octobus
+        role: audit_viewer
+      - project: octobus
+        role: compute_viewer
+      - project: octobus
+        role: dns_viewer
+      - project: octobus
+        role: keymanager_viewer
+      - project: octobus
+        role: member
+      - project: octobus
+        role: monitoring_viewer
+      - project: octobus
+        role: network_viewer
+      - project: octobus
+        role: resource_viewer
+      - project: octobus
+        role: sharedfilesystem_viewer
+      - project: octobus
+        role: volume_viewer
