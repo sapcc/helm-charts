@@ -32,7 +32,11 @@ spec:
     spec:
       containers:
       - name: postgres
+{{- if .Values.custom_repository }}
+        image: "{{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/{{ .Values.image }}:{{ .Values.imageTag }}"
+{{- else }}
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+{{- end }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         args: ["-c", "config_file=/postgresql-conf/postgresql.conf", "-c", "hba_file=/postgresql-conf/pg-hba.conf"]
         env:
