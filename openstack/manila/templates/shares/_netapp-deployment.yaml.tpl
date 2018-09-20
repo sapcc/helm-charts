@@ -41,8 +41,6 @@ spec:
               value: "manila-share --config-file /etc/manila/manila.conf --config-file /etc/manila/backend.conf"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: "manila-migration"
             - name: DEPENDENCY_SERVICE
               value: "manila-postgresql,manila-rabbitmq"
             {{- if .Values.sentry.enabled }}
