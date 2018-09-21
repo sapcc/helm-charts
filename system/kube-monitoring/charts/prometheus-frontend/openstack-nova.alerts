@@ -56,6 +56,20 @@ groups:
       description: Nova {{ $labels.availability_zone }} total RAM Usage is above 95%.
       summary: Nova Maximum RAM Usage percentage metric
 
+  - alert: OpenstackNovaInstanceInErrorState
+    expr: sum(openstack_compute_instance_created_in_24hrs_gauge{vm_state='error'})by(uuid,host) > 0
+    for: 5m
+    labels:
+      dashboard: nova-hypervisor
+      meta: '{{ $value }} instances'
+      playbook: docs/support/playbook/nova/instance_error_on_create.html
+      service: nova
+      severity: info
+      tier: openstack
+    annotations:
+      description: Nova Instance {{$labels.uuid }} Stuck in Error in {{ $labels.host }}
+      summary: Openstack Nova Instance In Error State
+
   - alert: OpenstackNovaInstanceStuckBuilding
     expr: sum(openstack_compute_stuck_instances_count_gauge{host!="nova-compute-ironic",vm_state="building"}) BY (host) > 0
     for: 5m
@@ -306,16 +320,3 @@ groups:
     annotations:
       description: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
       summary: '{{ $labels.check }}: host is disabled without reason'
-
-
-
-
-
-
-
-
-
-
-
-
-
