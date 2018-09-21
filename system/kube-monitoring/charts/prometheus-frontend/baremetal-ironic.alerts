@@ -2,14 +2,14 @@ groups:
 - name: baremetal-ironic.alerts
   rules:      
   - alert: BaremetalIronicSensorCritical
-    expr: count(ipmi_sensor_state{type="Memory", maintenance="false", provision_state!="enroll"} == 2) by (instance, type, name, manufacturer, model, provision_state)
+    expr: count(ipmi_sensor_state{type="Memory", maintenance="false", provision_state=~"(active|available)"} == 2) by (instance, type, name, manufacturer, model, provision_state)
     for: 5m
     labels:
       severity: critical
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }}"
+      meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
       description: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
@@ -23,7 +23,7 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }}"
+      meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
       description: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
@@ -37,22 +37,22 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }}"
+      meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
       description: "ironic node {{ $labels.instance }} (maintenance=true) has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
       summary: "Sensor Critical for instance {{ $labels.instance }}"
       
   - alert: BaremetalIronicMetricsDown
-    expr: count(ipmi_up == 0) by (instance, manufacturer, model)
+    expr: count(ipmi_up == 0) by (name, manufacturer, model)
     for: 5m
     labels:
       severity: warning
       tier: baremetal
       service: ironic
-      context: "{{ $labels.instance }}"
-      meta: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
+      context: "{{ $labels.name }}"
+      meta: "ipmi metrics cannot be fetched from node {{ $labels.name }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
-      summary: "ipmi metrics cannot be fetched from node {{ $labels.instance }}"
+      description: "ipmi metrics cannot be fetched from node {{ $labels.name }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.name }}"
