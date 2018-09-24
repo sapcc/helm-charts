@@ -8,6 +8,7 @@ wsma_adapter={{$config_agent.wsma_adapter | default "asr1k_neutron_l3.models.wsm
 preflights = VrfDefinition
 clean_orphans = {{$config_agent.clean_orphans | default "True"}}
 clean_orphan_interval = {{$config_agent.clean_orphan_interval | default 600}}
+init_mode= {{$config_agent.init_mode | default "False"}}
 
 [asr1k_l3]
 
