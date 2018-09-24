@@ -50,6 +50,16 @@ template: |{{`
             value: 'ignore:Unverified HTTPS request'
           - name: PGAPPNAME
             value: cinder-volume-vmware-{{ name }}
+          livenessProbe:
+            exec:
+              command:
+              - bash
+              - -e
+              - -c
+              - source <(grep -Pzo '\[keystone_authtoken\][^[]*' /etc/cinder/cinder.conf | tr -d '\000' | while read var equal val; do test "$equal" = "=" && echo export OS_${var^^}=${val} ; done); export OS_IDENTITY_API_VERSION=3; for backend in $(grep "^enabled_backends = " /etc/cinder/cinder-volume.conf | while read _ _ val; do tr -d ',' <<<"$val"; done); do test "$(openstack volume service list -f value --host "cinder-volume-vmware-{{ name }}@$backend" -c State)" = "up"; done
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 3
           volumeMounts:
           - name: etccinder
             mountPath: /etc/cinder
