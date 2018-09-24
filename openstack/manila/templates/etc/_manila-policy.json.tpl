@@ -51,6 +51,11 @@
   "share_export_location:index": "rule:context_is_viewer",
   "share_export_location:show": "rule:context_is_viewer",
 
+  "share_access_rule:get": "rule:context_is_viewer",
+  "share_access_rule:index": "rule:context_is_viewer",
+  "share_access_metadata:update": "rule:context_is_editor",
+  "share_access_metadata:delete": "rule:context_is_editor",
+
   "share_instance:index": "rule:context_is_admin",
   "share_instance:show": "rule:context_is_admin",
   "share_instance:force_delete": "rule:context_is_admin",
