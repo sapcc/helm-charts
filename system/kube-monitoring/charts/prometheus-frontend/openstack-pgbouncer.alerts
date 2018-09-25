@@ -2,13 +2,14 @@ groups:
 - name: openstack-pgbouncer.alerts
   rules:
   - alert: OpenstackPgBouncerWarning
-    expr: sum(pgbouncer_pools_client_waiting_connections) by (application, name) > 20
-    for: 10m
+    expr: sum(pgbouncer_pools_client_waiting_connections) by (instance, user, name, application) > 100
+    for: 5m
     labels:
       dashboard: PgBouncer
       service: "{{ $labels.application }}"
+      meta: "{{$labels.application}} PGBouncer({{$labels.instance}}) waiting connections > 100 since 5m for user {{$labels.user}}"
       severity: warning
       tier: openstack
     annotations:
-      description: Clients have to wait to get a connection for {{ $labels.name }} since 10 mins.
-      summary: Clients waiting connections > 20 since 10 minutes
+      description: Clients have to wait to get a connection for {{ $labels.name }} since 5 mins.
+      summary: Clients waiting connections > 100 since 5 minutes
