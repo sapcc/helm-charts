@@ -38,7 +38,11 @@ spec:
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
 {{- end }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+{{- if .Values.debug }}
+        command: ["sleep", "inf"]
+{{- else }}
         args: ["-c", "config_file=/postgresql-conf/postgresql.conf", "-c", "hba_file=/postgresql-conf/pg-hba.conf"]
+{{- end }}
         env:
         - name: POSTGRES_USER
           value: {{ default "postgres" .Values.postgresUser | quote }}
