@@ -1,0 +1,44 @@
+groups:
+- name: arista-monitoring.alerts
+  rules:      
+  - alert: AristaMonitoringTcamInfo
+    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 50)  by (instance, mac, model, serial, table)
+    for: 5m
+    labels:
+      severity: info
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.instance }}"
+      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }} has more than 50% usage"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "switch {{ $labels.instance }} tcam usage of table {{ $labels.table }} over 50% for 5 min"
+      summary: "TCAM usage info for switch {{ $labels.instance }}"
+      
+  - alert: AristaMonitoringTcamWarning
+    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 80)  by (instance, mac, model, serial, table)
+    for: 5m
+    labels:
+      severity: warning
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.instance }}"
+      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }} has more than 80% usage"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "switch {{ $labels.instance }} tcam usage of table {{ $labels.table }} over 80% for 5 min"
+      summary: "TCAM usage warning for switch {{ $labels.instance }}"
+      
+  - alert: AristaMonitoringSwitchDown
+    expr: count(arista_up == 0) by (instance, mac, model, serial)
+    for: 5m
+    labels:
+      severity: info
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.instance }}"
+      meta: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+      summary: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
