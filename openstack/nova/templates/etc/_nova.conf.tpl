@@ -147,3 +147,6 @@ region_name = {{.Values.global.region}}
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
 {{- include "ini_sections.cache" . }}
+
+[key_manager]
+backend=barbican
