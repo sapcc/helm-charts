@@ -88,7 +88,7 @@ groups:
       summary: swift-node-error
 
   - alert: OpenstackSwiftDisksUnmounted
-    expr: sum(swift_cluster_drives_unmounted) BY (storage_ip) > 0
+    expr: max(swift_cluster_drives_unmounted) BY (storage_ip) > 0
     for: 3m
     labels:
       context: drivesunmounted
@@ -102,7 +102,7 @@ groups:
       summary: swift disks unmounted on the server IP {{ $labels.storage_ip }}
 
   - alert: OpenstackSwiftDiskFailures
-    expr: sum(swift_cluster_drives_audit_errors) BY (storage_ip) > 0
+    expr: max(swift_cluster_drives_audit_errors) BY (storage_ip) > 0
     for: 3m
     labels:
       context: drivefailures
