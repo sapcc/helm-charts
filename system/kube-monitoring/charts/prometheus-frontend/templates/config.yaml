@@ -37,6 +37,14 @@ data:
   {{- end }}
 {{- end }}
 
+{{- if .Values.additional_alerts }}
+# add the few region-specific alerts
+{{- range $_, $bytes := .Values.additional_alerts }}
+  additional.alerts: |
+{{ toYaml $bytes | indent 4 }}
+{{- end }}
+{{- end }}
+
   prometheus.yaml: |
     global:
       # The labels to add to any time series or alerts when communicating with
