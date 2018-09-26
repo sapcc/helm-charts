@@ -1,7 +1,6 @@
 groups:
 - name: openstack-backup.alerts
   rules:
-
   - alert: OpenstackDatabaseBackupMissingCinder
     expr: absent(backup_last_success{app=~".*cinder.*"})
     for: 1h
@@ -92,21 +91,6 @@ groups:
     annotations:
       description: Nova Backup missing. Please check backup container.
       summary: Nova Backup missing
-
-  {{- if eq .Values.global.region "eu-de-1" }}
-  - alert: OpenstackDatabaseBackupMissingQuay
-    expr: absent(backup_last_success{kubernetes_namespace="quay"})
-    for: 1h
-    labels:
-      context: backupage
-      dashboard: db-backup
-      service: backup
-      severity: warning
-      tier: openstack
-    annotations:
-      description: Quay Backup missing. Please check backup container.
-      summary: Quay Backup missing
-  {{- end }}
 
   - alert: OpenstackDatabaseBackupAge2Hours
     expr: floor((time() - backup_last_success) / 60 / 60) >= 2
