@@ -92,8 +92,9 @@ groups:
       description: Nova Backup missing. Please check backup container.
       summary: Nova Backup missing
 
+  # NOTE: Quay is exempt from this alert because it only backs up every 3 hours.
   - alert: OpenstackDatabaseBackupAge2Hours
-    expr: floor((time() - backup_last_success) / 60 / 60) >= 2
+    expr: floor((time() - backup_last_success{app!="quay"}) / 60 / 60) >= 2
     for: 10m
     labels:
       context: backupage
