@@ -45,7 +45,7 @@
   <rule>
     key "message"
     pattern ERROR.+networkSystem.+vim.host.NetworkSystem.invokeHostTransactionCall:\svmodl.fault.
-    tag "OOM.${tag}"
+    tag "DVSTimeout.${tag}"
   </rule>
   <rule>
     key "message"
