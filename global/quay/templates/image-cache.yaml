@@ -1,0 +1,24 @@
+#This is used to prefill the image cache with
+#the target image on all farm nodes so that rescheduling doesn't
+#cause a major outage
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: image-cache
+  namespace: quay-enterprise
+spec:
+  template:
+    metadata:
+      labels:
+        app: image-cache
+    spec:
+      containers:
+        - name: dummy
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          command: [sleep, infinity]
+      imagePullSecrets:
+        - name: {{ template "quay.fullname" . }}-pull-secret
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 5
+    type: RollingUpdat

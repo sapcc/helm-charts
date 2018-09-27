@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "quay.fullname" . }}
+  labels:
+    app: {{ template "quay.name" . }}
+    chart: {{ template "quay.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+{{- if .Values.service.externalIP }}
+  externalIPs: [ {{ .Values.service.externalIP }} ]
+{{- end }}
+  selector:
+    quay-enterprise-component: app
+    release: {{ .Release.Name }}

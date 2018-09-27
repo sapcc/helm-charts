@@ -1,0 +1,19 @@
+{{- if .Values.tlsHostnames }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: noop.vice-president
+    vice-president: "true"
+    vice-president/tls-key-secret-key: "ssl.key"
+    vice-president/tls-cert-secret-key: "ssl.cert"
+  name: {{ template "quay.fullname" . }}-noop-vice
+spec:
+  backend:
+    serviceName: {{ template "quay.fullname" . }}
+    servicePort: 9090
+  tls:
+  - hosts:
+{{ toYaml .Values.tlsHostnames | indent 6 }}
+    secretName: quay-enterprise-config-secret
+{{- end }}
