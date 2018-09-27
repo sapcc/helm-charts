@@ -2,7 +2,7 @@ groups:
 - name: baremetal-ironic.alerts
   rules:      
   - alert: BaremetalIronicSensorCritical
-    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot)", maintenance="false", provision_state=~"(active|available)"} == 2) by (instance, type, name, manufacturer, model, provision_state)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor)", maintenance="false", provision_state=~"(active|available)"} == 2) by (instance, type, name, manufacturer, model, provision_state)
     for: 5m
     labels:
       severity: critical
@@ -16,7 +16,7 @@ groups:
       summary: "Sensor Critical for instance {{ $labels.instance }}"
       
   - alert: BaremetalIronicSensorWarning
-    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot)", maintenance="false", provision_state="enroll"} == 2) by (instance, type, name, manufacturer, model, provision_state)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor)", maintenance="false", provision_state="enroll"} == 2) by (instance, type, name, manufacturer, model, provision_state)
     for: 5m
     labels:
       severity: warning
@@ -30,7 +30,7 @@ groups:
       summary: "Sensor Warning for instance {{ $labels.instance }}"
       
   - alert: BaremetalIronicSensorInfo
-    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot)", maintenance="true"} == 2) by (instance, type, name, manufacturer, model, provision_state)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply)", maintenance="true"} == 2) by (instance, type, name, manufacturer, model, provision_state)
     for: 5m
     labels:
       severity: info
