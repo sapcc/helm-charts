@@ -26,3 +26,16 @@ groups:
     annotations:
       description: High number of database connections
       summary: Predicting more than 200 database connections for quay within the next 3 hours and might be unavailable soon.
+
+  - alert: QuayPostgresDatabaseSize
+    expr: pg_database_size_bytes{datname="quay"} >= 160 * 1024^3
+    for: 5m
+    labels:
+      tier: kubernetes
+      service: quay
+      severity: warning
+      context: quay
+      meta: "Database {{ $labels.datname }} to large"
+    annotations:
+      description: "The quay database size is greater than 160GB and will exceed the PV limits eventually"
+      summary: Quay database is too large 
