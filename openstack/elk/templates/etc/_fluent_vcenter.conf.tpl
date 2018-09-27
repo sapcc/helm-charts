@@ -104,7 +104,7 @@
   <metric>
     name vcenter_dvswitch_out_of_memory
     type counter
-    desc Found Error that indicates long timeout on dvs calls
+    desc Found Error that indicates dvs is out of memory
     <labels>
       tag ${tag}
       host ${host_name}

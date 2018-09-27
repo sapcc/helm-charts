@@ -8,7 +8,7 @@ groups:
       service: nova
       severity: info
       meta: "{{ $labels.host }} is missing vCenter patch"
-      playbook: docs/support/playbook/vsphere/vcenter_missing_updates.html
+      playbook: docs/devops/alert/vcenter/#vcenter_6_0_u_2
       dashboard: none
     annotations:
       description: vcenter {{ $labels.host }} is missing VMWare patch SR17595168510
@@ -20,7 +20,7 @@ groups:
       service: nova
       severity: info
       meta: "{{ $labels.host }} is missing an openstack nova driver update"
-      playbook: docs/support/playbook/vsphere/vcenter_missing_updates.html
+      playbook: docs/devops/alert/vcenter/#vcenter_nova_patch
       dashboard: none
     annotations:
       description: vcenter {{ $labels.host }} is missing openstack nova patch SR17629377811
@@ -32,9 +32,21 @@ groups:
       service: nova
       severity: info
       meta: "{{ $labels.host }} dvSwitch timing out"
-      playbook: docs/support/playbook/vsphere/dvs_timeout_error.html
+      playbook: docs/devops/alert/vcenter/#dvs_timeout
       dashboard: none
     annotations:
       description: vcenter {{ $labels.host }} has a dvSwitch reporting timeouts
       summary: Log entry in {{ $labels.host }} show dvSwitch reporting timeouts
+  - alert: VcenterDVSOutOfMemory
+    expr: sum(increase(vcenter_dvswitch_out_of_memory[30m])) by (host) > 0
+    labels:
+      tier: openstack
+      service: nova
+      severity: info
+      meta: "{{ $labels.host }} dvSwitch out of memory"
+      playbook: docs/devops/alert/vcenter/#dvs_out_of_memory
+      dashboard: none
+    annotations:
+      description: vcenter {{ $labels.host }} has a dvSwitch reporting out of memory
+      summary: Log entry in {{ $labels.host }} show dvSwitch reporting out of memory
     
