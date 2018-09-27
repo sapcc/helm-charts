@@ -47,7 +47,12 @@
     pattern ERROR.+networkSystem.+vim.host.NetworkSystem.invokeHostTransactionCall:\svmodl.fault.
     tag "OOM.${tag}"
   </rule>
-    <rule>                                                                                         
+  <rule>
+    key "message"
+    pattern Out\sof\s((memory)|(resources))
+    tag "DVSOOM.${tag}"
+  </rule>
+  <rule>                                                                                         
     key "host_name"                                                                              
     pattern unknown                                                                              
     tag "unknown.${tag}"                                                                         
@@ -82,7 +87,19 @@
     </labels>
   </metric>
 </match>
-<match OOM.**>
+<match DVSTimeout.**>
+  @type prometheus
+  <metric>
+    name vcenter_dvswitch_timeout
+    type counter
+    desc Found Error that indicates long timeout on dvs calls
+    <labels>
+      tag ${tag}
+      host ${host_name}
+    </labels>
+  </metric>
+</match>
+<match DVSOOM.**>
   @type prometheus
   <metric>
     name vcenter_dvswitch_out_of_memory
