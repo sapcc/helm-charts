@@ -45,6 +45,15 @@ spec:
             - name: arista-sd-config
               mountPath: /custom_targets/arista
             {{- end }}
+        - name: prometheus-configmap-reloader
+          image: "{{ .Values.global.configmap_reload.image.repository }}:{{ .Values.global.configmap_reload.image.tag }}"
+          args:
+            - --volume-dir=/etc/prometheus
+            - --webhook-url=http://localhost:9090/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+              readOnly: true
       volumes:
         - name: data
           emptyDir:

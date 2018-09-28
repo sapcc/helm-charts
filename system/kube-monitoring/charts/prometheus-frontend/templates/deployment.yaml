@@ -43,6 +43,15 @@ spec:
               mountPath: /prometheus
             - name: config
               mountPath: /etc/prometheus
+        - name: prometheus-configmap-reloader
+          image: "{{ .Values.global.configmap_reload.image.repository }}:{{ .Values.global.configmap_reload.image.tag }}"
+          args:
+            - --volume-dir=/etc/prometheus
+            - --webhook-url=http://localhost:9090/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
