@@ -28,6 +28,15 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/blackbox-exporter
+        - name: {{ .Chart.Name }}-configmap-reloader
+          image: "{{ .Values.global.configmap_reload.image.repository }}:{{ .Values.global.configmap_reload.image.tag }}"
+          args:
+            - --volume-dir=/etc/blackbox-exporter
+            - --webhook-url=http://localhost:{{ .Values.service.port }}/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox-exporter
+              readOnly: true
       volumes:
         - name: config
           configMap:
