@@ -9,14 +9,29 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }} has more than 50% usage"
+      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of {{ $value }}%"
       playbook: docs/devops/alert/baremetal
       dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
     annotations:
       description: "switch {{ $labels.instance }} tcam usage of table {{ $labels.table }} over 50% for 5 min"
       summary: "TCAM usage info for switch {{ $labels.instance }}"
       
-  - alert: BaremetalIronicAristaMonitoringTcamWarning
+  - alert: BaremetalIronicAristaMonitoringInfo
+    expr: count(arista_tcam{feature=~".+", table=~"TCAM|EFP|IFP"} > 80)  by (instance, mac, model, serial, table, feature)
+    for: 5m
+    labels:
+      severity: info
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.instance }}"
+      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }}, Feature {{ $labels.feature }} has a usage of {{ $value }}%"
+      playbook: docs/devops/alert/baremetal
+      dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
+    annotations:
+      description: "switch {{ $labels.instance }} tcam usage of table {{ $labels.table }} and feature {{ $labels.feature }} over 80% for 5 min"
+      summary: "TCAM usage info for switch {{ $labels.instance }}"
+      
+  - alert: BaremetalIronicAristaMonitoringWarning
     expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 80)  by (instance, mac, model, serial, table)
     for: 5m
     labels:
@@ -24,7 +39,7 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }} has more than 80% usage"
+      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of {{ $value }}%"
       playbook: docs/devops/alert/baremetal
       dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
     annotations:
