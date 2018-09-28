@@ -49,7 +49,7 @@
   </rule>
   <rule>
     key "message"
-    pattern Out\sof\s((memory)|(resources))
+    pattern ((Unable to Add Port; Status\(bad0006\)= Limit exceeded)|(Failed to get DVS state from vmkernel Status \(bad0014\)= Out of memory))
     tag "DVSOOM.${tag}"
   </rule>
   <rule>                                                                                         
