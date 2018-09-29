@@ -10,11 +10,11 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of {{ $value }}%"
+      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of {{ $value }}%"
       playbook: docs/devops/alert/baremetal
       dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
     annotations:
-      description: "switch {{ $labels.instance }} tcam usage of table {{ $labels.table }} over 50% for 5 min"
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} over 50% for 5 min"
       summary: "TCAM usage info for switch {{ $labels.instance }}"
       
   - alert: BaremetalIronicAristaMonTotalWarning
@@ -26,16 +26,16 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of {{ $value }}%"
+      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of {{ $value }}%"
       playbook: docs/devops/alert/baremetal
       dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
     annotations:
-      description: "switch {{ $labels.instance }} tcam usage of table {{ $labels.table }} over 80% for 5 min"
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} over 80% for 5 min"
       summary: "TCAM usage warning for switch {{ $labels.instance }}"
       
   - alert: BaremetalIronicAristaMonTableInfo
     # Single table IFP (Ingress) or EFP (Egress) on older Models (e.g. Arista 7060) is above 50%
-    expr: count(arista_tcam{feature=~".+", table=~"EFP|IFP"} > 80)  by (instance, mac, model, serial, table, feature)
+    expr: count(arista_tcam{feature=~".+", table=~"EFP|IFP"} == 100)  by (instance, mac, model, serial, table, feature)
     for: 5m
     labels:
       severity: info
@@ -46,7 +46,7 @@ groups:
       playbook: docs/devops/alert/baremetal
       dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
     annotations:
-      description: "switch {{ $labels.instance }} tcam usage of table {{ $labels.table }} and feature {{ $labels.feature }} over 80% for 5 min"
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }}, Feature {{ $labels.feature }} over 80% for 5 min"
       summary: "TCAM usage info for switch {{ $labels.instance }}"
       
   - alert: BaremetalIronicAristaMonSwitchDown
