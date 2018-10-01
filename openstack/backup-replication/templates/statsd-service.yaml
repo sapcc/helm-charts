@@ -1,0 +1,18 @@
+{{ if .Values.source }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: statsd
+  labels:
+    component: backup-replication
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9102"
+spec:
+  selector:
+    component: statsd-exporter
+  ports:
+    - name: statsd
+      port: 9125
+      protocol: UDP
+{{ end }}
