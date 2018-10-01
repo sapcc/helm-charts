@@ -1,0 +1,45 @@
+{{- if .Values.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: disco
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: disco
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.metricPort | quote }}
+    spec:
+      containers:
+        - name: disco
+          image: "{{.Values.image.repository}}:{{.Values.image.tag}}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - disco
+            - --ingress-annotation={{ .Values.ingressAnnotation }}
+            - --config=/etc/disco/config/disco.conf
+            - --metric-port={{ default 9091 .Values.metricPort }}
+            - --recordset-ttl={{ default 1800 .Values.recordsetTTL }}
+            - --record={{ required "missing record" .Values.record }}
+            - --zone-name={{ required "missing zone name" .Values.openstack.zoneName }}
+            - --recheck-period={{ default 5 .Values.recheckPeriod }}
+            - --resync-period={{ default 2 .Values.resyncPeriod }}
+            - --threadiness={{ default 1 .Values.threadiness }}
+            - --v={{ default 1 .Values.logLevel }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/disco/config/
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metricPort }}
+      volumes:
+        - name: config
+          configMap:
+            name: disco-config
+{{- end }}
