@@ -36,7 +36,7 @@ groups:
   - alert: BaremetalIronicAristaMonTableInfo
     # Single table IFP (Ingress) or EFP (Egress) on older Models (e.g. Arista 7060) is above 50%
     expr: count(arista_tcam{feature=~".+", table=~"EFP|IFP"} == 100)  by (instance, mac, model, serial, table, feature)
-    for: 5m
+    for: 30m
     labels:
       severity: info
       tier: baremetal
@@ -46,7 +46,7 @@ groups:
       playbook: docs/devops/alert/baremetal
       dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
     annotations:
-      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }}, Feature {{ $labels.feature }} over 80% for 5 min"
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }}, Feature {{ $labels.feature }} at 100% for 30 min"
       summary: "TCAM usage info for switch {{ $labels.instance }}"
       
   - alert: BaremetalIronicAristaMonSwitchDown
