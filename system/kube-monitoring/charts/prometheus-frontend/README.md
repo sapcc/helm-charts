@@ -1,5 +1,9 @@
 # Prometheus Alerting
 
+## Alert File
+
+The naming convention for alert files is `<tier>-<whatever>.alert`.
+
 ## Labels
 
 Prometheus alerts can be enriched with metadata using labels. Using these labels Prometheus can be configured to route, group and inhibit alerts. The labels are then again used to render the alerting notification you see in Slack. The configuration depends on the following labels:
