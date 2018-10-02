@@ -28,8 +28,8 @@ global:
 
 prometheus-node-exporter:
   image:
-    repository: quay.io/prometheus/node-exporter
-    tag: v0.16.0
+    repository: sapcc/node-exporter
+    tag: 9f820bd3
 
   serviceAccount:
     create: false
@@ -40,6 +40,14 @@ prometheus-node-exporter:
 
   extraArgs:
     - --collector.filesystem.ignored-mount-points=\"^/(sys|proc|dev|host|etc)($|/)\"
+    - --collector.systemd
+    - --collector.processes
+
+  extraHostVolumeMounts:
+    - name: dbus
+      hostPath: /var/run/dbus/system_bus_socket
+      mountPath: /var/run/dbus/system_bus_socket
+      readOnly: true
 
   resources:
     requests:
