@@ -9,7 +9,7 @@ actions:
   1:
     action: delete_indices
     description: >-
-      Delete indices so that we stay below {{.Values.elk_elasticsearch_data_retention}}
+      Delete indices so that we stay below {{.Values.elk_elasticsearch_data_retention_space}}
       gb of used disk space for indices (total summed up over all data nodes). The oldest
       indices will be deleted first. Ignore the error if the filter does not result in an
       actionable list of indices (ignore_empty_list) and exit cleanly.
@@ -31,7 +31,7 @@ actions:
   2:
     action: delete_indices
     description: >-
-      Delete indices older than {{.Values.elk_elasticsearch_data_retention}} days (based on index name).
+      Delete indices older than {{.Values.elk_elasticsearch_data_retention_time}} days (based on index name).
       Ignore the error if the filter does not result in an
       actionable list of indices (ignore_empty_list) and exit cleanly.
     options:
