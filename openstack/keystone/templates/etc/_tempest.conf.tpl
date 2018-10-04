@@ -4,7 +4,7 @@ use_stderr = True
 rally_debug = True
 
 [auth]
-use_dynamic_credentials = false
+use_dynamic_credentials = true
 test_accounts_file = /etc/tempest/accounts.yaml
 admin_username = admin
 admin_password = {{ .Values.tempest.adminPassword }}
@@ -30,6 +30,9 @@ admin_username = admin
 admin_password = {{ .Values.tempest.adminPassword }}
 catalog_type = identity
 disable_ssl_certificate_validation = true
+user_unique_last_password_count = 5
+user_lockout_duration = 300
+user_lockout_failure_attempts = 5
 
 [identity-feature-enabled]
 api_v2 = false
@@ -37,7 +40,7 @@ api_v2_admin = false
 api_v3 = true
 trust = true
 domain_specific_drivers = true
-security_compliance = false
+security_compliance = true
 project_tags = true
 application_credentials = true
 

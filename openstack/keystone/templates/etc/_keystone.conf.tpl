@@ -114,6 +114,11 @@ admin_project_name = {{ default "admin" .Values.api.cloudAdminProjectName }}
 project_name_url_safe = new
 domain_name_url_safe = new
 
+[security_compliance]
+lockout_failure_attempts = 5
+lockout_duration = 300
+unique_last_password_count = 5
+
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
 rabbit_password = {{ .Values.rabbitmq.users.default.password }}
@@ -131,3 +136,24 @@ driver = messaging
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true
+
+{{- if .Values.lifesaver.enabled }}
+[lifesaver]
+{{- if .Values.memcached.host }}
+memcached = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 11211}}
+{{ else }}
+memcached = {{ include "memcached_host" . }}:{{ .Values.memcached.port | default 11211}}
+{{- end }}
+domain_whitelist = {{ .Values.lifesaver.domain_whitelist | default "Default, tempest" }}
+user_whitelist = {{ .Values.lifesaver.user_whitelist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
+user_blacklist = {{ .Values.lifesaver.user_blacklist | default "" }}
+# initial user credit
+initial_credit = {{ .Values.lifesaver.initial_credit | default 70 }}
+# how often do we refill credit
+refill_seconds = {{ .Values.lifesaver.refill_seconds | default 60 }}
+# and with what amount
+refill_amount = {{ .Values.lifesaver.refill_amount | default 1 }}
+# cost of each status
+status_cost = {{ .Values.lifesaver.status_cost | default "default:1,401:10,403:5,404:0,429:0" }}
+{{- end }}
+
