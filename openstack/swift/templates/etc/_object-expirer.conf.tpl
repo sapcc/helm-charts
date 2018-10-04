@@ -6,7 +6,7 @@ log_level = INFO
 {{- end }}
 
 [object-expirer]
-concurrency = 2
+concurrency = {{ .Values.object_expirer_concurrency }}
 # auto_create_account_prefix = .
 
 [pipeline:main]
