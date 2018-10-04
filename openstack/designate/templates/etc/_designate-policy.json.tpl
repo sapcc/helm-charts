@@ -166,5 +166,5 @@
 
     "find_service_status": "rule:admin",
     "find_service_statuses": "rule:admin",
-    "update_service_service_status": "rule:admin"
+    "update_service_status": "rule:admin"
 }
