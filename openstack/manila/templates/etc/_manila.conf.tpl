@@ -81,7 +81,7 @@ lock_path = /var/lib/manila/tmp
 {{- include "ini_sections.database" . }}
 
 [keystone_authtoken]
-auth_plugin = v3password
+auth_type = v3password
 auth_version = v3
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
