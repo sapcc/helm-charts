@@ -92,6 +92,8 @@ region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+service_token_roles_required = True
+service_token_roles = service
 insecure = True
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
