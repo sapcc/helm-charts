@@ -3,21 +3,21 @@ image:
   tag: v201809231637
   pullPolicy: IfNotPresent
 
-# config
+# Symantec/DigiCert VICE API configuration
 vice:
-  first_name: ""
-  last_name: ""
-  email: ""
-  country: ""
-  province: ""
-  locality: ""
-  organization: ""
-  organizational_unit: ""
-  default_challenge: ""
+  firstName:
+  lastName:
+  email:
+  country:
+  province:
+  locality:
+  organization:
+  organizationalUnit:
+  defaultChallenge:
 
   # symantec API SSO certificate and key
-  cert: ""
-  key: ""
+  cert:
+  key:
 
   # RSA SHA-2 intermediate CA
   intermediate: |
@@ -49,15 +49,35 @@ vice:
     j6tJLp07kzQoH3jOlOrHvdPJbRzeXDLz
     -----END CERTIFICATE-----
 
-# operator settings
+# operator configuration
 president:
-  resync_period_minutes: 4
-  certificate_check_interval_minutes: 30
-  rate_limit: 2
-  metrics_port: 9091
-  log_level: 1
+  # trigger certificate renewal if cert is valid for less than min_cert_validity_days
+  minCertValidityDays: 30
 
+  # verify the certificate via TLS handshake
+  # potentially triggers additional certificate renewals or enrollments if the new certificate is not yet presented
+  # certificateCheckIntervalMinutes should be set accordingly
+  enableValidateRemoteCert: false
 
+  # enable additional symantec metrics for token usage
+  enableSymantecMetrics: true
 
+  # resync ingress and secrets every n minutes
+  resyncPeriodMinutes: 4
 
+  # check certificates every n minutes
+  certificateCheckIntervalMinutes: 30
 
+  # rate limit for certificate enrollments, renewals, etc. per certificateCheckIntervalMinutes
+  rateLimit: 2
+
+  # port to expose prometheus metrics on
+  metricsPort: 9091
+
+  # the log level
+  logLevel: 1
+
+  # rbac
+  rbac:
+    create: false
+    serviceAccountName: default
