@@ -171,7 +171,7 @@ pgmetrics:
              description: "instance current state"
          - time_taken_gauge:
              usage: "GAUGE"
-             description: "Name of host"
+             description: "Instances termination time in past 24hrs"
      openstack_compute_instance_termination:
        query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host!='nova-compute-ironic' GROUP BY host, project_id, uuid, vm_state"
        metrics:
@@ -189,7 +189,7 @@ pgmetrics:
              description: "instance current state"
          - time_taken_gauge:
              usage: "GAUGE"
-             description: "Name of host"
+             description: "Instances termination time in past 24hrs"
      openstack_compute_instance_created:
        query: "SELECT coalesce(host, 'N/A') AS host, uuid, vm_state, COUNT(*) AS in_24hrs_gauge FROM instances WHERE (created_at >= now() - interval '24 hours') AND host!='nova-compute-ironic' GROUP BY host, uuid, vm_state"
        metrics:
@@ -204,58 +204,76 @@ pgmetrics:
              description: "Instance UUID"
          - in_24hrs_gauge:
              usage: "GAUGE"
-             description: "Name of host"
+             description: "Instances created past 24hrs"
      openstack_ironic_node_launch:
        query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY host, project_id, uuid, vm_state"
        metrics:
          - host:
              usage: "LABEL"
-             description: "Name of host"
+             description: "Host name of the node"
          - project_id:
              usage: "LABEL"
-             description: "Project ID of the instance"
+             description: "Project ID of the Node"
          - uuid:
              usage: "LABEL"
-             description: "Instance UUID"
+             description: "Node UUID"
          - vm_state:
              usage: "LABEL"
-             description: "instance current state"
+             description: "Node current state"
          - time_taken_gauge:
              usage: "GAUGE"
-             description: "Name of host"
+             description: "Nodes Launch time in past 24hrs"
      openstack_ironic_node_termination:
        query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY host, project_id, uuid, vm_state"
        metrics:
          - host:
              usage: "LABEL"
-             description: "Name of host"
+             description: "Host name of the node"
          - project_id:
              usage: "LABEL"
-             description: "Project ID of the instance"
+             description: "Project ID of the Node"
          - uuid:
              usage: "LABEL"
-             description: "Instance UUID"
+             description: "Node UUID"
          - vm_state:
              usage: "LABEL"
-             description: "instance current state"
+             description: "Node current state"
          - time_taken_gauge:
              usage: "GAUGE"
-             description: "Name of host"
+             description: "Nodes termination time in past 24hrs"
      openstack_ironic_node_created:
        query: "SELECT coalesce(host, 'N/A') AS host, uuid, vm_state, COUNT(*) AS in_24hrs FROM instances WHERE (created_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY host, uuid, vm_state"
        metrics:
          - host:
              usage: "LABEL"
-             description: "Name of host"
+             description: "Host name of the node"
          - vm_state:
              usage: "LABEL"
-             description: "instance current state"
+             description: "Node current state"
          - uuid:
              usage: "LABEL"
-             description: "Instance UUID"
+             description: "Node UUID"
          - in_24hrs_gauge:
              usage: "GAUGE"
-             description: "Name of host"
+             description: "Nodes created past 24hrs"
+     openstack_ironic_nodes:
+       query: "SELECT instances.uuid AS node_id, instances.project_id,  instances.vm_state, coalesce(instance_types.name,'N/A') AS flavor_name, COUNT(*) AS gauge FROM instances JOIN instance_types ON instances.instance_type_id=instance_types.id where host='nova-compute-ironic' GROUP BY instances.vm_state, instances.host, instances.project_id, instance_types.name, instances.uuid"
+       metrics:
+         - node_id:
+             usage: "LABEL"
+             description: "Node UUID"
+         - project_id:
+             usage: "LABEL"
+             description: "Project ID of the Node"
+         - vm_state:
+             usage: "LABEL"
+             description: "Node current state"
+         - flavor_name:
+             usage: "LABEL"
+             description: "Node flavor Name"
+         - gauge:
+             usage: "GAUGE"
+             description: "Node Count"
      openstack_compute_nodes:
        query: "SELECT compute_nodes.host, compute_nodes.uuid, aggregate_metadata.value AS availability_zone, compute_nodes.hypervisor_type, compute_nodes.free_disk_gb AS free_disk_gb_gauge, compute_nodes.local_gb AS local_gb_gauge, compute_nodes.local_gb_used AS local_gb_used_gauge, compute_nodes.free_ram_mb AS free_ram_mb_gauge, compute_nodes.memory_mb AS memory_mb_gauge, compute_nodes.memory_mb_used AS memory_mb_used_gauge, compute_nodes.vcpus_used AS vcpus_used_gauge, compute_nodes.vcpus AS vcpus_gauge, compute_nodes.running_vms AS running_vms_gauge from compute_nodes join aggregate_hosts on compute_nodes.host=aggregate_hosts.host join aggregate_metadata on aggregate_hosts.aggregate_id=aggregate_metadata.aggregate_id WHERE compute_nodes.deleted = 0 AND aggregate_hosts.deleted=0 AND aggregate_metadata.deleted=0 AND aggregate_metadata.key='availability_zone'"
        metrics:
