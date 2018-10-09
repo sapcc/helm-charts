@@ -65,22 +65,6 @@ groups:
       description: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
       summary: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
 
-  - alert: BaremetalIronicAristaMonSwitchDownCritical
-    # No metrics could be retrieved from the switch. Means API is not reachable.
-    expr: count(arista_up == 0) by (instance, model, serial)
-    for: 5m
-    labels:
-      severity: critical
-      tier: baremetal
-      service: ironic
-      context: "{{ $labels.instance }}"
-      meta: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
-      playbook: docs/devops/alert/baremetal
-      dashboard: "arista-monitoring-details?var-instance={{$lables.instance}}"
-    annotations:
-      description: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
-      summary: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
-
   - alert: BaremetalIronicAristaMonResponseWarn
     # Slow response from the Switch above 1 second.
     expr: count(arista_response > 1) by (instance, model, serial)
