@@ -68,7 +68,7 @@ groups:
   - alert: BaremetalIronicAristaMonResponseWarn
     # Slow response from the Switch above 1 second.
     expr: count(arista_response > 1) by (instance, model, serial)
-    for: 5m
+    for: 10m
     labels:
       severity: warning
       tier: baremetal
@@ -76,7 +76,7 @@ groups:
       context: "{{ $labels.instance }}"
       meta: "Arista switch {{ $labels.instance }} responding slower than 1 second."
       playbook: docs/devops/alert/baremetal
-      dashboard: arista-monitoring-overview?panelId=7&fullscreen&orgId=1&var-instance={{labels.instance}}
+      dashboard: arista-monitoring-overview?panelId=7&fullscreen&orgId=1&var-instance={{$labels.instance}}
     annotations:
       description: "Arista switch {{ $labels.instance }} responding slower than 1 second."
       summary: "Arista switch {{ $labels.instance }} responding slower than 1 second."
@@ -84,7 +84,7 @@ groups:
   - alert: BaremetalIronicAristaMonResponseCritical
     # Slow response from the Switch above 5 second.
     expr: count(arista_response > 5) by (instance, model, serial)
-    for: 5m
+    for: 10m
     labels:
       severity: critical
       tier: baremetal
@@ -92,7 +92,7 @@ groups:
       context: "{{ $labels.instance }}"
       meta: "Arista switch {{ $labels.instance }} responding slower than 5 second."
       playbook: docs/devops/alert/baremetal
-      dashboard: arista-monitoring-overview?panelId=7&fullscreen&orgId=1&var-instance={{labels.instance}}
+      dashboard: arista-monitoring-overview?panelId=7&fullscreen&orgId=1&var-instance={{$labels.instance}}
     annotations:
       description: "Arista switch {{ $labels.instance }} responding slower than 5 second."
       summary: "Arista switch {{ $labels.instance }} responding slower than 5 second."
