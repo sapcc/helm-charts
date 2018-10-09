@@ -224,7 +224,7 @@ pgmetrics:
              usage: "GAUGE"
              description: "Nodes Launch time in past 24hrs"
      openstack_ironic_node_termination:
-       query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, hostname AS node_name, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY project_id, uuid, vm_state, hostname"
+       query: "SELECT project_id, uuid, hostname AS node_name, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY project_id, uuid, vm_state, hostname"
        metrics:
          - project_id:
              usage: "LABEL"
