@@ -4,33 +4,33 @@ groups:
   - alert: BaremetalIronicAristaMonTotalInfo
     # Total of ACL, IFP or EFP table is above 80%
     expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 50)  by (instance, model, serial, table)
-    for: 5m
+    for: 30m
     labels:
       severity: info
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of {{ $value }}%"
+      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of 50%"
       playbook: docs/devops/alert/baremetal
       dashboard: arista-monitoring-details?var-instance={{labels.instance}}
     annotations:
-      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} over 50% for 5 min"
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} above 50% for 5 min"
       summary: "TCAM usage info for switch {{ $labels.instance }}"
       
   - alert: BaremetalIronicAristaMonTotalWarn
     # Total of ACL, IFP or EFP table is above 90%
     expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 80)  by (instance, model, serial, table)
-    for: 5m
+    for: 30m
     labels:
       severity: warning
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of {{ $value }}%"
+      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }} has a usage of 80%"
       playbook: docs/devops/alert/baremetal
       dashboard: arista-monitoring-details?var-instance={{labels.instance}}
     annotations:
-      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} over {{ $value }}% for 5 min"
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} above 80% for 5 min"
       summary: "TCAM usage warning for switch {{ $labels.instance }}"
       
   - alert: BaremetalIronicAristaMonTableInfo
@@ -42,17 +42,17 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }}, Feature {{ $labels.feature }} has a usage of {{ $value }}%"
+      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }}, Feature {{ $labels.feature }} has a usage of 100%"
       playbook: docs/devops/alert/baremetal
       dashboard: arista-monitoring-details?var-instance={{labels.instance}}
     annotations:
-      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }}, Feature {{ $labels.feature }} at {{ $value }}% for 30 min"
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }}, Feature {{ $labels.feature }} at 100% for 30 min"
       summary: "TCAM usage info for switch {{ $labels.instance }}"
       
   - alert: BaremetalIronicAristaMonSwitchDownCritical
     # No metrics could be retrieved from the switch. Means API is not reachable.
     expr: count(arista_up == 0) by (instance, model, serial)
-    for: 5m
+    for: 10m
     labels:
       severity: critical
       tier: baremetal
