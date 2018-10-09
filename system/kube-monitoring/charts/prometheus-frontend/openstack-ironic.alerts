@@ -63,6 +63,7 @@ groups:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is down. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
 
+
   - alert: OpenstackIronicCanaryTimeout
     expr: blackbox_regression_status_gauge{service=~"ironic"} == 0.5
     for: 5m
@@ -78,3 +79,17 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
+
+  - alert: OpenstackIronicNodeInErrorState
+    expr: sum(openstack_ironic_nodes_gauge{vm_state='error'})by(project_id,node_id) > 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: Ironic-Baremetal
+      meta: '{{ $value }} Nodes are in Error State'
+    annotations:
+      description: 'Ironic Node-id{{ $labels.node_id }} from Project {{ $ labels.project_id }} is in Error State'
+      summary: Openstack Ironic Node In Error State
