@@ -2,8 +2,8 @@ groups:
 - name: baremetal-arista-mon.alerts
   rules:      
   - alert: BaremetalIronicAristaMonTotalInfo
-    # Total of ACL, IFP or EFP table is above 50%
-    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 50)  by (instance, mac, model, serial, table)
+    # Total of ACL, IFP or EFP table is above 80%
+    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 50)  by (instance, model, serial, table)
     for: 5m
     labels:
       severity: info
@@ -17,9 +17,9 @@ groups:
       description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} over 50% for 5 min"
       summary: "TCAM usage info for switch {{ $labels.instance }}"
       
-  - alert: BaremetalIronicAristaMonTotalWarning
-    # Total of ACL, IFP or EFP table is above 80%
-    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 80)  by (instance, mac, model, serial, table)
+  - alert: BaremetalIronicAristaMonTotalWarn
+    # Total of ACL, IFP or EFP table is above 90%
+    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 80)  by (instance, model, serial, table)
     for: 5m
     labels:
       severity: warning
@@ -30,12 +30,12 @@ groups:
       playbook: docs/devops/alert/baremetal
       dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
     annotations:
-      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} over 80% for 5 min"
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} over {{ $value }}% for 5 min"
       summary: "TCAM usage warning for switch {{ $labels.instance }}"
       
   - alert: BaremetalIronicAristaMonTableInfo
-    # Single table IFP (Ingress) or EFP (Egress) on older Models (e.g. Arista 7060) is above 50%
-    expr: count(arista_tcam{feature=~".+", table=~"EFP|IFP"} == 100)  by (instance, mac, model, serial, table, feature)
+    # Single table IFP (Ingress) or EFP (Egress) on older Models (e.g. Arista 7060) is at 100%
+    expr: count(arista_tcam{feature=~".+", table=~"EFP|IFP"} == 100)  by (instance, model, serial, table, feature)
     for: 30m
     labels:
       severity: info
@@ -46,15 +46,15 @@ groups:
       playbook: docs/devops/alert/baremetal
       dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
     annotations:
-      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }}, Feature {{ $labels.feature }} at 100% for 30 min"
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }}, Feature {{ $labels.feature }} at {{ $value }}% for 30 min"
       summary: "TCAM usage info for switch {{ $labels.instance }}"
       
   - alert: BaremetalIronicAristaMonSwitchDown
     # No metrics could be retrieved from the switch. Means API is not reachable.
-    expr: count(arista_up == 0) by (instance, mac, model, serial)
+    expr: count(arista_up == 0) by (instance, model, serial)
     for: 5m
     labels:
-      severity: warning
+      severity: critical
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
@@ -64,3 +64,35 @@ groups:
     annotations:
       description: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
       summary: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+
+  - alert: BaremetalIronicAristaMonResponseWarn
+    # Slow response from the Switch above 1 second.
+    expr: count(arista_response > 1) by (instance, model, serial)
+    for: 5m
+    labels:
+      severity: warning
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.instance }}"
+      meta: "Arista switch {{ $labels.instance }} responding slower than 1 second."
+      playbook: docs/devops/alert/baremetal
+      dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
+    annotations:
+      description: "Arista switch {{ $labels.instance }} responding slower than 1 second."
+      summary: "Arista switch {{ $labels.instance }} responding slower than 1 second."
+
+  - alert: BaremetalIronicAristaMonResponseCritical
+    # Slow response from the Switch above 5 second.
+    expr: count(arista_response > 5) by (instance, model, serial)
+    for: 5m
+    labels:
+      severity: critical
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.instance }}"
+      meta: "Arista switch {{ $labels.instance }} responding slower than 5 second."
+      playbook: docs/devops/alert/baremetal
+      dashboard: "arista-monitoring-details?var-instance={{`{{$lables.instance}}`}}"
+    annotations:
+      description: "Arista switch {{ $labels.instance }} responding slower than 5 second."
+      summary: "Arista switch {{ $labels.instance }} responding slower than 5 second."
