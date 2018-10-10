@@ -79,17 +79,3 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
-  - alert: OpenstackIronicNodeInErrorState
-    expr: sum(openstack_ironic_nodes_gauge{vm_state='error'})by(project_id,node_name) > 0
-    for: 4h 
-    labels:
-      severity: warning
-      tier: openstack
-      service: ironic
-      dashboard: Ironic-Baremetal
-      meta: 'Node {{ $labels.node_name }} in Error State'
-      playbook: 'docs/support/playbook/devops/alert/baremetal/'
-    annotations:
-      description: 'Ironic Node {{ $labels.node_name }} from Project {{ $labels.project_id }} is in Error State'
-      summary: 'Openstack Ironic Node In Error State'
