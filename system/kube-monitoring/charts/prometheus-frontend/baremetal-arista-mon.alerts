@@ -51,7 +51,7 @@ groups:
       
   - alert: BaremetalIronicAristaMonSwitchDownCritical
     # No metrics could be retrieved from the switch. Means API is not reachable.
-    expr: count(arista_up == 0) by (instance, model, serial)
+    expr: count(arista_up == 0) by (instance)
     for: 10m
     labels:
       severity: critical
@@ -66,24 +66,24 @@ groups:
       summary: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
 
   - alert: BaremetalIronicAristaMonResponseWarn
-    # Slow response from the Switch above 1 second.
-    expr: count(arista_response > 1) by (instance, model, serial)
+    # Slow response from the Switch above 2 second.
+    expr: count(arista_response > 1) by (instance)
     for: 10m
     labels:
       severity: warning
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "Arista switch {{ $labels.instance }} responding slower than 1 second."
+      meta: "Arista switch {{ $labels.instance }} responding slower than 2 second."
       playbook: docs/devops/alert/baremetal
       dashboard: arista-monitoring-overview?panelId=7&fullscreen&orgId=1&var-instance={{ $labels.instance }}
     annotations:
-      description: "Arista switch {{ $labels.instance }} responding slower than 1 second."
-      summary: "Arista switch {{ $labels.instance }} responding slower than 1 second."
+      description: "Arista switch {{ $labels.instance }} responding slower than 2 second."
+      summary: "Arista switch {{ $labels.instance }} responding slower than 2 second."
 
   - alert: BaremetalIronicAristaMonResponseCritical
     # Slow response from the Switch above 5 second.
-    expr: count(arista_response > 5) by (instance, model, serial)
+    expr: count(arista_response > 5) by (instance)
     for: 10m
     labels:
       severity: critical
