@@ -25,7 +25,7 @@ fi
 {{ if contains "pike" $image }} # Cell setup with Pike
 # Upgrade to newton
 nova-manage api_db sync --version 29 || true
-nova-manage db sync --version 334 || true
+nova-manage db sync --version 362 || true
 echo 'Ignore errors due to online data migration'
 nova-manage db online_data_migrations
 
