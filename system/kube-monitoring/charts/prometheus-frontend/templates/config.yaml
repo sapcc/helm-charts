@@ -48,7 +48,7 @@ data:
       # The labels to add to any time series or alerts when communicating with
       # external systems (federation, remote storage, Alertmanager).
       external_labels:
-        region: {{ .Values.global.region }}
+        region: {{ if .Values.regionPrefix }}{{ .Values.regionPrefix }}{{- end -}}{{ .Values.global.region }}
 
     rule_files:
       - ./*.rules
@@ -159,7 +159,7 @@ data:
       relabel_configs:
         - action: replace
           target_label: region
-          replacement: {{ .Values.global.region }}
+          replacement: {{ if .Values.regionPrefix }}{{ .Values.regionPrefix }}{{- end -}}{{ .Values.global.region }}
 
       metric_relabel_configs:
         - action: replace
