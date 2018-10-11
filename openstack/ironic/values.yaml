@@ -98,6 +98,49 @@ swift_tempurl: null
 
 pgmetrics:
   name: ironic
+  customMetrics:
+     openstack_ironic_nodes_list:
+      query: "Select uuid, name, instance_uuid,  power_state,  maintenance, provision_state, last_error, count(*) as gauge from nodes group by uuid, name, instance_uuid,  power_state, maintenance, provision_state, last_error"
+      metrics:
+        - uuid:
+            usage: "LABEL"
+            description: "Node UUID"
+        - name:
+            usage: "LABEL"
+            description: "Node name"
+        - instance_uuid:
+            usage: "LABEL"
+            description: "Instance UUID provisioned on the node"
+        - power_state:
+            usage: "LABEL"
+            description: "Power State of the node"
+        - maintenance:
+            usage: "LABEL"
+            description: "Current Power State of the node"
+        - provision_state:
+            usage: "LABEL"
+            description: "Current Node Provision status"
+        - last_error:
+            usage: "LABEL"
+            description: "Node last error"
+        - gauge:
+            usage: "GAUGE"
+            description: "Current Node count"
+     openstack_ironic_nodes_created:
+       query: "SELECT uuid, name, provision_state, COUNT(*) AS in_24hrs FROM nodes WHERE (created_at >= now() - interval '24 hours') GROUP BY uuid, provision_state, name"
+       metrics:
+         - uuid:
+             usage: "LABEL"
+             description: "Node UUID"
+         - name:
+             usage: "LABEL"
+             description: "Node name"
+         - provision_state:
+             usage: "LABEL"
+             description: "Current Node Provision status"
+         - in_24hrs_gauge:
+              usage: "GAUGE"
+              description: "Nodes created past 24hrs"
 
 postgresql:
   imageTag: '9.4.14'
