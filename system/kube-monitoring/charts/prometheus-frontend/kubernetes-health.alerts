@@ -66,23 +66,10 @@ groups:
       service: resources
       severity: info
       context: pod
-      meta: "{{$labels.namespace}}/{{$labels.pod}}"
+      meta: "Pod {{$labels.namespace}}/{{$labels.pod}} is restarting constantly"
     annotations:
-      description: Pod is in a restart loop
-      summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting constantly
-
-  - alert: KubernetesPodRestartingTooMuch
-    expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
-    for: 1h
-    labels:
-      tier: kubernetes
-      service: resources
-      severity: info
-      context: pod
-      meta: "{{$labels.namespace}}/{{$labels.pod}}"
-    annotations:
-      description: Pod is in a restart loop
-      summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting constantly
+      description: Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting constantly
+      summary: Pod is in a restart loop
 
   - alert: KubernetesSchedulerDown
     expr: count(up{job="kube-system/scheduler"} == 1) == 0
@@ -170,7 +157,7 @@ groups:
       service: deployment
       severity: info
       context: deployment
-      meta: "{{ $labels.deployment }}"
+      meta: "{ $labels.namespace }}/{{ $labels.deployment }} has insufficient replicas"
     annotations:
-      description: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has {{ $value }} replica available, which is less then desired
+      description: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} only {{ $value }} replica available, which is less then desired
       summary: Deployment has less than desired replicas since 10m
