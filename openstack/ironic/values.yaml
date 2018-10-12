@@ -100,7 +100,7 @@ pgmetrics:
   name: ironic
   customMetrics:
      openstack_ironic_nodes_list:
-      query: "Select uuid, name, instance_uuid,  power_state,  maintenance, provision_state, last_error, count(*) as gauge from nodes group by uuid, name, instance_uuid,  power_state, maintenance, provision_state, last_error"
+      query: "SELECT uuid, name, instance_uuid,  power_state,  provision_state, last_error, count(*) as gauge from nodes group by uuid, name, instance_uuid,  power_state, provision_state, last_error"
       metrics:
         - uuid:
             usage: "LABEL"
@@ -114,9 +114,6 @@ pgmetrics:
         - power_state:
             usage: "LABEL"
             description: "Power State of the node"
-        - maintenance:
-            usage: "LABEL"
-            description: "Current Power State of the node"
         - provision_state:
             usage: "LABEL"
             description: "Current Node Provision status"
@@ -126,8 +123,8 @@ pgmetrics:
         - gauge:
             usage: "GAUGE"
             description: "Current Node count"
-     openstack_ironic_nodes_created:
-       query: "SELECT uuid, name, provision_state, COUNT(*) AS in_24hrs FROM nodes WHERE (created_at >= now() - interval '24 hours') GROUP BY uuid, provision_state, name"
+     openstack_ironic_nodes_updated:
+       query: "SELECT uuid, name, provision_state, COUNT(*) AS in_24hrs FROM nodes WHERE (updated_at >= now() - interval '24 hours') GROUP BY uuid, provision_state, name"
        metrics:
          - uuid:
              usage: "LABEL"
@@ -141,7 +138,21 @@ pgmetrics:
          - in_24hrs_gauge:
               usage: "GAUGE"
               description: "Nodes created past 24hrs"
-
+     openstack_ironic_nodes:
+       query: "SELECT count(case when not maintenance then 1 end) as NodeNotInMaint, count(case when maintenance then 1 end) as NodeInMaint, uuid, name from nodes group by  uuid, name"
+       metrics:
+         - uuid:
+             usage: "LABEL"
+             description: "Node UUID"
+         - name:
+             usage: "LABEL"
+             description: "Node name"
+         - NodeNotInMaint:
+             usage: "GAUGE"
+             description: "Node not in maintenance"
+         - NodeInMaint:
+              usage: "GAUGE"
+              description: "Nodes in maintenance"
 postgresql:
   imageTag: '9.4.14'
   postgresDatabase: ironic
