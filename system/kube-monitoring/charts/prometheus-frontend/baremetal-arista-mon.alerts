@@ -33,22 +33,6 @@ groups:
       description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} above 80% for 30 min"
       summary: "TCAM usage warning for switch {{ $labels.instance }}"
       
-  - alert: BaremetalIronicAristaMonTableInfo
-    # Single table IFP (Ingress) or EFP (Egress) on older Models (e.g. Arista 7060) is at 100%
-    expr: count(arista_tcam{feature=~".+", table=~"EFP|IFP"} == 100)  by (instance, model, serial, table, feature)
-    for: 12h
-    labels:
-      severity: info
-      tier: baremetal
-      service: ironic
-      context: "{{ $labels.instance }}"
-      meta: "switch {{ $labels.instance }}: Table {{ $labels.table }}, Feature {{ $labels.feature }} has a usage of 100%"
-      playbook: docs/devops/alert/baremetal
-      dashboard: arista-monitoring-details?var-instance={{ $labels.instance }}
-    annotations:
-      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }}, Feature {{ $labels.feature }} at 100% for 30 min"
-      summary: "TCAM usage info for switch {{ $labels.instance }}"
-      
   - alert: BaremetalIronicAristaMonSwitchDownCritical
     # No metrics could be retrieved from the switch. Means API is not reachable.
     expr: count(arista_up == 0) by (instance)
