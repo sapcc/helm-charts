@@ -4,14 +4,14 @@ groups:
 - name: node.alerts
   rules:
   - alert: KubernetesHostHighCPUUsage
-    expr: avg(irate(node_cpu{mode="idle"}[5m])) by(instance, region) < 0.2
+    expr: avg(irate(node_cpu_seconds_total{instance=~".*cloud.sap",mode="idle"}[5m])) by(instance)
     for: 3m
     labels:
       tier: kubernetes
       service: node
       severity: warning
       context: node
-      meta: "{{ $labels.instance }}"
+      meta: "High CPU usage on {{ $labels.instance }}"
       dashboard: kubernetes-node?var-server={{$labels.instance}}
     annotations:
       description: High load on node
@@ -25,7 +25,7 @@ groups:
       service: node
       severity: warning
       context: availability
-      meta: "{{ $labels.instance }}"
+      meta: "Clock drift on {{ $labels.instance }}"
       dashboard: kubernetes-node?var-server={{$labels.instance}}
     annotations:
       description: High NTP drift
@@ -39,11 +39,11 @@ groups:
       service: node
       severity: info
       context: availability
-      meta: "{{ $labels.instance }}"
+      meta: "Kernel deadlock on {{ $labels.node }}"
       playbook: docs/support/playbook/k8s_node_safe_rebooting.html
     annotations:
       description: Node kernel has deadlock
-      summary: Permanent kernel deadlock on {{$labels.node}}. Please drain and reboot node
+      summary: Permanent kernel deadlock on {{ $labels.node }}. Please drain and reboot node
 
   - alert: KubernetesNodeDiskPressure
     expr: kube_node_status_condition{condition="DiskPressure",status="true"} == 1
@@ -53,10 +53,10 @@ groups:
       service: node
       severity: warning
       context: node
-      meta: "{{ $labels.instance }}"
+      meta: "Disk pressure on {{ $labels.node }}"
     annotations:
       description: Insufficient disk space
-      summary: Node {{$labels.instance}} under pressure due to insufficient available disk space
+      summary: Node {{ $labels.node }} under pressure due to insufficient available disk space
 
   - alert: KubernetesNodeMemoryPressure
     expr: kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
@@ -66,16 +66,16 @@ groups:
       service: node
       severity: warning
       context: node
-      meta: "{{ $labels.instance }}"
+      meta: "Memory pressure on {{ $labels.node }}"
     annotations:
       description: Insufficient memory
-      summary: Node {{$labels.instance}} under pressure due to insufficient available memory
+      summary: Node {{ $labels.node }} under pressure due to insufficient available memory
 
 
   ### Network health ###
 
   - alert: KubernetesNodeHighNumberOfOpenConnections
-    expr: node_netstat_Tcp_CurrEstab > 20000
+    expr: node_netstat_Tcp_CurrEstab{instance=~".*cloud.sap"} > 20000
     for: 15m
     labels:
       tier: kubernetes
@@ -89,7 +89,7 @@ groups:
       summary: The node {{ $labels.instance }} has more than 20000 active TCP connections. The maximally possible amount is 32768 connections
 
   - alert: KubernetesNodeHighRiseOfOpenConnections
-    expr: predict_linear(node_netstat_Tcp_CurrEstab[20m], 3600) > 32768
+    expr: predict_linear(node_netstat_Tcp_CurrEstab{instance=~".*cloud.sap"}[20m], 3600) > 32768
     for: 15m
     labels:
       tier: kubernetes
