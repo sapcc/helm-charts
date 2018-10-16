@@ -9,12 +9,12 @@ groups:
       service: k8s
       severity: critical
       context: node
-      meta: "{{ $labels.instance }}"
+      meta: "{{ $value }} nodes NotReady"
       dashboard: kubernetes-health
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
     annotations:
       description: Many Nodes are NotReady
-      summary: Many ({{$value}}) nodes are NotReady for more than an hour
+      summary: {{ $value }} nodes are NotReady for more than an hour
 
   - alert: KubernetesNodeNotReady
     expr: kube_node_status_condition{condition="Ready",status="true"} == 0
@@ -24,12 +24,12 @@ groups:
       service: k8s
       severity: warning
       context: node
-      meta: "{{ $labels.instance }}"
-      dashboard: kubernetes-node?var-server={{$labels.instance}}
+      meta: "{{ $labels.node }} is NotReady"
+      dashboard: kubernetes-node?var-server={{$labels.node}}
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
     annotations:
       description: Node status is NotReady
-      summary: Node {{$labels.node}} is NotReady for more than an hour
+      summary: Node {{ $labels.node }} is NotReady for more than an hour
 
   - alert: KubernetesNodeNotReadyFlapping
     expr: changes(kube_node_status_condition{condition="Ready",status="true"}[15m]) > 2
