@@ -48,6 +48,7 @@ auth_section = service_catalog
 
 [service_catalog]
 auth_section = service_catalog
+region_name = {{ .Values.global.region }}
 # auth_section
 auth_plugin = v3password
 auth_version = v3
@@ -90,6 +91,7 @@ url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}
 cleaning_network = {{ .Values.network_cleaning_uuid }}
 provisioning_network = {{ .Values.network_management_uuid }}
 url_timeout = {{ .Values.neutron_url_timeout }}
+timeout = {{ .Values.neutron_url_timeout }}
 port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 
 [oslo_middleware]
