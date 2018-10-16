@@ -21,7 +21,11 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: web
+{{- if typeIs "float64" .Values.image.tag  }}{{/* You can't make this shit up. Remove as soon as possible */}}
+          image: {{.Values.image.repository}}:{{.Values.image.tag | printf "%0.f" }}
+{{- else }}
           image: {{.Values.image.repository}}:{{.Values.image.tag}}
+{{- end }}
           imagePullPolicy: {{.Values.image.pullPolicy}}
           ports:
             - name: http
