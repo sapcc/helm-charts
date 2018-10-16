@@ -43,6 +43,7 @@ region = {{ .Values.global.region }}
 
 [keystone_authtoken]
 auth_section = service_catalog
+memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
@@ -59,7 +60,6 @@ username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }
 password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
-memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 insecure = True
 
 [glance]
