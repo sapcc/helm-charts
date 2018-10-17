@@ -4,7 +4,7 @@ groups:
 - name: node.alerts
   rules:
   - alert: KubernetesHostHighCPUUsage
-    expr: avg(irate(node_cpu_seconds_total{instance=~".*cloud.sap",mode="idle"}[5m])) by(instance) < 0.2
+    expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle", instance=~".*cloud.sap"}[5m])) * 100) > 90
     for: 15m
     labels:
       tier: kubernetes
@@ -14,8 +14,8 @@ groups:
       meta: "High CPU usage on {{ $labels.instance }}"
       dashboard: kubernetes-node?var-server={{$labels.instance}}
     annotations:
-      description: High load on node
-      summary: The node {{ $labels.instance }} has more than 80% CPU load
+      summary: High load on node
+      description: "Node {{ $labels.instance }} has more than {{ $value }}% CPU load"
 
   - alert: KubernetesNodeClockDrift
     expr: abs(ntp_drift_seconds) > 0.3
