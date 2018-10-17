@@ -157,3 +157,7 @@ refill_amount = {{ .Values.lifesaver.refill_amount | default 1 }}
 status_cost = {{ .Values.lifesaver.status_cost | default "default:1,401:10,403:5,404:0,429:0" }}
 {{- end }}
 
+{{- if .Values.cors.enabled }}
+[cors]
+allowed_origin = {{ .Values.cors.allowed_origin | default "*"}}
+{{- end }}
