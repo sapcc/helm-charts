@@ -127,3 +127,48 @@ groups:
     annotations:
       description: "Predicting high number of process threads on instance {{ $labels.instance }} within the next 8 hours"
       summary: Predicting high number of process threads
+
+  ### Bonding health ###
+
+  - alert: KubernetesNodeNetworkBondDegraded
+    expr: sum(node_bonding_active{master="bond1",instance=~".*cloud.sap"}) by (master, instance) < 2
+    for: 15m
+    labels:
+      tier: kubernetes
+      service: node
+      severity: info 
+      context: bond 
+      meta: "{{ $labels.instance }}"
+      playbook: "docs/support/playbook/kubernetes/k8s_bond_degraded.html"
+    annotations:
+      description: Bond {{ $labels.master }} on {{ $labels.instance }} is degraded.  
+      summary: Bond {{ $labels.master }} is degraded. This bond isn't used but this situation could cause problems on reboot.
+
+  - alert: KubernetesNodeNetworkBondDegraded
+    expr: sum(node_bonding_active{master="bond1",instance=~"network.*cloud.sap"}) by (master, instance) == 1
+    for: 15m
+    labels:
+      tier: kubernetes
+      service: node
+      severity: critical 
+      context: bond 
+      meta: "{{ $labels.instance }}"
+      playbook: "docs/support/playbook/kubernetes/k8s_bond_degraded.html"
+    annotations:
+      description: Bond {{ $labels.master }} on {{ $labels.instance }} is degraded. Network datapath threatened! 
+      summary: Bond {{ $labels.master }} is degraded. Switch failover will cause this node to be disconneted. Network datapath is not HA! Incidents on the other network node will take out the whole region!  
+
+  - alert: KubernetesNodeMainBondDegraded
+    expr: sum(node_bonding_active{master="bond2",instance=~".*cloud.sap"}) by (master, instance) < 2
+    for: 15m
+    labels:
+      tier: kubernetes
+      service: node
+      severity: warning 
+      context: bond 
+      meta: "{{ $labels.instance }}"
+      playbook: "docs/support/playbook/kubernetes/k8s_bond_degraded.html"
+    annotations:
+      description: Bond {{ $labels.master }} on {{ $labels.instance }} is degraded. Imminent network outage for this node. 
+      summary: Bond {{ $labels.master }} is degraded. Network connectivity is not HA. Switch failover and ACI upgrades will cause an outage!
+
