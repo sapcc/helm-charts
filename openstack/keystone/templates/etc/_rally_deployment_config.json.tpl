@@ -8,6 +8,7 @@
             "username": "admin",
             "password": {{ .Values.tempest.adminPassword | quote }},
             "user_domain_name": "tempest",
+            "project_name": "admin",
             "domain_name": "tempest",
     },
     "users": [
