@@ -14,14 +14,17 @@ function start_tempest_tests {
     # check if we can reach openstack endpoints
     rally deployment check
 
+    # otherwise tempest installation fails
+    sudo pip install "stestr>=1.0.0"
+
     # create tempest verifier fetched from our repo
     rally --debug verify create-verifier --type tempest --name ironic-tempest-verifier --system-wide --source https://github.com/sapcc/tempest --version ccloud
 
+    # install ironic-tempest tests
+    sudo pip install git+https://github.com/sapcc/ironic-tempest-plugin.git@ccloud
+
     # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
     rally --debug verify configure-verifier --extend /ironic-etc/tempest_extra_options
-
-    # wait a bit in case some ironic services are still starting
-    sleep 30
 
     # run the actual tempest tests for ironic
     echo -e "\n === STARTING TEMPEST TESTS FOR IRONIC === \n"
