@@ -53,17 +53,12 @@ openstack_services:
   - nova
   - swift
 
-# creates routing and channel for pagerduty
-# the order matters, as an alert is only send to the first matching pagerduty instance (matches by service, tier label)
-pagerduty_services:
+pagerduty:
   # name of the pagerduty receiver
   - name: pagerduty
     # pagerduty service key
     service_key: DEFINED-IN-SECRETS
-    # limit alerts to this receiver to the following labels
-    # `severity: critical` is always set
-    match:
-      # limit to alerts with this service label (optional)
-      service: SERVICE-TYPE
-      # limit to alerts with this tier label (optional)
-      tier: SERVICE-TIER
+    # limit alerts to this receiver to the following names. regex possible.
+    alerts:
+      - KubernetesKubeletManyDown
+      - KubernetesNodeNetworkBond.*

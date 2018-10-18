@@ -33,12 +33,20 @@ data:
       receiver: dev-null
 
       routes:
+
+      # staging, lab alerts > /dev/null
       - receiver: dev-null
         continue: false
         match_re:
+<<<<<<< HEAD
           region: staging|k-staging|s-staging|lab|i-eu-de-2
 
       # routing per tier to <tier>-{info, warning, critical}
+=======
+          region: .*staging|lab
+
+      # routing per tier to <tier>-{info, warning, critical} channel
+>>>>>>> page based on alert name
       {{- range $tier := .Values.tiers }}
       - receiver: {{ $tier }}-info
         continue: true
@@ -54,7 +62,8 @@ data:
           match:
             severity: critical
       {{- end }}
-      # routing per service to openstack-<service>
+
+      # routing per service to openstack-<service> channel
       {{- range $service := .Values.openstack_services }}
       - receiver: openstack-{{ $service }}
         continue: true
@@ -62,32 +71,21 @@ data:
           service: {{ $service }}
           tier: openstack
       {{- end }}
-      # Don’t page for qa-de-1
+
+      # staging, qa-de-1, lab, scaleout, internet cluster alerts > /dev/null
       - receiver: dev-null
         continue: false
         match_re:
-          region: qa-de-1|k-qa-de-1|s-qa-de-1|lab
+          region: .*staging|.*qa-de-1|lab|s-.*|i-.*
 
-      # block kubernikus and interconnect alerts away from pagerduty
-      - receiver: dev-null
-        continue: false
-        match:
-          tier: kubernikus
-      - receiver: dev-null
-        continue: false
-        match:
-          service: interconnect
-
-      {{- range $pd := .Values.pagerduty_services }}
+      # routing to pagerduty channels
+      {{- range $pd := .Values.pagerduty }}
       - receiver: pagerduty-{{ $pd.name }}
         continue: false
-        match:
-          severity: critical
-          {{- if $pd.match }}
-          {{- range $key, $value := $pd.match }}
-          {{ $key }}: {{ $value }}
-          {{- end }}
-          {{- end }}
+        {{- if $pd.alerts }}
+        match_re:
+          alertname: {{ join "|" $pd.alerts -}}
+        {{- end }}
       {{- end }}
 
     receivers:
