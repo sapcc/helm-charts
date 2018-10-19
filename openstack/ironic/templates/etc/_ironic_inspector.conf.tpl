@@ -50,7 +50,7 @@ password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.gl
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 region_name = {{.Values.global.region}}
 insecure = True
 
