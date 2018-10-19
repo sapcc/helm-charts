@@ -42,7 +42,7 @@ spec:
           name: nova-etc
       containers:
       - name: nova-console-{{ $name }}
-        image: {{ .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-{{ $name }}proxy:{{index .Values (print "imageVersionNova" (title $name) "proxy") | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+        image: {{ tuple . (printf "%sproxy" $name) | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
