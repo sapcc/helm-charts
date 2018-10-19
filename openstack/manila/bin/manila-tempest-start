@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 
-set -x
+set -xo pipefail
 
 function start_tempest_tests {
   echo -e "\n === CONFIGURING TEMPEST === \n"
+  # workaround missing dep
+  sudo pip install stestr
+
+  # install manila pluging
+  sudo git clone -b ccloud --single-branch https://github.com/sapcc/manila-tempest-plugin.git
+  sudo pip install -e manila-tempest-plugin/
+
   # ensure rally db is present
   rally db ensure
 
@@ -18,9 +25,6 @@ function start_tempest_tests {
 
   # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
   rally --debug verify configure-verifier --extend /manila-etc/tempest_extra_options
-
-  # wait a bit in case some manila services are still starting
-  sleep 10
 
   # run the actual tempest tests for manila
   echo -e "\n === STARTING TEMPEST TESTS FOR MANILA === \n"

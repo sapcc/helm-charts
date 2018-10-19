@@ -2,13 +2,12 @@
     "openstack": {
         "auth_url": "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3",
         "region_name": "{{ .Values.global.region }}",
-        "endpoint_type": "public",
+        "endpoint_type": "internal",
         "admin": {
             "username": "admin",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "admin",
-            "project_domain_name": "tempest"
+            "domain_name": "tempest"
     },
     "users": [
         {
