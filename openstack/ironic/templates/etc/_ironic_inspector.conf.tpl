@@ -1,12 +1,13 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
+debug = True
 
 enabled_drivers = {{.Values.enabled_drivers | default "pxe_ipmitool,agent_ipmitool"}}
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
 
 [ironic]
-os_region = {{.Values.global.region}}
+region_name = {{.Values.global.region}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
@@ -35,6 +36,9 @@ processing_hooks = $default_processing_hooks,local_link_connection
 [discovery]
 enroll_node_driver = agent_ipmitool
 
+[pxe_filter]
+driver = noop
+
 [database]
 connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectordbPassword | include "db_url" }}
 {{- include "ini_sections.database_options" . }}
@@ -42,7 +46,7 @@ connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectord
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
 [keystone_authtoken]
-auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
+www_authenticate_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
@@ -52,6 +56,7 @@ project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 memcached_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
 region_name = {{.Values.global.region}}
+service_token_roles_required = True
 insecure = True
 
 {{include "oslo_messaging_rabbit" .}}
