@@ -1,12 +1,5 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
-{{- if eq .Values.global.region "staging" }}
-debug = true
-{{- end }}
-
-enabled_drivers = {{.Values.enabled_drivers | default "pxe_ipmitool,agent_ipmitool"}}
-enabled_network_interfaces = noop,flat,neutron
-default_network_interface = neutron
 
 [ironic]
 region_name = {{.Values.global.region}}
