@@ -39,9 +39,9 @@ spec:
 {{- end }}
           args:
             - "iterate"
-            - "pytest"
+            - "parallel"
             - "-n 4"
-            - "--timeout 600"
+            - "--timeout "{{ .Values.paralell.global_timeout }}
             - "--disable-pytest-warnings"
             - "-r ap"
             - "-m \"canary and not serial\""
@@ -117,9 +117,9 @@ spec:
             - name: CANARY_FS_AVAILABILITY_ZONES
               value: {{ .Values.fs_availability_zones | quote }}
             - name: TIMEOUT
-              value: {{ .Values.timeout | quote }}
+              value: {{ .Values.parallel.single_timeout | quote }}
             - name: SLEEP_ITERATE
-              value: {{ .Values.sleep.iterate | quote }}
+              value: {{ .Values.parallel.sleep_iterater | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -202,7 +202,7 @@ spec:
             - name: CANARY_PROJECT_DOMAIN
               value: {{ .Values.project_domain | quote }}
             - name: SLEEP_PURGE
-              value: {{ .Values.sleep.purge | quote }}
+              value: {{ .Values.parallel.sleep_purger | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
