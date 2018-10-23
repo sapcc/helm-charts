@@ -55,5 +55,6 @@ user_domain_id = default
 project_name = service
 project_domain_id = default
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+service_token_roles_required = True
 
 {{- include "ini_sections.cache" . }}
