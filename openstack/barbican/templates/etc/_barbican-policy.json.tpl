@@ -36,7 +36,7 @@
     "orders:post": "rule:context_is_editor",
     "orders:get": "rule:context_is_viewer",
     "order:get": "rule:context_is_viewer",
-    "order:put": "rule:context_is_editor",
+    "orders:put": "rule:context_is_editor",
     "order:delete": "rule:context_is_key_admin",
     "consumer:get": "rule:service_user or rule:context_is_viewer or rule:container_non_private_read or rule:container_project_admin or rule:container_acl_read",
     "consumers:get": "rule:context_is_viewer or rule:container_non_private_read or rule:container_project_admin or rule:container_acl_read",
