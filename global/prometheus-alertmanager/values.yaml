@@ -1,10 +1,15 @@
+global:
+  region: DEFINED-IN-SECRETS
+  domain: DEFINED-IN-SECRETS
+
 image:
   repository: prom/alertmanager
   tag: v0.15.2
 
-global:
-  region: DEFINED-IN-SECRETS
-  domain: DEFINED-IN-SECRETS
+configmap_reload:
+  image:
+    repository: jimmidyson/configmap-reload
+    tag: v0.2.2
 
 cluster:
   listen_address: DEFINED-IN-SECRETS
@@ -19,51 +24,15 @@ persistence:
   access_mode: ReadWriteMany
   size: 1Gi
 
-configmap_reload:
-  image:
-    repository: jimmidyson/configmap-reload
-    tag: v0.2.2
-
 slack:
   webhook_url: DEFINED-IN-SECRETS
 
-# creates <tier>-{info, warning, critical} routing and receivers
-tiers:
-  - kubernetes
-  - kubernikus
-  - openstack
-  - baremetal
-
-# creates openstack-<service> routing and receivers
-openstack_services:
-  - arc
-  - backup
-  - barbican
-  - cinder
-  - designate
-  - elektra
-  - elk
-  - ironic
-  - keystone
-  - limes
-  - lyra
-  - maia
-  - manila
-  - neutron
-  - nova
-  - swift
-
-# creates routing and channel for pagerduty
-# the order matters, as an alert is only send to the first matching pagerduty instance (matches by service, tier label)
-pagerduty_services:
-  # name of the pagerduty receiver
-  - name: pagerduty
-    # pagerduty service key
+pagerduty:
+  default:
     service_key: DEFINED-IN-SECRETS
-    # limit alerts to this receiver to the following labels
-    # `severity: critical` is always set
-    match:
-      # limit to alerts with this service label (optional)
-      service: SERVICE-TYPE
-      # limit to alerts with this tier label (optional)
-      tier: SERVICE-TIER
+
+  baremetal:
+    service_key: DEFINED-IN-SECRETS
+
+  hypervisor:
+    service_key: DEFINED-IN-SECRETS

@@ -36,59 +36,44 @@ data:
       - receiver: dev-null
         continue: false
         match_re:
-          region: staging|k-staging|s-staging|lab|i-eu-de-2
+          region: .*staging|lab
 
-      # routing per tier to <tier>-{info, warning, critical}
-      {{- range $tier := .Values.tiers }}
-      - receiver: {{ $tier }}-info
-        continue: true
+      - receiver: slack_by_tier_and_severity
         match_re:
-          tier: {{ $tier }}
-        routes:
-        - receiver: '{{ $tier }}-warning'
-          continue: true
-          match:
-            severity: warning
-        - receiver: '{{ $tier }}-critical'
-          continue: true
-          match:
-            severity: critical
-      {{- end }}
-      # routing per service to openstack-<service>
-      {{- range $service := .Values.openstack_services }}
-      - receiver: openstack-{{ $service }}
-        continue: true
+          tier: openstack|kubernetes|kubernikus|baremetal
+          severity: info|warning|critical
+
+      - receiver: slack_by_tier_and_service
         match_re:
-          service: {{ $service }}
           tier: openstack
-      {{- end }}
-      # Don’t page for qa-de-1
-      - receiver: dev-null
+          severity: info|warning|critical
+          service: arc|backup|barbican|cinder|designate|elektra|elk|ironic|keystone|limes|lyra|maia|manila|neutron|nova|swift
+
+      - receiver: pagerduty_baremetal
         continue: false
         match_re:
-          region: qa-de-1|k-qa-de-1|s-qa-de-1|lab
-
-      # block kubernikus and interconnect alerts away from pagerduty
-      - receiver: dev-null
-        continue: false
-        match:
-          tier: kubernikus
-      - receiver: dev-null
-        continue: false
-        match:
-          service: interconnect
-
-      {{- range $pd := .Values.pagerduty_services }}
-      - receiver: pagerduty-{{ $pd.name }}
-        continue: false
-        match:
           severity: critical
-          {{- if $pd.match }}
-          {{- range $key, $value := $pd.match }}
-          {{ $key }}: {{ $value }}
-          {{- end }}
-          {{- end }}
-      {{- end }}
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+          tier: baremetal
+
+      - receiver: pagerduty_hypervisor
+        continue: false
+        match_re:
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+          service: vcenter
+
+      - receiver: pagerduty
+        match_re:
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+          tier: openstack|kubernetes
+
+      - receiver: pagerduty
+        match_re:
+          severity: warning
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+          alertname: KubernetesNodeBond.*|KubernetesNodeNotReady
 
     receivers:
     - name: dev-null
@@ -103,57 +88,83 @@ data:
         icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
         send_resolved: true
 
-    # <tier>-{info, warning, critical} receiver
-    {{- range $tier := .Values.tiers }}
-    {{- range $severtity := tuple "info" "warning" "critical" }}
-    - name: {{ $tier }}-{{ $severtity }}
+    - name: slack_by_tier_and_severity
       slack_configs:
-      - api_url: {{ default "MISSING" $.Values.slack.webhook_url | quote }}
-        username: "{{ $tier | title }} Control Plane"
-        channel: "#{{ $tier }}-{{ $severtity }}"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true
-    {{- end }}
-    {{- end }}
+        - channel: {{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}
+          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          username: "Kubernetes Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          send_resolved: true
 
-    # openstack-<service> receivers
-    {{- range .Values.openstack_services }}
-    - name: openstack-{{ . }}
+    - name: slack_by_tier_and_service
       slack_configs:
-      - api_url: {{ default "MISSING" $.Values.slack.webhook_url | quote }}
-        username: "OpenStack Control Plane"
-        channel: "#openstack-{{ . }}"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true
-    {{- end }}
+        - channel: {{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.service }}"}}
+          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          username: "Kubernetes Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          send_resolved: true
 
-    {{- range $pd := .Values.pagerduty_services }}
-    - name: pagerduty-{{ $pd.name }}
+    - name: pagerduty
       pagerduty_configs:
-      - service_key: {{ default "" $pd.service_key }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-    {{- end }}
+        - service_key: {{ default "MISSING" .Values.pagerduty.default.service_key | quote }}
+          description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+          component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          details:
+            Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+            Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+            Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+            Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+            Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+            Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+            Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+            Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+            Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+            firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+
+    - name: pagerduty_baremetal
+      pagerduty_configs:
+        - service_key: {{ default "MISSING" .Values.pagerduty.baremetal.service_key | quote }}
+          description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+          component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          details:
+            Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+            Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+            Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+            Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+            Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+            Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+            Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+            Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+            Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+            firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+
+    - name: pagerduty_hypervisor
+      pagerduty_configs:
+        - service_key: {{ default "MISSING" .Values.pagerduty.hypervisor.service_key | quote }}
+          description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+          component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          details:
+            Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+            Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+            Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+            Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+            Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+            Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+            Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+            Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+            Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+            firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   {{- $files := .Files }}
   {{ range tuple "slack.tmpl" "pagerduty.tmpl" }}
