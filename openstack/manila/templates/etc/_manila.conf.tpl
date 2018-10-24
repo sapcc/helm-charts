@@ -58,6 +58,8 @@ quota_share_networks = 0
 quota_share_groups = 0
 quota_share_group_snapshots = 0
 
+{{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
+
 [neutron]
 auth_strategy = keystone
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
