@@ -33,8 +33,8 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "-n 4"
-            - "--timeout 600"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
             - "--disable-pytest-warnings"
             - "-r ap"
             - "tests/test_certificates.py"
@@ -50,13 +50,15 @@ spec:
             - name: CERTS_NAMES
               value: {{ .Values.certs.names | quote }}
             - name: STATSD_HOST
-              value: "localhost"
+              value: {{ .Values.statsd.host | quote }}
             - name: STATSD_PORT
-              value: "9125"
+              value: {{ .Values.statsd.port | quote }}
             - name: STATSD_PREFIX
-              value: "blackbox-certificates"
+              value: {{ .Values.statsd.prefix | quote }}
+            - name: TIMEOUT
+              value: {{ .Values.parallel.timeout.atomic | quote }}
             - name: SLEEP_ITERATE
-              value: {{ .Values.sleep.iterate | quote }}
+              value: {{ .Values.parallel.iterator.sleep | quote }}
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
