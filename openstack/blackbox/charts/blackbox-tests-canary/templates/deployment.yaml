@@ -40,8 +40,8 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "-n 4"
-            - {{ .Values.parallel.global_timeout | printf "--timeout %.0f" | quote }}
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeou.global | printf "--timeout %.0f" | quote }}
             - "--disable-pytest-warnings"
             - "-r ap"
             - "-m \"canary and not serial\""
@@ -117,9 +117,9 @@ spec:
             - name: CANARY_FS_AVAILABILITY_ZONES
               value: {{ .Values.fs_availability_zones | quote }}
             - name: TIMEOUT
-              value: {{ .Values.parallel.single_timeout | quote }}
+              value: {{ .Values.parallel.timeout.atomic | quote }}
             - name: SLEEP_ITERATE
-              value: {{ .Values.parallel.sleep_iterater | quote }}
+              value: {{ .Values.parallel.iterator.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -173,9 +173,9 @@ spec:
           args:
             - "purge"
             - "python helper/purge_resources.py"
-            - "-n c_blackbox"
-            - "-r 600"
-            - "all"
+            - {{ .Values.parallel.purger.namespace | printf "-n %s" | quote }}
+            - {{ .Values.parallel.purger.retention | printf "-r %.0f" | quote }}
+            - {{ .Values.parallel.purger.target | quote }}
           volumeMounts:
             - name: blackbox-tests-canary
               mountPath: /opt/logs
@@ -202,7 +202,7 @@ spec:
             - name: CANARY_PROJECT_DOMAIN
               value: {{ .Values.project_domain | quote }}
             - name: SLEEP_PURGE
-              value: {{ .Values.parallel.sleep_purger | quote }}
+              value: {{ .Values.parallel.purger.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
