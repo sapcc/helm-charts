@@ -40,8 +40,8 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "-n 4"
-            - "--timeout 30"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
             - "--disable-pytest-warnings"
             - "-r ap"
             - "tests/test_datapath.py"
@@ -102,13 +102,15 @@ spec:
             - name: DATAPATH_S4_FIPS
               value: {{ .Values.s4_fips | quote }}
             - name: STATSD_HOST
-              value: "localhost"
+              value: {{ .Values.statsd.host | quote }}
             - name: STATSD_PORT
-              value: "9125"
+              value: {{ .Values.statsd.port | quote }}
             - name: STATSD_PREFIX
-              value: "blackbox-datapath"
+              value: {{ .Values.statsd.prefix | quote }}
+            - name: TIMEOUT
+              value: {{ .Values.parallel.timeout.atomic | quote }}
             - name: SLEEP_ITERATE
-              value: {{ .Values.sleep.iterate | quote }}
+              value: {{ .Values.parallel.iterator.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
