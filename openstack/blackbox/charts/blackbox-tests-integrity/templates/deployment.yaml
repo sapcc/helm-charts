@@ -40,8 +40,8 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "-n 4"
-            - "--timeout 60"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
             - "--disable-pytest-warnings"
             - "-r ap"
             - "-m integrity"
@@ -83,15 +83,15 @@ spec:
             - name: VC_USERNAME
               value: {{ .Values.global.vcenter.username | quote }}
             - name: STATSD_HOST
-              value: "localhost"
+              value: {{ .Values.statsd.host | quote }}
             - name: STATSD_PORT
-              value: "9125"
+              value: {{ .Values.statsd.port | quote }}
             - name: STATSD_PREFIX
-              value: "blackbox-integrity"
+              value: {{ .Values.statsd.prefix | quote }}
             - name: TIMEOUT
-              value: {{ .Values.timeout | quote }}
+              value: {{ .Values.parallel.timeout.atomic | quote }}
             - name: SLEEP_ITERATE
-              value: {{ .Values.sleep.iterate | quote }}
+              value: {{ .Values.parallel.iterator.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
