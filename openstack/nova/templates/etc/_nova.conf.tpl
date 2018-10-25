@@ -37,16 +37,9 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
 
 {{ include "ini_sections.database" . }}
 
-# most default quotas are 0 to enforce usage of the Resource Management tool in Elektra
-quota_cores = 0
-quota_instances = 0
-quota_ram = 0
-
-quota_fixed_ips = 0
-quota_floating_ips = 0
-quota_networks = 0
-quota_security_group_rules = 0
-quota_security_groups = 0
+{{- range $k, $v := .Values.quota }}
+quota_{{$k}} = {{ $v }}
+{{- end }}
 
 # usage refreshes on new reservations, 0 means disabled
 # number of seconds between subsequent usage refreshes
