@@ -205,7 +205,7 @@ pgmetrics:
          - in_24hrs_gauge:
              usage: "GAUGE"
              description: "Instances created past 24hrs"
-     openstack_ironic_instance_launch:
+     openstack_ironic_instances_launch:
        query: "SELECT project_id, uuid, node AS node_id, hostname, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY project_id, uuid, vm_state, hostname, node"
        metrics:
          - project_id:
@@ -226,7 +226,7 @@ pgmetrics:
          - time_taken_gauge:
              usage: "GAUGE"
              description: "Nodes Launch time in past 24hrs"
-     openstack_ironic_instance_termination:
+     openstack_ironic_instances_termination:
        query: "SELECT project_id, uuid, hostname, node AS node_id, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY project_id, uuid, vm_state, hostname, node"
        metrics:
          - project_id:
@@ -247,7 +247,7 @@ pgmetrics:
          - time_taken_gauge:
              usage: "GAUGE"
              description: "Nodes termination time in past 24hrs"
-     openstack_ironic_instance_created:
+     openstack_ironic_instances_created:
        query: "SELECT uuid, hostname, node AS node_id, vm_state, COUNT(*) AS in_24hrs FROM instances WHERE (created_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY uuid, vm_state, hostname, node"
        metrics:
          - vm_state:
@@ -265,7 +265,7 @@ pgmetrics:
          - in_24hrs_gauge:
              usage: "GAUGE"
              description: "Nodes created past 24hrs"
-     openstack_ironic_instance:
+     openstack_ironic_instances:
        query: "SELECT instances.uuid, instances.node AS node_id, instances.project_id, instances.hostname, instances.node AS node_id, instances.vm_state, coalesce(instance_types.name,'N/A') AS flavor_name, COUNT(*) AS gauge FROM instances JOIN instance_types ON instances.instance_type_id=instance_types.id where host='nova-compute-ironic' GROUP BY instances.vm_state, instances.project_id, instance_types.name, instances.uuid, instances.hostname, instances.node"
        metrics:
          - uuid:
