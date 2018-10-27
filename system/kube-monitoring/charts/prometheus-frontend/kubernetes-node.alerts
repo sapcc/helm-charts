@@ -114,19 +114,19 @@ groups:
       description: More than 3 OOM killed pods on a node within 24h
       summary: More than 3 OOM killed pods on node {{ $labels.instance }} within 24h
 
-  - alert: KubernetesNodePredictHighNumberOfThreads
-    expr: predict_linear(node_processes_threads{instance=~".*.cloud.sap"}[4h], 8*3600) > 32767
-    for: 2h
+  - alert: KubernetesNodeHighNumberOfThreads
+    expr: node_processes_threads{instance=~".*.cloud.sap"} > 31000
+    for: 1h
     labels:
       tier: kubernetes
       service: node
       severity: critical
       context: threads
-      meta: "Predicting more than 32767 threads on {{ $labels.instance }} in the next 8h."
+      meta: "Very high number of threads on {{ $labels.instance }}. Forking problems are imminent."
       playbook: "docs/support/playbook/kubernetes/k8s_high_threads.html"
     annotations:
-      description: "Predicting high number of process threads on instance {{ $labels.instance }} within the next 8 hours"
-      summary: Predicting high number of process threads
+      description: "Very high number of threads on {{ $labels.instance }}. Forking problems are imminent."
+      summary: Very high number of threads
 
   ### Bonding health ###
 
