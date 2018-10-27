@@ -130,7 +130,7 @@ groups:
 
   ### Bonding health ###
 
-  - alert: KubernetesNodeNetworkBondDegraded
+  - alert: KubernetesNodeBondDegradedNetwork
     expr: sum(node_bonding_active{master="bond1",instance=~"[^storage].*cloud.sap"}) by (master, instance) < 2
     for: 15m
     labels:
@@ -144,7 +144,7 @@ groups:
       description: Bond {{ $labels.master }} on {{ $labels.instance }} is degraded.  
       summary: Bond {{ $labels.master }} is degraded. This bond isn't used but this situation could cause problems on reboot.
 
-  - alert: KubernetesNodeNetworkBondDegraded
+  - alert: KubernetesNodeBondDegradedNetwork
     expr: sum(node_bonding_active{master="bond1",instance=~"network.*cloud.sap"}) by (master, instance) == 1
     for: 15m
     labels:
@@ -158,7 +158,7 @@ groups:
       description: Bond {{ $labels.master }} on {{ $labels.instance }} is degraded. Network datapath threatened! 
       summary: Bond {{ $labels.master }} is degraded. Switch failover will cause this node to be disconneted. Network datapath is not HA! Incidents on the other network node will take out the whole region!  
 
-  - alert: KubernetesNodeMainBondDegraded
+  - alert: KubernetesNodeBondDegradedMain
     expr: sum(node_bonding_active{master="bond2",instance=~".*cloud.sap"}) by (master, instance) < 2
     for: 15m
     labels:
