@@ -56,3 +56,17 @@ groups:
     annotations:
       description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
       summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
+      
+  - alert: BaremetalIronicSDDown
+    expr: ipmi_sd_up == 0
+    for: 5m
+    labels:
+      severity: info
+      tier: baremetal
+      service: ironic
+      context: ipmi_sd
+      meta: "ipmi service discovery failure"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ipmi service discovery failed to get ironic nodes"
+      summary: "ipmi service discovery failed to get ironic nodes"
