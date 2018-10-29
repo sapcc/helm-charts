@@ -23,6 +23,8 @@ default_router_type = {{.Values.default_router_type}}
 router_scheduler_driver = {{.Values.router_scheduler_driver}}
 
 max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 50}}
+# is often used together with multiple fixed IPs per port, keep the values similar
+max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
 
 dhcp_agent_notification = true
 network_auto_schedule = True
