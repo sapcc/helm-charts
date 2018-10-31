@@ -28,6 +28,9 @@ url_auth_digest_secret = {{.Values.console.secret}}
 # We expose this directory over http and tftp
 http_root = /tftpboot
 http_url = {{ .Values.conductor.deploy.protocol }}://{{ $tftp_ip }}:{{ .Values.conductor.deploy.port }}/tftpboot
+{{- range $k, $v :=  $conductor.deploy }}
+{{ $k }} = {{ $v }}
+{{- end }}
 
 [pxe]
 tftp_server = {{ $tftp_ip }}
