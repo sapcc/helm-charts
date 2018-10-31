@@ -1,0 +1,101 @@
+# Might we worth building your own ipxe stack here: https://rom-o-matic.eu/
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ironic-migrate-resource-class
+  labels:
+    system: openstack
+    type: job
+    component: ironic
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsUser: 0
+      containers:
+      - name: ironic-migrate-resource-class
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-pxe:{{.Values.imageVersionIronicPXE | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        imagePullPolicy: IfNotPresent
+        command:
+        - python
+        args:
+        - -c
+        - |
+          import logging
+          import os
+          import six
+          import sys
+
+          from keystoneauth1 import loading as kaloading
+          from novaclient import client as computeclient
+
+          from ironicclient import client as bmclient
+          from ironic import conf
+
+          from ironic.common import config
+          from ironic.common import keystone
+          from ironic.conf import CONF
+          from ironic.conf import opts
+
+
+          LOG = logging.getLogger('resource_classes')
+
+          def main(argv=None):
+            argv = [] if argv is None else argv
+            opts.update_opt_defaults()
+            config.parse_args(argv)
+
+
+            session = keystone.get_session('service_catalog')
+            session.auth = keystone.get_auth('service_catalog')
+
+
+            compute = computeclient.Client('2', session=session)
+            bm = bmclient.get_client(1, session=session, os_ironic_api_version='1.21')
+            flavor_map = dict()
+
+            for f in compute.flavors.list(is_public=True):
+              if f.name[0] == 'z':
+                resources = (f.vcpus, f.ram, f.disk)
+                LOG.debug("%s: %s", f.name, resources)
+                if resources in flavor_map:
+                  conflict = flavor_map[resources]
+                  LOG.error("Duplicate resources %s and %s", f.name, conflict)
+                  os.exit(1)
+
+                flavor_map[resources] = f.name
+
+            for node in bm.node.list(fields=["uuid", "name", "resource_class", "properties"]):
+              prop = node.properties
+              resources = (int(prop['cpus']),
+                            int(prop['memory_mb']),
+                            int(prop['local_gb']))
+              flavor = flavor_map.get(resources)
+              if not flavor:
+                LOG.warning("Cannot find flavor for %s: %s", node.name, resources)
+              elif node.resource_class != flavor:
+                LOG.info("%s: %s -> %s", node.name, node.resource_class, flavor)
+                patch =  [{"op": "replace", "path": "/resource_class", "value": flavor}]
+                bm.node.update(node.uuid, patch)
+
+          if __name__ == '__main__':
+            logging.basicConfig(level=logging.WARNING)
+            LOG.setLevel(logging.INFO)
+            LOG.debug("Started")
+            main(sys.argv)
+        volumeMounts:
+        - mountPath: /etc/ironic
+          name: etcironic
+        - mountPath: /etc/ironic/ironic.conf
+          name: ironic-etc
+          subPath: ironic.conf
+          readOnly: true
+      volumes:
+      - name: etcironic
+        emptyDir: {}
+      - name: ironic-etc
+        configMap:
+          name: ironic-etc
+          defaultMode: 0444
+
