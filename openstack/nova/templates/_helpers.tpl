@@ -19,7 +19,7 @@
   {{- $name := index . 1 -}}
   {{- with index . 0 -}}
     {{- $version_name := printf "imageVersionNova%s" ($name | lower | replace "-" " " | title | nospace) -}}
-    {{- $image_name := ( .Values.loci | ternary .Values.imageNameNova (printf "ubuntu-source-nova-%s" ($name | lower)) ) -}}
+    {{- $image_name := ( .Values.loci.nova | ternary .Values.imageNameNova (printf "ubuntu-source-nova-%s" ($name | lower)) ) -}}
 
     {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNova | required "Please set nova.imageVersionNova or similar" }}
  
@@ -30,9 +30,10 @@
   {{- $name := index . 1 -}}
   {{- with index . 0 -}}
     {{- $version_name := printf "imageVersionNeutron%s" ($name | lower | replace "-" " " | title | nospace) -}}
-    {{- $image_name := ( .Values.loci | ternary .Values.imageNameNeutron (printf "ubuntu-source-neutron-%s" ($name | lower)) ) -}}
+    {{- $image_name := ( .Values.loci.neutron | ternary .Values.imageNameNeutron (printf "ubuntu-source-neutron-%s" ($name | lower)) ) -}}
 
     {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNeutron | required "Please set imageVersionNeutron or similar" }}
 
   {{- end -}}
 {{- end -}}
+

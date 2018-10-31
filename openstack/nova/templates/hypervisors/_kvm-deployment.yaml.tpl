@@ -42,6 +42,13 @@ spec:
         value: "hypervisor"
         effect: "NoSchedule"
       {{- end }}
+      initContainers:
+        - name: fix-permssion-instance-volume
+          image: busybox
+          command: ["sh", "-c", "chown -R 42436:42436 /var/lib/nova"]
+          volumeMounts:
+            - mountPath: /var/lib/nova/instances
+              name: instances
       containers:
         - name: nova-compute
           image: {{ tuple . "compute" | include "container_image_nova" }}
@@ -91,6 +98,10 @@ spec:
               readOnly: true
             - mountPath: /nova-patches
               name: nova-patches
+            - mountPath: /etc/nova/rootwrap.conf
+              name: nova-etc
+              subPath: rootwrap.conf
+              readOnly: true
         - name: nova-libvirt
           image: {{ tuple . "libvirt" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent

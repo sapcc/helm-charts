@@ -74,13 +74,17 @@ port = {{ .Values.consoles.shellinabox.portInternal }}
 base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/shellinabox
 proxyclient_url = https://{{include "ironic_console_endpoint_host_public" .}}
 
+[mks]
+enabled = True
+mksproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/mks/vnc_auto.html
+
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
 
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
 
 [glance]
-api_servers = http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default "9292" }}/v2
+api_servers = http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default "9292" }}
 num_retries = 10
 
 [cinder]

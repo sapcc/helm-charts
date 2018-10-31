@@ -1,0 +1,58 @@
+{{- if .Values.vspc.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nova-vspc
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: nova-vspc
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: nova-vspc
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+        - name: serial-log-dir:
+          persistentVolumeClaim:
+            claimName: {{ .Values.vspc.pvc.existingClaim | default "nova-vspc-pvclaim" }}
+      containers:
+        - name: vspc
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          command: ['kuberenetes-entrypoint']
+          env:
+            - name: COMMAND
+              value: vmware-vspc
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: SENTRY_DSN
+              value: {{.Values.sentry_dsn | quote}}
+{{- if or $hypervisor.python_warnings .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
+{{- end }}
+          ports:
+            - name: vspc
+              port: {{ .Values.vspc.port }}
+          volumeMounts:
+            - mountPath: /var/run/serial_log_dir
+              name: serial-log-dir
+            - mountPath: /etc/vspc.conf
+              name: nova-etc
+              subPath: vspc.conf
+              readOnly: true
+{{- end }}
