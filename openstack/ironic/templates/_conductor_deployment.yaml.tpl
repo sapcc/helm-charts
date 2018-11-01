@@ -112,6 +112,10 @@ spec:
           name: ironic-conductor-etc
           subPath: pxe_config.template
           readOnly: {{ not $conductor.debug }}
+        - mountPath: /etc/ironic/ipxe_config.template
+          name: ironic-conductor-etc
+          subPath: ipxe_config.template
+          readOnly: {{ not $conductor.debug }}
         - mountPath: /tftpboot
           name: ironic-tftp
         - mountPath: /shellinabox

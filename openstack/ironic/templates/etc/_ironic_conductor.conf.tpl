@@ -42,12 +42,12 @@ ipxe_use_swift = {{ $conductor.ipxe_use_swift | default .Values.conductor.ipxe_u
 pxe_append_params = {{ $conductor.pxe_append_params | default .Values.conductor.pxe_append_params }}
 pxe_bootfile_name = {{ $conductor.pxe_bootfile_name | default .Values.conductor.pxe_bootfile_name | default "pxelinux.0" }}
 {{- if $conductor.ipxe_enabled }}
-pxe_config_template = $pybasedir/drivers/modules/ipxe_config.template
+pxe_config_template = /etc/ironic/ipxe_config.template
 {{- else }}
 pxe_config_template = /etc/ironic/pxe_config.template
 {{- end }}
 
 uefi_pxe_bootfile_name = ipxe.efi
-uefi_pxe_config_template = $pybasedir/drivers/modules/ipxe_config.template
+uefi_pxe_config_template = /etc/ironic/ipxe_config.template
 {{- end }}
 {{- end }}

@@ -14,5 +14,7 @@ data:
 {{ list . $conductor | include "ironic_conductor_conf" | indent 4 }}
   pxe_config.template: |
 {{ list . $conductor | include "pxe_config_template" | indent 4 }}
+  ipxe_config.template: |
+{{ list . $conductor | include "ipxe_config_template" | indent 4 }}
     {{- end }}
 {{- end }}
