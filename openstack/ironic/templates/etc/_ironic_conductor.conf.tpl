@@ -14,8 +14,8 @@ enabled_drivers = {{ $conductor.enabled_drivers}}
 
 [conductor]
 api_url = {{ .Values.global.ironic_api_endpoint_protocol_public | default "https" }}://{{include "ironic_api_endpoint_host_public" .}}:{{ .Values.global.ironic_api_port_public | default "443" }}
-clean_nodes = {{ $conductor.clean_nodes | default "False" }}
-automated_clean = {{ $conductor.automated_clean | default "False" }}
+clean_nodes = {{ $conductor.conductor.clean_nodes }}
+automated_clean = {{ $conductor.conductor.automated_clean }}
 
 [console]
 terminal_pid_dir = /shellinabox
@@ -36,12 +36,12 @@ http_url = {{ .Values.conductor.deploy.protocol }}://{{ $tftp_ip }}:{{ .Values.c
 tftp_server = {{ $tftp_ip }}
 tftp_root = /tftpboot
 
-ipxe_enabled = {{ $conductor.ipxe_enabled | default .Values.conductor.ipxe_enabled | default "False" }}
-ipxe_use_swift = {{ $conductor.ipxe_use_swift | default .Values.conductor.ipxe_use_swift | default "False" }}
+ipxe_enabled = {{ $conductor.pxe.ipxe_enabled }}
+ipxe_use_swift = {{ $conductor.pxe.ipxe_use_swift }}
 
-pxe_append_params = {{ $conductor.pxe_append_params | default .Values.conductor.pxe_append_params }}
-pxe_bootfile_name = {{ $conductor.pxe_bootfile_name | default .Values.conductor.pxe_bootfile_name | default "pxelinux.0" }}
-{{- if $conductor.ipxe_enabled }}
+pxe_append_params = {{ $conductor.pxe.pxe_append_params }}
+pxe_bootfile_name = {{ $conductor.pxe.pxe_bootfile_name }}
+{{- if $conductor.pxe.ipxe_enabled }}
 pxe_config_template = /etc/ironic/ipxe_config.template
 {{- else }}
 pxe_config_template = /etc/ironic/pxe_config.template
