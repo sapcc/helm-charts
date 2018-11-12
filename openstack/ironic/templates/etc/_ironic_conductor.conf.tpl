@@ -16,6 +16,9 @@ enabled_drivers = {{ $conductor.enabled_drivers}}
 api_url = {{ .Values.global.ironic_api_endpoint_protocol_public | default "https" }}://{{include "ironic_api_endpoint_host_public" .}}:{{ .Values.global.ironic_api_port_public | default "443" }}
 clean_nodes = {{ $conductor.conductor.clean_nodes }}
 automated_clean = {{ $conductor.conductor.automated_clean }}
+{{- if $conductor.conductor_group }}
+conductor_group = {{ $conductor.conductor_group}}
+{{- end }}
 
 [console]
 terminal_pid_dir = /shellinabox
