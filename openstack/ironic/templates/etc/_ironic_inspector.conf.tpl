@@ -1,5 +1,6 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
+{{- include "ini_sections.default_transport_url" . }}
 
 [ironic]
 region_name = {{.Values.global.region}}
@@ -53,8 +54,6 @@ memcached_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_po
 region_name = {{.Values.global.region}}
 service_token_roles_required = True
 insecure = True
-
-{{include "oslo_messaging_rabbit" .}}
 
 [oslo_middleware]
 enable_proxy_headers_parsing = True
