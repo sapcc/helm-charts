@@ -28,6 +28,7 @@ spec:
         name: nova-compute-{{$hypervisor.name}}
         hypervisor: "ironic"
       annotations:
+        pod.beta.kubernetes.io/hostname: nova-compute-{{$hypervisor.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
     spec:
