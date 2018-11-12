@@ -28,7 +28,7 @@ rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | defa
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
-transport_url = {{include "oslo_messaging_rabbit_url" .}}
+{{ include "ini_sections.default_transport_url" . }}
 
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
@@ -74,7 +74,7 @@ port = {{ .Values.consoles.shellinabox.portInternal }}
 base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/shellinabox
 proxyclient_url = https://{{include "ironic_console_endpoint_host_public" .}}
 
-{{ include "oslo_messaging_rabbit" .}}
+{{- include "ini_sections.oslo_messaging_rabbit" .}}
 
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp

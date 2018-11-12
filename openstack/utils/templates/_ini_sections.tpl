@@ -1,12 +1,16 @@
-{{define "oslo_messaging_rabbit"}}
-[oslo_messaging_rabbit]
+{{- define "oslo_messaging_rabbit" }}
+{{- include "ini_sections.oslo_messaging_rabbit" . }}
+{{- /* Those options are ignored, if transport_url is set */}}
 rabbit_userid = {{ .Values.rabbitmq_user | default .Values.global.rabbitmq_default_user | default "openstack"}}
 rabbit_password = {{ .Values.rabbitmq_pass | default .Values.global.rabbitmq_default_pass | default "openstack" }}
-rabbit_hosts =  {{include "rabbitmq_host" .}}
-rabbit_ha_queues = {{ .Values.rabbitmq_ha_queues | default .Values.global.rabbitmq_ha_queues | default "true" }}
-rabbit_transient_queues_ttl={{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
-{{end}}
+rabbit_hosts =  {{ include "rabbitmq_host" . }}
+{{- end }}
 
+{{- define "ini_sections.oslo_messaging_rabbit" }}
+[oslo_messaging_rabbit]
+rabbit_ha_queues = {{ .Values.rabbitmq_ha_queues | default .Values.global.rabbitmq_ha_queues | default "true" }}
+rabbit_transient_queues_ttl = {{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
+{{- end }}
 
 {{- define "ini_sections.default_transport_url" }}
 transport_url = rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password | default (tuple . .Values.rabbitmq.users.default.user | include "rabbitmq.password_for_user")  | urlquery}}@{{ include "release_rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
