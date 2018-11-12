@@ -4,7 +4,7 @@
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: nova-compute-ironic
+  name: nova-compute-{{$hypervisor.name}}
   labels:
     system: openstack
     type: backend
@@ -19,20 +19,20 @@ spec:
       maxSurge: 3
   selector:
     matchLabels:
-      name: nova-compute-ironic
+      name: nova-compute-{{$hypervisor.name}}
   template:
     metadata:
       labels:
-        name: nova-compute-ironic
-{{ tuple . "nova" "compute-ironic" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        name: nova-compute-{{$hypervisor.name}}
+{{ tuple . "nova" "compute-$hypervisor.name" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        pod.beta.kubernetes.io/hostname: nova-compute-ironic
+        pod.beta.kubernetes.io/hostname: nova-compute-{{$hypervisor.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
     spec:
-      hostname: nova-compute-ironic
+      hostname: nova-compute-{{$hypervisor.name}}
       containers:
-        - name: nova-compute-ironic
+        - name: nova-compute-{{$hypervisor.name}}
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
