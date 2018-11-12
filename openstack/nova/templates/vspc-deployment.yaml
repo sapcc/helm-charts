@@ -1,53 +1,83 @@
 {{- if .Values.vspc.enabled }}
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: extensions/v1beta1
+
 metadata:
   name: nova-vspc
   namespace: monsoon3
   labels:
     system: openstack
-    service: nova-vspc
-
+    type: collector
+    component: nova
 spec:
-  replicas: 1
+  replicas: {{ .Values.vspc.replicas | default 1 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
+  selector:
+    matchLabels:
+      name: nova-vspc
   template:
     metadata:
       labels:
-        component: nova-vspc
+        name: nova-vspc
+{{ tuple . "nova" "vspc" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
+        scheduler.alpha.kubernetes.io/affinity: >
+            {{ tuple . "nova" "vspc" | include "kubernetes_pod_anti_affinity" }}
+{{- end }}
     spec:
-      nodeSelector:
-        zone: farm
-      volumes:
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: serial-log-dir:
-          persistentVolumeClaim:
-            claimName: {{ .Values.vspc.pvc.existingClaim | default "nova-vspc-pvclaim" }}
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
+{{ tuple . "nova" "vspc" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{- end }}
       containers:
-        - name: vspc
-          image: busybox
+        - name: nova-vspc
+          image: {{ tuple . "vspc" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
-          command: ['kuberenetes-entrypoint']
+          command: ['dumb-init', 'kubernetes-entrypoint']
           env:
             - name: COMMAND
-              value: vmware-vspc
+              value: "nova-vspc --config-file /etc/nova/nova.conf"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "nova-api"
+{{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+{{- end }}
+          volumeMounts:
+            - mountPath: /etc/nova
+              name: etcnova
+            - mountPath: /etc/nova/nova.conf
+              name: nova-etc
+              subPath: nova.conf
+              readOnly: true
+            - mountPath: /etc/nova/logging.ini
+              name: nova-etc
+              subPath: logging.ini
+              readOnly: true
+            - mountPath: /var/run/serial_log_dir
+              name: serial-log-dir
+        - name: vmware-vspc
+          image: hub.global.cloud.sap/monsoon/vmware-vspc:{{ .Values.vspc.version }}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', '--', 'vmware-vspc', '--config-file', '/etc/vspc.conf']
+          env:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: SENTRY_DSN
               value: {{.Values.sentry_dsn | quote}}
-{{- if or $hypervisor.python_warnings .Values.python_warnings }}
+{{- if .Values.python_warnings }}
             - name: PYTHONWARNINGS
-              value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
+              value: {{ .Values.python_warnings | quote }}
 {{- end }}
           ports:
-            - name: vspc
-              port: {{ .Values.vspc.port }}
+            - containerPort: {{ .Values.vspc.portInternal }}
           volumeMounts:
             - mountPath: /var/run/serial_log_dir
               name: serial-log-dir
@@ -55,4 +85,13 @@ spec:
               name: nova-etc
               subPath: vspc.conf
               readOnly: true
+      volumes:
+        - name: etcnova
+          emptyDir: {}
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+        - name: serial-log-dir
+          persistentVolumeClaim:
+            claimName: {{ .Values.vspc.pvc.existingClaim | default "nova-vspc-pvclaim" }}
 {{- end }}
