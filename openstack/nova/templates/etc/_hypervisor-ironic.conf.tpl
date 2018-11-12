@@ -20,6 +20,10 @@ admin_project_domain_name = {{ default "Default" .Values.global.keystone_service
 api_endpoint = {{ default "http" .Values.global.ironic_api_endpoint_protocol_admin }}://{{ include "ironic_api_endpoint_host_internal" .}}:{{ .Values.global.ironic_api_port_internal | default "6385" }}/v1
 
 serial_console_state_timeout = 10
+{{- if contains "testing" $hypervisor.name }}
+conductor_group = testing
+{{- end }}
+
 
 {{- end }}
 {{- end }}
