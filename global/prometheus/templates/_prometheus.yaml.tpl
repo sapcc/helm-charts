@@ -24,7 +24,6 @@ scrape_configs:
       - '{__name__=~"^datapath_.+"}'
       - '{__name__=~"^elektra_open_inquiry_metrics$"}'
       - '{__name__=~"^kube_node_.+"}'
-      - '{__name__=~"^kubernikus_kluster_status_phase"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^swift_cluster_storage_used_percent_.+"}'
       - '{__name__=~"^pg_database_size_bytes_gauge_average$"}'
@@ -84,6 +83,7 @@ scrape_configs:
   params:
     match[]:
     - '{__name__=~"^ALERTS$"}'
+    - '{__name__=~"^kubernikus_kluster_status_phase"}'
     - '{__name__=~"up"}'
 
   relabel_configs:
