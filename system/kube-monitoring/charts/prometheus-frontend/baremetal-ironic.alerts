@@ -44,18 +44,18 @@ groups:
       summary: "Sensor Critical for instance {{ $labels.instance }}"
       
   - alert: BaremetalIronicMetricsDown
-    expr: count(ipmi_up == 0) by (server_name, manufacturer, model)
+    expr: count(ipmi_up == 0) by (server_name, maintenance) or count(up{job="baremetal/ironic"} == 0) by (server_name, maintenance)
     for: 5m
     labels:
       severity: warning
       tier: baremetal
       service: ironic
       context: "{{ $labels.server_name }}"
-      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
+      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenacne {{ $labels.maintenance }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
-      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
+      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenacne {{ $labels.maintenance }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenacne {{ $labels.maintenance }}"
       
   - alert: BaremetalIronicSDDown
     expr: absent(ipmi_sd_up) or ipmi_sd_up == 0
