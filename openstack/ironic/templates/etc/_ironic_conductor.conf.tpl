@@ -13,7 +13,6 @@ enabled_drivers = {{ $conductor.enabled_drivers}}
 {{- end }}
 
 [conductor]
-api_url = {{ .Values.global.ironic_api_endpoint_protocol_public | default "https" }}://{{include "ironic_api_endpoint_host_public" .}}:{{ .Values.global.ironic_api_port_public | default "443" }}
 {{- range $k, $v :=  $conductor.conductor }}
 {{ $k }} = {{ $v }}
 {{- end }}
