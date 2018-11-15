@@ -32,6 +32,11 @@ http_url = {{ .Values.conductor.deploy.protocol }}://{{ $tftp_ip }}:{{ .Values.c
 {{ $k }} = {{ $v }}
 {{- end }}
 
+[dhcp]
+{{- range $k, $v :=  $conductor.dhcp }}
+{{ $k }} = {{ $v }}
+{{- end }}
+
 [pxe]
 tftp_server = {{ $tftp_ip }}
 tftp_root = /tftpboot
