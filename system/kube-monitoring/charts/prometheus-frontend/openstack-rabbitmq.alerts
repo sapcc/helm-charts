@@ -1,0 +1,31 @@
+groups:
+- name: openstack-rabbitmq.alerts
+  rules:
+  - alert: OpenstackRabbitMQRPCUnackTotal
+    expr: sum(rabbitmq_queue_messages_unacknowledged{kubernetes_name=~".*rabbitmq"}) by (kubernetes_name) > 1000
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-rabbitmq
+      meta: '{{ $labels.service }} {{ $labels.check }} has over 1000 unacknowledged messages in {{ $labels.kubernetes_name }}.'
+      playbook: 'docs/devops/alert/rabbitmq/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.service }} {{ $labels.check }} RPC Messages are not being collected.
+        {{ $labels.check }} has over 1000 unacknowledged messages in {{ $labels.kubernetes_name }}.'
+      summary: 'RPC messages are not being collected.'
+  - alert: OpenstackRabbitMQRPCReadyTotal
+    expr: sum(rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq"}) by (kubernetes_name) > 1000
+    labels:
+      severity: critical
+      tier: openstack
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-rabbitmq
+      meta: '{{ $labels.service }} {{ $labels.check }} RPC Messages are not being collected. {{ $labels.check }} has over 1000 rpc messages waiting in {{ $labels.kubernetes_name }}.'
+      playbook: 'docs/devops/alert/rabbitmq/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.service }} {{ $labels.check }} RPC Messages are not being collected. 
+        {{ $labels.check }} has over 1000 rpc messages waiting in {{ $labels.kubernetes_name }}.'
+      summary: 'RPC messages are not being collected.'
