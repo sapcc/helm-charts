@@ -79,3 +79,16 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
+      
+  - alert: OpenstackIronicNodeInErrorState
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='error'})by(name,last_error) > 1
+    for: 5m
+    labels:
+      severity: warning
+      tier: openstack
+      service: ironic
+      dashboard: ironic-baremetal
+      meta: 'Node {{ $name }} is in error due to {{ $last_error }}'
+    annotations:
+      description: 'Node {{ $name }} is in error due to {{ $last_error }}'
+      summary: 'Openstack Ironic Node In Error State'
