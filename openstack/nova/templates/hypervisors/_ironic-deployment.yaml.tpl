@@ -24,7 +24,7 @@ spec:
     metadata:
       labels:
         name: nova-compute-{{$hypervisor.name}}
-{{ tuple . "nova" "compute-$hypervisor.name" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ tuple . "nova" compute-$hypervisor.name | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         pod.beta.kubernetes.io/hostname: nova-compute-{{$hypervisor.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
