@@ -1,6 +1,7 @@
 {{- define "ironic_hypervisor" -}}
 {{- $hypervisor := index . 1 -}}
 {{- with index . 0 -}}
+{{- $compute_hypervisor_name := printf "compute-%s" $hypervisor.name -}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -24,7 +25,6 @@ spec:
     metadata:
       labels:
         name: nova-compute-{{$hypervisor.name}}
-{{-  $compute_hypervisor_name := printf "compute-%s" $hypervisor.name -}}
 {{ tuple . "nova" $compute_hypervisor_name | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         pod.beta.kubernetes.io/hostname: nova-compute-{{$hypervisor.name}}
