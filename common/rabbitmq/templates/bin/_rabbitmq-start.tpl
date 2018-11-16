@@ -14,22 +14,7 @@ function upsert_user {
 
 function bootstrap {
    #Not especially proud of this, but it works (unlike the environment variable approach in the docs)
-   #disabled recusrive chown below in favor of one level chown
-   #chown -R rabbitmq:rabbitmq /var/lib/rabbitmq
-   USER=$(stat -c '%U' /var/lib/rabbitmq)
-   GROUP=$(stat -c '%G' /var/lib/rabbitmq)
-   if [ $USER != 'rabbitmq' ] || [ $GROUP != 'rabbitmq' ]
-   then
-       chown rabbitmq:rabbitmq /var/lib/rabbitmq
-   fi
-   for filename in /var/lib/rabbitmq/*; do
-       USER=$(stat -c '%U' ${filename})
-       GROUP=$(stat -c '%G' ${filename})
-       if [ $USER != 'rabbitmq' ] || [ $GROUP != 'rabbitmq' ]
-       then
-           chown rabbitmq:rabbitmq ${filename}
-       fi
-   done
+   chown -R rabbitmq:rabbitmq /var/lib/rabbitmq
 
    /etc/init.d/rabbitmq-server start || ( cat /var/log/rabbitmq/startup_* && exit 1 )
 
