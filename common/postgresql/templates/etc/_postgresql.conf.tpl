@@ -62,7 +62,7 @@ listen_addresses = '*'		# what IP address(es) to listen on;
                     # (change requires restart)
 #port = 5432				# (change requires restart)
 {{- if or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled  }}
-max_connections = {{.Values.max_connections | default 100 }}			# (change requires restart)
+max_connections = {{.Values.max_connections | default 50 }}			# (change requires restart)
 {{- else }}
 max_connections = {{.Values.max_connections | default 400 }}			# (change requires restart)
 {{- end }}
