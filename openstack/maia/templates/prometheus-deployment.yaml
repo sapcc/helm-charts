@@ -43,24 +43,35 @@ spec:
               mountPath: /etc/prometheus
 {{- if .Values.prometheusv2.enabled }}
         - name: prometheusv2
-          image: "{{ .Values.prometheusv2.image }}"
+          image: "{{ .Values.prometheusv2.image.repository }}:{{ .Values.prometheusv2.image.tag }}"
           args:
-            - -config.file=/etc/prometheus/prometheusv2.yaml
-            - -storage.local.path=/prometheus/v2
-            - -storage.local.target-heap-size={{ .Values.prometheusv2.target_heap_size }}
-            - -storage.local.retention={{ .Values.prometheusv2.retention }}
-            - -web.console.libraries=/etc/prometheus/console_libraries
-            - -web.console.templates=/etc/prometheus/consoles
-            - -web.external-url=https://prometheus-maia.{{ .Values.global.region }}.{{ .Values.global.domain }}
-            - -log.level={{ default "info" .Values.prometheusv2.log_level }}
+            - --config.file=/etc/prometheus/prometheusv2.yaml
+            - --storage.tsdb.path=/prometheusv2
+            - --storage.tsdb.retention={{ .Values.prometheusv2.retention }}
+            - --web.console.libraries=/etc/prometheus/console_libraries
+            - --web.console.templates=/etc/prometheus/consoles
+            - --web.listen-address="0.0.0.0:{{ .Values.prometheusv2.listen_port }}"
+            - --web.external-url=https://prometheus-maia.{{ .Values.global.region }}.{{ .Values.global.domain }}
+            - --web.enable-admin-api
+            - --web.enable-lifecycle
+            - --log.level={{ default "info" .Values.prometheusv2.log_level }}
           ports:
             - name: http
               containerPort: {{ .Values.prometheusv2.listen_port }}
           volumeMounts:
             - name: data
-              mountPath: /prometheus
+              mountPath: /prometheusv2
+            - name: configv2
+              mountPath: /etc/prometheus
+        - name: prometheus-configmap-reloader
+          image: "{{ .Values.prometheusv2.configmap_reload.image.repository }}:{{ .Values.prometheusv2.configmap_reload.image.tag }}"
+          args:
+            - --volume-dir=/etc/prometheus
+            - --webhook-url=http://localhost:{{ .Values.prometheusv2.listen_port }}/-/reload
+          volumeMounts:
             - name: config
               mountPath: /etc/prometheus
+              readOnly: true
 {{- end }}
       volumes:
         - name: data
