@@ -46,7 +46,7 @@
 {{- end }}
 
     "identity:get_domain": "rule:cloud_admin or rule:admin_and_matching_domain_id or token.project.domain.id:%(target.domain.id)s or rule:cloud_viewer",
-    "identity:list_domains": "rule:cloud_admin or rule:cloud_viewer",
+    "identity:list_domains": "rule:admin_required or rule:cloud_viewer",
     "identity:create_domain": "rule:cloud_admin",
     "identity:update_domain": "rule:cloud_admin",
     "identity:delete_domain": "rule:cloud_admin",
