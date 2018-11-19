@@ -13,3 +13,16 @@ groups:
     annotations:
       description: Clients have to wait to get a connection for {{ $labels.name }} since 5 mins.
       summary: Clients waiting connections > 100 since 5 minutes
+  
+  - alert: OpenstackPgBouncerNotReady
+    expr: count(kube_pod_container_status_ready{container="pgbouncer"} == 0) by (pod)
+    for: 5m
+    labels:
+      dashboard: PgBouncer
+      service: monsoon3
+      meta: "pgbouncer pod: {{$labels.pod}} failing readiness probe"
+      severity: warning
+      tier: openstack
+    annotations:
+      description: pgbouncer pod: {{$labels.pod}} failing readiness probe
+      summary: pgbouncer pod: {{$labels.pod}} failing readiness probe
