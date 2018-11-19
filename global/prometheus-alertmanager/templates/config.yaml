@@ -52,6 +52,12 @@ data:
           severity: info|warning|critical
           service: arc|backup|barbican|cinder|cfm|designate|elektra|elk|ironic|keystone|limes|lyra|maia|manila|neutron|nova|swift
 
+      - receiver: slack_by_tier
+        continue: true
+        match_re:
+          severity: info|warning|critical
+          service: concourse
+
       - receiver: dev-null
         continue: false
         match_re:
@@ -113,6 +119,18 @@ data:
     - name: slack_by_tier_and_severity
       slack_configs:
         - channel: '#{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          send_resolved: true
+
+    - name: slack_by_tier
+      slack_configs:
+        - channel: '#{{"{{ .CommonLabels.tier }}"}}'
           api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
