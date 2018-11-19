@@ -16,6 +16,9 @@ enabled_drivers = {{ $conductor.enabled_drivers}}
 {{- range $k, $v :=  $conductor.conductor }}
 {{ $k }} = {{ $v }}
 {{- end }}
+{{- if $conductor.conductor_group }}
+conductor_group = {{ $conductor.conductor_group }}
+{{- else }}
 
 [console]
 terminal_pid_dir = /shellinabox
