@@ -43,7 +43,7 @@ spec:
       {{- end }}
       containers:
         - name: nova-compute-minion1
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -149,7 +149,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              value: {{ .Values.sentry_dsn | quote }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
@@ -183,7 +183,7 @@ spec:
             - mountPath: /container.init
               name: nova-container-init
         - name: neutron-ovs-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-neutron-openvswitch-agent:{{.Values.imageVersionNeutronOpenvswitchAgent}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-neutron-openvswitch-agent:{{.Values.imageVersionNeutronOpenvswitchAgent | default .Values.imageVersionNeutron | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -200,7 +200,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-vswitchd:{{.Values.imageVersionOpenvswitchVswitchd}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-vswitchd:{{ .Values.imageVersionOpenvswitchVswitchd | default .Values.imageVersionNeutron | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -215,7 +215,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs-db
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-db-server:{{.Values.imageVersionOpenvswitchDbServer}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-db-server:{{ .Values.imageVersionOpenvswitchDbServer | default .Values.imageVersionNeutron | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -246,7 +246,7 @@ spec:
             path: /sys/fs/cgroup
         - name: hypervisor-config
           configMap:
-            name: hypervisor-{{$hypervisor.name}}
+            name: hypervisor-{{ $hypervisor.name }}
         - name: etclibvirt
           emptyDir: {}
         - name: etcnova

@@ -49,7 +49,7 @@ spec:
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: nova-{{ $name }}proxy
+          value: nova-{{ $name }}proxy {{ $config.args }}
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: LANG
