@@ -52,5 +52,19 @@ pxe_config_template = /etc/ironic/pxe_config.template
 {{- end }}
 uefi_pxe_bootfile_name = ipxe.efi
 uefi_pxe_config_template = /etc/ironic/ipxe_config.template
+
+{{- if $conductor.jinja2 }}
+{{`
+{%- for section in block %}
+{%- if block[section] is mapping %}
+
+[{{ section }}]
+{%- for k in block[section] %}
+{{ k }} = {{ block[section][k] }}
+{%- endfor %}
+{%- endif %}
+{%- endfor %}
+`}}
+{{- end }}
 {{- end }}
 {{- end }}
