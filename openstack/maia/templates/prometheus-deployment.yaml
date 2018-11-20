@@ -41,6 +41,37 @@ spec:
               mountPath: /prometheus
             - name: config
               mountPath: /etc/prometheus
+{{- if .Values.prometheusv2.enabled }}
+        - name: prometheusv2
+          image: "{{ .Values.prometheusv2.image.repository }}:{{ .Values.prometheusv2.image.tag }}"
+          args:
+            - --config.file=/etc/prometheus/prometheus.yaml
+            - --storage.tsdb.path=/prometheus/v2
+            - --storage.tsdb.retention={{ .Values.prometheusv2.retention }}
+            - --web.console.libraries=/etc/prometheus/console_libraries
+            - --web.console.templates=/etc/prometheus/consoles
+            - --web.listen-address="0.0.0.0:{{ .Values.prometheusv2.listen_port }}"
+            - --web.enable-admin-api
+            - --web.enable-lifecycle
+            - --log.level={{ default "info" .Values.prometheusv2.log_level }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.prometheusv2.listen_port }}
+          volumeMounts:
+            - name: data
+              mountPath: /prometheus
+            - name: config
+              mountPath: /etc/prometheus
+        - name: prometheus-configmap-reloader
+          image: "{{ .Values.prometheusv2.configmap_reload.image.repository }}:{{ .Values.prometheusv2.configmap_reload.image.tag }}"
+          args:
+            - --volume-dir=/etc/prometheus
+            - --webhook-url=http://localhost:{{ .Values.prometheusv2.listen_port }}/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+              readOnly: true
+{{- end }}
       volumes:
         - name: data
           persistentVolumeClaim:
