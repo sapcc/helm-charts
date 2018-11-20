@@ -320,3 +320,17 @@ groups:
     annotations:
       description: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
       summary: '{{ $labels.check }}: host is disabled without reason'
+
+  - alert: OpenstackNovaWaitingDatabaseConnections
+    expr: sum(pgbouncer_pools_client_waiting_connections{application=~"nova"}) > 10
+    labels:
+      severity: info
+      tier: openstack
+      service: '{{ $labels.application }}'
+      context: '{{ $labels.application }}'
+      dashboard: pgbouncer
+      meta: '{{ $labels.application }} has waiting database connections'
+#      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.application }} has more than 10 waiting database connections, please check pgbouncer logs'
+      summary: '{{ $labels.service }} waiting db connections'
