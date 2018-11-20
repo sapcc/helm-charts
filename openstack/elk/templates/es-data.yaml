@@ -13,6 +13,10 @@ metadata:
 spec:
   serviceName: "es-data"
   replicas: {{.Values.elk_elasticsearch_data_replicas}}
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: data
   template:
     metadata:
       labels:
@@ -21,21 +25,6 @@ spec:
       annotations:
         checksum/elk-templates-es-etc-configmap.yaml: "dummy"
         checksum/elk-templates-es-bin-configmap.yaml: "dummy"
-#        scheduler.alpha.kubernetes.io/affinity:  >
-#          {
-#          "podAntiAffinity": {
-#            "requiredDuringSchedulingIgnoredDuringExecution": [{
-#              "labelSelector": {
-#                "matchExpressions": [{
-#                  "key": "role",
-#                  "operator": "In",
-#                  "values": ["data"]
-#                }]
-#              },
-#              "topologyKey": "kubernetes.io/hostname"
-#            }]
-#          }
-#        }
         pod.alpha.kubernetes.io/initialized: "true"
     spec:
       nodeSelector:
