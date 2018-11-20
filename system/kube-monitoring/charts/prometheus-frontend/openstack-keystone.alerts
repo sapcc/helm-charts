@@ -68,21 +68,8 @@ groups:
       description: All keystone servers are down.
       summary: Keystone is unavailable.
 
-  - alert: OpenstackKeystoneADHealthcheckScrapeMissing
-    expr: absent(up{component="keystone",type="healthcheck"})
-    for: 1h
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: warning
-      tier: openstack
-    annotations:
-      description: Active Directory healthchecks failed to be scraped.
-      summary: Active Directory cannot be scraped
-
-  - alert: OpenstackActiveDirectoryNode1Down
-    expr: ad_node_1_up_status == 1
+  - alert: OpenstackActiveDirectoryNodeDown
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_node"} == 1
     for: 5m
     labels:
       context: availability
@@ -91,24 +78,11 @@ groups:
       severity: warning
       tier: openstack
     annotations:
-      description: ActiveDirectory node 1 is not responding to ping.
-      summary: ActiveDirectory node 1 is down
+      description: An ActiveDirectory node is not accepting connections.
+      summary: An ActiveDirectory node is down
 
-  - alert: OpenstackActiveDirectoryNode2Down
-    expr: ad_node_2_up_status == 1
-    for: 5m
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: warning
-      tier: openstack
-    annotations:
-      description: ActiveDirectory node 2 is not responding to ping.
-      summary: ActiveDirectory node 2 is down
-
-  - alert: OpenstackActiveDirectoryResolveFailed
-    expr: ad_dns_resolve_status == 1
+  - alert: OpenstackActiveDirectoryConnectFailed
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_dns"} == 1
     for: 5m
     labels:
       context: availability
@@ -117,11 +91,11 @@ groups:
       severity: critical
       tier: openstack
     annotations:
-      description: LDAP (active directory) DNS is not resolving.
-      summary: ldap.global.cloud.sap DNS resolve failed
+      description: The LDAP-LB endpoint (active directory) is not accepting connections.
+      summary: ldap.global.cloud.sap is down
 
   - alert: OpenstackActiveDirectorySearchUsersFailed
-    expr: ad_search_user_status == 1
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_search_user"} == 1
     for: 5m
     labels:
       context: availability
@@ -134,7 +108,7 @@ groups:
       summary: LDAP user searches are failing.
 
   - alert: OpenstackActiveDirectorySearchGroupsFailed
-    expr: ad_search_group_status == 1
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_search_group"} == 1
     for: 5m
     labels:
       context: availability
@@ -146,47 +120,8 @@ groups:
       description: LDAP (active directory) group searches are failing.
       summary: LDAP group searches are failing.
 
-  - alert: OpenstackCAMResolveFailed
-    expr: ad_dns_resolve_cam_status == 1
-    for: 5m
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: info
-      tier: openstack
-    annotations:
-      description: CAM DNS is not resolving.
-      summary: CAM DNS resolve failed
-
-  - alert: OpenstackCAMDown
-    expr: ad_cam_up_status == 1
-    for: 5m
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: info
-      tier: openstack
-    annotations:
-      description: CAM is not responding to ping.
-      summary: CAM is down
-
-  - alert: OpenstackEWSResolveFailed
-    expr: ad_dns_resolve_ews_status == 1
-    for: 5m
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: info
-      tier: openstack
-    annotations:
-      description: SAP Exchange webservice DNS is not resolving.
-      summary: SAP autodiscover.sap.com DNS resolve failed
-
   - alert: OpenstackEWSDown
-    expr: ad_ews_up_status == 1
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ping_ews"} == 1
     for: 5m
     labels:
       context: availability
