@@ -456,6 +456,8 @@
     "os_compute_api:os-server-groups:discoverable": "@",
     "os_compute_api:os-services": "rule:context_is_admin",
     "os_compute_api:os-services:disable": "!",
+    "os_compute_api:os-services:enable": "rule:context_is_admin",
+    "os_compute_api:os-services:disable-log-reason": "rule:context_is_admin",
     "os_compute_api:os-services:discoverable": "@",
     "os_compute_api:server-metadata:discoverable": "@",
     "os_compute_api:server-metadata:index": "rule:context_is_viewer",
