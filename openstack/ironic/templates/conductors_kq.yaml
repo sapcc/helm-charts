@@ -9,8 +9,7 @@ requirements:
   kind: OpenstackSeed
 context: ironic@Default/service
 python: |
-    from collections import defaultdict
-    blocks = defaultdict(lambda: defaultdict(dict))
+    blocks = dict()
 
     def append_item(d, k, v):
         if k not in d:
@@ -22,9 +21,15 @@ python: |
 
     for node in os.baremetal.nodes(fields='name,driver,properties,management_interface,inspect_interface,raid_interface,storage_interface,boot_interface,vendor_interface,network_interface,power_interface,rescue_interface,bios_interface,deploy_interface,console_interface'):
         block_name = node.name.split('-')[-1]
-        block = blocks[block_name]
-        block['name'] = block_name
-        block['conductor'] = {'conductor_group': block_name}
+        if block_name in blocks:
+            block = blocks[block_name]
+        else:
+            block = {
+                'name': block_name,
+                'conductor': {'conductor_group': block_name},
+                'default': {}
+            }
+            blocks[block_name] = block
         default = block['default']
         append_item(default, 'enabled_hardware_types', node.driver)
 
