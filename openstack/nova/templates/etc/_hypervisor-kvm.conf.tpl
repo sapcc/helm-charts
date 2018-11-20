@@ -2,17 +2,12 @@
 {{- $hypervisor := index . 1 }}
 {{- with index . 0 }}
 [DEFAULT]
-compute_driver = libvirt.LibvirtDriver
-firewall_driver = nova.virt.firewall.NoopFirewallDriver
-resume_guests_state_on_host_boot=True
-max_concurrent_builds={{$hypervisor.max_concurrent_builds | default .max_concurrent_builds | default 10 }}
-disk_allocation_ratio={{$hypervisor.disk_allocation_ratio | default .disk_allocation_ratio | default 1.0 }}
-reserved_host_disk_mb={{$hypervisor.reserved_host_disk_mb | default .reserved_host_disk_mb | default 0 }}
-reserved_host_memory_mb={{$hypervisor.reserved_host_memory_mb | default .reserved_host_memory_mb | default 512 }}
-
 # Needs to be same on hypervisor and scheduler
 scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instance_changes }}
 scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_interval }}
+{{- range $k, $v := $hypervisor.default }}
+{{ $k }} = {{ $v }}
+{{- end }}
 
 [libvirt]
 connection_uri = "qemu+tcp://127.0.0.1/system"
