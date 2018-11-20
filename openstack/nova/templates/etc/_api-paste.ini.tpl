@@ -6,7 +6,7 @@ use = egg:Paste#urlmap
 /: meta
 
 [pipeline:meta]
-pipeline = cors metaapp
+pipeline = healthcheck cors statsd {{- include "osprofiler_pipe" . }} {{- include "watcher_pipe" . }} sentry metaapp
 
 [app:metaapp]
 paste.app_factory = nova.api.metadata.handler:MetadataRequestHandler.factory
