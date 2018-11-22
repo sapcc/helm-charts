@@ -68,3 +68,6 @@ swift_store_use_trusts=True
 driver = noop
 
 {{- include "ini_sections.cache" . }}
+
+[barbican]
+auth_endpoint = https://{{include "keystone_api_endpoint_host_public" .}}/v3
