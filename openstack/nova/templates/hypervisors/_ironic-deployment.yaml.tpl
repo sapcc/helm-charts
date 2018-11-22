@@ -24,7 +24,7 @@ spec:
   template:
     metadata:
       labels:
-{{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ tuple . "nova" $compute_hypervisor_name | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
         name: nova-compute-{{$hypervisor.name}}
         hypervisor: "ironic"
       annotations:
