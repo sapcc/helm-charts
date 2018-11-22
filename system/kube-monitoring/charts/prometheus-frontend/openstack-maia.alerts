@@ -106,3 +106,22 @@ groups:
     annotations:
       description: '{{ $labels.check }} API is flapping for 30 minutes.'
       summary: '{{ $labels.check }} API flapping'
+
+  - alert: OpenstackSentryDown
+    expr: sum(probe_success{module="sentry"}) == 0
+    # alternative approach in case the compare to 0 is unreliable
+    # expr: sum(probe_success{module="sentry"}) <= 10
+    labels:
+      # this will get warning soon
+      severity: info
+      tier: openstack
+      # this will be sentry soon
+      service: 'maia'
+      context: 'maia'
+      # dashboard: ccloud-health-blackbox-details
+      meta: 'sentry at {{ $labels.instance }} is down'
+      # sentry: 'notyet'
+      # playbook: 'notyet'
+    annotations:
+      description: 'sentry at {{ $labels.instance }} is down'
+      summary: 'sentry at {{ $labels.instance }} is down'
