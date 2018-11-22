@@ -42,7 +42,7 @@ spec:
         effect: "NoSchedule"
       {{- end }}
       containers:
-        - name: nova-compute-minion1
+        - name: nova-compute-minion
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -229,19 +229,19 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
       volumes:
-        - name : instances
+        - name: instances
           persistentVolumeClaim:
             claimName: kvm-shared1-pvclaim
-        - name : libvirt
+        - name: libvirt
           emptyDir:
             medium: Memory
-        - name : run
+        - name: run
           emptyDir:
             medium: Memory
-        - name : modules
+        - name: modules
           hostPath:
             path: /lib/modules
-        - name : cgroup
+        - name: cgroup
           hostPath:
             path: /sys/fs/cgroup
         - name: hypervisor-config
