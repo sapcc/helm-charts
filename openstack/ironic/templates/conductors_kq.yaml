@@ -9,6 +9,7 @@ requirements:
   kind: OpenstackSeed
 context: ironic@Default/service
 python: |
+    global blocks
     blocks = dict()
 
     def append_item(d, k, v):
@@ -33,9 +34,10 @@ python: |
         default = block['default']
         append_item(default, 'enabled_hardware_types', node.driver)
 
-    for k in node.keys():
-        if k.endswith('_interface'):
-            enabled = 'enabled_' + k + 's'
-            append_item(default, enabled, node[k])
+        for k in node.keys():
+            if k.endswith('_interface'):
+                enabled = 'enabled_' + k + 's'
+                append_item(default, enabled, node[k])
+
     blocks = blocks.values()
 {{- end  }}
