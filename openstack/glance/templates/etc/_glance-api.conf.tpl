@@ -70,4 +70,4 @@ driver = noop
 {{- include "ini_sections.cache" . }}
 
 [barbican]
-auth_endpoint = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
