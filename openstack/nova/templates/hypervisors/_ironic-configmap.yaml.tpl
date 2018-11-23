@@ -11,6 +11,6 @@ metadata:
     component: nova
 data:
   nova-compute.conf: |
-{{ tuple . $hypervisor | include "ironic_conf" | indent 4 }}
+{{ tuple . $hypervisor | include "nova_compute_ironic_conf" | indent 4 }}
 {{- end -}}
 {{- end -}}

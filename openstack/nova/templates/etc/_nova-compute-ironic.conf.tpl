@@ -1,4 +1,4 @@
-{{- define "ironic_conf" }}
+{{- define "nova_compute_ironic_conf" }}
 {{- $hypervisor := index . 1 }}
 {{- with index . 0 }}
 [DEFAULT]

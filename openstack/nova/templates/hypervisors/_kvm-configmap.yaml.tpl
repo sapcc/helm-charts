@@ -11,7 +11,7 @@ metadata:
     component: nova
 data:
   nova-compute.conf: |
-{{ tuple . $hypervisor | include "kvm_conf" | indent 4 }}
+{{ tuple . $hypervisor | include "nova_compute_kvm_conf" | indent 4 }}
   libvirtd.conf: |
 {{ include (print .Template.BasePath "/etc/_libvirtd.conf.tpl") . | indent 4 }}
 {{- end -}}

@@ -1,4 +1,4 @@
-{{- define "ironic_hypervisor" -}}
+{{- define "ironic_deployment" -}}
 {{- $hypervisor := index . 1 -}}
 {{- with index . 0 -}}
 {{- $compute_hypervisor_name := printf "compute-%s" $hypervisor.name -}}

@@ -1,4 +1,4 @@
-{{- define "kvm_conf" }}
+{{- define "nova_compute_kvm_conf" }}
 {{- $hypervisor := index . 1 }}
 {{- with index . 0 }}
 [DEFAULT]

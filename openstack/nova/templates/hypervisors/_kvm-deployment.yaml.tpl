@@ -1,4 +1,4 @@
-{{- define "kvm_hypervisor" }}
+{{- define "kvm_deployment" }}
 {{- $hypervisor := index . 1 }}
 {{- with index . 0 }}
 kind: Deployment
@@ -42,7 +42,7 @@ spec:
         effect: "NoSchedule"
       {{- end }}
       containers:
-        - name: nova-compute-minion
+        - name: nova-compute
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
