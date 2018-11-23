@@ -25,6 +25,7 @@ spec:
         name: nova-vspc
 {{ tuple . "nova" "vspc" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        pod.beta.kubernetes.io/hostname: nova-vspc
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
 {{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
         scheduler.alpha.kubernetes.io/affinity: >
@@ -34,6 +35,7 @@ spec:
 {{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "nova" "vspc" | include "kubernetes_pod_anti_affinity" | indent 6 }}
 {{- end }}
+      hostname: nova-vspc
       containers:
         - name: nova-vspc
           image: {{ tuple . "vspc" | include "container_image_nova" }}
