@@ -30,12 +30,13 @@ template: |
     template:
       metadata:
         labels:
-          application: nova
-          component: compute
+{{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
           name: nova-compute-{= name =}
+          hypervisor: "vmware"
         annotations:
           prometheus.io/scrape: "true"
           prometheus.io/port: "9102"
+          configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
       spec:
         hostname: nova-compute-{= name =}
         containers:
@@ -50,7 +51,7 @@ template: |
           - name: COMMAND
             value: "nova-compute"
           - name: NAMESPACE
-            value: {= namespace =}
+            value: {{ .Release.Namespace }}
           - name: SENTRY_DSN
             value: {{ .Values.sentry_dsn | quote }}
           - name: STATSD_HOST

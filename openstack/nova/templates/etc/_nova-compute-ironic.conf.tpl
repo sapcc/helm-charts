@@ -2,6 +2,7 @@
 {{- $hypervisor := index . 1 }}
 {{- with index . 0 }}
 [DEFAULT]
+host = nova-compute-{{ $hypervisor.name }}
 # Needs to be same on hypervisor and scheduler
 scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instance_changes }}
 scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_interval }}

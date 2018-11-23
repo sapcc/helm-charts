@@ -26,16 +26,17 @@ spec:
       labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
         name: nova-compute-{{$hypervisor.name}}
+        hypervisor: "ironic"
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
     spec:
-      hostname: nova-compute-{{$hypervisor.name}}
       containers:
-        - name: nova-compute-{{$hypervisor.name}}
+        - name: nova-compute
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
+            - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND

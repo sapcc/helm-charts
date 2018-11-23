@@ -22,6 +22,7 @@ spec:
       labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
         name: nova-compute-{{$hypervisor.name}}
+        hypervisor: "kvm"
       annotations:
         {{- if le .Capabilities.KubeVersion.Minor "6" }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
