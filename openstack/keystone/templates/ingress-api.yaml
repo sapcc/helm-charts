@@ -88,7 +88,11 @@ spec:
   tls:
     {{- if .Values.services.ingress.vice_president }}
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+    {{- if eq .Values.release "queens" }}
       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}, {{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{ else }}
+      hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{- end }}
     {{ else }}
     {{- if .Values.services.public.tlsCertificate }}
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
