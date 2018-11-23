@@ -4,7 +4,7 @@ groups:
   - alert: BaremetalIronicAristaMonTotalInfo
     # Total of ACL, IFP or EFP table is above 50%
     expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 70)  by (instance, model, serial, table)
-    for: 1h
+    for: 60m
     labels:
       severity: info
       tier: baremetal
@@ -20,7 +20,7 @@ groups:
   - alert: BaremetalIronicAristaMonTotalWarn
     # Total of ACL, IFP or EFP table is above 80%
     expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 90)  by (instance, model, serial, table)
-    for: 1h
+    for: 60m
     labels:
       severity: warning
       tier: baremetal
@@ -39,6 +39,22 @@ groups:
     for: 10m
     labels:
       severity: critical
+      tier: baremetal
+      service: ironic
+      context: "{{ $labels.instance }}"
+      meta: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+      playbook: docs/devops/alert/baremetal
+      dashboard: arista-monitoring-overview?var-instance={{ $labels.instance }}
+    annotations:
+      description: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+      summary: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+
+  - alert: BaremetalIronicAristaMonDiscoveryWar
+    # No metrics could be retrieved from the switch. Likely not in DNS.
+    expr: count(up{job="baremetal/arista"} == 0) by (instance)
+    for: 60m
+    labels:
+      severity: warning
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
