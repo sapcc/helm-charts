@@ -41,7 +41,7 @@ template: |
         hostname: nova-compute-{= name =}
         containers:
         - name: nova-compute
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.global.image_namespace }}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           terminationGracePeriodSeconds: 900
           command:
@@ -99,7 +99,7 @@ template: |
             readOnly: true
 {{- end }}
         - name: neutron-dvs-agent
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.global.image_namespace }}/{{ .Values.neutron.imageName | default "ubuntu-source-neutron-server" }}:{{ .Values.imageVersionNeutronServer | default .Values.imageVersionNeutron | default .Values.imageVersion | required "Please set imageVersionNeutron or similar" }}
+          image: {{ tuple . "server" | include "container_image_neutron" }}
           imagePullPolicy: IfNotPresent
           command: ["dumb-init"]
           args: ["neutron-dvs-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-vmware.ini"]
