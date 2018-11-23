@@ -1,4 +1,4 @@
-{{- if and (.Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1") .Values.auto_assign_aggregates }}
+{{- if and (.Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1") }}
 apiVersion: kos-operator.stable.sap.cc/v1
 kind: KosQuery
 metadata:
@@ -34,7 +34,7 @@ python: |
             az = site.lower()
             if az != service.zone:
                 ag = next((ag for ag in aggregates if ag.get('name', '').lower() == az), {}).get('id', None)
-                {{- if eq .Values.auto_assign_aggregates "dry_run" }}
+                {{- if not .Values.auto_assign_aggregates }}
                 print("Add Host %s to %d" % (service.host, ag))
                 {{- else }}
                 os.session.post('/os-aggregates/%d/action' % ag,
