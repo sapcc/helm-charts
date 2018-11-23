@@ -4,7 +4,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: hypervisor-{{$hypervisor.name}}
+  name: nova-compute-kvm-{{$hypervisor.name}}
   labels:
     system: openstack
     type: configuration

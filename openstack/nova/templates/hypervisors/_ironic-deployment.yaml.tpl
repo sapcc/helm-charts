@@ -85,6 +85,6 @@ spec:
             name: nova-patches
         - name: hypervisor-config
           configMap:
-            name:  hypervisor-{{$hypervisor.name}}
+            name: nova-compute-{{$hypervisor.name}}
 {{- end -}}
 {{- end -}}

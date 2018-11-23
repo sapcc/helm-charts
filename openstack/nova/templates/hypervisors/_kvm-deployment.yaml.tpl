@@ -247,7 +247,7 @@ spec:
             path: /sys/fs/cgroup
         - name: hypervisor-config
           configMap:
-            name: hypervisor-{{ $hypervisor.name }}
+            name: nova-compute-kvm-{{ $hypervisor.name }}
         - name: etclibvirt
           emptyDir: {}
         - name: etcnova
