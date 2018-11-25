@@ -1,0 +1,161 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: billing-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+    #- monsoon3/keystone-seed
+    - monsoon3/domain-cc3test-seed
+    - swift/swift-seed
+    - limes/limes-seed
+
+  roles:
+  - masterdata_admin
+  - masterdata_viewer
+
+  services:
+  - name: sapcc-billing
+    type: sapcc-billing
+    description: 'SAP Converged Cloud Billing services'
+    endpoints:
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://billing.{{.Values.global.region}}.cloud.sap:64000'
+
+  domains:
+  - name: Default
+    users:
+    - name: billing
+      description: 'Billing Service'
+      password: {{ .Values.billingServicePassword | quote }}
+      roles:
+      - project: service
+        role: service
+
+  - name: cc3test
+    roles:
+    - user: {{ .Values.cc3testBillingDomainAdmUser | quote }}
+      role: admin
+    - user: {{ .Values.cc3testBillingDomainUsrUser | quote }}
+      role: member
+
+    projects:
+    - name: billing_test
+      description: 'project for used for testing the billing service'
+      roles:
+      - user: {{ .Values.cc3testBillingProjectAdmUser | quote }}
+        role: admin
+      - user: {{ .Values.cc3testBillingProjectUsrUser | quote }}
+        role: member
+      - user: {{ .Values.cc3testBillingProjectUsrUser | quote }}
+        role: swiftoperator
+
+    groups:
+    - name: CC3TEST_DOMAIN_ADMINS
+      roles:
+      - project: billing_test
+        role: admin
+
+  - name: ccadmin
+    projects:
+    - name: billing
+      description: 'Billing Administration for Converged Cloud'
+      roles:
+      - user: billing@Default
+        role: swiftoperator
+      - user: billing@Default
+        role: cloud_resource_viewer
+      swift:
+        enabled: true
+    groups:
+    - name: CCADMIN_API_SUPPORT
+      roles:
+      - project: api_support
+        role: masterdata_admin
+      - project: api_tools
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_admin
+        inherited: true
+    - name: CCADMIN_COMPUTE_SUPPORT
+      roles:
+      - project: compute_support
+        role: masterdata_admin
+      - project: compute_tools
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_viewer
+        inherited: true
+    - name: CCADMIN_NETWORK_SUPPORT
+      roles:
+      - project: network_support
+        role: masterdata_admin
+      - project: masterdata_tools
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_viewer
+        inherited: true
+    - name: CCADMIN_STORAGE_SUPPORT
+      roles:
+      - project: storage_support
+        role: masterdata_admin
+      - project: storage_tools
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_viewer
+        inherited: true
+    - name: CCADMIN_SERVICE_DESK
+      roles:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_viewer
+        inherited: true
+
+  - name: monsoon3
+    groups:
+    - name: MONSOON3_DOMAIN_ADMINS
+      roles:
+      - project: cc-demo
+        role: masterdata_admin
+    - name: MONSOON3_API_SUPPORT
+      roles:
+      - project: api_support
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_admin
+        inherited: true
+    - name: MONSOON3_COMPUTE_SUPPORT
+      roles:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_viewer
+        inherited: true
+    - name: MONSOON3_NETWORK_SUPPORT
+      roles:
+      - project: network_support
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_viewer
+        inherited: true
+    - name: MONSOON3_STORAGE_SUPPORT
+      roles:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_viewer
+        inherited: true
+    - name: MONSOON3_SERVICE_DESK
+      roles:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_viewer
+        inherited: true
+
