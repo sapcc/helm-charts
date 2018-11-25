@@ -1,0 +1,33 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: hcm-seed
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+
+  roles:
+  - cfm_admin
+  - cfm_user
+
+  services:
+  - name: cfm
+    type: database
+    description: HANA Database Service
+    endpoints:
+    - interface: public
+      region: '{{.Values.openstack.global.region}}'
+      url: '{{.Values.openstack.global.cfm_api_endpoint_protocol_public}}://cfm.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.openstack.global.cfm_api_port_public}}'
+  domains:
+  - name: Default
+    users:
+    - name: cfm
+      description: CFM Service User
+      password: '{{.Values.openstack.global.cfm_service_password}}'
+      roles:
+      - project: service
+        role: service
