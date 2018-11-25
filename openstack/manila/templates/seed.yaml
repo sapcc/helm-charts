@@ -1,0 +1,214 @@
+{{- if .Release.IsUpgrade }}
+{{- if .Capabilities.APIVersions.Has "openstack.stable.sap.cc/v1"}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: manila-seed
+  labels:
+    component: manila
+    app: manila
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-monsoon3-seed
+{{- if .Values.tempest.enabled }}
+  - monsoon3/domain-tempest-seed
+{{- end }}
+
+  roles:
+  - cloud_sharedfilesystem_admin
+  - sharedfilesystem_admin
+  - sharedfilesystem_viewer
+
+  services:
+  - name: manila
+    type: share
+    description: OpenStack Shared Filesystems
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "manila_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v1/%(tenant_id)s'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "manila_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}/v1/%(tenant_id)s'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{include "manila_api_endpoint_host_public" .}}/v1/%(tenant_id)s'
+  - name: manilav2
+    type: sharev2
+    description: OpenStack Shared Filesystems
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "manila_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v2/%(tenant_id)s'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "manila_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v2/%(tenant_id)s'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{include "manila_api_endpoint_host_public" .}}/v2/%(tenant_id)s'
+
+  domains:
+  - name: Default
+    groups:
+    - name: administrators
+      roles:
+      - domain: Default
+        role: cloud_sharedfilesystem_admin
+      - project: admin
+        role: cloud_sharedfilesystem_admin
+    users:
+    - name: admin
+      roles:
+      - domain: Default
+        role: cloud_sharedfilesystem_admin
+      - project: admin
+        role: cloud_sharedfilesystem_admin
+    - name: manila
+      description: Manila Service
+      password: '{{.Values.global.manila_service_password}}'
+      roles:
+      - project: service
+        role: service
+      - project: service
+        role: cloud_network_admin
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      roles:
+      - user: admin@Default
+        role: cloud_sharedfilesystem_admin
+    groups:
+    - name: CCADMIN_CLOUD_ADMINS
+      roles:
+      - project: cloud_admin
+        role: cloud_sharedfilesystem_admin
+    - name: CCADMIN_API_SUPPORT
+      roles:
+      - project: api_support
+        role: sharedfilesystem_admin
+      - project: api_tools
+        role: sharedfilesystem_admin
+      - domain: ccadmin
+        role: sharedfilesystem_admin
+        inherited: true
+    - name: CCADMIN_COMPUTE_SUPPORT
+      roles:
+      - project: compute_support
+        role: sharedfilesystem_admin
+      - project: compute_tools
+        role: sharedfilesystem_admin
+      - domain: ccadmin
+        role: sharedfilesystem_viewer
+        inherited: true
+    - name: CCADMIN_NETWORK_SUPPORT
+      roles:
+      - project: network_support
+        role: sharedfilesystem_admin
+      - project: network_tools
+        role: sharedfilesystem_admin
+      - domain: ccadmin
+        role: sharedfilesystem_viewer
+        inherited: true
+    - name: CCADMIN_STORAGE_SUPPORT
+      roles:
+      - project: storage_support
+        role: sharedfilesystem_admin
+      - project: storage_tools
+        role: sharedfilesystem_admin
+      - domain: ccadmin
+        role: sharedfilesystem_admin
+        inherited: true
+    - name: CCADMIN_SERVICE_DESK
+      roles:
+      - project: service_desk
+        role: sharedfilesystem_admin
+      - domain: ccadmin
+        role: sharedfilesystem_viewer
+        inherited: true
+  - name: monsoon3
+    groups:
+    - name: MONSOON3_DOMAIN_ADMINS
+      roles:
+      - project: cc-demo
+        role: sharedfilesystem_admin
+    - name: MONSOON3_API_SUPPORT
+      roles:
+      - project: api_support
+        role: sharedfilesystem_admin
+      - domain: monsoon3
+        role: sharedfilesystem_admin
+        inherited: true
+    - name: MONSOON3_COMPUTE_SUPPORT
+      roles:
+      - project: compute_support
+        role: sharedfilesystem_admin
+      - domain: monsoon3
+        role: sharedfilesystem_viewer
+        inherited: true
+    - name: MONSOON3_NETWORK_SUPPORT
+      roles:
+      - project: network_support
+        role: sharedfilesystem_admin
+      - domain: monsoon3
+        role: sharedfilesystem_viewer
+        inherited: true
+    - name: MONSOON3_STORAGE_SUPPORT
+      roles:
+      - project: storage_support
+        role: sharedfilesystem_admin
+      - domain: monsoon3
+        role: sharedfilesystem_admin
+        inherited: true
+    - name: MONSOON3_SERVICE_DESK
+      roles:
+      - project: service_desk
+        role: sharedfilesystem_admin
+      - domain: monsoon3
+        role: sharedfilesystem_viewer
+        inherited: true
+
+{{- if .Values.tempest.enabled }}
+  - name: tempest
+    projects:
+    - name: admin
+      roles:
+        - user: admin
+          role: cloud_sharedfilesystem_admin
+        - user: admin
+          role: member
+        - user: admin@Default
+          role: cloud_sharedfilesystem_admin
+    - name: tempest1
+      roles:
+        - user: admin@Default
+          role: cloud_sharedfilesystem_admin
+    - name: tempest2
+      roles:
+        - user: admin@Default
+          role: cloud_sharedfilesystem_admin
+    users:
+    - name: tempestuser1
+      roles:
+      - project: tempest1
+        role: sharedfilesystem_admin
+      - project: tempest1
+        role: member
+      - domain: tempest
+        role: sharedfilesystem_admin
+    - name: tempestuser2
+      roles:
+      - project: tempest2
+        role: sharedfilesystem_admin
+      - project: tempest2
+        role: member
+      - domain: tempest
+        role: sharedfilesystem_admin
+{{- end }}
+{{- end }}
+{{- end }}
