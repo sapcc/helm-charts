@@ -1,0 +1,95 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: cinder-backup
+  labels:
+    system: openstack
+    type: backend
+    component: cinder
+spec:
+  replicas: {{ .Values.pod.replicas.backup }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: cinder-backup
+  template:
+    metadata:
+      labels:
+        name: cinder-backup
+{{ tuple . "cinder" "backup" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
+        scheduler.alpha.kubernetes.io/affinity: >
+            {{ tuple . "cinder" "backup" | include "kubernetes_pod_anti_affinity" }}
+{{- end }}
+    spec:
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
+{{ tuple . "cinder" "backup" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{- end }}
+      containers:
+        - name: cinder-backup
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-backup:{{.Values.imageVersionCinderBackup | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /tmp/cinder-backup.sh
+          env:
+            - name: COMMAND
+              value: "cinder-backup"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "cinder-postgresql,rabbitmq"
+            - name: SENTRY_DSN
+              value: {{.Values.sentry_dsn | quote}}
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: cinder-bin
+              mountPath: /tmp/cinder-backup.sh
+              subPath: cinder-backup.sh
+              readOnly: true
+            - name: etccinder
+              mountPath: /etc/cinder
+            - name: cinder-etc
+              mountPath: /etc/cinder/cinder.conf
+              subPath: cinder.conf
+              readOnly: true
+            - name: cinder-etc
+              mountPath: /etc/cinder/api-paste.ini
+              subPath: api-paste.ini
+              readOnly: true
+            - name: cinder-etc
+              mountPath: /etc/cinder/policy.json
+              subPath: policy.json
+              readOnly: true
+            - name: cinder-etc
+              mountPath: /etc/cinder/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            {{- if eq .Values.backup_driver "cinder.backup.drivers.posix" }}
+            - name: cinder-backup
+              mountPath: {{ .Values.backup_posix_path }}
+            {{- end }}
+
+      volumes:
+        - name: etccinder
+          emptyDir: {}
+        - name: cinder-etc
+          configMap:
+            name: cinder-etc
+        {{- if eq .Values.backup_driver "cinder.backup.drivers.posix" }}
+        - name: cinder-backup
+          persistentVolumeClaim:
+            claimName: cinder-backup
+        {{- end }}
