@@ -1,27 +1,26 @@
-ALERT DatapathRunningOutOfSymantecTokens
-  IF vice_president_remaining_tokens < 50
-  FOR 1h
-  LABELS {
-    service = "vice-president",
-    severity = "critical",
-    context = "availability",
-    tier = "kubernetes"
-  }
-  ANNOTATIONS {
-    summary = "Running out of Symantec tokens",
-    description = "Almost of Symantec tokens. Only {{ $value }} more certificates can be requested."
-  }
+groups:
+- name: vice-president.alerts
+  rules:
+  - alert: DatapathRunningOutOfSymantecTokens
+    expr: vice_president_remaining_tokens < 50
+    for: 1h
+    labels:
+      context: availability
+      service: vice-president
+      severity: critical
+      tier: kubernetes
+    annotations:
+      description: Almost of Symantec tokens. Only {{ $value }} more certificates can be requested.
+      summary: Running out of Symantec tokens
 
-ALERT DatapathRunningOutOfSymantecTokens
-  IF vice_president_remaining_tokens < 100
-  FOR 1h
-  LABELS {
-    service = "vice-president",
-    severity = "warning",
-    context = "availability",
-    tier = "kubernetes"
-  }
-  ANNOTATIONS {
-    summary = "Running out of Symantec tokens",
-    description = "Running out of Symantec tokens. Only {{ $value }} more certificates can be requested."
-  }
+  - alert: DatapathRunningOutOfSymantecTokens
+    expr: vice_president_remaining_tokens < 100
+    for: 1h
+    labels:
+      context: availability
+      service: vice-president
+      severity: warning
+      tier: kubernetes
+    annotations:
+      description: Running out of Symantec tokens. Only {{ $value }} more certificates can be requested.
+      summary: Running out of Symantec tokens

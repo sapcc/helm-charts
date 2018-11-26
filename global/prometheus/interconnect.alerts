@@ -1,79 +1,72 @@
-ALERT RegionalInterconnects30PercentDown
-  IF (1- ((((count(count(count(probe_success{region!="admin",region_probed_from!="admin"}) by (region,region_probed_from)) by (region))) / (count(count(up{job="prometheus-regions-federation",region!="admin"})by (region))))))) * 100 > 30
-  FOR 10m
-  LABELS {
-    meta = "{{ $value }} percent of regions can’t reach any regions",
-    context = "interconnect",
-    service = "interconnect",
-    severity = "critical",
-    tier = "openstack",
-    dashboard = "region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All"
-  }
-  ANNOTATIONS {
-    description = "{{ $value }} percent of regions are not returning any probe metrics. The DMVPN is down.",
-    summary = "{{ $value }} percent of regions are not returning any probe metrics. The DMVPN is down."
-}
+groups:
+- name: interconnect.alerts
+  rules:
+  - alert: RegionalInterconnects30PercentDown
+    expr: (1 - ((((count(count by(region) (count by(region, region_probed_from) (probe_success{region!="admin",region_probed_from!="admin"})))) / (count(count by(region) (up{job="prometheus-regions-federation",region!="admin"}))))))) * 100 > 30
+    for: 10m
+    labels:
+      context: interconnect
+      dashboard: region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All
+      meta: '{{ $value }} percent of regions can’t reach any regions'
+      service: interconnect
+      severity: critical
+      tier: openstack
+    annotations:
+      description: '{{ $value }} percent of regions are not returning any probe metrics. The DMVPN is down.'
+      summary: '{{ $value }} percent of regions are not returning any probe metrics. The DMVPN is down.'
 
-ALERT RegionalInterconnectDown
-  IF count(up{job="prometheus-regions-federation",region!="admin"}) by (region) unless (count(count(probe_success{region!="admin",region_probed_from!="admin"}) by (region, region_probed_from)) by (region))
-  FOR 10m
-  LABELS {
-    meta = "{{ $labels.region }} is not returning any probe metrics. The DMVPN might be down.",
-    context = "interconnect",
-    service = "interconnect",
-    severity = "critical",
-    tier = "openstack",
-    dashboard = "region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All"
-  }
-  ANNOTATIONS {
-    description = "{{ $labels.region }} is not returning any probe metrics. The DMVPN might be down.",
-    summary = "{{ $labels.region }} is not returning any probe metrics. The DMVPN might be down."
-}
+  - alert: RegionalInterconnectDown
+    expr: count by(region) (up{job="prometheus-regions-federation",region!="admin"}) unless (count by(region) (count by(region, region_probed_from) (probe_success{region!="admin",region_probed_from!="admin"})))
+    for: 10m
+    labels:
+      context: interconnect
+      dashboard: region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All
+      meta: '{{ $labels.region }} is not returning any probe metrics. The DMVPN might be down.'
+      service: interconnect
+      severity: critical
+      tier: openstack
+    annotations:
+      description: '{{ $labels.region }} is not returning any probe metrics. The DMVPN might be down.'
+      summary: '{{ $labels.region }} is not returning any probe metrics. The DMVPN might be down.'
 
-ALERT RegionalInterconnectOutgoingDownQA
-  IF (count(up{job="prometheus-regions-federation"})) - ignoring(region)  group_right() (count(count(probe_success{region="qa-de-1"}) by (region,region_probed_from)) by (region)) != 0
-  FOR 1h
-  LABELS {
-    meta = "{{ $labels.region }} could not reach {{ $value }} other regions.",
-    context = "interconnect",
-    service = "interconnect",
-    severity = "critical",
-    tier = "openstack",
-    dashboard = "region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All"
-  }
-  ANNOTATIONS {
-    description = "{{ $labels.region }} could not reach the blackbox-exporter in {{ $value }} other regions. This also masks problems with {{$labels.region}}’s Regional Ingoing Interconnect.",
-    summary = "{{ $labels.region }} could not reach {{ $value }} other regions."
-}
+  - alert: RegionalInterconnectOutgoingDownQA
+    expr: (count(up{job="prometheus-regions-federation"})) - ignoring(region) group_right() (count by(region) (count by(region, region_probed_from) (probe_success{region="qa-de-1"}))) != 0
+    for: 1h
+    labels:
+      context: interconnect
+      dashboard: region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All
+      meta: '{{ $labels.region }} could not reach {{ $value }} other regions.'
+      service: interconnect
+      severity: critical
+      tier: openstack
+    annotations:
+      description: '{{ $labels.region }} could not reach the blackbox-exporter in {{ $value }} other regions. This also masks problems with {{$labels.region}}’s Regional Ingoing Interconnect.'
+      summary: '{{ $labels.region }} could not reach {{ $value }} other regions.'
 
-ALERT RegionalInterconnectOutgoingDown
-  IF (count(up{job="prometheus-regions-federation",region!~"qa-de-1|admin"})) - ignoring(region) group_right() (count(count(probe_success{region!~"qa-de-1|admin",region_probed_from!~"qa-de-1|admin"}) by (region, region_probed_from)) by (region)) != 0
-  FOR 10m
-  LABELS {
-    meta = "{{ $labels.region }} could not reach {{ $value }} other regions.",
-    context = "interconnect",
-    service = "interconnect",
-    severity = "critical",
-    tier = "openstack",
-    dashboard = "region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All"
-  }
-  ANNOTATIONS {
-    description = "{{ $labels.region }} could not reach the blackbox-exporter in {{ $value }} other regions. This also masks problems with {{$labels.region}}’s Regional Ingoing Interconnect.",
-    summary = "{{ $labels.region }} could not reach {{ $value }} other regions."
-}
+  - alert: RegionalInterconnectOutgoingDown
+    expr: (count(up{job="prometheus-regions-federation",region!~"qa-de-1|admin"})) - ignoring(region) group_right() (count by(region) (count by(region, region_probed_from) (probe_success{region!~"qa-de-1|admin",region_probed_from!~"qa-de-1|admin"}))) != 0
+    for: 10m
+    labels:
+      context: interconnect
+      dashboard: region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All
+      meta: '{{ $labels.region }} could not reach {{ $value }} other regions.'
+      service: interconnect
+      severity: critical
+      tier: openstack
+    annotations:
+      description: '{{ $labels.region }} could not reach the blackbox-exporter in {{ $value }} other regions. This also masks problems with {{$labels.region}}’s Regional Ingoing Interconnect.'
+      summary: '{{ $labels.region }} could not reach {{ $value }} other regions.'
 
-ALERT RegionalInterconnectIngoingDown
-  IF (count((count(probe_success{region!="admin",region_probed_from!="admin"} != 1) by (region, region_probed_from) unless (count(probe_success == 1) by (region, region_probed_from) >= 1))) by (region))
-  FOR 10m
-  LABELS {
-    meta = "{{ $labels.region }} could not be reached by {{ $value }} other regions it could reach itself.",
-    context = "interconnect",
-    service = "interconnect",
-    severity = "critical",
-    tier = "openstack",
-    dashboard = "region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All"
-  }
-  ANNOTATIONS {
-    description = "{{ $labels.region }} could not be reached by {{ $value }} other regions it could reach itself.",
-    summary = "{{ $labels.region }} could not be reached by {{ $value }} other regions it could reach itself."
-}
+  - alert: RegionalInterconnectIngoingDown
+    expr: (count by(region) ((count by(region, region_probed_from) (probe_success{region!="admin",region_probed_from!="admin"} != 1) unless (count by(region, region_probed_from) (probe_success == 1) >= 1))))
+    for: 10m
+    labels:
+      context: interconnect
+      dashboard: region-interconnect?var-region={{`{{$labels.region}}`}}&var-module=All
+      meta: '{{ $labels.region }} could not be reached by {{ $value }} other regions it could reach itself.'
+      service: interconnect
+      severity: critical
+      tier: openstack
+    annotations:
+      description: '{{ $labels.region }} could not be reached by {{ $value }} other regions it could reach itself.'
+      summary: '{{ $labels.region }} could not be reached by {{ $value }} other regions it could reach itself.'

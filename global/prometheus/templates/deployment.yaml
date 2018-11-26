@@ -16,18 +16,23 @@ spec:
         app: prometheus
         type: global
     spec:
+      securityContext:
+        fsGroup: 0
+        runAsUser: 0
       terminationGracePeriodSeconds: 300
       containers:
         - name: prometheus 
-          image: "{{.Values.image}}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           args:
-            - -config.file=/etc/prometheus/prometheus.yaml
-            - -storage.local.path=/prometheus
-            - -storage.local.target-heap-size={{.Values.target_heap_size}}
-            - -storage.local.retention={{.Values.retention}}
-            - -web.console.libraries=/etc/prometheus/console_libraries
-            - -web.console.templates=/etc/prometheus/consoles
-            - -web.external-url=https://prometheus.global.{{.Values.global.domain}}
+            - --config.file=/etc/prometheus/prometheus.yaml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention={{.Values.retention}}
+            - --web.console.libraries=/etc/prometheus/console_libraries
+            - --web.console.templates=/etc/prometheus/consoles
+            - --web.external-url=https://prometheus.global.{{.Values.global.domain}}
+            - --web.enable-admin-api
+            - --web.enable-lifecycle
+            - --log.level={{ default "info" .Values.log_level }}
           ports:
             - name: http 
               containerPort: 9090
@@ -36,8 +41,19 @@ spec:
               mountPath: /prometheus
             - name: config
               mountPath: /etc/prometheus
+              readOnly: true
             - name: certs
               mountPath: /etc/secrets
+              readOnly: true
+        - name: prometheus-configmap-reloader
+          image: "{{ .Values.configmap_reload.image.repository }}:{{ .Values.configmap_reload.image.tag }}"
+          args:
+            - --volume-dir=/etc/prometheus
+            - --webhook-url=http://localhost:9090/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:

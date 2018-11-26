@@ -1,11 +1,16 @@
-image: prom/prometheus:v1.8.2
-retention: 2160h0m0s # 90 days
-target_heap_size: "12884901888" # 12 GiB
+image:
+  repository: prom/prometheus
+  tag: v2.4.2
 
 persistence:
-  name: data-prometheus-global-0
+  name: data-prometheus-global
   access_mode: ReadWriteMany
-  size: 300Gi
+  size: 500Gi
+
+configmap_reload:
+  image:
+    repository: jimmidyson/configmap-reload
+    tag: v0.2.2
 
 kubernikus:
   # certificate and key for federation tls client authentication
@@ -13,6 +18,8 @@ kubernikus:
     enabled: false
     tls_cert: DEFINED-IN-SECRETS
     tls_key: DEFINED-IN-SECRETS
+
+retention: 90d
 
 regions:
   - "staging"
