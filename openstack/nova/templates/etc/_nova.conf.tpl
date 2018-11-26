@@ -82,8 +82,6 @@ lock_path = /var/lib/nova/tmp
 [glance]
 api_servers = http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.global.glance_api_port_internal | default "9292" }}/v2
 num_retries = 10
-verify_glance_signatures = True
-enable_certificate_validation = True
 
 [cinder]
 os_region_name = {{.Values.global.region}}
