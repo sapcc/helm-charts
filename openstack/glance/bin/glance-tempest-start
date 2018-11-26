@@ -4,8 +4,6 @@ set -xo pipefail
 
 function start_tempest_tests {
   echo -e "\n === CONFIGURING TEMPEST === \n"
-  # workaround missing dep
-  sudo pip install stestr -c https://raw.githubusercontent.com/sapcc/requirements/stable/queens-m3/upper-constraints.txt
 
   # ensure rally db is present
   rally db ensure
@@ -24,7 +22,8 @@ function start_tempest_tests {
 
   # run the actual tempest tests for glance
   echo -e "\n === STARTING TEMPEST TESTS FOR glance === \n"
-  rally --debug verify start --concurrency 1 --detailed --pattern set=image
+  # skip-list instead of xfail-list to skip failures in resource setup
+  rally --debug verify start --concurrency 1 --detailed --pattern set=image --skip-list /glance-etc/tempest_expected_failures.yaml
 }
 
 cleanup_tempest_leftovers() {
