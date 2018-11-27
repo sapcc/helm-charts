@@ -1,5 +1,6 @@
 {
   "context_is_cloud_admin":  "role:cloud_sharedfilesystem_admin",
+  "context_is_quota_admin":  "role:resource_service",
   "context_is_admin":  "rule:context_is_cloud_admin",
   "owner": "project_id:%(project_id)s",
   "member": "role:member and rule:owner",
@@ -12,12 +13,12 @@
 
   "availability_zone:index": "rule:context_is_viewer",
 
-  "quota_set:update": "rule:context_is_admin",
-  "quota_set:show": "rule:context_is_viewer",
-  "quota_set:delete": "rule:context_is_admin",
+  "quota_set:update": "rule:context_is_quota_admin",
+  "quota_set:show": "rule:context_is_viewer or rule:context_is_quota_admin",
+  "quota_set:delete": "rule:context_is_quota_admin",
 
-  "quota_class_set:show": "rule:context_is_viewer",
-  "quota_class_set:update": "rule:context_is_admin",
+  "quota_class_set:show": "rule:context_is_viewer or rule:context_is_quota_admin",
+  "quota_class_set:update": "rule:context_is_quota_admin",
 
   "service:index": "rule:context_is_admin",
   "service:update": "rule:context_is_admin",
