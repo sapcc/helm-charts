@@ -1,5 +1,6 @@
 {
   "context_is_cloud_admin":  "role:cloud_volume_admin",
+  "context_is_quota_admin":  "role:resource_service",
   "context_is_admin":  "rule:context_is_cloud_admin",
   "owner": "project_id:%(project_id)s",
   "member": "role:member and rule:owner",
@@ -52,11 +53,11 @@
   "volume_extension:extended_snapshot_attributes": "rule:context_is_editor",
   "volume_extension:volume_image_metadata": "rule:context_is_editor",
 
-  "volume_extension:quotas:show": "rule:context_is_viewer",
-  "volume_extension:quotas:update": "rule:context_is_admin",
-  "volume_extension:quotas:delete": "rule:context_is_admin",
-  "volume_extension:quota_classes": "rule:context_is_admin",
-  "volume_extension:quota_classes:validate_setup_for_nested_quota_use": "rule:context_is_admin",
+  "volume_extension:quotas:show": "rule:context_is_viewer or rule:context_is_quota_admin",
+  "volume_extension:quotas:update": "rule:context_is_quota_admin",
+  "volume_extension:quotas:delete": "rule:context_is_quota_admin",
+  "volume_extension:quota_classes": "rule:context_is_admin or rule:context_is_quota_admin",
+  "volume_extension:quota_classes:validate_setup_for_nested_quota_use": "rule:context_is_quota_admin",
 
   "volume_extension:volume_admin_actions:reset_status": "rule:context_is_volume_admin",
   "volume_extension:snapshot_admin_actions:reset_status": "rule:context_is_volume_admin",
