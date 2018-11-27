@@ -110,7 +110,7 @@ pgmetrics:
   name: ironic
   customMetrics:
      openstack_ironic_nodes_list:
-      query: "SELECT uuid, name, instance_uuid,  power_state,  provision_state, last_error, count(*) as gauge from nodes group by uuid, name, instance_uuid,  power_state, provision_state, last_error"
+      query: "SELECT uuid, name, instance_uuid, power_state, provision_state, coalesce(last_error,'error unknown') AS last_error, count(*) as gauge from nodes where provision_state='deploy failed' group by uuid, name, instance_uuid, power_state, provision_state, last_error"
       metrics:
         - uuid:
             usage: "LABEL"
