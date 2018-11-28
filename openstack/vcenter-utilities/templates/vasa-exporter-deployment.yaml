@@ -1,0 +1,46 @@
+{{- if .Values.vasa_exporter.enabled }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: vasa-exporter
+  namespace: monsoon3
+  labels$global_values:
+    system: openstack
+    service: metrics
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: vasa-exporter
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: config
+          configMap:
+            name: vasa-exporter
+      containers:
+        - name: vasa-exporter
+          imagePullPolicy: IfNotPresent
+          image: {{ .Values.vasa_exporter.docker_repo }}/vasa-exporter:{{ .Values.vasa_exporter.image_version | replace "string:" "" }}
+          command:
+            - python
+          args:
+            - vasa-exporter.py
+            - {{ .Values.vasa_exporter.prometheus_port }}
+            - /config/vasa_exporter.cfg
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.vasa_exporter.prometheus_port }}
+{{- end }}
+
