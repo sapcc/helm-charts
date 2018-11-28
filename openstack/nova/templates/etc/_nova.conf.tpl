@@ -18,7 +18,7 @@ osapi_compute_link_prefix=https://{{include "nova_api_endpoint_host_public" .}}:
 osapi_compute_workers=8
 metadata_workers=8
 
-memcache_servers =  {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default "11211" }}
+memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
 default_schedule_zone = {{.Values.global.default_availability_zone}}
 default_availability_zone = {{.Values.global.default_availability_zone}}
