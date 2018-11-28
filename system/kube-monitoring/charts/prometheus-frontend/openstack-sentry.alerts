@@ -1,0 +1,16 @@
+groups:
+- name: openstack-sentry.alerts
+  rules:
+  - alert: OpenstackSentryDown
+    expr: sum(probe_success{module="sentry"}) by (instance) == 0
+    labels:
+      severity: info
+      tier: 'openstack'
+      service: 'sentry'
+      context: 'sentry'
+      dashboard: sentry
+      meta: 'sentry at {{ $labels.instance }} is down'
+      # playbook: 'notyet'
+    annotations:
+      description: 'sentry at {{ $labels.instance }} is down'
+      summary: 'sentry at {{ $labels.instance }} is down'
