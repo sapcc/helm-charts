@@ -9,11 +9,11 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      meta: "ironic node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
-      summary: "Sensor Critical for instance {{ $labels.instance }}"
+      description: "ironic node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      summary: "Sensor critical error for instance {{ $labels.instance }}"
       
   - alert: BaremetalIronicSensorWarning
     expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Critical Interrupt)", maintenance="false", provision_state=~"(manageable)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
@@ -23,10 +23,10 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      meta: "ironic node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
+      description: "ironic node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
       summary: "Sensor Warning for instance {{ $labels.instance }}"
       
   - alert: BaremetalIronicSensorInfo
@@ -37,10 +37,10 @@ groups:
       tier: baremetal
       service: ironic
       context: "{{ $labels.instance }}"
-      meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      meta: "ironic node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ironic node {{ $labels.instance }} (maintenance=true) has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
+      description: "ironic node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
       summary: "Sensor Critical for instance {{ $labels.instance }}"
       
   - alert: BaremetalIronicMetricsDown
