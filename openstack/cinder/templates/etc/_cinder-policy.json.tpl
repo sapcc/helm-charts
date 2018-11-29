@@ -57,7 +57,7 @@
   "volume_extension:quotas:update": "rule:context_is_quota_admin",
   "volume_extension:quotas:delete": "rule:context_is_quota_admin",
   "volume_extension:quota_classes": "rule:context_is_admin or rule:context_is_quota_admin",
-  "volume_extension:quota_classes:validate_setup_for_nested_quota_use": "rule:context_is_quota_admin",
+  "volume_extension:quota_classes:validate_setup_for_nested_quota_use": "rule:context_is_admin",
 
   "volume_extension:volume_admin_actions:reset_status": "rule:context_is_volume_admin",
   "volume_extension:snapshot_admin_actions:reset_status": "rule:context_is_volume_admin",
