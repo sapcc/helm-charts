@@ -1,12 +1,12 @@
 groups:
-- name: baremetal-ironic.alerts
+- name: metal-ironic.alerts
   rules:      
-  - alert: BaremetalIronicSensorCritical
+  - alert: MetalIronicSensorCritical
     expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Critical Interrupt)", maintenance="false", provision_state=~"(deploy|active|available)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 5m
     labels:
       severity: critical
-      tier: baremetal
+      tier: metal
       service: ironic
       context: "{{ $labels.instance }}"
       meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
@@ -15,12 +15,12 @@ groups:
       description: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
       summary: "Sensor Critical for instance {{ $labels.instance }}"
       
-  - alert: BaremetalIronicSensorWarning
+  - alert: MetalIronicSensorWarning
     expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Critical Interrupt)", maintenance="false", provision_state=~"(manageable)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 5m
     labels:
       severity: warning
-      tier: baremetal
+      tier: metal
       service: ironic
       context: "{{ $labels.instance }}"
       meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
@@ -29,12 +29,12 @@ groups:
       description: "ironic node {{ $labels.instance }} has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
       summary: "Sensor Warning for instance {{ $labels.instance }}"
       
-  - alert: BaremetalIronicSensorInfo
+  - alert: MetalIronicSensorInfo
     expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply|Critical Interrupt)", maintenance="true"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 5m
     labels:
       severity: info
-      tier: baremetal
+      tier: metal
       service: ironic
       context: "{{ $labels.instance }}"
       meta: "ironic node {{ $labels.instance }} has hardware error-type: {{ $labels.type }} error-name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
@@ -43,12 +43,12 @@ groups:
       description: "ironic node {{ $labels.instance }} (maintenance=true) has hardware issue. Type: {{ $labels.type }} name: {{ $labels.name }} for 5 min"
       summary: "Sensor Critical for instance {{ $labels.instance }}"
       
-  - alert: BaremetalIronicMetricsDown
+  - alert: MetalIronicMetricsDown
     expr: count(ipmi_up == 0) by (server_name, maintenance) or count(up{job="baremetal/ironic"} == 0) by (server_name, maintenance)
     for: 5m
     labels:
       severity: warning
-      tier: baremetal
+      tier: metal
       service: ironic
       context: "{{ $labels.server_name }}"
       meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}"
@@ -57,12 +57,12 @@ groups:
       description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}"
       summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}"
       
-  - alert: BaremetalIronicSDDown
+  - alert: MetalIronicSDDown
     expr: absent(ipmi_sd_up) or ipmi_sd_up == 0
     for: 5m
     labels:
       severity: info
-      tier: baremetal
+      tier: metal
       service: ironic
       context: ipmi_sd
       meta: "ipmi service discovery failure"

@@ -36,7 +36,7 @@ Region is an implicit label that is automatically set by Prometheus. Do not over
 
 `tier` groups the alerts coarsly. We use:
 
-   * `baremetal`
+   * `metal`
    * `kubernetes`
    * `kubernikus`
    * `openstack`
