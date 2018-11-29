@@ -14,19 +14,19 @@ data:
 {{ list . $conductor | include "ironic_conductor_conf" | indent 4 }}
   pxe_config.template: |
     {{- if $conductor.jinja2 }}
-    {% raw %}
+    {%- raw %}
     {{- end }}
 {{ list . $conductor | include "pxe_config_template" | indent 4 }}
     {{- if $conductor.jinja2 }}
-    {% endraw %}
+    {%- endraw %}
     {{- end }}
   ipxe_config.template: |
     {{- if $conductor.jinja2 }}
-    {% raw %}
+    {%- raw %}
     {{- end }}
 {{ list . $conductor | include "ipxe_config_template" | indent 4 }}
     {{- if $conductor.jinja2 }}
-    {% endraw %}
+    {%- endraw %}
     {{- end }}
   {{- end }}
 {{- end }}

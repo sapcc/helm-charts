@@ -1,5 +1,5 @@
-{{- define "ipxe_config_template" }}
-{{- $conductor := index . 1 }}
+{{- define "ipxe_config_template" -}}
+{{- $conductor := index . 1 -}}
 {{- with index . 0 -}}
 #!ipxe
 
