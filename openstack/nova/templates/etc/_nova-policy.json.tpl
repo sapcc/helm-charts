@@ -180,7 +180,7 @@
     "compute_extension:quotas:show": "rule:context_is_viewer or rule:context_is_quota_admin",
     "compute_extension:quotas:update": "rule:context_is_quota_admin",
     "compute_extension:quotas:delete": "rule:context_is_quota_admin",
-    "compute_extension:quota_classes": "rule:context_is_admin",
+    "compute_extension:quota_classes": "rule:context_is_admin or rule:context_is_quota_admin",
     "compute_extension:rescue": "rule:context_is_editor",
     "compute_extension:security_group_default_rules": "rule:context_is_admin",
     "compute_extension:security_groups": "rule:context_is_viewer",
