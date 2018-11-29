@@ -67,7 +67,7 @@ pgmetrics:
   name: cinder
   customMetrics:
     openstack_stuck_volumes:
-      query: "SELECT host, project_id, availability_zone, status, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM volumes WHERE status IN ('attaching', 'deleting', 'detaching') GROUP BY host, availability_zone, volume_type_id, status, project_id"
+      query: "SELECT host, project_id, id, display_name, availability_zone, status, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM volumes WHERE status IN ('attaching', 'deleting', 'detaching') GROUP BY host, availability_zone, volume_type_id, id, display_name, status, project_id"
       metrics:
         - host:
             usage: "LABEL"
@@ -81,6 +81,12 @@ pgmetrics:
         - status:
             usage: "LABEL"
             description: "Status of the volume"
+         - id:
+            usage: "LABEL"
+            description: "Volume ID"
+         - display_name:
+            usage: "LABEL"
+            description: "Name of the volume"           
         - count_gauge:
             usage: "GAUGE"
             description: "Number of volumes"
