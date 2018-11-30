@@ -28,13 +28,11 @@ spec:
         name: ironic-conductor-{{$conductor.name}}
 {{ tuple . "ironic" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
-        pod.beta.kubernetes.io/hostname: ironic-conductor-{{$conductor.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-etc-conductor-hash: {{ tuple . $conductor | include "ironic_conductor_configmap" | sha256sum }}{{- if $conductor.jinja2 }}{{`
         configmap-etc-jinja2-hash: {{ block | safe | sha256sum }}
 `}}{{- end }}
     spec:
-      hostname: ironic-conductor-{{$conductor.name}}
       containers:
       - name: ironic-conductor
         image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-conductor:{{.Values.imageVersionIronicConductor | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
@@ -74,7 +72,7 @@ spec:
             command:
             - bash
             - -c
-            - eval $(cat /etc/ironic/ironic.conf | grep -Pzo '\[service_catalog\][^[]*' | tr -d '\000' | grep '='  | while read LINE; do var="${LINE% =*}" ; val="${LINE#*= }" ; echo export OS_${var^^}=${val} ; done); OS_IDENTITY_API_VERSION=3 openstack baremetal driver list -f csv | grep `hostname` >/dev/null
+            - eval $(cat /etc/ironic/ironic.conf | grep -Pzo '\[service_catalog\][^[]*' | tr -d '\000' | grep '='  | while read LINE; do var="${LINE% =*}" ; val="${LINE#*= }" ; echo export OS_${var^^}=${val} ; done); OS_IDENTITY_API_VERSION=3 openstack baremetal driver list -f csv | grep 'ironic-conductor-{{$conductor.name}}' >/dev/null
           initialDelaySeconds: 60
           periodSeconds: 10
           failureThreshold: 3
