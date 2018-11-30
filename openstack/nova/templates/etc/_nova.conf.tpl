@@ -148,8 +148,9 @@ region_name = {{.Values.global.region}}
 # TODO: Move me to vmware vcenter operator configmap
 [vmware]
 serial_port_service_uri = vmware-vspc
-serial_port_proxy_uri = telnet://{{ .Values.vspc.nodeIP }}:{{ .Values.vspc.portExternal }}
+serial_port_proxy_uri = telnet://{{ .Values.vspc.nodeIP }}:{{ .Values.vspc.telnet.portExternal }}
 serial_log_dir = /opt/vspc
+serial_log_uri = http://{{ .Values.vspc.nodeIP }}:{{ .Values.vspc.web.portExternal }}
 {{- end }}
 
 [barbican]

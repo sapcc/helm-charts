@@ -37,34 +37,6 @@ spec:
 {{- end }}
       hostname: nova-vspc
       containers:
-        - name: nova-vspc
-          image: {{ tuple . "vspc" | include "container_image_nova" }}
-          imagePullPolicy: IfNotPresent
-          command: ['dumb-init', 'kubernetes-entrypoint']
-          env:
-            - name: COMMAND
-              value: "nova-vspc --config-file /etc/nova/nova.conf"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "nova-api"
-{{- if .Values.python_warnings }}
-            - name: PYTHONWARNINGS
-              value: {{ .Values.python_warnings | quote }}
-{{- end }}
-          volumeMounts:
-            - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
-              name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /var/run/serial_log_dir
-              name: serial-log-dir
         - name: vmware-vspc
           image: hub.global.cloud.sap/monsoon/vmware-vspc:{{ .Values.vspc.version }}
           imagePullPolicy: IfNotPresent
@@ -79,7 +51,8 @@ spec:
               value: {{ .Values.python_warnings | quote }}
 {{- end }}
           ports:
-            - containerPort: {{ .Values.vspc.portInternal }}
+            - containerPort: {{ .Values.vspc.telnet.portInternal }}
+            - containerPort: {{ .Values.vspc.web.portInternal }}
           volumeMounts:
             - mountPath: /var/run/serial_log_dir
               name: serial-log-dir
