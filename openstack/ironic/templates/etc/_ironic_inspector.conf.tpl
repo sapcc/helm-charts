@@ -1,5 +1,5 @@
 [DEFAULT]
-log_config_append = /etc/ironic/logging.ini
+log_config_append = /etc/ironic-inspector/logging.ini
 {{- include "ini_sections.default_transport_url" . }}
 
 [ironic]
@@ -19,6 +19,7 @@ host_ip = 0.0.0.0
 manage_firewall = False
 
 [processing]
+store_data = swift
 always_store_ramdisk_logs = true
 ramdisk_logs_dir = /var/log/kolla/ironic/
 add_ports = all

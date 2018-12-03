@@ -39,7 +39,7 @@ spec:
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "ironic-inspector --config-file /etc/ironic/ironic.conf"
+          value: "ironic-inspector"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
@@ -56,15 +56,11 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         volumeMounts:
-        - mountPath: /etc/ironic
+        - mountPath: /etc/ironic-inspector
           name: etcironic
-        - mountPath: /etc/ironic/ironic.conf
+        - mountPath: /etc/ironic-inspector/ironic-inspector.conf
           name: ironic-inspector-etc
-          subPath: ironic.conf
-          readOnly: true
-        - mountPath: /etc/ironic/policy.json
-          name: ironic-etc
-          subPath: policy.json
+          subPath: ironic-inspector.conf
           readOnly: true
         - mountPath: /etc/ironic-inspector/rootwrap.conf
           name: ironic-etc
@@ -74,7 +70,7 @@ spec:
           name: ironic-inspector-rootwrap
           subPath: ironic-inspector-rootwrap
           readOnly: true
-        - mountPath: /etc/ironic/logging.ini
+        - mountPath: /etc/ironic-inspector/logging.ini
           name: ironic-etc
           subPath: logging.ini
           readOnly: true
