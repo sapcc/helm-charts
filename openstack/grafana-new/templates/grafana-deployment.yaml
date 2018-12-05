@@ -47,3 +47,17 @@ spec:
               mountPath: /grafana-bin
             - name: grafana-etc
               mountPath: /grafana-etc
+{{- if .Values.nginx.enabled }}
+        - name: nginx
+          image: "{{ .Values.nginx.image }}:{{ .Values.nginx.image_version }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: grafana-etc
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+          ports:
+            - name: http
+              containerPort: {{ .Values.nginx.port.public }}
+              protocol: TCP
+{{- end }}
