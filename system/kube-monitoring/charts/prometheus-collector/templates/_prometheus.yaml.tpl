@@ -42,6 +42,10 @@ scrape_configs:
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_service_name]
     target_label: kubernetes_name
+  # support injection of custom parameters. used by snmp exporter.
+  - action: labelmap
+    replacement: __param_$1
+    regex: __meta_kubernetes_service_annotation_prometheus_io_scrape_param_(.+)
 
 # Scrape config for endpoints with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
