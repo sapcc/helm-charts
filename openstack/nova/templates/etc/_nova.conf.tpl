@@ -91,7 +91,9 @@ num_retries = 10
 
 [cinder]
 os_region_name = {{.Values.global.region}}
+{{- if not (hasPrefix "queens" .Values.imageVersionNova) }}
 catalog_info = volumev2:cinderv2:internalURL
+{{- end }}
 cross_az_attach={{.Values.cross_az_attach}}
 
 [neutron]

@@ -52,7 +52,7 @@ spec:
               name: instances
       containers:
         - name: nova-compute
-          image: {{ tuple . "compute" | include "container_image_nova" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -104,7 +104,7 @@ spec:
               subPath: rootwrap.conf
               readOnly: true
         - name: nova-libvirt
-          image: {{ tuple . "libvirt" | include "container_image_nova" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -150,7 +150,7 @@ spec:
             - mountPath: /container.init
               name: nova-container-init
         - name: nova-virtlog
-          image: {{ tuple . "libvirt" | include "container_image_nova" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -196,7 +196,7 @@ spec:
             - mountPath: /container.init
               name: nova-container-init
         - name: neutron-ovs-agent
-          image: {{ tuple . "openvswitch-agent" | include "container_image_neutron" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -213,7 +213,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs
-          image: {{ tuple . "vswitchd" | include "container_image_openvswitch" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-vswitchd:{{ .Values.imageVersionOpenvswitchVswitchd | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -228,7 +228,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs-db
-          image: {{ tuple . "db-server" | include "container_image_openvswitch" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-db-server:{{ .Values.imageVersionOpenvswitchDbServer | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

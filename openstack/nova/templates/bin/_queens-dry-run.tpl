@@ -21,7 +21,7 @@ sudo -u postgres /usr/lib/postgresql/9.5/bin/pg_ctl -D /etc/postgresql/9.5/main 
 sleep 5
 sudo -u postgres createuser -s root
 psql postgres -c "CREATE USER nova WITH PASSWORD 'test';"
-psql postgres -c "CREATE USER nova_API WITH PASSWORD 'test';"
+psql postgres -c "CREATE USER nova_api WITH PASSWORD 'test';"
 createdb -O nova nova
 createdb -O nova_api nova_api
 psql nova < /tmp/nova.sql
