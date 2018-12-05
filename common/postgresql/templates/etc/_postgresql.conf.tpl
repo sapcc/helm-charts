@@ -130,7 +130,7 @@ temp_buffers = {{.Values.temp_buffers | default "8MB" }}			# min 800kB
 work_mem = {{.Values.work_mem | default "4MB" }}				# min 64kB
 maintenance_work_mem = {{.Values.maintenance_work_mem | default "64MB" }}		# min 1MB
 #autovacuum_work_mem = -1		# min 1MB, or -1 to use maintenance_work_mem
-max_stack_depth = {{.Values.max_stack_depth | "default 2MB" }}			# min 100kB
+max_stack_depth = {{.Values.max_stack_depth | default "2MB" }}			# min 100kB
 dynamic_shared_memory_type = posix	# the default is the first option
                     # supported by the operating system:
                     #   posix
