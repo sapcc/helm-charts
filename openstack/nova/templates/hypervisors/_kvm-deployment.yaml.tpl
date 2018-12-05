@@ -30,7 +30,7 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "kvm_configmap" | sha256sum }}
     spec:
-      terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default 60 | add 5 }}
+      terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostNetwork: true
       hostPID: true
       hostIPC: true
