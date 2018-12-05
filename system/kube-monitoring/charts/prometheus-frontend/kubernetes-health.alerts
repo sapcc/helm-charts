@@ -5,7 +5,7 @@ groups:
     expr: count(kube_node_status_condition{condition="Ready",status="true"} == 0) > 2
     for: 1h
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: critical
       context: node
@@ -20,7 +20,7 @@ groups:
     expr: kube_node_status_condition{condition="Ready",status="true"} == 0
     for: 1h
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: warning
       context: node
@@ -35,7 +35,7 @@ groups:
     expr: changes(kube_node_status_condition{condition="Ready",status="true"}[15m]) > 2
     for: 1h
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: warning
       context: node
@@ -49,7 +49,7 @@ groups:
     expr: absent(up{app="kube-state-metrics"})
     for: 1h
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: warning
       context: node
@@ -62,7 +62,7 @@ groups:
     expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
     for: 1h
     labels:
-      tier: kubernetes
+      tier: k8s
       service: resources
       severity: info
       context: pod
@@ -75,7 +75,7 @@ groups:
     expr: count(up{job="kube-system/scheduler"} == 1) == 0
     for: 5m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: critical
       context: scheduler
@@ -88,7 +88,7 @@ groups:
     expr: absent(up{job="kube-system/scheduler"})
     for: 1h
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: warning
       context: scheduler
@@ -101,7 +101,7 @@ groups:
     expr: count(up{job="kube-system/controller-manager"} == 1) == 0
     for: 5m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: critical
       context: controller-manager
@@ -114,7 +114,7 @@ groups:
     expr: absent(up{job="kube-system/controller-manager"})
     for: 1h
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: warning
       context: controller-manager
@@ -127,7 +127,7 @@ groups:
     expr: 100*process_open_fds{job=~"kube-system/kubelet|kube-system/apiserver"} / process_max_fds > 50
     for: 10m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: warning
       context: system
@@ -141,7 +141,7 @@ groups:
     expr: kube_persistentvolumeclaim_status_phase{phase=~"Pending|Lost"} == 1
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: k8s
       severity: info
       context: pvc
@@ -153,7 +153,7 @@ groups:
     expr: sum(kube_deployment_status_replicas) by (namespace,deployment) < sum(kube_deployment_spec_replicas) by (namespace,deployment)
     for: 10m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: deployment
       severity: info
       context: deployment

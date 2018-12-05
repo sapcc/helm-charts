@@ -7,7 +7,7 @@ groups:
     expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle", instance=~".*cloud.sap"}[5m])) * 100) > 90
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning
       context: node
@@ -21,7 +21,7 @@ groups:
     expr: abs(ntp_drift_seconds) > 0.3
     for: 10m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning
       context: availability
@@ -35,7 +35,7 @@ groups:
     expr: kube_node_status_condition{condition="KernelDeadlock",status="true"} == 1
     for: 96h
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: info
       context: availability
@@ -49,7 +49,7 @@ groups:
     expr: kube_node_status_condition{condition="DiskPressure",status="true"} == 1
     for: 5m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning
       context: node
@@ -62,7 +62,7 @@ groups:
     expr: kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
     for: 5m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning
       context: node
@@ -78,7 +78,7 @@ groups:
     expr: node_netstat_Tcp_CurrEstab{instance=~".*cloud.sap"} > 20000
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning
       context: availability
@@ -92,7 +92,7 @@ groups:
     expr: predict_linear(node_netstat_Tcp_CurrEstab{instance=~".*cloud.sap"}[20m], 3600) > 32768
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning
       context: availability
@@ -106,7 +106,7 @@ groups:
   - alert: KubernetesNodeContainerOOMKilled
     expr: sum by (instance) (changes(node_vmstat_oom_kill[24h])) > 3
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: info
       context: memory
@@ -118,7 +118,7 @@ groups:
     expr: node_processes_threads{instance=~".*.cloud.sap"} > 31000
     for: 1h
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: critical
       context: threads
@@ -134,7 +134,7 @@ groups:
     expr: sum(node_bonding_active{master="bond1",instance=~"[^storage].*cloud.sap"}) by (master, instance) < 2
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: info 
       context: bond 
@@ -148,7 +148,7 @@ groups:
     expr: sum(node_bonding_active{master="bond1",instance=~"network.*cloud.sap"}) by (master, instance) == 1
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: critical 
       context: bond 
@@ -162,7 +162,7 @@ groups:
     expr: sum(node_bonding_active{master="bond2",instance=~".*cloud.sap"}) by (master, instance) < 2
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning 
       context: bond 
@@ -178,7 +178,7 @@ groups:
     expr: sum(kube_node_labels{label_zone!~"farm|petting-zoo"}) by (node,label_zone) > 0
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning 
       context: label 
@@ -192,7 +192,7 @@ groups:
     expr: sum(kube_node_labels{node=~"storage.*", label_species!="swift-storage"}) by (node,label_species) > 0 OR sum(kube_node_labels{node=~"network.*", label_species!="network"}) by (node,label_species) > 0 OR sum(kube_node_labels{node=~"master.*", label_species!="master"}) by (node,label_species) > 0
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning 
       context: label 
@@ -208,7 +208,7 @@ groups:
     expr: sum(kube_node_spec_taint{node=~"storage.*", value!="swift-storage"}) by (node,value) > 0 OR sum(kube_node_spec_taint{node=~"network.*", value!~"network|alien"}) by (node,value) > 0
     for: 15m
     labels:
-      tier: kubernetes
+      tier: k8s
       service: node
       severity: warning 
       context: label 
