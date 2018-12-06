@@ -94,13 +94,13 @@ The regional Sentry prefix will be added automatically to the URL.
 
 The alerts will be routed into a hierachy of Slack channels:
 
-  * #{tier}-{severity}
-  * #{tier}-{service}
+  * #alert-{tier}-{severity}
+  * #alert-{tier}-{service}
 
 This means:
-  * #kubernetes-{info|warning|critical}
-  * #openstack-{info|warning|critical}
-  * #openstack-{neutron|nova|designate|...}
+  * #alert-k8s-{info|warning|critical}
+  * #alert-os-{info|warning|critical}
+  * #alert-os-{neutron|nova|designate|...}
 
 ## Meta
 
