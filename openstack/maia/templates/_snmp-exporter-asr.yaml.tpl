@@ -20,6 +20,10 @@ asr:
       type: DisplayString
     - labelname: expExpressionName
       type: DisplayString
+    regex_extracts:
+      Temp:
+        - regex: '(.*)'
+          value: '$1'
   - name: snmp_asr_cpmCPULoadAvg1min
     oid: 1.3.6.1.4.1.9.9.109.1.1.1.1.24
     type: gauge
