@@ -5,7 +5,7 @@ set -x
 {{- if hasPrefix "queens" .Values.imageVersion }}
 NOVA_VERSION=$(nova-manage db version)
 
-if [ $NOVA_VERSION -eq '321' ]; then
+if [ $NOVA_VERSION -lt 362 ]; then
 
     nova-manage cell_v2 map_cell0 --database_connection postgresql+psycopg2://{{ include "cell0_db_path" . }} || true
 
