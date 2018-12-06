@@ -42,4 +42,9 @@ template: |
       {{- if (or (not (hasKey .Values.compute.defaults.vmware "pbm_enabled")) (not .Values.compute.defaults.vmware.pbm_enabled)) }}
       datastore_regex = {= datastore_regex | quote =}
       {{- end }}
-{{ end }}
+      image_as_template = {{ .Values.compute.defaults.enable_image_as_template | default "False" }}
+      {{- if .Values.vspc.enabled }}
+      serial_port_service_uri = vmware-vspc
+      serial_port_proxy_uri = telnet://{{ .Values.vspc.nodeIP }}:{{ .Values.vspc.telnet.portExternal }}
+      {{- end }}
+  {{ end }}

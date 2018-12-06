@@ -13,7 +13,7 @@ rabbit_transient_queues_ttl = {{ .Values.rabbit_transient_queues_ttl | default .
 {{- end }}
 
 {{- define "ini_sections.default_transport_url" }}
-transport_url = rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password | default (tuple . .Values.rabbitmq.users.default.user | include "rabbitmq.password_for_user")  | urlquery}}@{{ include "release_rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
+transport_url = {{ include "rabbitmq.transport_url" . }}
 {{- end }}
 
 {{- define "ini_sections.database_options" }}
