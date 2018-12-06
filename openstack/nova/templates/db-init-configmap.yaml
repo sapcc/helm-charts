@@ -11,14 +11,14 @@ metadata:
 data:
   db-init.sql: |
     CREATE DATABASE {{.Values.dbName}};
-    CREATE ROLE {{default .Values.dbUser .Values.global.dbUser}} WITH ENCRYPTED PASSWORD '{{ .Values.dbPassword | default (include "postgres.password_for_user" . (default .Values.dbUser .Values.global.dbUser)) }}' LOGIN;
+    CREATE ROLE {{default .Values.dbUser .Values.global.dbUser}} WITH ENCRYPTED PASSWORD '{{ .Values.dbPassword | default (tuple . (default .Values.dbUser .Values.global.dbUser) | include "postgres.password_for_user" ) }}' LOGIN;
     GRANT ALL PRIVILEGES ON DATABASE {{.Values.dbName}} TO {{.Values.dbUser}};
 
     CREATE DATABASE {{.Values.apidbName}};
-    CREATE ROLE {{.Values.apidbUser}} WITH ENCRYPTED PASSWORD '{{ .Values.apidbPassword | default (include "postgres.password_for_user" . .Values.apidbUser) }}' LOGIN;
+    CREATE ROLE {{.Values.apidbUser}} WITH ENCRYPTED PASSWORD '{{ .Values.apidbPassword | default (tuple . .Values.apidbUser | include "postgres.password_for_user" ) }}' LOGIN;
     GRANT ALL PRIVILEGES ON DATABASE {{.Values.apidbName}} TO {{.Values.apidbUser}};
 
     CREATE DATABASE {{.Values.cell0dbName}};
-    CREATE ROLE {{.Values.cell0dbUser}} WITH ENCRYPTED PASSWORD '{{ .Values.cell0dbPassword | default (include "postgres.password_for_user" . .Values.cell0dbUser) }}' LOGIN;
+    CREATE ROLE {{.Values.cell0dbUser}} WITH ENCRYPTED PASSWORD '{{ .Values.cell0dbPassword | default (tuple . .Values.cell0dbUser | include "postgres.password_for_user") }}' LOGIN;
     GRANT ALL PRIVILEGES ON DATABASE {{.Values.cell0dbName}} TO {{.Values.cell0dbUser}};
 {{- end }}
