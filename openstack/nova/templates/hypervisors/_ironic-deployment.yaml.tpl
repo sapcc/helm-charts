@@ -31,6 +31,7 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
     spec:
+      terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       containers:
         - name: nova-compute
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}

@@ -1,5 +1,5 @@
 {{- if .Values.nanny.enabled }}
-{{- if or .Values.db_purge.enabled .Values.quota_sync.enabled .Values.db_cleanup.enabled .Values.sync_neutron_cache.enabled }}
+{{- if or .Values.db_purge.enabled .Values.consistency.enabled .Values.quota_sync.enabled .Values.db_cleanup.enabled .Values.sync_neutron_cache.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -28,7 +28,7 @@ spec:
           configMap:
             name: nova-etc
       containers:
-{{- if .Values.db_purge.enabled }}
+{{- if or .Values.db_purge.enabled .Values.consistency.enabled }}
         - name: db-consistency-and-purge
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/nova-nanny:{{.Values.imageVersion_nova_nanny}}
           imagePullPolicy: IfNotPresent

@@ -1,0 +1,17 @@
+groups:
+- name: openstack-ns-exporter.alerts
+  rules:
+  - alert: NetworkNamespaceProbesFailed
+    expr: sum(changes(ns_exporter_probe_failure_total[5m])) by (network, region) > 0 unless sum(changes(ns_exporter_probe_success_total[5m])) by (network, region) > 0
+    for: 5m
+    labels:
+      context: availability
+      service: neutron
+      severity: warning
+      tier: os
+      playbook: 'docs/support/playbook/neutron/asr1k.html'
+      meta: 'Network {{ $labels.network }} failed all probes'
+    annotations:
+      description: 'The network <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/{{ $labels.network }}/show|{{ $labels.network }}> failed all dns probes for more then 5 minutes'
+      summary: Network probes failed
+

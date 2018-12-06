@@ -52,6 +52,10 @@
     pattern ((Unable to Add Port; Status\(bad0006\)= Limit exceeded)|(Failed to get DVS state from vmkernel Status \(bad0014\)= Out of memory))
     tag "DVSOOM.${tag}"
   </rule>
+  <rule>
+    key "message"
+    pattern Failed to (power on|add disk) \'scsi
+    tag "vCenterVolumeStuck".${tag}"
   <rule>                                                                                         
     key "host_name"                                                                              
     pattern unknown                                                                              
@@ -105,6 +109,18 @@
     name vcenter_dvswitch_out_of_memory
     type counter
     desc Found Error that indicates dvs is out of memory
+    <labels>
+      tag ${tag}
+      host ${host_name}
+    </labels>
+  </metric>
+</match>
+<match vCenterVolumeStuck.**>
+  @type prometheus
+  <metric>
+    name vcenter_volume_stuck
+    type counter
+    desc Found Error that indicates a vCenter volume is vCenterVolumeStuck
     <labels>
       tag ${tag}
       host ${host_name}
