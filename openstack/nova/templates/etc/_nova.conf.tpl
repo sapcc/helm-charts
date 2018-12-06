@@ -131,7 +131,7 @@ driver = noop
 [oslo_middleware]
 enable_proxy_headers_parsing = true
 
-{{- if .Values.placement.enabled }}
+{{- if hasPrefix "queens" .Values.imageVersion }}
 [placement]
 auth_type = password
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
