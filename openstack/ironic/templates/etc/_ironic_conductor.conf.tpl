@@ -13,6 +13,11 @@ enabled_drivers = {{ $conductor.enabled_drivers}}
 {{ $k }} = {{ $v }}
 {{- end }}
 
+[agent]
+{{- range $k, $v :=  $conductor.agent }}
+{{ $k }} = {{ $v }}
+{{- end }}
+
 [conductor]
 {{- range $k, $v :=  $conductor.conductor }}
 {{ $k }} = {{ $v }}
