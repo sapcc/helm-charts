@@ -2,7 +2,7 @@
 set -e
 set -x
 
-{{- if hasPrefix "queens" .Values.imageVersionNova }}
+{{- if hasPrefix "queens" .Values.imageVersion }}
 {{ if .Values.novaQueensUpgrade }}
 if ! psql -lqt postgresql://{{ include "cell0_db_path" . }} | cut -d \| -f 1 | grep {{.Values.cell0dbName}}; then 
   echo Cell0 not found, createing cell0 database

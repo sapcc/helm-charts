@@ -13,7 +13,7 @@ scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_
 [ironic]
 {{ $user := print (coalesce .Values.global.ironicServiceUser .Values.global.ironic_service_user "ironic") (default "" .Values.global.user_suffix) }}
 
-{{- if hasPrefix "queens" .Values.imageVersionNova }}
+{{- if hasPrefix "queens" .Values.imageVersion }}
 # keystoneV3 values
 auth_type = v3password
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
