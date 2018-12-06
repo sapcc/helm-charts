@@ -4,14 +4,6 @@ set -x
 
 {{- if hasPrefix "queens" .Values.imageVersion }}
 {{ if .Values.novaQueensUpgrade }}
-if ! psql -lqt postgresql://{{ include "cell0_db_path" . }} | cut -d \| -f 1 | grep {{.Values.cell0dbName}}; then 
-  echo Cell0 not found, createing cell0 database
-  psql postgresql://{{.Values.postgresql.user}}:{{.Values.postgresql.postgresPassword}}@{{.Chart.Name}}-postgresql.{{include "svc_fqdn" .}}:5432 <<-EOT
-CREATE DATABASE {{.Values.cell0dbName}};
-CREATE ROLE {{.Values.cell0dbUser}} WITH ENCRYPTED PASSWORD '{{.Values.cell0dbPassword | default .Values.apidbPassword}}' LOGIN;
-GRANT ALL PRIVILEGES ON DATABASE {{.Values.cell0dbName}} TO {{.Values.cell0dbUser}};
-EOT
-fi
 nova-manage cell_v2 map_cell0 --database_connection postgresql+psycopg2://{{ include "cell0_db_path" . }} || true
 
 virtualenv /tmp/nova-pike
