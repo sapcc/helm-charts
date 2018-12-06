@@ -99,7 +99,7 @@ template: |
             readOnly: true
 {{- end }}
         - name: neutron-dvs-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | default .Values.imageVersion | required "Please set nova.imageVersionNeutron or similar" }}
           imagePullPolicy: IfNotPresent
           command: ["dumb-init"]
           args: ["neutron-dvs-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-vmware.ini"]
