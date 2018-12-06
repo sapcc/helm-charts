@@ -29,7 +29,6 @@ if [ $NOVA_VERSION -eq '321' ]; then
     rm -rf /tmp/nova-pike
 
 fi
-{{ end }}
 {{- end }}
 
 # Finish upgrade with queens
