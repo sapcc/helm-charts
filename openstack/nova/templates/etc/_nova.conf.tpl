@@ -77,7 +77,7 @@ proxyclient_url = https://{{include "ironic_console_endpoint_host_public" .}}
 {{- if .Values.consoles.mks }}
 [mks]
 enabled = True
-mksproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/mks/vnc_auto.html
+mksproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/mks/vnc_auto.html?path=mks/websockify
 {{- end }}
 
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
