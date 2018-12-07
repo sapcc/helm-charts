@@ -1,5 +1,5 @@
 {{- define "cell0_db_path" -}}
-{{.Values.cell0dbUser}}:{{.Values.cell0dbPassword | default .Values.apidbPassword | urlquery}}@{{.Chart.Name}}-postgresql.{{include "svc_fqdn" .}}:5432/{{.Values.cell0dbName}}
+{{.Values.cell0dbUser}}:{{.Values.cell0dbPassword | default (tuple . .Values.cell0dbUser | include "postgres.password_for_user") | urlquery}}@{{.Chart.Name}}-postgresql.{{include "svc_fqdn" .}}:5432/{{.Values.cell0dbName}}
 {{- end -}}
 
 {{- define "container_image_nova" -}}
