@@ -18,6 +18,7 @@ function start_application {
   export GRAFANA_LOCAL_USER={{.Values.grafana.local.user}}
   export GRAFANA_LOCAL_PASSWORD={{.Values.grafana.local.password}}
   # install some plugins
+  grafana-cli plugins install flant-statusmap-panel
   grafana-cli plugins install vonage-status-panel
   # since grafana version 4.6.2 the histogram feature is part of the normal graph in the axes tab, so this plugin is no longer needed
   # grafana-cli plugins install mtanda-histogram-panel
