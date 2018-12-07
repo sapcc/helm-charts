@@ -125,7 +125,7 @@ groups:
       summary: '{{ $labels.check }} API down'
 
   - alert: OpenstackLimesApiFlapping
-    expr: changes(blackbox_api_status_gauge{check=~"lbaas"}[30m]) > 8
+    expr: changes(blackbox_api_status_gauge{check=~"limes"}[30m]) > 8
     labels:
       severity: warning
       tier: os
@@ -151,3 +151,18 @@ groups:
     annotations:
       description: "Audit events could not be published to the RabbitMQ server."
       summary: "Audit events publish failing"
+
+  # allowed role assignments for the `resource_service` role:
+  # - user limes@Default in project cloud_admin@ccadmin
+  - alert: OpenstackLimesUnexpectedServiceRoleAssignments
+    expr: max(openstack_assignments_per_role_gauge{name="resource_service"}) > 1
+    for: 10m
+    labels:
+      tier: os
+      service: limes
+      severity: info
+      playbook: 'docs/support/playbook/unexpected-role-assignments'
+      meta: 'Unexpected role assignments found for Keystone role "resource_service"'
+    annotations:
+      summary: 'Unexpected role assignments'
+      description: 'The Keystone role "resource_service" is assigned to more users/groups than expected.'
