@@ -25,7 +25,7 @@ legacy_connection_pool_size={{$config_agent.netconf_legacy_pool_size | default 0
 
 # snat mode, either "pool" or "interface"
 snat_mode = {{ $config_agent.snat_mode | default "interface"}}
-
+report_nat_stats = {{ $context.Values.asr.report_nat_stats | default "False"}}
 
 
 [asr1k_l2]
