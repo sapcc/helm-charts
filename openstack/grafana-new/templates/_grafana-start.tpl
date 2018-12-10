@@ -24,6 +24,7 @@ function start_application {
   # since grafana version 4.6.2 the histogram feature is part of the normal graph in the axes tab, so this plugin is no longer needed
   # grafana-cli plugins install mtanda-histogram-panel
   grafana-cli plugins install grafana-worldmap-panel
+  grafana-cli plugins install satellogic-3d-globe-panel
   # install sapcc/grafana-prometheus-alertmanager-datasource
   grafana-cli --pluginUrl https://github.com/sapcc/grafana-prometheus-alertmanager-datasource/archive/master.zip plugins install prometheus-alertmanager
   # setup the datasources and dashboards if the setup script exists
