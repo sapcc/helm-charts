@@ -11,7 +11,7 @@ asr:
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.24.7000.1
   - 1.3.6.1.2.1.90.1.2.1.1.3.2.114.103.1.49
   metrics:
-  - name: snmp_asr_ResourceGroup
+  - name: snmp_asr_RedundancyGroup
     oid: 1.3.6.1.2.1.90.1.2.1.1.3
     type: DisplayString
     help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3
