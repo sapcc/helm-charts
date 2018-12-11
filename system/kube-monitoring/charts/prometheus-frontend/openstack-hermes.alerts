@@ -7,8 +7,8 @@ groups:
     labels:
       context: latency
       dashboard: Hermes-Details
-      service: '{{ $labels.service }}'
-      severity: info
+      service: hermes
+      severity: warning
       tier: os
     annotations:
       description: Hermes API does not fulfill the responsiveness goals (99% responses within 3 seconds)
@@ -20,8 +20,8 @@ groups:
     labels:
       context: availability
       dashboard: Hermes-Details
-      service: '{{ $labels.service }}'
-      severity: info
+      service: hermes
+      severity: critical
       tier: os
     annotations:
       description: Hermes API is affected by errors when accessing Keystone
@@ -31,10 +31,10 @@ groups:
     expr: blackbox_api_status_gauge{check=~"hermes"} == 1
     for: 20m
     labels:
+      context: api
       severity: critical
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: hermes
       dashboard: ccloud-health-blackbox-details
       meta: '{{ $labels.check }} API is down. See Sentry for details.'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
@@ -46,10 +46,10 @@ groups:
   - alert: OpenstackHermesApiFlapping
     expr: changes(blackbox_api_status_gauge{check=~"hermes"}[30m]) > 8
     labels:
+      context: api
       severity: warning
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: hermes
       dashboard: ccloud-health-blackbox-details
       meta: '{{ $labels.check }} API is flapping'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
@@ -58,14 +58,84 @@ groups:
       description: '{{ $labels.check }} API is flapping for 30 minutes.'
       summary: '{{ $labels.check }} API flapping'
 
+  - alert: OpenstackHermesRabbitMQUnack
+    expr: sum(rabbitmq_queue_messages_unacknowledged{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 2000
+    labels:
+      context: rabbitmq
+      severity: warning
+      tier: os
+      service: hermes
+      dashboard: ccloud-health-canary-details
+      meta: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
+      playbook: 'docs/devops/alert/hermes/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
+      summary: 'RabbitMQ unacknowledged messages count'
+
+  - alert: OpenstackElkPredictOutOfDiskSpace
+    expr: elasticsearch_data_diskspace_used_percentage{cluster="hermes",mount=~"/data \\(10.*"} > 85
+    for: 30m
+    labels:
+      context: elkdiskspace
+      service: hermes
+      severity: critical
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html
+    annotations:
+      description: The disk usage on {{ $labels.host }}:{{ $labels.mount }} in the {{ $labels.cluster }} cluster is above 85% now.
+                   Please consider cleaning up elastic search or lower the retention period for the logs.
+      summary: Elastic Search might run out of disk space
+
+  - alert: OpenstackElkPredictOutOfDiskSpace
+    expr: elasticsearch_data_diskspace_used_percentage{cluster="hermes",mount=~"/data \\(10.*"} > 25
+    for: 30m
+    labels:
+      context: elkdiskspace
+      service: hermes
+      severity: warning
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html
+    annotations:
+      description: The disk usage on {{ $labels.host }}:{{ $labels.mount }} in the {{ $labels.cluster }} cluster is above 85% now.
+                   Please consider cleaning up elastic search or lower the retention period for the logs.
+      summary: Elastic Search might run out of disk space
+
+  - alert: OpenstackClusterRed
+    expr: elasticsearch_cluster_health_status{cluster="hermes",color="red"} == 1
+    for: 30m
+    labels:
+      context: elkclusterred
+      service: hermes
+      severity: warning
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html
+    annotations:
+      description: Cluster {{ $labels.cluster }} is RED. Please check all nodes.
+      summary: Elastic Search {{ $labels.cluster }} cluster is RED
+
+  - alert: OpenstackElkClusterYellow
+    expr: elasticsearch_cluster_health_status{cluster="hermes",color="yellow"}
+      == 1
+    for: 30m
+    labels:
+      context: nodes
+      service: hermes
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html
+    annotations:
+      description: Cluster {{ $labels.cluster }} is YELLOW. Please check the data
+        nodes one or more are missing.
+      summary: Elastic Search {{ $labels.cluster }} cluster status is YELLOW
+
   - alert: OpenstackHermesCanaryDown
     expr: blackbox_canary_status_gauge{service=~"hermes"} == 1
     for: 1h
     labels:
+      context: canary
       severity: warning
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: hermes
       dashboard: ccloud-health-canary-details
       meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
@@ -78,10 +148,10 @@ groups:
     expr: blackbox_canary_status_gauge{service=~"hermes"} == 0.5
     for: 1h
     labels:
-      severity: info
+      context: canary
+      severity: warning
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: hermes
       dashboard: ccloud-health-canary-details
       meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
@@ -93,10 +163,10 @@ groups:
   - alert: OpenstackHermesCanaryFlapping
     expr: changes(blackbox_canary_status_gauge{service=~"hermes"}[2h]) > 8
     labels:
+      context: canary
       severity: warning
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: hermes
       dashboard: ccloud-health-canary-details
       meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
@@ -104,17 +174,3 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
-
-  - alert: OpenstackHermesRabbitMQUnack
-    expr: sum(rabbitmq_queue_messages_unacknowledged{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 2000
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
-      playbook: 'docs/devops/alert/hermes/#{{ $labels.check }}'
-    annotations:
-      description: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
-      summary: 'RabbitMQ unacknowledged messages count'
