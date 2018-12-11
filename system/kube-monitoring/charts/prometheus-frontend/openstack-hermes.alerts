@@ -113,21 +113,6 @@ groups:
       description: Cluster {{ $labels.cluster }} is RED. Please check all nodes.
       summary: Elastic Search {{ $labels.cluster }} cluster is RED
 
-  - alert: OpenstackElkClusterYellow
-    expr: elasticsearch_cluster_health_status{cluster="hermes",color="yellow"}
-      == 1
-    for: 30m
-    labels:
-      context: nodes
-      service: hermes
-      severity: info
-      tier: os
-      playbook: docs/support/playbook/elk_kibana_issues.html
-    annotations:
-      description: Cluster {{ $labels.cluster }} is YELLOW. Please check the data
-        nodes one or more are missing.
-      summary: Elastic Search {{ $labels.cluster }} cluster status is YELLOW
-
   - alert: OpenstackHermesCanaryDown
     expr: blackbox_canary_status_gauge{service=~"hermes"} == 1
     for: 1h
