@@ -126,7 +126,7 @@ For example:
 
 ### Understandable Alerts
 
-Write you alerts in a way that can be understood by non-experts.
+Write your alerts in a way that can be understood by non-experts.
 
 ### Predict Failures
 
