@@ -4,14 +4,14 @@ asr:
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.24
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.25
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.26
-  - 1.3.6.1.2.1.90.1.2.1.1.3.2.114.103.1.49
   get:
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.18.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.20.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.22.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.24.7000.1
+  - 1.3.6.1.2.1.90.1.2.1.1.3.2.114.103.1.49
   metrics:
-  - name: snmp_asr_expExpression
+  - name: snmp_asr_ResourceGroup
     oid: 1.3.6.1.2.1.90.1.2.1.1.3
     type: DisplayString
     help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3
@@ -21,9 +21,9 @@ asr:
     - labelname: expExpressionName
       type: DisplayString
     regex_extracts:
-      Temp:
-        - regex: '(.*)'
-          value: '$1'
+      "":
+      - value: '$1'
+        regex: ^(?:(.*))$
   - name: snmp_asr_cpmCPULoadAvg1min
     oid: 1.3.6.1.4.1.9.9.109.1.1.1.1.24
     type: gauge
@@ -93,8 +93,3 @@ asr:
     indexes:
     - labelname: entPhysicalIndex
       type: gauge
-  - name: snmp_asr_RedundancyGroupState
-    oid: 1.3.6.1.2.1.90.1.2.1.1.3.2.114.103.1.49
-    type: string
-    help: Redundancy Group State
-      in the NAT device - 1.3.6.1.2.1.90.1.2.1.1.3.2.114.103.1.49
