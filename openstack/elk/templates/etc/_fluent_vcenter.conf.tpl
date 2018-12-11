@@ -56,6 +56,7 @@
     key "message"
     pattern Failed\sto\s(power on|add disk)\s\'scsi
     tag "vCenterVolumeStuck.${tag}"
+  </rule>
   <rule>                                                                                         
     key "host_name"                                                                              
     pattern unknown                                                                              
