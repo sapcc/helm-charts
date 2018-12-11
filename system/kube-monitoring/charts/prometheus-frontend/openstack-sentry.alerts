@@ -16,8 +16,8 @@ groups:
       description: 'sentry at {{ $labels.instance }} is down'
       summary: 'sentry at {{ $labels.instance }} is down'
 
-  - alert: OpenstackSentryPostgresIsFull
-    expr: sum(pg_database_size_bytes{app="sentry-postgresql"}) by (app) > 45000000000
+  - alert: OpenstackSentryPostgresIsAlmostFull
+    expr: sum(pg_database_size_bytes{app="sentry-postgresql"}) by (app) > 40000000000
     for: 15m
     labels:
       severity: info
@@ -29,4 +29,4 @@ groups:
       playbook: 'docs/support/playbook/sentry.html'
     annotations:
       description: 'Current sentry-postgresql size is {{ $value }} will reach 50Gi shortly'
-      summary: 'sentry postgresql size is above 45Gi'
+      summary: 'sentry postgresql size is above 40Gi'
