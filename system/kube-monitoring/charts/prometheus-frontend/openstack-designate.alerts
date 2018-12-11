@@ -44,7 +44,52 @@ groups:
       tier: os
     annotations:
       description: DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $labels.region }}.
-      summary: DNS Bind server {{ $labels.kubernetes_name }} down.
+      summary: DNS Bind server {{ $labels.kubernetes_name }} is down.
+
+  - alert: OpenstackDesignateDnsUnboundEndpointNotAvailable
+    expr: (kube_endpoint_address_available{namespace="dns-recursor"}) BY (region, endpoint) < 1
+    for: 10m
+    labels:
+      context: unbound
+      dashboard: openstack-designate-unbound
+      meta: '{{ $labels.endpoint }}'
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_unbound_endpoint'
+    annotations:
+      description: DNS Unbound endpoint {{ $labels.endpoint }} not available in region {{ $labels.region }}.
+      summary: DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.
+
+  - alert: OpenstackDesignateDnsUnbound1Down
+    expr: absent(unbound_time_up{kubernetes_name="unbound1"}) BY (region)
+    for: 10m
+    labels:
+      context: unbound
+      dashboard: openstack-designate-unbound
+      meta: unbound1
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_unbound_endpoint'
+    annotations:
+      description: DNS Unbound1 recursor is down in region {{ $labels.region }}.
+      summary: DNS Unbound1 recursor is down. DNS resolution might be handled by another region.
+
+  - alert: OpenstackDesignateDnsUnbound2Down
+    expr: absent(unbound_time_up{kubernetes_name="unbound2"}) BY (region)
+    for: 10m
+    labels:
+      context: unbound
+      dashboard: openstack-designate-unbound
+      meta: unbound2
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_unbound_endpoint'
+    annotations:
+      description: DNS Unbound2 recursor is down in region {{ $labels.region }}.
+      summary: DNS Unbound2 recursor is down. DNS resolution might be handled by another region.
 
   - alert: OpenstackDesignateZoneError
     expr: sum(sql_openstack_designate_zones{status="ERROR"}) BY (zone_name) > 0
