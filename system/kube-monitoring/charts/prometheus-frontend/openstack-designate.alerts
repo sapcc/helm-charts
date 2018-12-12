@@ -106,6 +106,51 @@ groups:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
 
+  - alert: OpenstackDesignateDnsUnboundEndpointNotAvailable
+    expr: (kube_endpoint_address_available{namespace="dns-recursor"})by(region,endpoint) < 1
+    for: 10m
+    labels:
+      context: unbound
+      dashboard: openstack-designate-unbound
+      meta: '{{ $labels.endpoint }}'
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_unbound_endpoint'
+    annotations:
+      description: 'DNS Unbound endpoint {{ $labels.endpoint }} not available in {{ $labels.region }} region.'
+      summary: 'DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.'
+
+  - alert: OpenstackDesignateDnsUnbound1Down
+    expr: absent(unbound_time_up{kubernetes_name="unbound1"})by(region)
+    for: 10m
+    labels:
+      context: unbound
+      dashboard: openstack-designate-unbound
+      meta: unbound1
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_unbound_endpoint'
+    annotations:
+      description: 'DNS Unbound1 recursor is down in {{ $labels.region }} region.'
+      summary: DNS Unbound1 recursor is down. DNS resolution might be handled by another region.
+
+  - alert: OpenstackDesignateDnsUnbound2Down
+    expr: absent(unbound_time_up{kubernetes_name="unbound2"})by(region)
+    for: 10m
+    labels:
+      context: unbound
+      dashboard: openstack-designate-unbound
+      meta: unbound2
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_unbound_endpoint'
+    annotations:
+      description: 'DNS Unbound2 recursor is down in {{ $labels.region }} region.'
+      summary: DNS Unbound2 recursor is down. DNS resolution might be handled by another region.
+
   - alert: OpenstackDesignateDatapathFlapping
     expr: changes(blackbox_datapath_status_gauge{service=~"designate"}[30m]) > 8
     labels:
