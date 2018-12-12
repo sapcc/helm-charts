@@ -94,9 +94,9 @@
   "volume:failover_replication": "rule:context_is_admin",
   "volume:list_replication_targets": "rule:context_is_admin",
 
-  "backup:create" : "rule:context_is_admin",
-  "backup:delete": "rule:context_is_admin",
-  "backup:get": "rule:context_is_admin",
+  "backup:create" : "rule:context_is_editor",
+  "backup:delete": "rule:context_is_editor",
+  "backup:get": "rule:context_is_editor",
   "backup:get_all": "rule:context_is_admin",
   "backup:restore": "rule:context_is_admin",
   "backup:backup-import": "rule:context_is_admin",
