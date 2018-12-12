@@ -107,7 +107,7 @@ groups:
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
 
   - alert: OpenstackDesignateDnsUnboundEndpointNotAvailable
-    expr: (kube_endpoint_address_available{namespace="dns-recursor"})by(region,endpoint) < 1
+    expr: (kube_endpoint_address_available{namespace=~"dns-recursor"})by(region,endpoint) < 1
     for: 10m
     labels:
       context: unbound
@@ -122,7 +122,7 @@ groups:
       summary: 'DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.'
 
   - alert: OpenstackDesignateDnsUnbound1Down
-    expr: absent(unbound_time_up{kubernetes_name="unbound1"})by(region)
+    expr: absent(unbound_time_up{kubernetes_name=~"unbound1"})by(region)
     for: 10m
     labels:
       context: unbound
@@ -137,7 +137,7 @@ groups:
       summary: DNS Unbound1 recursor is down. DNS resolution might be handled by another region.
 
   - alert: OpenstackDesignateDnsUnbound2Down
-    expr: absent(unbound_time_up{kubernetes_name="unbound2"})by(region)
+    expr: absent(unbound_time_up{kubernetes_name=~"unbound2"})by(region)
     for: 10m
     labels:
       context: unbound
