@@ -3,7 +3,7 @@
 {{- /* Those options are ignored, if transport_url is set */}}
 rabbit_userid = {{ .Values.rabbitmq_user | default .Values.global.rabbitmq_default_user | default "openstack"}}
 rabbit_password = {{ .Values.rabbitmq_pass | default .Values.global.rabbitmq_default_pass | default "openstack" }}
-rabbit_hosts =  {{ include "rabbitmq_host" . }}
+rabbit_hosts =  {{ include "release_rabbitmq_host" . }}
 {{- end }}
 
 {{- define "ini_sections.oslo_messaging_rabbit" }}
