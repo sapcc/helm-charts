@@ -59,7 +59,8 @@ nova-manage db sync --version 344 || true
 echo 'Ignore errors due to online data migration'
 nova-manage db online_data_migrations
 
-# finish migrations
+# finish pike migrations
+nova-manage api_db sync
 nova-manage db sync
 nova-manage db online_data_migrations
 
