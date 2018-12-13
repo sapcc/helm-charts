@@ -29,14 +29,15 @@ EOT
     echo 'Ignore errors due to online data migration'
     nova-manage db online_data_migrations
 
-    # finish pike migrations
-    nova-manage api_db sync
-    nova-manage db sync
-    nova-manage db online_data_migrations
-
     # Create Cells if on pike, rerunning this doesn't break anything
+    nova-manage db sync
     nova-manage cell_v2 discover_hosts
     nova-manage cell_v2 simple_cell_setup
+
+    # finish pike migrations
+    nova-manage api_db sync
+    nova-manage db online_data_migrations
+
     deactivate
     rm -rf /tmp/nova-pike
 

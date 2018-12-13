@@ -59,13 +59,14 @@ nova-manage db sync --version 344 || true
 echo 'Ignore errors due to online data migration'
 nova-manage db online_data_migrations
 
+# Create fake cell
+nova-manage db sync
+nova-manage cell_v2 create_cell test_cell --transport-url null://nada --database_connection null://nada
+
 # finish pike migrations
 nova-manage api_db sync
-nova-manage db sync
 nova-manage db online_data_migrations
 
-# Create fake cell
-nova-manage cell_v2 create_cell test_cell --transport-url null://nada --database_connection null://nada
 deactivate
 rm -rf /tmp/nova-pike
 
