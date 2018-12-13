@@ -37,8 +37,15 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
 
 {{ include "ini_sections.database" . }}
 
+{{- if hasPrefix "queens" .Values.imageVersion }}
+[quota]
+{{- range $k, $v := .Values.quota }}
+{{$k}} = {{ $v }}
+{{- end }}
+{{- else }}
 {{- range $k, $v := .Values.quota }}
 quota_{{$k}} = {{ $v }}
+{{- end }}
 {{- end }}
 
 # usage refreshes on new reservations, 0 means disabled
