@@ -25,12 +25,12 @@ EOT
 
     # Upgrade to pike
     nova-manage api_db sync --version 29 || true
-    nova-manage db sync --version 345 || true
+    nova-manage db sync --version 344 || true
     echo 'Ignore errors due to online data migration'
     nova-manage db online_data_migrations
 
     # finish migrations
-    nova-manage db sync --version 362
+    nova-manage db sync
     nova-manage db online_data_migrations
 
     # Create Cells if on pike, rerunning this doesn't break anything
