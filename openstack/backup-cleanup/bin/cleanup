@@ -2,8 +2,9 @@
 
 set -euo pipefail
 
-# Check credentials
-eval "swift stat ${SEGMENTS_CONTAINER_NAME}" || exit 1
+eval "$(swift auth)"
+# This will fail and cause the exit if credentials are not correct
+swift stat ${CONTAINER_NAME} > /dev/null
 
 for slo in $(swift list ${SEGMENTS_CONTAINER_NAME} -p ${OS_REGION_NAME} | awk -F '/slo' '{print $1}' | uniq); do
   if ! swift --quiet stat ${CONTAINER_NAME} ${slo} >/dev/null 2>&1; then
