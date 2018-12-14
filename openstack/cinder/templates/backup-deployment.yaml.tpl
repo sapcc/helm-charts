@@ -1,8 +1,10 @@
+{{- define "backup_deployment" -}}
+{{- $volume := index . 1 -}}
+{{- with index . 0 -}}
 kind: Deployment
 apiVersion: extensions/v1beta1
-
 metadata:
-  name: cinder-backup
+  name: cinder-backup-{{$volume.name}}
   labels:
     system: openstack
     type: backend
@@ -19,24 +21,22 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: cinder-backup
+      name: cinder-{{$volume.name}}
   template:
     metadata:
       labels:
-        name: cinder-backup
+        name: cinder-{{$volume.name}}
 {{ tuple . "cinder" "backup" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "cinder" "backup" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
+        configmap-volume-hash: {{ tuple . $volume | include "backup_configmap" | sha256sum }}
     spec:
 {{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "cinder" "backup" | include "kubernetes_pod_anti_affinity" | indent 6 }}
 {{- end }}
+      hostname: cinder-backup-{{$volume.name}}
       containers:
-        - name: cinder-backup
+        - name: cinder-backup-{{$volume.name}}
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-backup:{{.Values.imageVersionCinderVolumeBackup | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
@@ -67,10 +67,6 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 5
           volumeMounts:
-            - name: cinder-etc
-              mountPath: /tmp/cinder-backup.sh
-              subPath: cinder-backup.sh
-              readOnly: true
             - name: etccinder
               mountPath: /etc/cinder
             - name: cinder-etc
@@ -99,3 +95,8 @@ spec:
         - name: cinder-etc
           configMap:
             name: cinder-etc
+        - name: volume-config
+          configMap:
+            name:  volume-{{$volume.name}}
+{{- end -}}
+{{- end -}}

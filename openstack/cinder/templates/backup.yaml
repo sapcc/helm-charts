@@ -1,0 +1,13 @@
+{{- if .Values.global.volumes }}
+{{- if ge (len .Values.global.volumes) 1 }}
+---
+{{- range $i, $volume := .Values.global.volumes }}
+{{- tuple $ $volume | include "backup_deployment" }}
+---
+{{ tuple $ $volume | include "backup_configmap" }}
+{{ if lt $i (sub (len $.Values.global.volumes) 1) }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
