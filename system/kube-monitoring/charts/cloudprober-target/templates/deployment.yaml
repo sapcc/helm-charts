@@ -1,0 +1,77 @@
+{{ if .Values.zones }}
+{{- range $zone, $ext_ip := .Values.zones }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: cloudprober-target-{{$zone}}
+  labels:
+    app: cloudprober-target
+    release: "{{$.Release.Name}}"
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: cloudprober-target-{{$zone}}
+        app: cloudprober-target
+    spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{$zone}}
+      containers:
+        - name: web-server
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c", "while true; do { echo -e 'HTTP/1.1 200 OK\r\n'; echo 'Hello World';} | nc -l -p 1080; done"]
+          ports:
+            - name: http
+              containerPort: 1080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 1080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 1080
+            timeoutSeconds: 5
+            periodSeconds: 5
+
+        - name: iperf3-server
+          image: hub.global.cloud.sap/monsoon/iperf3
+          imagePullPolicy: IfNotPresent
+          command:
+          - iperf3
+          - -s
+          ports:
+            - name: tcp
+              containerPort: 5201
+              protocol: TCP
+            - name: udp
+              containerPort: 5201
+              protocol: UDP
+          livenessProbe:
+            exec:
+              command:
+              - iperf3
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - iperf3
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+---
+{{- end }}
+{{ end }}

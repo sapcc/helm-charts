@@ -1,0 +1,32 @@
+{{ if .Values.zones }}
+{{- range $zone, $ext_ip := .Values.zones }}
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: cloudprober-target-{{$zone}}
+  labels:
+    app: cloudprober-target
+    release: "{{$.Release.Name}}"
+
+spec:
+  selector:
+    name: cloudprober-target-{{$zone}}
+  externalIPs:
+    - {{$ext_ip}}
+  ports:
+    - name: prober-target-http
+      protocol: TCP
+      port: 1080
+      targetPort: 1080
+    - name: prober-target-udp
+      protocol: UDP
+      port: 5201
+      targetPort: 5201
+    - name: prober-target-tcp
+      protocol: TCP
+      port: 5201
+      targetPort: 5201
+---
+{{- end }}
+{{ end}}
