@@ -9,6 +9,7 @@ scheduler_default_filters = {{ .Values.scheduler.default_filters}}
 ram_weight_multiplier = {{ .Values.scheduler.ram_weight_multiplier }}
 disk_weight_multiplier =  {{ .Values.scheduler.disk_weight_multiplier }}
 io_ops_weight_multiplier = {{ .Values.scheduler.io_ops_weight_multiplier }}
+soft_affinity_weight_multiplier = {{ .Values.scheduler.soft_affinity_weight_multiplier | default (mul .Values.quota.server_group_members 2) }}
 scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instance_changes }}
 
 [scheduler]
