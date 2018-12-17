@@ -44,8 +44,13 @@ template: |{{`
             value: 'cinder-volume'
           - name: NAMESPACE
             value: {{ namespace }}
+          `}}{{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
-            value: `}}{{ .Values.sentry_dsn | quote }}{{`
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}{{`
           - name: PYTHONWARNINGS
             value: 'ignore:Unverified HTTPS request'
           - name: PGAPPNAME
