@@ -1,4 +1,4 @@
-{{ if .Values.zones }}
+{{ if .Values.zones and not eq .Values.zones "DEFINED-IN-REGION-SECRETS" }}
 {{- range $zone, $ext_ip := .Values.zones }}
 kind: Deployment
 apiVersion: extensions/v1beta1
@@ -58,17 +58,13 @@ spec:
               protocol: UDP
           livenessProbe:
             exec:
-              command:
-              - iperf3
-              - --version
+              command: ["/bin/sh", "-c", "nc -v -w 3 localhost 5201"]
             timeoutSeconds: 5
             periodSeconds: 15
             initialDelaySeconds: 15
           readinessProbe:
             exec:
-              command:
-              - iperf3
-              - --version
+              command: ["/bin/sh", "-c", "nc -v -w 3 localhost 5201"]
             timeoutSeconds: 5
             periodSeconds: 15
             initialDelaySeconds: 15
