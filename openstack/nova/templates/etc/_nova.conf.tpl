@@ -144,13 +144,6 @@ region_name = {{.Values.global.region}}
 
 {{- include "ini_sections.cache" . }}
 
-{{- if .Values.vspc.enabled }}
-# TODO: Move me to vmware vcenter operator configmap
-[vmware]
-serial_log_dir = /opt/vspc
-serial_log_uri = http://{{ .Values.vspc.nodeIP }}:{{ .Values.vspc.web.portExternal }}
-{{- end }}
-
 [barbican]
 backend = barbican
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
