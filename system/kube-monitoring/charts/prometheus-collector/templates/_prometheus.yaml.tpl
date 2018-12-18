@@ -342,6 +342,23 @@ scrape_configs:
       replacement: /api/v1/nodes/${1}:4194/proxy/metrics
 {{ end -}}
 
+{{- if .Values.openstack_sd.enabled }}
+- job_name: 'openstack_sd'
+  scheme: https
+  openstack_sd_configs:
+    - role: {{ .Values.openstack_sd.role }}
+      region: {{ .Values.openstack_sd.region }}
+      identity_endpoint: {{ .Values.openstack_sd.identity_endpoint }}
+      username: {{ .Values.openstack_sd.username }}
+      password: {{ .Values.openstack_sd.password }}
+      domain_name: {{ .Values.openstack_sd.domain_name }}
+      project_name: {{ .Values.openstack_sd.project_name }}
+      all_tenants: {{ .Values.openstack_sd.all_tenants }}
+  relabel_configs:
+    - action: labelmap
+      regex: __meta_openstack_(.+)
+{{ end }}
+
 {{- range $region := .Values.global.regions }}
 - job_name: 'blackbox-ingress-{{ $region }}'
   metrics_path: /probe
