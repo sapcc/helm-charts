@@ -37,15 +37,9 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
 
 {{ include "ini_sections.database" . }}
 
-{{- if hasPrefix "queens" .Values.imageVersion }}
 [quota]
 {{- range $k, $v := .Values.quota }}
 {{$k}} = {{ $v }}
-{{- end }}
-{{- else }}
-{{- range $k, $v := .Values.quota }}
-quota_{{$k}} = {{ $v }}
-{{- end }}
 {{- end }}
 
 # usage refreshes on new reservations, 0 means disabled
@@ -98,9 +92,6 @@ num_retries = 10
 
 [cinder]
 os_region_name = {{.Values.global.region}}
-{{- if not (hasPrefix "queens" .Values.imageVersion) }}
-catalog_info = volumev2:cinderv2:internalURL
-{{- end }}
 cross_az_attach={{.Values.cross_az_attach}}
 
 [neutron]
@@ -138,7 +129,6 @@ driver = noop
 [oslo_middleware]
 enable_proxy_headers_parsing = true
 
-{{- if hasPrefix "queens" .Values.imageVersion }}
 [placement]
 auth_type = password
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
@@ -149,7 +139,6 @@ project_name = service
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 valid_interfaces = internal
 region_name = {{.Values.global.region}}
-{{- end }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
