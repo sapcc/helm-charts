@@ -36,7 +36,5 @@ export OS_DOMAIN_ID={{ .Values.keystone.domainId }}
 {{- end }}
 export OS_REGION={{.Values.global.region}}
 
-env
-
 echo "Starting openstack-seeder.."
 /usr/local/bin/openstack-seeder --v {{ default 1 .Values.logLevel }}
