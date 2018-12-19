@@ -47,6 +47,7 @@
 
     "create_zone": "rule:context_is_dns_ops",
     "create_sub_zone": "rule:context_is_zonemaster",
+    "create_super_zone": "rule:context_is_cloud_admin",
     "get_zones": "rule:context_is_viewer",
     "get_zone": "rule:context_is_viewer",
     "get_zone_servers": "rule:context_is_viewer",
@@ -55,7 +56,6 @@
     "update_zone": "rule:context_is_dns_support",
     "update_sub_zone": "rule:context_is_master",
     "delete_zone": "rule:context_is_master",
-    "delete_sub_zone": "rule:context_is_master",
 
     "xfr_zone": "rule:context_is_master or rule:admin",
     "abandon_zone": "rule:context_is_dns_ops",
