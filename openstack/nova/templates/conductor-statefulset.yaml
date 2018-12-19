@@ -1,5 +1,5 @@
-kind: Deployment
-apiVersion: extensions/v1beta1
+kind: StatefulSet
+apiVersion: apps/v1beta1
 
 metadata:
   name: nova-conductor
@@ -9,7 +9,9 @@ metadata:
     component: nova
 spec:
   replicas: {{ .Values.pod.replicas.conductor }}
+  podManagementPolicy: "Parallel"
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
     {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
@@ -17,6 +19,7 @@ spec:
       maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
     {{ end }}
+{{- end }}
   selector:
     matchLabels:
       name: nova-conductor
@@ -36,7 +39,6 @@ spec:
 {{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | indent 6 }}
 {{- end }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
-      hostname: nova-conductor
       containers:
         - name: nova-conductor
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
