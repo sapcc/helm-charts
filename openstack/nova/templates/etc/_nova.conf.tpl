@@ -1,6 +1,8 @@
 # nova.conf
 [DEFAULT]
-debug = {{.Values.debug}}
+{{- range $k, $v := .Values.default }}
+{{ $k }} = {{ $v }}
+{{- end }}
 
 log_config_append = /etc/nova/logging.ini
 state_path = /var/lib/nova
@@ -12,12 +14,9 @@ linuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver
 # https://github.com/sapcc/nova/commit/fd9508038351d027dcbf94282ba83caed5864a97
 allow_resize_to_same_host = true
 
-enable_new_services={{ .Values.enable_new_services | default .Release.IsInstall }}
+enable_new_services = {{ .Values.enable_new_services | default .Release.IsInstall }}
 
 osapi_compute_link_prefix=https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
-osapi_compute_workers=8
-metadata_workers=8
-
 memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
 default_schedule_zone = {{.Values.global.default_availability_zone}}
