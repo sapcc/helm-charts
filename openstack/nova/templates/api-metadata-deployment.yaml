@@ -57,8 +57,17 @@ spec:
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+            {{- if .Values.sentry.dsn }}
+              value: {{ .Values.sentry.dsn | quote}}
+            {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: nova.DSN.python
+            {{- end }}
+            {{- end }}
 {{- if .Values.python_warnings }}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}

@@ -63,8 +63,17 @@ spec:
               value: "nova-compute"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+            {{- if .Values.sentry.dsn }}
+              value: {{ .Values.sentry.dsn | quote}}
+            {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: nova.DSN.python
+            {{- end }}
+            {{- end }}
 {{- if or $hypervisor.python_warnings .Values.python_warnings }}
             - name: PYTHONWARNINGS
               value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}

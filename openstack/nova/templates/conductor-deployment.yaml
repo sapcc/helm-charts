@@ -51,6 +51,17 @@ spec:
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
               value: "nova-api,{{ .Release.Name }}-rabbitmq"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+            {{- if .Values.sentry.dsn }}
+              value: {{ .Values.sentry.dsn | quote}}
+            {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: nova.DSN.python
+            {{- end }}
+            {{- end }}
 {{- if .Values.python_warnings}}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
