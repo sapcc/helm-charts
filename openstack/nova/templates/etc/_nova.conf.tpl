@@ -39,7 +39,7 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
 
 [quota]
 {{- range $k, $v := .Values.quota }}
-{{$k}} = {{ $v }}
+{{ $k }} = {{ $v }}
 {{- end }}
 
 # usage refreshes on new reservations, 0 means disabled
@@ -51,7 +51,9 @@ until_refresh = {{ .Values.usage_until_refresh | default 0 }}
 {{- include "osprofiler" . }}
 
 [conductor]
-workers=8
+{{- range $k, $v := .Values.conductor }}
+{{ $k }} = {{ $v }}
+{{- end }}
 
 [spice]
 enabled = True
