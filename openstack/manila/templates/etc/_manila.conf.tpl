@@ -26,11 +26,11 @@ osapi_share_listen = 0.0.0.0
 osapi_share_base_URL = https://{{include "manila_api_endpoint_host_public" .}}
 
 # seconds between state report
-report_interval = {{ .Values.report_interval | default 10 }}
-service_down_time = {{ .Values.service_down_time | default 60 }}
-periodic_interval = {{ .Values.periodic_interval | default 60 }}
+report_interval = {{ .Values.report_interval | default 30 }}
+service_down_time = {{ .Values.service_down_time | default 300 }}
+periodic_interval = {{ .Values.periodic_interval | default 300 }}
 
-rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
+rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
