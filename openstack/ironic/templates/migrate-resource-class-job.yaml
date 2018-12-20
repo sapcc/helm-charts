@@ -38,18 +38,16 @@ spec:
           from ironic.conf import CONF
           from ironic.conf import opts
 
-
           LOG = logging.getLogger('resource_classes')
+
 
           def main(argv=None):
             argv = [] if argv is None else argv
             opts.update_opt_defaults()
             config.parse_args(argv)
 
-
             session = keystone.get_session('service_catalog')
             session.auth = keystone.get_auth('service_catalog')
-
 
             compute = computeclient.Client('2', session=session)
             bm = bmclient.get_client(1, session=session, os_ironic_api_version='1.21')
@@ -66,7 +64,9 @@ spec:
 
                 flavor_map[resources] = f.name
 
-            for node in bm.node.list(fields=["uuid", "name", "resource_class", "properties"]):
+            for node in bm.node.list(
+                  fields=["uuid", "name", "resource_class",
+                          "properties", "provision_state", "maintenance"]):
               prop = node.properties
               resources = (int(prop['cpus']),
                             int(prop['memory_mb']),
@@ -74,7 +74,9 @@ spec:
               flavor = flavor_map.get(resources)
               if not flavor:
                 LOG.warning("Cannot find flavor for %s: %s", node.name, resources)
-              elif node.resource_class != flavor:
+              elif node.resource_class != flavor \
+                    and node.maintenance \
+                        or node.provision_state in ['enroll','manageable','available']:
                 LOG.info("%s: %s -> %s", node.name, node.resource_class, flavor)
                 patch =  [{"op": "replace", "path": "/resource_class", "value": flavor}]
                 bm.node.update(node.uuid, patch)
