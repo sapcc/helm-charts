@@ -52,6 +52,13 @@ spec:
             - name: DEPENDENCY_SERVICE
               value: "nova-postgresql,{{ .Release.Name }}-rabbitmq"
               # plus soft-dependency to nova-rabbitmq-notifications
+            {{- if and .Values.sentry.enabled (.Capabilities.APIVersions.Has "sentry.sap.cc/v1") }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
 {{- if .Values.python_warnings }}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}

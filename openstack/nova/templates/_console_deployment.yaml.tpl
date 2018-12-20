@@ -68,6 +68,13 @@ spec:
         - name: OS_AUTH_URL
           value: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- end }}
+        {{- if and .Values.sentry.enabled (.Capabilities.APIVersions.Has "sentry.sap.cc/v1") }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN.python
+        {{- end }}
         ports:
         - name: {{ $name }}
           containerPort: {{ index .Values.consoles $name "portInternal" }}

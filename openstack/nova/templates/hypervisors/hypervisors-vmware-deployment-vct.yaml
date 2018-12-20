@@ -51,17 +51,13 @@ template: |
             value: "nova-compute"
           - name: NAMESPACE
             value: {{ .Release.Namespace }}
-          {{- if .Values.sentry.enabled }}
-          - name: SENTRY_DSN
-          {{- if .Values.sentry.dsn }}
-            value: {{ .Values.sentry.dsn | quote}}
-          {{ else }}
-            valueFrom:
-              secretKeyRef:
-                name: sentry
-                key: nova.DSN.python
-          {{- end }}
-          {{- end }}
+            {{- if and .Values.sentry.enabled (.Capabilities.APIVersions.Has "sentry.sap.cc/v1") }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
           - name: STATSD_HOST
             value: "localhost"
           - name: STATSD_PORT

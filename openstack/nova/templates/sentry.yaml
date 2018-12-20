@@ -1,12 +1,10 @@
-{{- if .Values.sentry.enabled }}
-{{- if not .Values.sentry.dsn }}
+{{- if and .Values.sentry.enabled (.Capabilities.APIVersions.Has "sentry.sap.cc/v1") -}}
 apiVersion: "sentry.sap.cc/v1"
 kind: "SentryProject"
 metadata:
-  name: nova-sentry
+  name: {{ .Chart.Name }}-sentry
 
 spec:
-  name: nova #slug of the project you want to use (or create
+  name: {{ .Chart.Name }} #slug of the project you want to use (or create)
   team: openstack #slug of the team where the project should be created (if it doesn't exist)
-{{- end }}
 {{- end }}
