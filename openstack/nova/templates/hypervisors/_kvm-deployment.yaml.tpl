@@ -63,7 +63,7 @@ spec:
               value: "nova-compute"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
-            {{- if and .Values.sentry.enabled (.Capabilities.APIVersions.Has "sentry.sap.cc/v1") }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
@@ -120,8 +120,13 @@ spec:
               value: /container.init/nova-libvirt-start
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
@@ -166,8 +171,13 @@ spec:
               value: /usr/sbin/virtlogd
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{ .Values.sentry_dsn | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
