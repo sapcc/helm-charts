@@ -92,11 +92,6 @@ template: |
             name: nova-etc
             subPath: compute.filters
             readOnly: true
-{{- if .Values.vspc.pvc.existingClaim }}
-          - mountPath: /opt/vspc
-            name: serial-log-dir
-            readOnly: true
-{{- end }}
         - name: neutron-dvs-agent
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
           imagePullPolicy: IfNotPresent
@@ -174,9 +169,4 @@ template: |
         - name: ml2-conf-vmware
           configMap:
             name: neutron-ml2-vmware-{= name =}
-{{- if .Values.vspc.pvc.existingClaim }}
-        - name: serial-log-dir
-          persistentVolumeClaim:
-            claimName: {{ .Values.vspc.pvc.existingClaim | default "nova-vspc-pvclaim" }}
-{{- end }}
 {{- end }}
