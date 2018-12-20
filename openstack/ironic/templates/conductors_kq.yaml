@@ -9,6 +9,9 @@ requirements:
   kind: OpenstackSeed
 context: ironic@Default/service
 python: |
+    from ironicclient import client as bmclient
+    bm = bmclient.get_client(1, session=os.session, os_ironic_api_version='1.46')
+
     blocks = dict()
 
     def append_item(d, k, v):
@@ -19,7 +22,12 @@ python: |
             if v not in vs:
                 vs += ',' + v
 
-    for node in os.baremetal.nodes(fields='name,driver,properties,management_interface,inspect_interface,raid_interface,storage_interface,boot_interface,vendor_interface,network_interface,power_interface,rescue_interface,bios_interface,deploy_interface,console_interface'):
+    for node in bm.node.list(
+            fields=['name','driver','properties',
+                    'management_interface','inspect_interface','raid_interface',
+                    'storage_interface','boot_interface','vendor_interface',
+                    'network_interface','power_interface','rescue_interface',
+                    'bios_interface','deploy_interface','console_interface']):
         block_name = node.name.split('-')[-1]
         if block_name in blocks:
             block = blocks[block_name]
@@ -32,11 +40,13 @@ python: |
             blocks[block_name] = block
         default = block['DEFAULT']
         append_item(default, 'enabled_hardware_types', node.driver)
+        node = node.to_dict()
 
-        for k in node.keys():
+        for k in node:
             if k.endswith('_interface'):
                 enabled = 'enabled_' + k + 's'
                 append_item(default, enabled, node[k])
+
 
     blocks = blocks.values()
 {{- end  }}
