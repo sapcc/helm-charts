@@ -17,7 +17,12 @@ data:
       request_log:
         except_status_codes: [300]
       cors:
-        allowed_origins: [ "https://dashboard.{{.Values.global.region}}.{{.Values.global.tld}}" ]
+        allowed_origins:
+          {{- if .Values.limes.relaxed_cors }}
+          - "*"
+          {{- else }}
+          - "https://dashboard.{{.Values.global.region}}.{{.Values.global.tld}}"
+          {{- end }}
 
     collector:
       metrics: :8080
