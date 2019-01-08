@@ -10,7 +10,23 @@ asr:
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.22.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.24.7000.1
   - 1.3.6.1.2.1.90.1.2.1.1.3.2.114.103.1.49
+  - 1.3.6.1.2.1.123.1.5
+  - 1.3.6.1.2.1.123.1.7.0
   metrics:
+  - name: snmp_asr_natAddrBindNumberOfEntries
+    oid: 1.3.6.1.2.1.123.1.5
+    type: gauge
+    help: This object maintains a count of the number of entriesthat currently exist in the natAddrBindTable. - 1.3.6.1.2.1.123.1.5
+    indexes:
+    - labelname: natAddrBindNumberOfEntries
+      type: gauge
+  - name: snmp_asr_natAddrPortBindNumberOfEntries
+    oid: 1.3.6.1.2.1.123.1.7.0
+    type: gauge
+    help: This object maintains a count of the number of entries that currently exist in the natAddrPortBindTable. - 1.3.6.1.2.1.123.1.7.0
+    indexes:
+    - labelname: natAddrPortBindNumberOfEntries
+      type: gauge
   - name: snmp_asr_RedundancyGroup
     oid: 1.3.6.1.2.1.90.1.2.1.1.3
     type: DisplayString
