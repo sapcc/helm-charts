@@ -1,0 +1,37 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: admin-k8s
+  namespace: kube-system
+
+spec:
+  revisisonHistoryLimit: 5
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-k8s
+  template:
+    metadata:
+      labels:
+        app: admin-k8s
+    spec:
+      containers:
+        - name: admin-k8s
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+      ports:
+        - name: web
+          containerPort: 80
+      livenessProbe:
+        httpGet:
+          path: /system/liveliness
+          port: 80
+        timeoutSeconds: 10
+        periodSeconds: 60
+        initialDelaySeconds: 60
+      readinessProbe:
+        httpGet:
+          path: /system/readiness
+          port: 80
+        timeoutSeconds: 5
+        periodSeconds: 5
