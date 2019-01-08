@@ -32,22 +32,28 @@ template: |{{`
         volumes:
           - name: config
             configMap:
-              name: vasa-exporter-{{ values.name }}
+              name: vasa-exporter-{{ name }}
         containers:
           - name: vasa-exporter
             imagePullPolicy: IfNotPresent
             image: `}}{{ .Values.vasa_exporter.docker_repo }}/vasa-exporter:{{ .Values.vasa_exporter.image_version | replace "string:" "" }}{{`
+            `}}{{ if .Values.vasa_exporter.debug }}{{`
             command:
-              - python
+              - /bin/sh`}}{{ else }}{{`
+            command:
+              - python`}}{{ end }}{{`
+            `}}{{ if .Values.vasa_exporter.debug }}{{`
+            args:
+              - -c
+              - "while true; do sleep 1000; done"`}}{{ else }}{{`
             args:
               - /vasa-exporter/vasa_exporter.py
-              - /config/vasa_exporter-{{ name }}.cfg
+              - /config/vasa_exporter-{{ name }}.cfg`}}{{ end }}{{`
             volumeMounts:
               - name: config
                 mountPath: /config
             ports:
               - name: metrics
-                containerPort: `}}{{ .Values.vasa_exporter.prometheus_port }}{{`
-`}}
+                containerPort: `}}{{ .Values.vasa_exporter.prometheus_port | quote }}
 {{- end }}
 {{- end }}
