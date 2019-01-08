@@ -6,48 +6,48 @@ metadata:
   name: 'vasa-exporter-deployment'
   scope: 'datacenter'
 template: |{{`
-kind: Deployment
-apiVersion: extensions/v1beta1
-metadata:
-  name: vasa-exporter-{{ name }}
-  namespace: monsoon3
-  labels:
-    system: openstack
-    service: metrics
-
-spec:
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
-  template:
-    metadata:
-      labels:
-        component: vasa-exporter-{{ name }}
-    spec:
-      nodeSelector:
-        zone: farm
-      volumes:
-        - name: config
-          configMap:
-            name: vasa-exporter-{{ values.name }}
-      containers:
-        - name: vasa-exporter
-          imagePullPolicy: IfNotPresent
-          image: `}}{{ .Values.vasa_exporter.docker_repo }}/vasa-exporter:{{ .Values.vasa_exporter.image_version | replace "string:" "" }}{{`
-          command:
-            - python
-          args:
-            - /vasa-exporter/vasa_exporter.py
-            - /config/vasa_exporter-{{ name }}.cfg
-          volumeMounts:
-            - name: config
-              mountPath: /config
-          ports:
-            - name: metrics
-              containerPort: `}}{{ .Values.vasa_exporter.prometheus_port }}{{`
+  kind: Deployment
+  apiVersion: extensions/v1beta1
+  metadata:
+    name: vasa-exporter-{{ name }}
+    namespace: monsoon3
+    labels:
+      system: openstack
+      service: metrics
+  
+  spec:
+    replicas: 1
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    template:
+      metadata:
+        labels:
+          component: vasa-exporter-{{ name }}
+      spec:
+        nodeSelector:
+          zone: farm
+        volumes:
+          - name: config
+            configMap:
+              name: vasa-exporter-{{ values.name }}
+        containers:
+          - name: vasa-exporter
+            imagePullPolicy: IfNotPresent
+            image: `}}{{ .Values.vasa_exporter.docker_repo }}/vasa-exporter:{{ .Values.vasa_exporter.image_version | replace "string:" "" }}{{`
+            command:
+              - python
+            args:
+              - /vasa-exporter/vasa_exporter.py
+              - /config/vasa_exporter-{{ name }}.cfg
+            volumeMounts:
+              - name: config
+                mountPath: /config
+            ports:
+              - name: metrics
+                containerPort: `}}{{ .Values.vasa_exporter.prometheus_port }}{{`
 `}}
 {{- end }}
 {{- end }}
