@@ -1,8 +1,15 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
 {{- if .Values.vasa_exporter.enabled }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vasa-exporter-deployment'
+  scope: 'datacenter'
+template: |{{`
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: vasa-exporter
+  name: vasa-exporter-{{ name }}
   namespace: monsoon3
   labels:
     system: openstack
@@ -18,29 +25,29 @@ spec:
   template:
     metadata:
       labels:
-        component: vasa-exporter
+        component: vasa-exporter-{{ name }}
     spec:
       nodeSelector:
         zone: farm
       volumes:
         - name: config
           configMap:
-            name: vasa-exporter
+            name: vasa-exporter-{{ values.name }}
       containers:
         - name: vasa-exporter
           imagePullPolicy: IfNotPresent
-          image: {{ .Values.vasa_exporter.docker_repo }}/vasa-exporter:{{ .Values.vasa_exporter.image_version | replace "string:" "" }}
+          image: `}}{{ .Values.vasa_exporter.docker_repo }}/vasa-exporter:{{ .Values.vasa_exporter.image_version | replace "string:" "" }}{{`
           command:
             - python
           args:
             - /vasa-exporter/vasa_exporter.py
-            - {{ .Values.vasa_exporter.prometheus_port | quote }}
-            - /config/vasa_exporter.cfg
+            - /config/vasa_exporter-{{ name }}.cfg
           volumeMounts:
             - name: config
               mountPath: /config
           ports:
             - name: metrics
-              containerPort: {{ .Values.vasa_exporter.prometheus_port }}
+              containerPort: `}}{{ .Values.vasa_exporter.prometheus_port }}{{`
+`}}
 {{- end }}
-
+{{- end }}
