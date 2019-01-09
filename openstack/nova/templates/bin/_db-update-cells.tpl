@@ -29,7 +29,7 @@ for line in $(nova-manage cell_v2 list_cells --verbose | grep 'rabbit://'); do
   fi
 
 {{ if .Values.cell2 }}
-  if [ "$cell_name" = "cell2" ]; then
+  if [ "$cell_name" = "{{.Values.cell2.name}}" ]; then
     found_cell2="true"
     echo "Found existing cell2..."
     if [ "$transport_url" != "{{ include "cell2_transport_url" . }}" ]; then
@@ -47,7 +47,7 @@ done
 {{ if .Values.cell2 }}
 if [ "$found_cell2" = "false" ]; then
   echo "Creating cell2"
-  nova-manage cell_v2 create_cell --name cell2 --transport-url "{{ include "cell2_transport_url" . }}" --database_connection "{{ include "cell2_db_path" . }}" --verbose
+  nova-manage cell_v2 create_cell --name "{{.Values.cell2.name}}" --transport-url "{{ include "cell2_transport_url" . }}" --database_connection "{{ include "cell2_db_path" . }}" --verbose
 fi
 {{- end }}
 
