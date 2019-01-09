@@ -33,10 +33,10 @@ The `region` label is automatically set by Prometheus and is equivalent to the O
 
 The `cluster_type` label is automatically set by Prometheus and helps distinguishing the various cluster types. **Do not overwrite.**
 Valid types are:
-- controlplane
-- kubernikus-controlplane
-- scaleout
-- scaleout-internet
+- `controlplane`
+- `kubernikus-controlplane`
+- `scaleout`
+- `scaleout-internet`
 
 ### Cluster
 
