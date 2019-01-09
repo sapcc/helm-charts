@@ -31,6 +31,11 @@ osprofiler: {}
 
 auto_assign_aggregates: 'dry_run'
 
+cell2:
+  name: cell2
+  enabled: false
+  conductor: {}
+
 defaults:
   default:
     graceful_shutdown_timeout: 60
@@ -83,6 +88,10 @@ dbPassword: null
 cell0dbName: nova_cell0
 cell0dbUser: nova_cell0
 cell0dbPassword: null
+
+cell2dbName: nova_cell2
+cell2dbUser: nova_cell2
+cell2dbPassword: null
 
 apidbName: nova_api
 apidbUser: nova_api
@@ -480,6 +489,44 @@ postgresql:
       default_pool_size: 50
       reserve_pool_size: 100
       idle_transaction_timeout: 60
+
+postgresql_cell2:
+  name: nova-cell2
+  postgresDatabase: nova-cell2
+  dbInit: nova-db-init
+  dbMaintain: nova-cell2-db-maintain
+  persistence:
+    enabled: true
+    existingClaim: db-nova-cell2-pvclaim
+  backup:
+    enabled: true
+    metrics: true
+    os_password: null
+
+  max_connections: 500
+  shared_buffers: '4GB'
+  temp_buffers: '32MB'
+  work_mem: '64MB'
+  maintenance_work_mem: '256MB'
+  max_stack_depth: '4MB'
+  effective_cache_size: '16GB'
+  autovacuum_analyze_scale_factor: '0.02'
+  autovacuum_vacuum_scale_factor: '0.01'
+  random_page_cost: '1.1'
+  shared_preload_libraries: pg_stat_statements
+  track_activity_query_size: 2048
+  pgbouncer:
+    enabled: true
+    config:
+      max_db_connections: 83
+      default_pool_size: 50
+      reserve_pool_size: 100
+      idle_transaction_timeout: 60
+
+rabbitmq_cell2:
+  name: nova-cell2
+  persistence:
+    enabled: false
 
 audit:
   enabled: false

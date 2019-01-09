@@ -2,6 +2,15 @@
 {{.Values.cell0dbUser}}:{{.Values.cell0dbPassword | default (tuple . .Values.cell0dbUser | include "postgres.password_for_user") | urlquery}}@{{.Chart.Name}}-postgresql.{{include "svc_fqdn" .}}:5432/{{.Values.cell0dbName}}
 {{- end -}}
 
+{{- define "cell2_db_path" -}}
+postgresql+psycopg2://{{.Values.cell2dbUser}}:{{ .Values.cell2dbPassword | default (tuple . .Values.cell2dbUser | include "postgres.password_for_user" | urlquery ) }}@{{.Chart.Name}}-{{.Values.cell2.name}}-postgresql.{{include "svc_fqdn" .}}:5432/{{.Values.cell2dbName}}
+{{- end -}}
+
+{{- define "cell2_transport_url" -}}
+rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2.users.default.user }}:{{ .Values.rabbitmq_cell2.users.default.password | default (tuple . .Values.rabbitmq_cell2.users.default.user | include "rabbitmq.password_for_user")  | urlquery}}@{{.Chart.Name}}-{{.Values.cell2.name}}-rabbitmq.{{include "svc_fqdn" .}}:{{ .Values.rabbitmq_cell2.port | default 5672 }}{{ .Values.rabbitmq_cell2.virtual_host | default "/" }}
+{{- end -}}
+
+
 {{- define "container_image_nova" -}}
   {{- $name := index . 1 -}}
   {{- with index . 0 -}}
