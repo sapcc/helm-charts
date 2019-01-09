@@ -28,7 +28,7 @@ for line in $(nova-manage cell_v2 list_cells --verbose | grep 'rabbit://'); do
     fi
   fi
 
-{{ if .Values.cell2 }}
+{{ if .Values.cell2.enabled }}
   if [ "$cell_name" = "{{.Values.cell2.name}}" ]; then
     found_cell2="true"
     echo "Found existing cell2..."
@@ -44,7 +44,7 @@ for line in $(nova-manage cell_v2 list_cells --verbose | grep 'rabbit://'); do
 {{- end }}
 done
 
-{{ if .Values.cell2 }}
+{{ if .Values.cell2.enabled }}
 if [ "$found_cell2" = "false" ]; then
   echo "Creating cell2"
   nova-manage cell_v2 create_cell --name "{{.Values.cell2.name}}" --transport-url "{{ include "cell2_transport_url" . }}" --database_connection "{{ include "cell2_db_path" . }}" --verbose
