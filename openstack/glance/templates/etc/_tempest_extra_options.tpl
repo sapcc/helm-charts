@@ -36,7 +36,6 @@ endpoint_type = internalURL
 
 [image-feature-enabled]
 api_v2 = true
-api_v1 = true
 
 [identity]
 uri_v3 = http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}:5000/v3
