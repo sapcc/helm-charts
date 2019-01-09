@@ -20,11 +20,11 @@ for line in $(nova-manage cell_v2 list_cells --verbose | grep 'rabbit://'); do
   if [ "$cell_name" = "cell1" ]; then
     if [ "$transport_url" != "{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}" ]; then
       echo "Updating $cell_name transport-url..."
-      nova-manage cell_v2 update_cell --cell_uuid $cell_uuid --transport-url "{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}"
+      nova-manage cell_v2 update_cell --cell_uuid $cell_uuid --transport-url "{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}" --database_connection "{{ include "db_url" . }}"
     fi
     if [ "$database_connection" != "{{ include "db_url" . }}" ]; then
       echo "Updating $cell_name database_connection..."
-      nova-manage cell_v2 update_cell --cell_uuid $cell_uuid --database_connection "{{ include "db_url" . }}"
+      nova-manage cell_v2 update_cell --cell_uuid $cell_uuid --transport-url "{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}" --database_connection "{{ include "db_url" . }}"
     fi
   fi
 
@@ -34,11 +34,11 @@ for line in $(nova-manage cell_v2 list_cells --verbose | grep 'rabbit://'); do
     echo "Found existing cell2..."
     if [ "$transport_url" != "{{ include "cell2_transport_url" . }}" ]; then
       echo "Updating $cell_name transport-url..."
-      nova-manage cell_v2 update_cell --cell_uuid $cell_uuid --transport-url "{{ include "cell2_transport_url" . }}"
+      nova-manage cell_v2 update_cell --cell_uuid $cell_uuid --transport-url "{{ include "cell2_transport_url" . }}" --database_connection "{{ include "cell2_db_path" . }}"
     fi
     if [ "$database_connection" != "" ]; then
       echo "Updating $cell_name database_connection..."
-      nova-manage cell_v2 update_cell --cell_uuid $cell_uuid --database_connection "{{ include "cell2_db_path" . }}"
+      nova-manage cell_v2 update_cell --cell_uuid $cell_uuid --transport-url "{{ include "cell2_transport_url" . }}" --database_connection "{{ include "cell2_db_path" . }}"
     fi
   fi
 {{- end }}
