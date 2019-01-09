@@ -1,0 +1,30 @@
+groups:
+- name: openstack-network.alerts
+  rules:
+  - alert: NetworkAsrNatTableIsFull
+    expr: sum(snmp_asr_natAddrBindNumberOfEntries+0)+sum(snmp_asr_natAddrPortBindNumberOfEntries+0) > 3500000
+    for: 15m
+    labels:
+      severity: critical
+      tier: net
+      service: asr
+      context: asr
+      meta: 'ASR NAT Table is full'
+      playbook: 'docs/devops/alert/network/#asr_nat_table_overflow'
+    annotations:
+      description: 'ASR NAT table is full for 15 min'
+      summary: 'ASR NAT table is full for 15 min'
+
+  - alert: NetworkAsrNatTableIsNearlyFull
+    expr: sum(snmp_asr_natAddrBindNumberOfEntries+0)+sum(snmp_asr_natAddrPortBindNumberOfEntries+0) > 2000000
+    for: 15m
+    labels:
+      severity: warning
+      tier: net
+      service: asr
+      context: asr
+      meta: 'ASR NAT Table is nearly full'
+      playbook: 'docs/devops/alert/network/#asr_nat_table_overflow'
+    annotations:
+      description: 'ASR NAT table is nearly full for 15 min'
+      summary: 'ASR NAT table is nearly full for 15 min'
