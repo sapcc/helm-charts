@@ -6,13 +6,13 @@
 {{ define "slack.sapcc.text" }}
 {{ if eq .Status "firing" }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
 {{ if eq .Status "resolved" }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
-  *[{{ .CommonLabels.region | toUpper }}]* {{ if .CommonLabels.dashboard }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }}
+  {{ if .CommonLabels.cluster }}*[{{ .CommonLabels.cluster | toUpper }}]*{{ else }}*[{{ .CommonLabels.region | toUpper }}]*{{ end }} {{ if .CommonLabels.dashboard }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }}
 
 {{ if eq .Status "firing" -}}
 {{ range .Alerts.Firing -}}
   {{ if eq .Labels.severity "warning" }}:warning: {{ end -}}
   {{ if eq .Labels.severity "critical" }}:fire: {{ end -}}
-  {{ .Annotations.description }} (<{{ .GeneratorURL }}|Graph>)
+  {{ .Annotations.description }} {{ if .Labels.sentry }}*<https://sentry.{{ .CommonLabels.region }}.cloud.sap/monsoon/{{ .Labels.sentry }}|Sentry>*{{ end }} {{ if .Labels.cloudops }}*<https://dashboard.{{ .CommonLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/{{ .Labels.cloudops }}|CloudOps>*{{ end }} (<{{ .GeneratorURL }}|Graph>)
 {{ end -}}
 {{ end -}}
 {{ if eq .Status "resolved" -}}
@@ -22,7 +22,6 @@
 {{ end -}}
 
 {{ if .CommonLabels.dashboard }}*<https://grafana.{{ .CommonLabels.region }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|Grafana>* {{ end -}}
-{{ if .CommonLabels.sentry }}*<https://sentry.{{ .CommonLabels.region }}.cloud.sap/monsoon/{{ .CommonLabels.sentry }}|Sentry>* {{ end -}}
 {{ if .CommonLabels.playbook }}*<https://operations.global.cloud.sap/{{ .CommonLabels.playbook }}|Playbook>* {{ end -}}
 {{ if .CommonLabels.kibana }}*<https://logs.{{ .CommonLabels.region }}.cloud.sap/{{ .CommonLabels.kibana }}|Kibana>* {{ end -}}
 {{ end }}
