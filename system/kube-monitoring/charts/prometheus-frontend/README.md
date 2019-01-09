@@ -57,6 +57,7 @@ The `cluster` label is an optional label used to differentiate multiple clusters
    * `k8s`   (kubernetes)
    * `kks`   (kubernikus)
    * `os`    (openstack)
+   * `net`   (network)
 
 ### Service
 
