@@ -2,29 +2,29 @@ groups:
 - name: network-asr.alerts
   rules:
   - alert: NetworkAsrDeviceIsDown
-    expr: sum(snmp_asr_natAddrBindNumberOfEntries+0)+sum(snmp_asr_natAddrPortBindNumberOfEntries+0) > 3500000
+    expr: sum(snmp_asr_natAddrBindNumberOfEntries + snmp_asr_natAddrPortBindNumberOfEntries) by (component) > 3500000
     for: 15m
     labels:
       severity: critical
       tier: net
       service: asr
       context: asr
-      meta: 'ASR device is DOWN for 15 min. Immediate device failure-over required.'
+      meta: 'ASR device {{ $labels.component }} is DOWN for 15 min. Immediate device failure-over required.'
       playbook: 'docs/devops/alert/network/#asr_nat_table_overflow'
     annotations:
-      description: 'ASR device is DOWN for 15 min. Immediate device failure-over required.'
-      summary: 'ASR device is DOWN for 15 min. Immediate device failure-over required.'
+      description: 'ASR device {{ $labels.component }} is DOWN for 15 min. Immediate device failure-over required.'
+      summary: 'ASR device {{ $labels.component }} is DOWN for 15 min. Immediate device failure-over required.'
 
   - alert: NetworkAsrNatTableIsNearlyFull
-    expr: sum(snmp_asr_natAddrBindNumberOfEntries+0)+sum(snmp_asr_natAddrPortBindNumberOfEntries+0) > 8000
+    expr: sum(snmp_asr_natAddrBindNumberOfEntries + snmp_asr_natAddrPortBindNumberOfEntries) by (component) > 2000000
     for: 15m
     labels:
       severity: critical
       tier: net
       service: asr
       context: asr
-      meta: 'ASR NAT table is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
+      meta: 'NAT table on ASR device {{ $labels.component }} is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
       playbook: 'docs/devops/alert/network/#asr_nat_table_overflow'
     annotations:
-      description: 'ASR NAT table is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
-      summary: 'ASR NAT table is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
+      description: 'NAT table on ASR device {{ $labels.component }} is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
+      summary: 'NAT table on ASR device is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
