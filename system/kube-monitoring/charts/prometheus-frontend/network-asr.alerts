@@ -1,7 +1,7 @@
 groups:
 - name: network-asr.alerts
   rules:
-  - alert: NetworkAsrNatTableIsFull
+  - alert: NetworkAsrDeviceIsDown
     expr: sum(snmp_asr_natAddrBindNumberOfEntries+0)+sum(snmp_asr_natAddrPortBindNumberOfEntries+0) > 3500000
     for: 15m
     labels:
@@ -9,22 +9,22 @@ groups:
       tier: net
       service: asr
       context: asr
-      meta: 'ASR NAT Table is full'
+      meta: 'ASR device is DOWN for 15 min. Immediate device failure-over required.'
       playbook: 'docs/devops/alert/network/#asr_nat_table_overflow'
     annotations:
-      description: 'ASR NAT table is full for 15 min'
-      summary: 'ASR NAT table is full for 15 min'
+      description: 'ASR device is DOWN for 15 min. Immediate device failure-over required.'
+      summary: 'ASR device is DOWN for 15 min. Immediate device failure-over required.'
 
   - alert: NetworkAsrNatTableIsNearlyFull
     expr: sum(snmp_asr_natAddrBindNumberOfEntries+0)+sum(snmp_asr_natAddrPortBindNumberOfEntries+0) > 8000
     for: 15m
     labels:
-      severity: warning
+      severity: critical
       tier: net
       service: asr
       context: asr
-      meta: 'ASR NAT Table is nearly full'
+      meta: 'ASR NAT table is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
       playbook: 'docs/devops/alert/network/#asr_nat_table_overflow'
     annotations:
-      description: 'ASR NAT table is nearly full for 15 min'
-      summary: 'ASR NAT table is nearly full for 15 min'
+      description: 'ASR NAT table is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
+      summary: 'ASR NAT table is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
