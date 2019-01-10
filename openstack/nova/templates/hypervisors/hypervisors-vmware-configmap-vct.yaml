@@ -29,6 +29,12 @@ template: |
 
       scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instance_changes }}
       scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_interval }}
+      {% if cells is defined and 'cell-' + availability_zone in cells %}
+      transport_url = {= cells['cell-' + availability_zone].transport_url | quote =}
+
+      [database]
+      connection = {= cells['cell-' + availability_zone].database_connection | quote =}
+      {% endif %}
 
       [vmware]
       integration_bridge = {= bridge | quote =}
