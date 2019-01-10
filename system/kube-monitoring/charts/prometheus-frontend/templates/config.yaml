@@ -36,6 +36,22 @@ data:
   {{- end }}
   {{- end }}
 {{- end }}
+  # network alerts
+  {{- if .Values.alerting.network }}
+  {{- range $path, $bytes := .Files.Glob "network-*.alerts" }}
+  {{ printf "%s" $path }}: |
+{{ printf "%s" $bytes | indent 4 }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+  # add vmware alerts
+  {{- if .Values.alerting.vmware }}
+  {{- range $path, $bytes := .Files.Glob "vmware-*.alerts" }}
+  {{ printf "%s" $path }}: |
+{{ printf "%s" $bytes | indent 4 }}
+  {{- end }}
+  {{- end }}
+{{- end }}
 
 {{- if .Values.additional_alerts }}
 # add the few region-specific alerts
