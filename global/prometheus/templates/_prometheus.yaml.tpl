@@ -24,6 +24,7 @@ scrape_configs:
       - '{__name__=~"^datapath_.+"}'
       - '{__name__=~"^elektra_open_inquiry_metrics$"}'
       - '{__name__=~"^kube_node_.+"}'
+      - '{__name__=~"^snmp_asr_.*"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^swift_cluster_storage_used_percent_.+"}'
       - '{__name__=~"^openstack_ironic_nodes_.+"}'
