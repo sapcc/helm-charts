@@ -73,6 +73,13 @@ data:
           severity: critical
           region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
 
+      - receiver: slack_vmware_critical
+        continue: true
+        match_re:
+          tier: vmware
+          severity: critical
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
       - receiver: slack_by_tier_and_severity
         continue: true
         match_re:
@@ -286,7 +293,37 @@ data:
     - name: slack_net_critical
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.net_critical_webhook_url | quote }}
+          api_url: {{ default "MISSING" .Values.slack.network_critical_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
+
+    - name: slack_vmware_critical
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.vmware_critical_webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
