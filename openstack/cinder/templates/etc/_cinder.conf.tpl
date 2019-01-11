@@ -1,5 +1,8 @@
 [DEFAULT]
 log_config_append = /etc/cinder/logging.ini
+backup_swift_url = https://objectstore-3.{{.Values.global.region}}.{{.Values.global.tld}}:443/v1/AUTH_
+backup_swift_auth_version = 2
+backup_driver = cinder.backup.drivers.swift.SwiftBackupDriver
 
 {{- template "ini_sections.default_transport_url" . }}
 
@@ -57,8 +60,6 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 insecure = True
 
-[oslo_policy]
-policy_file = /etc/cinder/policy.json
 
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp
