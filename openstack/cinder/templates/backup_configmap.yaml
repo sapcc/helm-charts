@@ -1,0 +1,21 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vcenter-datacenter-cinder-backup-configmap'
+  scope: 'datacenter'
+template: |{{`
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: backup-vmware-{{ name }}
+    labels:
+      system: openstack
+      type: configuration
+      component: cinder
+  data:
+    cinder-backup.conf: |
+      [DEFAULT]
+      host = cinder-backup-{{ name }}
+      storage_availability_zone = {{ availability_zone | quote }}`}}
+{{- end }}
