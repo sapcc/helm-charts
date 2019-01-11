@@ -196,6 +196,14 @@ spec:
         - name: keystone-statsd
           image: "{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
           imagePullPolicy: {{ .Values.api.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
+          command:
+            - /bin/statsd_exporter
+            - --statsd.mapping-config=/tmp/statsd_mapping.yml
+          volumeMounts:
+            - name: keystone-etc
+              mountPath: /tmp/statsd_mapping.yml
+              subPath: statsd_exporter_mapping.yaml
+              readOnly: true
           ports:
             - name: statsd
               containerPort: 9125
