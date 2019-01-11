@@ -60,6 +60,8 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 insecure = True
 
+[oslo_policy]
+policy_file = /etc/cinder/policy.json
 
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp
