@@ -184,7 +184,7 @@ shared_preload_libraries = '{{ keys .Values.extensions | join ","}}'		# (change 
 # - Settings -
 
 # Adjust WAL-settings if change-data-capture is enabled
-{{- if $.Values.postgres.cdc.enabled }}
+{{- if $.Values.cdc.enabled }}
 wal_level = logical       # required by Debezium
 {{- else }}
 #wal_level = minimal			# minimal, archive, hot_standby, or logical
@@ -239,7 +239,7 @@ wal_level = logical       # required by Debezium
 
 # Set these on the master and on any standby that will send replication data.
 
-{{- if $.Values.postgres.cdc.enabled }}
+{{- if $.Values.cdc.enabled }}
 max_wal_senders = 5     # required by Debezium
 {{- else }}
 #max_wal_senders = 0		# max number of walsender processes
@@ -248,7 +248,7 @@ max_wal_senders = 5     # required by Debezium
 #wal_keep_segments = 0		# in logfile segments, 16MB each; 0 disables
 #wal_sender_timeout = 60s	# in milliseconds; 0 disables
 
-{{- if $.Values.postgres.cdc.enabled }}
+{{- if $.Values.cdc.enabled }}
 max_replication_slots = 1   # required by Debezium
 {{- else }}
 #max_replication_slots = 0	# max number of replication slots
