@@ -183,8 +183,8 @@ shared_preload_libraries = '{{ keys .Values.extensions | join ","}}'		# (change 
 
 # - Settings -
 
-# Adjust WAL-settings if change-data-capture is enabled
 {{- if $.Values.cdc.enabled }}
+# Adjust WAL-settings if change-data-capture is enabled
 wal_level = logical       # required by Debezium
 {{- else }}
 #wal_level = minimal			# minimal, archive, hot_standby, or logical
