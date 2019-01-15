@@ -612,6 +612,18 @@ f5_parent_ssl_profile = clientssl
 {{- end}}
 
 #
+# Parent https monitor
+#
+# Set the pareent monitor tp a new ccloud value due to changes in tmos 13.1.1.2
+# where each https monitor should have an server_profile assigned
+# This assignment is done inside the cc_https monitor and individual monitors get it from there
+{{- if $loadbalancer.f5_parent_https_monitor}}
+f5_parent_https_monitor = {{$loadbalancer.f5_parent_https_monitor}}
+{{- else }}
+f5_parent_https_monitor = /Common/https
+{{- end}}
+
+#
 # Enable orphan checking
 #
 # Setting this to a positive value enables the F5 Agent to cleanup objects from F5 which do not exist in
