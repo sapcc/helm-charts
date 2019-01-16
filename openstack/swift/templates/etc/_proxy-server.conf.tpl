@@ -83,7 +83,7 @@ use = egg:swift#gatekeeper
 use = egg:swift#keystoneauth
 operator_roles = admin, swiftoperator
 is_admin = false
-cache = swift.cache
+
 {{- if $cluster.seed }}
 reseller_admin_role = {{ $cluster.reseller_admin_role | default "swiftreseller" }}
 {{- else }}
@@ -108,7 +108,11 @@ insecure = {{$cluster.keystone_insecure | default false}}
 {{- if $cluster.endpoint_override }}
 endpoint_override = {{$cluster.endpoint_override}}
 {{- end }}
+{{- if $cluster.token_memcache }}
+memcached_servers = memcached-tokens.{{$helm_release.Namespace}}.svc:11211
+{{- else }}
 cache = swift.cache
+{{- end }}
 region_name = {{$context.global.region}}
 user_domain_name = {{$cluster.swift_service_user_domain}}
 username = {{$cluster.swift_service_user}}
