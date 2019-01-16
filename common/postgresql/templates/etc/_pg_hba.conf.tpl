@@ -21,7 +21,7 @@ local   replication     debezium                                trust
 host    replication     debezium        127.0.0.1/32            trust
 host    replication     debezium        ::1/128                 trust
 # permit access from same cluster network (Kubernikus)
-host    replication     debezium        100.100.0.0/16          trust
+host    replication     debezium        100.68.0.0/16          trust
 {{- end }}
 
 host all all {{ .Values.hba_cidr }} {{if not (or .Values.pgbouncer.enabled .Values.global.pgbouncer.enabled ) }}{{ .Values.auth_method }}{{ else }}md5{{ end }}
