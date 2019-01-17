@@ -47,6 +47,7 @@ use_default_quota_class=false
 [keystone_authtoken]
 auth_plugin = v3password
 auth_version = v3
+auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.cinder_service_user | default "cinder"}}{{ .Values.global.user_suffix }}
@@ -54,8 +55,11 @@ password = {{ .Values.global.cinder_service_password | default (tuple . .Values.
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+region_name = {{.Values.global.region}}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+service_token_roles_required = True
 insecure = True
+token_cache_time = 600
 
 [oslo_policy]
 policy_file = /etc/cinder/policy.json
@@ -68,6 +72,7 @@ lock_path = /var/lib/cinder/tmp
 {{- include "ini_sections.cache" . }}
 
 [barbican]
+barbican_endpoint = internal
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 
 [key_manager]
