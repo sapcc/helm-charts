@@ -44,14 +44,14 @@ debug = True
 # seconds between attempts.
 #
 
-periodic_interval = {{$loadbalancer.periodic_interval | default 301}}
+periodic_interval = {{$loadbalancer.periodic_interval | default 300}}
 
 #
 # How often should the agent throw away its service cache and
 # resync assigned services with the neutron LBaaS plugin.
 #
 
-service_resync_interval = {{$loadbalancer.service_resync_interval | default 181}}
+service_resync_interval = {{$loadbalancer.service_resync_interval | default 180}}
 
 # Objects created on the BIG-IP by this agent will have their names prefixed
 # by an environment string. This allows you set this string.  The default is
