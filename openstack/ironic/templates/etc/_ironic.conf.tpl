@@ -41,7 +41,7 @@ auth_section = service_catalog
 
 [service_catalog]
 auth_section = service_catalog
-# ?? valid_interfaces = public {{- /* Public, so that the ironic-python-agent doesn't get a private url */}}
+valid_interfaces = public {{- /* Public, so that the ironic-python-agent doesn't get a private url */}}
 auth_type = v3password
 auth_interface = internal
 auth_version = v3
