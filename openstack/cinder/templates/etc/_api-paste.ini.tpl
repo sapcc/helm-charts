@@ -24,21 +24,21 @@ use = call:cinder.api:root_app_factory
 [composite:openstack_volume_api_v1]
 use = call:cinder.api.middleware.auth:pipeline_factory
 noauth = cors http_proxy_to_wsgi request_id faultwrap sizelimit {{- include "osprofiler_pipe" . }} noauth apiv1
-keystone = cors http_proxy_to_wsgi request_id statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv1
-keystone_nolimit = cors http_proxy_to_wsgi request_id statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv1
+keystone = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv1
+keystone_nolimit = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv1
 {{ end }}
 
 [composite:openstack_volume_api_v2]
 use = call:cinder.api.middleware.auth:pipeline_factory
-noauth = cors http_proxy_to_wsgi request_id {{- include "watcher_pipe" . }} statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} noauth apiv2
-keystone = cors http_proxy_to_wsgi request_id statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
-keystone_nolimit = cors http_proxy_to_wsgi request_id statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
+noauth = cors http_proxy_to_wsgi request_id {{- include "watcher_pipe" . }} faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} noauth apiv2
+keystone = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
+keystone_nolimit = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
 
 [composite:openstack_volume_api_v3]
 use = call:cinder.api.middleware.auth:pipeline_factory
-noauth = cors http_proxy_to_wsgi request_id {{- include "watcher_pipe" . }} statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} noauth apiv3
-keystone = cors http_proxy_to_wsgi request_id statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv3
-keystone_nolimit = cors http_proxy_to_wsgi request_id statsd faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv3
+noauth = cors http_proxy_to_wsgi request_id {{- include "watcher_pipe" . }} faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} noauth apiv3
+keystone = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv3
+keystone_nolimit = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv3
 
 [filter:request_id]
 paste.filter_factory = oslo_middleware.request_id:RequestId.factory
@@ -94,12 +94,8 @@ paste.filter_factory = cinder.api.middleware.auth:CinderKeystoneContext.factory
 [filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 
-# Converged Cloud statsd & sentry middleware
-[filter:statsd]
-use = egg:ops-middleware#statsd
-
 [filter:sentry]
-use = egg:ops-middleware#sentry
+use = egg:raven#raven
 level = ERROR
 
 {{ if .Values.audit.enabled }}

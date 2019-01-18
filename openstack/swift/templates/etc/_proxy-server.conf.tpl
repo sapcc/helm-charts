@@ -212,14 +212,8 @@ target_project_id_from_path = {{$context.watcher_project_id_from_path | default 
 config_file = /swift-etc/watcher.yaml
 {{- end }}
 
-# [filter:statsd]
-# use = egg:ops-middleware#statsd
-# statsd_host = localhost
-# statsd_port = 9125
-# statsd_replace = swift
-#
 # [filter:sentry]
-# use = egg:ops-middleware#sentry
+# use = egg:raven#raven
 # dsn = {{$cluster.sentry_dsn}}
 # level = ERROR
 {{end}}
