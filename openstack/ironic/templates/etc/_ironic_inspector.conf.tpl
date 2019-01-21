@@ -3,7 +3,14 @@ log_config_append = /etc/ironic-inspector/logging.ini
 {{- include "ini_sections.default_transport_url" . }}
 
 [ironic]
-auth_section = keystone_authtoken
+region_name = {{.Values.global.region}}
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+auth_type = v3password
+username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
+password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 
 [api]
 host_ip = 0.0.0.0
