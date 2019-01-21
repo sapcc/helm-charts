@@ -20,7 +20,7 @@ deploy_logs_swift_container = {{ .Values.agent.deploy_logs.swift_container | def
 {{- end }}
 
 [inspector]
-auth_section = keystone_authtoken
+auth_section = service_catalog
 
 [dhcp]
 dhcp_provider = neutron
@@ -36,7 +36,6 @@ auth_section = keystone_authtoken
 region = {{ .Values.global.region }}
 
 [keystone_authtoken]
-valid_interfaces = public {{- /* Public, so that the ironic-python-agent doesn't get a private url */}}
 auth_type = v3password
 auth_interface = internal
 auth_version = v3
@@ -55,8 +54,24 @@ token_cache_time = 600
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
+[service_catalog]
+auth_section = service_catalog
+valid_interfaces = public {{- /* Public, so that the ironic-python-agent doesn't get a private url */}}
+region_name = {{ .Values.global.region }}
+# auth_section
+auth_type = v3password
+auth_version = v3
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
+password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
+insecure = True
+
 [glance]
-auth_section = keystone_authtoken
+auth_section = service_catalog
 swift_temp_url_duration = 3600
 # No terminal slash, it will break the url signing scheme
 swift_endpoint_url = {{ .Values.global.swift_endpoint_protocol | default "https" }}://{{ include "swift_endpoint_host" . }}:{{ .Values.global.swift_api_port_public | default 443 }}
@@ -72,13 +87,13 @@ swift_account = {{ .Values.swift_account }}
 {{- end }}
 
 [swift]
-auth_section = keystone_authtoken
+auth_section = service_catalog
 {{- if .Values.swift_set_temp_url_key }}
 swift_set_temp_url_key = True
 {{- end }}
 
 [neutron]
-auth_section = keystone_authtoken
+auth_section = service_catalog
 cleaning_network = {{ .Values.network_cleaning_uuid }}
 provisioning_network = {{ .Values.network_management_uuid }}
 timeout = {{ .Values.neutron_url_timeout }}
