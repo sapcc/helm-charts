@@ -33,9 +33,12 @@ public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
 
 [keystone]
 auth_section = service_catalog
+region = {{ .Values.global.region }}
 
 [keystone_authtoken]
 auth_section = service_catalog
+memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+token_cache_time = 600
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
@@ -55,8 +58,6 @@ project_name = {{.Values.global.keystone_service_project | default "service"}}
 region_name = {{ .Values.global.region }}
 insecure = True
 service_token_roles_required = True
-memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
-token_cache_time = 600
 
 [glance]
 auth_section = service_catalog
