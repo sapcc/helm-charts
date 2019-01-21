@@ -46,6 +46,7 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
+auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
@@ -53,7 +54,10 @@ password = {{ .Values.global.barbican_service_password | default (tuple . .Relea
 user_domain_id = default
 project_name = service
 project_domain_id = default
+region_name = {{.Values.global.region}}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 service_token_roles_required = True
+token_cache_time = 600
+include_service_catalog = false
 
 {{- include "ini_sections.cache" . }}
