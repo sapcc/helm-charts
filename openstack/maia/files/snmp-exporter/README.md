@@ -34,6 +34,8 @@ asr:
   ...
 ```
 
+another required hack is that the oids 1.3.6.1.2.1.123.1.5 and 1.3.6.1.2.1.123.1.7 need a manually added .0 in the generated snmp.yml file
+
 for all the above to work the following section has to exist in the secrets file (for snmp v3 auth):
 
 snmp_exporter:
