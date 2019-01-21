@@ -216,14 +216,20 @@ spec:
       {{- end }}
       {{- if .Values.metrics.enabled }}
       - name: statsd
-        image: prom/statsd-exporter:v0.5.0
+        image: prom/statsd-exporter:v0.8.1
         imagePullPolicy: {{ .Values.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
+        args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         ports:
         - name: statsd
           containerPort: 9125
           protocol: UDP
         - name: metrics
           containerPort: {{ .Values.metrics.port }}
+        volumeMounts:
+          - name: glance-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
       {{- end }}
       volumes:
       - name: etcglance
