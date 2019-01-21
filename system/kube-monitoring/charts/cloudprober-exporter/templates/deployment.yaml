@@ -1,0 +1,76 @@
+{{- if .Values.enabled }}
+{{- range $i, $config := .Values.servers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: cloudprober-exporter-{{$config.name}}
+  labels:
+    app: cloudprober-exporter
+    release: "{{$.Release.Name}}"
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: cloudprober-exporter-{{$config.name}}
+        app: cloudprober-exporter
+    spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{$config.name}}
+      containers:
+        - name: web-server
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c", "while true; do { echo -e 'HTTP/1.1 200 OK\r\n'; echo 'Hello World';} | nc -l -p 1080; done"]
+          ports:
+            - name: http
+              containerPort: 1080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 1080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 1080
+            timeoutSeconds: 5
+            periodSeconds: 5
+
+        - name: iperf3-server
+          image: hub.global.cloud.sap/monsoon/iperf3
+          imagePullPolicy: IfNotPresent
+          command:
+          - iperf3
+          - -s
+          ports:
+            - name: tcp
+              containerPort: 5201
+              protocol: TCP
+            - name: udp
+              containerPort: 5201
+              protocol: UDP
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "nc -v -n -z localhost 5201"]
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "nc -v -n -z localhost 5201"]
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
+---
+{{ end -}}
+{{ end -}}
