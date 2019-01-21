@@ -20,7 +20,7 @@ deploy_logs_swift_container = {{ .Values.agent.deploy_logs.swift_container | def
 {{- end }}
 
 [inspector]
-auth_section = service_catalog
+auth_section = keystone_authtoken
 
 [dhcp]
 dhcp_provider = neutron
@@ -32,18 +32,10 @@ public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
 {{- include "ini_sections.database" . }}
 
 [keystone]
-auth_section = service_catalog
+auth_section = keystone_authtoken
 region = {{ .Values.global.region }}
 
 [keystone_authtoken]
-auth_section = service_catalog
-memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
-token_cache_time = 600
-
-{{- include "ini_sections.audit_middleware_notifications" . }}
-
-[service_catalog]
-auth_section = service_catalog
 valid_interfaces = public {{- /* Public, so that the ironic-python-agent doesn't get a private url */}}
 auth_type = v3password
 auth_interface = internal
@@ -58,9 +50,13 @@ project_name = {{.Values.global.keystone_service_project | default "service"}}
 region_name = {{ .Values.global.region }}
 insecure = True
 service_token_roles_required = True
+memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+token_cache_time = 600
+
+{{- include "ini_sections.audit_middleware_notifications" . }}
 
 [glance]
-auth_section = service_catalog
+auth_section = keystone_authtoken
 swift_temp_url_duration = 3600
 # No terminal slash, it will break the url signing scheme
 swift_endpoint_url = {{ .Values.global.swift_endpoint_protocol | default "https" }}://{{ include "swift_endpoint_host" . }}:{{ .Values.global.swift_api_port_public | default 443 }}
@@ -76,13 +72,13 @@ swift_account = {{ .Values.swift_account }}
 {{- end }}
 
 [swift]
-auth_section = service_catalog
+auth_section = keystone_authtoken
 {{- if .Values.swift_set_temp_url_key }}
 swift_set_temp_url_key = True
 {{- end }}
 
 [neutron]
-auth_section = service_catalog
+auth_section = keystone_authtoken
 cleaning_network = {{ .Values.network_cleaning_uuid }}
 provisioning_network = {{ .Values.network_management_uuid }}
 timeout = {{ .Values.neutron_url_timeout }}
