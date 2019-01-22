@@ -2,11 +2,11 @@ input {
   udp {
     port  => {{.Values.elk_logstash_input_netflow_port}}
     codec => netflow
-    tags ["netflow"]
-  },
+    tags => ["netflow"]
+  }
   udp {
     port  => {{.Values.elk_logstash_input_syslog_port}}
-    tags ["syslog"]
+    tags => ["syslog"]
   }
 }
 
