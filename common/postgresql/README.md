@@ -101,3 +101,7 @@ The chart mounts a [Persistent Volume](http://kubernetes.io/docs/user-guide/pers
 
 ## Metrics
 The chart optionally can start a metrics exporter for [prometheus](https://prometheus.io). The metrics endpoint (port 9187) is not exposed and it is expected that the metrics are collected from inside the k8s cluster using something similar as the described in the [example Prometheus scrape configuration](https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml).
+
+## Pipeline
+
+To centralize postgres operations and make deployments easier, the [postgres pipeline](https://ci.global.cloud.sap/teams/main/pipelines/postgres) can be used across the core CCloud Openstack services. This pipeline picks up commits from `common/postgresql` chart and automatically triggers a helm-diff. 
