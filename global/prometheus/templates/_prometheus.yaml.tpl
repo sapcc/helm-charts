@@ -33,6 +33,7 @@ scrape_configs:
       - '{__name__=~"^snmp_f5_sysGlobalHostOtherMemTotalKb"}'
       - '{__name__=~"^snmp_f5_sysHostMemoryUsedKb"}'
       - '{__name__=~"^snmp_f5_sysHostMemoryTotalKb"}'
+      - '{__name__=~"^node_cpu_seconds_total",mode="idle"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^swift_cluster_storage_used_percent_.+"}'
       - '{__name__=~"^openstack_ironic_nodes_.+"}'
