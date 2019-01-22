@@ -1,6 +1,9 @@
 # WARNING: This file was auto-generated using snmp_exporter generator, manual changes will be lost.
 asr:
   walk:
+  - 1.3.6.1.2.1.2.2.1.2
+  - 1.3.6.1.2.1.2.2.1.7
+  - 1.3.6.1.2.1.2.2.1.8
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.24
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.25
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.26
@@ -102,4 +105,25 @@ asr:
       in the NAT device - 1.3.6.1.4.1.9.9.532.1.1.1.1
     indexes:
     - labelname: entPhysicalIndex
+      type: gauge
+  - name: snmp_asr_ifDescr
+    oid: 1.3.6.1.2.1.2.2.1.2
+    type: DisplayString
+    help: A textual string containing information about the interface - 1.3.6.1.2.1.2.2.1.2
+    indexes:
+    - labelname: ifIndex
+      type: gauge
+  - name: snmp_asr_ifAdminStatus
+    oid: 1.3.6.1.2.1.2.2.1.7
+    type: gauge
+    help: The desired state of the interface - 1.3.6.1.2.1.2.2.1.7
+    indexes:
+    - labelname: ifIndex
+      type: gauge
+  - name: snmp_asr_ifOperStatus
+    oid: 1.3.6.1.2.1.2.2.1.8
+    type: gauge
+    help: The current operational state of the interface - 1.3.6.1.2.1.2.2.1.8
+    indexes:
+    - labelname: ifIndex
       type: gauge
