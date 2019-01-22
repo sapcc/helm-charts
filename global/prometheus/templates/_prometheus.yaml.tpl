@@ -34,6 +34,11 @@ scrape_configs:
       - '{__name__=~"^snmp_f5_sysHostMemoryUsedKb"}'
       - '{__name__=~"^snmp_f5_sysHostMemoryTotalKb"}'
       - '{__name__=~"^node_cpu_seconds_total",mode="idle"}'
+      - '{__name__=~"^node_memory_MemTotal_bytes$",instance=~".+cloud.sap"}
+      - '{__name__=~"^node_memory_MemFree_bytes,instance=~".+cloud.sap"}
+      - '{__name__=~"^node_memory_Cached_bytes,instance=~".+cloud.sap"}
+      - '{__name__=~"^node_memory_Buffers_bytes,instance=~".+cloud.sap"}
+      - '{__name__=~"^node_memory_Slab_bytes,instance=~".+cloud.sap"}
       - '{__name__=~"up"}'
       - '{__name__=~"^swift_cluster_storage_used_percent_.+"}'
       - '{__name__=~"^openstack_ironic_nodes_.+"}'
