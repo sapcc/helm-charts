@@ -85,15 +85,8 @@ spec:
             - exec pg_isready --host $POD_IP
           initialDelaySeconds: 5
           timeoutSeconds: 3
-        {{- if .Values.resources.enabled }}
         resources:
-          limits:
-            cpu: {{ .Values.resources.limits.cpu | quote }}
-            memory: {{ .Values.resources.limits.memory | quote }}
-          requests:
-            cpu: {{ .Values.resources.requests.cpu | quote }}
-            memory: {{ .Values.resources.requests.memory | quote }}
-        {{- end }}
+{{ toYaml .Values.resources | indent 10 }}
         volumeMounts:
         - name: data
           mountPath: /postgresql
