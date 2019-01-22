@@ -3,7 +3,7 @@ input {
     port  => {{.Values.elk_logstash_input_netflow_port}}
     codec => netflow
     tags netflow
-  }
+  },
   udp {
     port  => {{.Values.elk_logstash_input_syslog_port}}
     tags syslog
@@ -23,7 +23,7 @@ if "netflow" in [tags] {
     flush_size => 500
   }
 }
-if "syslog" in [tags] {
+else {
   elasticsearch {
     index => "syslog-%{+YYYY.MM.dd}"
     template => "/elk-etc/syslog.json"
