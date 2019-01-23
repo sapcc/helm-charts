@@ -11,7 +11,7 @@ metadata:
 
 data:
   cloudprober.cfg: |
-    {{- range $i, $config := .Values.ping_targets }}
+    {{- range $i, $config := .Values.static_ping_targets }}
     probe {
       type: PING
       name: "probe-ping-{{ $config.name }}"
@@ -25,7 +25,7 @@ data:
       timeout_msec: 1000   # 1s
     }
     {{- end }}
-    {{- range $i, $config := .Values.http_targets }}
+    {{- range $i, $config := .Values.static_http_targets }}
     probe {
       type: HTTP
       name: "probe-http-{{ $config.name }}"
@@ -39,5 +39,20 @@ data:
       timeout_msec: 1000   # 1s
     }
     {{- end }}
+    {{- range $i, $config := .Values.static_udp_targets }}
+    probe {
+      type: UDP
+      name: "probe-udp-{{ $config.name }}"
+      targets {
+        host_names: "{{ $config.target }}"
+      }
+      udp_probe {
+        port: {{ $config.port }}
+      }
+      interval_msec: 15000  # 15s
+      timeout_msec: 1000   # 1s
+    }
+    {{- end }}
+
 
   {{ end -}}
