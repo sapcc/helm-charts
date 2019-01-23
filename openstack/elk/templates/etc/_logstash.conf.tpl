@@ -6,11 +6,11 @@ input {
   }
   udp {
     port  => {{.Values.elk_logstash_input_syslog_port}}
-    type = > syslog
+    type => syslog
   }
   tcp {
     port  => {{.Values.elk_logstash_input_syslog_port}}
-    type = > syslog
+    type => syslog
   }
 }
 
