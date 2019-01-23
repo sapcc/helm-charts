@@ -6,13 +6,27 @@ input {
   }
   udp {
     port  => {{.Values.elk_logstash_input_syslog_port}}
-    type = > "syslog"
+    type = > syslog
   }
   tcp {
     port  => {{.Values.elk_logstash_input_syslog_port}}
-    type = > "syslog"
+    type = > syslog
   }
 }
+
+filter {
+  if [type] == "syslog" {
+    grok {
+      match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
+      add_field => [ "received_at", "%{@timestamp}" ]
+      add_field => [ "received_from", "%{host}" ]
+    }
+    date {
+      match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
+    }
+  }
+}
+
 
 output {
 if "netflow" in [tags] {
