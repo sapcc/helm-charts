@@ -44,8 +44,13 @@ spec:
           value: "cinder-volume"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
+        {{- if .Values.sentry.enabled }}
         - name: SENTRY_DSN
-          value: {{.Values.sentry_dsn | quote}}
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN.python
+        {{- end }}
 {{- if or $volume.python_warnings .Values.python_warnings }}
         - name: PYTHONWARNINGS
           value: {{ or $volume.python_warnings .Values.python_warnings }}

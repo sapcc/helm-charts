@@ -1,20 +1,29 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
 {{- if .Values.vasa_exporter.enabled }}
-kind: Service
-apiVersion: v1
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
 metadata:
-  name: vasa-exporter
-  namespace: monsoon3
-  labels:
-    system: openstack
-    service: metrics
-    component: vasa-exporter
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "{{ .Values.vasa_exporter.prometheus_port }}"
-spec:
-  selector:
-    component: vasa-exporter
-  ports:
-    - name: metrics
-      port: {{ .Values.vasa_exporter.prometheus_port }}
+  name: 'vasa-exporter-service'
+  scope: 'datacenter'
+template: |{{`
+  kind: Service
+  apiVersion: v1
+  metadata:
+    name: vasa-exporter-{{ name }}
+    namespace: monsoon3
+    labels:
+      system: openstack
+      service: metrics
+      component: vasa-exporter-{{ name }}
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: `}}{{ .Values.vasa_exporter.prometheus_port | quote }}{{`
+  spec:
+    selector:
+      component: vasa-exporter-{{ name }}
+    ports:
+      - name: metrics
+        port: `}}{{ .Values.vasa_exporter.prometheus_port | quote }}{{`
+`}}
+{{- end }}
 {{- end }}

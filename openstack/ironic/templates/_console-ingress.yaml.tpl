@@ -1,8 +1,11 @@
+{{- define "ironic_conductor_console_ingress" }}
+    {{- $conductor := index . 1 }}
+    {{- with index . 0 }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 
 metadata:
-  name: ironic-conductor-console
+  name: ironic-conductor-{{$conductor.name}}-console
   labels:
     system: openstack
     type: api
@@ -19,9 +22,9 @@ spec:
     - host: {{ include "ironic_console_endpoint_host_public" . }}
       http:
         paths:
-{{- range $i, $conductor := .Values.conductor.hosts }}
         - path: /{{$conductor.name}}
           backend:
             serviceName: ironic-conductor-{{$conductor.name}}-console
             servicePort: 80
+    {{- end }}
 {{- end }}

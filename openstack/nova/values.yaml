@@ -31,6 +31,11 @@ osprofiler: {}
 
 auto_assign_aggregates: 'dry_run'
 
+cell2:
+  name: cell2
+  enabled: false
+  conductor: {}
+
 defaults:
   default:
     graceful_shutdown_timeout: 60
@@ -83,6 +88,10 @@ dbPassword: null
 cell0dbName: nova_cell0
 cell0dbUser: nova_cell0
 cell0dbPassword: null
+
+cell2dbName: nova_cell2
+cell2dbUser: nova_cell2
+cell2dbPassword: null
 
 apidbName: nova_api
 apidbUser: nova_api
@@ -163,7 +172,7 @@ consoles:
   shellinabox:
     portInternal: '6084'
   mks:
-    portInternal: '6085'
+    portInternal: '6090'
     args: '--web /usr/local/noVNC-mks --verbose'
     inject_nova_credentials: true
 
@@ -251,7 +260,7 @@ pgmetrics:
              usage: "GAUGE"
              description: "Maximum duration of state"
      openstack_compute_instance_launch:
-       query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND host!='nova-compute-ironic' GROUP BY host, project_id, uuid, vm_state"
+       query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND NOT host LIKE 'nova-compute-ironic%' GROUP BY host, project_id, uuid, vm_state"
        metrics:
          - host:
              usage: "LABEL"
@@ -269,7 +278,7 @@ pgmetrics:
              usage: "GAUGE"
              description: "Instances termination time in past 24hrs"
      openstack_compute_instance_termination:
-       query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host!='nova-compute-ironic' GROUP BY host, project_id, uuid, vm_state"
+       query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND NOT host LIKE 'nova-compute-ironic%' GROUP BY host, project_id, uuid, vm_state"
        metrics:
          - host:
              usage: "LABEL"
@@ -287,7 +296,7 @@ pgmetrics:
              usage: "GAUGE"
              description: "Instances termination time in past 24hrs"
      openstack_compute_instance_created:
-       query: "SELECT coalesce(host, 'N/A') AS host, uuid, vm_state, COUNT(*) AS in_24hrs_gauge FROM instances WHERE (created_at >= now() - interval '24 hours') AND host!='nova-compute-ironic' AND deleted=0 GROUP BY host, uuid, vm_state"
+       query: "SELECT coalesce(host, 'N/A') AS host, uuid, vm_state, COUNT(*) AS in_24hrs_gauge FROM instances WHERE (created_at >= now() - interval '24 hours') AND NOT host LIKE 'nova-compute-ironic%' AND deleted=0 GROUP BY host, uuid, vm_state"
        metrics:
          - host:
              usage: "LABEL"
@@ -302,7 +311,7 @@ pgmetrics:
              usage: "GAUGE"
              description: "Instances created past 24hrs"
      openstack_ironic_instances_launch:
-       query: "SELECT project_id, uuid, node AS node_id, hostname, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY project_id, uuid, vm_state, hostname, node"
+       query: "SELECT project_id, uuid, node AS node_id, hostname, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND host LIKE 'nova-compute-ironic%' GROUP BY project_id, uuid, vm_state, hostname, node"
        metrics:
          - project_id:
              usage: "LABEL"
@@ -323,7 +332,7 @@ pgmetrics:
              usage: "GAUGE"
              description: "Nodes Launch time in past 24hrs"
      openstack_ironic_instances_termination:
-       query: "SELECT project_id, uuid, hostname, node AS node_id, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY project_id, uuid, vm_state, hostname, node"
+       query: "SELECT project_id, uuid, hostname, node AS node_id, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host LIKE 'nova-compute-ironic%' GROUP BY project_id, uuid, vm_state, hostname, node"
        metrics:
          - project_id:
              usage: "LABEL"
@@ -344,7 +353,7 @@ pgmetrics:
              usage: "GAUGE"
              description: "Nodes termination time in past 24hrs"
      openstack_ironic_instances_created:
-       query: "SELECT uuid, hostname, node AS node_id, vm_state, COUNT(*) AS in_24hrs FROM instances WHERE (created_at >= now() - interval '24 hours') AND host='nova-compute-ironic' GROUP BY uuid, vm_state, hostname, node"
+       query: "SELECT uuid, hostname, node AS node_id, vm_state, COUNT(*) AS in_24hrs FROM instances WHERE (created_at >= now() - interval '24 hours') AND host LIKE 'nova-compute-ironic%' GROUP BY uuid, vm_state, hostname, node"
        metrics:
          - vm_state:
              usage: "LABEL"
@@ -362,7 +371,7 @@ pgmetrics:
              usage: "GAUGE"
              description: "Nodes created past 24hrs"
      openstack_ironic_instances:
-       query: "SELECT instances.uuid, instances.node AS node_id, instances.project_id, instances.hostname, instances.node AS node_id, instances.vm_state, coalesce(instance_types.name,'N/A') AS flavor_name, COUNT(*) AS gauge FROM instances JOIN instance_types ON instances.instance_type_id=instance_types.id where host='nova-compute-ironic' GROUP BY instances.vm_state, instances.project_id, instance_types.name, instances.uuid, instances.hostname, instances.node"
+       query: "SELECT instances.uuid, instances.node AS node_id, instances.project_id, instances.hostname, instances.node AS node_id, instances.vm_state, coalesce(instance_types.name,'N/A') AS flavor_name, COUNT(*) AS gauge FROM instances JOIN instance_types ON instances.instance_type_id=instance_types.id where host LIKE 'nova-compute-ironic%' GROUP BY instances.vm_state, instances.project_id, instance_types.name, instances.uuid, instances.hostname, instances.node"
        metrics:
          - uuid:
              usage: "LABEL"
@@ -481,6 +490,44 @@ postgresql:
       reserve_pool_size: 100
       idle_transaction_timeout: 60
 
+postgresql_cell2:
+  name: nova-cell2
+  postgresDatabase: nova-cell2
+  dbInit: nova-db-init
+  dbMaintain: nova-cell2-db-maintain
+  persistence:
+    enabled: true
+    existingClaim: db-nova-cell2-pvclaim
+  backup:
+    enabled: true
+    metrics: true
+    os_password: null
+
+  max_connections: 500
+  shared_buffers: '4GB'
+  temp_buffers: '32MB'
+  work_mem: '64MB'
+  maintenance_work_mem: '256MB'
+  max_stack_depth: '4MB'
+  effective_cache_size: '16GB'
+  autovacuum_analyze_scale_factor: '0.02'
+  autovacuum_vacuum_scale_factor: '0.01'
+  random_page_cost: '1.1'
+  shared_preload_libraries: pg_stat_statements
+  track_activity_query_size: 2048
+  pgbouncer:
+    enabled: true
+    config:
+      max_db_connections: 83
+      default_pool_size: 50
+      reserve_pool_size: 100
+      idle_transaction_timeout: 60
+
+rabbitmq_cell2:
+  name: nova-cell2
+  persistence:
+    enabled: false
+
 audit:
   enabled: false
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
@@ -536,6 +583,9 @@ logging:
         nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
             handlers: stdout, sentry
             level: INFO
+        nova.virt.vmwareapi:
+            handlers: stdout, sentry
+            level: DEBUG
         eventlet.wsgi.server:
             handlers: stdout, sentry
             level: INFO
@@ -564,13 +614,17 @@ db_purge:
   # dry run mode, i.e. just pretend to purge the entries
   dry_run: True
   # purge instance entries older than n days
-  older_than: 21
+  older_than: 14
   # purge at max n entries in one run
   max_number: 50
 consistency:
   enabled: False
   # dry run mode, i.e. just check for consistency without fixing it
   dry_run: True
+  # detect problems in the instance mappings we saw in queens
+  queens_instance_mapping_enabled: True
+  # dry run mode, i.e. just check for consistency without fixing it
+  queens_instance_mapping_dry_run: True
   # purge deleted block_device_mappings and reservations older than n days
   older_than: 21
   # keep at max n instance fault entries per instance

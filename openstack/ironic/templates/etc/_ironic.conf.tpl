@@ -32,12 +32,25 @@ public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
 {{- include "ini_sections.database" . }}
 
 [keystone]
-auth_section = service_catalog
+auth_section = keystone_authtoken
 region = {{ .Values.global.region }}
 
 [keystone_authtoken]
-auth_section = service_catalog
+auth_type = v3password
+auth_interface = internal
+auth_version = v3
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
+password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
+region_name = {{ .Values.global.region }}
+insecure = True
+service_token_roles_required = True
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+token_cache_time = 600
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 

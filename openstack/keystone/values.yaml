@@ -8,7 +8,7 @@ global:
 # region: cluster
 # clusterDomain: cluster.local
   dbUser: keystone
-  dbPassword: DEFINED-IN-REGION-CHART
+  dbPassword: DEFINE-IN-REGION-VALUES
 # imageRegistry: hub.global.cloud.sap
 
 debug: False
@@ -24,7 +24,7 @@ release: rocky
 
 api:
   image: "monsoon/loci-keystone"
-  imageTag: rocky-20181214101949
+  imageTag: rocky-20190114152917
 
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
@@ -33,7 +33,7 @@ api:
   # imagePullPolicy:
 
   adminUser: admin
-  adminPassword: secret
+  adminPassword: DEFINE-IN-REGION-VALUES
   adminProjectName: admin
   cloudAdminDomainName: Default
   cloudAdminProjectName: admin
@@ -58,18 +58,17 @@ api:
     allow_expired_window: 28800
     # maximum size of a token (LDAP seems to go over the default 255)
     max_token_size: 268
+    # The number of seconds to cache token creation and validation data.
+    cache_time: 3600
 
   fernet:
     maxActiveKeys: 3
     secrets:
-    - c1dVSlFZVjRQRnBGR3pwSk1nMll6eEFwX2VDNURwRFVzLVd5aEVYaVI1dz0=
-    - M1V0dHp6bk5LYzVlQ1doMjdvUUctSGdmVFFEcWxIeDZXdHFDT25vT3RHUT0=
-    - WmlYLUZUZ1BNVnNPU2tib01YUkc0SkhZMGswLXFfeVF0eTdHbVBjSDZjND0=
+      0: DEFINE-IN-REGION-VALUES
 
   credentials:
     secrets:
-    - RUdXZU5oVFR1TUU3TkFqazJrZWpqSE5vZ0lqeHFMTTljeUZxb2dZakNQZz0=
-    - OUhUQnBzTDBLTkFfTnhqZlFWX0dmc0tlc2FnUUZYTFBrN2hpWldpQmN6cz0=
+      0: DEFINE-IN-REGION-VALUES
 
   auth:
   # Allowed authentication methods. (list value)
@@ -108,7 +107,7 @@ api:
     port: '9102'
 
     image: prom/statsd-exporter
-    imageTag: v0.5.0
+    imageTag: v0.8.1
     prefix: openstack
 
     resources:
@@ -147,7 +146,7 @@ api:
 
 cron:
   image: "monsoon/loci-keystone"
-  imageTag: rocky-20181214101949
+  imageTag: rocky-20190114152917
 
   cronSchedule: "0 * * * *"
 
@@ -170,11 +169,14 @@ cron:
       maxUnavailable: 0
       maxSurge: 3
 
+cache:
+  expiration_time: 600
+
 tempest:
   image: "monsoon/rally-openstack"
   imageTag: "ccloud-1.2.0"
-  adminPassword: DEFINE_IN_REGION_VALUES
-  userPassword: DEFINE_IN_REGION_VALUES
+  adminPassword: DEFINE-IN-REGION-VALUES
+  userPassword: DEFINE-IN-REGION-VALUES
 # tempest domain-id  -- do not set in production environments!
   domainId: not_set_this_in_production
 
@@ -209,7 +211,7 @@ services:
 
   admin:
     scheme: http
-    host: identity-admin-3
+    host: identity-3
     #tlsCertificate:
     #tlsKey:
 
@@ -218,18 +220,18 @@ rabbitmq:
   # host: rabbitmq
   users:
     default:
-      password: admin123
+      password: DEFINE-IN-REGION-VALUES
     admin:
-      password: secret123
+      password: DEFINE-IN-REGION-VALUES
 
   metrics:
     enabled: true
-    password: openstack
+    password: DEFINE-IN-REGION-VALUES
 
 postgresql:
   postgresDatabase: keystone
   postgresUser: postgres
-  postgresPassword: secret
+  postgresPassword: DEFINE-IN-REGION-VALUES
 
   dbInit: keystone-db-init
   dbMaintain: keystone-db-maintain
@@ -304,7 +306,7 @@ watcher:
   enabled: true
 
 lifesaver:
-  enabled: false
+  enabled: true
 
 cors:
   enabled: false

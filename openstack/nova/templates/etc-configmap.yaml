@@ -46,4 +46,9 @@ data:
 {{- end }}
   vspc.conf: |
 {{ include (print .Template.BasePath "/etc/_vspc.conf.tpl") . | indent 4 }}
-
+{{- if .Values.cell2.enabled }}
+  nova-cell2-conductor.conf: |
+{{ include "util.helpers.valuesToIni" .Values.cell2.conductor | indent 4 }}
+  nova-cell2.conf: |
+{{ include (print .Template.BasePath "/etc/_nova-cell2.conf.tpl") . | indent 4 }}
+{{- end }}

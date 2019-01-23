@@ -1,0 +1,27 @@
+{{ if .Values.enabled }}
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: cloudprober-config
+  labels:
+    app: cloudprober-exporter
+    release: "{{$.Release.Name}}"
+
+data:
+  cloudprober.cfg: |
+    {{ range .Values.ping_targets }}
+    probe {
+      type: PING
+      name: "ping-probe-{{ . }}"
+      targets {
+        host_names: "{{ . }}"
+      }
+      ping_probe {
+        use_datagram_socket: false
+      }
+    }
+    {{- end }}
+
+{{ end -}}

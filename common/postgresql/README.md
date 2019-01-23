@@ -62,6 +62,16 @@ The following tables lists the configurable parameters of the PostgresSQL chart 
 | `metrics.imageTag`         | Exporter image                             | `v0.1.1`                                                   |
 | `metrics.imagePullPolicy`  | Exporter image pull policy                 | `IfNotPresent`                                             |
 | `metrics.resources`        | Exporter resource requests/limit           | Memory: `256Mi`, CPU: `100m`                               |
+| `shared_buffers`           | Dedicated memory for caching               | `128MB`                                                    |
+| `temp_buffers`             | Per Connection memory for temp buffers     | `8MB`                                                      |
+| `work_mem`                 | Working memory for sorts/joins             | `4MB`                                                      |
+| `maintenance_work_mem`     | Max mem for maint ops (VACCUM/ALTER TABLE) | `64MB`                                                     |
+| `max_stack_depth`          | Max safe execution depth of servers stack  | `2MB`                                                      |
+| `random_page_cost`         | Est of the cost of a non-seq disk page     | `1.1`                                                      |
+| `effective_cache_size`     | Planner Est Cache size available per query | `4GB`                                                      |
+| `track_activity_query_size`| Bytes reserved for pg_stat_activity.query  | `1024`                                                     |
+| `autovacuum_vacuum_scale_factor`| Fract of table size before vacuum     | `0.2`                                                      |
+| `autovacuum_analyze_scale_factor`| Fract of table size before analyze   | `0.1`                                                      |
 
 The above parameters map to the env variables defined in [postgres](http://github.com/docker-library/postgres). For more information please refer to the [postgres](http://github.com/docker-library/postgres) image documentation.
 
@@ -91,3 +101,7 @@ The chart mounts a [Persistent Volume](http://kubernetes.io/docs/user-guide/pers
 
 ## Metrics
 The chart optionally can start a metrics exporter for [prometheus](https://prometheus.io). The metrics endpoint (port 9187) is not exposed and it is expected that the metrics are collected from inside the k8s cluster using something similar as the described in the [example Prometheus scrape configuration](https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml).
+
+## Pipeline
+
+To centralize postgres operations and make deployments easier, the [postgres pipeline](https://ci.global.cloud.sap/teams/main/pipelines/postgres) can be used across the core CCloud Openstack services. This pipeline picks up commits from `common/postgresql` chart and automatically triggers a helm-diff. 

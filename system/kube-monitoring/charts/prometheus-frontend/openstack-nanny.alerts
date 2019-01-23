@@ -45,3 +45,15 @@ groups:
     annotations:
       description: The cinder-nanny discovered a snapshot without a valid project id - this should not happen and be investigated ...
       summary: Cinder nanny detected a snapshot without a valid project id
+  - alert: OpenstackVcenterNannyVolumeAttachmentInconsistency
+    expr: sum(vcenter_nanny_volume_attachment_inconsistencies{region=~"staging|qa-de-1|ap-au-1|ap-ae-1|ap-jp-1|ap-jp-2|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3"}) > 1000
+    for: 60m
+    labels:
+      context: nanny
+      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
+      service: maia
+      severity: ignore_info
+      tier: os
+    annotations:
+      description: This is just a maia test debugging alert ... please ignore for now
+      summary: This is just a maia test debugging alert ... please ignore for now

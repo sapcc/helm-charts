@@ -63,13 +63,14 @@ access_token_duration = {{ .Values.api.oauth1.access_token_duration | default "0
 {{- end }}
 
 [cache]
-backend = oslo_cache.memcache_pool
+backend = dogpile.cache.memcached
 {{- if .Values.memcached.host }}
 memcache_servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
 {{ else }}
 memcache_servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11211}}
 {{- end }}
 config_prefix = cache.keystone
+expiration_time = {{ .Values.cache.expiration_time | default 600 }}
 enabled = true
 
 # Directory containing Fernet keys used to encrypt and decrypt credentials
@@ -86,6 +87,7 @@ provider = {{ .Values.api.token.provider | default "fernet" }}
 expiration = {{ .Values.api.token.expiration | default 3600 }}
 allow_expired_window = {{ .Values.api.token.allow_expired_window | default 28800 }}
 cache_on_issue = true
+cache_time = {{ .Values.api.token.cache_time | default 1800 }}
 
 [revoke]
 expiration_buffer = 0

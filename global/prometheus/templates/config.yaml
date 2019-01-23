@@ -4,10 +4,11 @@ metadata:
   name: prometheus-global
 
 data:
-  {{- $files := .Files }}
-  {{ range tuple "interconnect.alerts" "prometheus.alerts" "ca.crt" }}
-  {{ . }}: |
-{{ $files.Get . | indent 4 }}
+{{- range $path, $bytes := .Files.Glob "*.alerts" }}
+  {{ printf "%s" $path }}: |
+{{ printf "%s" $bytes | indent 4 }}
   {{- end }}
+  ca.crt: |
+{{ .Files.Get "ca.crt" | indent 4 }}
   prometheus.yaml: |
 {{ include "prometheus/templates/_prometheus.yaml.tpl" . | indent 4 }}

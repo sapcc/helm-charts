@@ -20,7 +20,7 @@ storage_availability_zone = {{ .Values.default_availability_zone | default .Valu
 # rootwrap_config = /etc/manila/rootwrap.conf
 api_paste_config = /etc/manila/api-paste.ini
 
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password | default (tuple . .Values.rabbitmq.users.default.user | include "rabbitmq.password_for_user") }}@{{ include "release_rabbitmq_host" .}}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
+transport_url = {{ include "rabbitmq.transport_url" . }}
 
 osapi_share_listen = 0.0.0.0
 osapi_share_base_URL = https://{{include "manila_api_endpoint_host_public" .}}
@@ -85,6 +85,7 @@ lock_path = /var/lib/manila/tmp
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
+auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.manila_service_user | default "manila" | replace "$" "$$" }}
@@ -93,11 +94,16 @@ user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+{{- if .Values.memcached.enabled }}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+{{- end }}
 service_token_roles_required = True
 service_token_roles = service
 insecure = True
+token_cache_time = 600
+include_service_catalog = false
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
-
+{{- if .Values.memcached.enabled }}
 {{- include "ini_sections.cache" . }}
+{{- end }}

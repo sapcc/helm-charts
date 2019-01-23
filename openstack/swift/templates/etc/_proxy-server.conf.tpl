@@ -83,7 +83,7 @@ use = egg:swift#gatekeeper
 use = egg:swift#keystoneauth
 operator_roles = admin, swiftoperator
 is_admin = false
-cache = swift.cache
+
 {{- if $cluster.seed }}
 reseller_admin_role = {{ $cluster.reseller_admin_role | default "swiftreseller" }}
 {{- else }}
@@ -108,7 +108,12 @@ insecure = {{$cluster.keystone_insecure | default false}}
 {{- if $cluster.endpoint_override }}
 endpoint_override = {{$cluster.endpoint_override}}
 {{- end }}
+{{- if $cluster.swift_token_cache }}
 cache = swift.cache
+{{- else }}
+memcached_servers = memcached-tokens.{{$helm_release.Namespace}}.svc:11211
+{{- end }}
+token_cache_time = {{$cluster.token_cache_time | default 600}}
 region_name = {{$context.global.region}}
 user_domain_name = {{$cluster.swift_service_user_domain}}
 username = {{$cluster.swift_service_user}}
@@ -212,14 +217,8 @@ target_project_id_from_path = {{$context.watcher_project_id_from_path | default 
 config_file = /swift-etc/watcher.yaml
 {{- end }}
 
-# [filter:statsd]
-# use = egg:ops-middleware#statsd
-# statsd_host = localhost
-# statsd_port = 9125
-# statsd_replace = swift
-#
 # [filter:sentry]
-# use = egg:ops-middleware#sentry
+# use = egg:raven#raven
 # dsn = {{$cluster.sentry_dsn}}
 # level = ERROR
 {{end}}
