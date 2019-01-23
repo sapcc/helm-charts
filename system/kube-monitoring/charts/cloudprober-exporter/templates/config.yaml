@@ -14,14 +14,30 @@ data:
     {{ range $i, $config := .Values.ping_targets -}}
     probe {
       type: PING
-      name: "probe-{{ $config.name }}"
+      name: "probe-ping-{{ $config.name }}"
       targets {
         host_names: "{{ $config.target }}"
       }
       ping_probe {
         use_datagram_socket: false
       }
+      interval_msec: 15000  # 15s
+      timeout_msec: 1000   # 1s
     }
+
+    probe {
+      type: HTTP
+      name: "probe-http-{{ $config.name }}"
+      targets {
+        host_names: "{{ $config.target }}"
+      }
+      http_probe {
+        port = 1080
+      }
+      interval_msec: 15000  # 15s
+      timeout_msec: 1000   # 1s
+    }
+
     {{- end }}
 
 {{ end -}}
