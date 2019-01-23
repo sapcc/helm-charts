@@ -22,7 +22,27 @@ spec:
     spec:
       nodeSelector:
         failure-domain.beta.kubernetes.io/zone: {{$config.name}}
+      volumes:
+        - name: cloudprober-config
+          configMap:
+            name: cloudprober-config
       containers:
+        - name: cloudprober
+          image: cloudprober/cloudprober
+          imagePullPolicy: IfNotPresent
+          args: [
+            "--config_file","/cfg/cloudprober.cfg",
+            "--logtostderr"
+          ]
+          volumeMounts:
+          - name: cloudprober-config
+            mountPath: /cfg
+          ports:
+          - name: http
+            containerPort: 9313
+          env:
+          - name: CLOUDPROBER_PORT
+            value: "9313"
         - name: web-server
           image: busybox
           imagePullPolicy: IfNotPresent
