@@ -76,8 +76,8 @@ function cleanup_tempest_leftovers() {
 
   # Delete all networks and routers for Admin
   export OS_USERNAME='neutron-tempestadmin1'
-  export OS_TENANT_NAME='neutron-tempestadmin1'
-  export OS_PROJECT_NAME='neutron-tempestadmin1'
+  export OS_TENANT_NAME='neutron-tempest-admin1'
+  export OS_PROJECT_NAME='neutron-tempest-admin1'
   for network in $(openstack network list | grep -E "tempest" | awk '{ print $2 }'); do openstack network delete ${network}; done 
 }
 
