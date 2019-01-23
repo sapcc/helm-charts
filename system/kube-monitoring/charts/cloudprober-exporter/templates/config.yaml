@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ConfigMap
 
 metadata:
-  name: cloudprober-config
+  name: cloudprober-exporter
   labels:
     app: cloudprober-exporter
     release: "{{$.Release.Name}}"
@@ -24,7 +24,8 @@ data:
       interval_msec: 15000  # 15s
       timeout_msec: 1000   # 1s
     }
-
+    {{ end }}
+    {{ range $i, $config := .Values.http_targets -}}
     probe {
       type: HTTP
       name: "probe-http-{{ $config.name }}"
@@ -32,12 +33,11 @@ data:
         host_names: "{{ $config.target }}"
       }
       http_probe {
-        port = 1080
+        port = {{ $config.port }}
       }
       interval_msec: 15000  # 15s
       timeout_msec: 1000   # 1s
     }
-
-    {{- end }}
+    {{ end }}
 
 {{ end -}}
