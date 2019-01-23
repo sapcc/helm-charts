@@ -53,7 +53,7 @@
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuse7",
+            "username": "neutron-tempestuser7",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
             "project_name": "neutron-tempest7",
