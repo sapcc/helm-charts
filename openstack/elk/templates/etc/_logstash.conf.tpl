@@ -16,17 +16,13 @@ input {
 
 filter {
   if [type] == "syslog" {
-    grok {
-      match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
-      add_field => [ "received_at", "%{@timestamp}" ]
-      add_field => [ "received_from", "%{host}" ]
-    }
-    date {
-      match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
+    grok{
+      match => [
+        "message", "%{SYSLOG5424PRI}%{NUMBER:log_sequence}: %{GREEDYDATA:syslog_host}: %{CISCOTIMESTAMP:log_date}: %%{CISCO_REASON:facility}-%{INT:severity_level}-%{CISCO_REASON:facility_mnemonic}: %{GREEDYDATA:message}"
+      ]
     }
   }
 }
-
 
 output {
 if "netflow" in [tags] {
@@ -41,7 +37,7 @@ if "netflow" in [tags] {
     flush_size => 500
   }
 }
-else {
+elseif [type] == "syslog" {
   elasticsearch {
     index => "syslog-%{+YYYY.MM.dd}"
     template => "/elk-etc/syslog.json"
