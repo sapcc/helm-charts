@@ -30,7 +30,7 @@ application_credentials = True
 
 [network]
 project_network_cidr = 10.199.0.0/16
-public_network_id = 3380fdf2-7079-4024-adbe-b2d7de1e1855
+public_network_id = {{ .Values.tempest.public_network_id }}
 
 [network-feature-enabled]
 ipv6 = false
