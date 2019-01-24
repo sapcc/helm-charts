@@ -45,4 +45,8 @@ mappings:
     SubType: $6
     SubTypeValue: $7
     Metric: $8
+- match: .
+  match_type: regex
+  action: drop
+  name: dropped
 

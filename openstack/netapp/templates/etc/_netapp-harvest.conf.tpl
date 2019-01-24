@@ -9,8 +9,8 @@ graphite_proto    = tcp
 
 host_type         = FILER
 auth_type         = password
-username          = ntap-hvest
-password          = prometheusrocks10
+username          = {{ .Values.global.netapp_filer.username | default "dummyuser" }}
+password          = {{ .Values.global.netapp_filer.password | default "******" }}
 data_update_freq  = 60
 
 [filer-0]

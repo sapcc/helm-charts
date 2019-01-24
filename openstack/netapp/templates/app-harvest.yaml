@@ -30,7 +30,7 @@ spec:
       volumes:
         - name: netapp-harvest-conf
           configMap:
-            name: netapp-harvest-conf
+            name: netapp-etc
       containers:
       - name: harvest
         image: {{ .Values.harvest.image.harvest }}
@@ -38,11 +38,19 @@ spec:
         - name: netapp-harvest-conf
           subPath: netapp-harvest.conf
           mountPath: /opt/netapp-harvest/netapp-harvest.conf
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "250m"
 
       - name: duplicator
         image: {{ .Values.harvest.image.duplicator }}
         command: [ "gotee" ]
         args: [ "--listen", "2003", "-1", "9109", "-2", "netapp-graphite:2003", "--debug" ]
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "10m"
 
       - name: graphite-exporter
         image: {{ .Values.harvest.image.exporter }}
@@ -53,3 +61,7 @@ spec:
         - name: netapp-harvest-conf
           subPath: graphite-mapping.conf
           mountPath: /tmp/graphite-mapping.conf
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "10m"
