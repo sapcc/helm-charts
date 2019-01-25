@@ -1,0 +1,28 @@
+image:
+  repository: sapcc/kubernetes-eventexporter
+  tag: 0.3.0
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 20Mi
+  limits:
+    cpu: 200m
+    memory: 100Mi
+
+metrics:
+  port: "9102"
+  config:
+    config.yaml: |-
+      metrics:
+      - name: kube_pod_image_pull_backoff_total
+        event_matcher:
+        - key: InvolvedObject.Kind
+          expr: Pod
+        - key: Message
+          expr: Back-off pulling image "(.*)"
+        labels:
+          image: Message[1]
+          namespace: InvolvedObject.Namespace
+          pod_name: InvolvedObject.Name
