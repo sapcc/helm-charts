@@ -48,6 +48,7 @@ scrape_configs:
       - '{__name__=~"^pg_database_size_bytes_gauge_average$"}'
       - '{__name__=~"^probe_(dns|duration|http|success).*"}'
       - '{__name__=~"^limes_consolidated_.+"}'
+      - '{__name__=~"^limes_project_quota$"}'
       - '{__name__=~"^openstack_compute_instances_total$"}'
       - '{__name__=~"^vcenter_vcenter_node_info$"}'
       - '{__name__=~"^vcenter_esx_node_info$"}'
