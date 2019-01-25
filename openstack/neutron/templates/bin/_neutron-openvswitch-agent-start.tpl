@@ -68,7 +68,7 @@ function _start_application {
       echo "Waiting to be the only highlander"
       sleep 5
     done
-    touch /var/lib/neutron/neutron-ovs-agent-ready
+    touch /var/lib/neutron/neutron-openvswitch-agent-ready
 
     configure_bridge
 
