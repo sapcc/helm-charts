@@ -23,6 +23,11 @@ spec:
         {{- include "swift_conf_annotations" . | indent 8 }}
         {{- include "swift_ring_annotations" . | indent 8 }}
     spec:
+      {{- if .Values.companions_run_on_storages }}
+      {{- include "swift_daemonset_tolerations" . | indent 6 }}
+      nodeSelector:
+        species: {{ .Values.species }}
+      {{- end }}
       volumes:
         - name: swift-etc
           configMap:

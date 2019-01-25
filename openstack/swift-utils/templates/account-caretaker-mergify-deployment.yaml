@@ -23,6 +23,15 @@ spec:
       annotations:
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
     spec:
+      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: {{ quote .Values.species }}
+        effect: "NoSchedule"
+      {{- end }}
+      nodeSelector:
+        species: {{ .Values.species }}
       volumes:
         - name: caretaker-etc
           configMap:
