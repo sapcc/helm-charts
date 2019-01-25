@@ -13,6 +13,4 @@ username          = {{ .Values.global.netapp_filer.username | default "dummyuser
 password          = {{ .Values.global.netapp_filer.password | default "******" }}
 data_update_freq  = 60
 
-[filer-0]
-hostname    = 10.44.58.21
-group       = filers
+{{ .Values.netapp.filers | indent 0 }}
