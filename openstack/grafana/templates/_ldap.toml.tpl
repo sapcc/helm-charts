@@ -39,12 +39,12 @@ email =  "email"
 
 # Map ldap groups to grafana org roles
 [[servers.group_mappings]]
-group_dn = "{{ .Values.ldap.domain_admin }},{{ .Values.ldap.suffix }}"
+group_dn = "{{ .Values.ldap.monitoring_admin }},{{ .Values.ldap.suffix }}"
 org_role = "Admin"
 
 [[servers.group_mappings]]
-group_dn = "{{ .Values.ldap.cloud_admin }},{{ .Values.ldap.suffix }}"
-org_role = "Admin"
+group_dn = "{{ .Values.ldap.monitoring_editor }},{{ .Values.ldap.suffix }}"
+org_role = "Editor"
 
 [[servers.group_mappings]]
 group_dn = "{{ .Values.ldap.monitoring_user }},{{ .Values.ldap.suffix }}"
