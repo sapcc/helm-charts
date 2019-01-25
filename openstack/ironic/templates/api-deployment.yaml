@@ -97,12 +97,18 @@ spec:
       - name: statsd
         image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
         imagePullPolicy: IfNotPresent
+        args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         ports:
           - name: statsd
             containerPort: 9125
             protocol: UDP
           - name: metrics
             containerPort: {{ .Values.statsd.port }}
+        volumeMounts:
+          - name: ironic-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
 {{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 6 }}
       volumes:
       - name: etcironic

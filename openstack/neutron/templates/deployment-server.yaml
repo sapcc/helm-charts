@@ -100,14 +100,20 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: statsd
-          image: prom/statsd-exporter:v0.5.0
+          image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{.Values.port_metrics}}
+          volumeMounts:
+            - name: neutron-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
 {{- tuple . .Values.api.override "neutron-api" | include "utils.snippets.debug.debug_port_container" | indent 8 }}
       volumes:
         - name: neutron-etc

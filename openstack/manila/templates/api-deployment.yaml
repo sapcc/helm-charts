@@ -98,14 +98,20 @@ spec:
               readOnly: true
             {{- end }}
         - name: statsd
-          image: prom/statsd-exporter:v0.6.0
+          image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.global.metrics_port }}
+          volumeMounts:
+            - name: manila-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
       volumes:
         - name: etcmanila
           emptyDir: {}
