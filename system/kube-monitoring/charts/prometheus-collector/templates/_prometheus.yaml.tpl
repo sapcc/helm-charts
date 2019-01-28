@@ -462,6 +462,8 @@ scrape_configs:
 
 {{- if .Values.global.ipmi_exporter.enabled }}
 - job_name: 'baremetal/ironic'
+  params:
+    job: [baremetal/ironic]
   scrape_interval: 60s
   scrape_timeout: 55s
   file_sd_configs:
@@ -476,7 +478,9 @@ scrape_configs:
     - target_label: __address__
       replacement: ipmi-exporter:9290
 {{- if .Values.global.ipmi_exporter.netbox.enabled }}
-- job_name: 'netbox/cp'
+- job_name: 'cp/netbox'
+  params:
+    job: [cp/netbox]
   scrape_interval: 60s
   scrape_timeout: 55s
   file_sd_configs:
