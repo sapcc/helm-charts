@@ -26,6 +26,28 @@ metrics:
           image: Message[1]
           namespace: InvolvedObject.Namespace
           pod_name: InvolvedObject.Name
-
+      - name: kube_pod_failed_scheduling_cpu_total
+        event_matcher:
+        - key: Reason
+          expr: FailedScheduling
+        - key: InvolvedObject.Kind
+          expr: Pod
+        - key: Message
+          expr: No nodes are available that match all of the predicates: .*Insufficient cpu.*
+        labels:
+          namespace: InvolvedObject.Namespace
+          pod_name: InvolvedObject.Name          
+      - name: kube_pod_failed_scheduling_memory_total
+        event_matcher:
+        - key: Reason
+          expr: FailedScheduling
+        - key: InvolvedObject.Kind
+          expr: Pod
+        - key: Message
+          expr: No nodes are available that match all of the predicates: .*Insufficient memory.*
+        labels:
+          namespace: InvolvedObject.Namespace
+          pod_name: InvolvedObject.Name       
+          
 rbac:
   create: false
