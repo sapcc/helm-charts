@@ -183,15 +183,11 @@ spec:
             - name: keystone-bin
               mountPath: /scripts
               readOnly: true
-          {{- if .Values.api.resources.enabled }}
+          {{- if .Values.api.resources }}
           resources:
-            limits:
-              cpu: {{ .Values.api.resources.limits.cpu | quote }}
-              memory: {{ .Values.api.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.api.resources.requests.cpu | quote }}
-              memory: {{ .Values.api.resources.requests.memory | quote }}
+{{ toYaml .Values.api.resources | indent 12 }}
           {{- end }}
+
         {{- if .Values.api.metrics.enabled }}
         - name: keystone-statsd
           image: "{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
@@ -210,14 +206,9 @@ spec:
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.api.metrics.port }}
-          {{- if .Values.api.metrics.resources.enabled }}
+          {{- if .Values.api.metrics.resources }}
           resources:
-            limits:
-              cpu: {{ .Values.api.metrics.resources.limits.cpu | quote }}
-              memory: {{ .Values.api.metrics.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.api.metrics.resources.requests.cpu | quote }}
-              memory: {{ .Values.api.metrics.resources.requests.memory | quote }}
+{{ toYaml .Values.api.metrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
       volumes:
