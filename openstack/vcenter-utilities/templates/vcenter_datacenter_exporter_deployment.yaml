@@ -1,6 +1,6 @@
 {{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
-{{- if .Values.vcenter_exporter.enabled }}
-{{- if .Values.vcenter_exporter.exporter_types }}
+{{- if .Values.vcenter_exporters.enabled }}
+{{- if .Values.vcenter_exporters.exporter_types }}
 apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
@@ -8,7 +8,7 @@ metadata:
   scope: 'datacenter'
 {{ $global_values := .Values }}
 template: |
-{{- range $exporter_type_values := .Values.vcenter_exporter.exporter_types }}{{`
+{{- range $exporter_type_values := .Values.vcenter_exporters.exporter_types }}{{`
   ---
   kind: Deployment
   apiVersion: extensions/v1beta1
@@ -40,28 +40,25 @@ template: |
         containers:
           - name: vcenter-exporter
             imagePullPolicy: IfNotPresent
-            image: `}}{{ $global_values.vcenter_exporter.docker_repo }}/vcenter-exporter:{{ $global_values.vcenter_exporter.image_version | replace "string:" "" }}{{`
-            command:
-              - python
+            image: `}}{{ $global_values.vcenter_exporters.docker_repo }}/infrastructure-exporters:{{ $global_values.vcenter_exporters.image_version | replace "string:" "" }}{{`
             args:
-              - /vcenter-exporter/vcenter-exporter.py
-              - -c
+              - -f
               - /maia-etc/config-{{ name }}-`}}{{ $exporter_type_values.name }}{{`.yaml
               - -t
               - `}}{{ $exporter_type_values.name }}{{`
-            `}}{{- if $global_values.vcenter_exporter.resources.enabled }}{{`
+            `}}{{- if $global_values.vcenter_exporters.resources.enabled }}{{`
             resources:
               requests:
-                memory: `}}{{ $global_values.vcenter_exporter.resources.requests.memory | quote }}{{`
+                memory: `}}{{ $global_values.vcenter_exporters.resources.requests.memory | quote }}{{`
               limits:
-                memory: `}}{{ $global_values.vcenter_exporter.resources.limits.memory | quote }}{{`
+                memory: `}}{{ $global_values.vcenter_exporters.resources.limits.memory | quote }}{{`
             `}}{{- end }}{{`
             volumeMounts:
               - mountPath: /maia-etc
                 name: maia-etc
             ports:
               - name: metrics
-                containerPort: `}}{{ $global_values.vcenter_exporter.prometheus_port }}{{`
+                containerPort: `}}{{ $global_values.vcenter_exporters.prometheus_port | quote}}{{`
 `}}
 {{- end }}
 {{- end }}
