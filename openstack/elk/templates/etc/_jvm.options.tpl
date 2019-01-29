@@ -19,8 +19,8 @@
 # Xms represents the initial size of total heap space
 # Xmx represents the maximum size of total heap space
 
--Xms10g
--Xmx10g
+-Xms5g
+-Xmx5g
 
 ################################################################
 ## Expert settings
@@ -36,6 +36,8 @@
 -XX:+UseConcMarkSweepGC
 -XX:CMSInitiatingOccupancyFraction=75
 -XX:+UseCMSInitiatingOccupancyOnly
+#-XX:+UseG1GC
+-XX:MaxGCPauseMillis=5000
 
 ## optimizations
 

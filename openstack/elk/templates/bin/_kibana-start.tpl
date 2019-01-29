@@ -17,10 +17,10 @@ function start_application {
   export KIBANA_ES_URL=${KIBANA_ES_URL:-http://localhost:{{.Values.elk_elasticsearch_port_internal}}}
 
 
-  if [ -n "${KIBANA_INDEX}" ]; then
-      echo "setting index!"
-      sed -i "s;^kibana_index:.*;kibana_index: ${KIBANA_INDEX};" "${KIBANA_CONF_FILE}"
-  fi
+#  if [ -n "${KIBANA_INDEX}" ]; then
+#      echo "setting index!"
+#      sed -i "s;^kibana_index:.*;kibana_index: ${KIBANA_INDEX};" "${KIBANA_CONF_FILE}"
+#  fi
 
 
   echo "Starting Kibana"

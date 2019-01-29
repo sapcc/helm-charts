@@ -32,7 +32,6 @@
   kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  include_namespace_id true
   use_journal 'false'
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
@@ -446,23 +445,16 @@
    port {{.Values.elk_elasticsearch_port_internal}}
    user {{.Values.elk_elasticsearch_data_user}}
    password {{.Values.elk_elasticsearch_data_password}}
+   logstash_format true
    time_as_integer false
    @log_level info
-   buffer_type "memory"
-   buffer_chunk_limit 96m
-   buffer_queue_limit 256
-   buffer_queue_full_action exception
-   slow_flush_log_threshold 40.0
-   flush_interval 3s
-   retry_wait 2s
-   include_tag_key true
-   logstash_format true
-   max_retry_wait 10s
-   disable_retry_limit
    request_timeout 60s
-   reload_connections true
-   reload_on_failure true
+   include_tag_key true
    resurrect_after 120
    reconnect_on_error true
-   num_threads 8
+   buffer_type memory
+   flush_interval 3s
+   buffer_chunk_limit 96m
+   buffer_queue_limit 256
+   num_threads 4
  </match>

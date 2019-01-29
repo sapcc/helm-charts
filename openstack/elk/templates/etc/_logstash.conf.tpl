@@ -14,6 +14,17 @@ output {
     hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}"]
     user => "{{.Values.elk_elasticsearch_admin_user}}"
     password => "{{.Values.elk_elasticsearch_admin_password}}"
-    flush_size => 500
   }
+}
+elseif [type] == "syslog" {
+  elasticsearch {
+    index => "syslog-%{+YYYY.MM.dd}"
+    template => "/elk-etc/syslog.json"
+    template_name => "syslog"
+    template_overwrite => true
+    hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}"]
+    user => "{{.Values.elk_elasticsearch_admin_user}}"
+    password => "{{.Values.elk_elasticsearch_admin_password}}"
+  }
+}
 }
