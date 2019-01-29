@@ -299,13 +299,6 @@
   </record>
 </filter>
 
-<filter kubernetes.var.log.containers.unbound1**>
-  @type record_transformer
-  <record>
-    process "unbound1"
-  </record>
-</filter>
-
 <filter kubernetes.var.log.containers.arc-postgresql**>
   @type record_transformer
   <record>
@@ -382,46 +375,6 @@
     process "es-data"
   </record>
 </filter>
-
-#<filter kubernetes.var.log.containers.postgres**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
-
-#<filter kubernetes.var.log.containers.arc**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
-
-#<filter kubernetes.var.log.containers.prometheus-frontend**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
-
-#<filter kubernetes.var.log.containers.blackbox**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
-
-#<filter kubernetes.var.log.containers.elk-fluent**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
 
 <filter kubernetes.**>
   @type record_modifier
