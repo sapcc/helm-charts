@@ -24,33 +24,47 @@ vcenter_nanny:
   # really delete entities after how many iterations
   iterations: 14
 
-vcenter_exporter:
+vcenter_exporters:
   enabled: False
   docker_repo: DEFINED-IN-REGION-CHART
   image_version: DEFINED-IN-REGION-CHART
-  prometheus_port: "9102"
-  vcenter_port: "443"
-  vc_cluster_match_regex: DEFINED-IN-REGION-CHART
-  ignore_ssl: DEFINED-IN-REGION-CHART
-  vc_polling_interval: "120"
-  exporter_log_level: INFO
-  name_shortening_regex: DEFINED-IN-REGION-CHART
-  ignore_vm_match_regex: DEFINED-IN-REGION-CHART
-  ignore_ds_match_regex: DEFINED-IN-REGION-CHART
+  resources:
+    enabled: True
+    requests:
+      memory: DEFINED-IN-REGION-CHART
+    limits:
+      memory: DEFINED-IN-REGION-CHART
+  prometheus_port: DEFINED-IN-REGION-CHART
+  device_information:
+      hostname: provided-by-vcenter-operator
+      username: provided-by-vcenter-operator
+      password: provided-by-vcenter-operator
+      port: 443
+      ignore_ssl: "true"
+      availability_zone: DEFINED-IN-REGION-CHART
+      log_level: INFO
   exporter_types:
-    - name: versionsandapi
-      collector:
-      - prometheus
-    - name: custvm
-      collector:
-      - maia
-      - prometheus
-      vc_polling_interval: "240"
-    - name: custds
-      collector:
-      - maia
-      - prometheus
-      vc_polling_interval: "240"
+    vcapiandversions:
+      name: vcapiandversions
+      enabled: False
+      collection_interval: 120
+      collector: DEFINED-IN-REGION-CHART
+    vccustomerdsmetrics:
+      name: vccustomerdsmetrics
+      enabled: False
+      collection_interval: 120
+      ignore_ds_match_regex: DEFINED-IN-REGION-CHART
+      vc_cluster_match_regex: DEFINED-IN-REGION-CHART
+      collector: DEFINED-IN-REGION-CHART
+    vccustomervmmetrics:
+      name: vccustomervmmetrics
+      enabled: False
+      collection_interval: 120
+      vc_cluster_match_regex: DEFINED-IN-REGION-CHART
+      shorter_names_regex: DEFINED-IN-REGION-CHART
+      ignore_vm_match_regex: DEFINED-IN-REGION-CHART
+      collector: DEFINED-IN-REGION-CHART
+      vm_metrics: DEFINED-IN-REGION-CHART
 
 vasa_exporter:
   enabled: False
