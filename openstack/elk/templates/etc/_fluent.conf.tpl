@@ -59,7 +59,6 @@
   </parse>
 </filter>
 
-
 <filter kubernetes.var.log.containers.neutron-server**>
   @type grep
   <exclude>
@@ -67,17 +66,6 @@
     pattern \"password\"\:
   </exclude>
 </filter>
-
-<filter kubernetes.var.log.containers.unbound**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern \[%{DATA:timestamp}\] %{NOTSPACE:process} %{WORD:loglevel}
-  </parse>
-</filter>
-
 
 <filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.nginx** kubernetes.var.log.containers.horizon**>
   @type parser
@@ -439,6 +427,10 @@
   @type record_modifier
     remove_keys message,stream
 </filter>
+
+<match kubernetes.var.log.containers.unbound**>
+  @type null
+</match>
 
 <match **>
    @type elasticsearch
