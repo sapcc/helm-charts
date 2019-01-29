@@ -2,7 +2,7 @@ groups:
 - name: openstack-ns-exporter.alerts
   rules:
   - alert: NetworkNamespaceProbesFailed
-    expr: sum(changes(ns_exporter_probe_failure_total[10m])) by (network, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total[5m])) by (network, region, router) > 0
+    expr: sum(changes(ns_exporter_probe_failure_total[10m])) by (network_id, network_name, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total[5m])) by (network_id, network_name, region, router) > 0
     for: 5m
     labels:
       context: availability
@@ -10,9 +10,9 @@ groups:
       severity: warning
       tier: os
       playbook: 'docs/support/playbook/neutron/asr1k.html'
-      meta: 'Network {{ $labels.network }} failed all probes'
-      cloudops: "?searchTerm={{ $labels.network }}&type=network"
+      meta: 'Network {{ $labels.network_name }} failed all probes'
+      cloudops: "?searchTerm={{ $labels.network_id }}&type=network"
     annotations:
-      description: 'The network {{ $labels.network }} failed all dns probes for more then 5 minutes. Router: <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router }}&type=router|{{ $labels.router }}>'
+      description: 'The network {{ $labels.network_name }} failed all dns probes for more then 5 minutes. (<https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router }}&type=router|Router>)'
       summary: Network probes failed
 
