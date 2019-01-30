@@ -8,7 +8,7 @@ global:
 # region: cluster
 # clusterDomain: cluster.local
   dbUser: keystone
-  dbPassword: DEFINED-IN-REGION-CHART
+  dbPassword: ""
 # imageRegistry: hub.global.cloud.sap
 
 debug: False
@@ -24,7 +24,7 @@ release: rocky
 
 api:
   image: "monsoon/loci-keystone"
-  imageTag: rocky-20181214101949
+  #imageTag: latest
 
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
@@ -33,11 +33,11 @@ api:
   # imagePullPolicy:
 
   adminUser: admin
-  adminPassword: secret
+  adminPassword: ""
   adminProjectName: admin
   cloudAdminDomainName: Default
   cloudAdminProjectName: admin
-  cloudAdminProjectId: put-your-cloud-admin-project-id-here
+  cloudAdminProjectId: ""
 
   notifications:
     enabled: true
@@ -64,14 +64,11 @@ api:
   fernet:
     maxActiveKeys: 3
     secrets:
-    - c1dVSlFZVjRQRnBGR3pwSk1nMll6eEFwX2VDNURwRFVzLVd5aEVYaVI1dz0=
-    - M1V0dHp6bk5LYzVlQ1doMjdvUUctSGdmVFFEcWxIeDZXdHFDT25vT3RHUT0=
-    - WmlYLUZUZ1BNVnNPU2tib01YUkc0SkhZMGswLXFfeVF0eTdHbVBjSDZjND0=
+      0: <put-your-fernet-keys-here>
 
   credentials:
     secrets:
-    - RUdXZU5oVFR1TUU3TkFqazJrZWpqSE5vZ0lqeHFMTTljeUZxb2dZakNQZz0=
-    - OUhUQnBzTDBLTkFfTnhqZlFWX0dmc0tlc2FnUUZYTFBrN2hpWldpQmN6cz0=
+      0: <put-your-credential-keys-here>
 
   auth:
   # Allowed authentication methods. (list value)
@@ -113,27 +110,25 @@ api:
     imageTag: v0.8.1
     prefix: openstack
 
-    resources:
-      enabled: false
-      limits:
-        memory: 128Mi
-        cpu: 500m
-      requests:
-        memory: 128Mi
-        cpu: 500m
+#    resources:
+#      enabled: false
+#      requests:
+#        memory: 40Mi
+#        cpu: 100m
+#      limits:
+#        memory: 64Mi
+#        cpu: 500m
 
   terminationGracePeriodSeconds: 30
   minReadySeconds: 5
 
-  resources:
-    enabled: false
-
-    requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
-      memory: "1024Mi"
-      cpu: "2000m"
+#  resources:
+#    requests:
+#      memory: 1433Mi
+#      cpu: 1000m
+#    limits:
+#      memory: 2Gi
+#      cpu: 2000m
 
   replicas: 3
 
@@ -149,21 +144,19 @@ api:
 
 cron:
   image: "monsoon/loci-keystone"
-  imageTag: rocky-20181214101949
+  #imageTag: latest
 
   cronSchedule: "0 * * * *"
 
   replicas: 1
 
-  resources:
-    enabled: false
-
-    requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
-      memory: "1024Mi"
-      cpu: "2000m"
+#  resources:
+#    requests:
+#      memory: 1433Mi
+#      cpu: 400m
+#    limits:
+#      memory: 2Gi
+#      cpu: 2000m
 
   upgrades:
     revisionHistory: 3
@@ -176,10 +169,11 @@ cache:
   expiration_time: 600
 
 tempest:
+  enabled: false
   image: "monsoon/rally-openstack"
   imageTag: "ccloud-1.2.0"
-  adminPassword: DEFINE_IN_REGION_VALUES
-  userPassword: DEFINE_IN_REGION_VALUES
+  adminPassword: ""
+  userPassword: ""
 # tempest domain-id  -- do not set in production environments!
   domainId: not_set_this_in_production
 
@@ -214,7 +208,7 @@ services:
 
   admin:
     scheme: http
-    host: identity-admin-3
+    host: identity-3
     #tlsCertificate:
     #tlsKey:
 
@@ -223,18 +217,27 @@ rabbitmq:
   # host: rabbitmq
   users:
     default:
-      password: admin123
+      password: ""
     admin:
-      password: secret123
+      password: ""
+
+#  resources:
+#    requests:
+#      memory: 512Mi
+#      cpu: 500m
+#    limits:
+#      memory: 2Gi
+#      cpu: 1000m
 
   metrics:
     enabled: true
-    password: openstack
+    password: ""
+
 
 postgresql:
   postgresDatabase: keystone
   postgresUser: postgres
-  postgresPassword: secret
+  postgresPassword: ""
 
   dbInit: keystone-db-init
   dbMaintain: keystone-db-maintain
@@ -246,8 +249,21 @@ postgresql:
     enabled: false
     imageTag: v0.5.15
 
+#  resources:
+#    requests:
+#      memory: 256Mi
+#      cpu: 500m
+#    limits:
+#      memory: 512Mi
+#      cpu: 1000m
+
 pgmetrics:
   db_name: keystone
+
+#  resources:
+#    requests:
+#      memory: 25Mi
+#      cpu: 500m
 
   customMetrics:
     openstack_roles_total:
@@ -301,6 +317,15 @@ pgmetrics:
         - gauge:
             usage: "GAUGE"
             description: "Total keystone role-assignment count per role"
+
+#memcached:
+#  resources:
+#    requests:
+#      memory: 2252Mi
+#      cpu: 50m
+#    limits:
+#      memory: 2560Mi
+#      cpu: 100m
 
 rbac:
   enabled: false

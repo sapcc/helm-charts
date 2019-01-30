@@ -1,0 +1,61 @@
+{{ if .Values.tempest.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: neutron-tempest
+  annotations:
+    "helm.sh/hook": test-success
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+spec:
+  restartPolicy: Never
+  containers:
+    - name: neutron-tempest
+      image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/neutron-tempest-plugin:{{.Values.tempest.imageTag}}
+      command:
+        - /usr/local/bin/kubernetes-entrypoint
+      env:
+        - name: COMMAND
+          value: "/container.init/neutron-tempest-start.sh"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: neutron-server
+        - name: OS_REGION_NAME
+          value: {{ .Values.global.region }}
+        - name: OS_USER_DOMAIN_NAME
+          value: "tempest"
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: "tempest"
+        - name: OS_INTERFACE
+          value: "internal"
+        - name: OS_ENDPOINT_TYPE
+          value: "internalURL"
+        - name: OS_TENANT_NAME
+          value: "tempest2"
+        - name: OS_PROJECT_NAME
+          value: "tempest2"
+        - name: OS_USERNAME
+          value: "tempestuser2"
+        - name: OS_PASSWORD
+          value: {{ .Values.tempestAdminPassword | quote }}
+        - name: OS_IDENTITY_API_VERSION
+          value: "3"
+        - name: OS_AUTH_URL
+          value: "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3"
+      volumeMounts:
+        - mountPath: /neutron-etc-tempest
+          name: neutron-etc-tempest
+        - mountPath: /container.init
+          name: container-init
+  volumes:
+    - name: neutron-etc-tempest
+      configMap:
+        name: neutron-etc-tempest
+    - name: container-init
+      configMap:
+        name: neutron-bin-tempest
+        defaultMode: 0755
+{{ end }}

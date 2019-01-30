@@ -23,6 +23,10 @@ function start_application {
   curl -XDELETE 'http://elasticsearch:9200/.monitoring-data-2'
   curl -XDELETE 'http://elasticsearch:9200/.monitoring-es-2'
 
+  # setting all replicas to 0 as we aren't using clustering.
+  echo "INFO: resetting all indexes to no replicas, as we aren't using clustering."
+  curl -XPUT 'http://elasticsearch:9200/*/_settings' -d '{ "index" : {  "number_of_replicas":0 } }'
+
   # run the creation of the index patterns and the index retention cleanup deletion once on startup and put them into cron to run once per night afterwards
   echo "INFO: creating the audit indexes in kibana"
   . /wall-e-bin/create-kibana-indexes.sh

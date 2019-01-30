@@ -67,7 +67,7 @@ spec:
       initContainers:
       - name: kubernetes-entrypoint
         #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-        image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
+        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
         imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
         command:
           - /usr/local/bin/kubernetes-entrypoint
@@ -89,7 +89,7 @@ spec:
           value: "true"
       containers:
         - name: keystone-api
-          image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
           imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /scripts/keystone-api.sh
@@ -183,26 +183,22 @@ spec:
             - name: keystone-bin
               mountPath: /scripts
               readOnly: true
-          {{- if .Values.api.resources.enabled }}
+          {{- if .Values.api.resources }}
           resources:
-            limits:
-              cpu: {{ .Values.api.resources.limits.cpu | quote }}
-              memory: {{ .Values.api.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.api.resources.requests.cpu | quote }}
-              memory: {{ .Values.api.resources.requests.memory | quote }}
+{{ toYaml .Values.api.resources | indent 12 }}
           {{- end }}
+
         {{- if .Values.api.metrics.enabled }}
         - name: keystone-statsd
           image: "{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
           imagePullPolicy: {{ .Values.api.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /bin/statsd_exporter
-            - --statsd.mapping-config=/tmp/statsd_mapping.yml
+            - --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml
           volumeMounts:
             - name: keystone-etc
-              mountPath: /tmp/statsd_mapping.yml
-              subPath: statsd_exporter_mapping.yaml
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
               readOnly: true
           ports:
             - name: statsd
@@ -210,14 +206,9 @@ spec:
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.api.metrics.port }}
-          {{- if .Values.api.metrics.resources.enabled }}
+          {{- if .Values.api.metrics.resources }}
           resources:
-            limits:
-              cpu: {{ .Values.api.metrics.resources.limits.cpu | quote }}
-              memory: {{ .Values.api.metrics.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.api.metrics.resources.requests.cpu | quote }}
-              memory: {{ .Values.api.metrics.resources.requests.memory | quote }}
+{{ toYaml .Values.api.metrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
       volumes:

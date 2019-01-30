@@ -131,7 +131,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- define "swift_statsd_exporter_container" }}
 - name: statsd
   image: prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
-  args: [ -statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+  args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
   ports:
     - name: statsd
       containerPort: 9125

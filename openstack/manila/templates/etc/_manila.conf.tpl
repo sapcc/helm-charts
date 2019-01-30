@@ -85,6 +85,7 @@ lock_path = /var/lib/manila/tmp
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
+auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.manila_service_user | default "manila" | replace "$" "$$" }}
@@ -93,11 +94,16 @@ user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+{{- if .Values.memcached.enabled }}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+{{- end }}
 service_token_roles_required = True
 service_token_roles = service
 insecure = True
+token_cache_time = 600
+include_service_catalog = false
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
-
+{{- if .Values.memcached.enabled }}
 {{- include "ini_sections.cache" . }}
+{{- end }}

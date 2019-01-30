@@ -44,14 +44,14 @@ debug = True
 # seconds between attempts.
 #
 
-periodic_interval = 300
+periodic_interval = {{$context.Values.f5.periodic_interval | default 300}}
 
 #
 # How often should the agent throw away its service cache and
 # resync assigned services with the neutron LBaaS plugin.
 #
 
-service_resync_interval = 180
+service_resync_interval = {{$context.Values.f5.service_resync_interval | default 180}}
 
 # Objects created on the BIG-IP by this agent will have their names prefixed
 # by an environment string. This allows you set this string.  The default is
@@ -609,6 +609,18 @@ insecure = True
 f5_parent_ssl_profile = {{$loadbalancer.f5_parent_ssl_profile}}
 {{- else }}
 f5_parent_ssl_profile = clientssl
+{{- end}}
+
+#
+# Parent https monitor
+#
+# Set the pareent monitor tp a new ccloud value due to changes in tmos 13.1.1.2
+# where each https monitor should have an server_profile assigned
+# This assignment is done inside the cc_https monitor and individual monitors get it from there
+{{- if $loadbalancer.f5_parent_https_monitor}}
+f5_parent_https_monitor = {{$loadbalancer.f5_parent_https_monitor}}
+{{- else }}
+f5_parent_https_monitor = /Common/https
 {{- end}}
 
 #

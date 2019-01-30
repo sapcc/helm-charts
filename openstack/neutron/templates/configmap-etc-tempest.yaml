@@ -1,0 +1,21 @@
+{{- if .Values.tempest.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neutron-etc-tempest
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+data:
+  tempest_accounts.yaml: |
+{{ include (print .Template.BasePath "/etc/_tempest_accounts.yaml.tpl") . | indent 4 }}
+  tempest_deployment_config.json: |
+{{ include (print .Template.BasePath "/etc/_tempest_deployment_config.json.tpl") . | indent 4 }}
+  tempest_expected_failures.yaml: |
+{{- include (print .Template.BasePath "/etc/_tempest_expected_failures.yaml.tpl") . | indent 4 }}
+  tempest_skip_list.yaml: |
+{{- include (print .Template.BasePath "/etc/_tempest_skip_list.yaml.tpl") . | indent 4 }}
+  tempest_extra_options: |
+{{ include (print .Template.BasePath "/etc/_tempest_extra_options.tpl") . | indent 4 }}
+{{- end }}

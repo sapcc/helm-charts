@@ -1,12 +1,14 @@
-{{ if (.Values.zones) and (ne .Values.zones "DEFINED-IN-REGION-SECRETS") }}
-{{- range $zone, $ext_ip := .Values.zones }}
+{{- if .Values.enabled }}
+{{- range $i, $config := .Values.servers -}}
+{{ if ne $i 0 }}---{{ end }}
+
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: cloudprober-target-{{$zone}}
+  name: cloudprober-exporter-{{$config.name}}
   labels:
-    app: cloudprober-target
+    app: cloudprober-exporter
     release: "{{$.Release.Name}}"
 
 spec:
@@ -15,12 +17,34 @@ spec:
   template:
     metadata:
       labels:
-        name: cloudprober-target-{{$zone}}
-        app: cloudprober-target
+        name: cloudprober-exporter-{{$config.name}}
+        app: cloudprober-exporter
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
     spec:
       nodeSelector:
-        failure-domain.beta.kubernetes.io/zone: {{$zone}}
+        failure-domain.beta.kubernetes.io/zone: {{$config.name}}
+      volumes:
+        - name: cloudprober-config
+          configMap:
+            name: cloudprober-exporter
       containers:
+        - name: prober
+          image: cloudprober/cloudprober
+          imagePullPolicy: IfNotPresent
+          args: [
+            "--config_file","/cfg/cloudprober.cfg",
+            "--logtostderr"
+          ]
+          volumeMounts:
+          - name: cloudprober-config
+            mountPath: /cfg
+          ports:
+          - name: http
+            containerPort: 9313
+          env:
+          - name: CLOUDPROBER_PORT
+            value: "9313"
         - name: web-server
           image: busybox
           imagePullPolicy: IfNotPresent
@@ -70,5 +94,5 @@ spec:
             initialDelaySeconds: 15
 
 ---
-{{- end }}
-{{ end }}
+{{ end -}}
+{{ end -}}
