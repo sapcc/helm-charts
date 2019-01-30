@@ -2,28 +2,28 @@ groups:
 - name: cp-netbox.alerts
   rules:      
   - alert: CPNetboxSensorCritical
-    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt)", job="cp/netbox", provision_state=~"(Planned|Staged|Active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Planned|Staged|Active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id)
     for: 15m
     labels:
       severity: critical
-      tier: cp
-      service: netbox
-      context: "{{ $labels.instance }}"
-      meta: "cp node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / server_id: {{ $labels.server_id }}"
+      tier: k8s
+      service: controlplane
+      context: "{{ $labels.server_name }}"
+      meta: "control plane node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/cp
     annotations:
       description: "cp node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for instance: {{ $labels.instance }}"
 
   - alert: CPNetboxSensorWarning
-    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt)", job="cp/netbox", provision_state=~"(Staged)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot)", job="cp/netbox"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id)
+    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Staged)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot)", job="cp/netbox"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id)
     for: 15m
     labels:
       severity: warning
-      tier: cp
-      service: netbox
-      context: "{{ $labels.instance }}"
-      meta: "cp node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / server_id: {{ $labels.server_id }}"
+      tier: k8s
+      service: controlplane
+      context: "{{ $labels.server_name }}"
+      meta: "control plane node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/cp
     annotations:
       description: "cp node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Server ID: {{ $labels.server_id }}"
@@ -34,10 +34,10 @@ groups:
     for: 15m
     labels:
       severity: info
-      tier: cp
-      service: netbox
-      context: "{{ $labels.instance }}"
-      meta: "cp node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / server_id: {{ $labels.server_id }}"
+      tier: k8s
+      service: controlplane
+      context: "{{ $labels.server_name }}"
+      meta: "control plane node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/cp
     annotations:
       description: "cp node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Server ID: {{ $labels.server_id }}"
@@ -48,8 +48,8 @@ groups:
     for: 15m
     labels:
       severity: warning
-      tier: cp
-      service: netbox
+      tier: k8s
+      service: controlplane
       context: "{{ $labels.server_name }}"
       meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
       playbook: docs/devops/alert/cp
@@ -58,13 +58,13 @@ groups:
       summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
       
   - alert: CPNetboxSDDown
-    expr: absent(ipmi_sd_up) or ipmi_sd_up == 0
+    expr: absent(netbox_sd_up) or netbox_sd_up == 0
     for: 15m
     labels:
       severity: info
-      tier: cp
-      service: netbox
-      context: ipmi_sd
+      tier: k8s
+      service: controlplane
+      context: netbox_sd
       meta: "ipmi service discovery failure"
       playbook: docs/devops/alert/cp
     annotations:
