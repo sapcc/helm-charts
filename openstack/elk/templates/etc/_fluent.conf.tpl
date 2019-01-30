@@ -389,6 +389,10 @@
   @type null
 </match>
 
+<match kubernetes.var.log.containers.fluent**>
+  @type null
+</match>
+
 <match **>
    @type elasticsearch
    host {{.Values.elk_elasticsearch_endpoint_host_internal}}
