@@ -1,6 +1,6 @@
 {
     "admin_required": "role:admin",
-    "cloud_admin": "role:admin and ((is_admin_project:True or domain_id:default) or domain_id:{{.Values.tempest.domainId}})",
+    "cloud_admin": "role:admin and ((is_admin_project:True or domain_id:default){{- if .Values.tempest.enabled }} or domain_id:{{.Values.tempest.domainId}}{{- end}})",
     "service_role": "role:service",
     "service_or_admin": "rule:admin_required or rule:service_role",
     "cloud_viewer": "role:cloud_identity_viewer or rule:service_role or rule:cloud_admin",
