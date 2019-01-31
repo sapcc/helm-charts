@@ -35,7 +35,7 @@ rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | defa
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
-delete_share_server_with_last_share = { .Values.delete_share_server_with_last_share | default false }}
+delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_share | default false }}
 
 # Float representation of the over subscription ratio when thin
 # provisioning is involved. Default ratio is 20.0, meaning provisioned
