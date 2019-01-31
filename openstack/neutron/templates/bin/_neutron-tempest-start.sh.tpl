@@ -81,9 +81,9 @@ function cleanup_tempest_leftovers() {
   for network in $(openstack network list | grep -E "tempest" | awk '{ print $2 }'); do openstack network delete ${network}; done 
 
   # upload report to swift
-  openstack object delete reports/neutron $OS_REGION_NAME)-latest.html
-  openstack object create reports/neutron /tmp/report.html --name $OS_REGION_NAME)-$(date -u +%Y%m%d%H%M%S).html
-  openstack object create reports/neutron /tmp/report.html --name $OS_REGION_NAME)-latest.html
+  openstack object delete reports/neutron $(echo $OS_REGION_NAME)-latest.html
+  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-$(date -u +%Y%m%d%H%M%S).html
+  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
 }
 
 main() {
