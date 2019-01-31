@@ -54,5 +54,26 @@ spec:
           ports:
             - name: metrics
               containerPort: 8080
+          {{- if $.Values.limes.resources.enabled }}
+          resources:
+            # observed usage for non-CCloud clusters: CPU <= 10m, RAM <= 50 MiB
+            # observed usage for CCloud clusters: CPU = 50m-500m, RAM = 100-150 MiB
+            limits:
+              {{- if eq $cluster_id "ccloud" }}
+                cpu: '1000m'
+                memory: '250MiB'
+              {{- else }}
+                cpu: '20m'
+                memory: '50MiB'
+              {{- end }}
+            requests:
+              {{- if eq $cluster_id "ccloud" }}
+                cpu: '250m'
+                memory: '250MiB'
+              {{- else }}
+                cpu: '10m'
+                memory: '50MiB'
+              {{- end }}
+          {{- end }}
 ---
 {{end}}
