@@ -2,11 +2,25 @@ input {
   udp {
     port  => {{.Values.elk_logstash_input_netflow_port}}
     codec => netflow
-    tags netflow
-  },
+    tags => ["netflow"]
+  }
   udp {
     port  => {{.Values.elk_logstash_input_syslog_port}}
-    tags syslog
+    type => syslog
+  }
+  tcp {
+    port  => {{.Values.elk_logstash_input_syslog_port}}
+    type => syslog
+  }
+}
+
+filter {
+  if [type] == "syslog" {
+    grok{
+      match => [
+        "message", "%{SYSLOG5424PRI}%{NUMBER:log_sequence}: %{GREEDYDATA:syslog_host}: %{CISCOTIMESTAMP:log_date}: %%{CISCO_REASON:facility}-%{INT:severity_level}-%{CISCO_REASON:facility_mnemonic}: %{GREEDYDATA:message}"
+      ]
+    }
   }
 }
 
@@ -23,7 +37,7 @@ if "netflow" in [tags] {
     flush_size => 500
   }
 }
-else {
+elseif [type] == "syslog" {
   elasticsearch {
     index => "syslog-%{+YYYY.MM.dd}"
     template => "/elk-etc/syslog.json"

@@ -32,7 +32,7 @@ spec:
 {{ tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: manila-api
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-api:{{.Values.imageVersionManilaApi}}
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-api:{{required ".Values.global.imageVersionManilaApi is missing" .Values.imageVersionManilaApi}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -98,14 +98,20 @@ spec:
               readOnly: true
             {{- end }}
         - name: statsd
-          image: prom/statsd-exporter:v0.6.0
+          image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.global.metrics_port }}
+          volumeMounts:
+            - name: manila-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
       volumes:
         - name: etcmanila
           emptyDir: {}

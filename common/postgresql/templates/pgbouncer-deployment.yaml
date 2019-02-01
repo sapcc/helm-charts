@@ -61,6 +61,26 @@ spec:
             - name: LOGLEVEL
               value: {{ .Values.global.pgbouncer.logLevel | default "INFO" }}
 {{- if not $opts.debug }}
+  {{- if semverCompare ">=20190123.2" (default .Values.pgbouncer.image_version .Values.global.pgbouncer.imageTag | default .Values.global.pgbouncer.imageTag | default .Values.global.pgbouncer.image_version ) }}
+          livenessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+              - "[ -f /tmp/pgbouncer-alive ] && [ $(($(date +%s) - $(date -r /tmp/pgbouncer-alive +%s))) -lt 5 ]"
+            initialDelaySeconds: 3
+            periodSeconds: 1
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+              - "[ -f /tmp/pgbouncer-ready ] && [ $(($(date +%s) - $(date -r /tmp/pgbouncer-ready +%s))) -lt 5 ]"
+            initialDelaySeconds: 3
+            periodSeconds: 1
+            failureThreshold: 5
+  {{- else }}
           livenessProbe:
             exec:
               command:
@@ -75,6 +95,7 @@ spec:
             initialDelaySeconds: 3
             periodSeconds: 1
             failureThreshold: 5
+  {{- end }}
 {{- end }}
           ports:
             - name: pgbouncer

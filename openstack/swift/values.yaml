@@ -21,7 +21,7 @@ image_version_nginx: '1.14.0-alpine'
 # image versions of auxiliary images from other sources
 image_version_auxiliary_memcached: '1.5.10-alpine'
 image_version_auxiliary_memcached_exporter: 'v0.5.0'
-image_version_auxiliary_statsd_exporter: 'v0.5.0'
+image_version_auxiliary_statsd_exporter: 'v0.8.1'
 
 # shared secrets and credentials
 hash_path_prefix: DEFINED_IN_REGION_CHART
@@ -57,6 +57,11 @@ fallocate_reserve: 1%                  # Availably since Rocky for all servers
 # Allows to avoid 408 client timeout occurred by VMware snapshot creation process
 client_timeout: 420 # 7 minutes, default is 60 seconds
 
+# Add additional memcached deployments here
+memcached_servers:
+  - memcached
+#  - memcached-tokens
+
 # If the swift cluster is shared across multiple openstack clusters, one can
 # start multiple proxy deployments connecting to the different keystone backends
 clusters:
@@ -76,8 +81,9 @@ clusters:
     sentry_dsn: DEFINED_IN_REGION_CHART
     replicas: 2
 
-    # Use the swift cache for token caching, default is the seperate token memcached
-    # swift_token_cache: true
+    # The default is using the cache.swift for token caching
+    # Specifing a memcached server name here will overrule that, see .Values.memcached_servers
+    # token_memcached: memcached-tokens
     # token_cache_time: 600
 
     # If there is a need to rate limit the nginx per cluster, that can be reached here

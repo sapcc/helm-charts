@@ -59,7 +59,6 @@
   </parse>
 </filter>
 
-
 <filter kubernetes.var.log.containers.neutron-server**>
   @type grep
   <exclude>
@@ -67,17 +66,6 @@
     pattern \"password\"\:
   </exclude>
 </filter>
-
-<filter kubernetes.var.log.containers.unbound**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern \[%{DATA:timestamp}\] %{NOTSPACE:process} %{WORD:loglevel}
-  </parse>
-</filter>
-
 
 <filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.nginx** kubernetes.var.log.containers.horizon**>
   @type parser
@@ -311,13 +299,6 @@
   </record>
 </filter>
 
-<filter kubernetes.var.log.containers.unbound1**>
-  @type record_transformer
-  <record>
-    process "unbound1"
-  </record>
-</filter>
-
 <filter kubernetes.var.log.containers.arc-postgresql**>
   @type record_transformer
   <record>
@@ -395,50 +376,22 @@
   </record>
 </filter>
 
-#<filter kubernetes.var.log.containers.postgres**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
-
-#<filter kubernetes.var.log.containers.arc**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
-
-#<filter kubernetes.var.log.containers.prometheus-frontend**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
-
-#<filter kubernetes.var.log.containers.blackbox**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
-
-#<filter kubernetes.var.log.containers.elk-fluent**>
-#  @type record_transformer
-#  enable_ruby
-#  <record>
-#    loglevel ${record["message".upcase]}
-#  </record>
-#</filter>
-
 <filter kubernetes.**>
   @type record_modifier
     remove_keys message,stream
 </filter>
+
+<match kubernetes.var.log.containers.unbound**>
+  @type null
+</match>
+
+<match kubernetes.var.log.containers.cfm**>
+  @type null
+</match>
+
+<match kubernetes.var.log.containers.fluent**>
+  @type null
+</match>
 
 <match **>
    @type elasticsearch

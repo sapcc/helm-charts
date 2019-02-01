@@ -108,10 +108,10 @@ insecure = {{$cluster.keystone_insecure | default false}}
 {{- if $cluster.endpoint_override }}
 endpoint_override = {{$cluster.endpoint_override}}
 {{- end }}
-{{- if $cluster.swift_token_cache }}
-cache = swift.cache
+{{- if $cluster.token_memcached }}
+memcached_servers = {{ $cluster.token_memcached }}.{{ $helm_release.Namespace }}.svc:11211
 {{- else }}
-memcached_servers = memcached-tokens.{{$helm_release.Namespace}}.svc:11211
+cache = swift.cache
 {{- end }}
 token_cache_time = {{$cluster.token_cache_time | default 600}}
 region_name = {{$context.global.region}}

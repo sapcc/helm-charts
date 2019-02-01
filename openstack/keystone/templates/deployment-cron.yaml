@@ -36,7 +36,7 @@ spec:
       initContainers:
       - name: kubernetes-entrypoint
         #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-        image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
+        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
         imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
         command:
           - /usr/local/bin/kubernetes-entrypoint
@@ -58,7 +58,7 @@ spec:
           value: "true"
       containers:
         - name: keystone-cron
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ .Values.cron.imageTag }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
           imagePullPolicy: {{ .Values.cron.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - bash
@@ -90,14 +90,9 @@ spec:
             - name: credential-keys
               mountPath: /credential-keys
               readOnly: true
-          {{- if .Values.cron.resources.enabled }}
+          {{- if .Values.cron.resources }}
           resources:
-            limits:
-              cpu: {{ .Values.cron.resources.limits.cpu | quote }}
-              memory: {{ .Values.cron.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.cron.resources.requests.cpu | quote }}
-              memory: {{ .Values.cron.resources.requests.memory | quote }}
+{{ toYaml .Values.cron.resources | indent 12 }}
           {{- end }}
       volumes:
         - name: keystone-etc

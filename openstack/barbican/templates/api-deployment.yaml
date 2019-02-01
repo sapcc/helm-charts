@@ -100,12 +100,19 @@ spec:
         - name: statsd
           image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.statsd.port }}
+          volumeMounts:
+            - name: barbican-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+
       volumes:
         - name: barbican-etc
           configMap:
