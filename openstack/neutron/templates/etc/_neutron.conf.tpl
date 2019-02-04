@@ -35,7 +35,9 @@ dhcp_lease_duration = {{ .Values.dhcp_lease_duration | default 86400 }}
 
 # Designate configuration
 dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
+{{- if .Values.dns_external_driver }}
 external_dns_driver = {{required "A valid .Values.dns_external_driver required!" .Values.dns_external_driver}}
+{{- end }}
 
 global_physnet_mtu = {{.Values.global.default_mtu | default 9000}}
 advertise_mtu = True
