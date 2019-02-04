@@ -31,11 +31,13 @@ function start_tempest_tests {
 
 function cleanup_tempest_leftovers() {
 
-  # upload report to swift container of neutron-tempestadmin1
+  # upload report and logfile to swift container of neutron-tempestadmin1
   export OS_USERNAME='neutron-tempestadmin1'
   export OS_TENANT_NAME='neutron-tempest-admin1'
   export OS_PROJECT_NAME='neutron-tempest-admin1'
-  openstack object delete reports/neutron $(echo $OS_REGION_NAME)-latest.html
+  cd /home/rally/.rally/verification/verifier*/for-deployment* && tar cfvz /tmp/tempest-log.tar.gz ./tempest.log && cd /home/rally/source/
+  openstack object create reports/neutron /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(date -u +%Y%m%d%H%M%S)-log.tar.gz
+  openstack object create reports/neutron /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-log.tar.gz
   openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-$(date -u +%Y%m%d%H%M%S).html
   openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
 
