@@ -12,29 +12,30 @@ allow_pagination = true
 allow_sorting = true
 pagination_max_limit = 500
 
+# DEPRECATED
+max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 50}}
+# is often used together with multiple fixed IPs per port, keep the values similar
+max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
+
 interface_driver = neutron.agent.linux.interface.OVSInterfaceDriver
 
 allow_overlapping_ips = true
 core_plugin = ml2
 
-service_plugins={{.Values.service_plugins}}
+service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}}
 
-default_router_type = {{.Values.default_router_type}}
-router_scheduler_driver = {{.Values.router_scheduler_driver}}
+default_router_type = {{required "A valid .Values.default_router_type required!" .Values.default_router_type}}
+router_scheduler_driver = {{required "A valid .Values.router_scheduler_driver required!" .Values.router_scheduler_driver}}
+router_auto_schedule = {{ .Values.router_auto_schedule | default "false" }}
+allow_automatic_l3agent_failover = {{ .Values.allow_automatic_l3agent_failover | default "false" }}
 
-max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 50}}
-# is often used together with multiple fixed IPs per port, keep the values similar
-max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
-
-dhcp_agent_notification = true
-network_auto_schedule = True
-allow_automatic_dhcp_failover = True
-dhcp_agents_per_network=2
-dhcp_lease_duration = {{.Values.dhcp_lease_duration}}
+allow_automatic_dhcp_failover = {{ .Values.allow_automatic_dhcp_failover | default "false" }}
+dhcp_agents_per_network = 2
+dhcp_lease_duration = {{ .Values.dhcp_lease_duration | default 86400 }}
 
 # Designate configuration
-dns_domain =  {{.Values.dns_local_domain}}
-external_dns_driver = {{.Values.dns_external_driver}}
+dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
+external_dns_driver = {{required "A valid .Values.dns_external_driver required!" .Values.dns_external_driver}}
 
 global_physnet_mtu = {{.Values.global.default_mtu | default 9000}}
 advertise_mtu = True
@@ -46,12 +47,15 @@ rpc_state_report_workers = {{ .Values.rpc_state_workers | default .Values.global
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
 api_workers = {{ .Values.api_workers | default .Values.global.api_workers | default 8 }}
+periodic_fuzzy_delay = 10
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
 
 [nova]
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
+# DEPRECATED: auth_plugin
 auth_plugin = v3password
+auth_type = v3password
 region_name = {{.Values.global.region}}
 username = {{ .Values.global.nova_service_user | default "nova" | replace "$" "$$" }}
 password = {{ .Values.global.nova_service_password | default "" | replace "$" "$$"}}
@@ -89,8 +93,7 @@ root_helper = neutron-rootwrap /etc/neutron/rootwrap.conf
 {{ end }}
 
 [database]
-
-connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@{{include "neutron_db_host" .}}:{{.Values.global.postgres_port_public | default 5432}}/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
+connection = postgresql+psycopg2://{{ default .Release.Name .Values.global.dbUser }}:{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}@{{include "neutron_db_host" .}}:{{.Values.global.postgres_port_public | default 5432}}/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 5 }}
 {{- if or .Values.postgresql.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default -1 }}
