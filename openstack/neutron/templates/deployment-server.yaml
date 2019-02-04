@@ -55,11 +55,11 @@ spec:
             - name: COMMAND
               value: "/container.init/neutron-server-start"
             - name: DEBUG_CONTAINER
-            {{ if .Values.pod.debug.server }}
+            {{- if .Values.pod.debug.server }}
               value: "true"
-            {{else}}
+            {{- else}}
               value: "false"
-            {{ end }}
+            {{- end }}
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
@@ -82,7 +82,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
           ports:
-            - name: neutron-api{{- tuple .Values.api.override | include "utils.snippets.debug.debuggable_port" }}
+            - name: neutron-api
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}
           volumeMounts:
             - mountPath: /development
@@ -110,7 +110,6 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
-{{- tuple . .Values.api.override "neutron-api" | include "utils.snippets.debug.debug_port_container" | indent 8 }}
       volumes:
         - name: neutron-etc
           configMap:
@@ -128,4 +127,3 @@ spec:
           configMap:
             name: neutron-bin
             defaultMode: 0755
-{{- default 9696 .Values.global.neutron_api_port_internal | tuple . .Values.api.override "neutron-api" | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}
