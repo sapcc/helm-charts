@@ -21,4 +21,12 @@ readinessProbe:
       - /var/lib/neutron/{{ $containerName }}-ready
   initialDelaySeconds: 5
   timeoutSeconds: 10
+{{- if hasSuffix "agent" $containerName }}
+livenessProbe:
+  exec:
+    command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--binary", "{{ $containerName }}"]
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 10
+{{- end }}
 {{- end -}}
