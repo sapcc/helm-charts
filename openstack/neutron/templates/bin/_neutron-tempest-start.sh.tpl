@@ -35,10 +35,11 @@ function cleanup_tempest_leftovers() {
   export OS_USERNAME='neutron-tempestadmin1'
   export OS_TENANT_NAME='neutron-tempest-admin1'
   export OS_PROJECT_NAME='neutron-tempest-admin1'
+  export MYTIMESTAMP=$(date -u +%Y%m%d%H%M%S)
   cd /home/rally/.rally/verification/verifier*/for-deployment* && tar cfvz /tmp/tempest-log.tar.gz ./tempest.log && cd /home/rally/source/
-  openstack object create reports/neutron /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(date -u +%Y%m%d%H%M%S)-log.tar.gz
+  openstack object create reports/neutron /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP)-log.tar.gz
   openstack object create reports/neutron /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-log.tar.gz
-  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-$(date -u +%Y%m%d%H%M%S).html
+  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).html
   openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
 
   # Subnet CIDR pattern from tempest.conf: https://docs.openstack.org/tempest/latest/sampleconf.html
