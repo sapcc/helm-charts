@@ -1,0 +1,45 @@
+{{- if and (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (contains ",nsxv3" .Values.ml2_mechanismdrivers ) }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'neutron-ml2-nsxv3-configmap'
+  scope: 'cluster'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  {% if nsx_t_enabled is defined and nsx_t_enabled -%}
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: neutron-ml2-nsxv3-{= name =}
+    labels:
+      system: openstack
+      type: configuration
+      component: neutron
+  data:
+    ml2-nsxv3.ini: |
+      [DEFAULT]
+      # The agent binds only port with the same host
+      host = nova-compute-{= name =}
+      backdoor_socket = /var/lib/neutron/eventlet_backdoor.socket
+
+      [securitygroup]
+      firewall_driver = networking_nsxv3.plugins.ml2.drivers.nsxv3.agent.extensions.firewall.NsxV3SecurityGroupsDriver
+
+      [AGENT]
+      {{- range $k, $v := .Values.drivers.nsxv3.defaults.AGENT }}
+      {{ $k }} = {{ $v }}
+      {{- end }}
+
+      [NSXV3]
+      nsxv3_login_user = {= username | quote =}
+      {%- set hostname = "nsx-ctl-" + name + "." + domain %}
+      nsxv3_login_hostname = {= hostname =}
+      nsxv3_login_password = {= username | derive_password(hostname) | quote =}
+
+      {{- range $k, $v := .Values.drivers.nsxv3.defaults.NSXV3 }}
+      {{ $k }} = {{ $v }}
+      {{- end }}
+  {% endif %}
+{{ end }}
