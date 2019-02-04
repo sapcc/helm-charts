@@ -31,6 +31,14 @@ function start_tempest_tests {
 
 function cleanup_tempest_leftovers() {
 
+  # upload report to swift container of neutron-tempestadmin1
+  export OS_USERNAME='neutron-tempestadmin1'
+  export OS_TENANT_NAME='neutron-tempest-admin1'
+  export OS_PROJECT_NAME='neutron-tempest-admin1'
+  openstack object delete reports/neutron $(echo $OS_REGION_NAME)-latest.html
+  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-$(date -u +%Y%m%d%H%M%S).html
+  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
+
   # Subnet CIDR pattern from tempest.conf: https://docs.openstack.org/tempest/latest/sampleconf.html
 
   # Due to a clean up bug we need to clean up ourself the ports, networks and routers: https://bugs.launchpad.net/neutron/+bug/1759321
@@ -79,11 +87,6 @@ function cleanup_tempest_leftovers() {
   export OS_TENANT_NAME='neutron-tempest-admin1'
   export OS_PROJECT_NAME='neutron-tempest-admin1'
   for network in $(openstack network list | grep -E "tempest" | awk '{ print $2 }'); do openstack network delete ${network}; done 
-
-  # upload report to swift
-  openstack object delete reports/neutron $(echo $OS_REGION_NAME)-latest.html
-  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-$(date -u +%Y%m%d%H%M%S).html
-  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
 }
 
 main() {
