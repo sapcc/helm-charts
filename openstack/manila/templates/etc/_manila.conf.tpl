@@ -71,6 +71,7 @@ user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+endpoint_type = internalURL
 insecure = True
 
 [oslo_messaging_rabbit]
