@@ -1,0 +1,41 @@
+{{ if .Values.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ironic_exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ironic_exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: ironic_exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.port_number }}"
+    spec:
+      containers:
+      - name: ironic_exporter
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        env:
+        - name: LOGLEVEL
+          value: "{{ .Values.log_level }}"
+        - name: PORT_NUMBER
+          value: "{{ .Values.port_number }}"
+        - name: OS_VERSION
+          value: "{{ .Values.tag }}"
+        - name: OS_IRONIC_USERNAME
+          value: "{{ .Values.global.ipmi_exporter_user }}"
+        - name: OS_IRONIC_PASSWORD
+          value: "{{ .Values.global.ipmi_exporter_user_passwd }}"
+        - name: OS_USER_DOMAIN_NAME
+          value: "{{ .Values.os_user_domain_name }}"
+        - name: OS_PROJECT_NAME
+          value: "{{ .Values.os_project_name }}"
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: "{{ .Values.os_project_domain_name }}"
+{{ end }}
