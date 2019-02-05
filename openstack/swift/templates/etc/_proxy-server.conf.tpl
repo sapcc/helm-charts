@@ -23,6 +23,9 @@ log_level = DEBUG
 {{- else -}}
 log_level = INFO
 {{- end }}
+{{- if .Values.sentry.enabled }}
+log_custom_handlers = swift_sentry.sentry_logger
+{{- end }}
 
 [pipeline:main]
 {{- if le $swift_release "queens" }}
@@ -32,7 +35,6 @@ pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_forma
 # Rocky or higher pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
-# TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
 [app:proxy-server]
 use = egg:swift#proxy
@@ -216,9 +218,4 @@ cadf_service_name = service/storage/object
 target_project_id_from_path = {{$context.watcher_project_id_from_path | default true}}
 config_file = /swift-etc/watcher.yaml
 {{- end }}
-
-# [filter:sentry]
-# use = egg:raven#raven
-# dsn = {{$cluster.sentry_dsn}}
-# level = ERROR
 {{end}}
