@@ -23,7 +23,7 @@ log_level = DEBUG
 {{- else -}}
 log_level = INFO
 {{- end }}
-{{- if .Values.sentry.enabled }}
+{{- if $context.sentry.enabled }}
 log_custom_handlers = swift_sentry.sentry_logger
 {{- end }}
 
