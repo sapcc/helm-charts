@@ -113,6 +113,8 @@ allow_redelegation = true
 [resource]
 admin_project_domain_name = {{ default "Default" .Values.api.cloudAdminDomainName }}
 admin_project_name = {{ default "admin" .Values.api.cloudAdminProjectName }}
+bootstrap_project_domain_name = Default
+bootstrap_project_name = admin
 project_name_url_safe = new
 domain_name_url_safe = new
 
