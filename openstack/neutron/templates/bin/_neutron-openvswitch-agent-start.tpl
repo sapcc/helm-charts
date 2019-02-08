@@ -50,6 +50,10 @@ function configure_bridge {
 
         ovs-vsctl br-exists br-${interface}; rc=$?
 
+	# Make sure the MTU is correct
+
+	ovs-vsctl set int br-int mtu_request=9000
+
         if [[ $rc != 0 ]]; then
             echo "Failed to create bridge configuration"
             exit 1
