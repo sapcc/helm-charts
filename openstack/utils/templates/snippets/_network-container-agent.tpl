@@ -16,10 +16,13 @@ env:
     value: "false"
 readinessProbe:
   exec:
-    command:
-      - cat
-      - /var/lib/neutron/{{ $containerName }}-ready
-  initialDelaySeconds: 5
+{{- if eq "neutron-dhcp-agent" $containerName }}
+    command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--dhcp_ready"]
+{{- else }}
+    command: ["cat", "/var/lib/neutron/{{ $containerName }}-ready"]
+{{- end }}
+  initialDelaySeconds: 30
+  periodSeconds: 60
   timeoutSeconds: 10
 {{- if hasSuffix "agent" $containerName }}
 livenessProbe:
