@@ -53,11 +53,12 @@ The `cluster` label is an optional label used to differentiate multiple clusters
 
 `tier` groups the alerts coarsly. We use:
 
-   * `metal` (baremetal)
-   * `k8s`   (kubernetes)
-   * `kks`   (kubernikus)
-   * `os`    (openstack)
-   * `net`   (network)
+   * `metal`  (baremetal)
+   * `k8s`    (kubernetes)
+   * `kks`    (kubernikus)
+   * `os`     (openstack)
+   * `net`    (network)
+   * `vmware` (vmware)
 
 ### Service
 
