@@ -1,4 +1,3 @@
-{{- if .Values.region_check.enabled }}
 {{- if .Release.IsUpgrade }}
 apiVersion: batch/v1
 kind: Job
@@ -23,10 +22,10 @@ spec:
       restartPolicy: Never
       containers:
         - name: check
-          image: hub.global.cloud.sap/monsoon/pipeline-kolla:2.2.2
+          image: hub.global.cloud.sap/monsoon/kube-python:1.0.0
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c"]
-          args: ["/container.init/run-region-check --namespace {{ .Release.Namespace }} --region {{ .Values.global.region }} --suffix {{ .Values.global.tld }}"]
+          args: ["/container.init/region-check.py --namespace {{ .Release.Namespace }} --region {{ .Values.global.region }} --suffix {{ .Values.global.tld }}"]
           volumeMounts:
             - mountPath: /container.init
               name: container-init
@@ -35,5 +34,4 @@ spec:
           configMap:
             name: manila-bin
             defaultMode: 0755
-{{- end }}
 {{- end }}

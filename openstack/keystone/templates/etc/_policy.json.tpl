@@ -1,6 +1,6 @@
 {
     "admin_required": "role:admin",
-    "cloud_admin": "role:admin and ((is_admin_project:True or domain_id:default) or domain_id:{{.Values.tempest.domainId}})",
+    "cloud_admin": "role:admin and ((is_admin_project:True or domain_id:default){{- if .Values.tempest.enabled }} or domain_id:{{.Values.tempest.domainId}}{{- end}})",
     "service_role": "role:service",
     "service_or_admin": "rule:admin_required or rule:service_role",
     "cloud_viewer": "role:cloud_identity_viewer or rule:service_role or rule:cloud_admin",
@@ -136,7 +136,7 @@
     "identity:revoke_system_grant_for_group": "rule:admin_required",
 
     "blacklist_roles": "'resource_service':%(target.role.name)s or 'cloud_registry_admin':%(target.role.name)s or 'cloud_registry_viewer':%(target.role.name)s or 'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s or 'cloud_identity_viewer':%(target.role.name)s or 'cloud_support_tools_viewer':%(target.role.name)s",
-    "blacklist_projects": "'{{.Values.api.cloudAdminProjectId}}':%(target.project.id)s",
+    "blacklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s",
     "identity:check_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants",
     "identity:list_grants": "rule:cloud_admin or rule:domain_admin_for_list_grants or rule:project_admin_for_list_grants",
     "identity:create_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants",

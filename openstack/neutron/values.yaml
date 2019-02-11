@@ -7,7 +7,7 @@ osprofiler: {}
 
 global:
   dbUser: neutron
-  dbPassword: DEFINED-IN-REGION-CHART
+  # dbPassword:
   imageRegistry:
   fernetRouter:
     image: "monsoon/fernet-router:latest"
@@ -39,10 +39,6 @@ agent:
   image_tag: mitaka
   image_name: neutron
 
-
-api:
-  override: {}
-
 debug: "True"
 
 port_metrics: '9102'
@@ -56,54 +52,65 @@ service_plugins: neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2
 default_router_type: ASR1k_router
 router_scheduler_driver: neutron.scheduler.l3_agent_scheduler.LeastRoutersScheduler
 
-
 aci:
-  apic_hosts: DEFINED-IN-REGION-CHART
-  apic_user: DEFINED-IN-REGION-CHART
-  apic_password: DEFINED-IN-REGION-CHART
-  apic_tenant_name: DEFINED-IN-REGION-CHART
   apic_application_profile: converged_cloud_openstack
   support_remote_mac_clear: 'True'
-  
+  # apic_hosts: null
+  # apic_user: null
+  # apic_password: null
+  # apic_tenant_name: null
+
 arista:
   api_type: nocvx
   sync_interval: 60
   conn_timeout: 30
   lossy_consolidation_limit: 50
-  eapi_host: DEFINED-IN-REGION-CHART
-  eapi_username: DEFINED-IN-REGION-CHART
-  eapi_password: DEFINED-IN-REGION-CHART
-  switches:
-    - host: DEFINED-IN-REGION-CHART
-      user: DEFINED-IN-REGION-CHART
-      password: DEFINED-IN-REGION-CHART
+  # eapi_host:
+  # eapi_username:
+  # eapi_password:
+  # switches:
+  #  - host:
+  #    user:
+  #    password:
 
 asr:
   config_agents: []
 
 f5:
   snat_per_subnet: 1
-  loadbalancers:
-    - name: DEFINED-IN-REGION-CHART
-      username: DEFINED-IN-REGION-CHART
-      password: DEFINED-IN-REGION-CHART
-      guest_host: DEFINED-IN-REGION-CHART
-      vcmp_host: DEFINED-IN-REGION-CHART
-      external_physical_mappings: DEFINED-IN-REGION-CHART
-      physical_network: DEFINED-IN-REGION-CHART
+  # loadbalancers:
+  #  - name: null
+  #    username:
+  #    password:
+  #    guest_host:
+  #    vcmp_host:
+  #    external_physical_mappings:
+  #    physical_network:
 
 hypervisors_vmware: []
 
-manila:
-  physnet: ab123
+# manila:
+#   physnet:
 
-cisco_ucsm_bm:
-  example.com:
-    user: DEFINED-IN-REGION-CHART
-    password: DEFINED-IN-REGION-CHART
-    physical_network: DEFINED-IN-REGION-CHART
-    vnic_paths: DEFINED-IN-REGION-CHART
-
+drivers:
+  nsxv3:
+    defaults:
+      AGENT:
+        sync_pool_size: 10
+        db_max_records_per_query: 2000
+      NSXV3:
+        nsxv3_connection_retry_count: 10
+        nsxv3_connection_retry_sleep: 5
+        nsxv3_login_port: 443
+        nsxv3_transport_zone_name: openstack-tz
+        nsxv3_suppress_ssl_wornings: True
+        nsxv3_max_records_per_query: 2000
+# cisco_ucsm_bm:
+#  example.com:
+#    user:
+#    password:
+#    physical_network:
+#    vnic_paths:
 
 logging:
     formatters:
@@ -253,19 +260,20 @@ pgmetrics:
 
 postgresql:
   postgresDatabase: neutron
-  postgresUser: postgres
-  postgresPassword: DEFINED-IN-REGION-CHART
-
+  # postgresPassword:
   dbInit: neutron-db-init
   dbMaintain: neutron-db-maintain
-
   persistence:
     enabled: false
-
   backup:
     enabled: false
     image_version: v0.5.15
-    
+
+  resources:
+    requests:
+      cpu: "3000m" # 3 cpu
+      memory: "2Gi" # 1.5Gi high recorded
+
   max_connections: 500
   shared_buffers: '4GB'
   temp_buffers: '32MB'
@@ -297,29 +305,31 @@ audit:
   mem_queue_size: 1000
 
 rabbitmq:
-  users:
-    default:
-      password: null
-    admin:
-      password: null
   persistence:
     enabled: false
-  metrics:
-    password: null
+
+  resources:
+    enabled: true
+
+    requests:
+      memory: 2Gi
+      cpu: 1000m
+    limits:
+      cpu: 2000m
 
 rabbitmq_notifications:
   name: neutron
 
-secgroup_entanglement_exporter:
-  image_tag: DEFINED_IN_VALUES_FILE
-  release:   DEFINED_IN_VALUES_FILE # Neutron release in lower case, e.g. "queens"
+# secgroup_entanglement_exporter:
+#  image_tag: null
+#  release: null # Neutron release in lower case, e.g. "queens"
 
 # openstack-watcher-middleware
 watcher:
   enabled: true
 
 # neutron nanny
-imageVersion_neutron_nanny: DEFINED-IN-REGION-CHART
+# imageVersion_neutron_nanny:
 nanny:
   enabled: False
   # run the pod with an infinite sleep loop for debugging

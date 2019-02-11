@@ -90,7 +90,7 @@ cache_on_issue = true
 cache_time = {{ .Values.api.token.cache_time | default 1800 }}
 
 [revoke]
-expiration_buffer = 0
+expiration_buffer = 3600
 
 [fernet_tokens]
 key_repository = /fernet-keys
@@ -113,6 +113,8 @@ allow_redelegation = true
 [resource]
 admin_project_domain_name = {{ default "Default" .Values.api.cloudAdminDomainName }}
 admin_project_name = {{ default "admin" .Values.api.cloudAdminProjectName }}
+bootstrap_project_domain_name = Default
+bootstrap_project_name = admin
 project_name_url_safe = new
 domain_name_url_safe = new
 

@@ -10,7 +10,7 @@ groups:
       severity: ignore_info
       tier: os
     annotations:
-      description: The {{ $labels.kubernetes_name }} discovered a ghost volume. a good opportunity to search for the underlying bug now ...
+      description: "The {{ $labels.kubernetes_name }} discovered a ghost volume. a good opportunity to search for the underlying bug now ..."
       summary: Vcenter nanny detected a ghost volume
   - alert: OpenstackNovaNannyServerWithoutValidProject
     expr: sum(nova_nanny_delete_server{kind="plan"}) > 0
@@ -57,3 +57,51 @@ groups:
     annotations:
       description: This is just a maia test debugging alert ... please ignore for now
       summary: This is just a maia test debugging alert ... please ignore for now
+  - alert: OpenstackVcenterNannyConsistencyVolumeAttachingForTooLong
+    expr: vcenter_nanny_consistency_cinder_volume_attaching_for_too_long{region=~"ap-jp-2|eu-de-1|eu-de-2|eu-nl-1|na-us-1"} > 0
+    for: 15m
+    labels:
+      context: nanny
+      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
+      service: maia
+      severity: info
+      tier: os
+    annotations:
+      description: "This is just a test debugging alert ... please ignore for now - volume_uuid: {{ $labels.volume_uuid }} - project_id: {{ $labels.project_id }} - nanny: {{ $labels.kubernetes_name }}"
+      summary: This is just a test debugging alert ... please ignore for now
+  - alert: OpenstackVcenterNannyConsistencyVolumeDetachingForTooLong
+    expr: vcenter_nanny_consistency_cinder_volume_detaching_for_too_long{region=~"ap-jp-2|eu-de-1|eu-de-2|eu-nl-1|na-us-1"} > 0
+    for: 15m
+    labels:
+      context: nanny
+      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
+      service: maia
+      severity: info
+      tier: os
+    annotations:
+      description: "This is just a test debugging alert ... please ignore for now - volume_uuid: {{ $labels.volume_uuid }} - project_id: {{ $labels.project_id }} - nanny: {{ $labels.kubernetes_name }}"
+      summary: This is just a test debugging alert ... please ignore for now
+  - alert: OpenstackVcenterNannyConsistencyVolumeIsInStateReserved
+    expr: vcenter_nanny_consistency_cinder_volume_is_in_state_reserved{region=~"ap-jp-2|eu-de-1|eu-de-2|eu-nl-1|na-us-1"} > 0
+    for: 15m
+    labels:
+      context: nanny
+      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
+      service: maia
+      severity: info
+      tier: os
+    annotations:
+      description: "This is just a test debugging alert ... please ignore for now - volume_uuid: {{ $labels.volume_uuid }} - project_id: {{ $labels.project_id }} - nanny: {{ $labels.kubernetes_name }}"
+      summary: This is just a test debugging alert ... please ignore for now
+  - alert: OpenstackVcenterNannyConsistencyVolumeAvailableWithAttachments
+    expr: vcenter_nanny_consistency_cinder_volume_available_with_attachments{region=~"ap-jp-2|eu-de-1|eu-de-2|eu-nl-1|na-us-1"} > 0
+    for: 15m
+    labels:
+      context: nanny
+      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
+      service: maia
+      severity: info
+      tier: os
+    annotations:
+      description: "This is just a test debugging alert ... please ignore for now - volume_uuid: {{ $labels.volume_uuid }} - project_id: {{ $labels.project_id }} - nanny: {{ $labels.kubernetes_name }}"
+      summary: This is just a test debugging alert ... please ignore for now

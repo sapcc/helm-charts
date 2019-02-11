@@ -195,13 +195,13 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: nova-container-init
-        - name: neutron-ovs-agent
+        - name: neutron-openvswitch-agent
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
           command:
-            - /container.init/neutron-ovs-agent-start
+            - /container.init/neutron-openvswitch-agent-start
           volumeMounts:
             - mountPath: /var/run/
               name: run

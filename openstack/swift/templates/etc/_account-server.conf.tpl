@@ -20,6 +20,9 @@ log_level = DEBUG
 {{- else -}}
 log_level = INFO
 {{- end }}
+{{- if .Values.sentry.enabled }}
+log_custom_handlers = swift_sentry.sentry_logger
+{{- end }}
 
 fallocate_reserve = {{ .Values.fallocate_reserve }}
 

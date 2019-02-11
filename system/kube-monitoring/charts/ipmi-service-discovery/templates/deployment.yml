@@ -46,4 +46,12 @@ spec:
           value: "{{ .Values.os_project_domain_name }}"
         - name: OS_PROM_CONFIGMAP_NAME
           value: "{{ .Values.global.ipmi_service_discovery.configmap_name }}"
+        {{- if .Values.global.ipmi_service_discovery.netbox.enabled }}
+        - name: NETBOX
+          value: "true"
+        - name: NETBOX_API_TOKEN
+          value: {{ required "ipmi_service_discovery.netbox.api_token needs to be defined in global values" .Values.global.ipmi_service_discovery.netbox.api_token }}
+        - name: OS_REGION
+          value: {{ .Values.global.region }}
+        {{- end }}
 {{- end }}

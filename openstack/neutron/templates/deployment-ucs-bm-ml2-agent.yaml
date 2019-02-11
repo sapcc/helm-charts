@@ -1,4 +1,4 @@
-{{- if or (ne (len (keys .Values.cisco_ucsm_bm)) 1) (ne (index (keys .Values.cisco_ucsm_bm) 0) "example.com") -}}
+{{- if .Values.cisco_ucsm_bm -}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -38,6 +38,12 @@ spec:
             - dumb-init
           args:
             - kubernetes-entrypoint
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
           env:
             - name: COMMAND
 {{- if not .Values.pod.debug.cisco_ml2_ucsm_bm }}
