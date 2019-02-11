@@ -1,7 +1,7 @@
 groups:
-- name: cp-netbox.alerts
+- name: controlplane.alerts
   rules:      
-  - alert: CPNetboxSensorCritical
+  - alert: KubernetesCPSensorCritical
     expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Planned|Staged|Active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id)
     for: 15m
     labels:
@@ -15,7 +15,7 @@ groups:
       description: "cp node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for instance: {{ $labels.instance }}"
 
-  - alert: CPNetboxSensorWarning
+  - alert: KubernetesCPSensorWarning
     expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Staged)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot)", job="cp/netbox"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id)
     for: 15m
     labels:
@@ -29,7 +29,7 @@ groups:
       description: "cp node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for instance: {{ $labels.instance }}"
 
-  - alert: CPNetboxSensorInfo
+  - alert: KubernetesCPSensorInfo
     expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply|Critical Interrupt)", job="cp/netbox"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id)
     for: 15m
     labels:
@@ -43,7 +43,7 @@ groups:
       description: "cp node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for instance: {{ $labels.instance }}"
 
-  - alert: CPNetboxMetricsDown
+  - alert: KubernetesCPMetricsDown
     expr: count(ipmi_up{job="cp/netbox"} == 0) by (server_name) or count(up{job="cp/netbox"} == 0) by (server_name)
     for: 15m
     labels:
@@ -57,7 +57,7 @@ groups:
       description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
       summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
       
-  - alert: CPNetboxSDDown
+  - alert: KubernetesCPSDDown
     expr: absent(ipmi_netbox_sd_up) or ipmi_netbox_sd_up == 0
     for: 15m
     labels:
