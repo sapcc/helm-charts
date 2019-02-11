@@ -33,11 +33,11 @@
 ################################################################
 
 ## GC configuration
--XX:+UseConcMarkSweepGC
--XX:CMSInitiatingOccupancyFraction=75
--XX:+UseCMSInitiatingOccupancyOnly
+#-XX:+UseConcMarkSweepGC
+#-XX:CMSInitiatingOccupancyFraction=75
+#-XX:+UseCMSInitiatingOccupancyOnly
 #-XX:+UseG1GC
--XX:MaxGCPauseMillis=5000
+#-XX:MaxGCPauseMillis=5000
 
 ## optimizations
 
