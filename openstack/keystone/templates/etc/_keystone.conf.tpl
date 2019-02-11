@@ -90,7 +90,7 @@ cache_on_issue = true
 cache_time = {{ .Values.api.token.cache_time | default 1800 }}
 
 [revoke]
-expiration_buffer = 0
+expiration_buffer = 3600
 
 [fernet_tokens]
 key_repository = /fernet-keys
