@@ -155,7 +155,17 @@ data:
       - receiver: slack_by_tier_and_severity
         continue: true
         match_re:
-          tier: os|k8s|kks|metal|net
+          tier: os|kks|metal|net
+          severity: info|warning
+          region: admin|qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # limit tier k8s to controlplane for now
+      # should be merged with the above block as soon as we sorted out kube-monitoring
+      - receiver: slack_by_tier_and_severity
+        continue: true
+        match_re:
+          tier: k8s
+          cluster_type: controlplane
           severity: info|warning
           region: admin|qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
 
@@ -176,7 +186,7 @@ data:
       - receiver: dev-null
         continue: false
         match_re:
-          cluster_type: kubernikus-controlplane
+          cluster_type: kubernikus-controlplane|kubernikus-scaleout
 
     receivers:
     - name: dev-null
