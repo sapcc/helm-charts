@@ -12,18 +12,17 @@ data:
       - ./*.tmpl
 
     inhibit_rules:
-    # Mute warnings for which also a critical alert exists.
-    # Per context and region.
+    # More severe alerts mute less urgent ones.
     - source_match:
         severity: 'critical'
       target_match:
         severity: 'warning'
-      equal: ['context']
+      equal: ['region', 'alertname']
     - source_match:
         severity: 'critical|warning'
       target_match:
         severity: 'info'
-      equal: ['context']
+      equal: ['region', 'alertname']
 
     route:
       group_by: ['region', 'alertname']
