@@ -102,7 +102,7 @@ url = http://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.globa
 metadata_proxy_shared_secret = {{ .Values.global.nova_metadata_secret }}
 service_metadata_proxy = true
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
-auth_plugin = v3password
+auth_type = v3password
 username = {{ .Values.global.neutron_service_user | default "neutron" }}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.neutron_service_password | default (tuple . .Values.global.neutron_service_user | include "identity.password_for_user") | replace "$" "$$" }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
@@ -111,7 +111,7 @@ project_name = {{.Values.global.keystone_service_project | default "service" }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
 
 [keystone_authtoken]
-auth_plugin = v3password
+auth_type = v3password
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
