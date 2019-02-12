@@ -154,3 +154,7 @@ region_name = {{.Values.global.region}}
 [barbican]
 backend = barbican
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+
+[service_user]
+send_service_user_token = true
+auth_section = keystone_authtoken
