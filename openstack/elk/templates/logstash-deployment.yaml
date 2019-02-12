@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: logstash-netflow
+  name: logstash-external
   namespace: elk
   labels:
     system: openstack
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        component: logstash-netflow
+        component: logstash-external
       annotations:
         checksum/logstash-etc-configmap.yaml: {{ include "elk/templates/logstash-etc-configmap.yaml" . | sha256sum }}
     spec:
@@ -29,13 +29,19 @@ spec:
           configMap:
             name: logstash-etc
       containers:
-        - name: logstash-netflow
+        - name: logstash-external
           image: {{.Values.docker_repo}}/elk-logstash:{{.Values.elk_image_version_logstash}}
           imagePullPolicy: IfNotPresent
           ports:
             - name: netflow
               containerPort: {{.Values.elk_logstash_input_netflow_port}}
               protocol: UDP
+            - name: syslogudp
+              containerPort: {{.Values.elk_logstash_input_syslog_port}}
+              protocol: UDP
+            - name: syslogtcp
+              containerPort: {{.Values.elk_logstash_input_syslog_port}}
+              protocol: TCP
           command:
             - logstash
           args:

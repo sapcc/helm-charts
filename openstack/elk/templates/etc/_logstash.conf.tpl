@@ -1,11 +1,20 @@
 input {
   udp {
-    port  => {{.Values.elk_logstash_input_udp_port}}
-    codec => netflow
+    port  => {{.Values.elk_logstash_input_netflow_port}}
+    type => netflow
   }
+  udp {
+    port  => {{.Values.elk_logstash_input_syslog_port}}
+    type => syslog
+  }
+  tcp {
+    port  => {{.Values.elk_logstash_input_syslog_port}}
+    type => syslog
+}
 }
 
 output {
+if  [type] == "netflow" {
   elasticsearch {
     index => "netflow-%{+YYYY.MM.dd}"
     template => "/elk-etc/netflow.json"
