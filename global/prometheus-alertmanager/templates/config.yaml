@@ -17,12 +17,26 @@ data:
         severity: 'critical'
       target_match:
         severity: 'warning'
-      equal: ['region', 'alertname', 'context']
-    - source_match:
+      equal: ['region', 'alertname']
+    - source_match_re:
         severity: 'critical|warning'
       target_match:
         severity: 'info'
-      equal: ['region', 'alertname', 'context']
+      equal: ['region', 'alertname']
+    - source_match_re:
+        severity: 'critical'
+        context: '.+'
+      target_match_re:
+        severity: 'warning'
+        context: '.+'
+      equal: ['region', 'context']
+    - source_match_re:
+        severity: 'critical|warning'
+        context: '.+'
+      target_match_re:
+        severity: 'info'
+        context: '.+'
+      equal: ['region', 'context']
 
     route:
       group_by: ['region', 'alertname']
