@@ -46,6 +46,15 @@ scrape_configs:
   - action: labelmap
     replacement: __param_$1
     regex: __meta_kubernetes_service_annotation_prometheus_io_scrape_param_(.+)
+  metric_relabel_configs:
+  - source_labels: [component]
+    regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
+    replacement: '$1'
+    target_label: availability_zone
+  - source_labels: [component]
+    regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
+    replacement: '$2'
+    target_label: device
 
 # Scrape config for endpoints with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
