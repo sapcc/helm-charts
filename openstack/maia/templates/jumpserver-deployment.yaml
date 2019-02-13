@@ -4,7 +4,6 @@ metadata:
   name: jumpserver-exporter 
   namespace: maia 
 spec:
-  #replicas: 1
   selector:
     matchLabels:
       app: jumpserver-exporter 
@@ -21,13 +20,6 @@ spec:
       containers:
          - name: jumpserver-exporter
            image: "{{ .Values.global.imageRegistry }}/{{ .Values.jumpserver.image.namespace }}/{{ .Values.jumpserver.image.name }}:{{ .Values.jumpserver.image.tag }}"
-           command:
-              - /usr/bin/python3
-           args:
-              - /jumpserver-health/export.py
-              - -r "{{ .Values.global.region }}"
-              - -p "{{ .Values.jumpserver.radius_secret }}"
-              - -o {{ .Values.jumpserver.port_number }}
            ports:
              - name: metrics
                containerPort: {{ .Values.jumpserver.port_number }}
@@ -36,3 +28,5 @@ spec:
              value: "{{ .Values.global.region }}"
            - name: RADIUS_SECRET
              value: "{{ .Values.jumpserver.radius_secret }}"
+           - name: EXPORT_PORT
+             value: "{{ .Values.jumpserver.port_number }}"
