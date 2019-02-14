@@ -81,6 +81,7 @@ function cleanup_tempest_leftovers() {
     TEMPESTPROJECT=neutron-tempest$COUNTER
     export OS_TENANT_NAME=$TEMPESTPROJECT
     export OS_PROJECT_NAME=$TEMPESTPROJECT
+    for ip in $(openstack floating ip list | grep 10. | awk '{ print $2 }'); do openstack floating ip delete ${ip}; done
     for network in $(openstack network list | grep -E "tempest|test|newnet|smoke-network" | awk '{ print $2 }'); do openstack network delete ${network}; done 
     for router in $(openstack router list | grep -E "tempest|test|abc" | awk '{ print $2 }'); do openstack router delete ${router}; done
   done
@@ -90,6 +91,7 @@ function cleanup_tempest_leftovers() {
   export OS_TENANT_NAME='neutron-tempest-admin1'
   export OS_PROJECT_NAME='neutron-tempest-admin1'
   for network in $(openstack network list | grep -E "tempest" | awk '{ print $2 }'); do openstack network delete ${network}; done 
+  for pool in $(openstack subnet pool list | grep -E "tempest" | awk '{ print $2 }'); do openstack subnet pool delete ${pool}; done 
 }
 
 main() {
