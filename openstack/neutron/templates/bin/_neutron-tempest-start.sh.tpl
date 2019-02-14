@@ -23,7 +23,7 @@ function start_tempest_tests {
 
   # run the actual tempest tests for neutron
   echo -e "\n === STARTING TEMPEST TESTS FOR neutron === \n"
-  rally --debug verify start --concurrency 4 --detailed --pattern neutron_tempest_plugin.api --skip-list /neutron-etc-tempest/tempest_skip_list.yaml
+  rally --debug verify start --concurrency 4 --detailed --pattern neutron_tempest_plugin.api --skip-list /neutron-etc-tempest/tempest_skip_list.yaml --xfail-list /neutron-etc-tempest/tempest_expected_failures_list.yaml
 
   # generate html report
   rally verify report --type html --to /tmp/report.html
