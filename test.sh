@@ -1,0 +1,1 @@
+kubectl get kluster  -o json | jq -c '.items[] | {pool: .spec.nodePools[].name, cluster: .metadata.name}' | ruby -rjson -e 'ARGF.each_line {|line| p = JSON::parse(line); puts p unless p["pool"] =~ /^[a-z0-9]([-\.a-z0-9]*)?$/}'
