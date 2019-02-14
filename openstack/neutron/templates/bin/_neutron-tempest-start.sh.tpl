@@ -96,7 +96,7 @@ function cleanup_tempest_leftovers() {
 
 main() {
   start_tempest_tests
-  TEMPEST_EXIT_CODE=$?
+  TEMPEST_EXIT_CODE=$(rally verify show --uuid $(rally verify list | grep "tempest" | awk '{ print $2 }') --detailed | grep -E "Failures" | awk '{ print $4 }')
   cleanup_tempest_leftovers
   CLEANUP_EXIT_CODE=$?
   exit $(($TEMPEST_EXIT_CODE + $CLEANUP_EXIT_CODE))
