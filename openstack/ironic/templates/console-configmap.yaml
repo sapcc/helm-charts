@@ -19,7 +19,7 @@ data:
 
         location ~* "/[^/]*/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([0-9]*)/([^/]*)/?(.*)$" {
             secure_link $3,$2;
-            secure_link_md5 "$secure_link_expires$1 {{.Values.console.secret}}";
+            secure_link_md5 "$secure_link_expires$1 {{required "A valid .Values.console.secret required!" .Values.console.secret}}";
 
             if ($secure_link = "") {
                 return 403;
