@@ -63,9 +63,9 @@ data:
       # The labels to add to any time series or alerts when communicating with
       # external systems (federation, remote storage, Alertmanager).
       external_labels:
-        region: {{ if .Values.regionPrefix }}{{ .Values.regionPrefix }}{{- end -}}{{ .Values.global.region }}
+        region: {{ .Values.global.region }}
         cluster_type: {{ .Values.global.clusterType }}
-        cluster: {{ .Values.global.cluster }}
+        cluster: {{if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
 
     rule_files:
       - ./*.rules
@@ -187,11 +187,6 @@ data:
           - '{__name__=~"^success"}'
           - '{__name__=~"^latency"}'
           - '{job="dns-sd"}'
-
-      relabel_configs:
-        - action: replace
-          target_label: region
-          replacement: {{ if .Values.regionPrefix }}{{ .Values.regionPrefix }}{{- end -}}{{ .Values.global.region }}
 
       metric_relabel_configs:
         - action: replace
