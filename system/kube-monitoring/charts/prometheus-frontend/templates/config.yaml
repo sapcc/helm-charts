@@ -188,6 +188,12 @@ data:
           - '{__name__=~"^latency"}'
           - '{job="dns-sd"}'
 
+      #add region label to all metrics, don't delete this without knowing what you are doing...
+      relabel_configs:
+         - action: replace
+           target_label: region
+           replacement: {{ required ".Values.global.region undefined" .Values.global.region }}
+
       metric_relabel_configs:
         - action: replace
           source_labels: [__name__]

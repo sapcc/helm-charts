@@ -3,12 +3,6 @@ rule_files:
 
 global:
   scrape_timeout: 55s
-  # The labels to add to any time series or alerts when communicating with
-  # external systems (federation, remote storage, Alertmanager).
-  external_labels:
-    region: {{ required ".Values.global.region undefined" .Values.global.region }}
-    cluster_type: {{ .Values.global.clusterType }}
-    cluster: {{if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
 
 scrape_configs:
 # Scrape config for service endpoints.
