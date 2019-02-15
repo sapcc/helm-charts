@@ -129,6 +129,7 @@ scrape_configs:
 {{- end }}
 {{- end }}
 
+{{- if .Values.alerting.enabled }}
 alerting:
   alertmanagers:
   - scheme: https
@@ -136,3 +137,4 @@ alerting:
     - targets:
       - "alertmanager.eu-de-1.cloud.sap"
       - "alertmanager.eu-nl-1.cloud.sap"
+{{- end }}
