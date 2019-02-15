@@ -47,3 +47,15 @@ groups:
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: JumpserverRSAForwardingDown
+    expr: jump_rsa_forwarding_up == 1 or absent(jump_rsa_forwarding_up)
+    for: 15m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: info
+      tier: os
+    annotations:
+      description: 'RSA authentication on port {{ $labels.port }}/{{ $labels.protocol }} is not working anymore.'
+      summary: {{ $labels.server }} RSA forwarding to RADIUS server down since 15m.
