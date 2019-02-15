@@ -4,8 +4,8 @@ pybasedir = /ironic/ironic
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
-{{- if .Values.notification.enabled }}
-notification_level = {{ .Values.notification.level }}
+{{- if .Values.notification_level }}
+notification_level = {{ .Values.notification_level }}
 {{- end }}
 
 {{- include "ini_sections.default_transport_url" . }}
