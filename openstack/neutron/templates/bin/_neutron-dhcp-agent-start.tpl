@@ -41,11 +41,6 @@ function _start_application {
     done
 
 
-    # Make sure the MTU is correct
-
-    ovs-vsctl set int br-int mtu_request=9000
-
-
     # br-int interface isn't there, lets crash and try again - we have situation where this intermittently can happen
     # We can't start DHCP without it otherwise we lose teh DHCP ports. Kill all the ovs processes on the host to get a full
     # OVS restart which should make things better....
