@@ -12,6 +12,11 @@ notification_level = {{ .Values.notification_level }}
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
+{{- if .Values.notification_level }}
+[oslo_messaging_notifications]
+driver = messagingv2
+{{- end }}
+
 [agent]
 deploy_logs_collect = {{ .Values.agent.deploy_logs.collect }}
 deploy_logs_storage_backend = {{ .Values.agent.deploy_logs.storage_backend }}
