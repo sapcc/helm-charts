@@ -469,7 +469,8 @@ scrape_configs:
 {{- end }}
 {{- end }}
 
-{{- if and .Values.global.ipmi_exporter.enabled .Values.global.ipmi_exporter.ironic.enabled }}
+{{- if .Values.global.ipmi_exporter.enabled }}
+{{- if .Values.global.ipmi_exporter.ironic.enabled }}
 - job_name: 'baremetal/ironic'
   params:
     job: [baremetal/ironic]
@@ -487,7 +488,7 @@ scrape_configs:
     - target_label: __address__
       replacement: ipmi-exporter:9290
 {{- end }}
-{{- if and .Values.global.ipmi_exporter.enabled .Values.global.ipmi_exporter.netbox.enabled }}
+{{- if .Values.global.ipmi_exporter.netbox.enabled }}
 - job_name: 'cp/netbox'
   params:
     job: [cp/netbox]
@@ -504,6 +505,7 @@ scrape_configs:
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:9290
+{{- end }}
 {{- end }}
 
 {{- if .Values.global.arista_exporter.enabled }}
