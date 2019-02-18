@@ -21,10 +21,12 @@ spec:
         env:
         - name: APP_ENV
           value: "{{ .Values.app_env }}"
+        {{- if .Values.global.ipmi_exporter.ironic.enabled }}
         - name: IPMI_USER
           value: "{{ .Values.global.ipmi_username | default .Values.ipmi_username }}"
         - name: IPMI_PASSWORD
           value: "{{ .Values.global.ipmi_password | default .Values.ipmi_password }}"
+        {{- end }}
         {{- if .Values.global.ipmi_exporter.netbox.enabled }}
         - name: NETBOX_CP_USER
           value: {{ required "ipmi_username_cp needs to be defined in global values" .Values.global.ipmi_username_cp }}

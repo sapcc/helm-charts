@@ -30,6 +30,9 @@ spec:
         env:
         - name: APP_ENV
           value: "{{ .Values.app_env }}"
+        {{- if .Values.global.ipmi_service_discovery.ironic.enabled }}
+        - name: IRONIC
+          value: "true"
         - name: OS_VERSION
           value: "{{ .Values.tag }}"
         - name: OS_AUTH_URL
@@ -44,6 +47,7 @@ spec:
           value: "{{ .Values.os_project_name }}"
         - name: OS_PROJECT_DOMAIN_NAME
           value: "{{ .Values.os_project_domain_name }}"
+        {{- end }}
         - name: OS_PROM_CONFIGMAP_NAME
           value: "{{ .Values.global.ipmi_service_discovery.configmap_name }}"
         {{- if .Values.global.ipmi_service_discovery.netbox.enabled }}
