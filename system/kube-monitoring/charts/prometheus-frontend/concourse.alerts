@@ -1,0 +1,29 @@
+groups:
+- name: ci.alerts
+  rules:
+
+  - alert: ConcoursePostgresDatabaseSize
+    expr: pg_database_size_bytes{datname="concourse"} >= 40 * 1024^3
+    for: 5m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      meta: "Database {{ $labels.datname }} to large"
+    annotations:
+      description: "The concourse database size is greater than 40GB and will exceed the PV limits eventually"
+      summary: Concourse database is too large
+
+  - alert: ConcourseWorkerStalled
+    expr: changes(concourse_workers_containers{platform="linux", worker=~"mo-.*"}[5m])==0
+    for: 30m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      meta: "Worker {{ $labels.name }} has a stale container metric."
+    annotations:
+      description: "The workers container count seems to be stuck indicating that the worker might by stalled."
+      summary: Worker has stale container count

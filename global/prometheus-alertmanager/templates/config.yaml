@@ -8,22 +8,35 @@ data:
     global:
       resolve_timeout: 16m
 
-    templates: 
+    templates:
       - ./*.tmpl
 
     inhibit_rules:
-    # Mute warnings for which also a critical alert exists.
-    # Per context and region.
+    # More severe alerts mute less urgent ones.
     - source_match:
         severity: 'critical'
       target_match:
         severity: 'warning'
-      equal: ['context']
-    - source_match:
+      equal: ['region', 'alertname']
+    - source_match_re:
         severity: 'critical|warning'
       target_match:
         severity: 'info'
-      equal: ['context']
+      equal: ['region', 'alertname']
+    - source_match_re:
+        severity: 'critical'
+        context: '.+'
+      target_match_re:
+        severity: 'warning'
+        context: '.+'
+      equal: ['region', 'context']
+    - source_match_re:
+        severity: 'critical|warning'
+        context: '.+'
+      target_match_re:
+        severity: 'info'
+        context: '.+'
+      equal: ['region', 'context']
 
     route:
       group_by: ['region', 'alertname']
@@ -36,123 +49,592 @@ data:
       - receiver: dev-null
         continue: false
         match_re:
-          region: staging|k-staging|lab
-      # routing per tier to <tier>-{info, warning, critical}
-      {{- range $tier := .Values.tiers }}
-      - receiver: {{ $tier }}-info
+          region: .*staging|lab
+
+      # ---- DUTY API ----
+      - receiver: pagerduty_api
         continue: true
         match_re:
-          tier: {{ $tier }}
-        routes:
-        - receiver: '{{ $tier }}-warning'
-          continue: true
-          match:
-            severity: warning
-        - receiver: '{{ $tier }}-critical'
-          continue: true
-          match:
-            severity: critical
-      {{- end }}
-      # routing per service to openstack-<service>
-      {{- range $service := .Values.openstack_services }}
-      - receiver: openstack-{{ $service }}
-        continue: true
-        match_re:
-          service: {{ $service }}
-          tier: openstack
-      {{- end }}
-      # Don’t page for qa-de-1
-      - receiver: dev-null
-        continue: false
-        match_re:
-          region: qa-de-1|k-qa-de-1|lab
-
-      # block kubernikus and interconnect alerts away from pagerduty
-      - receiver: dev-null
-        continue: false
-        match:
-          tier: kubernikus
-      - receiver: dev-null
-        continue: false
-        match:
-          service: interconnect
-
-      {{- range $pd := .Values.pagerduty_services }}
-      - receiver: pagerduty-{{ $pd.name }}
-        continue: false
-        match:
+          tier: os|k8s
           severity: critical
-          {{- if $pd.match }}
-          {{- range $key, $value := $pd.match }}
-          {{ $key }}: {{ $value }}
-          {{- end }}
-          {{- end }}
-      {{- end }}
+          cluster_type: controlplane
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_api_warning
+        continue: true
+        match_re:
+          tier: os|k8s
+          severity: warning
+          cluster_type: controlplane
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_api_critical
+        continue: true
+        match_re:
+          tier: os|k8s
+          severity: critical
+          cluster_type: controlplane
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # ---- DUTY Metal ----
+      - receiver: pagerduty_metal
+        continue: true
+        match_re:
+          tier: metal
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_metal_warning
+        continue: true
+        match_re:
+          tier: metal
+          severity: warning
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_metal_critical
+        continue: true
+        match_re:
+          tier: metal
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # ---- DUTY VMware ----
+      - receiver: pagerduty_vmware
+        continue: true
+        match_re:
+          tier: vmware
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_vmware_warning
+        continue: true
+        match_re:
+          tier: vmware
+          severity: warning
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_vmware_critical
+        continue: true
+        match_re:
+          tier: vmware
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # ---- DUTY network ----
+      - receiver: pagerduty_network
+        continue: true
+        match_re:
+          tier: net
+          severity: critical
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_net_warning
+        continue: true
+        match_re:
+          tier: net
+          severity: warning
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_net_critical
+        continue: true
+        match_re:
+          tier: net
+          severity: critical
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # ----  Just Notification Slack Channels ----
+      - receiver: slack_os_critical
+        continue: true
+        match_re:
+          tier: os
+          severity: critical
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_k8s_critical
+        continue: true
+        match_re:
+          tier: k8s
+          severity: critical
+          cluster_type: controlplane
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_kks_critical
+        continue: true
+        match_re:
+          tier: kks
+          severity: critical
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_by_tier_and_severity
+        continue: true
+        match_re:
+          tier: os|kks|metal|net
+          severity: info|warning
+          region: admin|qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # limit tier k8s to controlplane for now
+      # should be merged with the above block as soon as we sorted out kube-monitoring
+      - receiver: slack_by_tier_and_severity
+        continue: true
+        match_re:
+          tier: k8s
+          cluster_type: controlplane
+          severity: info|warning
+          region: admin|qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_by_tier_and_service
+        continue: true
+        match_re:
+          tier: os
+          severity: info|warning|critical
+          service: arc|backup|barbican|cinder|cfm|designate|elektra|elk|hermes|ironic|keystone|limes|lyra|maia|manila|neutron|nova|sentry|swift
+
+      - receiver: slack_by_tier
+        continue: true
+        match_re:
+          severity: info|warning|critical
+          service: concourse
+
+      # do not page for kubernikus controlplane
+      - receiver: dev-null
+        continue: false
+        match_re:
+          cluster_type: kubernikus-controlplane|kubernikus-scaleout
 
     receivers:
     - name: dev-null
       slack_configs:
-      - api_url: {{ default "MISSING" $.Values.slack.webhook_url | quote }}
-        username: "Kubernetes Control Plane"
-        channel: "#dev-null"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true
+        - api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          channel: "#dev-null"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
 
-    # <tier>-{info, warning, critical} receiver
-    {{- range $tier := .Values.tiers }}
-    {{- range $severtity := tuple "info" "warning" "critical" }}
-    - name: {{ $tier }}-{{ $severtity }}
+    - name: slack_metal_warning
       slack_configs:
-      - api_url: {{ default "MISSING" $.Values.slack.webhook_url | quote }}
-        username: "{{ $tier | title }} Control Plane"
-        channel: "#{{ $tier }}-{{ $severtity }}"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true
-    {{- end }}
-    {{- end }}
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.metal_warning_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
 
-    # openstack-<service> receivers
-    {{- range .Values.openstack_services }}
-    - name: openstack-{{ . }}
+    - name: slack_metal_critical
       slack_configs:
-      - api_url: {{ default "MISSING" $.Values.slack.webhook_url | quote }}
-        username: "OpenStack Control Plane"
-        channel: "#openstack-{{ . }}"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        send_resolved: true
-    {{- end }}
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.metal_critical_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
 
-    {{- range $pd := .Values.pagerduty_services }}
-    - name: pagerduty-{{ $pd.name }}
+
+    - name: slack_os_critical
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          send_resolved: true
+
+    - name: slack_k8s_critical
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          send_resolved: true
+
+    - name: slack_kks_critical
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.kubernikus_critical_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
+
+    - name: slack_net_warning
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.network_warning_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
+
+    - name: slack_net_critical
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.network_critical_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
+
+    - name: slack_vmware_warning
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.vmware_warning_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
+
+    - name: slack_vmware_critical
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.vmware_critical_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
+
+
+    - name: slack_by_tier_and_severity
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          send_resolved: true
+
+    - name: slack_by_tier
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          send_resolved: true
+
+    - name: slack_by_tier_and_service
+      slack_configs:
+        - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.service }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          send_resolved: true
+
+    - name: slack_api_warning
+      slack_configs:
+        - channel: '#alert-api-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.api_warning_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
+
+    - name: slack_api_critical
+      slack_configs:
+        - channel: '#alert-api-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ default "MISSING" .Values.slack.api_critical_webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          callback_id: "alertmanager"
+          send_resolved: true
+          actions:
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Day.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Day.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silenceUntilMonday.actionValue\" . }}'"}}
+            - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+              type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+              text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
+              value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
+
+    - name: pagerduty_api
       pagerduty_configs:
-      - service_key: {{ default "" $pd.service_key }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-    {{- end }}
+        - service_key: {{ default "MISSING" .Values.pagerduty.api.service_key | quote }}
+          description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+          component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          details:
+            Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+            Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+            Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+            Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+            Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+            Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+            Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+            Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+            Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+            firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+
+    - name: pagerduty_metal
+      pagerduty_configs:
+        - service_key: {{ default "MISSING" .Values.pagerduty.metal.service_key | quote }}
+          description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+          component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          details:
+            Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+            Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+            Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+            Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+            Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+            Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+            Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+            Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+            Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+            firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+
+    - name: pagerduty_network
+      pagerduty_configs:
+        - service_key: {{ default "MISSING" .Values.pagerduty.network.service_key | quote }}
+          description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+          component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          details:
+            Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+            Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+            Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+            Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+            Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+            Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+            Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+            Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+            Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+            firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+
+    - name: pagerduty_vmware
+      pagerduty_configs:
+        - service_key: {{ default "MISSING" .Values.pagerduty.vmware.service_key | quote }}
+          description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+          component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          details:
+            Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+            Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+            Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+            Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+            Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+            Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+            Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+            Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+            Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+            firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   {{- $files := .Files }}
   {{ range tuple "slack.tmpl" "pagerduty.tmpl" }}

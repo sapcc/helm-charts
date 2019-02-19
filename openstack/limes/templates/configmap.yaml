@@ -16,10 +16,18 @@ data:
       policy: /etc/limes/policy.json
       request_log:
         except_status_codes: [300]
+      cors:
+        allowed_origins:
+          {{- if .Values.limes.relaxed_cors }}
+          - "*"
+          {{- else }}
+          - "https://dashboard.{{.Values.global.region}}.{{.Values.global.tld}}"
+          {{- end }}
 
     collector:
       metrics: :8080
       data_metrics: true
+      data_metrics_skip_zero: true
 
     clusters:
 {{ toYaml .Values.limes.clusters | indent 6 }}

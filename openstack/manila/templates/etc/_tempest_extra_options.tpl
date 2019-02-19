@@ -1,3 +1,8 @@
+[DEFAULT]
+debug = True
+use_stderr = True
+rally_debug = True
+
 [auth]
 use_dynamic_credentials = False
 create_isolated_networks = False
@@ -45,7 +50,7 @@ application_credentials = True
 
 [service_available]
 manila = True
-neutron = True
+neutron = False
 cinder = False
 glance = False
 nova = False

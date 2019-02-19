@@ -1,7 +1,6 @@
 [composite:osapi_dns]
 use = egg:Paste#urlmap
 /: osapi_dns_versions
-/v1: osapi_dns_v1
 /v2: osapi_dns_v2
 /admin: osapi_dns_admin
 
@@ -13,27 +12,18 @@ keystone = http_proxy_to_wsgi cors maintenance faultwrapper sentry osapi_dns_app
 [app:osapi_dns_app_versions]
 paste.app_factory = designate.api.versions:factory
 
-[composite:osapi_dns_v1]
-use = call:designate.api.middleware:auth_pipeline_factory
-noauth = http_proxy_to_wsgi cors request_id noauthcontext statsd {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance validation_API_v1 faultwrapper_v1 sentry normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v1
-keystone = http_proxy_to_wsgi cors request_id authtoken statsd keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance validation_API_v1 faultwrapper_v1 sentry normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v1
-
-
-[app:osapi_dns_app_v1]
-paste.app_factory = designate.api.v1:factory
-
 [composite:osapi_dns_v2]
 use = call:designate.api.middleware:auth_pipeline_factory
-noauth = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
-keystone = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry validation_API_v2 authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
+noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
+keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
 
 [app:osapi_dns_app_v2]
 paste.app_factory = designate.api.v2:factory
 
 [composite:osapi_dns_admin]
 use = call:designate.api.middleware:auth_pipeline_factory
-noauth = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_admin
-keystone = http_proxy_to_wsgi cors request_id statsd faultwrapper sentry authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }} osapi_dns_app_admin
+noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_admin
+keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }} osapi_dns_app_admin
 
 [app:osapi_dns_app_admin]
 paste.app_factory = designate.api.admin:factory
@@ -66,21 +56,11 @@ paste.filter_factory = designate.api.middleware:NormalizeURIMiddleware.factory
 [filter:faultwrapper]
 paste.filter_factory = designate.api.middleware:FaultWrapperMiddleware.factory
 
-[filter:faultwrapper_v1]
-paste.filter_factory = designate.api.middleware:FaultWrapperMiddlewareV1.factory
-
-[filter:validation_API_v1]
-paste.filter_factory = designate.api.middleware:APIv1ValidationErrorMiddleware.factory
-
 [filter:validation_API_v2]
 paste.filter_factory = designate.api.middleware:APIv2ValidationErrorMiddleware.factory
 
-# Converged Cloud statsd & sentry middleware
-[filter:statsd]
-use = egg:ops-middleware#statsd
-
 [filter:sentry]
-use = egg:ops-middleware#sentry
+use = egg:raven#raven
 level = ERROR
 
 # Converged Cloud audit middleware

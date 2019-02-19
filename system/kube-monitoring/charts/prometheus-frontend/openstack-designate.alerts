@@ -6,7 +6,7 @@ groups:
     for: 20m
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-blackbox-details
@@ -21,7 +21,7 @@ groups:
     expr: changes(blackbox_api_status_gauge{check=~"designate"}[30m]) > 8
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-blackbox-details
@@ -37,11 +37,11 @@ groups:
     for: 10m
     labels:
       context: bind
-      dashboard: openstack-designate-bind
+      dashboard: designate-bind
       meta: '{{ $labels.kubernetes_name }}'
       service: designate
       severity: critical
-      tier: openstack
+      tier: os
     annotations:
       description: DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $labels.region }}.
       summary: DNS Bind server {{ $labels.kubernetes_name }} down.
@@ -51,11 +51,11 @@ groups:
     for: 15m
     labels:
       context: zone_replication
-      dashboard: openstack-designate
-      meta: '{{ $labels.zone_name }}'
+      dashboard: designate
+      meta: 'Designate zone {{ $labels.zone_name }} in Error State.'
       service: designate
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: '{{ $labels.zone_name }} in Error State.'
       summary: Designate Zone in Error State
@@ -65,11 +65,11 @@ groups:
     for: 5m
     labels:
       context: zone_replication
-      dashboard: openstack-designate
-      meta: '{{ $value }} zones'
+      dashboard: designate
+      meta: '{{ $value }} Designate Zones in Error State.'
       service: designate
       severity: warning
-      tier: openstack
+      tier: os
     annotations:
       description: '{{ $value }} Designate Zones in Error State.'
       summary: Designate Zones in Error State
@@ -79,7 +79,7 @@ groups:
     for: 15m
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -95,7 +95,7 @@ groups:
     for: 15m
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -106,11 +106,56 @@ groups:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
 
+  - alert: OpenstackDesignateDnsUnboundEndpointNotAvailable
+    expr: max(kube_endpoint_address_available{namespace=~"dns-recursor"})by(region,endpoint) < 1
+    for: 15m
+    labels:
+      context: unbound
+      dashboard: designate-unbound
+      meta: '{{ $labels.endpoint }}'
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+    annotations:
+      description: 'DNS Unbound endpoint {{ $labels.endpoint }} not available in {{ $labels.region }} region.'
+      summary: 'DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.'
+
+  - alert: OpenstackDesignateDnsUnbound1Down
+    expr: absent(unbound_time_up{kubernetes_name=~"unbound1"}) == 1
+    for: 60m
+    labels:
+      context: unbound
+      dashboard: designate-unbound
+      meta: unbound1
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+    annotations:
+      description: 'DNS Unbound1 recursor is down.'
+      summary: DNS Unbound1 recursor is down. DNS resolution might be handled by another region.
+
+  - alert: OpenstackDesignateDnsUnbound2Down
+    expr: absent(unbound_time_up{kubernetes_name=~"unbound2"}) == 1
+    for: 60m
+    labels:
+      context: unbound
+      dashboard: designate-unbound
+      meta: unbound2
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+    annotations:
+      description: 'DNS Unbound2 recursor is down.'
+      summary: DNS Unbound2 recursor is down. DNS resolution might be handled by another region.
+
   - alert: OpenstackDesignateDatapathFlapping
     expr: changes(blackbox_datapath_status_gauge{service=~"designate"}[30m]) > 8
     labels:
       severity: warning
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -126,7 +171,7 @@ groups:
     for: 1h
     labels:
       severity: warning
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-canary-details
@@ -142,7 +187,7 @@ groups:
     for: 1h
     labels:
       severity: info
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-canary-details
@@ -157,7 +202,7 @@ groups:
     expr: changes(blackbox_canary_status_gauge{service=~"designate"}[2h]) > 8
     labels:
       severity: warning
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-canary-details

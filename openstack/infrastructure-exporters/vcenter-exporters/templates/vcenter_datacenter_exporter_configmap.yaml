@@ -1,0 +1,55 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+{{- if .Values.vcenter_exporters.enabled }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vcenter-datacenter-exporter-configmap'
+  scope: 'datacenter'
+{{ $global_values := .Values }}
+{{- if .Values.vcenter_exporters.exporter_types }}
+template: |
+{{- range $exporter_type_values := $global_values.vcenter_exporters.exporter_types }}{{`
+  ---
+  kind: ConfigMap
+  apiVersion: v1
+  metadata:
+    name: vcenter-exporter-{{ name }}-`}}{{ $exporter_type_values.name }}{{`
+    namespace: monsoon3
+    labels:
+      system: openstack
+      service: metrics
+      component: configuration
+  data:
+    config-{{ name }}-`}}{{ $exporter_type_values.name }}{{`.yaml: |
+      prometheus_port: `}}{{ $global_values.vcenter_exporters.prometheus_port }}{{`
+      log_level: `}}{{ $global_values.vcenter_exporters.device_information.log_level | quote }}{{`
+      device_information:
+        hostname: {{ host | quote }}
+        username: "{{ username }}"
+        password: "{{ password }}"
+        port: `}}{{ $global_values.vcenter_exporters.device_information.port | quote }}{{`
+        ignore_ssl: `}}{{ $global_values.vcenter_exporters.device_information.ignore_ssl | quote }}{{`
+        availability_zone: {{ availability_zone | quote }}
+      exporter_types:
+        `}}{{ $exporter_type_values.name }}{{`:
+          name: `}}{{ $exporter_type_values.name | quote }}{{`
+        `}}{{- range $key, $val := $exporter_type_values }}
+        {{ if eq $key "collector" }}
+          {{ $key }}:
+            {{- range $listitem := $val }}
+            - {{ $listitem }}
+            {{- end}}
+        {{ else if eq $key "vm_metrics" }}
+          {{ $key }}:
+            {{- range $listitem := $val }}
+            - {{ $listitem }}
+            {{- end }}
+        {{ else }}
+          {{ $key }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}{{`
+`}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

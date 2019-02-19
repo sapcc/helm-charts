@@ -1,0 +1,14 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: vcenter-operator
+data:
+  namespace: {{ .Values.global.keystoneNamespace }}
+  username: {{ .Values.username }}
+  user_suffix: {{ .Values.global.user_suffix | default "" | quote }}
+  password: {{ .Values.global.master_password | quote }}
+  tsig_key: {{ .Values.tsig_key }}
+{{- range $key, $value := .Values.variables }}
+  {{- $str := toJson $value }}
+  {{ $key }}: {{if hasPrefix "\"" $str }}{{ $str }}{{ else }}{{ quote $str }}{{ end }}
+{{- end }}

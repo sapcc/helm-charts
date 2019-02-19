@@ -3,16 +3,16 @@
 # Declare variables to be passed into your templates.
 global:
   imageNamespace: monsoon
-  imageRegistry: DEFINED-IN-REGION-CHART
+#  imageRegistry: DEFINED-IN-REGION-CHART
   dbUser: glance
   master_password: ""
   pgbouncer:
     enabled: true
 
 # The registry is deprecated, setting imageVersionGlanceRegistry or imageVersion will enable the deployment (but not the setting)
-imageVersionGlance: null
-imageVersionGlanceApi: null
-imageVersionGlanceRegistry: null
+# imageVersionGlance: null
+# imageVersionGlanceApi: null
+# imageVersionGlanceRegistry: null
 
 stores: "swift,file"
 default_store: swift
@@ -90,6 +90,43 @@ metrics:
 sentry:
   enabled: true
 
+tempest:
+  imageTag: manila-0.0.2
+  domain_id: null
+  enabled: false
+  expected_failures: {}
+
+unittest:
+  enabled: false
+
+pgmetrics:
+  name: glance
+  customMetrics:
+     openstack_glance_image:
+       query: "SELECT id, name, status, size, owner, visibility, COUNT(*) AS gauge from images where deleted='false' GROUP BY id"
+       metrics:
+         - id:
+             usage: "LABEL"
+             description: "Image ID"
+         - name:
+             usage: "LABEL"
+             description: "Image Name"
+         - status:
+             usage: "LABEL"
+             description: "Image Status"
+         - size:
+             usage: "LABEL"
+             description: "Image Size"
+         - owner:
+             usage: "LABEL"
+             description: "Image Owner"
+         - visibility:
+             usage: "LABEL"
+             description: "Image visibility"
+         - gauge:
+             usage: "GAUGE"
+             description: "Image Count"
+
 postgresql:
   imageTag: '9.4.14'
   postgresDatabase: glance
@@ -105,6 +142,11 @@ postgresql:
     enabled: true
     metrics: true
     os_password: null
+  resources:
+    requests:
+      cpu: "500m" # 1/2 cpu
+      memory: "300Mi" # 140Mi high recorded
+
   shared_preload_libraries: pg_stat_statements
   track_activity_query_size: 2048
 
@@ -169,7 +211,7 @@ nanny:
   db_purge:
     enabled: True
     # purge deleted db entries older than n days
-    older_than: 7
+    older_than: 14
     # delete at max number of entries in one run
     max_number: 50
 

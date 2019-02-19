@@ -32,10 +32,13 @@ spec:
             - --storage.tsdb.retention={{.Values.retention}}
             - --web.console.libraries=/etc/prometheus/console_libraries
             - --web.console.templates=/etc/prometheus/consoles
-            - --web.external-url=https://{{.Values.ingress.host}}.{{.Values.global.region}}.{{.Values.global.domain}}
+            - --web.external-url=https://{{required ".Values.ingress.host undefined" .Values.ingress.host }}.{{ required ".Values.global.region undefined" .Values.global.region}}.{{ required "Values.global.domain undefined" .Values.global.domain }}
             - --web.enable-admin-api
             - --web.enable-lifecycle
             - --log.level={{ default "info" .Values.log_level }}
+            {{- if semverCompare ">=v2.6.0" .Values.global.prometheus.tag }}
+            - --web.page-title=Prometheus {{ .Values.global.region | upper }}
+            {{- end }}
           ports:
             - name: http 
               containerPort: 9090
@@ -44,6 +47,8 @@ spec:
               mountPath: /prometheus
             - name: config
               mountPath: /etc/prometheus
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
         - name: prometheus-configmap-reloader
           image: "{{ .Values.global.configmap_reload.image.repository }}:{{ .Values.global.configmap_reload.image.tag }}"
           args:

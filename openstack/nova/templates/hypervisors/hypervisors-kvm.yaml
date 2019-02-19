@@ -1,0 +1,10 @@
+{{- $envAll := . }}
+{{- range $i, $hypervisor := .Values.hypervisors_kvm }}
+  {{- $hypervisor := merge $hypervisor $envAll.Values.defaults.hypervisor.kvm $envAll.Values.defaults.hypervisor.common }}
+  {{- if ne $i 0 }}
+---
+  {{- end }}
+{{- tuple $envAll $hypervisor | include "kvm_deployment" }}
+---
+{{ tuple $envAll $hypervisor | include "kvm_configmap" }}
+{{- end }}

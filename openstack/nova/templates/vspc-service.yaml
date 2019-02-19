@@ -1,0 +1,27 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: nova-vspc
+  labels:
+    system: openstack
+    type: backend
+    component: nova
+spec:
+  type: NodePort
+  selector:
+    name: nova-vspc
+  ports:
+    - name: vspc
+      protocol: TCP
+      port: {{.Values.vspc.telnet.portExternal}}
+      targetPort: {{.Values.vspc.telnet.portInternal}}
+    - name: web
+      protocol: TCP
+      port: {{.Values.vspc.web.portExternal}}
+      targetPort: {{.Values.vspc.web.portInternal}}
+{{- if .Values.vspc.nodeIP }}
+  externalIPs:
+    - {{ .Values.vspc.nodeIP }}
+{{- end }}
+  sessionAffinity: "ClientIP"

@@ -35,9 +35,6 @@ export OS_DOMAIN_NAME={{ .Values.keystone.domainName }}
 export OS_DOMAIN_ID={{ .Values.keystone.domainId }}
 {{- end }}
 export OS_REGION={{.Values.global.region}}
-{{- if .Values.sentry.enabled }}
-export SENTRY_DSN={{ .Values.sentry.dsn | quote}}
-{{- end }}
 
 echo "Starting openstack-seeder.."
 /usr/local/bin/openstack-seeder --v {{ default 1 .Values.logLevel }}

@@ -10,7 +10,7 @@ groups:
       meta: '{{ $labels.kubernetes_pod_name }} below 1min'
       service: nova
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: Polling iterations of DVS Agent {{ $labels.kubernetes_pod_name }} is below 1 per minute.
       summary: Polling iterations fall below 1 per minute
@@ -23,7 +23,7 @@ groups:
       meta: '{{ $labels.kubernetes_pod_name }} below 1min'
       service: nova
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: Security Group latency of DVS Agent {{ $labels.kubernetes_pod_name }} is over 1 minute.
       summary: security group latency goes over 1 minute
@@ -37,7 +37,7 @@ groups:
       meta: '{{ $labels.availability_zone }} DiskUsage above 90%'
       service: nova
       severity: critical
-      tier: openstack
+      tier: os
     annotations:
       description: Nova {{ $labels.availability_zone }} Disk Usage is above 90%
       summary: Nova Maximum Disk Usage percentage metric
@@ -51,7 +51,7 @@ groups:
       meta: '{{ $labels.availability_zone }} RAMUsage above 95%'
       service: nova
       severity: warning
-      tier: openstack
+      tier: os
     annotations:
       description: Nova {{ $labels.availability_zone }} total RAM Usage is above 95%.
       summary: Nova Maximum RAM Usage percentage metric
@@ -65,7 +65,7 @@ groups:
       playbook: docs/support/playbook/nova/instance_error_on_create.html
       service: nova
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: Nova Instance {{$labels.uuid }} Stuck in Error in {{ $labels.host }}
       summary: Openstack Nova Instance In Error State
@@ -79,7 +79,7 @@ groups:
       playbook: docs/support/playbook/nova/instance_error_on_create.html
       service: nova
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: Nova Instance Stuck in Building state over 15mins in {{ $labels.host }}
       summary: Openstack Nova Instance Stuck in Building state metric
@@ -93,7 +93,7 @@ groups:
       playbook: docs/support/playbook/nova/delete_stuck_instance.html/#Delete
       service: nova
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: Nova Instance Stuck in Deleting state over 15mins in {{ $labels.host }}
       summary: Openstack Nova Instance Stuck in Deleting state metric
@@ -106,7 +106,7 @@ groups:
       meta: '{{ $value }} instances'
       service: nova
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: Nova Instance Stuck in Stopping state over 15mins in {{ $labels.host }}
       summary: Openstack Nova Instance Stuck in Stopping state metric
@@ -120,7 +120,7 @@ groups:
       meta: '{{ $value }} instances'
       service: nova
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: Nova Instance Stuck in Starting state over 15mins in {{ $labels.host }}
       summary: Openstack Nova Instance Stuck in Starting state metric
@@ -133,7 +133,7 @@ groups:
       meta: '{{ $value }} instances'
       service: nova
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: Nova Instance Stuck in Spawning state over 15mins in {{ $labels.host }}
       summary: Openstack Nova Instance Stuck in Spawning state metric
@@ -147,7 +147,7 @@ groups:
       playbook: docs/support/playbook/nova/delete_stuck_instance.html/#Rebooting
       service: nova
       severity: info
-      tier: openstack
+      tier: os
     annotations:
       description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.host }}
       summary: Openstack Nova Instance Stuck in Rebooting state metric
@@ -157,7 +157,7 @@ groups:
     for: 20m
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-blackbox-details
@@ -172,7 +172,7 @@ groups:
     expr: changes(blackbox_api_status_gauge{check=~"nova"}[30m]) > 8
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-blackbox-details
@@ -188,7 +188,7 @@ groups:
     for: 15m
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -204,7 +204,7 @@ groups:
     for: 15m
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -219,7 +219,7 @@ groups:
     expr: changes(blackbox_datapath_status_gauge{service=~"nova"}[30m]) > 8
     labels:
       severity: warning
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -232,10 +232,10 @@ groups:
 
   - alert: OpenstackNovaDatapathJumpHostDown
     expr: blackbox_canary_status_gauge{check=~"ping_jump-.+"} == 1
-    for: 15m
+    for: 1h
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -251,7 +251,7 @@ groups:
     for: 1h
     labels:
       severity: warning
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-canary-details
@@ -267,7 +267,7 @@ groups:
     for: 1h
     labels:
       severity: info
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-canary-details
@@ -282,7 +282,7 @@ groups:
     expr: changes(blackbox_canary_status_gauge{service=~"nova"}[2h]) > 8
     labels:
       severity: warning
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-canary-details
@@ -298,7 +298,7 @@ groups:
     for: 20m
     labels:
       severity: warning
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.context }}'
       meta: '{{ $labels.check }}: host is enabled but hypervisor is down for 20 minutes. See Sentry for details.'
@@ -312,7 +312,7 @@ groups:
     for: 20m
     labels:
       severity: info
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.context }}'
       meta: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
@@ -320,3 +320,18 @@ groups:
     annotations:
       description: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
       summary: '{{ $labels.check }}: host is disabled without reason'
+
+  - alert: OpenstackNovaWaitingDatabaseConnections
+    expr: sum by (application) (pgbouncer_pools_client_waiting_connections{application=~"nova"}) > 10
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.application }}'
+      context: '{{ $labels.application }}'
+      dashboard: pgbouncer
+      meta: '{{ $labels.application }} has waiting database connections for 15min'
+#      playbook: 'docs/devops/alert/{{ $labels.application }}'
+    annotations:
+      description: '{{ $labels.application }} has more than 10 waiting database connections for 15 minutes, please check pgbouncer logs'
+      summary: '{{ $labels.application }} waiting db connections'

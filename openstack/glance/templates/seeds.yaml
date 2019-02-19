@@ -12,6 +12,9 @@ spec:
   - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
   - domain-default-seed
   - domain-ccadmin-seed
+{{- if .Values.tempest.enabled }}
+  - monsoon3/domain-tempest-seed
+{{- end }}
 
   roles:
   - cloud_image_admin
@@ -71,3 +74,22 @@ spec:
         role: cloud_image_admin
       - project: cloud_admin
         role: cloud_image_admin
+
+{{- if .Values.tempest.enabled }}
+  - name: tempest
+    projects:
+    - name: admin
+      roles:
+        - user: admin
+          role: cloud_image_admin
+        - user: admin@Default
+          role: cloud_image_admin
+    - name: tempest1
+      roles:
+        - user: admin@Default
+          role: cloud_image_admin
+    - name: tempest2
+      roles:
+        - user: admin@Default
+          role: cloud_image_admin
+{{- end }}

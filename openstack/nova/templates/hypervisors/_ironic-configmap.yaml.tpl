@@ -4,13 +4,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: hypervisor-{{$hypervisor.name}}
+  name: nova-compute-{{$hypervisor.name}}
   labels:
     system: openstack
     type: configuration
     component: nova
 data:
   nova-compute.conf: |
-{{ tuple . $hypervisor | include "ironic_conf" | indent 4 }}
+{{ tuple . $hypervisor | include "nova_compute_ironic_conf" | indent 4 }}
 {{- end -}}
 {{- end -}}

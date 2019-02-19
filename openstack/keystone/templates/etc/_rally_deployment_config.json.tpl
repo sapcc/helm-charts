@@ -6,21 +6,21 @@
         "endpoint_type": "internal",
         "admin": {
             "username": "admin",
-            "password": {{ .Values.tempest.adminPassword | quote }},
+            "password": {{ required "A valid .Values.tempest.adminPassword required!" .Values.tempest.adminPassword | quote }},
             "user_domain_name": "tempest",
             "domain_name": "tempest",
     },
     "users": [
         {
             "username": "tempestuser1",
-            "password": {{ .Values.tempest.userPassword | quote }},
+            "password": {{ required "A valid .Values.tempest.userPassword required!" .Values.tempest.userPassword | quote }},
             "user_domain_name": "tempest",
             "project_name": "tempest1",
             "project_domain_name": "tempest"
         },
         {
             "username": "tempestuser2",
-            "password": {{ .Values.tempest.userPassword | quote }},
+            "password": {{ required "A valid .Values.tempest.userPassword required!" .Values.tempest.userPassword | quote }},
             "user_domain_name": "tempest",
             "project_name": "tempest2",
             "project_domain_name": "tempest"

@@ -66,6 +66,23 @@ spec:
           env:
             - name: DEBUG_CONTAINER
               value: "false"
+            {{- if $.Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: swift.DSN.public
+            {{- end }}
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 300m-2500m, RAM = 450-800 MiB
+            requests:
+              cpu: "2000m"
+              memory: "1024Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1024Mi"
+          {{- end }}
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc
@@ -84,6 +101,16 @@ spec:
           args:
             - /bin/sh
             - /swift-bin/nginx-start
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 10m-500m, RAM = 20-50 MiB
+            requests:
+              cpu: "1000m"
+              memory: "100Mi"
+            limits:
+              cpu: "1000m"
+              memory: "100Mi"
+          {{- end }}
           volumeMounts:
             - mountPath: /swift-bin
               name: swift-bin
@@ -122,6 +149,16 @@ spec:
               value: "info"
             - name: ADD_HOSTNAME_SUFFIX
               value: "true"
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 100m-300m, RAM = 20-85 MiB
+            requests:
+              cpu: "400m"
+              memory: "150Mi"
+            limits:
+              cpu: "400m"
+              memory: "150Mi"
+          {{- end }}
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc

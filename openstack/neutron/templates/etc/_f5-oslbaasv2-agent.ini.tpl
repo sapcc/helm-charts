@@ -44,14 +44,14 @@ debug = True
 # seconds between attempts.
 #
 
-periodic_interval = 300
+periodic_interval = {{$context.Values.f5.periodic_interval | default 300}}
 
 #
 # How often should the agent throw away its service cache and
 # resync assigned services with the neutron LBaaS plugin.
 #
 
-service_resync_interval = 180
+service_resync_interval = {{$context.Values.f5.service_resync_interval | default 180}}
 
 # Objects created on the BIG-IP by this agent will have their names prefixed
 # by an environment string. This allows you set this string.  The default is
@@ -126,7 +126,7 @@ environment_group_number = {{$loadbalancer.environment_group_number | default 1}
 #  Static Agent Configuration Setting
 ###############################################################################
 
-agent_id={{$loadbalancer.name}}
+agent_id={{required "A valid $loadbalancer required!" $loadbalancer.name}}
 
 #
 # Static configuration data to sent back to the plugin. This can be used
@@ -162,7 +162,7 @@ f5_ha_type = {{$loadbalancer.ha_type}}
 #            synced to the group
 # replication - each device configured separately
 #
-f5_sync_mode = {{$loadbalancer.sync_mode}}
+f5_sync_mode = {{required "A valid $loadbalancer required!" $loadbalancer.sync_mode}}
 #f5_sync_mode = autosync
 
 #
@@ -196,7 +196,7 @@ f5_sync_mode = {{$loadbalancer.sync_mode}}
 # pair or scalen (1.1 and 1.2 are used for HA purposes):
 #   f5_external_physical_mappings = default:1.3:True
 #
-f5_external_physical_mappings = {{$loadbalancer.external_physical_mappings}}
+f5_external_physical_mappings = {{required "A valid $loadbalancer required!" $loadbalancer.external_physical_mappings}}
 #
 # VLAN device and interface to port mappings
 #
@@ -301,7 +301,7 @@ f5_populate_static_arp = False
 # Restrict discovery of network segmentation ID to a specific physical network
 # name.
 #
-f5_network_segment_physical_network = {{$loadbalancer.physical_network}}
+f5_network_segment_physical_network = {{required "A valid $loadbalancer required!" $loadbalancer.physical_network}}
 #
 # Periodically scan for disconected listeners (a.k.a virtual servers).  The
 # interval is number of seconds between attempts.
@@ -445,7 +445,7 @@ f5_snat_mode = True
 # SAP specific enhancement setting to -1 creates a LB specific SNAT pool
 # using LB IP
 
-f5_snat_addresses_per_subnet = {{ $context.Values.f5.snat_per_subnet }}
+f5_snat_addresses_per_subnet = {{ required "A valid Values.f5.snat_per_subnetValues.f5.snat_per_subnet required!" $context.Values.f5.snat_per_subnet }}
 #
 # This setting will cause all networks with
 # the router:external attribute set to True
@@ -589,7 +589,7 @@ cert_manager = f5_openstack_agent.lbaasv2.drivers.bigip.barbican_cert.BarbicanCe
 auth_version = v3
 os_auth_url = {{$context.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" $context}}:{{ $context.Values.global.keystone_api_port_internal | default 5000 }}/v3
 os_username = {{ $context.Values.global.neutron_service_user | default "neutron" }}
-os_password = {{ $context.Values.global.neutron_service_password }}
+os_password = {{ required "A valid .Values.global.neutron_service_password required!" $context.Values.global.neutron_service_password }}
 os_user_domain_name = {{$context.Values.global.keystone_service_domain | default "Default"}}
 os_project_name = {{$context.Values.global.keystone_service_project | default "service"}}
 os_project_domain_name = {{$context.Values.global.keystone_service_domain | default "Default"}}
@@ -609,6 +609,18 @@ insecure = True
 f5_parent_ssl_profile = {{$loadbalancer.f5_parent_ssl_profile}}
 {{- else }}
 f5_parent_ssl_profile = clientssl
+{{- end}}
+
+#
+# Parent https monitor
+#
+# Set the pareent monitor tp a new ccloud value due to changes in tmos 13.1.1.2
+# where each https monitor should have an server_profile assigned
+# This assignment is done inside the cc_https monitor and individual monitors get it from there
+{{- if $loadbalancer.f5_parent_https_monitor}}
+f5_parent_https_monitor = {{$loadbalancer.f5_parent_https_monitor}}
+{{- else }}
+f5_parent_https_monitor = /Common/https
 {{- end}}
 
 #

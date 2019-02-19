@@ -2,9 +2,11 @@ global:
   region: DEFINED-AS-VALUE
   domain: DEFINED-AS-VALUE
 
+  clusterType: controlplane
+
   prometheus:
     image: prom/prometheus
-    tag: v2.4.2
+    tag: v2.6.0
     
   configmap_reload:
     image:
@@ -14,9 +16,14 @@ global:
   ipmi_service_discovery:
     enabled: false
     configmap_name: ipmi-sd
+    netbox:
+      enabled: false
+    #api_token:
 
   ipmi_exporter:
     enabled: false
+    netbox:
+      enabled: false
 
   arista_exporter:
     enabled: false
@@ -40,7 +47,6 @@ prometheus-node-exporter:
 
   extraArgs:
     - --collector.filesystem.ignored-mount-points=\"^/(sys|proc|dev|host|etc)($|/)\"
-    - --collector.systemd
     - --collector.processes
 
   extraHostVolumeMounts:

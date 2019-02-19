@@ -5,16 +5,12 @@ set -ex
 # seed just enough to have a functional v3 api
 keystone-manage --config-file=/etc/keystone/keystone.conf bootstrap \
     --bootstrap-username {{ .Values.api.adminUser }} \
-    --bootstrap-password {{ .Values.api.adminPassword }} \
+    --bootstrap-password {{ required "A valid .Values.api.adminPassword required!" .Values.api.adminPassword }} \
     --bootstrap-project-name {{ .Values.api.adminProjectName }} \
 {{- if eq .Values.services.admin.scheme "https" }}
     --bootstrap-admin-url https://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}/v3 \
 {{- else }}
-{{- if eq .Values.release "queens" }}
-    --bootstrap-admin-url {{.Values.services.admin.scheme}}://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:35357/v3 \
-{{- else }}
     --bootstrap-admin-url {{.Values.services.admin.scheme}}://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
-{{- end }}
 {{- end }}
 {{- if eq .Values.services.public.scheme "https" }}
     --bootstrap-public-url https://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}/v3 \

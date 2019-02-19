@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nova-online-migration
+  labels:
+    system: openstack
+    type: configuration
+    component: nova
+spec:
+  template:
+    metadata:
+{{ tuple . "nova" "online-migration" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 6 }}
+      annotations:
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: nova-migration
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+        imagePullPolicy: IfNotPresent
+        command:
+        - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "/container.init/db-online-migrate"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_JOBS
+          value: "nova-migration"
+        - name: DEPENDENCY_SERVICE
+          value: "nova-postgresql"
+        - name: PGAPPNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - mountPath: /etc/nova
+          name: etcnova
+        - mountPath: /etc/nova/nova.conf
+          name: nova-etc
+          subPath: nova.conf
+          readOnly: true
+        - mountPath: /etc/nova/logging.ini
+          name: nova-etc
+          subPath: logging.ini
+          readOnly: true
+        - mountPath: /container.init
+          name: container-init
+      volumes:
+      - name: etcnova
+        emptyDir: {}
+      - name: nova-etc
+        configMap:
+          name: nova-etc
+      - name: container-init
+        configMap:
+          name: nova-bin
+          defaultMode: 0755

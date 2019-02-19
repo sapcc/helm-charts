@@ -8,7 +8,7 @@ global:
 # region: cluster
 # clusterDomain: cluster.local
   dbUser: keystone
-  dbPassword: DEFINED-IN-REGION-CHART
+  dbPassword: ""
 # imageRegistry: hub.global.cloud.sap
 
 debug: False
@@ -19,12 +19,15 @@ run_db_migration: False
 # ignore invalid role assignments
 skipRepairRoleAssignments: False
 
+# suppress pre-deployment region check
+skipRegionCheck: False
+
 # current keystone release
-release: queens
+release: rocky
 
 api:
   image: "monsoon/loci-keystone"
-  imageTag: queens-20180814091359
+  #imageTag: latest
 
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
@@ -33,11 +36,11 @@ api:
   # imagePullPolicy:
 
   adminUser: admin
-  adminPassword: secret
+  adminPassword: ""
   adminProjectName: admin
   cloudAdminDomainName: Default
   cloudAdminProjectName: admin
-  cloudAdminProjectId: put-your-cloud-admin-project-id-here
+  cloudAdminProjectId: ""
 
   notifications:
     enabled: true
@@ -58,18 +61,17 @@ api:
     allow_expired_window: 28800
     # maximum size of a token (LDAP seems to go over the default 255)
     max_token_size: 268
+    # The number of seconds to cache token creation and validation data.
+    cache_time: 3600
 
   fernet:
     maxActiveKeys: 3
     secrets:
-    - c1dVSlFZVjRQRnBGR3pwSk1nMll6eEFwX2VDNURwRFVzLVd5aEVYaVI1dz0=
-    - M1V0dHp6bk5LYzVlQ1doMjdvUUctSGdmVFFEcWxIeDZXdHFDT25vT3RHUT0=
-    - WmlYLUZUZ1BNVnNPU2tib01YUkc0SkhZMGswLXFfeVF0eTdHbVBjSDZjND0=
+      0: <put-your-fernet-keys-here>
 
   credentials:
     secrets:
-    - RUdXZU5oVFR1TUU3TkFqazJrZWpqSE5vZ0lqeHFMTTljeUZxb2dZakNQZz0=
-    - OUhUQnBzTDBLTkFfTnhqZlFWX0dmc0tlc2FnUUZYTFBrN2hpWldpQmN6cz0=
+      0: <put-your-credential-keys-here>
 
   auth:
   # Allowed authentication methods. (list value)
@@ -108,31 +110,30 @@ api:
     port: '9102'
 
     image: prom/statsd-exporter
-    imageTag: v0.5.0
+    imageTag: v0.8.1
     prefix: openstack
 
     resources:
       enabled: false
-      limits:
-        memory: 128Mi
-        cpu: 500m
       requests:
-        memory: 128Mi
-        cpu: 500m
+        memory: 50Mi
+        cpu: 10m
+      limits:
+        memory: 64Mi
+        cpu: 50m
 
   terminationGracePeriodSeconds: 30
   minReadySeconds: 5
-  replicas: 2
 
   resources:
-    enabled: false
-
     requests:
-      memory: "128Mi"
-      cpu: "100m"
+      memory: 2Gi
+      cpu: 500m
     limits:
-      memory: "1024Mi"
-      cpu: "2000m"
+      memory: 3Gi
+      cpu: 1000m
+
+  replicas: 3
 
   upgrades:
     revisionHistory: 3
@@ -141,23 +142,24 @@ api:
       maxUnavailable: 0
       maxSurge: 1
 
+  pdb:
+    minAvailable: 1
+
 cron:
   image: "monsoon/loci-keystone"
-  imageTag: queens-20180814091359
+  #imageTag: latest
 
   cronSchedule: "0 * * * *"
 
   replicas: 1
 
   resources:
-    enabled: false
-
     requests:
-      memory: "128Mi"
-      cpu: "100m"
+      memory: 2Gi
+      cpu: 500m
     limits:
-      memory: "1024Mi"
-      cpu: "2000m"
+      memory: 3Gi
+      cpu: 1000m
 
   upgrades:
     revisionHistory: 3
@@ -166,16 +168,20 @@ cron:
       maxUnavailable: 0
       maxSurge: 3
 
+cache:
+  expiration_time: 600
+
 tempest:
+  enabled: false
   image: "monsoon/rally-openstack"
   imageTag: "ccloud-1.2.0"
-  adminPassword: DEFINE_IN_REGION_VALUES
-  userPassword: DEFINE_IN_REGION_VALUES
+  adminPassword: ""
+  userPassword: ""
 # tempest domain-id  -- do not set in production environments!
   domainId: not_set_this_in_production
 
 sentry:
-  enabled: false
+  enabled: true
 # dsn: put-your-sentry-dsn-here or leave it up to the sentry-operator to provide one in a k8s sentry secret
 
 services:
@@ -205,7 +211,7 @@ services:
 
   admin:
     scheme: http
-    host: identity-admin-3
+    host: identity-3
     #tlsCertificate:
     #tlsKey:
 
@@ -214,18 +220,26 @@ rabbitmq:
   # host: rabbitmq
   users:
     default:
-      password: admin123
+      password: ""
     admin:
-      password: secret123
+      password: ""
+
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 500m
+    limits:
+      cpu: 1000m
 
   metrics:
     enabled: true
-    password: openstack
+    password: ""
+
 
 postgresql:
   postgresDatabase: keystone
   postgresUser: postgres
-  postgresPassword: secret
+  postgresPassword: ""
 
   dbInit: keystone-db-init
   dbMaintain: keystone-db-maintain
@@ -236,6 +250,11 @@ postgresql:
   backup:
     enabled: false
     imageTag: v0.5.15
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 500Mi
 
 pgmetrics:
   db_name: keystone
@@ -283,6 +302,23 @@ pgmetrics:
         - gauge:
             usage: "GAUGE"
             description: "Total keystone token revocation count"
+    openstack_assignments_per_role:
+      query: "SELECT r.name AS name, COUNT(*) AS gauge FROM assignment a JOIN role r ON r.id = a.role_id GROUP BY r.name"
+      metrics:
+        - name:
+            usage: "LABEL"
+            description: "Name of assigned role"
+        - gauge:
+            usage: "GAUGE"
+            description: "Total keystone role-assignment count per role"
+
+  resources:
+    requests:
+      memory: 24Mi
+      cpu: 10m
+    limits:
+      memory: 64Mi
+      cpu: 50m
 
 rbac:
   enabled: false
@@ -291,4 +327,7 @@ watcher:
   enabled: true
 
 lifesaver:
+  enabled: true
+
+cors:
   enabled: false

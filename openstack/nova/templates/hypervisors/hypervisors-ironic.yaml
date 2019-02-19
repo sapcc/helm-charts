@@ -1,0 +1,12 @@
+{{- $envAll := . }}
+{{- range $i, $hypervisor := .Values.hypervisors_ironic }}
+  {{- $hypervisor := merge $hypervisor $envAll.Values.defaults.hypervisor.ironic $envAll.Values.defaults.hypervisor.common }}
+  {{- if ne $i 0 }}
+---
+  {{- end }}
+
+{{ tuple $envAll $hypervisor | include "ironic_deployment" }}
+---
+
+{{ tuple $envAll $hypervisor | include "ironic_configmap" }}
+{{- end }}

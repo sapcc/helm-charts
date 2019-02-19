@@ -25,6 +25,13 @@ spec:
             claimName: blackbox-tests-api
       containers:
         - name: pytest
+          resources:
+            requests:
+              cpu: 500m
+              memory: 500M
+            limits:
+              cpu: 900m
+              memory: 900M
 {{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
           image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
 {{- else }}
@@ -33,10 +40,10 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "-n 4"
-            - "--timeout 15"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
             - "--disable-pytest-warnings"
-            - "-r a"
+            - "-r ap"
             - "tests/test_api.py"
           volumeMounts:
             - name: blackbox-tests-api
@@ -78,13 +85,15 @@ spec:
             - name: API_VC_NAMES
               value: {{ .Values.vcenter_names | quote }}
             - name: STATSD_HOST
-              value: "localhost"
+              value: {{ .Values.statsd.host | quote }}
             - name: STATSD_PORT
-              value: "9125"
+              value: {{ .Values.statsd.port | quote }}
             - name: STATSD_PREFIX
-              value: "blackbox-api"
+              value: {{ .Values.statsd.prefix | quote }}
+            - name: TIMEOUT
+              value: {{ .Values.parallel.timeout.atomic | quote }}
             - name: SLEEP_ITERATE
-              value: {{ .Values.sleep.iterate | quote }}
+              value: {{ .Values.parallel.iterator.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -119,7 +128,14 @@ spec:
             initialDelaySeconds: 15
 
         - name: statsd
-          image: prom/statsd-exporter:v0.5.0
+          resources:
+            requests:
+              cpu: 2m
+              memory: 20M
+            limits:
+              cpu: 4m
+              memory: 30M
+          image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: statsd

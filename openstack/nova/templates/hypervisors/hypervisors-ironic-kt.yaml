@@ -1,0 +1,20 @@
+{{- if .Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1" }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosTemplate
+metadata:
+  name: nova-compute-ironic
+  namespace: monsoon3
+requirements:
+- name: ironic-baremetal-blocks
+template: |
+    {{- $hypervisor := dict "name" "ironic-{{block.name}}" "ironic" (dict "conductor_group" "{{block.name}}")}}
+    {{- $hypervisor := merge $hypervisor .Values.defaults.hypervisor.ironic .Values.defaults.hypervisor.common }}
+    {%- for block in blocks %}
+{{ tuple . $hypervisor | include "ironic_deployment" | indent 4 }}
+    ---
+{{ tuple . $hypervisor | include "ironic_configmap" | indent 4 }}
+    {%- if not loop.last %}
+    ---
+    {%- endif %}
+    {%- endfor %}
+{{- end  }}

@@ -23,6 +23,9 @@ log_level = DEBUG
 {{- else -}}
 log_level = INFO
 {{- end }}
+{{- if $context.sentry.enabled }}
+log_custom_handlers = swift_sentry.sentry_logger
+{{- end }}
 
 [pipeline:main]
 {{- if le $swift_release "queens" }}
@@ -32,7 +35,6 @@ pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_forma
 # Rocky or higher pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
-# TODO: sentry middleware (between "proxy-logging" and "proxy-server") disabled temporarily because of weird exceptions tracing into raven, need to check further
 
 [app:proxy-server]
 use = egg:swift#proxy
@@ -83,7 +85,7 @@ use = egg:swift#gatekeeper
 use = egg:swift#keystoneauth
 operator_roles = admin, swiftoperator
 is_admin = false
-cache = swift.cache
+
 {{- if $cluster.seed }}
 reseller_admin_role = {{ $cluster.reseller_admin_role | default "swiftreseller" }}
 {{- else }}
@@ -108,7 +110,12 @@ insecure = {{$cluster.keystone_insecure | default false}}
 {{- if $cluster.endpoint_override }}
 endpoint_override = {{$cluster.endpoint_override}}
 {{- end }}
+{{- if $cluster.token_memcached }}
+memcached_servers = {{ $cluster.token_memcached }}.{{ $helm_release.Namespace }}.svc:11211
+{{- else }}
 cache = swift.cache
+{{- end }}
+token_cache_time = {{$cluster.token_cache_time | default 600}}
 region_name = {{$context.global.region}}
 user_domain_name = {{$cluster.swift_service_user_domain}}
 username = {{$cluster.swift_service_user}}
@@ -138,7 +145,7 @@ container_listing_ratelimit_100 = 100
 [filter:cname_lookup]
 use = egg:swift#cname_lookup
 lookup_depth = 2
-storage_domain = {{tuple $cluster $context | include "swift_endpoint_host"}}
+storage_domain = {{tuple $cluster $context | include "swift_endpoint_host"}}{{ range $index, $csd := $cluster.additional_cname_storage_domains }},{{ $csd }}{{ end }}
 
 [filter:domain_remap]
 use = egg:swift#domain_remap
@@ -211,15 +218,4 @@ cadf_service_name = service/storage/object
 target_project_id_from_path = {{$context.watcher_project_id_from_path | default true}}
 config_file = /swift-etc/watcher.yaml
 {{- end }}
-
-# [filter:statsd]
-# use = egg:ops-middleware#statsd
-# statsd_host = localhost
-# statsd_port = 9125
-# statsd_replace = swift
-#
-# [filter:sentry]
-# use = egg:ops-middleware#sentry
-# dsn = {{$cluster.sentry_dsn}}
-# level = ERROR
 {{end}}

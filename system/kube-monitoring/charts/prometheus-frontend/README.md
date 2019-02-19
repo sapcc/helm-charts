@@ -9,12 +9,16 @@ The naming convention for alert files is `<tier>-<whatever>.alert`.
 Prometheus alerts can be enriched with metadata using labels. Using these labels Prometheus can be configured to route, group and inhibit alerts. The labels are then again used to render the alerting notification you see in Slack. The configuration depends on the following labels:
 
   * Region
+  * ClusterType
+  * Cluster
   * Severity
   * Tier
   * Service
   * Context
   * Dashboard
   * Playbook
+  * Kibana
+  * CloudOps
   * Meta
 
 **Note**: Label and annotation values are strings. If they contain special characters like `{` the whole string has to be quoted: `meta: "meta information for instance {{ $labels.instance}}"`
@@ -23,7 +27,20 @@ We are using the following conventions.
 
 ### Region
 
-Region is an implicit label that is automatically set by Prometheus. Do not overwrite.
+The `region` label is automatically set by Prometheus and is equivalent to the OpenStack region. **Do not overwrite.**
+
+### ClusterType
+
+The `cluster_type` label is automatically set by Prometheus and helps distinguishing the various cluster types. **Do not overwrite.**
+Valid types are:
+- `controlplane`
+- `kubernikus-controlplane`
+- `scaleout`
+- `scaleout-internet`
+
+### Cluster
+
+The `cluster` label is an optional label used to differentiate multiple clusters of the same type in a region.
 
 ### Severity
 
@@ -36,10 +53,12 @@ Region is an implicit label that is automatically set by Prometheus. Do not over
 
 `tier` groups the alerts coarsly. We use:
 
-   * `baremetal`
-   * `kubernetes`
-   * `kubernikus`
-   * `openstack`
+   * `metal`  (baremetal)
+   * `k8s`    (kubernetes)
+   * `kks`    (kubernikus)
+   * `os`     (openstack)
+   * `net`    (network)
+   * `vmware` (vmware)
 
 ### Service
 
@@ -90,17 +109,38 @@ If there is a Sentry project relevant for this alert, you can add its name in th
 
 The regional Sentry prefix will be added automatically to the URL.
 
+## Kibana
+
+If there are logs relevant for this alert, you can add a Kibana search query via the `kibana` label.
+
+Shortend link:
+```kibana = "goto/8ef06b0edac2513a5ff237d17b9f62d5"```
+
+Alertnatively, the longer, verbose link can be used:
+```kibana = "/app/kibana#/discover?_g=()&_a=(columns:!(_source),index:'logstash-*',interval:auto,query:(query_string:(query:ingress)),sort:!(time,desc))"```
+
+The regional Kibana prefix will be added automatically to the URL.
+
+## CloudOps
+
+If there is an OpenStack entity related to this alert it can be referenced using the CloudOps universal search to show further information.
+The search term can be passed via the `cloudops` label.
+
+```cloudops = "?searchTerm={{ $labels.node }}"```
+
+The regional CloudOps prefix will be added automatically to the URL.
+
 ## Routing
 
 The alerts will be routed into a hierachy of Slack channels:
 
-  * #{tier}-{severity}
-  * #{tier}-{service}
+  * #alert-{tier}-{severity}
+  * #alert-{tier}-{service}
 
 This means:
-  * #kubernetes-{info|warning|critical}
-  * #openstack-{info|warning|critical}
-  * #openstack-{neutron|nova|designate|...}
+  * #alert-k8s-{info|warning|critical}
+  * #alert-os-{info|warning|critical}
+  * #alert-os-{neutron|nova|designate|...}
 
 ## Meta
 
@@ -126,7 +166,7 @@ For example:
 
 ### Understandable Alerts
 
-Write you alerts in a way that can be understood by non-experts.
+Write your alerts in a way that can be understood by non-experts.
 
 ### Predict Failures
 

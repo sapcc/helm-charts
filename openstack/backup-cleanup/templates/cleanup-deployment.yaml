@@ -1,0 +1,63 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: backup-cleanup
+  namespace: backup
+  labels:
+    system: openstack
+    component: backup-cleanup
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: backup-cleanup
+  template:
+    metadata:
+      labels:
+        component: backup-cleanup
+      annotations:
+        checksum/check.bin: {{ include "backup-cleanup/templates/bin-configmap.yaml" . | sha256sum }}
+    spec:
+      volumes:
+      - name: bin
+        configMap:
+          name: bin-backup-cleanup
+          defaultMode: 0550
+      containers:
+      - name: cleanup
+        image: {{ $.Values.global.imageRegistry }}/{{ $.Values.global.image_namespace }}/swift:{{ $.Values.image_tag }}
+        imagePullPolicy: {{ $.Values.image_pull_policy | default "IfNotPresent" }}
+        command:
+          - /usr/bin/dumb-init
+        args:
+          - /bin-cleanup/sleep-for
+          - {{ $.Values.sleep_for | quote }}
+          - /bin-cleanup/exponential-backoff
+          - /bin-cleanup/cleanup
+        env:
+          - name: OS_REGION_NAME
+            value: {{ $.Values.global.region | quote }}
+          - name: OS_AUTH_URL
+            value: {{ $.Values.auth.auth_url | quote }}
+          - name: OS_USER_DOMAIN_NAME
+            value: {{ $.Values.auth.user_domain_name | quote }}
+          - name: OS_USERNAME
+            value: {{ $.Values.auth.username | quote }}
+          - name: OS_PASSWORD
+            value: {{ $.Values.auth.password | quote }}
+          - name: OS_PROJECT_DOMAIN_NAME
+            value: {{ $.Values.auth.project_domain_name | quote }}
+          - name: OS_PROJECT_NAME
+            value: {{ $.Values.auth.project_name | quote }}
+          - name: CONTAINER_NAME
+            value: {{ $.Values.destination.container_name | quote }}
+          - name: SEGMENTS_CONTAINER_NAME
+            value: {{ $.Values.destination.segments_container_name | quote }}
+        volumeMounts:
+          - mountPath: /bin-cleanup
+            name: bin

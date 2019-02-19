@@ -18,11 +18,17 @@ function start_application {
   export GRAFANA_LOCAL_USER={{.Values.grafana.local.user}}
   export GRAFANA_LOCAL_PASSWORD={{.Values.grafana.local.password}}
   # install some plugins
+  grafana-cli plugins install flant-statusmap-panel
+  grafana-cli plugins install natel-discrete-panel
   grafana-cli plugins install vonage-status-panel
+  grafana-cli plugins install blackmirror1-statusbygroup-panel
   # since grafana version 4.6.2 the histogram feature is part of the normal graph in the axes tab, so this plugin is no longer needed
   # grafana-cli plugins install mtanda-histogram-panel
+  grafana-cli plugins install grafana-worldmap-panel
   # install sapcc/grafana-prometheus-alertmanager-datasource
   grafana-cli --pluginUrl https://github.com/sapcc/grafana-prometheus-alertmanager-datasource/archive/master.zip plugins install prometheus-alertmanager
+  # install sapcc/Grafana_Status_panel
+  grafana-cli --pluginUrl https://github.com/sapcc/Grafana_Status_panel/archive/master.zip plugins install cc-status-panel
   # setup the datasources and dashboards if the setup script exists
   # wait a moment until grafana is up and write to stdout and logfile in parallel
   if [ -f /grafana-bin/grafana-initial-setup ]; then

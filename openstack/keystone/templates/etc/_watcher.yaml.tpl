@@ -2,6 +2,7 @@ path_keywords:
   - application_credentials
   - credentials
   - domains
+  - ec2tokens
   - endpoints
   - groups
   - implies
@@ -14,15 +15,18 @@ path_keywords:
   - role_assignments
   - role_inferences
   - roles
+  - s3tokens
   - services
   - tags
   - tokens
   - users
 
+# never replace these
 keyword_exclusions:
   - config
   - OS-PKI
   - model
+
 
 regex_path_mapping:
   - '\S+/domains/config/[0-9a-zA-Z_]+/default$': 'domains/config/group/default'

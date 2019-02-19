@@ -3,6 +3,14 @@
 # Reference for this file's format:
 # <https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration>
 
+# Activate once dashborads and alerts are adopted
+defaults:
+  ttl: 3h
+#  timer_type: histogram
+#  buckets: [.025, .1, .25, 1, 2.5]
+#  match_type: glob
+#  glob_disable_ordering: false
+
 mappings:
 
   ##############################################################################
@@ -108,6 +116,11 @@ mappings:
   name: swift_object_replicator
   labels:
     action: $1
+- match: swift.object-server.async_pendings.project.*.*
+  name: swift_async_pendings_detail
+  labels:
+    project_id: $1
+    container:  $2
 
   ##############################################################################
   # remove superfluous "timing" word from timer names

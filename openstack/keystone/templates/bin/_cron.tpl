@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -ex
-
 export STDOUT=${STDOUT:-/proc/1/fd/1}
 export STDERR=${STDERR:-/proc/1/fd/2}
 

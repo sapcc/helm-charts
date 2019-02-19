@@ -22,15 +22,30 @@ data:
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
   {{- end }}
+  # add openstack alerts
   {{- if .Values.alerting.openstack }}
   {{- range $path, $bytes := .Files.Glob "openstack-*.alerts" }}
   {{ printf "%s" $path }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
   {{- end}}
-  # add baremetal alerts
-  {{- if .Values.alerting.baremetal }}
-  {{- range $path, $bytes := .Files.Glob "baremetal-*.alerts" }}
+  # add metal alerts
+  {{- if .Values.alerting.metal }}
+  {{- range $path, $bytes := .Files.Glob "metal-*.alerts" }}
+  {{ printf "%s" $path }}: |
+{{ printf "%s" $bytes | indent 4 }}
+  {{- end }}
+  {{- end }}
+  # add network alerts
+  {{- if .Values.alerting.network }}
+  {{- range $path, $bytes := .Files.Glob "network-*.alerts" }}
+  {{ printf "%s" $path }}: |
+{{ printf "%s" $bytes | indent 4 }}
+  {{- end }}
+  {{- end }}
+  # add vmware alerts
+  {{- if .Values.alerting.vmware }}
+  {{- range $path, $bytes := .Files.Glob "vmware-*.alerts" }}
   {{ printf "%s" $path }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
@@ -48,7 +63,9 @@ data:
       # The labels to add to any time series or alerts when communicating with
       # external systems (federation, remote storage, Alertmanager).
       external_labels:
-        region: {{ .Values.global.region }}
+        region: {{ required ".Values.global.region undefined" .Values.global.region }}
+        cluster_type: {{ .Values.global.clusterType }}
+        cluster: {{if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
 
     rule_files:
       - ./*.rules
@@ -60,8 +77,8 @@ data:
         - targets: ['localhost:9090']
 
     - job_name: 'prometheus-collector-federation'
-      scrape_interval: 60s
-      scrape_timeout: 55s
+      scrape_interval: {{ .Values.federation.scrapeInterval }}
+      scrape_timeout: {{ .Values.federation.scrapeTimeout }}
 
       honor_labels: true
       metrics_path: '/federate'
@@ -102,7 +119,9 @@ data:
           - '{__name__=~"^inframonitor_.+"}'
           - '{__name__=~"^ingress_.+"}'
           - '{__name__=~"^ipmi_.+"}'
+          - '{__name__=~"^jump_.+"}'
           - '{__name__=~"^keystone_.+"}'
+          - '{__name__=~"^klog_.+"}'
           - '{__name__=~"^kube_.+"}'
           - '{__name__=~"^kubelet_.+"}'
           - '{__name__=~"^limes_.+"}'
@@ -112,6 +131,7 @@ data:
           - '{__name__=~"^maia_.+"}'
           - '{__name__=~"^memcached.+"}'
           - '{__name__=~"^metrics_.+"}'
+          - '{__name__=~"^netapp_.+"}'
           - '{__name__=~"^neutron_asr1k.+"}'
           - '{__name__=~"^nginx_.+"}'
           - '{__name__=~"^node_.+"}'
@@ -137,11 +157,19 @@ data:
           - '{__name__=~"^scrape_duration_seconds"}'
           - '{__name__=~"^security_group_(max|total)_entanglement$"}'
           - '{__name__=~"^skydns_.+"}'
+          - '{__name__=~"^snmp_asr_.+"}'
+          - '{__name__=~"^snmp_arista_dot1qVlanFdbId"}'
+          - '{__name__=~"^snmp_f5_.+"}'
           - '{__name__=~"^sql_openstack_.+"}'
+          - '{__name__=~"^mysql_global_status_.+"}'
+          - '{__name__=~"^mysql_global_variables_.+"}'
+          - '{__name__=~"^mysql_info_.+"}'
           - '{__name__=~"^statsd_.+"}'
           - '{__name__=~"^swift_.+"}'
           - '{__name__=~"^unbound_.+"}'
           - '{__name__=~"^up"}'
+          - '{__name__=~"^uwsgi_.+"}'
+          - '{__name__=~"^vasa_.+"}'
           - '{__name__=~"^vice_president_.+"}'
           - '{__name__=~"^vcenter_datastore_.+$"}'
           - '{__name__=~"^vcenter_vcenter_api_session_info$"}'
@@ -154,12 +182,17 @@ data:
           - '{__name__=~"^vcenter_SR17595168510$"}'
           - '{__name__=~"^webhook_.+"}'
           - '{__name__=~"^admission|daemonset|deployment|disruption|endpoint|job|namespace|petset|replicaset|serviceaccount.+"}'
+          - '{__name__=~"^ns_exporter.+"}'
+          - '{__name__=~"^total"}'
+          - '{__name__=~"^success"}'
+          - '{__name__=~"^latency"}'
           - '{job="dns-sd"}'
 
+      #add region label to all metrics, don't delete this without knowing what you are doing...
       relabel_configs:
-        - action: replace
-          target_label: region
-          replacement: {{ .Values.global.region }}
+         - action: replace
+           target_label: region
+           replacement: {{ required ".Values.global.region undefined" .Values.global.region }}
 
       metric_relabel_configs:
         - action: replace

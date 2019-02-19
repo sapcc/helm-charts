@@ -20,6 +20,7 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default 100 }}
 [keystone_authtoken]
 auth_plugin = v3password
 auth_version = v3
+auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
@@ -30,6 +31,8 @@ project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 insecure = True
+token_cache_time = 600
+service_token_roles_required = True
 
 [paste_deploy]
 flavor = keystone
@@ -68,3 +71,6 @@ swift_store_use_trusts=True
 driver = noop
 
 {{- include "ini_sections.cache" . }}
+
+[barbican]
+auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3

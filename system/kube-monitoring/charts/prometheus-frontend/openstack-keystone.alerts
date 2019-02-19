@@ -9,9 +9,9 @@ groups:
       dashboard: keystone
       service: keystone
       severity: warning
-      tier: openstack
+      tier: os
     annotations:
-      description: Keystone failed to be scraped.
+      description: Keystone failed to be scraped. Monitoring might miss metrics it needs to alert on.
       summary: Keystone cannot be scraped
 
   - alert: OpenstackKeystoneDatabaseScrapeMissing
@@ -22,9 +22,9 @@ groups:
       dashboard: keystone
       service: keystone
       severity: warning
-      tier: openstack
+      tier: os
     annotations:
-      description: Keystones database running status failed to be scraped.
+      description: Keystones database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
       summary: Keystone database cannot be scraped
 
   - alert: OpenstackKeystoneApiDown
@@ -36,9 +36,9 @@ groups:
       meta: a keystone instance went down on {{ $labels.instance }}
       service: keystone
       severity: info
-      tier: openstack
+      tier: os
     annotations:
-      description: Keystone on {{ $labels.instance}} is DOWN.
+      description: A keystone-api pod on {{ $labels.instance}} is DOWN. The remaining ones should keep the service up.
       summary: A keystone server is DOWN
 
   - alert: OpenstackKeystoneDatabaseDown
@@ -46,10 +46,11 @@ groups:
     for: 5m
     labels:
       context: availability
-      dashboard: keystone
       service: keystone
       severity: critical
-      tier: openstack
+      tier: os
+      dashboard: postgres?var-database=keystone
+      playbook: 'docs/devops/alert/keystone/#database_down'
     annotations:
       description: Keystone database on {{ $labels.instance }} is DOWN.
       summary: Keystone Database is DOWN
@@ -59,143 +60,82 @@ groups:
     for: 5m
     labels:
       context: availability
-      dashboard: keystone
       meta: all keystone instances are down
       service: keystone
       severity: critical
-      tier: openstack
+      tier: os
+      dashboard: keystone
+      playbook: 'docs/devops/alert/keystone/#api_down'
     annotations:
-      description: All keystone servers are down.
+      description: All keystone-api server pods are down.
       summary: Keystone is unavailable.
 
-  - alert: OpenstackKeystoneADHealthcheckScrapeMissing
-    expr: absent(up{component="keystone",type="healthcheck"})
-    for: 1h
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: warning
-      tier: openstack
-    annotations:
-      description: Active Directory healthchecks failed to be scraped.
-      summary: Active Directory cannot be scraped
-
-  - alert: OpenstackActiveDirectoryNode1Down
-    expr: ad_node_1_up_status == 1
+  - alert: OpenstackActiveDirectoryNodeDown
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_node"} == 1
     for: 5m
     labels:
       context: availability
       dashboard: keystone
       service: keystone
       severity: warning
-      tier: openstack
+      tier: os
     annotations:
-      description: ActiveDirectory node 1 is not responding to ping.
-      summary: ActiveDirectory node 1 is down
+      description: An ActiveDirectory node is not accepting connections. The remaining node should continue service.
+      summary: An ActiveDirectory node is down
 
-  - alert: OpenstackActiveDirectoryNode2Down
-    expr: ad_node_2_up_status == 1
+  - alert: OpenstackActiveDirectoryConnectFailed
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_dns"} == 1
     for: 5m
     labels:
       context: availability
-      dashboard: keystone
-      service: keystone
-      severity: warning
-      tier: openstack
-    annotations:
-      description: ActiveDirectory node 2 is not responding to ping.
-      summary: ActiveDirectory node 2 is down
-
-  - alert: OpenstackActiveDirectoryResolveFailed
-    expr: ad_dns_resolve_status == 1
-    for: 5m
-    labels:
-      context: availability
-      dashboard: keystone
       service: keystone
       severity: critical
-      tier: openstack
+      tier: os
+      dashboard: keystone
+      playbook: 'docs/devops/alert/keystone/#ldap_fail'
     annotations:
-      description: LDAP (active directory) DNS is not resolving.
-      summary: ldap.global.cloud.sap DNS resolve failed
+      description: The LDAP-LB endpoint (active directory) is not accepting connections.
+      summary: ldap.global.cloud.sap is down
 
   - alert: OpenstackActiveDirectorySearchUsersFailed
-    expr: ad_search_user_status == 1
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_search_user"} == 1
     for: 5m
     labels:
       context: availability
-      dashboard: keystone
       service: keystone
       severity: critical
-      tier: openstack
+      tier: os
+      dashboard: keystone
+      playbook: 'docs/devops/alert/keystone/#ldap_fail'
     annotations:
       description: LDAP (active directory) user searches are failing.
       summary: LDAP user searches are failing.
 
   - alert: OpenstackActiveDirectorySearchGroupsFailed
-    expr: ad_search_group_status == 1
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_search_group"} == 1
     for: 5m
     labels:
       context: availability
-      dashboard: keystone
       service: keystone
       severity: critical
-      tier: openstack
+      tier: os
+      dashboard: keystone
+      playbook: 'docs/devops/alert/keystone/#ldap_fail'
     annotations:
       description: LDAP (active directory) group searches are failing.
       summary: LDAP group searches are failing.
 
-  - alert: OpenstackCAMResolveFailed
-    expr: ad_dns_resolve_cam_status == 1
-    for: 5m
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: info
-      tier: openstack
-    annotations:
-      description: CAM DNS is not resolving.
-      summary: CAM DNS resolve failed
-
-  - alert: OpenstackCAMDown
-    expr: ad_cam_up_status == 1
-    for: 5m
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: info
-      tier: openstack
-    annotations:
-      description: CAM is not responding to ping.
-      summary: CAM is down
-
-  - alert: OpenstackEWSResolveFailed
-    expr: ad_dns_resolve_ews_status == 1
-    for: 5m
-    labels:
-      context: availability
-      dashboard: keystone
-      service: keystone
-      severity: info
-      tier: openstack
-    annotations:
-      description: SAP Exchange webservice DNS is not resolving.
-      summary: SAP autodiscover.sap.com DNS resolve failed
-
   - alert: OpenstackEWSDown
-    expr: ad_ews_up_status == 1
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ping_ews"} == 1
     for: 5m
     labels:
       context: availability
       dashboard: keystone
       service: keystone
       severity: info
-      tier: openstack
+      tier: os
     annotations:
-      description: SAP Exchange webservice is not responding to ping.
+      description: SAP Exchange webservice is not responding to ping. Usualy due to lacking internet connectivity. Password updates will fail.
       summary: SAP autodiscover.sap.com is down
 
   - alert: OpenstackKeystoneApiDown
@@ -203,7 +143,7 @@ groups:
     for: 20m
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-blackbox-details
@@ -218,7 +158,7 @@ groups:
     expr: changes(blackbox_api_status_gauge{check=~"keystone"}[30m]) > 8
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-blackbox-details
@@ -229,12 +169,28 @@ groups:
       description: '{{ $labels.check }} API is flapping for 30 minutes.'
       summary: '{{ $labels.check }} API flapping'
 
+  - alert: OpenstackKeystoneApi5xx
+    expr: sum(irate(nginx_ingress_controller_requests{ingress=~"keystone", status=~"5.+"}[5m])) > 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      service: keystone
+      context: availability
+      dashboard: keystone
+      meta: 'Keystone API ingress endpoint is throwing 5xx. '
+      sentry: 'keystone'
+      playbook: 'docs/devops/alert/keystone/#api_5xx'
+    annotations:
+      description: 'The keystone ingress API endpoint is throwing 5xx for 5 min. Check if the keystone-api k8s pods are OK.'
+      summary: 'Keystone API ingress endpoint is not healthy'
+
   - alert: OpenstackKeystoneDatapathDown
     expr: blackbox_datapath_status_gauge{service=~"keystone"} == 1
     for: 15m
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -250,7 +206,7 @@ groups:
     for: 15m
     labels:
       severity: critical
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -265,7 +221,7 @@ groups:
     expr: changes(blackbox_datapath_status_gauge{service=~"keystone"}[30m]) > 8
     labels:
       severity: warning
-      tier: openstack
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: ccloud-health-datapath-details
@@ -275,3 +231,18 @@ groups:
     annotations:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: OpenstackKeystoneDatabaseSize
+    expr: predict_linear(pg_database_size_bytes{datname="keystone"}[1h], 24 * 3600) >= 10 * 1024^3
+    for: 5m
+    labels:
+      tier: k8s
+      service: keystone
+      severity: warning
+      context: availability
+      dashboard: postgres?var-database=keystone
+      meta: "The keystone database is predicted to run out of space in the next 24h"
+      playbook: 'docs/devops/alert/keystone/#database_size'
+    annotations:
+      description: "The keystone database is predicted to exceed the PV size in the next 24h"
+      summary: Keystone database is running out of PV space

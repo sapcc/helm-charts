@@ -36,6 +36,8 @@ data:
 {{ include (print .Template.BasePath "/etc/_sudoers.tpl") . | indent 4 }}
   logging.conf: |
 {{ include "loggerIni" .Values.logging | indent 4 }}
+  uwsgi.ini: |
+{{ include (print .Template.BasePath "/etc/_uwsgi.ini.tpl") . | indent 4 }}
 {{- if .Values.audit.enabled }}
   neutron_audit_map.yaml: |
 {{ include (print .Template.BasePath "/etc/_neutron_audit_map.yaml") . | indent 4 }}
@@ -44,3 +46,10 @@ data:
   watcher.yaml: |
 {{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
 {{- end }}
+  statsd-exporter.yaml: |
+    defaults:
+      timer_type: histogram
+      buckets: [.025, .1, .25, 1, 2.5]
+      match_type: glob
+      glob_disable_ordering: false
+      ttl: 0 # metrics do not expire

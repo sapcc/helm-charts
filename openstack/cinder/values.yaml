@@ -46,12 +46,13 @@ pod:
 
 debug: "True"
 
+sentry:
+  enabled: true
+
 dbName: cinder
 dbPassword: null
 
 port_metrics: 9102
-
-sentry_dsn: DEFINE-IN-REGION-CHART
 
 backend_defaults:
   suppress_requests_ssl_warnings: True
@@ -67,7 +68,7 @@ pgmetrics:
   name: cinder
   customMetrics:
     openstack_stuck_volumes:
-      query: "SELECT host, project_id, availability_zone, status, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM volumes WHERE status IN ('attaching', 'deleting', 'detaching') GROUP BY host, availability_zone, volume_type_id, status, project_id"
+      query: "SELECT host, project_id, id, display_name, availability_zone, status, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM volumes WHERE status IN ('attaching', 'deleting', 'detaching') GROUP BY host, availability_zone, volume_type_id, id, display_name, status, project_id"
       metrics:
         - host:
             usage: "LABEL"
@@ -81,6 +82,12 @@ pgmetrics:
         - status:
             usage: "LABEL"
             description: "Status of the volume"
+        - id:
+            usage: "LABEL"
+            description: "Volume ID"
+        - display_name:
+            usage: "LABEL"
+            description: "Name of the volume"           
         - count_gauge:
             usage: "GAUGE"
             description: "Number of volumes"
@@ -149,6 +156,10 @@ postgresql:
     enabled: true
     metrics: true
     os_password: null
+  resources:
+    requests:
+      cpu: "500m" # 1/2 cpu
+      memory: "500Mi" # 350Mi high recorded
 
 audit:
   enabled: false
@@ -212,7 +223,7 @@ quota_sync:
 db_purge:
   enabled: False
   # purge deleted cinder entities older than n days
-  older_than: 7
+  older_than: 14
 consistency:
   enabled: False
   # dry run mode, i.e. just check for consistency without fixing it

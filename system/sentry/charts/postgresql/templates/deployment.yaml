@@ -18,6 +18,7 @@ spec:
       - name: {{ template "fullname" . }}
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
         imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
+        args: ["-c", "config_file=/postgresql-conf/postgresql.conf", "-c", "hba_file=/postgresql-conf/pg-hba.conf"]
         env:
         - name: POSTGRES_USER
           value: {{ default "postgres" .Values.postgresUser | quote }}
@@ -65,6 +66,8 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /postgresql
+        - name: postgres-etc
+          mountPath: /postgresql-conf
 {{- if .Values.backup.enabled }}
       - image: {{.Values.backup.repository}}:{{.Values.backup.image_version}}
         name: backup
@@ -113,6 +116,9 @@ spec:
 {{ toYaml .Values.metrics.resources | indent 10 }}
 {{- end }}
       volumes:
+      - name: postgres-etc
+        configMap:
+          name: {{ template "fullname" . }}-etc
       - name: data
       {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:

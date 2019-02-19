@@ -42,6 +42,19 @@ scrape_configs:
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_service_name]
     target_label: kubernetes_name
+  # support injection of custom parameters. used by snmp exporter.
+  - action: labelmap
+    replacement: __param_$1
+    regex: __meta_kubernetes_service_annotation_prometheus_io_scrape_param_(.+)
+  metric_relabel_configs:
+  - source_labels: [component]
+    regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
+    replacement: '$1'
+    target_label: availability_zone
+  - source_labels: [component]
+    regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
+    replacement: '$2'
+    target_label: device
 
 # Scrape config for endpoints with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -338,6 +351,23 @@ scrape_configs:
       replacement: /api/v1/nodes/${1}:4194/proxy/metrics
 {{ end -}}
 
+{{- if .Values.openstack_sd.enabled }}
+- job_name: 'openstack_sd'
+  scheme: https
+  openstack_sd_configs:
+    - role: {{ .Values.openstack_sd.role }}
+      region: {{ .Values.openstack_sd.region }}
+      identity_endpoint: {{ .Values.openstack_sd.identity_endpoint }}
+      username: {{ .Values.openstack_sd.username }}
+      password: {{ .Values.openstack_sd.password }}
+      domain_name: {{ .Values.openstack_sd.domain_name }}
+      project_name: {{ .Values.openstack_sd.project_name }}
+      all_tenants: {{ .Values.openstack_sd.all_tenants }}
+  relabel_configs:
+    - action: labelmap
+      regex: __meta_openstack_(.+)
+{{ end }}
+
 {{- range $region := .Values.global.regions }}
 - job_name: 'blackbox-ingress-{{ $region }}'
   metrics_path: /probe
@@ -440,7 +470,10 @@ scrape_configs:
 {{- end }}
 
 {{- if .Values.global.ipmi_exporter.enabled }}
+{{- if .Values.global.ipmi_exporter.ironic.enabled }}
 - job_name: 'baremetal/ironic'
+  params:
+    job: [baremetal/ironic]
   scrape_interval: 60s
   scrape_timeout: 55s
   file_sd_configs:
@@ -454,6 +487,25 @@ scrape_configs:
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:9290
+{{- end }}
+{{- if .Values.global.ipmi_exporter.netbox.enabled }}
+- job_name: 'cp/netbox'
+  params:
+    job: [cp/netbox]
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /custom_targets/ipmi/netbox_targets.json
+  metrics_path: /ipmi
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: ipmi-exporter:9290
+{{- end }}
 {{- end }}
 
 {{- if .Values.global.arista_exporter.enabled }}

@@ -48,6 +48,23 @@ spec:
           env:
             - name: DEBUG_CONTAINER
               value: "false"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: swift.DSN.public
+            {{- end }}
+          {{- if .Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 1m-300m, RAM = 50-180 MiB
+            requests:
+              cpu: '200m'
+              memory: '200Mi'
+            limits:
+              cpu: '400m'
+              memory: '400Mi'
+          {{- end }}
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc

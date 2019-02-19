@@ -30,6 +30,7 @@ netapp_mtu={{$share.mtu | default 9000 }}
 
 netapp_root_volume_aggregate={{$share.root_volume_aggregate}}
 netapp_aggregate_name_search_pattern={{$share.aggregate_search_pattern}}
+netapp_reset_snapdir_visibility = hidden
 
 netapp_lif_name_template = os_%(net_allocation_id)s
 netapp_port_name_search_pattern = {{ $share.port_search_pattern  | default "(a0b)" }}

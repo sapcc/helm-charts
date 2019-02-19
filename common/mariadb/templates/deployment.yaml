@@ -18,6 +18,9 @@ spec:
     metadata:
       labels:
         app: {{.Values.name}}-mariadb
+      annotations:
+        checksum/secrets: {{ include (print $.Template.BasePath  "/secret.yaml") . | sha256sum }}
+        checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
 
     spec:
       containers:
@@ -31,10 +34,33 @@ spec:
         ports:
           - name: mariadb
             containerPort: 3306
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          exec:
+            command: ["sh", "-c", "exec mysqladmin status -uroot -p$MYSQL_ROOT_PASSWORD"]
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "exec mysqladmin status -uroot -p$MYSQL_ROOT_PASSWORD"]
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        {{- end }}
         volumeMounts:
           - name: mariadb-persistent-storage
             mountPath: /var/lib/mysql
             readOnly: false
+          - mountPath: /etc/mysql/conf.d/mariadb.cnf
+            name: mariadb-etc
+            subPath: mariadb.cnf
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
 {{- if .Values.backup.enabled }}
@@ -76,9 +102,6 @@ spec:
         - mountPath: /db/data
           name: mariadb-persistent-storage
           readOnly: true
-        - mountPath: /etc/mysql/conf.d/mariadb.cnf
-          name: mariadb-etc
-          subPath: mariadb.cnf
         - mountPath: /db/socket
           name: db-socket
 {{- end }}

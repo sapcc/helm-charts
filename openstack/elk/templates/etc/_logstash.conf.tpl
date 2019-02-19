@@ -10,8 +10,9 @@ input {
   tcp {
     port  => {{.Values.elk_logstash_input_syslog_port}}
     type => syslog
+  }
 }
-}
+
 
 output {
 if  [type] == "netflow" {

@@ -6,7 +6,7 @@ use = egg:Paste#urlmap
 /: meta
 
 [pipeline:meta]
-pipeline = cors metaapp
+pipeline = healthcheck cors {{- include "osprofiler_pipe" . }} {{- include "watcher_pipe" . }} sentry metaapp
 
 [app:metaapp]
 paste.app_factory = nova.api.metadata.handler:MetadataRequestHandler.factory
@@ -46,19 +46,19 @@ use = call:nova.api.openstack.urlmap:urlmap_factory
 # NOTE: this is deprecated in favor of openstack_compute_api_v21_legacy_v2_compatible
 [composite:openstack_compute_api_legacy_v2]
 use = call:nova.api.auth:pipeline_factory
-noauth2 = cors compute_req_id {{- include "osprofiler_pipe" . }} statsd faultwrap sizelimit noauth2 {{- include "watcher_pipe" . }} legacy_ratelimit sentry osapi_compute_app_legacy_v2
-keystone = cors compute_req_id {{- include "osprofiler_pipe" . }} statsd faultwrap sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} legacy_ratelimit sentry {{- include "audit_pipe" . }} osapi_compute_app_legacy_v2
-keystone_nolimit = cors compute_req_id {{- include "osprofiler_pipe" . }} statsd faultwrap sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_legacy_v2
+noauth2 = cors compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit noauth2 {{- include "watcher_pipe" . }} legacy_ratelimit sentry osapi_compute_app_legacy_v2
+keystone = cors compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} legacy_ratelimit sentry {{- include "audit_pipe" . }} osapi_compute_app_legacy_v2
+keystone_nolimit = cors compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_legacy_v2
 
 [composite:openstack_compute_api_v21]
 use = call:nova.api.auth:pipeline_factory_v21
-noauth2 = cors healthcheck http_proxy_to_wsgi compute_req_id {{- include "osprofiler_pipe" . }} statsd faultwrap sizelimit noauth2 {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
-keystone = cors compute_req_id {{- include "osprofiler_pipe" . }} statsd faultwrap sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
+noauth2 = cors healthcheck http_proxy_to_wsgi compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit noauth2 {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
+keystone = cors compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit authtoken keystonecontext {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
 
 [composite:openstack_compute_api_v21_legacy_v2_compatible]
 use = call:nova.api.auth:pipeline_factory_v21
-noauth2 = cors healthcheck http_proxy_to_wsgi compute_req_id {{- include "osprofiler_pipe" . }} statsd faultwrap sizelimit noauth2 legacy_v2_compatible {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
-keystone = cors healthcheck http_proxy_to_wsgi compute_req_id {{- include "osprofiler_pipe" . }} statsd faultwrap sizelimit authtoken keystonecontext legacy_v2_compatible {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
+noauth2 = cors healthcheck http_proxy_to_wsgi compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit noauth2 legacy_v2_compatible {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
+keystone = cors healthcheck http_proxy_to_wsgi compute_req_id {{- include "osprofiler_pipe" . }} faultwrap sizelimit authtoken keystonecontext legacy_v2_compatible {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
 
 [filter:request_id]
 paste.filter_factory = oslo_middleware:RequestId.factory
@@ -118,12 +118,8 @@ paste.filter_factory = nova.api.auth:NovaKeystoneContext.factory
 [filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 
-# Converged Cloud statsd & sentry middleware
-[filter:statsd]
-use = egg:ops-middleware#statsd
-
 [filter:sentry]
-use = egg:ops-middleware#sentry
+use = egg:raven#raven
 level = ERROR
 
 {{ if .Values.audit.enabled }}

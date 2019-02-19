@@ -42,6 +42,12 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr1k-start
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
           env:
             - name: DEBUG_CONTAINER
             {{ if $context.Values.pod.debug.asr1k_agent }}

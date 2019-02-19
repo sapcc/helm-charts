@@ -1,10 +1,11 @@
+{{- range $index, $memcached := .Values.memcached_servers }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: memcached
+  name: swift-{{ $memcached }}
   labels:
-    release: "{{.Release.Name}}"
+    release: "{{ $.Release.Name }}"
 spec:
   revisionHistoryLimit: 5
   replicas: 1
@@ -15,22 +16,43 @@ spec:
       maxSurge: 3
   selector:
     matchLabels:
-      name: memcached
+      name: swift-{{ $memcached }}
   template:
     metadata:
       labels:
-        name: memcached
+        name: swift-{{ $memcached }}
     spec:
       containers:
         - name: memcached
-          image: memcached:{{.Values.image_version_auxiliary_memcached}}
-          imagePullPolicy: Always
+          image: memcached:{{ $.Values.image_version_auxiliary_memcached }}
           ports:
-            - name: memcache
+            - name: memcached
               containerPort: 11211
-          command: ["memcached", "-m", "1024"]
+          command: ["memcached", "-m", "1024", "-c", "16384"]
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 15m-100m, RAM = 25-70 MiB
+            requests:
+              cpu: '50m'
+              memory: '1024Mi'
+            limits:
+              cpu: '200m'
+              memory: '2048Mi'
+          {{- end }}
         - name: metrics
-          image: prom/memcached-exporter:{{.Values.image_version_auxiliary_memcached_exporter}}
+          image: prom/memcached-exporter:{{ $.Values.image_version_auxiliary_memcached_exporter }}
           ports:
             - name: metrics
               containerPort: 9150
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU <= 2m-4m, RAM = 18-20 MiB
+            requests:
+              cpu: '10m'
+              memory: '36Mi'
+            limits:
+              cpu: '50m'
+              memory: '64Mi'
+          {{- end }}
+---
+{{end}}

@@ -46,6 +46,7 @@ nginx-ingress:
         }
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
+      proxy-send-timeout: '300'
       proxy-read-timeout: '300'
       proxy-body-size: '0k'
       server-name-hash-bucket-size: '128'
@@ -54,13 +55,14 @@ nginx-ingress:
       disable-ipv6: 'true'
       ssl-redirect: 'false'
       enable-underscores-in-headers: "true"
+      # worker shutdown timeout to 5h
+      worker-shutdown-timeout: "18000s"
 
     extraArgs:
       enable-dynamic-configuration:
       # disabled until https://github.com/kubernetes/ingress-nginx/issues/3034 is fixed
       enable-dynamic-certificates: "false"
       annotations-prefix: ingress.kubernetes.io
-      sync-period: 5m0s
 
     stats:
       enabled: true
