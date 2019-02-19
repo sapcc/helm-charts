@@ -25,9 +25,10 @@ spec:
       nodeSelector:
         failure-domain.beta.kubernetes.io/zone: {{$config.name}}
       volumes:
-        - name: cloudprober-config
+        - name: cloudprober-exporter
           configMap:
             name: cloudprober-exporter
+
       containers:
         - name: prober
           image: cloudprober/cloudprober@sha256:e018162dfbe43fa5f2ead9471cefe31d537652dc6f318a50477b66da0aad94b6
@@ -37,7 +38,7 @@ spec:
             "--logtostderr"
           ]
           volumeMounts:
-          - name: cloudprober-config
+          - name: cloudprober-exporter
             mountPath: /cfg
           ports:
           - name: http
@@ -45,10 +46,12 @@ spec:
           env:
           - name: CLOUDPROBER_PORT
             value: "9313"
-        - name: web-server
-          image: busybox
+        - name: nginx
+          image: nginx:alpine
           imagePullPolicy: IfNotPresent
-          command: ["/bin/sh", "-c", "while true; do { echo -e 'HTTP/1.1 200 OK\r\n'; echo 'Hello World';} | nc -l -p 1080; done"]
+          volumeMounts:
+            - name: cloudprober-exporter
+              mountPath: /usr/share/nginx/html
           ports:
             - name: http
               containerPort: 1080
@@ -59,8 +62,6 @@ spec:
               port: 1080
             timeoutSeconds: 10
             periodSeconds: 60
-            failureThreshold: 5
-            initialDelaySeconds: 60
           readinessProbe:
             httpGet:
               path: /
