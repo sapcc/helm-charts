@@ -12,7 +12,7 @@
 @include files/*
 
 <system>
-  log_level info
+  log_level warn
 </system>
 
 # All the auto-generated files should use the tag "file.<filename>".
@@ -452,7 +452,15 @@
    include_tag_key true
    resurrect_after 120
    reconnect_on_error true
-   buffer_type memory
+   <buffer>
+     flush_at_shutdown true
+     flush_thread_interval 5
+     overflow_action block
+     retry_forever true
+     retry_wait 2s
+     flush_thread_count 4
+     buffer_type memory
+   </buffer>
    flush_interval 3s
    buffer_chunk_limit 96m
    buffer_queue_limit 256

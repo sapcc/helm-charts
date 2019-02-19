@@ -11,11 +11,11 @@ metadata:
     service: logging
 
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1
+      maxUnavailable: 0
       maxSurge: 1
   template:
     metadata:
@@ -24,6 +24,10 @@ spec:
     spec:
       nodeSelector:
         zone: farm
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: elasticsearch-exporter
           image: justwatch/elasticsearch_exporter:{{ $.Values.elk_image_version_elasticsearch_exporter }}
@@ -32,5 +36,22 @@ spec:
           ports:
             - name: metrics
               containerPort: {{ $.Values.elasticsearch_exporter.listen_port }}
+          securityContext:
+            capabilities:
+              drop:
+                - SETPCAP
+                - MKNOD
+                - AUDIT_WRITE
+                - CHOWN
+                - NET_RAW
+                - DAC_OVERRIDE
+                - FOWNER
+                - FSETID
+                - KILL
+                - SETGID
+                - SETUID
+                - NET_BIND_SERVICE
+                - SYS_CHROOT
+                - SETFCAP
 {{ end -}}
 {{ end -}}
