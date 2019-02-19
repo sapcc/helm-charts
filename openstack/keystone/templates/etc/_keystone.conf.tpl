@@ -141,8 +141,8 @@ driver = messaging
 [oslo_middleware]
 enable_proxy_headers_parsing = true
 
-{{- if .Values.lifesaver.enabled }}
 [lifesaver]
+enabled = {{ .Values.lifesaver.enabled }}
 {{- if .Values.memcached.host }}
 memcached = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 11211}}
 {{ else }}
@@ -159,7 +159,6 @@ refill_seconds = {{ .Values.lifesaver.refill_seconds | default 60 }}
 refill_amount = {{ .Values.lifesaver.refill_amount | default 1 }}
 # cost of each status
 status_cost = {{ .Values.lifesaver.status_cost | default "default:1,401:10,403:5,404:0,429:0" }}
-{{- end }}
 
 {{- if .Values.cors.enabled }}
 [cors]
