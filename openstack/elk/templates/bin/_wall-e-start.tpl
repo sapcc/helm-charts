@@ -34,48 +34,29 @@ function start_application {
 
   echo ""
   echo "INFO: creating index for fluentd/logstash logs"
-  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/logstash" -d "@/wall-e-etc/logstash.json"
+  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} --header "content-type: application/JSON" -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/logstash" -d "@/wall-e-etc/logstash.json"
 
   echo ""
   echo "INFO: creating index for fluent-systemd/systemd logs"
-  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/systemd" -d "@/wall-e-etc/systemd.json"
+  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} --header "content-type: application/JSON" -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/systemd" -d "@/wall-e-etc/systemd.json"
 
   echo ""
   echo "INFO: creating index for filebeat/jump server logs"
-  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/jump" -d "@/wall-e-etc/jump.json"
+  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} --header "content-type: application/JSON" -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/jump" -d "@/wall-e-etc/jump.json"
 
   echo ""
   echo "INFO: creating index for fluentd/kubernikus server logs"
-  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/kubernikus" -d "@/wall-e-etc/kubernikus.json"
-
-  echo ""
-  echo "INFO: setting up the discover panel"
-  /node_modules/elasticdump/bin/elasticdump \
-      --input=/search.json \
-      --output=http://{{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}@{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/.kibana \
-      --type=data
-
-  echo "INFO: setting up the visualization panel"
-  /node_modules/elasticdump/bin/elasticdump \
-      --input=/visualization.json \
-      --output=http://{{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}@{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/.kibana \
-      --type=data
-  
-  echo "INFO: setting up the dashboard panel"
-  /node_modules/elasticdump/bin/elasticdump \
-      --input=/dashboard.json \
-      --output=http://{{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}}@{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/.kibana \
-      --type=data
+  curl -s -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} --header "content-type: application/JSON" -XPUT "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}/_template/kubernikus" -d "@/wall-e-etc/kubernikus.json"
 
   # run the creation of the index patterns and the index retention cleanup deletion once on startup and put them into cron to run once per night afterwards
   echo "INFO: creating the indexes"
-  . /wall-e-bin/create-kibana-indexes.sh
+  #  . /wall-e-bin/create-kibana-indexes.sh
   echo ""
   echo "INFO: deleting old indexes in case we run out of space"
   /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml
   
   echo "INFO: setting up cron jobs for index creation and purging"
-  cat <(crontab -l) <(echo "0 3 * * * . /wall-e-bin/create-kibana-indexes.sh  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  #cat <(crontab -l) <(echo "0 3 * * * . /wall-e-bin/create-kibana-indexes.sh  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
   cat <(crontab -l) <(echo "0 6 * * * /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
 
   echo "INFO: starting cron in foreground"

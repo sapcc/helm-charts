@@ -5,6 +5,7 @@ function process_config {
   cp -f /es-etc/readonlyrest.yml /elasticsearch/config/readonlyrest.yml
   cp -f /es-etc/log4j2.properties /elasticsearch/config/log4j2.properties
   cp -f /es-etc/jvm.options /elasticsearch/config/jvm.options
+  cp -f /es-etc/java.security /usr/lib/jvm/java-11-openjdk-amd64/lib/security/java.security
 }
 
 function start_application {
@@ -21,10 +22,6 @@ function start_application {
   export HTTP_ENABLE=${HTTP_ENABLE:-true}
   export MULTICAST=${MULTICAST:-true}
   unset http_proxy https_proxy all_proxy no_proxy
-
-  if [ "$ES_JAVA_OPTS" = "" ]; then
-     export ES_JAVA_OPTS="-Xms10g -Xmx10g"
-  fi
 
   # enable resync (again, it is disabled by the stop script)
   (sleep 180; curl -u {{.Values.elk_elasticsearch_admin_user}}:{{.Values.elk_elasticsearch_admin_password}} -XPUT localhost:{{.Values.elk_elasticsearch_port_internal}}/_cluster/settings -d '{"transient": { "cluster.routing.allocation.enable": "all" } }') &

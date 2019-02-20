@@ -25,6 +25,7 @@ spec:
         operator: "Exists"
         effect: "NoSchedule"
       {{- end }}
+      terminationGracePeriodSeconds: 30
       volumes:
         - name: fluent-bin
           configMap:
@@ -51,9 +52,11 @@ spec:
             - name: DEPENDENCY_SERVICE
               value: "es-client.elk"
           resources:
-#            limits:
-#              cpu: 1000m
-#              memory: 2000Mi
+            limits:
+              memory: 2000Mi
+            requests:
+              cpu: 100m
+              memory: 2000Mi
           volumeMounts:
             - name: fluent-bin
               mountPath: /fluent-bin

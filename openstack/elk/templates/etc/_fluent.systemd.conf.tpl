@@ -49,7 +49,6 @@
    buffer_queue_full_action exception
    slow_flush_log_threshold 40.0
    flush_interval 3s
-   retry_wait 2s
    include_tag_key true
    logstash_format true
    max_retry_wait 10s
@@ -59,5 +58,5 @@
    reload_on_failure true
    resurrect_after 120
    reconnect_on_error true
-   num_threads 8
+   num_threads 4
 </match>

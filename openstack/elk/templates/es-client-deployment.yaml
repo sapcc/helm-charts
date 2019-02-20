@@ -13,6 +13,10 @@ metadata:
 
 spec:
   replicas: {{.Values.elk_elasticsearch_client_replicas}}
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: client
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -58,12 +62,18 @@ spec:
                   fieldPath: metadata.namespace
             - name: KUBERNETES_CA_CERTIFICATE_FILE
               value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: NODE_MASTER
               value: "false"
             - name: NODE_DATA
               value: "false"
             - name: HTTP_ENABLE
               value: "true"
+            - name: ES_JAVA_OPTS
+              value: "-XX:+UseG1GC -XX:MaxGCPauseMillis=300 -Xms10g -Xmx10g"
           volumeMounts:
             - mountPath: /es-bin
               name: es-bin
@@ -76,7 +86,3 @@ spec:
             - name: http
               containerPort: {{.Values.elk_elasticsearch_port_internal}}
               protocol: TCP
-            - name: dummymasterport
-              hostPort: {{.Values.elk_elasticsearch_client_dummy_port}}
-              hostIP: 127.0.0.1
-              containerPort: {{.Values.elk_elasticsearch_client_dummy_port}}

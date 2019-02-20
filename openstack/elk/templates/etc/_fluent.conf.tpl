@@ -12,7 +12,7 @@
 @include files/*
 
 <system>
-  log_level info
+  log_level warn
 </system>
 
 # All the auto-generated files should use the tag "file.<filename>".
@@ -32,7 +32,6 @@
   kubernetes_url https://KUBERNETES_SERVICE_HOST
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  include_namespace_id true
   use_journal 'false'
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
@@ -399,23 +398,24 @@
    port {{.Values.elk_elasticsearch_port_internal}}
    user {{.Values.elk_elasticsearch_data_user}}
    password {{.Values.elk_elasticsearch_data_password}}
+   logstash_format true
    time_as_integer false
    @log_level info
-   buffer_type "memory"
-   buffer_chunk_limit 96m
-   buffer_queue_limit 256
-   buffer_queue_full_action exception
-   slow_flush_log_threshold 40.0
-   flush_interval 3s
-   retry_wait 2s
-   include_tag_key true
-   logstash_format true
-   max_retry_wait 10s
-   disable_retry_limit
    request_timeout 60s
-   reload_connections true
-   reload_on_failure true
+   include_tag_key true
    resurrect_after 120
    reconnect_on_error true
-   num_threads 8
+   <buffer>
+     flush_at_shutdown true
+     flush_thread_interval 5
+     overflow_action block
+     retry_forever true
+     retry_wait 2s
+     flush_thread_count 4
+     buffer_type memory
+   </buffer>
+   flush_interval 3s
+   buffer_chunk_limit 96m
+   buffer_queue_limit 256
+   num_threads 4
  </match>
