@@ -42,7 +42,7 @@ scrape_configs:
       - '{__name__=~"^kube_pod_container_resource_requests_memory_bytes$",node=~".+cloud.sap"}'
       - '{__name__=~"^kube_pod_container_resource_requests_cpu_cores$",node=~".+cloud.sap"}'
       - '{__name__=~"^kube_node_status_capacity$",node=~".+cloud.sap"}'
-      - '{__name__=~"^ipmi_sensor_state$",job=~"baremetal/ironic"}'
+      - '{__name__=~"^ipmi_sensor_state$"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^swift_cluster_storage_used_percent_.+"}'
       - '{__name__=~"^openstack_ironic_nodes_.+"}'
