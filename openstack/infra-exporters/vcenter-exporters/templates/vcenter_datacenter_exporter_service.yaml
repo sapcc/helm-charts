@@ -13,31 +13,31 @@ template: |
   kind: Service
   apiVersion: v1
   metadata:
-    name: vcenter-exporter-{{ name }}-`}}{{ $exporter_type_values.name }}{{`
-    namespace: monsoon3
+    name: vcenter-exporter-{{ name }}-`}}{{ required ".Values.vcenter_exporters.<exporter_type>.name is missing" $exporter_type_values.name }}{{`
+    namespace: infra-exporters
     labels:
       system: openstack
       service: metrics
-      component: vcenter-exporter-{{ name }}-`}}{{ $exporter_type_values.name }}
+      component: vcenter-exporter-{{ name }}-`}}{{ required ".Values.vcenter_exporters.<exporter_type>.name is missing" $exporter_type_values.name }}
     {{ if $exporter_type_values.collector }}
     annotations:
       {{- range $collector := $exporter_type_values.collector }}
       {{- if eq $collector "maia" }}
       maia.io/scrape: "true"
-      maia.io/port: {{ $global_values.vcenter_exporters.prometheus_port | quote }}
+      maia.io/port: {{ required ".Values.vcenter_exporters.prometheus_port is missing" $global_values.vcenter_exporters.prometheus_port | quote }}
       {{- end }}
       {{- if eq $collector "prometheus" }}
       prometheus.io/scrape: "true"
-      prometheus.io/port: {{ $global_values.vcenter_exporters.prometheus_port | quote }}
+      prometheus.io/port: {{ required ".Values.vcenter_exporters.prometheus_port is missing" $global_values.vcenter_exporters.prometheus_port | quote }}
       {{- end }}
       {{- end }}
     {{ end }}{{`
   spec:
     selector:
-      component: vcenter-exporter-{{ name }}-`}}{{ $exporter_type_values.name }}{{`
+      component: vcenter-exporter-{{ name }}-`}}{{ required ".Values.vcenter_exporters.<exporter_type>.name is missing" $exporter_type_values.name }}{{`
     ports:
       - name: metrics
-        port: `}}{{ $global_values.vcenter_exporters.prometheus_port }}{{`
+        port: `}}{{ required ".Values.vcenter_exporters.prometheus_port is missing" $global_values.vcenter_exporters.prometheus_port }}{{`
 `}}
 {{- end }}
 {{- end }}
