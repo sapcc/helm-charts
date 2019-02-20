@@ -1,8 +1,6 @@
-{{- define "helm-toolkit.snippets.network_container_agent" -}}
+{{- define "network_container_agent" -}}
 {{- $env := index . 0 -}}
 {{- $containerName := index . 1 -}}
-image: {{$env.Values.global.imageRegistry}}/{{$env.Values.agent.image_name}}:{{$env.Values.agent.image_tag}}
-imagePullPolicy: IfNotPresent
 securityContext:
   privileged: true
 command: ["/container.init/{{ $containerName }}-start"]

@@ -30,7 +30,9 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: neutron-dhcp-agent
-{{ tuple . "neutron-dhcp-agent" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentDHCP | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
+          imagePullPolicy: IfNotPresent
+{{ tuple . "neutron-dhcp-agent" | include "network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -42,7 +44,9 @@ spec:
               name: host-run-netns
               mountPropagation: Bidirectional
         - name: neutron-metadata-agent
-{{ tuple . "neutron-metadata-agent" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentMetadata | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
+          imagePullPolicy: IfNotPresent
+{{ tuple . "neutron-metadata-agent" | include "network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -51,7 +55,9 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: neutron-l3-agent
-{{ tuple . "neutron-l3-agent" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentL3 | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
+          imagePullPolicy: IfNotPresent
+{{ tuple . "neutron-l3-agent" | include "network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -63,7 +69,9 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: neutron-ovs-agent
-{{ tuple . "neutron-openvswitch-agent" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentOVS | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentOVS or similar"}}
+          imagePullPolicy: IfNotPresent
+{{ tuple . "neutron-openvswitch-agent" | include "network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -75,7 +83,9 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: ovs
-{{ tuple . "neutron-ovs" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentOVS | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentOVS or similar"}}
+          imagePullPolicy: IfNotPresent
+{{ tuple . "neutron-ovs" | include "network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -85,7 +95,9 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: ovs-db
-{{ tuple . "neutron-ovs-db" | include "helm-toolkit.snippets.network_container_agent" | indent 10 }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentOVS | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentOVS or similar"}}
+          imagePullPolicy: IfNotPresent
+{{ tuple . "neutron-ovs-db" | include "network_container_agent" | indent 10 }}
           volumeMounts:
             - mountPath: /lib/modules
               name: modules
