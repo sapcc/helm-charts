@@ -10,43 +10,49 @@ data:
 {{ $files.Get . | indent 4 }}
   {{- end }}
   # add all rules
-  {{- range $path, $bytes := .Files.Glob "*.rules" }}
-  {{ printf "%s" $path }}: |
+  {{- range $path, $bytes := .Files.Glob "rules/*.rules" }}
+  {{ printf "%s" $path | replace "/" "-" }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{ end -}}
 {{- if .Values.alerting.enabled }}
   # add kubernetes alerts
   {{- if .Values.alerting.kubernetes }}
-  {{- range $path, $bytes := .Files.Glob "kubernetes-*.alerts" }}
-  {{ printf "%s" $path }}: |
+    {{- if eq .Values.global.clusterType "controlplane" }}
+      {{- range $path, $bytes := .Files.Glob "alerts/controlplane/kubernetes-*.alerts" }}
+  {{ printf "%s" $path | replace "/" "-" }}: |
+{{ printf "%s" $bytes | indent 4 }}
+      {{- end }}
+    {{- end }}
+  {{- range $path, $bytes := .Files.Glob "alerts/kubernetes-*.alerts" }}
+  {{ printf "%s" $path | replace "/" "-" }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
   {{- end }}
   # add openstack alerts
   {{- if .Values.alerting.openstack }}
-  {{- range $path, $bytes := .Files.Glob "openstack-*.alerts" }}
-  {{ printf "%s" $path }}: |
+  {{- range $path, $bytes := .Files.Glob "alerts/openstack-*.alerts" }}
+  {{ printf "%s" $path | replace "/" "-" }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
   {{- end}}
   # add metal alerts
   {{- if .Values.alerting.metal }}
-  {{- range $path, $bytes := .Files.Glob "metal-*.alerts" }}
-  {{ printf "%s" $path }}: |
+  {{- range $path, $bytes := .Files.Glob "alerts/metal-*.alerts" }}
+  {{ printf "%s" $path | replace "/" "-" }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
   {{- end }}
   # add network alerts
   {{- if .Values.alerting.network }}
-  {{- range $path, $bytes := .Files.Glob "network-*.alerts" }}
-  {{ printf "%s" $path }}: |
+  {{- range $path, $bytes := .Files.Glob "alerts/network-*.alerts" }}
+  {{ printf "%s" $path | replace "/" "-" }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
   {{- end }}
   # add vmware alerts
   {{- if .Values.alerting.vmware }}
-  {{- range $path, $bytes := .Files.Glob "vmware-*.alerts" }}
-  {{ printf "%s" $path }}: |
+  {{- range $path, $bytes := .Files.Glob "alerts/vmware-*.alerts" }}
+  {{ printf "%s" $path | replace "/" "-" }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
   {{- end }}
