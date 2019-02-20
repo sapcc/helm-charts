@@ -1,26 +1,26 @@
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ template "rabbitmq.fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "rabbitmq.fullname" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     component: rabbitmq
 spec:
-  serviceName: {{ template "fullname" . }}
+  serviceName: {{ template "rabbitmq.fullname" . }}
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
   updateStrategy:
     type: {{ .Values.upgrades.updateStrategy }}
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app: {{ template "rabbitmq.fullname" . }}
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
+        app: {{ template "rabbitmq.fullname" . }}
         release: {{ .Release.Name }}
       annotations:
         checksum/etc.config: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
@@ -55,7 +55,7 @@ spec:
           - name: RABBITMQ_USE_LONGNAME
             value: "true"
           - name: K8S_SERVICE_NAME
-            value: {{ template "fullname" . }}
+            value: {{ template "rabbitmq.fullname" . }}
           - name: RABBITMQ_ERLANG_COOKIE
             value: "{{ .Values.erlangCookie }}"
         resources:
@@ -103,13 +103,13 @@ spec:
         - name: rabbitmq-storage
 {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
-            claimName: {{ .Values.persistence.existingClaim | default (include "fullname" .) }}
+            claimName: {{ .Values.persistence.existingClaim | default (include "rabbitmq.fullname" .) }}
 {{- else if not .Values.persistenceTemplate.enabled }}
           emptyDir: {}
 {{- end }}
         - name: config-volume
           configMap:
-            name: {{ template "fullname" . }}-config
+            name: {{ template "rabbitmq.fullname" . }}-config
             items:
               - key: rabbitmq.conf
                 path: rabbitmq.conf
@@ -120,7 +120,7 @@ spec:
 {{- if .Values.persistenceTemplate.enabled }}
   volumeClaimTemplates:
   - metadata:
-      name: {{ template "fullname" . }}
+      name: {{ template "rabbitmq.fullname" . }}
     spec:
 {{- .Values.persistenceTemplate.spec | toYaml | indent 6 }}
 {{- end }}

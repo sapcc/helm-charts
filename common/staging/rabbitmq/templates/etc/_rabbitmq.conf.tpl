@@ -23,4 +23,4 @@ cluster_formation.node_cleanup.only_log_warning = true
 cluster_partition_handling = autoheal
 
 ## queue master locator 
-queue_master_locator=min-masters
+queue_master_locator = min-masters
