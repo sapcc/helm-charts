@@ -46,7 +46,7 @@ elasticsearch.password: "{{.Values.elk_elasticsearch_admin_password}}"
 
 # Time in milliseconds to wait for elasticsearch to respond to pings, defaults to
 # request_timeout setting
-elasticsearch.pingTimeout: 3000
+elasticsearch.pingTimeout: 10000
 
 # Time in milliseconds to wait for responses from the back end or elasticsearch.
 # This must be > 0
@@ -81,3 +81,5 @@ xpack.monitoring.enabled: false
 xpack.xpack_main.telemetry.enabled: false
 xpack.monitoring.kibana.collection.enabled: false
 xpack.monitoring.ui.enabled: false
+
+map.includeElasticMapsService: false
