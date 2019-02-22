@@ -23,8 +23,12 @@ spec:
         component: elasticsearch
         role: data
       annotations:
-        checksum/elk-templates-es-etc-configmap.yaml: "dummy"
-        checksum/elk-templates-es-bin-configmap.yaml: "dummy"
+        checksum/elk-templates-es-etc-configmap.yaml: {{ include "elk/templates/es-etc-configmap.yaml" . | sha256sum }}
+        checksum/elk-templates-es-bin-configmap.yaml: {{ include "elk/templates/es-bin-configmap.yaml" . | sha256sum }}
+        checksum/elasticsearch.yml.tpl: {{ include "elk/templates/etc/_elasticsearch.yml.tpl" . | sha256sum }}
+        checksum/jvm.options.tpl: {{ include "elk/templates/etc/_jvm.options.tpl" . | sha256sum }}
+        checksum/log4j2.properties.tpl: {{ include "elk/templates/etc/_log4j2.properties.tpl" . | sha256sum }}
+        checksum/elasticsearch-start.tpl: {{ include "elk/templates/bin/_elasticsearch-start.tpl" . | sha256sum }}
         pod.alpha.kubernetes.io/initialized: "true"
     spec:
       nodeSelector:
@@ -74,15 +78,12 @@ spec:
             - mountPath: /es-etc
               name: es-etc
 #          lifecycle:
+#            postStart:
+#              exec:
+#                command: ["/bin/bash","/es-bin/es-enable-sync.sh"]
 #            preStop:
 #              exec:
-#                command: ["bash, /es-bin/elasticsearch_stop"]
-#          livenessProbe:
-#            exec:
-#              command:
-#              - /es-bin/elasticsearch_health
-#            timeoutSeconds: 30
-#            initialDelaySeconds: 120
+#                command: ["/bin/bash, /es-bin/es-disable-sync.sh"]
           ports:
             - name: transport
               containerPort: {{.Values.elk_elasticsearch_port_cluster}}

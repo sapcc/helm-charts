@@ -1,16 +1,16 @@
 #!/bin/bash
 
-KIBANA_VERSION="5.5.2"
+KIBANA_VERSION="6.6.0"
 
 unset http_proxy
 
 # ccadmin@master alias index
 # this is only required for regions with logs in the master project (for example from swift outside of ccloud etc.)
-if [ -f /elk-content/elk-content/elasticsearch/{{.Values.cluster_region}}/{{.Values.elk_elasticsearch_master_project_id}}.json ]; then
-  curl -s -u {{ .Values.elk_elasticsearch_admin_user }}:{{ .Values.elk_elasticsearch_admin_password }} -XPUT http://{{ .Values.elk_elasticsearch_endpoint_host_internal }}:{{ .Values.elk_elasticsearch_port_internal}}/.kibana/index-pattern/master@ccadmin -d '{"title" : "master@ccadmin",  "timeFieldName": "@timestamp"}'
-  # line break for cleaner output
-  echo ""
-fi
+#if [ -f /elk-content/elk-content/elasticsearch/{{.Values.cluster_region}}/{{.Values.elk_elasticsearch_master_project_id}}.json ]; then
+#  curl -s -u {{ .Values.elk_elasticsearch_admin_user }}:{{ .Values.elk_elasticsearch_admin_password }} -XPUT http://{{ .Values.elk_elasticsearch_endpoint_host_internal }}:{{ .Values.elk_elasticsearch_port_internal}}/.kibana/index-pattern/master@ccadmin -d '{"title" : "master@ccadmin",  "timeFieldName": "@timestamp"}'
+#  # line break for cleaner output
+#  echo ""
+#fi
 
 # log indexes
 indexes=`curl -s -u {{ .Values.elk_elasticsearch_admin_user }}:{{ .Values.elk_elasticsearch_admin_password }} 'http://{{ .Values.elk_elasticsearch_endpoint_host_internal }}:{{ .Values.elk_elasticsearch_port_internal }}/_cat/indices?v'|awk '{ print $3}'|grep -v audit|awk -F- '{ print $1}'|sort|uniq|grep -v "kibana"|grep -v "index"`
