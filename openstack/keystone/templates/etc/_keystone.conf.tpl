@@ -103,6 +103,7 @@ connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .
 driver = sql
 
 [identity]
+list_limit = {{ .Values.api.identity.list_limit | default 0 }}
 default_domain_id = default
 domain_specific_drivers_enabled = true
 domain_configurations_from_database = true
