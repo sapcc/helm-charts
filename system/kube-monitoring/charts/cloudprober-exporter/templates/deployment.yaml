@@ -46,6 +46,19 @@ spec:
           env:
           - name: CLOUDPROBER_PORT
             value: "9313"
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 9313
+            timeoutSeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 9313
+            timeoutSeconds: 5
+            periodSeconds: 15
+
         - name: nginx
           image: nginx:alpine
           imagePullPolicy: IfNotPresent
