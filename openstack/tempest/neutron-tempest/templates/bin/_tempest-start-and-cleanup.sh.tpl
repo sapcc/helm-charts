@@ -1,50 +1,14 @@
 #!/usr/bin/env bash
 
-set -xo pipefail
+set -o pipefail
 
-function start_tempest_tests {
-
-  echo -e "\n === CONFIGURING TEMPEST === \n"
-
-  # ensure rally db is present
-  rally db ensure
-
-  # configure deployment for current region with existing users
-  rally deployment create --file /neutron-etc-tempest/tempest_deployment_config.json --name tempest_deployment
-
-  # check if we can reach openstack endpoints
-  rally deployment check
-
-  # create tempest verifier fetched from our repo
-  rally --debug verify create-verifier --type tempest --name neutron-tempest-verifier --system-wide --source https://github.com/sapcc/tempest --version ccloud
-
-  # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
-  rally --debug verify configure-verifier --extend /neutron-etc-tempest/tempest_extra_options
-
-  # run the actual tempest tests for neutron
-  echo -e "\n === STARTING TEMPEST TESTS FOR neutron === \n"
-  rally --debug verify start --concurrency 4 --detailed --pattern neutron_tempest_plugin.api --skip-list /neutron-etc-tempest/tempest_skip_list.yaml --xfail-list /neutron-etc-tempest/tempest_expected_failures_list.yaml
-
-  # generate html report
-  rally verify report --type html --to /tmp/report.html
-}
+{{- include "tempest-base.function_start_tempest_tests" . }}
 
 function cleanup_tempest_leftovers() {
-
-  # upload report and logfile to swift container of neutron-tempestadmin1
-  export OS_USERNAME='neutron-tempestadmin1'
-  export OS_TENANT_NAME='neutron-tempest-admin1'
-  export OS_PROJECT_NAME='neutron-tempest-admin1'
-  export MYTIMESTAMP=$(date -u +%Y%m%d%H%M%S)
-  cd /home/rally/.rally/verification/verifier*/for-deployment* && tar cfvz /tmp/tempest-log.tar.gz ./tempest.log && cd /home/rally/source/
-  openstack object create reports/neutron /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP)-log.tar.gz
-  openstack object create reports/neutron /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-log.tar.gz
-  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).html
-  openstack object create reports/neutron /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
+  
+  echo "Run cleanup"
 
   # Subnet CIDR pattern from tempest.conf: https://docs.openstack.org/tempest/latest/sampleconf.html
-
-  # Due to a clean up bug we need to clean up ourself the ports, networks and routers: https://bugs.launchpad.net/neutron/+bug/1759321
 
   # Grep all ports and put in a list, only IPv4  
   COUNTER=0
@@ -86,20 +50,14 @@ function cleanup_tempest_leftovers() {
     for router in $(openstack router list | grep -E "tempest|test|abc" | awk '{ print $2 }'); do openstack router delete ${router}; done
   done
 
-  # Delete all networks and routers for Admin
+  # Delete all networks, routers and subnet pools for Admin
   export OS_USERNAME='neutron-tempestadmin1'
   export OS_TENANT_NAME='neutron-tempest-admin1'
   export OS_PROJECT_NAME='neutron-tempest-admin1'
-  for network in $(openstack network list | grep -E "tempest" | awk '{ print $2 }'); do openstack network delete ${network}; done 
+  for network in $(openstack network list | grep -E "tempest" | awk '{ print $2 }'); do openstack network delete ${network}; done
   for pool in $(openstack subnet pool list | grep -E "tempest" | awk '{ print $2 }'); do openstack subnet pool delete ${pool}; done 
 }
 
-main() {
-  start_tempest_tests
-  TEMPEST_EXIT_CODE=$(rally verify show --uuid $(rally verify list | grep "tempest" | awk '{ print $2 }') --detailed | grep -E "Failures" | awk '{ print $4 }')
-  cleanup_tempest_leftovers
-  CLEANUP_EXIT_CODE=$?
-  exit $(($TEMPEST_EXIT_CODE + $CLEANUP_EXIT_CODE))
-}
+{{- include "tempest-base.function_main" . }}
 
 main
