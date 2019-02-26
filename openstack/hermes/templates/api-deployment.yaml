@@ -21,8 +21,8 @@ spec:
             name: hermes
       containers:
         - name: api
-          image: {{.Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
-          imagePullPolicy: {{.Values.hermes.image_pull_policy}}
+          image: {{required ".Values.hermes.image is missing" .Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
+          imagePullPolicy: {{required ".Values.hermes.image_pull_policy is missing" .Values.hermes.image_pull_policy}}
           args:
             - -f
             - /etc/hermes/hermes.conf
@@ -36,8 +36,8 @@ spec:
               name: config
           resources:
             requests:
-              memory: {{.Values.resources_requests_memory_api}}
-              cpu: {{.Values.resources_requests_cpu_api}}
+              memory: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_memory_api}}
+              cpu: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_cpu_api}}
           livenessProbe:
             httpGet:
               path: /v1/
