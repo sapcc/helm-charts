@@ -55,10 +55,12 @@ scrape_configs:
     regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
     replacement: '$2'
     target_label: device
-  - source_labels: [__meta_kubernetes_pod_container_name, cluster]
+  - source_labels: [component, cluster]
     separator: ;
-    regex: elasticsearch-exporter;(.+)
-    target_label: elastic_cluster   
+    regex: elasticsearch-exporter-(.+);(.+)
+    target_label: elastic_cluster
+    replacement: $2
+    action: replace
 
 # Scrape config for endpoints with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
