@@ -33,11 +33,11 @@ endpoint_type = internal
 ipv6 = false
 
 [service_available]
-manila = False
+manila = True
 neutron = True
 cinder = True
 glance = True
 nova = True
-swift = False
+swift = True
 
 {{ end }}
