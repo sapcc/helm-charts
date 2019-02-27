@@ -32,6 +32,28 @@ endpoint_type = internal
 [network-feature-enabled]
 ipv6 = false
 
+[compute]
+image_ref = CHANGE_ME_IMAGE_REF
+image_ref_alt = CHANGE_ME_IMAGE_REF_ALT
+endpoint_type = internal
+v3_endpoint_type = internal
+region = {{ .Values.global.region }}
+flavor_ref = 20
+flavor_ref_alt = 30
+min_microversio = 2.1
+max_microversion = latest
+
+[compute-feature-enabled]
+resize = true
+cold_migration = false
+live_migration = false
+live_migrate_back_and_forth = false
+vnc_console = true
+vnc_server_header = WebSockify
+serial_console = true
+spice_console = true
+attach_encrypted_volume = false
+
 [service_available]
 manila = True
 neutron = True

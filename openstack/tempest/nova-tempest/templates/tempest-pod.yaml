@@ -1,4 +1,4 @@
-{{- define "tempest-base.tempest_pod" }}
+{{- if (index .Values (print .Chart.Name | replace "-" "_")).tempest.enabled }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -10,7 +10,8 @@ spec:
   restartPolicy: Never
   containers:
     - name: {{ .Chart.Name }}
-      image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{ default "monsoon3" .Values.global.image_namespace}}/{{ .Chart.Name }}-plugin:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
+      # As nova has no tempest plugin project we use standard tempest tests for compute -> use neutron-tempest-plugin image
+      image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{ default "monsoon3" .Values.global.image_namespace}}/neutron-tempest-plugin:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
       command:
         - /usr/local/bin/kubernetes-entrypoint
       env:
@@ -54,4 +55,4 @@ spec:
       configMap:
         name: {{ .Chart.Name }}-bin
         defaultMode: 0755
-{{ end }}
+{{- end }}
