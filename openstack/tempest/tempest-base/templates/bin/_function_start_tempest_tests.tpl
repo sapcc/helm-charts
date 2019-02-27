@@ -4,7 +4,6 @@ function start_tempest_tests {
 
   echo -e "\n === PRE-CONFIG STEP  === \n"
 
-  sleep 1d
   export OS_USERNAME='neutron-tempestadmin1'
   export OS_TENANT_NAME='neutron-tempest-admin1'
   export OS_PROJECT_NAME='neutron-tempest-admin1'
