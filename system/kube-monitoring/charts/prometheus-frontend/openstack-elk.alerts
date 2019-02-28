@@ -15,20 +15,6 @@ groups:
                    Please consider cleaning up elastic search or lower the retention period for the logs.
       summary: Elastic Search might run out of disk space
 
-  - alert: OpenstackElkNodesMissing
-    expr: elasticsearch_cluster_health_number_of_nodes{elastic_cluster="elkelasticsearch"} / elasticsearch_cluster_health_number_of_data_nodes{cluster="elkelasticsearch"} < 3
-    for: 30m
-    labels:
-      context: nodes
-      service: elk
-      severity: info
-      tier: os
-      playbook: docs/support/playbook/elk_kibana_issues.html
-    annotations:
-      description: One or more nodes are missing in the {{ $labels.elastic_cluster }} cluster service:{{ $labels.service }}. Please check, if there is an equal count of
-                   each type client, master and data nodes.
-      summary: Elastic Search one or more nodes are missing
-
   - alert: OpenstackClusterRed
     expr: elasticsearch_cluster_health_status{color="red"} == 1
     for: 30m
