@@ -47,6 +47,11 @@ template: |
               - -t
               - `}}{{ $exporter_type_values.name }}{{`
             `}}{{- if $global_values.vcenter_exporters.resources.enabled }}{{`
+            livenessProbe:
+              exec:
+                command [ test $(ls -l /proc/7/task | wc -l) -lt 10000 ]
+              initialDelaySeconds: 10
+              periodSeconds: 5
             resources:
               requests:
                 memory: `}}{{ required ".Values.vcenter_exporters.resources.requests.memory is missing" $global_values.vcenter_exporters.resources.requests.memory | quote }}{{`
