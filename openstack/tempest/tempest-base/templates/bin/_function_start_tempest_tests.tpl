@@ -59,7 +59,7 @@ main() {
   	export TEMPEST_EXIT_CODE=0
   fi
   cleanup_tempest_leftovers
-  export CLEANUP_EXIT_CODE=0
+  export CLEANUP_EXIT_CODE=$?
   rally verify show --uuid $(rally verify list | grep "tempest" | awk '{ print $2 }')
   exit $(($TEMPEST_EXIT_CODE + $CLEANUP_EXIT_CODE))
 }
