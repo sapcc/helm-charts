@@ -1,0 +1,49 @@
+groups:
+- name: network-ntp.alerts
+  rules:
+  - alert: NetworkNTPServerClockOffsetLarger1Sec
+    expr: blackbox_datapath_status_gauge{service="ntp"} == 1
+    for: 15m
+    labels:
+      severity: warning
+      tier: net
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is larger than 1 second.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/network/ntp.html#ntp_offset'
+    annotations:
+      description: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is larger than 1 second form 15 minutes.'
+      summary: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is larger than 1 second form 15 minutes.'
+
+  - alert: NetworkNTPServerClockOffsetLarger0.5Sec
+    expr: blackbox_datapath_status_gauge{service="ntp"} == 0.5
+    for: 15m
+    labels:
+      severity: warning
+      tier: net
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is larger than 0.5 second.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/network/ntp.html#ntp_offset'
+    annotations:
+      description: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is larger than 0.5 second.'
+      summary: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is larger than 0.5 second.'
+
+  - alert: NetworkNTPServerClockOffsetFlapping
+    expr: blackbox_datapath_status_gauge{service="ntp"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: net
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: meta: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is flapping.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/network/ntp.html#ntp_offset'
+    annotations:
+      description: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is flapping for 30 minutes.'
+      summary: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is flapping for 30 minutes.'
