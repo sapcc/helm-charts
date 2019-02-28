@@ -61,6 +61,8 @@ scrape_configs:
     target_label: elastic_cluster
     replacement: $2
     action: replace
+  - regex: 'cluster'
+    action: labeldrop
 
 # Scrape config for endpoints with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
