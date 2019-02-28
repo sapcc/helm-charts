@@ -401,6 +401,7 @@
    logstash_format true
    time_as_integer false
    @log_level info
+   slow_flush_log_threshold 50.0
    request_timeout 60s
    include_tag_key true
    resurrect_after 120
