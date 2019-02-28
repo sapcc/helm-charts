@@ -1,6 +1,6 @@
 [DEFAULT]
 debug = {{.Values.debug}}
-insecure_debug = false
+insecure_debug = true
 verbose = true
 
 max_token_size = {{ .Values.api.token.max_token_size | default 255 }}

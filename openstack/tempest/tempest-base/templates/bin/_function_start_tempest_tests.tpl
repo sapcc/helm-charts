@@ -2,7 +2,18 @@
 
 function start_tempest_tests {
 
-  echo -e "\n === CONFIGURING TEMPEST === \n"
+  echo -e "\n === PRE-CONFIG STEP  === \n"
+
+  export OS_USERNAME='neutron-tempestadmin1'
+  export OS_TENANT_NAME='neutron-tempest-admin1'
+  export OS_PROJECT_NAME='neutron-tempest-admin1'
+  export IMAGE_REF=$(openstack image list | grep {{ default "cirros-vmware" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref }} | awk {' print $2 '})
+  export IMAGE_REF_ALT=$(openstack image list | grep {{ default "ubuntu-16.04-amd64-vmwaree" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref_alt }} | awk {' print $2 '})
+  cp /{{ .Chart.Name }}-etc/tempest_extra_options /tmp
+  sed -i "s/CHANGE_ME_IMAGE_REF/$(echo $IMAGE_REF)/g" /tmp/tempest_extra_options
+  sed -i "s/CHANGE_ME_IMAGE_REF_ALT/$(echo $IMAGE_REF_ALT)/g" /tmp/tempest_extra_options
+
+  echo -e "\n === CONFIGURING RALLY & TEMPEST === \n"
 
   # ensure rally db is present
   rally db ensure
@@ -17,19 +28,17 @@ function start_tempest_tests {
   rally --debug verify create-verifier --type tempest --name {{ .Chart.Name }}-verifier --system-wide --source https://github.com/sapcc/tempest --version ccloud
 
   # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
-  rally --debug verify configure-verifier --extend /{{ .Chart.Name }}-etc/tempest_extra_options
+  # use config file from PRE_CONFIG STEP from /tmp directory
+  rally --debug verify configure-verifier --extend /tmp/tempest_extra_options
 
   # run the actual tempest tests for neutron
   echo -e "\n === STARTING TEMPEST TESTS FOR {{ .Chart.Name }} === \n"
-  rally --debug verify start --concurrency {{ default "1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.concurrency }} --detailed --pattern {{ .Chart.Name | replace "-" "_" }}_plugin.api --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
+  rally --debug verify start --concurrency {{ default "1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.concurrency }} --detailed --pattern {{ if eq .Chart.Name "nova-tempest" }}tempest.api.compute{{ else }}{{ .Chart.Name | replace "-" "_" }}_plugin.api{{ end }} --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
 
   # generate html report
   rally verify report --type html --to /tmp/report.html
 
   # upload report and logfile to swift container of neutron-tempestadmin1
-  export OS_USERNAME='neutron-tempestadmin1'
-  export OS_TENANT_NAME='neutron-tempest-admin1'
-  export OS_PROJECT_NAME='neutron-tempest-admin1'
   export MYTIMESTAMP=$(date -u +%Y%m%d%H%M%S)
   cd /home/rally/.rally/verification/verifier*/for-deployment* && tar cfvz /tmp/tempest-log.tar.gz ./tempest.log && cd /home/rally/source/
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP)-log.tar.gz
@@ -38,7 +47,7 @@ function start_tempest_tests {
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
 }
 
-{{ end }}
+{{- end }}
 
 {{- define "tempest-base.function_main" }}
 
@@ -55,4 +64,4 @@ main() {
   exit $(($TEMPEST_EXIT_CODE + $CLEANUP_EXIT_CODE))
 }
 
-{{ end }}
+{{- end }}
