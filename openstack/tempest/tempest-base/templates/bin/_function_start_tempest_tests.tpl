@@ -33,7 +33,7 @@ function start_tempest_tests {
 
   # run the actual tempest tests for neutron
   echo -e "\n === STARTING TEMPEST TESTS FOR {{ .Chart.Name }} === \n"
-  rally --debug verify start --concurrency {{ default "1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.concurrency }} --detailed --pattern {{ if eq .Chart.Name "nova-tempest" }}tempest.api.compute{{ else }}{{ .Chart.Name | replace "-" "_" }}_plugin.api{{ end }} --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
+  rally --debug verify start --concurrency {{ default "1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.concurrency }} --detailed --pattern {{ if eq .Chart.Name "nova-tempest" }}tempest.api.compute{{ else if eq .Chart.Name "barbican-tempest"}}{{ .Chart.Name | replace "-" "_" }}_plugin.tests.api{{ else }}{{ .Chart.Name | replace "-" "_" }}_plugin.api{{ end }} --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
 
   # generate html report
   rally verify report --type html --to /tmp/report.html

@@ -9,6 +9,7 @@ use_dynamic_credentials = False
 create_isolated_networks = False
 test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
 default_credentials_domain_name = tempest
+admin_project_name = neutron-tempest-admin1
 
 [identity]
 uri_v3 = http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}:5000/v3

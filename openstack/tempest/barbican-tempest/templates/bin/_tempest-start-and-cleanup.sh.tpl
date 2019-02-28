@@ -7,8 +7,6 @@ set -o pipefail
 function cleanup_tempest_leftovers() {
 
   echo "Run cleanup"
-
-  exit 0
   
 }
 
