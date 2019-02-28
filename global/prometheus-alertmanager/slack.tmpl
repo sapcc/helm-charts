@@ -4,24 +4,20 @@
 {{ define "slack.sapcc.pretext" }} {{- end }}
 
 {{ define "slack.sapcc.text" }}
-{{ if eq .Status "firing" }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
-{{ if eq .Status "resolved" }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
+{{ if .Alerts.Firing }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 | or .Alerts.Resolved }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
+{{ if .Alerts.Resolved }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 | or .Alerts.Firing }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
   {{ if .CommonLabels.cluster }}*[{{ .CommonLabels.cluster | toUpper }}]*{{ else }}*[{{ .CommonLabels.region | toUpper }}]*{{ end }} {{ if .CommonLabels.dashboard }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }}
 
 {{- $generatorURL := "" }}
-{{ if eq .Status "firing" -}}
 {{ range .Alerts.Firing -}}
   {{ if eq .Labels.severity "warning" }}:warning: {{ end -}}
   {{ if eq .Labels.severity "critical" }}:fire: {{ end -}}
   {{ .Annotations.description }} {{ if .Labels.sentry }}*<https://sentry.{{ .Labels.region }}.cloud.sap/monsoon/{{ .Labels.sentry }}|Sentry>*{{ end }} {{ if .Labels.cloudops }}*<https://dashboard.{{ .Labels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/{{ .Labels.cloudops }}|CloudOps>*{{ end }}
 {{- $generatorURL = .GeneratorURL }}
 {{ end -}}
-{{ end -}}
-{{ if eq .Status "resolved" -}}
 {{ range .Alerts.Resolved -}}
   :white_check_mark: {{ .Annotations.description }}
 {{- if not $generatorURL }}{{ $generatorURL = .GeneratorURL }}{{ end }}
-{{ end -}}
 {{ end -}}
 
 {{ if .CommonLabels.dashboard }}*<https://grafana.{{ .CommonLabels.region }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|Grafana>* {{ end -}}
