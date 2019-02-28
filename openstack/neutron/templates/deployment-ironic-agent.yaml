@@ -1,0 +1,67 @@
+{{- if contains "baremetal" .Values.ml2_mechanismdrivers }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: neutron-ironic-agent
+  labels:
+    system: openstack
+    type: backend
+    component: neutron
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 3
+  selector:
+    matchLabels:
+      name: neutron-ironic-agent
+  template:
+    metadata:
+      labels:
+        name: neutron-ironic-agent
+    spec:
+      containers:
+        - name: neutron-ironic-agent
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionIronicAgent | default .Values.imageVersion | required "Please set neutron.imageVersionIronicAgent or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init']
+          args: ['ironic-neutron-agent', '--config-dir', '/etc/neutron', '--config-file', '/etc/neutron/plugins/ml2/ironic_neutron_agent.ini']
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          env:
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: neutron.DSN.python
+          volumeMounts:
+            - mountPath: /etc/neutron/plugins/ml2/ironic_neutron_agent.ini
+              name: neutron-ironic-agent
+              subPath: ironic_neutron_agent.ini
+              readOnly: true
+            - mountPath: /etc/neutron/neutron.conf
+              name: neutron-etc
+              subPath: neutron.conf
+              readOnly: true
+            - mountPath: /etc/neutron/logging.conf
+              name: neutron-etc
+              subPath: logging.conf
+              readOnly: true
+      volumes:
+        - name: empty-dir
+          emptyDir: {}
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+        - name: neutron-ironic-agent
+          configMap:
+            name: neutron-ironic-agent
+{{- end }}
