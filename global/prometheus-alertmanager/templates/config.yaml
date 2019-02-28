@@ -204,7 +204,7 @@ data:
     receivers:
     - name: dev-null
       slack_configs:
-        - api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+        - api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
           username: "Control Plane"
           channel: "#dev-null"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
@@ -213,6 +213,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
@@ -235,7 +236,7 @@ data:
     - name: slack_metal_warning
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.metal_warning_webhook_url | quote }}
+          api_url: {{ required "slack.metal_warning_webhook_url undefined" .Values.slack.metal_warning_webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -243,6 +244,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
@@ -265,7 +267,7 @@ data:
     - name: slack_metal_critical
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.metal_critical_webhook_url | quote }}
+          api_url: {{ required "slack.metal_critical_webhook_url undefined" .Values.slack.metal_critical_webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -273,6 +275,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
@@ -296,31 +299,33 @@ data:
     - name: slack_os_critical
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
           text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
 
     - name: slack_k8s_critical
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
           text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
 
     - name: slack_kks_critical
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.kubernikus_critical_webhook_url | quote }}
+          api_url: {{ required "slack.kubernikus_critical_webhook_url undefined" .Values.slack.kubernikus_critical_webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -328,6 +333,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
@@ -350,7 +356,7 @@ data:
     - name: slack_net_warning
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.network_warning_webhook_url | quote }}
+          api_url: {{ required "slack.network_warning_webhook_url undefined" .Values.slack.network_warning_webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -358,6 +364,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
@@ -380,7 +387,7 @@ data:
     - name: slack_net_critical
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.network_critical_webhook_url | quote }}
+          api_url: {{ required "slack.network_critical_webhook_url undefined" .Values.slack.network_critical_webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -388,6 +395,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
@@ -410,7 +418,7 @@ data:
     - name: slack_vmware_warning
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.vmware_warning_webhook_url | quote }}
+          api_url: {{ required "slack.vmware_warning_webhook_url undefined" .Values.slack.vmware_warning_webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -418,6 +426,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
@@ -440,7 +449,7 @@ data:
     - name: slack_vmware_critical
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.vmware_critical_webhook_url | quote }}
+          api_url: {{ required "slack.vmware_critical_webhook_url undefined" .Values.slack.vmware_critical_webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -448,6 +457,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
@@ -471,25 +481,27 @@ data:
     - name: slack_by_tier_and_severity
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}-{{"{{ .CommonLabels.severity }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
           text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
 
     - name: slack_by_tier
       slack_configs:
         - channel: '#alert-{{"{{ .CommonLabels.tier }}"}}'
-          api_url: {{ default "MISSING" .Values.slack.webhook_url | quote }}
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
           title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
           text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
 
     - name: slack_by_tier_and_service
@@ -502,6 +514,7 @@ data:
           text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
 
     - name: slack_api_warning
@@ -515,6 +528,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
@@ -545,6 +559,7 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           callback_id: "alertmanager"
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
           actions:
             - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
