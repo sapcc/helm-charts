@@ -107,3 +107,6 @@
 # WARNING: This option will be removed in Elasticsearch 6.0.0 and is provided
 # only for migration purposes.
 #-Delasticsearch.json.allow_unquoted_field_names=true
+
+-Des.networkaddress.cache.ttl=20
+-Des.networkaddress.cache.negative.ttl=10
