@@ -34,7 +34,7 @@
 <match **>
    @type elasticsearch
    host {{.Values.elk_elasticsearch_endpoint_host_internal}}
-   port 9200
+   port {{.Values.elk_elasticsearch_http_port}}
    user {{.Values.elk_elasticsearch_admin_user}}
    password {{.Values.elk_elasticsearch_admin_password}}
    index_name systemd

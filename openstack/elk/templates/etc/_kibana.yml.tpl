@@ -8,7 +8,7 @@ server.host: "0.0.0.0"
 # server.maxPayloadBytes: 1048576
 
 # The Elasticsearch instance to use for all your queries.
-elasticsearch.hosts: http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}
+elasticsearch.hosts: http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_http_port}}
 
 # preserve_elasticsearch_host true will send the hostname specified in `elasticsearch`. If you set it to false,
 # then the host you use to connect to *this* Kibana instance will be sent.

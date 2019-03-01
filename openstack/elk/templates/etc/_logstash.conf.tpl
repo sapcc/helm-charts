@@ -21,7 +21,7 @@ if  [type] == "netflow" {
     template => "/elk-etc/netflow.json"
     template_name => "netflow"
     template_overwrite => true
-    hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}"]
+    hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_http_port}}"]
     user => "{{.Values.elk_elasticsearch_admin_user}}"
     password => "{{.Values.elk_elasticsearch_admin_password}}"
   }
@@ -32,7 +32,7 @@ elseif [type] == "syslog" {
     template => "/elk-etc/syslog.json"
     template_name => "syslog"
     template_overwrite => true
-    hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}"]
+    hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_http_port}}"]
     user => "{{.Values.elk_elasticsearch_admin_user}}"
     password => "{{.Values.elk_elasticsearch_admin_password}}"
   }

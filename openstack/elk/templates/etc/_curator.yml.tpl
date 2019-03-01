@@ -1,7 +1,7 @@
 client:
   hosts:
     - {{.Values.elk_elasticsearch_endpoint_host_internal}}
-  port: {{.Values.elk_elasticsearch_port_internal}}
+  port: {{.Values.elk_elasticsearch_http_port}}
   url_prefix:
   use_ssl: False
   certificate:
