@@ -53,8 +53,8 @@
     "get_metadef_resource_type":"rule:context_is_image_viewer",
     "add_metadef_resource_type_association":"rule:context_is_image_admin",
 
-    "get_metadef_property":"rule:context_is_image_viewerrule:context_is_image_viewerrule:context_is_image_viewer",
-    "get_metadef_properties":"rule:context_is_image_viewerrule:context_is_image_viewer",
+    "get_metadef_property":"rule:context_is_image_viewer",
+    "get_metadef_properties":"rule:context_is_image_viewer",
     "modify_metadef_property":"rule:context_is_image_admin",
     "add_metadef_property":"rule:context_is_image_admin",
 
