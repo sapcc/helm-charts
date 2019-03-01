@@ -395,7 +395,7 @@
 <match **>
    @type elasticsearch
    host {{.Values.elk_elasticsearch_endpoint_host_internal}}
-   port {{.Values.elk_elasticsearch_port_internal}}
+   port {{.Values.elk_elasticsearch_http_port}}
    user {{.Values.elk_elasticsearch_data_user}}
    password {{.Values.elk_elasticsearch_data_password}}
    logstash_format true

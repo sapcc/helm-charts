@@ -67,7 +67,9 @@ spec:
             - name: NODE_INGEST
               value: "false"
             - name: HTTP_ENABLE
-              value: "true"
+              value: "false"
+            - name: READONLYREST_ENABLE
+              value: "false"
             - name: ES_JAVA_OPTS
               value: "-XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:MaxGCPauseMillis=500 -Xms10g -Xmx10g"
           securityContext:
@@ -82,16 +84,9 @@ spec:
               name: es-bin
             - mountPath: /es-etc
               name: es-etc
-#          lifecycle:
-#            postStart:
-#              exec:
-#                command: ["/bin/bash","/es-bin/es-enable-sync.sh"]
-#            preStop:
-#              exec:
-#                command: ["/bin/bash, /es-bin/es-disable-sync.sh"]
           ports:
             - name: transport
-              containerPort: {{.Values.elk_elasticsearch_port_cluster}}
+              containerPort: {{.Values.elk_elasticsearch_cluster_port}}
               protocol: TCP
             - name: dummymasterport
               hostPort: {{.Values.elk_elasticsearch_data_dummy_port}}

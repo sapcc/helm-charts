@@ -22,6 +22,6 @@ processors:
 #cloud.auth: ${ELASTIC_CLOUD_AUTH}
 
 output.elasticsearch:
-  hosts: ['{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}']
+  hosts: ['{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_http_port}}']
   username: {{.Values.elk_elasticsearch_data_user}}
   password: {{.Values.elk_elasticsearch_data_password}}

@@ -14,7 +14,7 @@ function process_config {
 
 function start_application {
 
-#  export KIBANA_ES_URL=${KIBANA_ES_URL:-http://localhost:{{.Values.elk_elasticsearch_port_internal}}}
+#  export KIBANA_ES_URL=${KIBANA_ES_URL:-http://localhost:{{.Values.elk_elasticsearch_http_port}}}
 
 
 #  if [ -n "${KIBANA_INDEX}" ]; then
