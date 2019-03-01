@@ -4,9 +4,9 @@ function start_tempest_tests {
 
   echo -e "\n === PRE-CONFIG STEP  === \n"
 
-  export OS_USERNAME='neutron-tempestadmin1'
-  export OS_TENANT_NAME='neutron-tempest-admin1'
-  export OS_PROJECT_NAME='neutron-tempest-admin1'
+  export OS_USERNAME={{ default "neutron-tempestadmin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name | quote }}
+  export OS_TENANT_NAME={{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
+  export OS_PROJECT_NAME={{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
   export IMAGE_REF=$(openstack image list | grep {{ default "cirros-vmware" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref }} | awk {' print $2 '})
   export IMAGE_REF_ALT=$(openstack image list | grep {{ default "ubuntu-16.04-amd64-vmwaree" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref_alt }} | awk {' print $2 '})
   cp /{{ .Chart.Name }}-etc/tempest_extra_options /tmp
@@ -33,12 +33,15 @@ function start_tempest_tests {
 
   # run the actual tempest tests for neutron
   echo -e "\n === STARTING TEMPEST TESTS FOR {{ .Chart.Name }} === \n"
-  rally --debug verify start --concurrency {{ default "1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.concurrency }} --detailed --pattern {{ if eq .Chart.Name "nova-tempest" }}tempest.api.compute{{ else if eq .Chart.Name "barbican-tempest"}}{{ .Chart.Name | replace "-" "_" }}_plugin.tests.api{{ else }}{{ .Chart.Name | replace "-" "_" }}_plugin.api{{ end }} --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
+  rally --debug verify start --concurrency {{ default "1" .Values.concurrency }} --detailed --pattern {{ required "Missing run_pattern value!" .Values.run_pattern }} --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
 
   # generate html report
   rally verify report --type html --to /tmp/report.html
 
-  # upload report and logfile to swift container of neutron-tempestadmin1
+  # upload report and logfile to swift container of neutron-tempestadmin1 as there is a permalink in the slack message
+  export OS_USERNAME="neutron-tempestadmin1"
+  export OS_TENANT_NAME="neutron-tempest-admin1"
+  export OS_PROJECT_NAME="neutron-tempest-admin1"
   export MYTIMESTAMP=$(date -u +%Y%m%d%H%M%S)
   cd /home/rally/.rally/verification/verifier*/for-deployment* && tar cfvz /tmp/tempest-log.tar.gz ./tempest.log && cd /home/rally/source/
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP)-log.tar.gz

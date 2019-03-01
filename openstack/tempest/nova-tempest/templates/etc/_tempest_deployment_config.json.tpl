@@ -4,80 +4,136 @@
         "region_name": "{{ .Values.global.region }}",
         "endpoint_type": "internal",
         "admin": {
-            "username": "neutron-tempestadmin1",
+            "username": "nova-tempestadmin1",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
             "domain_name": "tempest"
     },
     "users": [
         {
-            "username": "neutron-tempestuser1",
+            "username": "nova-tempestuser1",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest1",
+            "project_name": "nova-tempest1",
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuser2",
+            "username": "nova-tempestuser2",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest2",
+            "project_name": "nova-tempest2",
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuser3",
+            "username": "nova-tempestuser3",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest3",
+            "project_name": "nova-tempest3",
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuser4",
+            "username": "nova-tempestuser4",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest4",
+            "project_name": "nova-tempest4",
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuser5",
+            "username": "nova-tempestuser5",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest5",
+            "project_name": "nova-tempest5",
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuser6",
+            "username": "nova-tempestuser6",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest6",
+            "project_name": "nova-tempest6",
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuser7",
+            "username": "nova-tempestuser7",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest7",
+            "project_name": "nova-tempest7",
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuser8",
+            "username": "nova-tempestuser8",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest8",
+            "project_name": "nova-tempest8",
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuser9",
+            "username": "nova-tempestuser9",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest9",
+            "project_name": "nova-tempest9",
             "project_domain_name": "tempest"
         },
         {
-            "username": "neutron-tempestuser10",
+            "username": "nova-tempestuser10",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "neutron-tempest10",
+            "project_name": "nova-tempest10",
+            "project_domain_name": "tempest"
+        },
+        {
+            "username": "nova-tempestuser11",
+            "password": {{ .Values.tempestAdminPassword | quote }},
+            "user_domain_name": "tempest",
+            "project_name": "nova-tempest11",
+            "project_domain_name": "tempest"
+        },
+        {
+            "username": "nova-tempestuser12",
+            "password": {{ .Values.tempestAdminPassword | quote }},
+            "user_domain_name": "tempest",
+            "project_name": "nova-tempest12",
+            "project_domain_name": "tempest"
+        },
+        {
+            "username": "nova-tempestuser13",
+            "password": {{ .Values.tempestAdminPassword | quote }},
+            "user_domain_name": "tempest",
+            "project_name": "nova-tempest13",
+            "project_domain_name": "tempest"
+        },
+        {
+            "username": "nova-tempestuser14",
+            "password": {{ .Values.tempestAdminPassword | quote }},
+            "user_domain_name": "tempest",
+            "project_name": "nova-tempest14",
+            "project_domain_name": "tempest"
+        },
+        {
+            "username": "nova-tempestuser15",
+            "password": {{ .Values.tempestAdminPassword | quote }},
+            "user_domain_name": "tempest",
+            "project_name": "nova-tempest15",
+            "project_domain_name": "tempest"
+        },
+        {
+            "username": "nova-tempestuser16",
+            "password": {{ .Values.tempestAdminPassword | quote }},
+            "user_domain_name": "tempest",
+            "project_name": "nova-tempest16",
+            "project_domain_name": "tempest"
+        },
+        {
+            "username": "nova-tempestuser17",
+            "password": {{ .Values.tempestAdminPassword | quote }},
+            "user_domain_name": "tempest",
+            "project_name": "nova-tempest17",
+            "project_domain_name": "tempest"
+        },
+        {
+            "username": "nova-tempestuser18",
+            "password": {{ .Values.tempestAdminPassword | quote }},
+            "user_domain_name": "tempest",
+            "project_name": "nova-tempest18",
             "project_domain_name": "tempest"
         }
     ],
