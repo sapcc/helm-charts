@@ -4,6 +4,7 @@ node:
 
 
 cluster.name: elkelasticsearch
+node.name: ${NODE_NAME}
 
 path:
   data: /data/data
@@ -19,3 +20,4 @@ discovery.zen.minimum_master_nodes: 2
 
 xpack.ml.enabled: false
 xpack.security.enabled: false
+xpack.monitoring.enabled: false
