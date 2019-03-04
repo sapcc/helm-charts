@@ -509,7 +509,7 @@ scrape_configs:
   relabel_configs:
     - source_labels: [__address__]
       target_label: __param_target
-    - source_labels: [__param_target]
+    - source_label: server_name
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:9290
