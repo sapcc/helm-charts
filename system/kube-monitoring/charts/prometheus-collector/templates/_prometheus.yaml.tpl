@@ -513,6 +513,9 @@ scrape_configs:
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:9290
+    - source_labels: [__meta_serial]
+      target_label: server_serial
+
 {{- end }}
 {{- end }}
 
