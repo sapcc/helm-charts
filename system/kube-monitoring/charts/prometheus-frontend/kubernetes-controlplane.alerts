@@ -2,7 +2,7 @@ groups:
 - name: controlplane.alerts
   rules:      
   - alert: KubernetesCPSensorCritical
-    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Planned|Staged|Active)"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Planned|Staged|Active)"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
     for: 15m
     labels:
       severity: critical
@@ -15,7 +15,7 @@ groups:
       summary: "Hardware error for instance: {{ $labels.server_name }}"
 
   - alert: KubernetesCPSensorWarning
-    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Staged)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot)", job="cp/netbox"} == 2)) by (server_name, type, name, manufacturer, model, provision_state, server_id)
+    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Staged)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot)", job="cp/netbox"} == 2)) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
     for: 15m
     labels:
       severity: warning
@@ -28,7 +28,7 @@ groups:
       summary: "Hardware error for instance: {{ $labels.server_name }}"
 
   - alert: KubernetesCPSensorInfo
-    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply|Critical Interrupt)", job="cp/netbox"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply|Critical Interrupt)", job="cp/netbox"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
     for: 15m
     labels:
       severity: info
@@ -41,7 +41,7 @@ groups:
       summary: "Hardware error for instance: {{ $labels.server_name }}"
 
   - alert: KubernetesCPMetricsDown
-    expr: count(ipmi_up{job="cp/netbox"} == 0) by (server_name) or count(up{job="cp/netbox"} == 0) by (server_name)
+    expr: count(ipmi_up{job="cp/netbox"} == 0) by (server_name, serial) or count(up{job="cp/netbox"} == 0) by (server_name, serial)
     for: 15m
     labels:
       severity: warning
