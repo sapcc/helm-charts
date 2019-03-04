@@ -2,10 +2,11 @@
     "context_is_cloud_admin":  "role:cloud_image_admin",
     “owner”: “project_id:%(project_id)s”,
     “admin”: “role:image_admin and rule:owner”,
+    "member": "role:member and rule:owner",
     “viewer”: “role:image_viewer and rule:owner”,
     "context_is_admin":  "rule:context_is_cloud_admin",
     "context_is_image_admin":  "rule:context_is_admin or rule:admin",
-    "context_is_image_viewer":  "rule:context_is_image_admin or rule:viewer",
+    "context_is_image_viewer":  "rule:context_is_image_admin or rule:viewer or role:member",
 
     "add_image": "rule:context_is_image_admin",
     "delete_image": "rule:context_is_image_admin",
