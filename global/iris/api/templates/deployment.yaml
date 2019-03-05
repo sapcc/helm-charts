@@ -2,11 +2,11 @@ kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: iris
+  name: iris-api
 
 spec:
   revisionHistoryLimit: 3
-  replicas: {{ .Values.replica_count }}
+  replicas: {{ .Values.api.replica_count }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -15,32 +15,20 @@ spec:
   template:
     metadata:
       labels:
-        name: iris
+        name: iris-api
     spec:
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
       containers:
-        - name: web
-{{- if typeIs "float64" .Values.image.tag  }}{{/* You can't make this shit up. Remove as soon as possible */}}
-          image: {{.Values.image.repository}}:{{.Values.image.tag | printf "%0.f" }}
-{{- else }}
-          image: {{.Values.image.repository}}:{{.Values.image.tag}}
-{{- end }}
-          imagePullPolicy: {{.Values.image.pullPolicy}}
+        - name: api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{.Values.api.image.pullPolicy}}
           ports:
             - name: http
               containerPort: 80
           env:
             - name: REGION
               value: {{ .Values.region }}
-            - name: ELEKTRA_ENDPOINT
-              value: {{ .Values.elektraEndpoint }}
-            - name: IDENTITY_ENDPOINT
-              value: {{ .Values.identity_endpoint }}
-            - name: AUTH_SCOPE_DOMAIN
-              value: {{ .Values.auth_scope_domain }}
-            - name: AUTH_SCOPE_PROJECT
-              value: {{ .Values.auth_scope_project }}
           livenessProbe:
             httpGet:
               path: /system/liveliness

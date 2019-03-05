@@ -1,12 +1,12 @@
-{{- if .Values.ingress.enabled }}
-{{- if .Values.ingress.ca }}
+{{- if .Values.ui.ingress.enabled }}
+{{- if .Values.ui.ingress.ca }}
 kind: Secret
 apiVersion: v1
 
 metadata:
   name: iris-x509-ca
 data:
-  ca.crt: {{ .Values.ingress.ca | b64enc }}
+  ca.crt: {{ .Values.ui.ingress.ca | b64enc }}
 ---
 {{- end }}
 apiVersion: extensions/v1beta1
@@ -14,19 +14,19 @@ kind: Ingress
 metadata:
   name: iris
   annotations:
-    {{- if .Values.ingress.ca }}
-    ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
+    {{- if .Values.ui.ingress.ca }}
+    ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ui.ingress.pass_certificate_to_upstream | quote }}
     ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "1"
     {{- end }}
-    vice-president: {{ default false .Values.ingress.vice_president | quote }}
+    vice-president: {{ default false .Values.ui.ingress.vice_president | quote }}
 spec:
   tls:
      - secretName: iris
-       hosts: [{{ .Values.ingress.host }}]
+       hosts: [{{ .Values.ui.ingress.host }}]
   rules:
-  - host: {{ .Values.ingress.host }}
+  - host: {{ .Values.ui.ingress.host }}
     http:
       paths:
       - path: /
