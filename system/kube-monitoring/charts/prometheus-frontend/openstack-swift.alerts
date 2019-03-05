@@ -122,7 +122,7 @@ groups:
       context: asyncpendings
       dashboard: swift-overview
       service: swift
-      severity: warning
+      severity: info
       tier: os
       meta: Async Pendings indicate an overload scenario or faulty device(s)
     annotations:
@@ -187,7 +187,7 @@ groups:
       summary: No consistency checks performed
 
   - alert: OpenstackSwiftAccountReplicationCheck
-    expr: max(swift_cluster_accounts_replication_age) by (storage_ip) > 3600
+    expr: max(swift_cluster_accounts_replication_age) by (storage_ip) > 3*3600
     labels:
       context: accountrepl
       dashboard: swift-overview
@@ -197,12 +197,12 @@ groups:
       meta: Account replication getting stuck on {{ $labels.storage_ip }}
     annotations:
       description: "The last successful account replication age on {{ $labels.storage_ip }}
-        is older than 1 hour. Check the affected node. A restart of the replicator pod
+        is older than 3 hours. Check the affected node. A restart of the replicator pod
         might be necessary."
-      summary: Account replication on {{ $labels.storage_ip }} older than 1 hour
+      summary: Account replication on {{ $labels.storage_ip }} older than 3 hours
 
   - alert: OpenstackSwiftContainerReplicationCheck
-    expr: max(swift_cluster_containers_replication_age) by (storage_ip) > 3600
+    expr: max(swift_cluster_containers_replication_age) by (storage_ip) > 3*3600
     labels:
       context: containerrepl
       dashboard: swift-overview
@@ -212,9 +212,9 @@ groups:
       meta: Container replication getting stuck on {{ $labels.storage_ip }}
     annotations:
       description: "The last successful container replication age on {{ $labels.storage_ip }}
-        is older than 1 hour. Check the affected node. A restart of the replicator pod might
+        is older than 3 hours. Check the affected node. A restart of the replicator pod might
         be necessary."
-      summary: Container replication on {{ $labels.storage_ip }} older than 1 hour
+      summary: Container replication on {{ $labels.storage_ip }} older than 3 hours
 
   - alert: OpenstackSwiftApiDown
     expr: blackbox_api_status_gauge{check=~"swift"} == 1
