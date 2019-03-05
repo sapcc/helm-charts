@@ -16,7 +16,7 @@ elasticsearch.hosts: http://{{.Values.elk_elasticsearch_endpoint_host_internal}}
 
 # Kibana uses an index in Elasticsearch to store saved searches, visualizations
 # and dashboards. It will create a new index if it doesn't already exist.
-# kibana.index: ".kibana"
+kibana.index: ".kibana-6"
 
 # The default application to load.
 # kibana.defaultAppId: "discover"
