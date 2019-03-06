@@ -15,25 +15,35 @@ function start_tempest_tests {
 
   echo -e "\n === CONFIGURING RALLY & TEMPEST === \n"
 
+  # init exit code vars
+  export TEMPEST_EXIT_CODE=0
+  export RALLY_EXIT_CODE=0
+
   # ensure rally db is present
   rally db ensure
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # configure deployment for current region with existing users
   rally deployment create --file /{{ .Chart.Name }}-etc/tempest_deployment_config.json --name tempest_deployment
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # check if we can reach openstack endpoints
   rally deployment check
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # create tempest verifier fetched from our repo
   rally --debug verify create-verifier --type tempest --name {{ .Chart.Name }}-verifier --system-wide --source https://github.com/sapcc/tempest --version ccloud
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
   # use config file from PRE_CONFIG STEP from /tmp directory
   rally --debug verify configure-verifier --extend /tmp/tempest_extra_options
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # run the actual tempest tests for neutron
   echo -e "\n === STARTING TEMPEST TESTS FOR {{ .Chart.Name }} === \n"
   rally --debug verify start --concurrency {{ default "1" .Values.concurrency }} --detailed --pattern {{ required "Missing run_pattern value!" .Values.run_pattern }} --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # generate html report
   rally verify report --type html --to /tmp/report.html
@@ -56,15 +66,14 @@ function start_tempest_tests {
 
 main() {
   start_tempest_tests
-  if [ $(rally verify show --uuid $(rally verify list | grep "tempest" | awk '{ print $2 }') --detailed | grep -E "Failures" | awk '{ print $4 }') -gt 0 ]; then 
+  # check if rally had a problem, if not grab the failures and eventually set the exit code for tempest results
+  if [[ $RALLY_EXIT_CODE -eq 0 && $(rally verify show --uuid $(rally verify list | grep "tempest" | awk '{ print $2 }') --detailed | grep -E "Failures" | awk '{ print $4 }') -gt 0 ]]; then 
   	export TEMPEST_EXIT_CODE=1
-  else
-  	export TEMPEST_EXIT_CODE=0
   fi
   cleanup_tempest_leftovers
   export CLEANUP_EXIT_CODE=$?
   rally verify show --uuid $(rally verify list | grep "tempest" | awk '{ print $2 }')
-  exit $(($TEMPEST_EXIT_CODE + $CLEANUP_EXIT_CODE))
+  exit $(($RALLY_EXIT_CODE + $TEMPEST_EXIT_CODE + $CLEANUP_EXIT_CODE))
 }
 
 {{- end }}
