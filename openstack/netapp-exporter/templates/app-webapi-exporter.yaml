@@ -1,0 +1,67 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name:  {{ .Values.webapi_exporter.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9108"
+    maia.io/scrape: "true"
+    maia.io/port: "9108"
+spec:
+  selector:
+    app: {{ .Values.webapi_exporter.name }} 
+  ports:
+  - name:  prometheus
+    port:  9108
+    targetPort:  9108
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name:  {{ .Values.webapi_exporter.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.webapi_exporter.name }} 
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.webapi_exporter.name }} 
+    spec:
+      volumes:
+        - name: netap-etc
+          configMap:
+            name: netapp-etc
+      containers:
+      - name: {{ .Values.webapi_exporter.name }} 
+        image: {{ .Values.webapi_exporter.image }}
+        env:
+          - name: OS_USERNAME
+            valueFrom: 
+              configMapKeyRef:
+                name: netapp-etc
+                key: netapp_api_env.username
+          - name: OS_REGION
+            valueFrom:
+              configMapKeyRef:
+                name: netapp-etc
+                key: netapp_api_env.region
+          - name: OS_PASSWORD
+            valueFrom:
+              configMapKeyRef:
+                name: netapp-etc
+                key: netapp_api_env.password
+        ports:
+        - containerPort: 9108
+        volumeMounts:
+        - name: netap-etc
+          subPath: netapp_filers.yaml
+          mountPath: /app/netapp_filers.yaml
+        resources:
+          limit:
+            memory: "200Mi"
+            cpu: "200m"
+          requests:
+            memory: "100Mi"
+            cpu: "100m"

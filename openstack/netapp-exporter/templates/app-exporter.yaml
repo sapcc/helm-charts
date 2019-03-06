@@ -1,0 +1,40 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name:  {{ .Values.exporter.name }}
+  labels:
+    app: {{ .Values.exporter.name }} 
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9108"
+spec:
+  selector:
+    app: {{ .Values.exporter.name }} 
+  ports:
+  - name:  prometheus
+    port:  9108
+    targetPort:  9108
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name:  {{ .Values.exporter.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.exporter.name }} 
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.exporter.name }} 
+    spec:
+     containers:
+      - name: {{ .Values.exporter.name }} 
+        image: {{ .Values.exporter.image }}
+        ports:
+        - containerPort: 9108
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
