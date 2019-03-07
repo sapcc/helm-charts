@@ -2,11 +2,11 @@ kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: iris-api
+  name: iris
 
 spec:
   revisionHistoryLimit: 3
-  replicas: {{ .Values.api.replica_count }}
+  replicas: {{ .Values.replica_count }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -15,20 +15,26 @@ spec:
   template:
     metadata:
       labels:
-        name: iris-api
+        name: iris
     spec:
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
       containers:
-        - name: api
-          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
-          imagePullPolicy: {{.Values.api.image.pullPolicy}}
+        - name: web
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{.Values.image.pullPolicy}}
           ports:
             - name: http
               containerPort: 80
           env:
             - name: REGION
               value: {{ .Values.region }}
+            - name: IDENTITY_ENDPOINT
+              value: {{ .Values.identity_endpoint }}
+            - name: AUTH_SCOPE_DOMAIN
+              value: {{ .Values.auth_scope_domain }}
+            - name: AUTH_SCOPE_PROJECT
+              value: {{ .Values.auth_scope_project }}
           livenessProbe:
             httpGet:
               path: /system/liveliness
