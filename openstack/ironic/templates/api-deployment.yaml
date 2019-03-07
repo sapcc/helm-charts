@@ -52,6 +52,8 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
+        resources:
+{{ toYaml .Values.api.resources | indent 10 }}
         - name: PGAPPNAME
           valueFrom:
             fieldRef:
@@ -98,6 +100,8 @@ spec:
         image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
         imagePullPolicy: IfNotPresent
         args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+        resources:
+{{ toYaml .Values.statsd.resources | indent 10 }}
         ports:
           - name: statsd
             containerPort: 9125
