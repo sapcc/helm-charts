@@ -68,7 +68,7 @@ spec:
               fieldPath: metadata.name
         {{- if not $conductor.debug }}
         resources:
-{{ toYaml .Values.pod.conductor.resources | indent 10 }}
+{{ toYaml .Values.pod.resources.conductor | indent 10 }}
         livenessProbe:
           exec:
             command:
