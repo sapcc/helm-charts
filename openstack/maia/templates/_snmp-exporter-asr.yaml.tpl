@@ -15,7 +15,6 @@ asr:
   - 1.3.6.1.2.1.90.1.2.1.1.3.2.114.103.1.49
   - 1.3.6.1.2.1.123.1.5.0
   - 1.3.6.1.2.1.123.1.7.0
-  - 1.3.6.1.2.1.197.1.2.1.0
   metrics:
   - name: snmp_asr_natAddrBindNumberOfEntries
     oid: 1.3.6.1.2.1.123.1.5.0
@@ -128,15 +127,3 @@ asr:
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: ntpEntStatusCurrentMode
-    oid: 1.3.6.1.2.1.197.1.2.1
-    type: gauge
-    help: The current mode of the NTP - 1.3.6.1.2.1.197.1.2.1
-    enum_values:
-      1: notRunning
-      2: notSynchronized
-      3: noneConfigured
-      4: syncToLocal
-      5: syncToRefclock
-      6: syncToRemoteServer
-      99: unknown
