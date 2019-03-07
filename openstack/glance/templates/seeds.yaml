@@ -20,10 +20,14 @@ spec:
   - monsoon3/domain-monsoon3-seed
   - monsoon3/domain-s4-seed
   - monsoon3/domain-wbs-seed
+{{- if .Values.tempest.enabled }}
+  - monsoon3/domain-tempest-seed
+{{- end }}
+
 
   roles:
   - cloud_image_admin
-  - image_admin   # this is currently not backed by a glance policy, but should IMHO
+  - image_admin
   - image_viewer
 
   services:
@@ -432,3 +436,22 @@ spec:
       - domain: wbs
         role: image_viewer
         inherited: true
+
+{{- if .Values.tempest.enabled }}
+  - name: tempest
+    projects:
+    - name: admin
+      roles:
+        - user: admin
+          role: cloud_image_admin
+        - user: admin@Default
+          role: cloud_image_admin
+    - name: tempest1
+      roles:
+        - user: admin@Default
+          role: cloud_image_admin
+    - name: tempest2
+      roles:
+        - user: admin@Default
+          role: cloud_image_admin
+{{- end }}
