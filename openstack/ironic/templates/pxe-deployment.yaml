@@ -40,6 +40,8 @@ spec:
         volumeMounts:
         - mountPath: /tftpboot
           name: ironic-tftp
+        resources:
+{{ toYaml .Values.pxe.resources | indent 10 }}
       - name: ironic-ipxe
         image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
         imagePullPolicy: IfNotPresent
@@ -58,6 +60,8 @@ spec:
             port: ironic-ipxe
           initialDelaySeconds: 5
           periodSeconds: 3
+        resources:
+{{ toYaml .Values.pxe.resources | indent 10 }}
       volumes:
       - name: ironic-tftp
         persistentVolumeClaim:
