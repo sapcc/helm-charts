@@ -33,6 +33,8 @@ spec:
       - name: ironic-api
         image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicApi | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
+        resources:
+{{ toYaml .Values.api.resources | indent 10 }}
         command:
           - dumb-init
           - kubernetes-entrypoint
@@ -52,8 +54,6 @@ spec:
               name: sentry
               key: {{ .Chart.Name }}.DSN.python
         {{- end }}
-        resources:
-{{ toYaml .Values.api.resources | indent 10 }}
         - name: PGAPPNAME
           valueFrom:
             fieldRef:
