@@ -11,7 +11,7 @@
     "add_image": "rule:context_is_image_admin",
     "delete_image": "rule:context_is_image_admin",
     "get_image": "rule:context_is_image_viewer",
-    "get_images": "rule:context_is_image_viewer",
+    "get_images": "rule:context_is_image_viewer or visibility:public",
     "modify_image": "rule:context_is_image_admin",
     "publicize_image": "rule:context_is_image_admin",
     "copy_from": "rule:context_is_image_admin",
