@@ -1,6 +1,10 @@
 # WARNING: This file was auto-generated using snmp_exporter generator, manual changes will be lost.
 f5:
   walk:
+  - 1.3.6.1.4.1.3375.2.1.7.5.2.1.19
+  - 1.3.6.1.4.1.3375.2.1.7.5.2.1.27
+  - 1.3.6.1.4.1.3375.2.1.8.2.3.1.37
+  - 1.3.6.1.4.1.3375.2.1.8.2.3.1.38
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.1
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.10
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.11
@@ -46,6 +50,8 @@ f5:
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.8
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.9
   get:
+  - 1.3.6.1.4.1.3375.2.1.1.2.20.21.0
+  - 1.3.6.1.4.1.3375.2.1.1.2.20.29.0
   - 1.3.6.1.4.1.3375.2.1.1.2.20.44.0
   - 1.3.6.1.4.1.3375.2.1.1.2.20.45.0
   - 1.3.6.1.4.1.3375.2.1.1.2.20.46.0
@@ -65,6 +71,16 @@ f5:
   - 1.3.6.1.4.1.3375.2.2.10.2.1.0
   - 1.3.6.1.4.1.3375.2.2.10.2.2.0
   metrics:
+  - name: snmp_f5_sysGlobalHostCpuUsageRatio5s
+    oid: 1.3.6.1.4.1.3375.2.1.1.2.20.21
+    type: gauge
+    help: This is average usage ratio of CPU for the system in the last five seconds
+      - 1.3.6.1.4.1.3375.2.1.1.2.20.21
+  - name: snmp_f5_sysGlobalHostCpuUsageRatio1m
+    oid: 1.3.6.1.4.1.3375.2.1.1.2.20.29
+    type: gauge
+    help: This is average usage ratio of CPU for the system in the last one minute
+      - 1.3.6.1.4.1.3375.2.1.1.2.20.29
   - name: snmp_f5_sysGlobalHostOtherMemoryTotal
     oid: 1.3.6.1.4.1.3375.2.1.1.2.20.44
     type: counter
@@ -132,6 +148,40 @@ f5:
     oid: 1.3.6.1.4.1.3375.2.1.7.1.4
     type: gauge
     help: The host memory in Kilobytes currently in use - 1.3.6.1.4.1.3375.2.1.7.1.4
+  - name: snmp_f5_sysMultiHostCpuUsageRatio5s
+    oid: 1.3.6.1.4.1.3375.2.1.7.5.2.1.19
+    type: gauge
+    help: This is average usage ratio of CPU for the associated host in the last five
+      seconds - 1.3.6.1.4.1.3375.2.1.7.5.2.1.19
+    indexes:
+    - labelname: sysMultiHostCpuHostId
+      type: DisplayString
+    - labelname: sysMultiHostCpuIndex
+      type: gauge
+  - name: snmp_f5_sysMultiHostCpuUsageRatio1m
+    oid: 1.3.6.1.4.1.3375.2.1.7.5.2.1.27
+    type: gauge
+    help: This is average usage ratio of CPU for the associated host in the last one
+      minute - 1.3.6.1.4.1.3375.2.1.7.5.2.1.27
+    indexes:
+    - labelname: sysMultiHostCpuHostId
+      type: DisplayString
+    - labelname: sysMultiHostCpuIndex
+      type: gauge
+  - name: snmp_f5_sysTmmStatTmUsageRatio5s
+    oid: 1.3.6.1.4.1.3375.2.1.8.2.3.1.37
+    type: gauge
+    help: The percentage of time the TMM was busy over the last 5 seconds. - 1.3.6.1.4.1.3375.2.1.8.2.3.1.37
+    indexes:
+    - labelname: sysTmmStatTmmId
+      type: DisplayString
+  - name: snmp_f5_sysTmmStatTmUsageRatio1m
+    oid: 1.3.6.1.4.1.3375.2.1.8.2.3.1.38
+    type: gauge
+    help: The percentage of time the TMM was busy over the last 1 minute. - 1.3.6.1.4.1.3375.2.1.8.2.3.1.38
+    indexes:
+    - labelname: sysTmmStatTmmId
+      type: DisplayString
   - name: snmp_f5_ltmVirtualServStatResetStats
     oid: 1.3.6.1.4.1.3375.2.2.10.2.1
     type: gauge
