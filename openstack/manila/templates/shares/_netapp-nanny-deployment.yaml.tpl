@@ -71,6 +71,10 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
+          {{- if .Values.pod.resources.netapp_nanny }}
+          resources:
+{{ toYaml .Values.pod.resources.netapp_nanny | indent 13 }}
+          {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}

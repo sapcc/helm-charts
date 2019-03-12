@@ -69,6 +69,10 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
+          {{- if .Values.pod.resources.share }}
+          resources:
+{{ toYaml .Values.pod.resources.share | indent 13 }}
+          {{- end }}
           livenessProbe:
             exec:
               command:
