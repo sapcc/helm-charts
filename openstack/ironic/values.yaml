@@ -208,7 +208,7 @@ pgmetrics:
               usage: "GAUGE"
               description: "Nodes created past 24hrs"
      openstack_ironic_nodes:
-       query: "SELECT count(case when not maintenance then 1 end) as NodeNotInMaint, count(case when maintenance then 1 end) as NodeInMaint, uuid, name, maintenance_reason from nodes group by maintenance_reason, uuid, name"
+       query: "SELECT count(case when not maintenance then 1 end) as NodeNotInMaint, count(case when maintenance then 1 end) as NodeInMaint, uuid, name, coalesce(maintenance_reason,'reason unknown') AS maintenance_reason from nodes group by maintenance_reason, uuid, name"
        metrics:
          - uuid:
              usage: "LABEL"
