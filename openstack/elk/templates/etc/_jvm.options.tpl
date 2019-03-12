@@ -19,8 +19,8 @@
 # Xms represents the initial size of total heap space
 # Xmx represents the maximum size of total heap space
 
--Xms10g
--Xmx10g
+-Xms5g
+-Xmx5g
 
 ################################################################
 ## Expert settings
@@ -33,9 +33,11 @@
 ################################################################
 
 ## GC configuration
--XX:+UseConcMarkSweepGC
--XX:CMSInitiatingOccupancyFraction=75
--XX:+UseCMSInitiatingOccupancyOnly
+#-XX:+UseConcMarkSweepGC
+#-XX:CMSInitiatingOccupancyFraction=75
+#-XX:+UseCMSInitiatingOccupancyOnly
+#-XX:+UseG1GC
+#-XX:MaxGCPauseMillis=5000
 
 ## optimizations
 
@@ -105,3 +107,6 @@
 # WARNING: This option will be removed in Elasticsearch 6.0.0 and is provided
 # only for migration purposes.
 #-Delasticsearch.json.allow_unquoted_field_names=true
+
+-Des.networkaddress.cache.ttl=20
+-Des.networkaddress.cache.negative.ttl=10

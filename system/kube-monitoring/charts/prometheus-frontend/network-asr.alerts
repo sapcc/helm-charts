@@ -28,3 +28,31 @@ groups:
     annotations:
       description: 'NAT table on ASR device {{ $labels.component }} is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
       summary: 'NAT table on ASR device {{ $labels.component }} is nearly full for 15 min with more than 2M NAT translations. Device failure-over required.'
+
+  - alert: NetworkAsrRedundancyGroupBothDevicesDown
+    expr: sum(snmp_asr_RedundancyGroup) by (device) == 0
+    for: 5m
+    labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: 'All ASR routers {{ $labels.device }} in the redundancy group are down.'
+        playbook: 'docs/devops/alert/network/router.html#asr_both_devices_down'
+    annotations:
+        description: 'All ASR routers {{ $labels.device }} in the redundancy group are down.'
+        summary: 'All ASR routers {{ $labels.device }} in the redundancy group are down.'
+
+  - alert: NetworkAsrRedundancyGroupBothDevicesUp
+    expr: sum(snmp_asr_RedundancyGroup) by (device) == 2
+    for: 5m
+    labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: 'All ASR routers {{ $labels.device }} in the redundancy group are up.'
+        playbook: 'docs/devops/alert/network/router.html#asr_both_devices_up'
+    annotations:
+        description: 'All ASR routers {{ $labels.device }} in the redundancy group are up.'
+        summary: 'All ASR routers {{ $labels.device }} in the redundancy group are up.'

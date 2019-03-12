@@ -1,6 +1,6 @@
 [DEFAULT]
 debug = {{.Values.debug}}
-insecure_debug = true
+insecure_debug = {{.Values.insecure_debug}}
 verbose = true
 
 max_token_size = {{ .Values.api.token.max_token_size | default 255 }}
@@ -103,6 +103,7 @@ connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .
 driver = sql
 
 [identity]
+list_limit = {{ .Values.api.identity.list_limit | default 0 }}
 default_domain_id = default
 domain_specific_drivers_enabled = true
 domain_configurations_from_database = true
@@ -141,8 +142,8 @@ driver = messaging
 [oslo_middleware]
 enable_proxy_headers_parsing = true
 
-{{- if .Values.lifesaver.enabled }}
 [lifesaver]
+enabled = {{ .Values.lifesaver.enabled }}
 {{- if .Values.memcached.host }}
 memcached = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 11211}}
 {{ else }}
@@ -152,14 +153,13 @@ domain_whitelist = {{ .Values.lifesaver.domain_whitelist | default "Default, tem
 user_whitelist = {{ .Values.lifesaver.user_whitelist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
 user_blacklist = {{ .Values.lifesaver.user_blacklist | default "" }}
 # initial user credit
-initial_credit = {{ .Values.lifesaver.initial_credit | default 70 }}
+initial_credit = {{ .Values.lifesaver.initial_credit | default 100 }}
 # how often do we refill credit
 refill_seconds = {{ .Values.lifesaver.refill_seconds | default 60 }}
 # and with what amount
 refill_amount = {{ .Values.lifesaver.refill_amount | default 1 }}
 # cost of each status
 status_cost = {{ .Values.lifesaver.status_cost | default "default:1,401:10,403:5,404:0,429:0" }}
-{{- end }}
 
 {{- if .Values.cors.enabled }}
 [cors]

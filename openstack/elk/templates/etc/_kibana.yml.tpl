@@ -8,7 +8,7 @@ server.host: "0.0.0.0"
 # server.maxPayloadBytes: 1048576
 
 # The Elasticsearch instance to use for all your queries.
-elasticsearch.url: http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}
+elasticsearch.hosts: http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_http_port}}
 
 # preserve_elasticsearch_host true will send the hostname specified in `elasticsearch`. If you set it to false,
 # then the host you use to connect to *this* Kibana instance will be sent.
@@ -16,7 +16,7 @@ elasticsearch.url: http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{
 
 # Kibana uses an index in Elasticsearch to store saved searches, visualizations
 # and dashboards. It will create a new index if it doesn't already exist.
-# kibana.index: ".kibana"
+kibana.index: ".kibana-6"
 
 # The default application to load.
 # kibana.defaultAppId: "discover"
@@ -46,7 +46,7 @@ elasticsearch.password: "{{.Values.elk_elasticsearch_admin_password}}"
 
 # Time in milliseconds to wait for elasticsearch to respond to pings, defaults to
 # request_timeout setting
-# elasticsearch.pingTimeout: 1500
+elasticsearch.pingTimeout: 10000
 
 # Time in milliseconds to wait for responses from the back end or elasticsearch.
 # This must be > 0
@@ -63,16 +63,23 @@ elasticsearch.requestTimeout: 60000
 # pid.file: /var/run/kibana.pid
 
 # If you would like to send the log output to a file you can set the path below.
-# logging.dest: stdout
+logging.dest: stdout
 
 # Set this to true to suppress all logging output.
 # logging.silent: false
 
 # Set this to true to suppress all logging output except for error messages.
-# logging.quiet: false
+logging.quiet: true
 
 # Set this to true to log all events, including system usage information and all requests.
-# logging.verbose: false
+#logging.verbose: true
 
 # whitelist the headers we want to transfer from the ingress to elasticsearch
 elasticsearch.requestHeadersWhitelist: [ "X-Remote-User" ]
+
+xpack.monitoring.enabled: false
+xpack.xpack_main.telemetry.enabled: false
+xpack.monitoring.kibana.collection.enabled: false
+xpack.monitoring.ui.enabled: false
+
+map.includeElasticMapsService: false

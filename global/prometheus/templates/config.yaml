@@ -4,10 +4,12 @@ metadata:
   name: prometheus-global
 
 data:
+{{- if .Values.alerting.enabled }}
 {{- range $path, $bytes := .Files.Glob "*.alerts" }}
   {{ printf "%s" $path }}: |
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
+{{- end }}
   ca.crt: |
 {{ .Files.Get "ca.crt" | indent 4 }}
   prometheus.yaml: |

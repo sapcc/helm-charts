@@ -24,7 +24,7 @@ actions:
       value: '^audit'
       exclude:
     - filtertype: space
-      disk_space: {{.Values.hermes_elasticsearch_data_retention}}
+      disk_space: {{required ".Values.hermes_elasticsearch_data_retention" .Values.hermes_elasticsearch_data_retention}}
       use_age: True
       source: creation_date
       exclude:

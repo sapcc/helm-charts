@@ -1,8 +1,7 @@
 input {
   udp {
     port  => {{.Values.elk_logstash_input_netflow_port}}
-    codec => netflow
-    tags => ["netflow"]
+    type => netflow
   }
   udp {
     port  => {{.Values.elk_logstash_input_syslog_port}}
@@ -14,27 +13,17 @@ input {
   }
 }
 
-filter {
-  if [type] == "syslog" {
-    grok{
-      match => [
-        "message", "%{SYSLOG5424PRI}%{NUMBER:log_sequence}: %{GREEDYDATA:syslog_host}: %{CISCOTIMESTAMP:log_date}: %%{CISCO_REASON:facility}-%{INT:severity_level}-%{CISCO_REASON:facility_mnemonic}: %{GREEDYDATA:message}"
-      ]
-    }
-  }
-}
 
 output {
-if "netflow" in [tags] {
+if  [type] == "netflow" {
   elasticsearch {
     index => "netflow-%{+YYYY.MM.dd}"
     template => "/elk-etc/netflow.json"
     template_name => "netflow"
     template_overwrite => true
-    hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}"]
+    hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_http_port}}"]
     user => "{{.Values.elk_elasticsearch_admin_user}}"
     password => "{{.Values.elk_elasticsearch_admin_password}}"
-    flush_size => 500
   }
 }
 elseif [type] == "syslog" {
@@ -43,10 +32,9 @@ elseif [type] == "syslog" {
     template => "/elk-etc/syslog.json"
     template_name => "syslog"
     template_overwrite => true
-    hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}"]
+    hosts => ["{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_http_port}}"]
     user => "{{.Values.elk_elasticsearch_admin_user}}"
     password => "{{.Values.elk_elasticsearch_admin_password}}"
-    flush_size => 500
   }
 }
 }

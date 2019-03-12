@@ -67,6 +67,8 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         {{- if not $conductor.debug }}
+        resources:
+{{ toYaml .Values.pod.resources.conductor | indent 10 }}
         livenessProbe:
           exec:
             command:
@@ -127,6 +129,8 @@ spec:
       - name: console
         image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
         imagePullPolicy: IfNotPresent
+        resources:
+{{ toYaml .Values.pod.resources.console | indent 10 }}
         ports:
           - name: ironic-console
             protocol: TCP

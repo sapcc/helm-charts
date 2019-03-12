@@ -21,7 +21,7 @@ start_rally_tests() {
     rally verify configure-verifier --extend /etc/tempest/tempest.conf --show
 
     # run the tempest tests for keystone
-    rally verify start --concurrency 1 --detailed --pattern set=identity
+    rally verify start --concurrency 1 --detailed --pattern set=identity --skip-list /etc/tempest/tempest-skip-list.yaml
 
     # evaluate the overall test result
     rally verify list --status failed | grep -c 'failed' && exit 1 || exit 0

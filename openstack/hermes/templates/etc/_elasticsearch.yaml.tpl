@@ -1,4 +1,4 @@
-cluster.name: {{.Values.hermes_elasticsearch_cluster_name}}
+cluster.name: {{required ".Values.hermes_elasticsearch_cluster_name" .Values.hermes_elasticsearch_cluster_name}}
 
 node.master: true
 node.data: true

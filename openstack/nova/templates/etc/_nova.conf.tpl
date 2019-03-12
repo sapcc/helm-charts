@@ -10,9 +10,11 @@ state_path = /var/lib/nova
 use_neutron = True
 linuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver
 
-# we patched this to be treated as force_resize_to_same_host
+# we patched this to be treated as force_resize_to_same_host for mitaka
 # https://github.com/sapcc/nova/commit/fd9508038351d027dcbf94282ba83caed5864a97
 allow_resize_to_same_host = true
+# but now we also need a new patch with this for queens
+always_resize_on_same_host = true
 
 enable_new_services = {{ .Values.enable_new_services | default .Release.IsInstall }}
 

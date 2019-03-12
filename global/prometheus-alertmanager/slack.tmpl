@@ -1,30 +1,31 @@
+{{ define "slack.sapcc.color" }}{{ if .Alerts.Firing | and .Alerts.Resolved }}warning{{ else if .Alerts.Firing }}danger{{ else }}good{{ end }}{{ end }}
 {{ define "slack.sapcc.iconemoji" }}:fire_engine:{{ end }}
 {{ define "slack.sapcc.title" }}{{ end }}
 {{ define "slack.sapcc.titlelink" }}{{ end }}
 {{ define "slack.sapcc.pretext" }} {{- end }}
 
 {{ define "slack.sapcc.text" }}
-{{ if eq .Status "firing" }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
-{{ if eq .Status "resolved" }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
+{{ if .Alerts.Firing }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 | or .Alerts.Resolved }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
+{{ if .Alerts.Resolved }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 | or .Alerts.Firing }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
   {{ if .CommonLabels.cluster }}*[{{ .CommonLabels.cluster | toUpper }}]*{{ else }}*[{{ .CommonLabels.region | toUpper }}]*{{ end }} {{ if .CommonLabels.dashboard }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }}
 
-{{ if eq .Status "firing" -}}
+{{- $generatorURL := "" }}
 {{ range .Alerts.Firing -}}
   {{ if eq .Labels.severity "warning" }}:warning: {{ end -}}
   {{ if eq .Labels.severity "critical" }}:fire: {{ end -}}
-  {{ .Annotations.description }} {{ if .Labels.sentry }}*<https://sentry.{{ .Labels.region }}.cloud.sap/monsoon/{{ .Labels.sentry }}|Sentry>*{{ end }} {{ if .Labels.cloudops }}*<https://dashboard.{{ .Labels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/{{ .Labels.cloudops }}|CloudOps>*{{ end }}
+  {{ if eq .Labels.severity "info" }}:information_source: {{ end -}}
+  {{ .Annotations.description }} {{ if .Labels.sentry }}*<https://sentry.{{ .Labels.region }}.cloud.sap/monsoon/{{ .Labels.sentry }}|:sentry:>*{{ end }} {{ if .Labels.cloudops }}*<https://dashboard.{{ .Labels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/{{ .Labels.cloudops }}|:ccloud:>*{{ end }}
+{{- $generatorURL = .GeneratorURL }}
 {{ end -}}
-{{ end -}}
-{{ if eq .Status "resolved" -}}
 {{ range .Alerts.Resolved -}}
   :white_check_mark: {{ .Annotations.description }}
-{{ end -}}
+{{- if not $generatorURL }}{{ $generatorURL = .GeneratorURL }}{{ end }}
 {{ end -}}
 
 {{ if .CommonLabels.dashboard }}*<https://grafana.{{ .CommonLabels.region }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}|Grafana>* {{ end -}}
 {{ if .CommonLabels.playbook }}*<https://operations.global.cloud.sap/{{ .CommonLabels.playbook }}|Playbook>* {{ end -}}
 {{ if .CommonLabels.kibana }}*<https://logs.{{ .CommonLabels.region }}.cloud.sap/{{ .CommonLabels.kibana }}|Kibana>* {{ end -}}
-*<https://prometheus.{{- if eq .CommonLabels.tier "kks" -}}kubernikus.{{- end -}}{{ .CommonLabels.region }}.cloud.sap|Prometheus>*
+*<{{ $generatorURL }}|Prometheus>*
 {{ end }}
 
 {{ define "slack.sapcc.actionName" }}{{ if eq .Status "firing" }}reaction{{ end }}{{ end }}

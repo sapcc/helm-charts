@@ -46,6 +46,23 @@ scrape_configs:
   - action: labelmap
     replacement: __param_$1
     regex: __meta_kubernetes_service_annotation_prometheus_io_scrape_param_(.+)
+  metric_relabel_configs:
+  - source_labels: [component]
+    regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
+    replacement: '$1'
+    target_label: availability_zone
+  - source_labels: [component]
+    regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
+    replacement: '$2'
+    target_label: device
+  - source_labels: [component, cluster]
+    separator: ;
+    regex: elasticsearch-exporter-(.+);(.+)
+    target_label: elastic_cluster
+    replacement: $2
+    action: replace
+  - regex: 'cluster'
+    action: labeldrop
 
 # Scrape config for endpoints with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -461,6 +478,7 @@ scrape_configs:
 {{- end }}
 
 {{- if .Values.global.ipmi_exporter.enabled }}
+{{- if .Values.global.ipmi_exporter.ironic.enabled }}
 - job_name: 'baremetal/ironic'
   params:
     job: [baremetal/ironic]
@@ -477,6 +495,7 @@ scrape_configs:
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:9290
+{{- end }}
 {{- if .Values.global.ipmi_exporter.netbox.enabled }}
 - job_name: 'cp/netbox'
   params:
@@ -494,6 +513,9 @@ scrape_configs:
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:9290
+    - source_labels: [__meta_serial]
+      target_label: server_serial
+
 {{- end }}
 {{- end }}
 

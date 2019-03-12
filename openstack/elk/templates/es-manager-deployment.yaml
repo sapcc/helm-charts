@@ -12,7 +12,7 @@ metadata:
     kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
 
 spec:
-  replicas: 1
+  replicas: 0
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -24,7 +24,6 @@ spec:
         component: elasticsearch
         role: manager
       annotations:
-        checksum/elk-templates-es-etc-configmap.yaml: {{ include "elk/templates/es-etc-configmap.yaml" . | sha256sum }}
         checksum/application.conf.tpl: {{ include "elk/templates/etc/_application.conf.tpl" . | sha256sum }}
     spec:
       nodeSelector:
@@ -42,6 +41,9 @@ spec:
         args:
           - /opt/cerebro/bin/cerebro
           - -Dconfig.file=/es-etc/elasticsearch-application.conf
+          - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
+          - -Des.networkaddress.cache.ttl=20
+          - -Des.networkaddress.cache.negative.ttl=10
         env:
           - name: NAMESPACE
             valueFrom:

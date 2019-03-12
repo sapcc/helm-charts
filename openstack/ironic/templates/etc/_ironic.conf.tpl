@@ -4,10 +4,18 @@ pybasedir = /ironic/ironic
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
+{{- if .Values.notification_level }}
+notification_level = {{ .Values.notification_level }}
+{{- end }}
 
 {{- include "ini_sections.default_transport_url" . }}
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
+
+{{- if .Values.notification_level }}
+[oslo_messaging_notifications]
+driver = messagingv2
+{{- end }}
 
 [agent]
 deploy_logs_collect = {{ .Values.agent.deploy_logs.collect }}
@@ -82,8 +90,8 @@ swift_store_multi_tenant = True
     {{- if .Values.swift_multi_tenant }}
 swift_store_multiple_containers_seed = 32
     {{- end }}
-swift_temp_url_key = {{ .Values.swift_tempurl }}
-swift_account = {{ .Values.swift_account }}
+swift_temp_url_key = {{required "A valid .Values.swift_tempurl required!" .Values.swift_tempurl }}
+swift_account = {{required "A valid .Values.swift_account required!" .Values.swift_account }}
 {{- end }}
 
 [swift]
@@ -94,8 +102,8 @@ swift_set_temp_url_key = True
 
 [neutron]
 auth_section = service_catalog
-cleaning_network = {{ .Values.network_cleaning_uuid }}
-provisioning_network = {{ .Values.network_management_uuid }}
+cleaning_network = {{required "A valid .Values.network_cleaning_uuid required!" .Values.network_cleaning_uuid }}
+provisioning_network = {{required "A valid .Values.network_management_uuid required!" .Values.network_management_uuid }}
 timeout = {{ .Values.neutron_url_timeout }}
 port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 

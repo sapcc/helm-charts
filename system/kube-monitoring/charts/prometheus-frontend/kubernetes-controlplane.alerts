@@ -2,60 +2,56 @@ groups:
 - name: controlplane.alerts
   rules:      
   - alert: KubernetesCPSensorCritical
-    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Planned|Staged|Active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Planned|Staged|Active)"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
     for: 15m
     labels:
       severity: critical
       tier: k8s
       service: controlplane
       context: "{{ $labels.server_name }}"
-      meta: "control plane node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / server_id: {{ $labels.server_id }}"
-      playbook: docs/devops/alert/cp
+      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }} / provision_state: {{ $labels.provision_state }}"
     annotations:
-      description: "cp node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Server ID: {{ $labels.server_id }}"
-      summary: "Hardware error for instance: {{ $labels.instance }}"
+      description: "cp node {{ $labels.server_name }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
+      summary: "Hardware error for instance: {{ $labels.server_name }}"
 
   - alert: KubernetesCPSensorWarning
-    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Staged)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot)", job="cp/netbox"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id)
+    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Staged)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot)", job="cp/netbox"} == 2)) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
     for: 15m
     labels:
       severity: warning
       tier: k8s
       service: controlplane
       context: "{{ $labels.server_name }}"
-      meta: "control plane node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / server_id: {{ $labels.server_id }}"
-      playbook: docs/devops/alert/cp
+      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }} / provision_state: {{ $labels.provision_state }}"
     annotations:
-      description: "cp node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Server ID: {{ $labels.server_id }}"
-      summary: "Hardware error for instance: {{ $labels.instance }}"
+      description: "cp node {{ $labels.server_name }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
+      summary: "Hardware error for instance: {{ $labels.server_name }}"
 
   - alert: KubernetesCPSensorInfo
-    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply|Critical Interrupt)", job="cp/netbox"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply|Critical Interrupt)", job="cp/netbox"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
     for: 15m
     labels:
       severity: info
       tier: k8s
       service: controlplane
       context: "{{ $labels.server_name }}"
-      meta: "control plane node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / server_id: {{ $labels.server_id }}"
-      playbook: docs/devops/alert/cp
+      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }} / provision_state: {{ $labels.provision_state }}"
     annotations:
-      description: "cp node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Server ID: {{ $labels.server_id }}"
-      summary: "Hardware error for instance: {{ $labels.instance }}"
+      description: "cp node {{ $labels.server_name }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
+      summary: "Hardware error for instance: {{ $labels.server_name }}"
 
   - alert: KubernetesCPMetricsDown
-    expr: count(ipmi_up{job="cp/netbox"} == 0) by (server_name) or count(up{job="cp/netbox"} == 0) by (server_name)
+    expr: count(ipmi_up{job="cp/netbox"} == 0) by (server_name, serial) or count(up{job="cp/netbox"} == 0) by (server_name, serial)
     for: 15m
     labels:
       severity: warning
       tier: k8s
       service: controlplane
       context: "{{ $labels.server_name }}"
-      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
-      playbook: docs/devops/alert/cp
+      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }} / Serial: {{ $labels.serial }}"
     annotations:
-      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
-      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
+      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }} / Serial: {{ $labels.serial }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }} / Serial: {{ $labels.serial }}"
       
   - alert: KubernetesCPSDDown
     expr: absent(ipmi_netbox_sd_up) or ipmi_netbox_sd_up == 0
@@ -66,7 +62,6 @@ groups:
       service: controlplane
       context: netbox_sd
       meta: "ipmi service discovery failure"
-      playbook: docs/devops/alert/cp
     annotations:
       description: "ipmi service discovery failed to get netbox nodes"
       summary: "ipmi service discovery failed to get netbox nodes"
@@ -79,9 +74,7 @@ groups:
       tier: k8s
       service: controlplane
       context: "{{ $labels.server_name }}"
-      meta: "control plane node {{ $labels.node_name }} has no IPMI sensor data"
-      playbook: docs/devops/alert/cp
-      cluster_type: kubernikus-controlplane
+      meta: "control plane node {{ $labels.node_name }} has no IPMI sensor data available. please ensure that the node is configured in netbox"
     annotations:
-      description: "control plane node {{ $labels.node_name }} has no IPMI sensor data"
-      summary: "control plane node {{ $labels.node_name }} has no IPMI sensor data"
+      description: "control plane node {{ $labels.node_name }} has no IPMI sensor data available. please ensure that the node is configured in netbox"
+      summary: "control plane node {{ $labels.node_name }} has no IPMI sensor data. please ensure that the node is configured in netbox"

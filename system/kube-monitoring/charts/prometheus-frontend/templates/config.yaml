@@ -63,9 +63,9 @@ data:
       # The labels to add to any time series or alerts when communicating with
       # external systems (federation, remote storage, Alertmanager).
       external_labels:
-        region: {{ if .Values.regionPrefix }}{{ .Values.regionPrefix }}{{- end -}}{{ .Values.global.region }}
+        region: {{ required ".Values.global.region undefined" .Values.global.region }}
         cluster_type: {{ .Values.global.clusterType }}
-        cluster: {{ .Values.global.cluster }}
+        cluster: {{if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
 
     rule_files:
       - ./*.rules
@@ -119,6 +119,7 @@ data:
           - '{__name__=~"^inframonitor_.+"}'
           - '{__name__=~"^ingress_.+"}'
           - '{__name__=~"^ipmi_.+"}'
+          - '{__name__=~"^jump_.+"}'
           - '{__name__=~"^keystone_.+"}'
           - '{__name__=~"^klog_.+"}'
           - '{__name__=~"^kube_.+"}'
@@ -159,6 +160,7 @@ data:
           - '{__name__=~"^snmp_asr_.+"}'
           - '{__name__=~"^snmp_arista_dot1qVlanFdbId"}'
           - '{__name__=~"^snmp_f5_.+"}'
+          - '{__name__=~"^snmp_n7k_.+"}'          
           - '{__name__=~"^sql_openstack_.+"}'
           - '{__name__=~"^mysql_global_status_.+"}'
           - '{__name__=~"^mysql_global_variables_.+"}'
@@ -187,10 +189,11 @@ data:
           - '{__name__=~"^latency"}'
           - '{job="dns-sd"}'
 
+      #add region label to all metrics, don't delete this without knowing what you are doing...
       relabel_configs:
-        - action: replace
-          target_label: region
-          replacement: {{ if .Values.regionPrefix }}{{ .Values.regionPrefix }}{{- end -}}{{ .Values.global.region }}
+         - action: replace
+           target_label: region
+           replacement: {{ required ".Values.global.region undefined" .Values.global.region }}
 
       metric_relabel_configs:
         - action: replace

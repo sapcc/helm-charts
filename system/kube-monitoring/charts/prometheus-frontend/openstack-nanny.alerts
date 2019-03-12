@@ -58,8 +58,8 @@ groups:
       description: This is just a maia test debugging alert ... please ignore for now
       summary: This is just a maia test debugging alert ... please ignore for now
   - alert: OpenstackVcenterNannyConsistencyVolumeAttachingForTooLong
-    expr: vcenter_nanny_consistency_cinder_volume_attaching_for_too_long{region=~"ap-jp-2|eu-de-1|eu-de-2|eu-nl-1|na-us-1"} > 0
-    for: 15m
+    expr: vcenter_nanny_consistency_cinder_volume_attaching_for_too_long > 0
+    for: 30m
     labels:
       context: nanny
       # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
@@ -67,11 +67,11 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - volume_uuid: {{ $labels.volume_uuid }} - project_id: {{ $labels.project_id }} - nanny: {{ $labels.kubernetes_name }}"
+      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
       summary: This is just a test debugging alert ... please ignore for now
   - alert: OpenstackVcenterNannyConsistencyVolumeDetachingForTooLong
-    expr: vcenter_nanny_consistency_cinder_volume_detaching_for_too_long{region=~"ap-jp-2|eu-de-1|eu-de-2|eu-nl-1|na-us-1"} > 0
-    for: 15m
+    expr: vcenter_nanny_consistency_cinder_volume_detaching_for_too_long > 0
+    for: 30m
     labels:
       context: nanny
       # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
@@ -79,11 +79,35 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - volume_uuid: {{ $labels.volume_uuid }} - project_id: {{ $labels.project_id }} - nanny: {{ $labels.kubernetes_name }}"
+      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
+      summary: This is just a test debugging alert ... please ignore for now
+  - alert: OpenstackVcenterNannyConsistencyVolumeCreatingForTooLong
+    expr: vcenter_nanny_consistency_cinder_volume_creating_for_too_long > 0
+    for: 30m
+    labels:
+      context: nanny
+      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
+      service: maia
+      severity: info
+      tier: os
+    annotations:
+      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
+      summary: This is just a test debugging alert ... please ignore for now
+  - alert: OpenstackVcenterNannyConsistencyVolumeDeletingForTooLong
+    expr: vcenter_nanny_consistency_cinder_volume_deleting_for_too_long > 0
+    for: 30m
+    labels:
+      context: nanny
+      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
+      service: maia
+      severity: info
+      tier: os
+    annotations:
+      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
       summary: This is just a test debugging alert ... please ignore for now
   - alert: OpenstackVcenterNannyConsistencyVolumeIsInStateReserved
-    expr: vcenter_nanny_consistency_cinder_volume_is_in_state_reserved{region=~"ap-jp-2|eu-de-1|eu-de-2|eu-nl-1|na-us-1"} > 0
-    for: 15m
+    expr: vcenter_nanny_consistency_cinder_volume_is_in_state_reserved > 0
+    for: 30m
     labels:
       context: nanny
       # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
@@ -91,11 +115,11 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - volume_uuid: {{ $labels.volume_uuid }} - project_id: {{ $labels.project_id }} - nanny: {{ $labels.kubernetes_name }}"
+      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
       summary: This is just a test debugging alert ... please ignore for now
   - alert: OpenstackVcenterNannyConsistencyVolumeAvailableWithAttachments
-    expr: vcenter_nanny_consistency_cinder_volume_available_with_attachments{region=~"ap-jp-2|eu-de-1|eu-de-2|eu-nl-1|na-us-1"} > 0
-    for: 15m
+    expr: vcenter_nanny_consistency_cinder_volume_available_with_attachments > 0
+    for: 30m
     labels:
       context: nanny
       # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
@@ -103,5 +127,17 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - volume_uuid: {{ $labels.volume_uuid }} - project_id: {{ $labels.project_id }} - nanny: {{ $labels.kubernetes_name }}"
+      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
+      summary: This is just a test debugging alert ... please ignore for now
+  - alert: OpenstackVcenterNannyConsistencyTooMuchToFix
+    expr: vcenter_nanny_consistency_cinder_volume_attachment_fix_count > vcenter_nanny_consistency_cinder_volume_attachment_max_fix_count
+    for: 30m
+    labels:
+      context: nanny
+      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
+      service: maia
+      severity: info
+      tier: os
+    annotations:
+      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
       summary: This is just a test debugging alert ... please ignore for now

@@ -25,7 +25,7 @@ data.path = "./cerebro.db"
 # A list of known hosts
 hosts = [
   {
-    host = "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_port_internal}}"
+    host = "http://{{.Values.elk_elasticsearch_endpoint_host_internal}}:{{.Values.elk_elasticsearch_http_port}}"
     name = "elk cluster"
     auth = {
       username = "{{.Values.elk_elasticsearch_admin_user}}"

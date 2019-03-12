@@ -33,6 +33,9 @@ scrape_configs:
       - '{__name__=~"^snmp_f5_sysGlobalHostOtherMemTotalKb"}'
       - '{__name__=~"^snmp_f5_sysHostMemoryUsedKb"}'
       - '{__name__=~"^snmp_f5_sysHostMemoryTotalKb"}'
+      - '{__name__=~"^snmp_f5_sysMultiHostCpuUsageRatio5s"}'
+      - '{__name__=~"^snmp_f5_sysGlobalHostCpuUsageRatio5s"}'
+      - '{__name__=~"^snmp_f5_sysTmmStatTmUsageRatio5s"}'
       - '{__name__=~"^node_cpu_seconds_total",mode="idle"}'
       - '{__name__=~"^node_memory_MemTotal_bytes$",instance=~".+cloud.sap"}'
       - '{__name__=~"^node_memory_MemFree_bytes$",instance=~".+cloud.sap"}'
@@ -42,6 +45,7 @@ scrape_configs:
       - '{__name__=~"^kube_pod_container_resource_requests_memory_bytes$",node=~".+cloud.sap"}'
       - '{__name__=~"^kube_pod_container_resource_requests_cpu_cores$",node=~".+cloud.sap"}'
       - '{__name__=~"^kube_node_status_capacity$",node=~".+cloud.sap"}'
+      - '{__name__=~"^ipmi_sensor_state$",job=~"baremetal/ironic",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^swift_cluster_storage_used_percent_.+"}'
       - '{__name__=~"^openstack_ironic_nodes_.+"}'
@@ -129,6 +133,7 @@ scrape_configs:
 {{- end }}
 {{- end }}
 
+{{- if .Values.alerting.enabled }}
 alerting:
   alertmanagers:
   - scheme: https
@@ -136,3 +141,4 @@ alerting:
     - targets:
       - "alertmanager.eu-de-1.cloud.sap"
       - "alertmanager.eu-nl-1.cloud.sap"
+{{- end }}
