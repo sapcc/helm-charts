@@ -33,25 +33,25 @@ pod:
     pxe: 1
   resources:
     api:
-      limits:	
-        memory: 3Gi	
-        cpu: 1000m	
-      requests:	
-        memory: 2Gi	
+      limits:
+        memory: 3Gi
+        cpu: 1000m
+      requests:
+        memory: 2Gi
         cpu: 500m
     inspector:
-      limits:	
-        memory: 512Mi	
-        cpu: 500m	
-      requests:	
-        memory: 256Mi	
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
         cpu: 100m
     conductor:
-      limits:	
-        memory: 2Gi	
-        cpu: 1000m	
-      requests:	
-        memory: 1Gi	
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+      requests:
+        memory: 1Gi
         cpu: 500m
     pxe:
       limits:
@@ -208,7 +208,7 @@ pgmetrics:
               usage: "GAUGE"
               description: "Nodes created past 24hrs"
      openstack_ironic_nodes:
-       query: "SELECT count(case when not maintenance then 1 end) as NodeNotInMaint, count(case when maintenance then 1 end) as NodeInMaint, uuid, name from nodes group by  uuid, name"
+       query: "SELECT count(case when not maintenance then 1 end) as NodeNotInMaint, count(case when maintenance then 1 end) as NodeInMaint, uuid, name, maintenance_reason from nodes group by maintenance_reason, uuid, name"
        metrics:
          - uuid:
              usage: "LABEL"
@@ -216,6 +216,9 @@ pgmetrics:
          - name:
              usage: "LABEL"
              description: "Node name"
+         - maintenance_reason:
+             usage: "LABEL"
+             description: "Maintenance Reason of Node "
          - NodeNotInMaint:
              usage: "GAUGE"
              description: "Node not in maintenance"
