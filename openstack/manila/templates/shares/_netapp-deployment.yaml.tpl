@@ -1,6 +1,5 @@
 {{- define "share_netapp" -}}
 {{$share := index . 1 -}}
-{{$az := index . 2 -}}
 {{with index . 0}}
 kind: Deployment
 apiVersion: extensions/v1beta1
@@ -27,7 +26,7 @@ spec:
         name: manila-share-netapp-{{$share.name}}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        configmap-netapp-hash: {{ list . $share $az | include "share_netapp_configmap" | sha256sum }}
+        configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
     spec:
       containers:
         - name: manila-share-netapp-{{$share.name}}
