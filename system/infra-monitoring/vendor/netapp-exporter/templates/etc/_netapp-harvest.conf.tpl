@@ -10,13 +10,12 @@ host_type         = FILER
 auth_type         = password
 data_update_freq  = 300
 
-{{- range $idx, $avzone := .Values.shares  }}
-{{- range $idx, $share := .shares_netapp }}
+{{- range $idx, $share := .Values.netapp.filers }}
 
 [{{ $share.name }}]
 hostname = {{ $share.host }}
-username = {{ required "netapp filer api user" $share.username }}
-password = {{ required "netapp filer password" $share.password }}
+username = {{ required "netapp.filers.*.username" $share.username }}
+password = {{ required "netapp.filers.*.password" $share.password }}
 
 {{- with $share.name | regexFind "bb|cp|bm|ma" }}
 {{- if eq . "bb" }}
@@ -29,7 +28,6 @@ group    = bare-metal
 group    = manila
 {{- else }}
 group    = others
-{{- end }}
 {{- end }}
 
 {{- end }}
