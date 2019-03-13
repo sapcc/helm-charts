@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: operator
-          image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}" 
+          image: "{{required ".Values.operator.image.repository is missing" .Values.operator.image.repository }}:{{required ".Values.operator.image.tag is missing" .Values.operator.image.tag }}" 
           imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
           env:
             - name: SENTRY_ENDPOINT
@@ -24,7 +24,7 @@ spec:
             - name: SENTRY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "fullname" . }} 
+                  name: {{ template "fullname" . }}
                   key: admin-api-token
             - name: SENTRY_ORGANIZATION
               value: {{ .Values.organizationSlug }}
