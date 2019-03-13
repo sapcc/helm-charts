@@ -33,6 +33,13 @@ endpoint_type = internal
 [network-feature-enabled]
 ipv6 = false
 
+
+[baremetal]
+min_microversion = 1.46
+max_microversion = 1.46
+# Driver to use for API tests for Queens and newer:
+driver = fake-hardware
+
 [compute]
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
 image_ref = CHANGE_ME_IMAGE_REF
