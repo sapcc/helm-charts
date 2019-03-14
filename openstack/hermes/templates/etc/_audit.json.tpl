@@ -165,8 +165,8 @@
           }
         },
         "@version": {
-          "index": "not_analyzed",
-          "type": "string",
+          "index": true,
+          "type": "keyword",
           "doc_values": true
         }
       }
