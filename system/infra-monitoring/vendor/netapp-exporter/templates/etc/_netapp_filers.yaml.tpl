@@ -1,4 +1,4 @@
-{{- range $idx, $share := .Values.netapp.filers }}
+{{- range $idx, $share := .Values.global.netapp.filers }}
 - name: {{ $share.name }}
   host: {{ $share.host }}
   username: {{ $share.username }}
