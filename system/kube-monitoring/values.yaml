@@ -7,12 +7,12 @@ global:
   prometheus:
     image: prom/prometheus
     tag: v2.6.0
-    
+
   configmap_reload:
     image:
       repository: jimmidyson/configmap-reload
       tag: v0.2.2
-    
+
   ipmi_service_discovery:
     enabled: false
     configmap_name: ipmi-sd
@@ -35,8 +35,8 @@ global:
 
 prometheus-node-exporter:
   image:
-    repository: sapcc/node-exporter
-    tag: e80d48849b9
+    repository: prom/node-exporter
+    tag: v0.17.0
 
   serviceAccount:
     create: false
@@ -48,6 +48,7 @@ prometheus-node-exporter:
   extraArgs:
     - --collector.filesystem.ignored-mount-points=\"^/(sys|proc|dev|host|etc)($|/)\"
     - --collector.processes
+    - --collector.systemd.enable-task-metrics
 
   extraHostVolumeMounts:
     - name: dbus
