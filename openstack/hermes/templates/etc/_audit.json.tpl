@@ -22,9 +22,9 @@
               "fielddata": {
                 "format": "disabled"
               },
-              "index": "analyzed",
+              "index": true,
               "omit_norms": true,
-              "type": "string"
+              "type": "text"
             },
             "match_mapping_type": "string",
             "match": "message"
@@ -36,14 +36,14 @@
               "fielddata": {
                 "format": "disabled"
               },
-              "index": "analyzed",
+              "index": true,
               "omit_norms": true,
-              "type": "string",
+              "type": "text",
               "fields": {
                 "raw": {
                   "ignore_above": 256,
-                  "index": "not_analyzed",
-                  "type": "string",
+                  "index": true,
+                  "type": "keyword",
                   "doc_values": true
                 }
               }
