@@ -81,16 +81,6 @@
             "match_mapping_type": "date",
             "match": "*"
           }
-        },
-        {
-          "geo_point_fields": {
-            "mapping": {
-              "type": "geo_point",
-              "doc_values": true
-            },
-            "match_mapping_type": "geo_point",
-            "match": "*"
-          }
         }
       ],
       "_all": {
