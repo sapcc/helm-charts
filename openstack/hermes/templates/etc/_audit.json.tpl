@@ -23,7 +23,7 @@
                 "format": "disabled"
               },
               "index": true,
-              "omit_norms": true,
+              "norms": false,
               "type": "text"
             },
             "match_mapping_type": "string",
@@ -37,7 +37,7 @@
                 "format": "disabled"
               },
               "index": true,
-              "omit_norms": true,
+              "norms": false,
               "type": "text",
               "fields": {
                 "raw": {
@@ -53,52 +53,12 @@
           }
         },
         {
-          "float_fields": {
-            "mapping": {
-              "type": "float",
-              "doc_values": true
-            },
-            "match_mapping_type": "float",
-            "match": "*"
-          }
-        },
-        {
           "double_fields": {
             "mapping": {
               "type": "double",
               "doc_values": true
             },
             "match_mapping_type": "double",
-            "match": "*"
-          }
-        },
-        {
-          "byte_fields": {
-            "mapping": {
-              "type": "byte",
-              "doc_values": true
-            },
-            "match_mapping_type": "byte",
-            "match": "*"
-          }
-        },
-        {
-          "short_fields": {
-            "mapping": {
-              "type": "short",
-              "doc_values": true
-            },
-            "match_mapping_type": "short",
-            "match": "*"
-          }
-        },
-        {
-          "integer_fields": {
-            "mapping": {
-              "type": "integer",
-              "doc_values": true
-            },
-            "match_mapping_type": "integer",
             "match": "*"
           }
         },
@@ -134,7 +94,7 @@
         }
       ],
       "_all": {
-        "omit_norms": true,
+        "norms": false,
         "enabled": true
       },
       "properties": {
