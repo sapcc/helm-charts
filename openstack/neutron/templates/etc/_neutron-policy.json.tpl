@@ -39,7 +39,7 @@
     "update_subnet": "rule:context_is_network_admin",
     "delete_subnet": "rule:context_is_network_admin",
 
-    "create_subnetpool": "rule:context_is_admin",
+    "create_subnetpool": "rule:context_is_network_admin",
     "create_subnetpool:shared": "rule:context_is_admin",
     "create_subnetpool:is_default": "rule:context_is_admin",
     "get_subnetpool": "rule:context_is_viewer or rule:shared_subnetpools",
