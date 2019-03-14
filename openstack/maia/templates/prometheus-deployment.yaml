@@ -1,4 +1,4 @@
-{{- if .Values.prometheusv2.enabled }}
+{{- if .Values.prometheus.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 
@@ -25,31 +25,31 @@ spec:
         runAsUser: 0
       terminationGracePeriodSeconds: 600
       containers:
-        - name: prometheusv2
-          image: "{{ .Values.prometheusv2.image.repository }}:{{ .Values.prometheusv2.image.tag }}"
+        - name: prometheus
+          image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
           args:
             - --config.file=/etc/prometheus/prometheus.yaml
             - --storage.tsdb.path=/prometheus/v2
-            - --storage.tsdb.retention={{ .Values.prometheusv2.retention }}
+            - --storage.tsdb.retention={{ .Values.prometheus.retention }}
             - --web.console.libraries=/etc/prometheus/console_libraries
             - --web.console.templates=/etc/prometheus/consoles
-            - --web.listen-address=0.0.0.0:{{ .Values.prometheusv2.listen_port }}
+            - --web.listen-address=0.0.0.0:{{ .Values.prometheus.listen_port }}
             - --web.enable-admin-api
             - --web.enable-lifecycle
-            - --log.level={{ default "info" .Values.prometheusv2.log_level }}
+            - --log.level={{ default "info" .Values.prometheus.log_level }}
           ports:
             - name: http
-              containerPort: {{ .Values.prometheusv2.listen_port }}
+              containerPort: {{ .Values.prometheus.listen_port }}
           volumeMounts:
             - name: data
               mountPath: /prometheus
             - name: config
               mountPath: /etc/prometheus
         - name: prometheus-configmap-reloader
-          image: "{{ .Values.prometheusv2.configmap_reload.image.repository }}:{{ .Values.prometheusv2.configmap_reload.image.tag }}"
+          image: "{{ .Values.prometheus.configmap_reload.image.repository }}:{{ .Values.prometheus.configmap_reload.image.tag }}"
           args:
             - --volume-dir=/etc/prometheus
-            - --webhook-url=http://localhost:{{ .Values.prometheusv2.listen_port }}/-/reload
+            - --webhook-url=http://localhost:{{ .Values.prometheus.listen_port }}/-/reload
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus
