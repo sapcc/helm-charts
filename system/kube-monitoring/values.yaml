@@ -77,3 +77,46 @@ kube-state-metrics:
     cronjobs: false
     # not available in k8s1.7
     horizontalpodautoscalers: false
+
+fluent-bit:
+  enabled: false
+
+  image:
+    fluent_bit:
+      repository: fluent/fluent-bit
+      tag: 1.0.4
+    pullPolicy: IfNotPresent
+
+  backend:
+    es:
+      tls_ca: ""
+      # host:
+      # http_user:
+      # http_passwd:
+      # logstash_prefix:
+
+  # filter:
+  # list of additional static values added to each log entry
+  #  additionalValues:
+  #  - key: some-key
+  #    value: some-value
+
+  podAnnotations:
+    # manual versioning, raise if configmap changes
+    versioning: "1"
+
+  existingConfigMap: fluent-bit-config
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true
