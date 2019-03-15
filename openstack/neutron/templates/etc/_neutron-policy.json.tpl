@@ -256,7 +256,7 @@
     "create_flavor_service_profile": "rule:context_is_admin",
     "delete_flavor_service_profile": "rule:context_is_admin",
     "get_flavor_service_profile": "rule:context_is_admin",
-    "get_auto_allocated_topology": "rule:context_is_admin",
+    "get_auto_allocated_topology": "rule:context_is_network_admin",
 
     "create_trunk": "rule:context_is_admin",
     "get_trunk": "rule:context_is_admin",
