@@ -216,7 +216,7 @@
     "delete_metering_label_rule": "rule:context_is_admin",
     "get_metering_label_rule": "rule:context_is_admin",
 
-    "get_service_provider": "rule:context_is_editor",
+    "get_service_provider": "rule:context_is_admin",
     "get_lsn": "rule:context_is_admin",
     "create_lsn": "rule:context_is_admin",
 
