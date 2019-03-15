@@ -29,7 +29,7 @@ application_credentials = True
 project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = internal
-shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default True }}
+shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 
 [network-feature-enabled]
 ipv6 = false
