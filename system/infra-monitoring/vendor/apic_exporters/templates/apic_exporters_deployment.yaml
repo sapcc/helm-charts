@@ -1,5 +1,5 @@
-{{- if .Values.apic_exporters.enabled }}
-{{- if .Values.apic_exporters.exporter_types }}
+{{- if .Values.enabled }}
+{{- if .Values.exporter_types }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -29,22 +29,22 @@ spec:
       containers:
         - name: apic-exporters
           imagePullPolicy: IfNotPresent
-          image: {{ .Values.apic_exporters.docker_repo }}/infrastructure-exporters:{{ .Values.apic_exporters.image_version | replace "string:" "" }}
+          image: {{ .Values.docker_repo }}/infrastructure-exporters:{{ .Values.image_version | replace "string:" "" }}
           args:
             - -c
             - /apic-exporters-etc/config-apic-exporters.yaml
-          {{- if .Values.apic_exporters.resources.enabled }}
+          {{- if .Values.resources.enabled }}
           resources:
             requests:
-              memory: {{ .Values.apic_exporters.resources.requests.memory | quote }}
+              memory: {{ .Values.resources.requests.memory | quote }}
             limits:
-              memory: {{ .Values.apic_exporters.resources.limits.memory | quote }}
+              memory: {{ .Values.resources.limits.memory | quote }}
           {{- end }}
           volumeMounts:
             - mountPath: /apic-exporters-etc
               name: apic-exporters-etc
           ports:
             - name: metrics
-              containerPort: {{ .Values.apic_exporters.prometheus_port }}
+              containerPort: {{ .Values.prometheus_port }}
 {{- end }}
 {{- end }}
