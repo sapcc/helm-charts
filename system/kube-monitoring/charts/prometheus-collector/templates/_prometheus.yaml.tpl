@@ -52,9 +52,13 @@ scrape_configs:
     replacement: '$1'
     target_label: availability_zone
   - source_labels: [component]
+    regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
+    replacement: '$2'
+    target_label: device
+  - source_labels: [component]
     regex: 'snmp-exporter-(.+)'
     replacement: '$1'
-    target_label: device
+    target_label: devicename
   - source_labels: [component, cluster]
     separator: ;
     regex: elasticsearch-exporter-(.+);(.+)
