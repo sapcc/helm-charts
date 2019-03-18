@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: webhook-broadcaster
+spec:
+  template:
+    metadata:
+      labels:
+        name: webhook-broadcaster
+    spec:
+      containers:
+      - name: webhook-broadcaster
+        image: "{{ index .Values "webhook-broadcaster" "image" }}:{{ index .Values "webhook-broadcaster" "imageTag" }}"
+        imagePullPolicy: {{ index .Values "webhook-broadcaster" "imagePullPolicy" | quote }}
+        env:
+        - name: CONCOURSE_URL
+          value: {{ .Values.concourse.concourse.web.externalUrl }} 
+        - name: CONCOURSE_USER
+          value: admin
+        - name: CONCOURSE_PASSWORD
+          value: {{ (split ":" .Values.concourse.secrets.localUsers)._1 }}
+        - name: CONCOURSE_REFRESH_INTERVAL
+          value: 1m
+        - name: CONCOURSE_LISTEN_ADDRESS
+          value: 0.0.0.0:8080
+        ports:
+        - containerPort: 8080

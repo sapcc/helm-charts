@@ -1,0 +1,139 @@
+{{ range .Values.teams }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ $.Values.worker.name }}-{{ .name }}
+  labels:
+    app: {{ $.Values.worker.name }}-{{ .name }}
+    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ $.Release.Name }}"
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ $.Values.worker.name }}-{{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $.Values.worker.name }}-{{ .name }}
+        release: "{{ $.Release.Name }}"
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: {{ .nodePool | quote }}
+      tolerations:
+      - key: "team"
+        operator: Equal
+        value: {{ .name | quote }}
+        effect: "NoSchedule"
+      serviceAccountName: concourse-worker
+      initContainers:
+      - name: {{ $.Values.worker.name }}-{{ .name }}-init-rm
+        image: "{{ $.Values.concourse.image }}:{{ $.Values.concourse.imageTag }}"
+        imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
+        command:
+        - /bin/sh
+        args:
+        - -ce
+        - |-
+          rm -rf {{ $.Values.concourse.concourse.worker.workDir }}/*
+        volumeMounts:
+        - name: concourse-work-dir
+          mountPath: {{ $.Values.concourse.concourse.worker.workDir | quote }}
+      containers:
+      - name: {{ $.Values.worker.name }}-{{ .name }}
+        image: "{{ $.Values.concourse.image }}:{{ $.Values.concourse.imageTag }}"
+        imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
+        command:
+        - /bin/sh
+        args:
+        - -ce
+        - |-
+          update-ca-certificates &&
+          /usr/local/concourse/bin/concourse worker
+        livenessProbe:
+          failureThreshold: 5
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 3
+          httpGet:
+            path: /
+            port: 8888
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - "kill"
+              - "-s"
+              - "SIGUSR2"
+              - "1"
+        env:
+        {{- if ne .name "main" }}
+        - name: CONCOURSE_TEAM
+          value: {{ .name | quote }}
+        {{- end }}
+        - name: CONCOURSE_BIND_DEBUG_PORT
+          value: "9099"
+        - name: CONCOURSE_WORK_DIR
+          value: {{ $.Values.concourse.concourse.worker.workDir | quote }}
+        - name: CONCOURSE_BIND_IP
+          value: "127.0.0.1"
+        - name: CONCOURSE_BIND_PORT
+          value: "7777"
+        - name: CONCOURSE_LOG_LEVEL
+          value: "info"
+        - name: CONCOURSE_TSA_HOST
+          value: "concourse-web:2222"
+        - name: CONCOURSE_TSA_PUBLIC_KEY
+          value: "{{ $.Values.concourse.worker.keySecretsPath }}/host_key.pub"
+        - name: CONCOURSE_TSA_WORKER_PRIVATE_KEY
+          value: "{{ $.Values.concourse.worker.keySecretsPath }}/worker_key"
+        - name: CONCOURSE_GARDEN_BIND_PORT
+          value: "7777"
+        - name: CONCOURSE_BAGGAGECLAIM_DRIVER
+          value: "naive"
+        - name: LIVENESS_PROBE_FATAL_ERRORS
+          value: |-
+            guardian.api.garden-server.create.failed
+            baggageclaim.api.volume-server.create-volume-async.failed-to-create
+        - name: CONCOURSE_CERTS_DIR
+          value: /etc/ssl/certs
+{{- if $.Values.worker.env }}
+{{ toYaml $.Values.worker.env | indent 12 }}
+{{- end }}
+        resources:
+{{ toYaml $.Values.worker.resources | indent 12 }}
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: concourse-keys
+          mountPath: {{ $.Values.concourse.worker.keySecretsPath | quote }}
+          readOnly: true
+        - name: concourse-work-dir
+          mountPath: {{ $.Values.concourse.concourse.worker.workDir | quote }}
+        - name: sap-root-certs 
+          mountPath: /usr/local/share/ca-certificates
+      volumes:
+      - name: sap-root-certs
+        secret:
+          secretName: concourse-concourse
+          defaultMode: 256
+          items:
+          - key: github-ca-cert
+            path: sap-root-certs.crt
+      - name: concourse-keys
+        secret:
+          secretName: {{ template "concourse.concourse.fullname" $ }}
+          defaultMode: 0400
+          items:
+          - key: host-key-pub
+            path: host_key.pub
+          - key: worker-key
+            path: worker_key
+          - key: worker-key-pub
+            path: worker_key.pub
+      - name: concourse-work-dir
+        emptyDir: {}
+        sizeLimit: 20Gi
+---
+{{ end }}
