@@ -45,146 +45,15 @@ data:
       repeat_interval: 12h
       receiver: dev-null
 
+      # Route Logic:
+      # - execution is top down
+      # - custom setup first and always continue: true
+      # - duty setup gets continue: false
+      # - all undefined should be routed to dev_null
       routes:
-      - receiver: dev-null
-        continue: false
-        match_re:
-          region: .*staging|lab
 
-      # ---- DUTY API ----
-      - receiver: pagerduty_api
-        continue: true
-        match_re:
-          tier: os|k8s
-          severity: critical
-          cluster_type: controlplane
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+      # ======= CUSTOM NOTIFICATION CHANNELS ======= 
 
-      - receiver: slack_api_critical
-        continue: true
-        match_re:
-          tier: os|k8s
-          severity: critical
-          cluster_type: controlplane
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_api_warning
-        continue: true
-        match_re:
-          tier: os|k8s
-          severity: warning
-          cluster_type: controlplane
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_api_info
-        continue: true
-        match_re:
-          tier: os|k8s
-          severity: info
-          cluster_type: controlplane
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      # ---- DUTY Metal ----
-      - receiver: pagerduty_metal
-        continue: true
-        match_re:
-          tier: metal
-          severity: critical
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_metal_critical
-        continue: true
-        match_re:
-          tier: metal
-          severity: critical
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_metal_warning
-        continue: true
-        match_re:
-          tier: metal
-          severity: warning
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_metal_info
-        continue: true
-        match_re:
-          tier: metal
-          severity: info
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      # ---- DUTY VMware ----
-      - receiver: pagerduty_vmware
-        continue: true
-        match_re:
-          tier: vmware
-          severity: critical
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_vmware_critical
-        continue: true
-        match_re:
-          tier: vmware
-          severity: critical
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_vmware_warning
-        continue: true
-        match_re:
-          tier: vmware
-          severity: warning
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_vmware_info
-        continue: true
-        match_re:
-          tier: vmware
-          severity: info
-          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      # ---- DUTY network ----
-      - receiver: pagerduty_network
-        continue: true
-        match_re:
-          tier: net
-          severity: critical
-          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_net_critical
-        continue: true
-        match_re:
-          tier: net
-          severity: critical
-          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_net_warning
-        continue: true
-        match_re:
-          tier: net
-          severity: warning
-          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      - receiver: slack_net_info
-        continue: true
-        match_re:
-          tier: net
-          severity: info
-          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
-
-      # ---- QA / DEV & Labs ----
-      - receiver: slack_qa
-        continue: true
-        match_re:
-          severity: critical | warning | info
-          region: qa-de-1
-
-      - receiver: slack_dev
-        continue: true
-        match_re:
-          severity: critical | warning | info
-          region: staging | lab-1
-
-      # ---- special notification channels ----
       # owner: Thomas Grainchen
       - receiver: slack_nannies
         continue: true
@@ -239,11 +108,147 @@ data:
           severity: info|warning|critical
           service: arc|backup|barbican|cinder|cfm|designate|elektra|elk|glance|hermes|ironic|keystone|limes|lyra|maia|manila|neutron|nova|sentry|swift
 
-      # do not page for kubernikus controlplane
-      - receiver: dev-null
+
+      # ======= DUTY ROUTING =======
+
+      # ---- API  ----
+      - receiver: pagerduty_api
+        continue: true
+        match_re:
+          tier: os|k8s
+          severity: critical
+          cluster_type: controlplane
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_api_critical
         continue: false
         match_re:
-          cluster_type: kubernikus-controlplane|kubernikus-scaleout
+          tier: os|k8s
+          severity: critical
+          cluster_type: controlplane
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_api_warning
+        continue: false
+        match_re:
+          tier: os|k8s
+          severity: warning
+          cluster_type: controlplane
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_api_info
+        continue: false
+        match_re:
+          tier: os|k8s
+          severity: info
+          cluster_type: controlplane
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # ---- DUTY Metal ----
+      - receiver: pagerduty_metal
+        continue: true
+        match_re:
+          tier: metal
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_metal_critical
+        continue: false
+        match_re:
+          tier: metal
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_metal_warning
+        continue: false
+        match_re:
+          tier: metal
+          severity: warning
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_metal_info
+        continue: true
+        match_re:
+          tier: metal
+          severity: info
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # ---- DUTY VMware ----
+      - receiver: pagerduty_vmware
+        continue: true
+        match_re:
+          tier: vmware
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_vmware_critical
+        continue: false
+        match_re:
+          tier: vmware
+          severity: critical
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_vmware_warning
+        continue: false
+        match_re:
+          tier: vmware
+          severity: warning
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_vmware_info
+        continue: false
+        match_re:
+          tier: vmware
+          severity: info
+          region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # ---- DUTY network ----
+      - receiver: pagerduty_network
+        continue: true
+        match_re:
+          tier: net
+          severity: critical
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_net_critical
+        continue: false
+        match_re:
+          tier: net
+          severity: critical
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_net_warning
+        continue: false
+        match_re:
+          tier: net
+          severity: warning
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      - receiver: slack_net_info
+        continue: false
+        match_re:
+          tier: net
+          severity: info
+          region: admin|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3
+
+      # ---- QA / DEV & Labs ----
+      - receiver: slack_qa
+        continue: false
+        match_re:
+          severity: critical | warning | info
+          region: qa-de-1
+
+      - receiver: slack_dev
+        continue: false
+        match_re:
+          severity: critical | warning | info
+          region: staging | lab-1
+
+
+      # all unrouted should end here
+      - receiver: dev-null
+        continue: false
+
 
     receivers:
     - name: dev-null
