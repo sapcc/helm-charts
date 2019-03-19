@@ -3,17 +3,16 @@ kind: Ingress
 
 metadata:
   name: prometheus-global
-  {{- if .Values.vice_president }}
   annotations:
-    vice-president: "true"
-  {{- end}}
+    vice-president: {{ default false .Values.vice_president | quote }}
+    disco: {{ default false .Values.disco | quote }}
 
 spec:
   tls:
      - secretName: prometheus-global
-       hosts: [prometheus.global.{{.Values.global.domain}}]
+       hosts: [prometheus.global.{{ required "missing .Values.global.domain" .Values.global.domain }}]
   rules:
-    - host: prometheus.global.{{.Values.global.domain}}
+    - host: prometheus.global.{{ required "missing .Values.global.domain" .Values.global.domain }}
       http:
         paths:
         - path: /
