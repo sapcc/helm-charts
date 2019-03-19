@@ -10,14 +10,3 @@ asa:
     indexes:
     - labelname: cfwHardwareType
       type: gauge
-    enum_values:
-      1: other
-      2: up
-      3: down
-      4: error
-      5: overTemp
-      6: busy
-      7: noMedia
-      8: backup
-      9: active
-      10: standby
