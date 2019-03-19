@@ -7,12 +7,12 @@ global:
   prometheus:
     image: prom/prometheus
     tag: v2.6.0
-    
+
   configmap_reload:
     image:
       repository: jimmidyson/configmap-reload
       tag: v0.2.2
-    
+
   ipmi_service_discovery:
     enabled: false
     configmap_name: ipmi-sd
@@ -35,8 +35,8 @@ global:
 
 prometheus-node-exporter:
   image:
-    repository: sapcc/node-exporter
-    tag: e80d48849b9
+    repository: prom/node-exporter
+    tag: v0.17.0
 
   serviceAccount:
     create: false
@@ -48,6 +48,8 @@ prometheus-node-exporter:
   extraArgs:
     - --collector.filesystem.ignored-mount-points=\"^/(sys|proc|dev|host|etc)($|/)\"
     - --collector.processes
+    # enabled by default. flag didn't make it to prom/node-exporter:v0.17.0 .
+    #- --collector.systemd.enable-task-metrics
 
   extraHostVolumeMounts:
     - name: dbus
@@ -77,3 +79,46 @@ kube-state-metrics:
     cronjobs: false
     # not available in k8s1.7
     horizontalpodautoscalers: false
+
+fluent-bit:
+  enabled: false
+
+  image:
+    fluent_bit:
+      repository: fluent/fluent-bit
+      tag: 1.0.4
+    pullPolicy: IfNotPresent
+
+  backend:
+    es:
+      tls_ca: ""
+      # host:
+      # http_user:
+      # http_passwd:
+      # logstash_prefix:
+
+  # filter:
+  # list of additional static values added to each log entry
+  #  additionalValues:
+  #  - key: some-key
+  #    value: some-value
+
+  podAnnotations:
+    # manual versioning, raise if configmap changes
+    versioning: "1"
+
+  existingConfigMap: fluent-bit-config
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true

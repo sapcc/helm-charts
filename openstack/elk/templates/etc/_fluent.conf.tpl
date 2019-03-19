@@ -413,10 +413,6 @@
      retry_forever true
      retry_wait 2s
      flush_thread_count 4
-     buffer_type memory
    </buffer>
    flush_interval 3s
-   buffer_chunk_limit 96m
-   buffer_queue_limit 256
-   num_threads 4
  </match>

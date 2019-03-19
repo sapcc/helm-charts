@@ -29,7 +29,7 @@ groups:
       summary: security group latency goes over 1 minute
   
   - alert: OpenstackDVSSecurityGroupTooManyRules
-    expr: count(max(openstack_networking_dvs__apply_changed_sg_aggr_security_group_rules) by (host,security_group,port_group,project_id)) > 3000
+    expr: max(max(openstack_networking_dvs__apply_changed_sg_aggr_security_group_rules) by (host,security_group,port_group,project_id)) > 3000
     for: 30m
     labels:
       dashboard: neutron-dvs-agent
@@ -348,3 +348,17 @@ groups:
     annotations:
       description: '{{ $labels.application }} has more than 10 waiting database connections for 15 minutes, please check pgbouncer logs'
       summary: '{{ $labels.application }} waiting db connections'
+
+  - alert: OpenstackNovaComputeIdle
+    expr: max(rate(container_cpu_usage_seconds_total{pod_name=~"nova-compute-bb.*"}[5m])) by (pod_name) * 1000 < 15
+    for: 20m
+    labels:
+      severity: warning
+      tier: os
+      service: 'nova'
+      meta: 'Something is fishy with {{ $labels.pod_name }}, it usually uses more CPU.'
+      playbook: docs/devops/alert/nova/#OpenstackNovaComputeIdle
+    annotations:
+      description: 'Something is fishy with {{ $labels.pod_name }}, it usually uses more CPU.'
+      summary: 'Pod idles, but normally does not.'
+

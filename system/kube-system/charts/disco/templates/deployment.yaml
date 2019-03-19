@@ -14,30 +14,30 @@ spec:
         app: disco
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ .Values.metricPort | quote }}
+        prometheus.io/port: {{ default 9091 .Values.metricPort | quote }}
     spec:
       containers:
         - name: disco
           image: "{{.Values.image.repository}}:{{.Values.image.tag}}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
           args:
             - disco
-            - --ingress-annotation={{ .Values.ingressAnnotation }}
+            - --ingress-annotation={{ default "disco" .Values.ingressAnnotation }}
             - --config=/etc/disco/config/disco.conf
             - --metric-port={{ default 9091 .Values.metricPort }}
             - --recordset-ttl={{ default 1800 .Values.recordsetTTL }}
-            - --record={{ required "missing record" .Values.record }}
-            - --zone-name={{ required "missing zone name" .Values.openstack.zoneName }}
+            - --record={{ required ".Values.record missing" .Values.record }}
+            - --zone-name={{ required ".Values.openstack.zoneName missing" .Values.openstack.zoneName }}
             - --recheck-period={{ default 5 .Values.recheckPeriod }}
             - --resync-period={{ default 2 .Values.resyncPeriod }}
             - --threadiness={{ default 1 .Values.threadiness }}
-            - --v={{ default 1 .Values.logLevel }}
+            - --debug={{ default false .Values.debug }}
           volumeMounts:
             - name: config
               mountPath: /etc/disco/config/
           ports:
             - name: metrics
-              containerPort: {{ .Values.metricPort }}
+              containerPort: {{ default 9091 .Values.metricPort }}
       volumes:
         - name: config
           configMap:

@@ -29,9 +29,17 @@ application_credentials = True
 project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = internal
+shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 
 [network-feature-enabled]
 ipv6 = false
+
+
+[baremetal]
+min_microversion = 1.46
+max_microversion = 1.46
+# Driver to use for API tests for Queens and newer:
+driver = fake-hardware
 
 [compute]
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.

@@ -1,3 +1,11 @@
+global:
+  # The labels to add to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    region: "eu-de-1"
+    cluster: "global"
+    cluster_type: "controlplane"
+
 rule_files:
   - ./*.rules
   - ./*.alerts
@@ -33,6 +41,9 @@ scrape_configs:
       - '{__name__=~"^snmp_f5_sysGlobalHostOtherMemTotalKb"}'
       - '{__name__=~"^snmp_f5_sysHostMemoryUsedKb"}'
       - '{__name__=~"^snmp_f5_sysHostMemoryTotalKb"}'
+      - '{__name__=~"^snmp_f5_sysMultiHostCpuUsageRatio5s"}'
+      - '{__name__=~"^snmp_f5_sysGlobalHostCpuUsageRatio5s"}'
+      - '{__name__=~"^snmp_f5_sysTmmStatTmUsageRatio5s"}'
       - '{__name__=~"^node_cpu_seconds_total",mode="idle"}'
       - '{__name__=~"^node_memory_MemTotal_bytes$",instance=~".+cloud.sap"}'
       - '{__name__=~"^node_memory_MemFree_bytes$",instance=~".+cloud.sap"}'

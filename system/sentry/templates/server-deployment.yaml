@@ -14,7 +14,7 @@ spec:
         pod.beta.kubernetes.io/init-containers: '[
             {
                 "name": "upgrade",
-                "image": "{{ .Values.image.repository }}:{{ .Values.image.tag }}",
+                "image": "{{required ".Values.image.repository is missing" .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}",
                 "args": ["upgrade", "--noinput", "--lock"],
                 "env": [
                   { "name" : "SENTRY_DB_NAME",
@@ -37,7 +37,7 @@ spec:
     spec:
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{required ".Values.image.repository is missing" .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         args: [ run, web ]
         #command: [tail, -f, /dev/null]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
