@@ -11,6 +11,5 @@ network.host: 0.0.0.0
 transport.host: 0.0.0.0
 http.enabled: true
 http.max_content_length: 500mb
-xpack.security.enabled: false
 
 discovery.zen.minimum_master_nodes: 1
