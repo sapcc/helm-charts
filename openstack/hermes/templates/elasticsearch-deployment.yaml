@@ -30,10 +30,11 @@ spec:
           command:
             - /bin/sh
             - -c
-            - mkdir -p /data/es-config &&
+            - chown -R 1000:1000 /data &&
+              mkdir -p /data/es-config &&
               chown -R 1000:1000 /data/es-config &&
               cp /hermes-etc/* /data/es-config &&
-              mkdir /data/es-config/scripts &&
+              mkdir -p /data/es-config/scripts &&
               mkdir -p /data/snapshots &&
               chown -R 1000:1000 /data/snapshots
           volumeMounts:
@@ -57,7 +58,6 @@ spec:
           securityContext:
             runAsUser: 1000
           #command: ["/bin/bash", "-c", "while true; do sleep 1000; done"]
-          #command: [elasticsearch-plugin remove ingest-geoip --purge && elasticsearch]
           command: [elasticsearch]
           env:
             # tell elasticsearch where to find jvm.options
