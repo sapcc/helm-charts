@@ -27,7 +27,11 @@ kind: Deployment
 metadata:
   name: {{ .Values.graphite.name }}
 spec:
-  replicas: {{ .Values.graphite.replicas | default 1 }}
+  {{-  if .Values.graphite.enabled }}
+  replicas: 1
+  {{-  else }}
+  replicas: 0
+  {{- end }}
   selector:
     matchLabels:
       app: {{ .Values.graphite.name }}
