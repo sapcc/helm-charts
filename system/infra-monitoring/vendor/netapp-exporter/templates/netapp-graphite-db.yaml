@@ -27,7 +27,7 @@ kind: Deployment
 metadata:
   name: {{ .Values.graphite.name }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.graphite.replicas | default 1 }}
   selector:
     matchLabels:
       app: {{ .Values.graphite.name }}
@@ -37,7 +37,7 @@ spec:
         app: {{ .Values.graphite.name }}
     spec:
       volumes:
-      - name: netapp-harvest-conf
+      - name: netapp-etc
         configMap:
           name: netapp-etc
       - name: pv-storage
@@ -65,10 +65,10 @@ spec:
           - name: pv-storage
             subPath: log-graphite
             mountPath: /var/log/graphite
-          - name: netapp-harvest-conf
+          - name: netapp-etc
             subPath: storage-schemas.conf
             mountPath: /opt/graphite/conf/storage-schemas.conf
-          - name: netapp-harvest-conf
+          - name: netapp-etc
             subPath: carbon.conf
             mountPath: /opt/graphite/conf/carbon.conf
         resources:
