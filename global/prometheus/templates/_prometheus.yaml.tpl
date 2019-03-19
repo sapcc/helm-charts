@@ -1,3 +1,11 @@
+global:
+  # The labels to add to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    region: "eu-de-1"
+    cluster: "global"
+    cluster_type: "controlplane"
+
 rule_files:
   - ./*.rules
   - ./*.alerts
