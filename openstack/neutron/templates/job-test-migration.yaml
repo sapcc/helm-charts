@@ -12,7 +12,7 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: neutron-migration
+        - name: neutron-test-migration
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{default "queens-20190318110549" .Values.imageVersionUpgrade }}
           imagePullPolicy: IfNotPresent
           command:
@@ -28,6 +28,22 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: OS_AUTH_URL
+              value: {{ include "keystone_url" . }}
+            - name: OS_AUTH_VERSION
+              value: "3"
+            - name: OS_USERNAME
+              value: {{.Values.postgresql.backup.os_username}}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{.Values.postgresql.backup.os_user_domain}}
+            - name: OS_PROJECT_NAME
+              value: {{.Values.postgresql.backup.os_project_name}}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{.Values.postgresql.backup.os_project_domain}}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.region }}
+            - name: OS_PASSWORD
+              value: {{.Values.postgresql.backup.os_password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote}}
           volumeMounts:
             - mountPath: /etc/neutron
               name: empty-dir
@@ -38,9 +54,6 @@ spec:
       volumes:
         - name: empty-dir
           emptyDir: {}
-        - name: neutron-etc
-          configMap:
-            name: neutron-etc
         - name: container-init
           configMap:
             name: neutron-bin-test-migrate
