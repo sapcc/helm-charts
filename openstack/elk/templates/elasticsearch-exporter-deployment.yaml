@@ -32,10 +32,13 @@ spec:
         - name: elasticsearch-exporter
           image: justwatch/elasticsearch_exporter:{{ $.Values.elk_image_version_elasticsearch_exporter }}
           imagePullPolicy: IfNotPresent
-          command: [ "/bin/elasticsearch_exporter", "-es.uri", "{{$config.protocol}}://{{ if $config.auth }}{{$config.username }}:{{$config.password }}@{{ end }}{{$config.hostname}}:{{$config.port}}" , "-es.all", "-web.listen-address", ":{{ $.Values.elasticsearch_exporter.listen_port }}" ]
+          command: [ "/bin/elasticsearch_exporter", "--es.all", "--web.listen-address", ":{{ $.Values.elasticsearch_exporter.listen_port }}", "--es.cluster_settings" ]
           ports:
             - name: metrics
               containerPort: {{ $.Values.elasticsearch_exporter.listen_port }}
+          env:
+            - name: ES_URI
+              value: "{{$config.protocol}}://{{ if $config.auth }}{{$config.username }}:{{$config.password }}@{{ end }}{{$config.hostname}}:{{$config.port}}"
           securityContext:
             capabilities:
               drop:
