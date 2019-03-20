@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 
-echo "######### Testing migration to {{.Values.imageVersionUpgrade}} #########"
+echo "######### Testing migration to {{default "queens-20190318110549" .Values.imageVersionUpgrade}} #########"
 
 set -x
 apt-get update
-apt-get install -y postgresql
-echo '{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}' > ~/.pgpass
-export PGPASSWORD="{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}"
+apt-get install -y postgresql python-swiftclient
 chmod 600 ~/.pgpass
 
-if [ ! -f /tmp/neutron.sql ]; then
-	pg_dump -h {{include "neutron_db_host" .}} -U {{ default .Release.Name .Values.global.dbUser }} -p {{.Values.global.postgres_port_public | default 5432}} neutron > /tmp/neutron.sql
-fi
+latest=$(swift download db_backup $OS_REGION_NAME/monsoon3/neutron-postgresql/last_backup_timestamp -o -)
+swift download db_backup $OS_REGION_NAME/monsoon3/neutron-postgresql/$latest/backup/pgsql/base/neutron.sql.gz -o /tmp/neutron.sql.gz
+gunzip /tmp/neutron.sql.gz
 
 /etc/init.d/postgresql start
 export PGPASSWORD="neutron"
@@ -21,6 +19,5 @@ sudo -u postgres psql -c "create role root with login superuser password 'neutro
 createdb -O root neutron
 
 psql neutron < /tmp/neutron.sql
-psql neutron -c 'delete from portdnses'
 neutron-db-manage --database-connection postgresql+psycopg2://root:neutron@localhost:5432/neutron current --verbose
 neutron-db-manage --database-connection postgresql+psycopg2://root:neutron@localhost:5432/neutron upgrade head
