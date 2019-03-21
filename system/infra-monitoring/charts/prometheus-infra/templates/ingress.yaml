@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: prometheus-infra
+  annotations:
+    vice-president: {{ default false .Values.vice_president | quote }}
+    disco: {{ default false .Values.disco | quote }}
+
+spec:
+  tls:
+    - secretName: prometheus-infra
+      hosts: [{{.Values.prometheus.ingress.host}}.{{.Values.global.region}}.{{.Values.global.domain}}]
+  rules:
+    - host: {{.Values.prometheus.ingress.host}}.{{.Values.global.region}}.{{.Values.global.domain}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: prometheus-infra
+            servicePort: 9090

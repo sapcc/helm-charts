@@ -1,0 +1,75 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: prometheus-infra
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      type: infra
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        type: infra
+    spec:
+      terminationGracePeriodSeconds: 300
+      containers:
+        - name: prometheus
+          image: "{{.Values.prometheus.image}}:{{.Values.prometheus.tag}}"
+          args:
+            - --config.file=/etc/prometheus/prometheus.yaml
+            - --storage.tsdb.path=/prometheus
+            {{- if semverCompare ">=v2.8.0" .Values.prometheus.tag }}
+            - --storage.tsdb.retention.time={{.Values.prometheus.retention}}
+            {{ else }}
+            - --storage.tsdb.retention={{.Values.prometheus.retention}}
+            {{- end }}
+            - --web.console.libraries=/etc/prometheus/console_libraries
+            - --web.console.templates=/etc/prometheus/consoles
+            - --web.external-url=https://{{.Values.prometheus.ingress.host}}.{{.Values.global.region}}.{{.Values.global.domain}}
+            - --web.enable-admin-api
+            - --web.enable-lifecycle
+            - --log.level={{ default "info" .Values.prometheus.log_level }}
+            {{- if semverCompare ">=v2.6.0" .Values.prometheus.tag }}
+            - --web.page-title=Prometheus Infrastructure {{ .Values.global.region | upper }}
+            {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          ports:
+            - name: http
+              containerPort: 9090
+          volumeMounts:
+            - name: data
+              mountPath: /prometheus
+            - name: config
+              mountPath: /etc/prometheus
+            {{- if .Values.arista_snmp_exporter.enabled }}
+            - name: arista-sd-config
+              mountPath: /custom_targets/arista
+            {{- end }}
+        - name: prometheus-configmap-reloader
+          image: "{{ .Values.prometheus.configmap_reload.image.repository }}:{{ .Values.prometheus.configmap_reload.image.tag }}"
+          args:
+            - --volume-dir=/etc/prometheus
+            - --webhook-url=http://localhost:9090/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+              readOnly: true
+      volumes:
+        - name: data
+          emptyDir:
+            medium: Memory
+        - name: config
+          configMap:
+            name: prometheus-collector
+        {{- if .Values.arista_snmp_exporter.enabled }}
+        - name: arista-sd-config
+          configMap:
+            name: {{ .Values.arista_snmp_exporter.configmap_name }}
+        {{- end }}
