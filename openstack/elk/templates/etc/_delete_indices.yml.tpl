@@ -28,6 +28,8 @@ actions:
       use_age: True
       source: creation_date
       exclude:
+    - filtertype: kibana
+      exclude: True
   2:
     action: delete_indices
     description: >-
@@ -51,3 +53,5 @@ actions:
       unit: days
       unit_count: {{.Values.elk_elasticsearch_data_retention_time}}
       exclude:
+    - filtertype: kibana
+      exclude: True
