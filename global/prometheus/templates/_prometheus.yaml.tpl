@@ -1,11 +1,3 @@
-global:
-  # The labels to add to any time series or alerts when communicating with
-  # external systems (federation, remote storage, Alertmanager).
-  external_labels:
-    region: "eu-de-1"
-    cluster: "global"
-    cluster_type: "controlplane"
-
 rule_files:
   - ./*.rules
   - ./*.alerts
@@ -74,6 +66,9 @@ scrape_configs:
       target_label: region
       regex: prometheus.(.+).cloud.sap
       replacement: $1
+    - action: replace
+      target_label: cluster_type
+      replacement: controlplane
 
   static_configs:
     - targets:
@@ -99,6 +94,9 @@ scrape_configs:
       target_label: region
       regex: prometheus-collector.(.+).cloud.sap
       replacement: $1
+    - action: replace
+      target_label: cluster_type
+      replacement: controlplane
 
   static_configs:
     - targets:
@@ -126,6 +124,9 @@ scrape_configs:
       target_label: region
       regex: prometheus.kubernikus.(.+).cloud.sap
       replacement: k-$1
+    - action: replace
+      target_label: cluster_type
+      replacement: kubernikus-controlplane
 
   {{- if .Values.kubernikus.authentication.enabled }}
   tls_config:
