@@ -97,6 +97,10 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+          {{- if .Values.pod.resources.api }}
+          resources:
+{{ toYaml .Values.pod.resources.api | indent 13 }}
+          {{- end }}
         - name: statsd
           image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -112,6 +116,10 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
+          resources:
+            requests:
+              cpu: 1m
+              memory: 32Mi
       volumes:
         - name: etcmanila
           emptyDir: {}

@@ -1,4 +1,4 @@
-{{- if .Values.cisco_ucsm_bm -}}
+{{- if contains "cisco_ucsm_bm" .Values.ml2_mechanismdrivers }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -32,7 +32,7 @@ spec:
       {{- end }}
       containers:
         - name: neutron-cisco-ml2-ucsm-bm-agent
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{.Values.image_name}}:{{.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{default .Values.imageVersionUCSM | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init

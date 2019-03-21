@@ -55,6 +55,18 @@ scrape_configs:
     regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
     replacement: '$2'
     target_label: device
+  - source_labels: [component]
+    regex: 'snmp-exporter-(.+)'
+    replacement: '$1'
+    target_label: devicename
+  - source_labels: [component, cluster]
+    separator: ;
+    regex: elasticsearch-exporter-(.+);(.+)
+    target_label: elastic_cluster
+    replacement: $2
+    action: replace
+  - regex: 'cluster'
+    action: labeldrop
 
 # Scrape config for endpoints with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -505,6 +517,9 @@ scrape_configs:
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:9290
+    - source_labels: [__meta_serial]
+      target_label: server_serial
+
 {{- end }}
 {{- end }}
 

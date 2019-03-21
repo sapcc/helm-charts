@@ -27,6 +27,10 @@
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.password } }
 - name: MONSOON_SWIFT_TEMP_URL_KEY
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.swift.tempURLKey } }
+- name: QUEWEB_USERNAME
+  value: {{ .Values.auth.queweb.username }}
+- name: QUEWEB_PASSWORD
+  value: {{ .Values.auth.queweb.password }}
 {{- if .Values.omnitruck.enabled }}
 - name: OMNITRUCK_URL
   value: https://{{ required ".Values.omnitruck.host missing" .Values.omnitruck.host }}

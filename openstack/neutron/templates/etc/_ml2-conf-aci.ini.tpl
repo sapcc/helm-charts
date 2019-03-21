@@ -1,4 +1,5 @@
 [ml2_aci]
+sync_allocations =  {{.Values.aci.sync_allocations | default "True"}}
 tenant_manager = hash_ring
 tenant_ring_size = 60
 tenant_items_managed = 1:60

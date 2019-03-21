@@ -33,6 +33,9 @@ scrape_configs:
       - '{__name__=~"^snmp_f5_sysGlobalHostOtherMemTotalKb"}'
       - '{__name__=~"^snmp_f5_sysHostMemoryUsedKb"}'
       - '{__name__=~"^snmp_f5_sysHostMemoryTotalKb"}'
+      - '{__name__=~"^snmp_f5_sysMultiHostCpuUsageRatio5s"}'
+      - '{__name__=~"^snmp_f5_sysGlobalHostCpuUsageRatio5s"}'
+      - '{__name__=~"^snmp_f5_sysTmmStatTmUsageRatio5s"}'
       - '{__name__=~"^node_cpu_seconds_total",mode="idle"}'
       - '{__name__=~"^node_memory_MemTotal_bytes$",instance=~".+cloud.sap"}'
       - '{__name__=~"^node_memory_MemFree_bytes$",instance=~".+cloud.sap"}'
@@ -63,6 +66,9 @@ scrape_configs:
       target_label: region
       regex: prometheus.(.+).cloud.sap
       replacement: $1
+    - action: replace
+      target_label: cluster_type
+      replacement: controlplane
 
   static_configs:
     - targets:
@@ -88,6 +94,9 @@ scrape_configs:
       target_label: region
       regex: prometheus-collector.(.+).cloud.sap
       replacement: $1
+    - action: replace
+      target_label: cluster_type
+      replacement: controlplane
 
   static_configs:
     - targets:
@@ -115,6 +124,9 @@ scrape_configs:
       target_label: region
       regex: prometheus.kubernikus.(.+).cloud.sap
       replacement: k-$1
+    - action: replace
+      target_label: cluster_type
+      replacement: kubernikus-controlplane
 
   {{- if .Values.kubernikus.authentication.enabled }}
   tls_config:

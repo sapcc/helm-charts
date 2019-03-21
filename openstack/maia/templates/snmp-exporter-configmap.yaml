@@ -34,4 +34,11 @@ data:
         priv_password: {{ $config.priv_password }}
         {{- end }}
 {{- end }}
+{{- range $config := .Values.arista.switches }}
+  {{ $config.name }}.yaml: |
+{{ include (print "maia/templates/_snmp-exporter-arista.yaml.tpl") . | indent 4 }}
+      version: {{ $.Values.snmp_exporter.arista_version }}
+      auth:
+        community: {{ $.Values.snmp_exporter.arista_community }}
+{{- end }}
 {{- end }}

@@ -1,0 +1,88 @@
+# Default values for rabbitmq.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+
+global:
+  user_suffix: ""
+  master_password: ""
+
+image: rabbitmq
+imageTag: 3.7-management
+## Specify a imagePullPolicy
+## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+##
+# imagePullPolicy:
+
+
+ports:
+  public: 5672
+  management: 15672
+  clustering: 25672
+  epmd: 4369
+
+users:
+  default:
+    user: rabbitmq
+    # password:
+  admin:
+    user: admin
+    # password:
+
+persistence:
+  enabled: false
+  # persistentVolumeClaim:
+
+persistenceTemplate:
+  enabled: false
+  # will automatically allocate per instance called pv-app-name-0/pv-app-name-1...
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 500Mi
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 800m
+  limits:
+    cpu: 1000m
+
+metrics:
+  enabled: true
+  image: kbudde/rabbitmq-exporter
+  imageTag: v0.29.0
+  user: monitoring
+#  password:
+  port: 9150
+  skipQueues: "^(.*_fanout_|reply).*$"
+  exporters: "node,overview,queue"
+  resources:
+    limits:
+      memory: 128Mi
+      cpu: 50m
+    requests:
+      memory: 64Mi
+      cpu: 10m
+
+plugins:
+  - rabbitmq_management
+  - rabbitmq_tracing
+  - rabbitmq_peer_discovery_k8s
+
+replicas: 1
+erlangCookie: "DefaultErlangSecretCookie"
+hipe_compile: "false"
+
+definitions:
+  users: []
+  vhosts:
+    - name: /
+  permissions: []
+
+upgrades:
+  updateStrategy: RollingUpdate
+  revisionHistory: 3

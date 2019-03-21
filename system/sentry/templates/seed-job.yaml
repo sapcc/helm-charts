@@ -17,7 +17,7 @@ spec:
             name: {{ template "fullname" . }}-seed
       containers:
       - name: job 
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{required ".Values.image.repository is missing" .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         command: ["sentry",  "exec", "/seed/seed.py"]
         volumeMounts:
           - mountPath: /seed

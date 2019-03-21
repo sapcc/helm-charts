@@ -66,6 +66,65 @@ spec:
               value: {{ .Values.consistency.queens_instance_mapping_dry_run | quote }}
             - name: NOVA_NANNY_INTERVAL
               value: {{ .Values.nanny.interval | quote }}
+            - name: NOVA_CELL2_ENABLED
+              value: "false"
+            - name: OS_AUTH_URL
+              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
+            - name: OS_PROJECT_NAME
+              value: "cloud_admin"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "ccadmin"
+            - name: OS_USERNAME
+              value: "nova_nanny"
+            - name: OS_USER_DOMAIN_NAME
+              value: "Default"
+            - name: OS_PASSWORD
+              value: {{ derivePassword 1 "long" .Values.global.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+          volumeMounts:
+            - mountPath: /nova-etc
+              name: nova-etc
+{{- if .Values.cell2.enabled }}
+        - name: db-consistency-and-purge-cell2
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/nova-nanny:{{.Values.imageVersion_nova_nanny}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.nanny.debug }}/bin/bash /scripts/nova-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,nova-api"
+            - name: NOVA_DB_PURGE_ENABLED
+              value: {{ .Values.db_purge.enabled | quote }}
+            - name: NOVA_DB_PURGE_DRY_RUN
+              # value: {{ .Values.db_purge.dry_run | quote }}
+              value: "true"
+            - name: NOVA_DB_PURGE_OLDER_THAN
+              value: {{ .Values.db_purge.older_than | quote }}
+            - name: NOVA_DB_PURGE_MAX_NUMBER
+              value: {{ .Values.db_purge.max_number | quote }}
+            - name: NOVA_CONSISTENCY_ENABLED
+              value: {{ .Values.consistency.enabled | quote }}
+            - name: NOVA_CONSISTENCY_DRY_RUN
+              # value: {{ .Values.consistency.dry_run | quote }}
+              value: "true"
+            - name: NOVA_CONSISTENCY_OLDER_THAN
+              value: {{ .Values.consistency.older_than | quote }}
+            - name: NOVA_CONSISTENCY_MAX_INSTANCE_FAULTS
+              value: {{ .Values.consistency.max_instance_faults | quote }}
+            - name: NOVA_QUEENS_INSTANCE_MAPPING_ENABLED
+              value: "false"
+            - name: NOVA_QUEENS_INSTANCE_MAPPING_DRY_RUN
+              value: "true"
+            - name: NOVA_NANNY_INTERVAL
+              value: {{ .Values.nanny.interval | quote }}
+            - name: NOVA_CELL2_ENABLED
+              value: "true"
             - name: OS_AUTH_URL
               value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
             - name: OS_PROJECT_NAME
@@ -82,7 +141,8 @@ spec:
             - mountPath: /nova-etc
               name: nova-etc
 {{- end }}
-{{- if .Values.quota_sync.enabled }}
+{{- end }}
+{{- if .Values.quota_sync.enabled_disabled_for_now_as_not_used }}
         - name: quota-sync
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/nova-nanny:{{.Values.imageVersion_nova_nanny}}
           imagePullPolicy: IfNotPresent
@@ -111,8 +171,7 @@ spec:
 {{- if .Values.db_cleanup.enabled }}
         - name: db-cleanup
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/nova-nanny:{{.Values.imageVersion_nova_nanny}}
-          #imagePullPolicy: IfNotPresent
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command:
             - dumb-init
             - kubernetes-entrypoint
@@ -168,9 +227,40 @@ spec:
               value: {{ .Values.sync_neutron_cache.dry_run | quote }}
             - name: NOVA_SYNC_NEUTRON_CACHE_INTERVAL
               value: {{ .Values.sync_neutron_cache.interval | quote }}
+            - name: NOVA_CELL2_ENABLED
+              value: "false"
           volumeMounts:
             - mountPath: /nova-etc
               name: nova-etc
+{{- if .Values.cell2.enabled }}
+        - name: sync-neutron-cache-cell2
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/nova-nanny:{{.Values.imageVersion_nova_nanny}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.nanny.debug }}/bin/bash /scripts/nova-sync-neutron-cache.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,nova-api,neutron-server"
+            - name: NOVA_SYNC_NEUTRON_CACHE_ENABLED
+              value: {{ .Values.sync_neutron_cache.enabled | quote }}
+            - name: NOVA_SYNC_NEUTRON_CACHE_DRY_RUN
+              # value: {{ .Values.sync_neutron_cache.dry_run | quote }}
+              value: "true"
+            - name: NOVA_SYNC_NEUTRON_CACHE_INTERVAL
+              value: {{ .Values.sync_neutron_cache.interval | quote }}
+            - name: NOVA_CELL2_ENABLED
+              value: "true"
+          volumeMounts:
+            - mountPath: /nova-etc
+              name: nova-etc
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

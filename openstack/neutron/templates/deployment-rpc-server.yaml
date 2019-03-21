@@ -9,7 +9,7 @@ metadata:
     type: rpc
     component: neutron
 spec:
-  replicas: 1
+  replicas: {{ if not .Values.pod.debug.rpc_server }}{{ .Values.pod.replicas.rpc_server }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
@@ -34,7 +34,7 @@ spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: neutron-server
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{.Values.image_name}}:{{.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionServerRPC | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command: ['dumb-init', 'kubernetes-entrypoint']
           env:
