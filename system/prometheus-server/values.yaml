@@ -1,0 +1,86 @@
+global:
+  # The OpenStack region.
+  region:
+
+  # The domain used to build the hostname.
+  domain:
+
+  # The type of the cluster to which the Prometheus is deployed.
+  # Choose between: controlplane, kubernikus-controlplane, kubernikus-scaleout.
+  clusterType:
+
+  # Optional name of the cluster to which the Prometheus is deployed.
+  # Defaults to region if not set.
+  # cluster:
+
+# The repository and tag of the Prometheus image.
+image:
+  repository: prom/prometheus
+  tag: v2.8.0
+
+# Mandatory name for this Prometheus.
+# The name is used to find relevant aggregation and alerting rules.
+# Examples: k8s-prometheus, openstack-prometheus, infra-prometheus, maia-prometheus, etc.
+name:
+
+# Defines how long data is stored. Format: `[0-9]+(ms|s|m|h|d|w|y)`
+retentionTime: 7d
+
+# Reference secrets containing additional Prometheus scrape configurations.
+# Injecting an invalid configuration might break the Prometheus server instance.
+additionalScrapeConfigs:
+  # name:
+  # key:
+
+# Optional ingress for this Prometheus.
+ingress:
+  enabled: false
+
+  # The name is used to generate the external URL Prometheus will be available under: <host>.<region>.<domain>.
+  # If the ingress is enabled, it's also used for the ingress host.
+  host:
+
+  # Automate certificate management via vice-president.
+  vice_president: true
+
+  # Automate DNS management via disco.
+  disco: true
+
+# Enable persistent storage.
+# If disabled, data will be stored in memory.
+persistence:
+  enabled: false
+
+  # Optional name of the PVC. Default: < .Values.name >
+  # name:
+
+  # Access mode of the PVC.
+  accessMode: ReadWriteOnce
+
+  # Size of the PVC.
+  size: 300Gi
+
+# Create RBAC resources.
+rbac:
+  create: false
+
+# ServiceAccount to use for the Prometheus server.
+serviceAccount:
+  create: false
+
+  # Optional name of the service account.
+  # If not provided one will be generated in the format: prometheus-<name>.
+  name:
+
+# Optional Thanos sidecar configuration.
+thanos: {}
+
+# The log level of the Prometheus.
+logLevel: info
+
+# Kubernetes resource requests and limits for this Prometheus.
+# See: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container .
+resources:
+  requests:
+    cpu: 12
+    memory: 40Gi
