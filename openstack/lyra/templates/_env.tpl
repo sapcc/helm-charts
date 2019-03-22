@@ -28,7 +28,7 @@
 - name: MONSOON_SWIFT_TEMP_URL_KEY
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: auth.swift.tempURLKey } }
 - name: MONSOON_SWIFT_OBJECT_EXPIRATION_DATE_MONTHS
-  value: {{ .Values.swift_object_expiration_date_months | default "6" }}
+  value: {{ default "6" .Values.swift_object_expiration_date_months}}
 - name: QUEWEB_USERNAME
   value: {{ .Values.auth.queweb.username }}
 - name: QUEWEB_PASSWORD
