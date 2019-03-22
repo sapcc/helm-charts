@@ -1,0 +1,111 @@
+global:
+  rbac:
+    create: false
+    # Disable PodSecurityPolicy for k8s 1.7 .
+    pspEnabled: false
+
+# Disable Grafana sub-chart. We deploy independently.
+grafana:
+  enabled: false
+
+# Disable the kube-state-metrics sub-chart. We deploy independently.
+kubeStateMetrics:
+  enabled: false
+
+# Disable the node-exporter sub-chart. We deploy independently.
+nodeExporter:
+  enabled: false
+
+prometheus-operator:
+  # Disable the prometheus operator by default.
+  # Enable via regional values.
+  enabled: false
+
+  # Just `prometheus`. The operator appends `-operator`.
+  nameOverride: prometheus
+  fullnameOverride: prometheus
+
+  prometheusOperator:
+    image:
+      repository: quay.io/coreos/prometheus-operator
+      tag: v0.29.0
+
+    serviceAccount:
+      create: false
+
+    # Enable creation of CRDs used by the Prometheus operator.
+    createCustomResource: true
+
+  operator:
+    serviceAccountName: default
+
+  # Disable creation of default aggregation and alerting rules.
+  defaultRules:
+    create: false
+
+  # Disable the Prometheus instance. We deploy our own Prometheis.
+  prometheus:
+    enabled: false
+
+  # Disable the Grafana configuration and dashboards.
+  grafana:
+    enabled: false
+
+  alertmanager:
+    enabled: false
+    image:
+      repository: prom/alertmanager
+      tag: v0.16.1
+    # Alertmanager template files
+    templateFiles: {}
+    ingress:
+      enabled: false
+      annotations:
+        vice-president: "true"
+        disco: "true"
+      # hosts:
+      #   - alertmanager.tld
+      # tls:
+      #   - secretName:
+      #     hosts:
+      #       - alertmanager.tld
+
+  # Disable the configuration for kube state metrics.
+  kube-state-metrics:
+    enabled: false
+
+  # Disable the configuration for the node exporter.
+  prometheus-node-exporter:
+    enabled: false
+
+  # Exporter section:
+  # Enable/Disable exporters.
+  # Deploys the service and servicemonitor.
+  kubeApiServer:
+    enabled: true
+    serviceMonitor:
+      jobLabel: kube-apiserver
+
+  kubelet:
+    enabled: false
+
+  kubeControllerManager:
+    enabled: false
+
+  coreDns:
+    enabled: false
+
+  kubeDns:
+    enabled: false
+
+  kubeEtcd:
+    enabled: false
+
+  kubeScheduler:
+    enabled: false
+
+  kubeStateMetrics:
+    enabled: false
+
+  nodeExporter:
+    enabled: false
