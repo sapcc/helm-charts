@@ -16,7 +16,9 @@ spec:
   - monsoon3/domain-monsoon3-seed
   - monsoon3/domain-s4-seed
   - monsoon3/domain-wbs-seed
+{{- if .Values.tempest.enabled }}
   - monsoon3/domain-tempest-seed
+{{- end }}
   - monsoon3/nova-seed
   - monsoon3/neutron-seed
   - swift/swift-seed
@@ -248,6 +250,7 @@ spec:
       description: IPMI Exporter for MB Monitoring
       password: {{ .Values.global.ipmi_exporter_user_passwd | default (tuple . .Values.global.ipmi_exporter_user_passwd | include "identity.password_for_user") | quote }}
 
+{{- if .Values.tempest.enabled }}
   - name: tempest
     projects:
     - name: tempest1
@@ -271,6 +274,7 @@ spec:
         role: baremetal_admin
       - domain: tempest
         role: baremetal_admin
+{{- end }}
 
   - name: ccadmin
     projects:
