@@ -36,7 +36,7 @@ spec:
 {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: barbican-api
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{required ".Values.global.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -97,6 +97,10 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+          resources:
+            requests:
+              memory: 24Mi
+              cpu: 10m
         - name: statsd
           image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
           imagePullPolicy: IfNotPresent
