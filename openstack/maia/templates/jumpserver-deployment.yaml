@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
          - name: jumpserver-exporter
-           image: "{{ .Values.global.imageRegistry }}/{{ .Values.jumpserver.image.namespace }}/{{ .Values.jumpserver.image.name }}:{{ .Values.jumpserver.image.tag }}"
+           image: "{{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.jumpserver.image.namespace }}/{{ .Values.jumpserver.image.name }}:{{ .Values.jumpserver.image.tag }}"
            ports:
              - name: metrics
                containerPort: {{ .Values.jumpserver.port_number }}
@@ -27,6 +27,6 @@ spec:
            - name: REGION
              value: "{{ .Values.global.region }}"
            - name: RADIUS_SECRET
-             value: "{{ .Values.jumpserver.radius_secret }}"
+             value: "{{ required "jumpserver.radius_secret variable is missing" .Values.jumpserver.radius_secret }}"
            - name: EXPORT_PORT
              value: "{{ .Values.jumpserver.port_number }}"
