@@ -413,6 +413,6 @@
      retry_forever true
      retry_wait 2s
      flush_thread_count 4
+     flush_interval 3s
    </buffer>
-   flush_interval 3s
  </match>
