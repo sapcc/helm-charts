@@ -18,6 +18,8 @@ spec:
       labels:
         app: {{ $.Values.worker.name }}-{{ .name }}
         release: "{{ $.Release.Name }}"
+      annotations:
+        checksum/pre-stop: {{ include (print $.Template.BasePath "/retire-worker-config.yaml") . | sha256sum }}
     spec:
       nodeSelector:
         ccloud.sap.com/nodepool: {{ .nodePool | quote }}
@@ -103,10 +105,11 @@ spec:
           VOLUME_NAME=${NODE_NAME}-{{ $.Values.worker.name }}-{{ .name }}-work-dir
           VOLUME_ID=`openstack volume show ${VOLUME_NAME} -f value -c id`
           VOLUME_PATH=/root/dev/disk/by-id/wwn-0x${VOLUME_ID//-/}
-          if [ ! $(df -h | grep ${VOLUME_PATH}) ]; then
+          MOUNT_PATH=/root{{ $.Values.concourse.concourse.worker.workDir }}
+          if [ ! $(df -h | grep ${MOUNT_PATH}) ]; then
             mkfs.btrfs -f ${VOLUME_PATH} &&
             mkdir -p /root{{ $.Values.concourse.concourse.worker.workDir }} &&
-            mount -t btrfs ${VOLUME_PATH} /root{{ $.Values.concourse.concourse.worker.workDir }}
+            mount -t btrfs ${VOLUME_PATH} ${MOUNT_PATH}
           fi
         env:
         - name: NODE_NAME
@@ -135,7 +138,7 @@ spec:
         - -ce
         - |-
           update-ca-certificates &&
-          /usr/local/concourse/bin/concourse worker
+          /usr/local/concourse/bin/concourse worker --tag="node=${NODE_NAME}"
         livenessProbe:
           failureThreshold: 5
           initialDelaySeconds: 10
@@ -148,10 +151,7 @@ spec:
           preStop:
             exec:
               command:
-              - "kill"
-              - "-s"
-              - "SIGUSR2"
-              - "1"
+              - "/retire-worker/pre-stop.sh"
         env:
         - name: CONCOURSE_TEAM
           value: {{ .name | quote }}
@@ -181,6 +181,10 @@ spec:
             baggageclaim.api.volume-server.create-volume-async.failed-to-create
         - name: CONCOURSE_CERTS_DIR
           value: /etc/ssl/certs
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
 {{- if $.Values.worker.env }}
 {{ toYaml $.Values.worker.env | indent 12 }}
 {{- end }}
@@ -199,6 +203,8 @@ spec:
           mountPath: {{ $.Values.concourse.concourse.worker.workDir }}
         - name: sap-root-certs 
           mountPath: /usr/local/share/ca-certificates
+        - name: pre-stop
+          mountPath: /retire-worker
       volumes:
       - name: sap-root-certs
         secret:
@@ -233,5 +239,9 @@ spec:
       - name: root-dir
         hostPath:
           path: /
+      - name: pre-stop
+        configMap:
+          name: retire-worker
+          defaultMode: 0755
 ---
 {{ end }}
