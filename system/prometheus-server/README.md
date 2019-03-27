@@ -17,7 +17,7 @@ See the [values.yaml](./values.yaml) for more details.
 |----------------------------------------|-------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
 | `global.region`                        | The OpenStack region.                                                                                                   | `""`                                                |
 | `global.domain`                        | The URL domain.                                                                                                         | `""`                                                |
-| `global.clusterType`                   | The type of the cluster to which the Prometheus is deployed.                                                            | `""`                                                |
+| `global.clusterType`                   | Optional: The type of the cluster to which the Prometheus is deployed.                                                  | `""`                                                |
 | `global.cluster`                       | Optional: The name of the cluster to which the Prometheus is deployed.                                                  | `$global.region`                                    |
 | `image.repository`                     | Repository of the Prometheus image.                                                                                     | `prom/prometheus`                                   |
 | `image.tag`                            | Tag of the Prometheus image.                                                                                            | `v2.8.0`                                            |
@@ -39,6 +39,7 @@ See the [values.yaml](./values.yaml) for more details.
 | `rbac.create`                          | Create RBAC resources.                                                                                                  | `false`                                             |
 | `serviceAccount.name`                  | Name of the service account to use for the Prometheus server.                                                           | `""`                                                |
 | `thanos`                               | Thanos sidecar configuration.                                                                                           | `{}`                                                |
+| `externalLabels`                       | The labels to add to any time series or alerts when communicating with any external system.                             | `{}`                                                |
 
 ## Providing addition scrape configurations
 
