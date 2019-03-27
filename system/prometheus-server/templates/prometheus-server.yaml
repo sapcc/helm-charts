@@ -1,0 +1,82 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+
+metadata:
+  name: {{ include "prometheus.name" . }}
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  replicas: 1
+
+  {{ if .Values.rbac.create -}}
+  serviceAccountName: {{ include "serviceAccount.name" . }}
+  {{- end }}
+
+  image: {{ include "prometheus.image" . }}
+
+  # Select all ServiceMonitors with the label 'prometheus: <name>'.
+  serviceMonitorSelector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" . }}
+
+  # Select all (aggregation, alerting) PrometheusRules with the label 'prometheus: <name>'.
+  ruleSelector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" . }}
+
+  # Find rules in every namespace.
+  ruleNamespaceSelector:
+    any: true
+
+  # The labels to add to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  externalLabels:
+    region: {{ required ".Values.global.region missing" .Values.global.region }}
+    cluster: {{if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+    {{- if .Values.global.clusterType }}
+    cluster_type: {{ required ".Values.global.clusterType missing" .Values.global.clusterType }}
+    {{- end }}
+    {{- if .Values.externalLabels }}
+{{ toYaml .Values.externalLabels | indent 4 }}
+    {{- end }}
+
+  {{ if .Values.additionalScrapeConfigs -}}
+  # Inject additional scrape configurations.
+  additionalScrapeConfigs:
+{{ toYaml .Values.additionalScrapeConfigs | indent 4}}
+  {{- end }}
+
+  {{- if .Values.ingress.host -}}
+  # The external URL of the Prometheus.
+  externalUrl: https://{{ include "prometheus.externalURL" . }}
+  {{- end }}
+
+  # The retention time of the Prometheus.
+  retention: {{ default "7d" .Values.retentionTime }}
+
+  # The log level of the Prometheus.
+  logLevel: {{ default "info" .Values.logLevel }}
+
+  # Storage configuration.
+  # If configured, persistent storage is used, alternatively data is stored in memory.
+  storage:
+    {{- if .Values.persistence.enabled }}
+    volumeClaimTemplate:
+      claimName: {{ include "pvc.name" . }}
+    {{ else }}
+    emptyDir:
+      medium: Memory
+    {{- end -}}
+
+  {{ if .Values.thanos }}
+  # Thanos configuration.
+  thanos:
+{{ toYaml .Values.thanos | indent 4 }}
+  {{- end -}}
+
+  {{ if .Values.resources }}
+  # Kubernetes resource requests and limits if configured.
+  resources:
+{{ toYaml .Values.resources | indent 4 }}
+  {{ end }}
