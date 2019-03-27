@@ -8,6 +8,11 @@ It will set up:
 - Ingress (if configured; default off)
 - RBAC resources (if configured; default off)
 
+## Prerequisite
+
+This chart relies on resources brought to you by the [Prometheus Operator](https://github.com/coreos/prometheus-operator).  
+It may be installed using the [official helm chart](https://github.com/helm/charts/tree/master/stable/prometheus-operator).
+
 ## Configuration
 
 The following table provides an overview of configurable parameters of this chart and their defaults.  
@@ -23,8 +28,7 @@ See the [values.yaml](./values.yaml) for more details.
 | `image.tag`                            | Tag of the Prometheus image.                                                                                            | `v2.8.0`                                            |
 | `name`                                 | Unique name for this Prometheus instance. The name will be used to assign aggregation and alerting rules to Prometheus. | `""`                                                |
 | `retentionTime`                        | Defines how long data is stored. Format: `[0-9]+(ms|s|m|h|d|w|y)`.                                                      | `7d`                                                |
-| `additionalScrapeConfigs.name`         | Name of the Secret containing the additional scrape configuration.                                                      | `""`                                                |
-| `additionalScrapeConfigs.key`          | Key of the data in the Secret.                                                                                          | `""`                                                |
+| `additionalScrapeConfigs`              | List of Secrets containing the additional scrape configuration.                                                         | `[]`                                                |
 | `ingress.enabled`                      | If enabled deploy an Ingress for this Prometheus.                                                                       | `false`                                             |
 | `ingress.host`                         | Used to generate the external URL and ingress host in the form `<host>.<region>.<domain>`.                              | `""`                                                |
 | `ingress.vice_president`               | Automate certificate management via vice-president (k8s operator).                                                      | `true`                                              |
