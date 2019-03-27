@@ -1,0 +1,16 @@
+{{- if .Values.persistence.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+
+metadata:
+  name: {{ include "pvc.name" . }}
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  accessModes:
+    - {{ required ".Values.persistence.accessMode missing" .Values.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ required ".Values.persistence.size missing" .Values.persistence.size | quote }}
+{{ end }}

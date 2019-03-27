@@ -1,0 +1,23 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: {{ include "prometheus.name" . }}
+  annotations:
+    vice-president: {{ default true .Values.ingress.vice_president | quote }}
+    disco: {{ default true .Values.ingress.disco | quote }}
+
+spec:
+  rules:
+    - host: {{ include "prometheus.externalURL" . }}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: {{ include "prometheus.name" . }}
+            servicePort: 9090
+  tls:
+    - secretName: tls-{{ include "prometheus.externalURL" . | replace "." "-" }}
+      hosts: [https://{{ include "prometheus.externalURL" . }}]
+{{ end }}
