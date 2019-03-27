@@ -1,7 +1,12 @@
 Prometheus Chart
 ----------------
 
-This chart shall serve as a template to deploy your own Prometheus.
+This chart shall serve as a template to deploy your own Prometheus.  
+It will set up:
+- Prometheus server instance (with 2 configmap, rules reload sidecars)
+- Persistent volume claim (if configured; default off)
+- Ingress (if configured; default off)
+- RBAC resources (if configured; default off)
 
 ## Configuration
 
