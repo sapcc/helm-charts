@@ -1,0 +1,60 @@
+# Defined in secrets.
+#  global:
+#    region:
+#    domain:
+#    clusterType: controlplane
+
+openstack_sd:
+  enabled: false
+
+ipmi_exporter:
+  enabled: false
+  netbox:
+    enabled: false
+  ironic:
+    enabled: false
+
+blackbox_exporter:
+  enabled: false
+
+# Placeholder. Full list is set via pipeline.
+regionList:
+  - "staging"
+
+prometheus-server:
+  image:
+    repository: prom/prometheus
+    tag: v2.8.0
+
+  name: k8s-collector
+
+  retentionTime: 1h
+
+  additionalScrapeConfigs:
+    name: k8s-collector-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: true
+    host: prometheus-collector-operated
+
+  # Store in memory.
+  persistence:
+    enabled: false
+
+  rbac:
+    create: false
+
+  serviceAccount:
+    create: false
+    name: default
+
+  # The log level of the Prometheus.
+  logLevel: info
+
+  # Kubernetes resource requests and limits for this Prometheus.
+  # Flagship configuration for now.
+  resources:
+    requests:
+      cpu: 12
+      memory: 40Gi
