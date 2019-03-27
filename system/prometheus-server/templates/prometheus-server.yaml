@@ -33,8 +33,10 @@ spec:
   # external systems (federation, remote storage, Alertmanager).
   externalLabels:
     region: {{ required ".Values.global.region missing" .Values.global.region }}
-    cluster_type: {{ required ".Values.global.clusterType missing" .Values.global.clusterType }}
     cluster: {{if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+    {{- if .Values.global.clusterType }}
+    cluster_type: {{ required ".Values.global.clusterType missing" .Values.global.clusterType }}
+    {{- end }}
 
   {{ if .Values.additionalScrapeConfigs -}}
   # Inject additional scrape configurations.
