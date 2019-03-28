@@ -1,125 +1,339 @@
 {
-  "order": 0,
-  "template": "audit-*",
-  "settings": {
-    "index": {
-      "refresh_interval": "10s",
-      "unassigned": {
-        "node_left": {
-          "delayed_timeout": "10m"
-        }
-      },
-      "number_of_shards": "1",
-      "number_of_replicas": "0"
+  "index_patterns" : [
+    "audit-*"
+  ],
+  "settings" : {
+    "index" : {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
     }
   },
-  "mappings": {
-    
-    "dynamic_templates": [
-      {
-        "message_field": {
-          "mapping": {
-            "fielddata": {
-              "format": "disabled"
+  "mappings" : {
+    "doc" : {
+      "properties" : {
+        "@timestamp" : {
+          "type" : "date"
+        },
+        "@version" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "_unique_id" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "action" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "attachments" : {
+          "properties" : {
+            "content" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
             },
-            "index": true,
-            "norms": false,
-            "type": "text"
-          },
-          "match_mapping_type": "string",
-          "match": "message"
-        }
-      },
-      {
-        "string_fields": {
-          "mapping": {
-            "fielddata": {
-              "format": "disabled"
+            "name" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
             },
-            "index": true,
-            "norms": false,
-            "type": "text",
-            "fields": {
-              "raw": {
-                "ignore_above": 256,
-                "index": true,
-                "type": "keyword",
-                "doc_values": true
+            "typeURI" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
               }
             }
-          },
-          "match_mapping_type": "string",
-          "match": "*"
-        }
-      },
-      {
-        "double_fields": {
-          "mapping": {
-            "type": "double",
-            "doc_values": true
-          },
-          "match_mapping_type": "double",
-          "match": "*"
-        }
-      },
-      {
-        "long_fields": {
-          "mapping": {
-            "type": "long",
-            "doc_values": true
-          },
-          "match_mapping_type": "long",
-          "match": "*"
-        }
-      },
-      {
-        "date_fields": {
-          "mapping": {
-            "type": "date",
-            "doc_values": true
-          },
-          "match_mapping_type": "date",
-          "match": "*"
-        }
-      }
-    ],
-    "_all": {
-      "norms": false,
-      "enabled": true
-    },
-    "properties": {
-      "@timestamp": {
-        "type": "date",
-        "doc_values": true
-      },
-      "geoip": {
-        "dynamic": true,
-        "type": "object",
-        "properties": {
-          "ip": {
-            "type": "ip",
-            "doc_values": true
-          },
-          "latitude": {
-            "type": "float",
-            "doc_values": true
-          },
-          "location": {
-            "type": "geo_point",
-            "doc_values": true
-          },
-          "longitude": {
-            "type": "float",
-            "doc_values": true
+          }
+        },
+        "eventTime" : {
+          "type" : "date"
+        },
+        "eventType" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "id" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "initiator" : {
+          "properties" : {
+            "domain" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "domain_id" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "host" : {
+              "properties" : {
+                "address" : {
+                  "type" : "text",
+                  "fields" : {
+                    "keyword" : {
+                      "type" : "keyword",
+                      "ignore_above" : 256
+                    }
+                  }
+                },
+                "agent" : {
+                  "type" : "text",
+                  "fields" : {
+                    "keyword" : {
+                      "type" : "keyword",
+                      "ignore_above" : 256
+                    }
+                  }
+                }
+              }
+            },
+            "id" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "name" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "project_id" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "typeURI" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            }
+          }
+        },
+        "observer" : {
+          "properties" : {
+            "id" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "name" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "typeURI" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            }
+          }
+        },
+        "outcome" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "reason" : {
+          "properties" : {
+            "reasonCode" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "reasonType" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            }
+          }
+        },
+        "requestPath" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        },
+        "target" : {
+          "properties" : {
+            "attachments" : {
+              "properties" : {
+                "content" : {
+                  "type" : "text",
+                  "fields" : {
+                    "keyword" : {
+                      "type" : "keyword",
+                      "ignore_above" : 256
+                    }
+                  }
+                },
+                "name" : {
+                  "type" : "text",
+                  "fields" : {
+                    "keyword" : {
+                      "type" : "keyword",
+                      "ignore_above" : 256
+                    }
+                  }
+                },
+                "typeURI" : {
+                  "type" : "text",
+                  "fields" : {
+                    "keyword" : {
+                      "type" : "keyword",
+                      "ignore_above" : 256
+                    }
+                  }
+                }
+              }
+            },
+            "domain_id" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "id" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "name" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "project_id" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "typeURI" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            }
+          }
+        },
+        "typeURI" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
           }
         }
-      },
-      "@version": {
-        "index": true,
-        "type": "keyword",
-        "doc_values": true
       }
     }
-  },
-  "aliases": {}
+  }
 }
