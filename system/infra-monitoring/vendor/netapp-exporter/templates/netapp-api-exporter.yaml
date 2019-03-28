@@ -1,7 +1,7 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name:  {{ .Values.webapi_exporter.name }}
+  name:  {{ .Values.api_exporter.name }}
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9108"
@@ -9,7 +9,7 @@ metadata:
     maia.io/port: "9108"
 spec:
   selector:
-    app: {{ .Values.webapi_exporter.name }} 
+    app: {{ .Values.api_exporter.name }} 
   ports:
   - name:  prometheus
     port:  9108
@@ -18,24 +18,24 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name:  {{ .Values.webapi_exporter.name }}
+  name:  {{ .Values.api_exporter.name }}
 spec:
   selector:
     matchLabels:
-      app: {{ .Values.webapi_exporter.name }} 
+      app: {{ .Values.api_exporter.name }} 
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ .Values.webapi_exporter.name }} 
+        app: {{ .Values.api_exporter.name }} 
     spec:
       volumes:
         - name: netap-etc
           configMap:
             name: netapp-etc
       containers:
-      - name: {{ .Values.webapi_exporter.name }} 
-        image: {{ .Values.webapi_exporter.image }}
+      - name: {{ .Values.api_exporter.name }} 
+        image: {{ .Values.api_exporter.image }}:{{ .Values.api_exporter.imageVersion }}
         ports:
         - containerPort: 9108
         volumeMounts:

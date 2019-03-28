@@ -8,7 +8,7 @@ readonlyrest:
     # access for logstash to write to the logstash indexes
     - name: data
       actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
-      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", ".kibana"]
+      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", ".kibana*"]
       auth_key: {{.Values.elk_elasticsearch_data_user}}:{{.Values.elk_elasticsearch_data_password}}
 
     # access to write to the jump server log indexes
@@ -26,7 +26,7 @@ readonlyrest:
     - name: Monsoon (read only, but can create dashboards)
       kibana_access: ro
       auth_key: {{.Values.elk_elasticsearch_monsoon_user}}:{{.Values.elk_elasticsearch_monsoon_password}}
-      indices: [".kibana", ".kibana-devnull", {{.Values.elk_elasticsearch_indexes}}]
+      indices: [".kibana*", ".kibana-devnull", {{.Values.elk_elasticsearch_indexes}}]
 
     # admin user
     - name: Admin

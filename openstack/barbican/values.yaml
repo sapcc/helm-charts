@@ -27,9 +27,6 @@ pod:
 api_port_internal: '9311'
 debug: "True"
 
-dbName: barbican
-dbPassword: null
-
 statsd:
   port: 9102
   image:
@@ -44,9 +41,10 @@ pg_cluster:
     backup_schedule: "* * * * *"
 
 postgresql:
-  imageTag: '9.4.14'
+  custom_repository: true
+  imageTag: '9.4.21'
   postgresDatabase: barbican
-  postgresPassword: null
+#  postgresPassword: null
   dbInit: barbican-db-init
   dbMaintain: barbican-db-maintain
   pgbouncer:
@@ -57,8 +55,7 @@ postgresql:
   backup:
     enabled: true
     metrics: true
-    os_password: null
-
+#    os_password: null
   resources:
     requests:
       cpu: "500m" # 1/2 cpu
@@ -130,15 +127,8 @@ pgmetrics:
             description: "Project ID of the secret"
 
 rabbitmq:
-  users:
-    default:
-      password: null
-    admin:
-      password: null
   persistence:
     enabled: false
-  metrics:
-    password: null
 
 logging:
     formatters:

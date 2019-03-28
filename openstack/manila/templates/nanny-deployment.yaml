@@ -1,3 +1,4 @@
+{{- if .Release.IsUpgrade }}
 {{- if .Values.nanny.enabled }}
 {{- if or .Values.nanny.db_purge.enabled .Values.nanny.quota_sync.enabled .Values.nanny.db_cleanup.enabled }}
 apiVersion: extensions/v1beta1
@@ -64,6 +65,10 @@ spec:
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
+          {{- if .Values.pod.resources.nanny }}
+          resources:
+{{ toYaml .Values.pod.resources.nanny | indent 13 }}
+          {{- end }}
 {{- end }}
 {{- if .Values.nanny.quota_sync.enabled }}
         - name: quota-sync
@@ -90,6 +95,10 @@ spec:
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
+          {{- if .Values.pod.resources.nanny_quota }}
+          resources:
+{{ toYaml .Values.pod.resources.nanny_quota | indent 13 }}
+          {{- end }}
 {{- end }}
 {{- if .Values.nanny.db_cleanup.enabled }}
         - name: db-cleanup
@@ -116,6 +125,11 @@ spec:
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
+          {{- if .Values.pod.resources.nanny }}
+          resources:
+{{ toYaml .Values.pod.resources.nanny | indent 13 }}
+          {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

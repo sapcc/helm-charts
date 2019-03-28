@@ -4,10 +4,6 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: apic-exporters-deployment
-  namespace: monsoon3
-  labels:
-    system: openstack
-    service: metrics
 spec:
   replicas: 1
   strategy:
@@ -31,8 +27,10 @@ spec:
           imagePullPolicy: IfNotPresent
           image: {{ .Values.docker_repo }}/infrastructure-exporters:{{ .Values.image_version | replace "string:" "" }}
           args:
-            - -c
+            - -f
             - /apic-exporters-etc/config-apic-exporters.yaml
+            - -t
+            - apichealth
           {{- if .Values.resources.enabled }}
           resources:
             requests:
