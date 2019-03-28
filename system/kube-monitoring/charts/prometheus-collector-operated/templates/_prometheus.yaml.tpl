@@ -1,21 +1,3 @@
-rule_files:
-  - ./*.rules
-
-global:
-  scrape_timeout: 55s
-
-scrape_configs:
-# Scrape config for service endpoints.
-#
-# The relabeling allows the actual service scrape endpoint to be configured
-# via the following annotations:
-#
-# * `prometheus.io/scrape`: Only scrape services that have a value of `true`
-# * `prometheus.io/scheme`: If the metrics endpoint is secured then you will need
-# to set this to `https` & most likely set the `tls_config` of the scrape config.
-# * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
-# * `prometheus.io/port`: If the metrics are exposed on a different port to the
-# service then set this appropriately.
 - job_name: 'endpoints'
   kubernetes_sd_configs:
   - role: endpoints
@@ -173,7 +155,7 @@ scrape_configs:
   relabel_configs:
   - action: keep
     source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system 
+    regex: kube-system
   - action: keep
     source_labels: [__meta_kubernetes_pod_name]
     regex: (etcd-[^\.]+).+
@@ -197,7 +179,7 @@ scrape_configs:
   relabel_configs:
   - action: keep
     source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system 
+    regex: kube-system
   - action: keep
     source_labels: [__meta_kubernetes_pod_name]
     regex: (kubernetes-master[^\.]+).+
@@ -213,7 +195,7 @@ scrape_configs:
   relabel_configs:
   - action: keep
     source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system 
+    regex: kube-system
   - action: keep
     source_labels: [__meta_kubernetes_pod_name]
     regex: (kubernetes-master[^\.]+).+
@@ -234,7 +216,7 @@ scrape_configs:
   relabel_configs:
   - action: keep
     source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system 
+    regex: kube-system
   - action: keep
     source_labels: [__meta_kubernetes_pod_name]
     regex: (kubernetes-master[^\.]+).+
@@ -254,7 +236,7 @@ scrape_configs:
   relabel_configs:
   - action: keep
     source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system 
+    regex: kube-system
   - action: keep
     source_labels: [__meta_kubernetes_pod_name]
     regex: (kube-dns[^\.]+).+
@@ -274,7 +256,7 @@ scrape_configs:
   relabel_configs:
   - action: keep
     source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system 
+    regex: kube-system
   - action: keep
     source_labels: [__meta_kubernetes_pod_name]
     regex: (kube-dns[^\.]+).+
@@ -283,7 +265,7 @@ scrape_configs:
     regex: ([^:]+)(:\d+)?
     replacement: ${1}:10055
   - target_label: component
-    replacement: dns 
+    replacement: dns
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
     target_label: instance
@@ -315,7 +297,7 @@ scrape_configs:
   - action: labelmap
     regex: __meta_kubernetes_node_label_(.+)
   - target_label: component
-    replacement: node 
+    replacement: node
   - action: replace
     source_labels: [__meta_kubernetes_node_name]
     target_label: instance
@@ -335,7 +317,7 @@ scrape_configs:
   - action: labelmap
     regex: __meta_kubernetes_node_label_(.+)
   - target_label: component
-    replacement: node 
+    replacement: node
   - action: replace
     source_labels: [__meta_kubernetes_node_name]
     target_label: instance
@@ -362,165 +344,3 @@ scrape_configs:
       target_label: __metrics_path__
       replacement: /api/v1/nodes/${1}:4194/proxy/metrics
 {{ end -}}
-
-{{- if .Values.openstack_sd.enabled }}
-- job_name: 'openstack_sd'
-  scheme: https
-  openstack_sd_configs:
-    - role: {{ .Values.openstack_sd.role }}
-      region: {{ .Values.openstack_sd.region }}
-      identity_endpoint: {{ .Values.openstack_sd.identity_endpoint }}
-      username: {{ .Values.openstack_sd.username }}
-      password: {{ .Values.openstack_sd.password }}
-      domain_name: {{ .Values.openstack_sd.domain_name }}
-      project_name: {{ .Values.openstack_sd.project_name }}
-      all_tenants: {{ .Values.openstack_sd.all_tenants }}
-  relabel_configs:
-    - action: labelmap
-      regex: __meta_openstack_(.+)
-{{ end }}
-
-{{- range $region := .Values.global.regionList }}
-- job_name: 'blackbox-ingress-{{ $region }}'
-  metrics_path: /probe
-  params:
-    # Look for a HTTP 200 response per default.
-    # Can be overwritten by annotating the ingress resource with the expected return codes, e.g. `prometheus.io/probe_code: "4xx"`
-    module: [http_2xx]
-  scheme: https
-  kubernetes_sd_configs:
-  - role: ingress
-  relabel_configs:
-  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe]
-    action: keep
-    regex: true
-  # consider prometheus.io/probe_code annotation. mind below regex.
-  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_code]
-    regex: ^(\d).+
-    replacement: http_${1}xx
-    target_label: __param_module
-  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_module]
-    regex: (.+)
-    target_label: __param_module
-  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_path]
-    regex: ^(\/.+)
-    target_label: __meta_kubernetes_ingress_path
-  - source_labels: [__meta_kubernetes_ingress_scheme,__address__,__meta_kubernetes_ingress_path]
-    regex: (.+);(.+);(.+)
-    replacement: ${1}://${2}${3}
-    target_label: __param_target
-  - target_label: __address__
-    replacement: prober.{{ $region }}.cloud.sap
-  - source_labels: [__param_target]
-    target_label: instance
-  - action: labelmap
-    regex: __meta_kubernetes_ingress_label_(.+)
-  - source_labels: [__meta_kubernetes_namespace]
-    target_label: kubernetes_namespace
-  - source_labels: [__meta_kubernetes_ingress_name]
-    target_label: ingress_name
-  - source_labels: [__param_module]
-    target_label: module
-  - target_label: region_probed_from
-    replacement: {{ $region }}
-{{- end }}
-
-{{ $root := .Values }}
-{{- if and .Values.blackbox_exporter.enabled .Values.blackbox_exporter.static_config }}
-{{- range $module, $module_config := .Values.blackbox_exporter.static_config }}
-- job_name: 'blackbox-static-targets-{{ $module }}'
-  metrics_path: /probe
-  params:
-    module: [{{ $module }}]
-  static_configs:
-    - targets:
-      {{- range  $module_config.targets }}
-      - {{ . }}
-      {{- end }}
-  scheme: https
-  relabel_configs:
-  - source_labels: [__address__]
-    target_label: __param_target
-  - source_labels: [__param_target]
-    target_label: instance
-  - target_label: __address__
-    replacement: prober.{{ $root.global.region }}.cloud.sap
-  - source_labels: [__param_module]
-    target_label: module
-  - target_label: region_probed_from
-    replacement: {{ $root.global.region }}
-{{ end }}
-{{ end }}
-
-{{- if and .Values.blackbox_exporter.enabled .Values.blackbox_exporter.tcp_probe_targets }}
-{{- range $region := .Values.global.regionList }}
-- job_name: 'blackbox-tcp-{{ $region }}'
-  metrics_path: /probe
-  scrape_interval: 15s
-  params:
-    module: [tcp_connect]
-  static_configs:
-    - targets:
-      {{- range $.Values.blackbox_exporter.tcp_probe_targets }}
-      - {{ . }}
-      {{- end }}
-  scheme: https
-  relabel_configs:
-  - source_labels: [__address__]
-    target_label: __param_target
-  - source_labels: [__param_target]
-    target_label: instance
-  - target_label: __address__
-    replacement: prober.{{ $region }}.cloud.sap
-  - source_labels: [__param_module]
-    target_label: module
-  - target_label: region_probed_from
-    replacement: {{ $region }}
-{{- end }}
-{{- end }}
-
-{{- if and .Values.ipmi_exporter.enabled .Values.ipmi_exporter.ironic.enabled }}
-- job_name: 'baremetal/ironic'
-  params:
-    job: [baremetal/ironic]
-  scrape_interval: 60s
-  scrape_timeout: 55s
-  file_sd_configs:
-      - files :
-        - /custom_targets/ipmi/ipmi_targets.json
-  metrics_path: /ipmi
-  relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: ipmi-exporter:9290
-{{- end }}
-
-{{- if and .Values.ipmi_exporter.enabled .Values.ipmi_exporter.netbox.enabled }}
-- job_name: 'cp/netbox'
-  params:
-    job: [cp/netbox]
-  scrape_interval: 60s
-  scrape_timeout: 55s
-  file_sd_configs:
-      - files :
-        - /custom_targets/ipmi/netbox_targets.json
-  metrics_path: /ipmi
-  relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: ipmi-exporter:9290
-    - source_labels: [__meta_serial]
-      target_label: server_serial
-{{- end }}
-
-# Static Targets
-- job_name: 'static-targets'
-  file_sd_configs:
-    - files:
-      - /etc/prometheus/static_targets.json
