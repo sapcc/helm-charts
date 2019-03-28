@@ -1,5 +1,5 @@
 {{- if .Values.prometheusOperator.enabled }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "9") }}
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (gt .Capabilities.KubeVersion.Minor "9") }}
 apiVersion: apps/v1
 {{ else }}
 apiVersion: extensions/v1beta1
@@ -59,7 +59,9 @@ spec:
           resources:
 {{ toYaml .Values.prometheusOperator.resources | indent 12 }}
           securityContext:
-            allowPrivilegeEscalation: false
+            # commented out due to bug with docker 1.12
+            # https://github.com/moby/moby/issues/27983
+            # allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
 {{- if .Values.prometheusOperator.securityContext }}
       securityContext:
