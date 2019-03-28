@@ -4,43 +4,26 @@
 #    domain:
 #    clusterType: controlplane
 
-openstack_sd:
-  enabled: false
-
-ipmi_exporter:
-  enabled: false
-  netbox:
-    enabled: false
-  ironic:
-    enabled: false
-
-blackbox_exporter:
-  enabled: false
-
-# Placeholder. Full list is set via pipeline.
-regionList:
-  - "staging"
-
 prometheus-server:
   image:
     repository: prom/prometheus
     tag: v2.8.0
 
-  name: k8s-collector
+  name: k8s-frontend
 
   retentionTime: 1h
 
   additionalScrapeConfigs:
-    name: k8s-collector-additional-scrape-config
+    name: k8s-frontend-additional-scrape-config
     key: scrape-config.yaml
 
   ingress:
     enabled: true
-    host: prometheus-collector-operated
+    host: prometheus-frontend-operated
 
-  # Store in memory.
   persistence:
     enabled: false
+    size: 300Gi
 
   rbac:
     create: false
