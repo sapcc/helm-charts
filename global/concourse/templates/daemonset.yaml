@@ -18,8 +18,6 @@ spec:
       labels:
         app: {{ $.Values.worker.name }}-{{ .name }}
         release: "{{ $.Release.Name }}"
-      annotations:
-        checksum/pre-stop: {{ include (print $.Template.BasePath "/retire-worker-config.yaml") . | sha256sum }}
     spec:
       nodeSelector:
         ccloud.sap.com/nodepool: {{ .nodePool | quote }}
@@ -138,7 +136,7 @@ spec:
         - -ce
         - |-
           update-ca-certificates &&
-          /usr/local/concourse/bin/concourse worker --tag="node=${NODE_NAME}"
+          /usr/local/concourse/bin/concourse worker --name=${NODE_NAME}
         livenessProbe:
           failureThreshold: 5
           initialDelaySeconds: 10
