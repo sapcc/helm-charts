@@ -23,6 +23,10 @@ actions:
       kind: prefix
       value: .kibana
       exclude: True
+    - filtertype: pattern
+      kind: prefix
+      value: .task
+      exclude: True
     - filtertype: space
       disk_space: {{.Values.elk_elasticsearch_data_retention_space}}
       use_age: True
@@ -45,6 +49,10 @@ actions:
     - filtertype: pattern
       kind: prefix
       value: .kibana
+      exclude: True
+    - filtertype: pattern
+      kind: prefix
+      value: .task
       exclude: True
     - filtertype: age
       source: name
