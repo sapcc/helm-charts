@@ -1,0 +1,24 @@
+{{- if .Values.wham.enabled }}
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: wham
+  labels:
+    app: wham
+    system: openstack
+    type: alerthandler
+    component: ironic
+  annotations:
+    prometheus.io/port: {{ .Values.wham.metricPort | quote }}
+    prometheus.io/scrape: "true"
+
+spec:
+  ports:
+    - port: {{ .Values.wham.listenPort }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: wham
+{{- end-}}
