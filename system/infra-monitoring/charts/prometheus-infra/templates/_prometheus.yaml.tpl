@@ -167,24 +167,7 @@ scrape_configs:
 #  - source_labels: [__meta_kubernetes_pod_name]
 #    target_label: kubernetes_pod_name
 
-#{{- if .Values.openstack_sd.enabled }}
-#- job_name: 'openstack_sd'
-#  scheme: https
-#  openstack_sd_configs:
-#    - role: {{ .Values.openstack_sd.role }}
-#      region: {{ .Values.openstack_sd.region }}
-#      identity_endpoint: {{ .Values.openstack_sd.identity_endpoint }}
-#      username: {{ .Values.openstack_sd.username }}
-#      password: {{ .Values.openstack_sd.password }}
-#      domain_name: {{ .Values.openstack_sd.domain_name }}
-#      project_name: {{ .Values.openstack_sd.project_name }}
-#      all_tenants: {{ .Values.openstack_sd.all_tenants }}
-#  relabel_configs:
-#    - action: labelmap
-#      regex: __meta_openstack_(.+)
-#{{ end }}
-
-{{- if .Values.global.arista_snmp_exporter.enabled }}
+{{- if .Values.arista_snmp_exporter.enabled }}
 - job_name: 'arista-{{ .Values.global.region }}'
   scrape_interval: 60s
   scrape_timeout: 55s
