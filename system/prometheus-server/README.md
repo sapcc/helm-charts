@@ -5,8 +5,8 @@ This chart shall serve as a template to deploy your own Prometheus.
 It will set up:
 - Prometheus server instance (with 2 sidecars: configmap, rules reload)
 - Persistent volume claim (if configured; default off)
-- Ingress (if configured; default off)
-- RBAC resources (if configured; default off)
+- Ingress to manage external access for the Prometheus instance. (default off)
+- RBAC resources for the Prometheus. Might be required if e.g. when service discoveries are used. (default off)
 
 ## Prerequisite
 
@@ -28,7 +28,9 @@ See the [values.yaml](./values.yaml) for more details.
 | `image.tag`                            | Tag of the Prometheus image.                                                                                            | `v2.8.0`                                            |
 | `name`                                 | Unique name for this Prometheus instance. The name will be used to assign aggregation and alerting rules to Prometheus. | `""`                                                |
 | `retentionTime`                        | Defines how long data is stored. Format: `[0-9]+(ms|s|m|h|d|w|y)`.                                                      | `7d`                                                |
-| `additionalScrapeConfigs`              | List of Secrets containing the additional scrape configuration.                                                         | `[]`                                                |
+| `additionalScrapeConfigs.name`         | Name of the Secret containing the additional scrape configuration.                                                      | `""`                                                |
+| `additionalScrapeConfigs.key`          | Key in the Secret containing the additional scrape configuration.                                                       | `""`                                                |
+| `additionalScrapeConfigs.optional`     | Whether the Secret or the key must be found.                                                                            | `false`                                             |
 | `ingress.enabled`                      | If enabled deploy an Ingress for this Prometheus.                                                                       | `false`                                             |
 | `ingress.host`                         | Used to generate the external URL and ingress host in the form `<host>.<region>.<domain>`.                              | `""`                                                |
 | `ingress.vice_president`               | Automate certificate management via vice-president (k8s operator).                                                      | `true`                                              |
@@ -36,10 +38,10 @@ See the [values.yaml](./values.yaml) for more details.
 | `persistence.enabled`                  | If enabled a persistent volume is used to store the data. Else data is stored in memory.                                | `false`                                             |
 | `persistence.name`                     | Name of the persistent volume claim.                                                                                    | `$name`                                             |
 | `persistence.accessMode`               | Access mode for the persistent volume.                                                                                  | `ReadWriteOnce`                                     |
-| `persistence.size`                     | The size of the persistent volume claim with unit.                                                                      | `300Gi`                                             |
+| `persistence.size`                     | The size of the persistent volume claim with unit.                                                                      | `100Gi`                                             |
 | `logLevel`                             | The log level of the Prometheus server                                                                                  | `info`                                              |
-| `resources.requests.cpu`               | Kubernetes resource requests for CPU.                                                                                   | `12`                                                |
-| `resources.requests.memory`            | Kubernetes resource requests for memory.                                                                                | `40Gi`                                              |
+| `resources.requests.cpu`               | Kubernetes resource requests for CPU.                                                                                   | `4`                                                 |
+| `resources.requests.memory`            | Kubernetes resource requests for memory.                                                                                | `8Gi`                                               |
 | `rbac.create`                          | Create RBAC resources.                                                                                                  | `false`                                             |
 | `serviceAccount.name`                  | Name of the service account to use for the Prometheus server.                                                           | `""`                                                |
 | `thanos`                               | Thanos sidecar configuration.                                                                                           | `{}`                                                |
