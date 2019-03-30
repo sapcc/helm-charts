@@ -56,7 +56,7 @@ See the `prometheus.yaml` and `additional-scrape-config.yaml` in the [examples](
 
 Aggregation and alerting rules can be deployed independently of the Prometheus server instance using the `PrometheusRule` CRD.  
 An example can be found [here](./examples/kubernetes-health.alerts.yaml).  
-Rules are assigned to a Prometheus instance by setting labels on the PrometheusRule as shown below. See the `name` parameter in table above.
+Rules are assigned to a Prometheus instance by setting labels on the PrometheusRule as shown below. Refers to the `name` of the Prometheus as describe above.
 ```
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
