@@ -16,7 +16,9 @@ It may be installed using the [official helm chart](https://github.com/helm/char
 ## Configuration
 
 The following table provides an overview of configurable parameters of this chart and their defaults.  
-See the [values.yaml](./values.yaml) for more details.
+See the [values.yaml](./values.yaml) for more details.  
+**TLDR;** Set the `name`, `global.region`, `global.domain` parameters and get started.
+
 
 |       Parameter                        |           Description                                                                                                   |                         Default                     |
 |----------------------------------------|-------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
@@ -39,7 +41,7 @@ See the [values.yaml](./values.yaml) for more details.
 | `persistence.name`                     | Name of the persistent volume claim.                                                                                    | `$name`                                             |
 | `persistence.accessMode`               | Access mode for the persistent volume.                                                                                  | `ReadWriteOnce`                                     |
 | `persistence.size`                     | The size of the persistent volume claim with unit.                                                                      | `100Gi`                                             |
-| `logLevel`                             | The log level of the Prometheus server                                                                                  | `info`                                              |
+| `logLevel`                             | The log level of the Prometheus server.                                                                                 | `info`                                              |
 | `resources.requests.cpu`               | Kubernetes resource requests for CPU.                                                                                   | `4`                                                 |
 | `resources.requests.memory`            | Kubernetes resource requests for memory.                                                                                | `8Gi`                                               |
 | `rbac.create`                          | Create RBAC resources.                                                                                                  | `false`                                             |
