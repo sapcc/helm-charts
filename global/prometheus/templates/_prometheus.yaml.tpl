@@ -59,6 +59,7 @@ scrape_configs:
       - '{__name__=~"^vcenter_vcenter_node_info$"}'
       - '{__name__=~"^vcenter_esx_node_info$"}'
       - '{__name__=~"^vice_president_token_count_remaining$"}'
+      - '{__name__=~"^vice_president_sso_certificate_expires$"}'
       - '{__name__=~"^netapp_capacity_aggregate$"}'
 
   relabel_configs:
