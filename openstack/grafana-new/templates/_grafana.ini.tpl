@@ -71,6 +71,7 @@ password={{.Values.postgres.password}}
 ssl_mode=disable
 #type=sqlite3
 #path=/etc/grafana/grafana.db
+max_open_conn=95
 
 #################################### Session ####################################
 [session]
