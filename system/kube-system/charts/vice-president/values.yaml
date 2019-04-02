@@ -1,9 +1,9 @@
 image:
   repository: sapcc/vice-president
-  tag: v201903181100
+  tag: v201904011430
   pullPolicy: IfNotPresent
 
-# Symantec/DigiCert VICE API configuration
+# Symantec/DigiCert VICE API configuration.
 vice:
   firstName:
   lastName:
@@ -15,11 +15,11 @@ vice:
   organizationalUnit:
   defaultChallenge:
 
-  # symantec API SSO certificate and key
+  # The VICE 2.0 API SSO certificate and key the Symantec user with the web services (w) role.
   cert:
   key:
 
-  # RSA SHA-2 intermediate CA
+  # RSA SHA-2 intermediate CA.
   intermediate: |
     -----BEGIN CERTIFICATE-----
     MIIElDCCA3ygAwIBAgIQAf2j627KdciIQ4tyS8+8kTANBgkqhkiG9w0BAQsFADBh
@@ -49,35 +49,35 @@ vice:
     j6tJLp07kzQoH3jOlOrHvdPJbRzeXDLz
     -----END CERTIFICATE-----
 
-# operator configuration
+# Vice president operator configuration.
 president:
-  # trigger certificate renewal if cert is valid for less than min_cert_validity_days
+  # Trigger certificate renewal if cert is valid for less than the given number of days.
   minCertValidityDays: 30
 
-  # verify the certificate via TLS handshake
-  # potentially triggers additional certificate renewals or enrollments if the new certificate is not yet presented
-  # certificateCheckIntervalMinutes should be set accordingly
+  # Verify the certificate via TLS handshake.
+  # Use with caution: Potentially triggers additional certificate renewals or enrollments if the new certificate is not yet presented.
+  # CertificateCheckIntervalMinutes should be set accordingly.
   enableValidateRemoteCert: false
 
-  # enable additional symantec metrics for token usage
+  # Enable additional symantec metrics for token usage, organization and SSO certificate expiry.
   enableSymantecMetrics: false
 
-  # resync ingress and secrets every n minutes
-  resyncPeriodMinutes: 4
+  # How often to force sync of ingress and secrets resources in the format: `[0-9]+(ms|s|m|h|d|w|y)`.
+  resyncInterval: 4m
 
-  # check certificates every n minutes
-  certificateCheckIntervalMinutes: 30
+  # How often to check certificates in the format: `[0-9]+(ms|s|m|h|d|w|y)`.
+  certificateRecheckInterval: 30m
 
-  # rate limit for certificate enrollments, renewals, etc. per certificateCheckIntervalMinutes
+  # Rate limit for certificate enrollments, renewals, etc. per host.
   rateLimit: 2
 
-  # port to expose prometheus metrics on
+  # Port to expose prometheus metrics on.
   metricsPort: 9091
 
-  # the log level
-  logLevel: 1
+  # Debug log level.
+  debug: false
 
-  # rbac
+  # Create RBAC resources.
   rbac:
     create: false
     serviceAccountName: default

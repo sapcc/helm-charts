@@ -1,0 +1,54 @@
+{{- if .Values.wham.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+    app: wham
+    system: openstack
+    type: alerthandler
+    component: ironic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+        app: wham
+        type: alerthandler
+        component: ironic
+  template:
+    metadata:
+      labels:
+        app: wham
+        type: alerthandler
+        component: ironic
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.wham.metricPort }}"
+    spec:
+      containers:
+      - name: wham
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.wham.image.repository }}:{{ .Values.wham.image.tag }}"
+        args:
+            - wham
+            - --metric-port={{ .Values.wham.metricPort }}
+            - --debug-level={{ .Values.wham.debugLevel }}
+            - --listen-port={{ .Values.wham.listenPort }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.wham.listenPort }}
+          protocol: TCP
+        - name: metrics
+          containerPort: {{ .Values.wham.metricPort }}
+          protocol: TCP
+        env:
+        - name: OS_IRONIC_USERNAME
+          value: "{{ .Values.global.ipmi_exporter_user }}"
+        - name: OS_IRONIC_PASSWORD
+          value: "{{ .Values.global.ipmi_exporter_user_passwd }}"
+        - name: OS_USER_DOMAIN_NAME
+          value: "{{ .Values.wham.os_user_domain_name }}"
+        - name: OS_PROJECT_NAME
+          value: "{{ .Values.wham.os_project_name }}"
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: "{{ .Values.wham.os_project_domain_name }}"
+        - name: REGION
+          value: "{{ .Values.global.region }}"
+{{- end }}
