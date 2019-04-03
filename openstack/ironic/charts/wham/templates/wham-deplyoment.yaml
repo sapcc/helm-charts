@@ -1,4 +1,4 @@
-{{- if .Values.global.wham.enabled }}
+{{- if .Values.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
       - name: {{ include "wham.name" . }}
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.imageRepository }}:{{ .Values.imageTag }}"
         args:
             - wham
             - --metric-port={{ .Values.metricPort }}
@@ -43,9 +43,11 @@ spec:
           containerPort: {{ .Values.metricPort }}
           protocol: TCP
         env:
-        - name: OS_IRONIC_USERNAME
+        - name: OS_AUTH_URL
+          value: "{{ .Values.os_auth_url }}"
+        - name: OS_USERNAME
           value: "{{ .Values.global.ipmi_exporter_user }}"
-        - name: OS_IRONIC_PASSWORD
+        - name: OS_PASSWORD
           value: "{{ .Values.global.ipmi_exporter_user_passwd }}"
         - name: OS_USER_DOMAIN_NAME
           value: "{{ .Values.os_user_domain_name }}"
