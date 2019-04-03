@@ -17,7 +17,7 @@ It may be installed using the [official helm chart](https://github.com/helm/char
 
 The following table provides an overview of configurable parameters of this chart and their defaults.  
 See the [values.yaml](./values.yaml) for more details.  
-**TLDR;** Set the `name`, `global.region`, `global.domain` parameters and get started.
+**TLDR;** Set the `name`, `global.region`, `global.domain` parameters and get started where `name` has to be a unique identifier for your prometheus.
 
 
 |       Parameter                        |           Description                                                                                                   |                         Default                     |
@@ -48,6 +48,8 @@ See the [values.yaml](./values.yaml) for more details.
 | `serviceAccount.name`                  | Name of the service account to use for the Prometheus server.                                                           | `""`                                                |
 | `thanos`                               | Thanos sidecar configuration.                                                                                           | `{}`                                                |
 | `externalLabels`                       | The labels to add to any time series or alerts when communicating with any external system.                             | `{}`                                                |
+| `configMaps`                           | List of configmaps in the same namespace as the Prometheus that should be mounted.                                      | `[]`                                                |
+| `alertmanagers`                        | List of Alertmanagers to send alerts to.                                                                                | `[]`                                                |
 
 ## Providing addition scrape configurations
 
