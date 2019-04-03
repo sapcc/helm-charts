@@ -10,7 +10,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: {{ .Chart.Name }}
-      image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{ default "monsoon3" .Values.global.image_namespace}}/{{ .Chart.Name }}-plugin:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
+      image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{ default "monsoon3" .Values.global.image_namespace}}/{{ default .Chart.Name (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageNameOverride }}-plugin:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
       command:
         - /usr/local/bin/kubernetes-entrypoint
       env:
