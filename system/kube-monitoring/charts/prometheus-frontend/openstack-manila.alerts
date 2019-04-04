@@ -45,6 +45,36 @@ groups:
       description: Manila Shares taking more than 2 minutes to delete in {{ $labels.host }}
       summary: Manila Shares taking more than 2 minutes to delete
 
+  - alert: OpenstackManilaShareServerHigh
+    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (host),
+      "short_hostname", "$1", "host", "(.*)@.*") >= 240
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} share server'
+      playbook: docs/support/playbook/manila/backend_full.html
+      service: manila
+      severity: warning
+      tier: os
+      context: share-server-limit
+    annotations:
+      description: 'Panel: Share Server netapp host distribution'
+      summary: High number of share servers on {{ $short_hostname }}
+
+  - alert: OpenstackManilaShareServerFull
+    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (host),
+      "short_hostname", "$1", "host", "(.*)@.*") >= 250
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} share server'
+      playbook: docs/support/playbook/manila/backend_full.html
+      service: manila
+      severity: critical
+      tier: os
+      context: share-server-limit
+    annotations:
+      description: 'Panel: Share Server netapp host distribution'
+      summary: Share servers on {{ $short_hostname }} exhausted
+
   - alert: OpenstackManilaProbeSuccessValueIs0
     expr: probe_success{instance=~".*stnp.*|.*ma.*"} == 0
     for: 5m
