@@ -249,6 +249,13 @@ data:
 
       # ======= SPECIFIC ALERT NOTIFICATION  ======= 
 
+      # ---- webhook handler: metal ----
+      - receiver: wham_metal
+        continue: false
+        match_re:
+          tier: metal
+          severity: critical|warning|info
+          region: staging|qa-de-1
 
       # ======= all unrouted should end here ======= 
       - receiver: dev-null
@@ -286,6 +293,11 @@ data:
               type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
               text: {{"'{{template \"slack.sapcc.silence1Month.actionText\" . }}'"}}
               value: {{"'{{template \"slack.sapcc.silence1Month.actionValue\" . }}'"}}
+
+    # ---- custom webhook handlers ----
+    - name: wham_metal
+      webhook_configs:
+        - url: "http://ironic-wham/alerts/metal"
 
     # ---- Slack Duty (Alert)Channels ----
     # slack duty metal
