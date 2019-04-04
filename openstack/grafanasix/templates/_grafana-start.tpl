@@ -45,8 +45,11 @@ function start_application {
   # the cp is required in order to be able to modify the datasources below, the dashboard
   # config references back to the dashboard-sources dir in the git repo directly
   mkdir -p /var/lib/grafana/provisioning
-  rm -rf /var/lib/grafana/provisioning/dashboards
-  cp -a /git/grafana-content/dashboards-config-regional /var/lib/grafana/provisioning/dashboards
+  # do not do the above if the are in author more - then we do not provision anything
+  if [ "{{.Values.grafana.mode}}" != "author" ]; then
+    rm -rf /var/lib/grafana/provisioning/dashboards
+    cp -a /git/grafana-content/dashboards-config-{{.Values.grafana.mode}} /var/lib/grafana/provisioning/dashboards
+  fi
   rm -rf /var/lib/grafana/provisioning/datasources
   cp -a /git/grafana-content/datasources-config /var/lib/grafana/provisioning/datasources
   # fill in the region specific fields in the elasticsearch datasources
