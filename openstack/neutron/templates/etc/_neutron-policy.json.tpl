@@ -21,8 +21,8 @@
 
     "compute_admin": "role:compute_admin and rule:owner",
     "context_is_compute_admin": "role:cloud_compute_admin or rule:compute_admin",
-    "context_is_securitygroup_admin": "role:securitygroup_admin or rule:context_is_compute_admin or rule:context_is_network_admin",
-    "context_is_securitygroup_viewer": "role:securitygroup_viewer or rule:context_is_viewer or rule:context_is_securitygroup_admin or rule:context_is_network_viewer",
+    "context_is_securitygroup_admin": "(role:securitygroup_admin and rule:owner) or rule:context_is_compute_admin or rule:context_is_network_admin",
+    "context_is_securitygroup_viewer": "(role:securitygroup_viewer and rule:owner) or rule:context_is_viewer or rule:context_is_securitygroup_admin",
 
     "shared": "field:networks:shared=True",
     "shared_firewalls": "field:firewalls:shared=True",
