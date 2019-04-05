@@ -40,13 +40,16 @@ template: |
       spec:
         containers:
         - name: neutron-dvs-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionDVS | default .Values.imageVersion  | required "Please set neutron.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command: ["dumb-init"]
           args: ["neutron-dvs-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-vmware.ini"]
           env:
           - name: SENTRY_DSN
-            value: {{ .Values.neutron.sentry_dsn | quote }}
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: neutron.DSN.python
           - name: STATSD_HOST
             value: "localhost"
           - name: STATSD_PORT
