@@ -47,7 +47,10 @@ template: |
           args: ["neutron-nsxv3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
           env:
           - name: SENTRY_DSN
-            value: {{ .Values.sentry_dsn | quote }}
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: neutron.DSN.python
           - name: STATSD_HOST
             value: "localhost"
           - name: STATSD_PORT

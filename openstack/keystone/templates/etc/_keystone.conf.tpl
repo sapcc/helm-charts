@@ -1,6 +1,6 @@
 [DEFAULT]
 debug = {{.Values.debug}}
-insecure_debug = true
+insecure_debug = {{.Values.insecure_debug}}
 verbose = true
 
 max_token_size = {{ .Values.api.token.max_token_size | default 255 }}
@@ -153,7 +153,7 @@ domain_whitelist = {{ .Values.lifesaver.domain_whitelist | default "Default, tem
 user_whitelist = {{ .Values.lifesaver.user_whitelist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
 user_blacklist = {{ .Values.lifesaver.user_blacklist | default "" }}
 # initial user credit
-initial_credit = {{ .Values.lifesaver.initial_credit | default 70 }}
+initial_credit = {{ .Values.lifesaver.initial_credit | default 100 }}
 # how often do we refill credit
 refill_seconds = {{ .Values.lifesaver.refill_seconds | default 60 }}
 # and with what amount

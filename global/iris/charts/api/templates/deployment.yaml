@@ -1,0 +1,55 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: iris-api
+
+spec:
+  revisionHistoryLimit: 3
+  replicas: {{ .Values.replica_count }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: iris-api
+    spec:
+      # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: REGION
+              value: {{ .Values.region }}
+            - name: ADMIN_API_KEY
+              value: {{ .Values.admin_api_key}}
+            - name: ADMIN_API_SECRET
+              value: {{ .Values.admin_api_secret}}
+            - name: IRIS_API_DB_PASSWORD
+              valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }  
+          livenessProbe:
+            httpGet:
+              path: /system/liveliness
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /system/readiness
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                #Give the ingress some time to reload its config
+                command: ["/bin/sh","-c","sleep 30"]

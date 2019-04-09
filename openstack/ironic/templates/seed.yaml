@@ -8,6 +8,7 @@ spec:
   - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-bs-seed
+  - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
   - monsoon3/domain-hcm-seed
   - monsoon3/domain-hcp03-seed
@@ -15,7 +16,9 @@ spec:
   - monsoon3/domain-monsoon3-seed
   - monsoon3/domain-s4-seed
   - monsoon3/domain-wbs-seed
+{{- if .Values.tempest_enabled }}
   - monsoon3/domain-tempest-seed
+{{- end }}
   - monsoon3/nova-seed
   - monsoon3/neutron-seed
   - swift/swift-seed
@@ -203,9 +206,9 @@ spec:
       "hw_video:ram_max_mb": "16"
 
   - name: "bame_xclarity_big"
-    id: "90020"
+    id: "90011"
     vcpus: "16"
-    ram: "10240"
+    ram: "30720"
     disk: "192"
     is_public: false
     extra_specs:
@@ -247,6 +250,7 @@ spec:
       description: IPMI Exporter for MB Monitoring
       password: {{ .Values.global.ipmi_exporter_user_passwd | default (tuple . .Values.global.ipmi_exporter_user_passwd | include "identity.password_for_user") | quote }}
 
+{{- if .Values.tempest_enabled }}
   - name: tempest
     projects:
     - name: tempest1
@@ -270,6 +274,7 @@ spec:
         role: baremetal_admin
       - domain: tempest
         role: baremetal_admin
+{{- end }}
 
   - name: ccadmin
     projects:
@@ -367,6 +372,44 @@ spec:
       - project: service_desk
         role: baremetal_admin
       - domain: bs
+        role: baremetal_viewer
+        inherited: true
+
+  - name: cp
+    groups:
+    - name: CP_API_SUPPORT
+      roles:
+      - project: api_support
+        role: baremetal_admin
+      - domain: cp
+        role: baremetal_admin
+        inherited: true
+    - name: CP_COMPUTE_SUPPORT
+      roles:
+      - project: compute_support
+        role: baremetal_admin
+      - domain: cp
+        role: baremetal_admin
+        inherited: true
+    - name: CP_NETWORK_SUPPORT
+      roles:
+      - project: network_support
+        role: baremetal_admin
+      - domain: cp
+        role: baremetal_viewer
+        inherited: true
+    - name: CP_STORAGE_SUPPORT
+      roles:
+      - project: storage_support
+        role: baremetal_admin
+      - domain: cp
+        role: baremetal_viewer
+        inherited: true
+    - name: CP_SERVICE_DESK
+      roles:
+      - project: service_desk
+        role: baremetal_admin
+      - domain: cp
         role: baremetal_viewer
         inherited: true
 

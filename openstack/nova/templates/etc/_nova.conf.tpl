@@ -30,6 +30,7 @@ rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | defa
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 sync_power_state_pool_size = {{ .Values.sync_power_state_pool_size | default 500 }}
 sync_power_state_interval = {{ .Values.sync_power_state_interval | default 1200 }}
+sync_power_state_unexpected_call_stop = false
 
 {{ include "ini_sections.default_transport_url" . }}
 

@@ -122,11 +122,14 @@ pgmetrics:
             usage: "GAUGE"
             description: "Number of share networks"
     openstack_manila_shares:
-      query: "SELECT coalesce(share_instances.share_type_id, 'N/A') AS share_type_id, share_instances.host, shares.project_id, shares.id, share_instances.status, COUNT(*) AS count_gauge, SUM(size) size_gauge FROM shares INNER JOIN share_instances ON shares.id=share_instances.share_id GROUP BY share_instances.share_type_id, share_instances.host, share_instances.status, shares.id, shares.project_id"
+      query: "SELECT coalesce(share_instances.share_type_id, 'N/A') AS share_type_id, availability_zones.name AS availability_zone_name, share_instances.host, shares.project_id, shares.id, share_instances.status, COUNT(*) AS count_gauge, SUM(size) size_gauge FROM shares JOIN share_instances ON shares.id=share_instances.share_id JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id GROUP BY share_instances.share_type_id, share_instances.host, share_instances.status, shares.id, shares.project_id, availability_zones.id"
       metrics:
         - share_type_id:
             usage: "LABEL"
             description: "Type of the share"
+        - availability_zone_name:
+            usage: "LABEL"
+            description: "Availability Zone Name of the share"
         - host:
             usage: "LABEL"
             description: "Host Name"
@@ -217,11 +220,39 @@ pod:
         rolling_update:
            max_unavailable: 0
            max_surge: 1
+  resources:
+    api:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+    scheduler:
+      requests:
+        memory: "256Mi"
+        cpu: "1000m"
+    netapp_nanny:
+      requests:
+        memory: "2Gi"
+        cpu: "500m"
+    nanny_quota:
+      requests:
+        memory: "64Mi"
+        cpu: "300m"
+    nanny:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+    share: # is not scalable -> qosClass: guaranteed
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "400m"
 
 postgresql:
   custom_configmap: false
   custom_repository: true
-  imageTag: '9.4.14'
+  imageTag: '9.4.21'
   postgresDatabase: manila
   dbInit: manila-db-init
   dbMaintain: manila-db-maintain
@@ -267,25 +298,23 @@ tempest:
   admin_share_network_id: null
   expected_failures: {}
 
-unittest:
-  enabled: false
-
-# Dictionary mapping availability-zones to shares
-# shares:
-#   nova1:
-#     shares_netapp:
-#      - name: DEFINED-IN-REGION-CHART
-#        backend_name: custom-name-used-in-type
-#        share_server_cleanup_interval: 10
-#        host: my-netapp-host
-#        username: my-netapp-user
-#        password: my-netapp-pw
-#        root_volume_aggregate: DEFINED-IN-REGION-CHART
-#        aggregate_search_pattern: DEFINED-IN-REGION-CHART
-#        port_search_pattern: DEFINED-IN-REGION-CHART
-#        physical_network: DEFINED-IN-REGION-CHART
-#        mtu: DEFINED-IN-REGION-CHART
-#        reserved_share_percentage: 0
+# netapp filer back ends, required input
+# netapp:
+#   filers:
+#    - name: DEFINED-IN-REGION-CHART
+#      availability_zone: DEFINED-IN-REGION-CHART
+#      backend_name: custom-name-used-in-type
+#      debug: false
+#      share_server_cleanup_interval: 10
+#      host: my-netapp-host
+#      username: my-netapp-user
+#      password: my-netapp-pw
+#      root_volume_aggregate: DEFINED-IN-REGION-CHART
+#      aggregate_search_pattern: DEFINED-IN-REGION-CHART
+#      port_search_pattern: DEFINED-IN-REGION-CHART
+#      physical_network: DEFINED-IN-REGION-CHART
+#      mtu: DEFINED-IN-REGION-CHART
+#      reserved_share_percentage: 0
 
 vice_president: true
 

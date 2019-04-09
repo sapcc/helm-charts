@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: operator
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-vcenter-operator:{{ .Values.imageVersionVcenterOperator | default .Values.imageVersion | required "Please set imageVersion or similar"}}
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{required ".Values.global.image_namespace is missing" .Values.global.image_namespace}}/ubuntu-source-vcenter-operator:{{ .Values.imageVersionVcenterOperator | default .Values.imageVersion | required "Please set imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
@@ -31,3 +31,5 @@ spec:
         env:
         - name: SERVICE_DOMAIN
           value: "cc.{{.Values.global.region}}.{{.Values.global.tld}}"
+        - name: LOG_LEVEL
+          value: {{ .Values.log_level | default "INFO" }}

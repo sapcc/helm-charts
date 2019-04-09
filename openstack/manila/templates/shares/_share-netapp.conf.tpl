@@ -1,9 +1,8 @@
 {{- define "share_netapp_conf" -}}
 {{- $context := index . 0 -}}
 {{- $share := index . 1 -}}
-{{- $az := index . 2 -}}
 [DEFAULT]
-storage_availability_zone = {{$az}}
+storage_availability_zone = {{ $share.availability_zone | default $context.Values.default_availability_zone | default $context.Values.global.default_availability_zone }}
 host = manila-share-netapp-{{$share.name}}
 
 [netapp-multi]
@@ -42,6 +41,6 @@ netapp_trace_flags=api,method
 {{- end }}
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
-reserved_share_percentage = {{ $share.reserved_share_percentage | default 5 }}
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 25 }}
 filter_function = {{ $share.filter_function | default "stats.provisioned_capacity_gb / stats.total_capacity_gb <= 0.7" }}
 {{- end -}}

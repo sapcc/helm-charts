@@ -1,0 +1,20 @@
+{{- if .Values.ingress.external_public_service.enabled }}
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: ingress-controller-public-service
+
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-ingress
+    component: controller
+    release: kube-system
+  ports:
+    - name: https
+      port: 443
+      targetPort: https
+  externalIPs:
+    - {{ required ".Values.ingress.external_public_service.ip" .Values.ingress.external_public_service.ip }}
+{{- end }}

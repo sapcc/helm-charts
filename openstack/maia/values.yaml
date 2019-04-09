@@ -1,14 +1,18 @@
-global:
-  region: DEFINED-IN-REGION-SECRETS
-  domain: DEFINED-IN-REGION-SECRETS
-  imageRegistry: DEFINED-IN-REGION-SECRETS
-
+# global:
+  # region: DEFINED-IN-REGION-SECRETS
+  # domain: DEFINED-IN-REGION-SECRETS
+  # imageRegistry: DEFINED-IN-REGION-SECRETS
 maia:
-  endpoint_host_public: DEFINED-IN-REGION-SECRETS
+  # maia is on in all regions by default
+  enabled: True
+  # vice_president is used by default to generate certs
+  vice_president: true
+  # endpoint_host_public: DEFINED-IN-REGION-SECRETS
   endpoint_port_public: 443
   endpoint_protocol_public: https
   docker_repo: DEFINED-IN-REGION-SECRETS
-  image_version: '20171117185355'
+  image_version: '20190313100650'
+  debug: "0"
   listen_port: 9091
   # how long will label values be listed by the API (keep minimal)
   label_value_ttl: "24h"
@@ -18,68 +22,47 @@ maia:
   default_domain: monsoon3
   service_user:
     name:  maia
-    password: DEFINED-IN-REGION-SECRETS
+    # password: DEFINED-IN-REGION-SECRETS
     user_domain_name:    Default
     project_name:        service
     project_domain_name: Default
-
-openstack:
-  identity_endpoint: DEFINED-IN-REGION-SECRETS
-  userid: DEFINED-IN-REGION-SECRETS
-  password: DEFINED-IN-REGION-SECRETS
-  domain_name: DEFINED-IN-REGION-SECRETS
+  resources:
+    # reasonable defaults, should be reduced for small regions
+    memory:
+      expected: 100Mi
+      tolerated: 400Mi
+    cpu:
+      # currently maia is used by very few concurrent users
+      expected: "10m"
+      tolerated: "500m"
 
 prometheus:
-  image: prom/prometheus:v1.8.2
-  retention: 168h0m0s
-  target_heap_size: "26843545600"
-  listen_port: 9092
-  persistence:
-    name: data-prometheus-maia-0
-    access_mode: ReadWriteMany
-    size: 100Gi
-
-prometheusv2:
-  enabled: False
+  enabled: True
+  vice_president: true
   image:
     repository: prom/prometheus
     tag: v2.5.0
-  retention: 7d
+  retention: 30d
   listen_port: 9090
   configmap_reload:
     image:
       repository: jimmidyson/configmap-reload
       tag: v0.2.2
-
-  # persistence:
-    # name: data-prometheus-maia-0
-    # access_mode: ReadWriteMany
-    # size: 100Gi
-
-vcenter_exporter:
-  listen_port: 9102
-  interval: 120
-  image_version: DEFINED-IN-REGION-SECRETS
-  enabled: DEFINED-IN-REGION-SECRETS
-  name_shortening_regex: DEFINED-IN-REGION-SECRETS
-  docker_repo: DEFINED-IN-REGION-SECRETS
-# the below is as well DEFINED-IN-REGION-SECRETS
-#  maia_vcenter_config:
-#    - name: vcentername
-#      vcenter_ip: vcenter.host.name
-#      username: vcenteradminuser
-#      password: vcenteradminpassword
-#      availability_zone: az
-
-# using config options from vcenter_exporter     
-esx_node_info:
-  enabled: false # DEFINED-IN-REGION-SECRETS
-  image_version: DEFINED-IN-REGION-SECRETS
+  persistence:
+    name: data-prometheus-maia-0
+    # this should be ReadWriteOnce but change is not possible
+    access_mode: ReadWriteMany
+    size: 100Gi
+  resources:
+    # reasonable defaults, should be reduced for small regions
+    memory:
+      expected: 4Gi
+      tolerated: 8Gi
 
 snmp_exporter:
   listen_port: 9116
   image_version: "v0.4.0"
-  docker_repo: DEFINED-IN-REGION-SECRETS
+#  docker_repo: DEFINED-IN-REGION-SECRETS
   enabled: False
 # the below is as well DEFINED-IN-REGION-SECRETS
 #  maia_snmp_config:
@@ -88,8 +71,8 @@ snmp_exporter:
 
 jumpserver:
    image:
-      namespace: DEFINED-IN-REGION-SECRETS
+      namespace: monsoon
       name: jumphealth
-      tag: 1.1
-   radius_secret: DEFINED-IN-REGION-SECRETS
+      tag: 1.3
+#   radius_secret: DEFINED-IN-REGION-SECRETS
    port_number: 9150

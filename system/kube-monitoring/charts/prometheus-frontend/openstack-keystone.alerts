@@ -15,7 +15,7 @@ groups:
       summary: Keystone cannot be scraped
 
   - alert: OpenstackKeystoneDatabaseScrapeMissing
-    expr: absent(kube_pod_container_status_running{container="postgres",pod=~"keystone-postgres.*"})
+    expr: absent(up{app="keystone-postgresql", type="database"})
     for: 1h
     labels:
       context: availability
@@ -42,7 +42,7 @@ groups:
       summary: A keystone server is DOWN
 
   - alert: OpenstackKeystoneDatabaseDown
-    expr: count(kube_pod_container_status_running{container="postgres",pod=~"keystone-postgres.*"} == 0) == count(kube_pod_container_status_running{container="postgres",pod=~"keystone-postgres.*"})
+    expr: count(up{component="keystone-postgresql",type="database"} == 0) == count(up{component="keystone-postgresql",type="database"})
     for: 5m
     labels:
       context: availability

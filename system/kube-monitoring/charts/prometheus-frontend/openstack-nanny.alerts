@@ -6,7 +6,7 @@ groups:
     for: 5m
     labels:
       context: nanny
-      service: cinder
+      service: nanny
       severity: ignore_info
       tier: os
     annotations:
@@ -17,7 +17,7 @@ groups:
     for: 5m
     labels:
       context: nanny
-      service: nova
+      service: nanny
       severity: info
       tier: os
     annotations:
@@ -28,7 +28,7 @@ groups:
     for: 5m
     labels:
       context: nanny
-      service: cinder
+      service: nanny
       severity: info
       tier: os
     annotations:
@@ -39,7 +39,7 @@ groups:
     for: 5m
     labels:
       context: nanny
-      service: cinder
+      service: nanny
       severity: info
       tier: os
     annotations:
@@ -50,94 +50,108 @@ groups:
     for: 60m
     labels:
       context: nanny
-      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
-      service: maia
+      service: nanny
       severity: ignore_info
       tier: os
     annotations:
-      description: This is just a maia test debugging alert ... please ignore for now
-      summary: This is just a maia test debugging alert ... please ignore for now
+      description: "The {{ $labels.kubernetes_name }} discovered a volume with an inconsistent state across nova, cinder and the vcenter - please ignore for now, inconsistencies are now primarily handled by the vcenter-nanny-consistency"
+      summary:  "The {{ $labels.kubernetes_name }} discovered a volume with an inconsistent state across nova, cinder and the vcenter - please ignore for now"
   - alert: OpenstackVcenterNannyConsistencyVolumeAttachingForTooLong
     expr: vcenter_nanny_consistency_cinder_volume_attaching_for_too_long > 0
     for: 30m
     labels:
       context: nanny
-      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
-      service: maia
+      service: nanny
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
-      summary: This is just a test debugging alert ... please ignore for now
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'attaching' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'attaching' - should fix itself"
   - alert: OpenstackVcenterNannyConsistencyVolumeDetachingForTooLong
     expr: vcenter_nanny_consistency_cinder_volume_detaching_for_too_long > 0
     for: 30m
     labels:
       context: nanny
-      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
-      service: maia
+      service: nanny
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
-      summary: This is just a test debugging alert ... please ignore for now
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'detaching' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'detaching' - should fix itself"
   - alert: OpenstackVcenterNannyConsistencyVolumeCreatingForTooLong
     expr: vcenter_nanny_consistency_cinder_volume_creating_for_too_long > 0
     for: 30m
     labels:
       context: nanny
-      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
-      service: maia
+      service: nanny
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
-      summary: This is just a test debugging alert ... please ignore for now
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'creating' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'creating' - should fix itself"
   - alert: OpenstackVcenterNannyConsistencyVolumeDeletingForTooLong
     expr: vcenter_nanny_consistency_cinder_volume_deleting_for_too_long > 0
     for: 30m
     labels:
       context: nanny
-      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
-      service: maia
+      service: nanny
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
-      summary: This is just a test debugging alert ... please ignore for now
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'deleting' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'deleting' - should fix itself"
   - alert: OpenstackVcenterNannyConsistencyVolumeIsInStateReserved
     expr: vcenter_nanny_consistency_cinder_volume_is_in_state_reserved > 0
     for: 30m
     labels:
       context: nanny
-      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
-      service: maia
+      service: nanny
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
-      summary: This is just a test debugging alert ... please ignore for now
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'reserved' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'reserved' - should fix itself"
   - alert: OpenstackVcenterNannyConsistencyVolumeAvailableWithAttachments
     expr: vcenter_nanny_consistency_cinder_volume_available_with_attachments > 0
     for: 30m
     labels:
       context: nanny
-      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
-      service: maia
+      service: nanny
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
-      summary: This is just a test debugging alert ... please ignore for now
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'available' with attachments - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'available' with attachments - should fix itself"
+  - alert: OpenstackVcenterNannyConsistencyVolumeInUseWithoutSomeAttachments
+    expr: vcenter_nanny_consistency_cinder_volume_in_use_without_some_attachments > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: ignore_info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with some attachments missing - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with some attachments missing - should be investigated ..."
+  - alert: OpenstackVcenterNannyConsistencyVolumeInUseWithoutAttachments
+    expr: vcenter_nanny_consistency_cinder_volume_in_use_without_attachments > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with all attachments missing - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with some attachments missing - should fix itself"
   - alert: OpenstackVcenterNannyConsistencyTooMuchToFix
     expr: vcenter_nanny_consistency_cinder_volume_attachment_fix_count > vcenter_nanny_consistency_cinder_volume_attachment_max_fix_count
     for: 30m
     labels:
       context: nanny
-      # maia for now for me to easily monitor - later we should decide if nova,cinder or vcenter is correct here
-      service: maia
+      service: nanny
       severity: info
       tier: os
     annotations:
-      description: "This is just a test debugging alert ... please ignore for now - nanny: {{ $labels.kubernetes_name }}"
-      summary: This is just a test debugging alert ... please ignore for now
+      description: "The {{ $labels.kubernetes_name }} denied to fix some problems as there are too many of them - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} denied to fix some problems - should be investigated ..."

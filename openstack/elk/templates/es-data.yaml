@@ -17,11 +17,6 @@ spec:
     matchLabels:
       component: elasticsearch
       role: data
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: {{.Values.elk_elasticsearch_data_replicas}}
   template:
     metadata:
       labels:
@@ -73,7 +68,7 @@ spec:
             - name: READONLYREST_ENABLE
               value: "false"
             - name: ES_JAVA_OPTS
-              value: "-XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:MaxGCPauseMillis=500 -Xms10g -Xmx10g"
+              value: "-XX:MaxRAM=100g -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:MaxGCPauseMillis=500 -Xms10g -Xmx10g"
           securityContext:
             capabilities:
               add:

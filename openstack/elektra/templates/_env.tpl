@@ -53,3 +53,5 @@
   valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: sentryDSN } }
 {{- end }}
 {{- end }}
+- name: DOMAIN_MASTERDATA_INHERITANCE_BLACKLIST
+  value: hcp03,monsoon3

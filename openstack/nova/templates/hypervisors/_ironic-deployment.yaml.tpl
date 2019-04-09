@@ -53,6 +53,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "200Mi"
           volumeMounts:
             - mountPath: /etc/nova
               name: etcnova
