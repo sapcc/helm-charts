@@ -18,7 +18,7 @@ boot
 :retry
 iseq ${i} ${attempts} && goto fail ||
 inc i
-echo No response, retrying in {i} seconds.
+echo No response, retrying in ${i} seconds.
 sleep ${i}
 goto deploy
 
