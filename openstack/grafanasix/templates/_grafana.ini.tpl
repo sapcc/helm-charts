@@ -65,9 +65,13 @@ plugins = /var/lib/grafana/plugins
 #################################### Database ####################################
 [database]
 type={{.Values.grafana.db.type}}
-host=postgres.{{.Release.Namespace}}
-user={{.Values.postgres.user}}
-password={{.Values.postgres.password}}
+host=grafanasix-postgresql.{{.Release.Namespace}}
+user={{.Values.postgresql.postgresUser}}
+password={{.Values.postgresql.postgresPassword}}
+#host=postgres.{{.Release.Namespace}}
+#user={{.Values.postgres.user}}
+#password={{.Values.postgres.password}}
+
 ssl_mode=disable
 #type=sqlite3
 #path=/etc/grafana/grafana.db
@@ -84,7 +88,8 @@ provider = postgres
 # redis: config like redis server e.g. `addr=127.0.0.1:6379,pool_size=100,db=grafana`
 # mysql: go-sql-driver/mysql dsn config string, e.g. `user:password@tcp(127.0.0.1:3306)/database_name`
 #;provider_config = sessions
-provider_config = user={{.Values.postgres.user}} password={{.Values.postgres.password}} host=postgres.{{.Release.Namespace}} port=5432 dbname=grafana sslmode=disable
+provider_config = user={{.Values.postgresql.postgresUser}} password={{.Values.postgresql.postgresPassword}} host=grafanasix-postgresql.{{.Release.Namespace}} port=5432 dbname=grafana sslmode=disable
+#provider_config = user={{.Values.postgres.user}} password={{.Values.postgres.password}} host=postgres.{{.Release.Namespace}} port=5432 dbname=grafana sslmode=disable
 #provider_config = .
 
 # Session cookie name
