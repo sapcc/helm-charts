@@ -1,3 +1,7 @@
+## v1.0.8
+
+* Add out-of-the-box service discovery for endpoints, services.
+
 ## v1.0.7
 
 * Add configurable security context.
