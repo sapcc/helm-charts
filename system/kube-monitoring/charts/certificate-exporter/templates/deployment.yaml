@@ -16,6 +16,10 @@ spec:
         prometheus.io/scrape: 'true'
         prometheus.io/port: {{ required ".Values.metricsPort missing" .Values.metricsPort | quote }}
     spec:
+      {{- if .Values.rbac.create }}
+      serviceAccount: {{ required ".Values.rbac.serviceAccountName missing" .Values.rbac.serviceAccountName }}
+      serviceAccountName: {{ required ".Values.rbac.serviceAccountName missing" .Values.rbac.serviceAccountName }}
+      {{ end }}
       containers:
         - name: k8s-secrets-certificate-exporter
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

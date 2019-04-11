@@ -1,0 +1,16 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: k8s-secrets-certificate-exporter
+  labels:
+    app: k8s-secrets-certificate-exporter
+subjects:
+  - kind: ServiceAccount
+    name: {{ required ".Values.rbac.serviceAccountName missing" .Values.rbac.serviceAccountName }}
+    namespace: kube-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: k8s-secrets-certificate-exporter
+{{- end }}
