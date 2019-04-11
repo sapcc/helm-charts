@@ -1,0 +1,31 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: k8s-secrets-certificate-exporter
+  labels:
+    app: k8s-secrets-certificate-exporter
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: k8s-secrets-certificate-exporter
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: {{ required ".Values.metricsPort missing" .Values.metricsPort | quote }}
+    spec:
+      containers:
+        - name: k8s-secrets-certificate-exporter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ default IfNotPresent .Values.image.pullPolicy }}
+          args:
+            - certificate-exporter
+            - --metric-port={{ required ".Values.metricsPort missing " .Values.metricsPort }}
+            - --resync-interval={{ required ".Values.resyncInterval missing" .Values.resyncInterval }}
+            - --recheck-interval={{ required ".Values.recheckInterval missing" .Values.recheckInterval }}
+            - --namespace={{ required ".Values.namespace missing" .Values.namespace }}
+            - --threadiness={{ required ".Values.threadiness missing" .Values.threadiness }}
+          ports:
+            - containerPort: {{ required ".Values.metricsPort missing" .Values.metricsPort }}
