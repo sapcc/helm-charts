@@ -50,7 +50,8 @@ See the [values.yaml](./values.yaml) for more details.
 | `externalLabels`                       | The labels to add to any time series or alerts when communicating with any external system.                             | `{}`                                                |
 | `configMaps`                           | List of configmaps in the same namespace as the Prometheus that should be mounted.                                      | `[]`                                                |
 | `alertmanagers`                        | List of Alertmanagers to send alerts to.                                                                                | `[]`                                                |
-| `serviceDiscoveries.endpoints.enabled` | En-/Disable service discovery of endpoints. See below documentation for additional details.                             | `true`                                              |     
+| `serviceDiscoveries.endpoints.enabled` | En-/Disable service discovery of endpoints. See below documentation for additional details.                             | `true`                                              |  
+| `tolerations`                          | The pods tolerations.                                                                                                   | `[]`                                                |     
 
 ## Providing addition scrape configurations
 
