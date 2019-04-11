@@ -1,0 +1,19 @@
+{{- $envAll := . }}
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: {{ include "wham.fullname" . }}
+  labels:
+    app: {{ include "wham.name" . }}
+    chart: {{ include "wham.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+
+data:
+  wham.yaml: |
+    handlers:
+      baremetal:
+{{- range .Values.handlers.baremetal.regions }}
+  {{- tuple $envAll .name | include "ironic_configmap" | indent 8 }}
+{{- end }}
