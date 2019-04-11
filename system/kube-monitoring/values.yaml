@@ -33,6 +33,67 @@ global:
   regions:
     - "staging"
 
+  # Prometheus via deployment.
+  prometheus_deploy:
+    enabled: true
+
+  # Prometheus via operator.
+  prometheus_operated:
+    enabled: false
+
+# Values for operated Prometheus collector.
+# Only used if global.prometheus_operated.enabled: true.
+prometheus-collector-operated:
+  name: k8s-collector
+
+  retentionTime: 1h
+
+  additionalScrapeConfigs:
+    name: k8s-collector-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: false
+
+  # Store in memory.
+  persistence:
+    enabled: false
+
+  serviceAccount:
+    create: false
+    name: default
+
+  serviceDiscoveries:
+    endpoints:
+      enabled: false
+
+# Values for operated Prometheus frontend.
+# Only used if global.prometheus_operated.enabled: true.
+prometheus-frontend-operated:
+  name: k8s-frontend
+
+  retentionTime: 1h
+
+  additionalScrapeConfigs:
+    name: k8s-frontend-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: false
+
+  # Store in memory.
+  persistence:
+    enabled: true
+    size: 300Gi
+
+  serviceAccount:
+    create: false
+    name: default
+
+  serviceDiscoveries:
+    endpoints:
+      enabled: false
+
 prometheus-node-exporter:
   image:
     repository: prom/node-exporter
