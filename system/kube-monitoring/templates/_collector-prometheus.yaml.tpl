@@ -24,31 +24,10 @@
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_service_name]
     target_label: kubernetes_name
-  # support injection of custom parameters. used by snmp exporter.
+  # Support injection of custom parameters.
   - action: labelmap
     replacement: __param_$1
     regex: __meta_kubernetes_service_annotation_prometheus_io_scrape_param_(.+)
-  metric_relabel_configs:
-  - source_labels: [component]
-    regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
-    replacement: '$1'
-    target_label: availability_zone
-  - source_labels: [component]
-    regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
-    replacement: '$2'
-    target_label: device
-  - source_labels: [component]
-    regex: 'snmp-exporter-(.+)'
-    replacement: '$1'
-    target_label: devicename
-  - source_labels: [component, cluster]
-    separator: ;
-    regex: elasticsearch-exporter-(.+);(.+)
-    target_label: elastic_cluster
-    replacement: $2
-    action: replace
-  - regex: 'cluster'
-    action: labeldrop
 
 # Scrape config for endpoints with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -326,7 +305,6 @@
     regex: ([^:]+)(:\d+)?
     replacement: ${1}:9101
 
-{{ if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 - job_name: 'kubernetes-cadvisors'
   scheme: https
   tls_config:
@@ -343,4 +321,3 @@
       regex: (.+)
       target_label: __metrics_path__
       replacement: /api/v1/nodes/${1}:4194/proxy/metrics
-{{ end -}}
