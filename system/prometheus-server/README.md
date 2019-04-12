@@ -13,12 +13,31 @@ It will set up:
 This chart relies on resources brought to you by the [Prometheus Operator](https://github.com/coreos/prometheus-operator).  
 It may be installed using the [official helm chart](https://github.com/helm/charts/tree/master/stable/prometheus-operator).
 
+## Providing addition scrape configurations
+
+Additional scrape configuration is provided via a secret referenced by the `additionalScrapeConfigs.name` and `additionalScrapeConfigs.key` parameters.  
+See the `prometheus.yaml` and `additional-scrape-config.yaml` in the [examples](./examples) folder.
+
+## Aggregation and Alerting rules
+
+Aggregation and alerting rules can be deployed independently of the Prometheus server instance using the `PrometheusRule` CRD.  
+An example can be found [here](./examples/kubernetes-health.alerts.yaml).  
+Rules are assigned to a Prometheus instance by setting labels on the PrometheusRule as shown below. Refers to the `name` of the Prometheus as describe above.
+```
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  labels:
+    prometheus: < name of the prometheus to which the rule should be assigned to >
+  ...
+```
+
 ## Configuration
 
 The following table provides an overview of configurable parameters of this chart and their defaults.  
 See the [values.yaml](./values.yaml) for more details.  
 **TLDR;** Set the `name`, `global.region`, `global.domain` parameters and get started where `name` has to be a unique identifier for your prometheus.
-
 
 |       Parameter                        |           Description                                                                                                   |                         Default                     |
 |----------------------------------------|-------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
@@ -52,23 +71,3 @@ See the [values.yaml](./values.yaml) for more details.
 | `alertmanagers`                        | List of Alertmanagers to send alerts to.                                                                                | `[]`                                                |
 | `serviceDiscoveries.endpoints.enabled` | En-/Disable service discovery of endpoints. See below documentation for additional details.                             | `true`                                              |  
 | `tolerations`                          | The pods tolerations.                                                                                                   | `[]`                                                |     
-
-## Providing addition scrape configurations
-
-Additional scrape configuration is provided via a secret referenced by the `additionalScrapeConfigs.name` and `additionalScrapeConfigs.key` parameters.  
-See the `prometheus.yaml` and `additional-scrape-config.yaml` in the [examples](./examples) folder.
-
-## Aggregation and Alerting rules
-
-Aggregation and alerting rules can be deployed independently of the Prometheus server instance using the `PrometheusRule` CRD.  
-An example can be found [here](./examples/kubernetes-health.alerts.yaml).  
-Rules are assigned to a Prometheus instance by setting labels on the PrometheusRule as shown below. Refers to the `name` of the Prometheus as describe above.
-```
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-
-metadata:
-  labels:
-    prometheus: < name of the prometheus to which the rule should be assigned to >
-  ...
-```
