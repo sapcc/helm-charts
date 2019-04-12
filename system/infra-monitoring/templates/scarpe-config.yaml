@@ -1,0 +1,12 @@
+{{- if .Values.prometheus_server.enabled }}
+apiVersion: v1
+kind: Secret
+
+metadata:
+  name: {{ include "prometheus.name" }}-additional-scrape-config
+  labels:
+    prometheus: {{ include "prometheus.name" }}
+
+data:
+  scrape-config.yaml: {{ include (print $.Template.BasePath "/_prometheus.yaml.tpl") . | b64enc }}
+{{- end }}

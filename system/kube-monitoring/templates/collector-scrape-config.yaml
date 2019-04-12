@@ -1,0 +1,12 @@
+{{- if .Values.global.prometheus_operated.enabled }}
+apiVersion: v1
+kind: Secret
+
+metadata:
+  name: k8s-collector-additional-scrape-config
+  labels:
+    prometheus: k8s-collector
+
+data:
+  scrape-config.yaml: {{ include (print $.Template.BasePath  "/_collector-prometheus.yaml.tpl") . | b64enc }}
+{{- end }}

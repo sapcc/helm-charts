@@ -118,7 +118,8 @@ scrape_configs:
     match[]:
     - '{__name__=~"^ALERTS$"}'
     - '{__name__=~"^kubernikus_kluster_status_phase"}'
-    - '{__name__=~"^kubernikus_servicing_status_nodes"}'
+    - '{__name__=~"^kubernikus_kluster_info"}'
+    - '{__name__=~"^kubernikus_servicing_nodes.+"}'
     - '{__name__=~"up"}'
 
   relabel_configs:

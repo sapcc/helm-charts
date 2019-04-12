@@ -1,0 +1,12 @@
+{{- if .Values.global.prometheus_operated.enabled }}
+apiVersion: v1
+kind: Secret
+
+metadata:
+  name: k8s-frontend-additional-scrape-config
+  labels:
+    prometheus: k8s-frontend
+
+data:
+  scrape-config.yaml: {{ include (print $.Template.BasePath  "/_frontend-prometheus.yaml.tpl") . | b64enc }}
+{{- end }}
