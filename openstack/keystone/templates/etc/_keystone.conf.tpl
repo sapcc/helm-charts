@@ -23,14 +23,11 @@ methods = {{ .Values.api.auth.methods | default "password,token,application_cred
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
 {{- end }}
 
-
-{{ if .Values.api.cc_x509 }}
 [cc_x509]
-trusted_issuer_cn = {{ .Values.api.cc_x509.trusted_issuer_cn | default "SSO_CA" }}
-trusted_issuer_o = {{ .Values.api.cc_x509.trusted_issuer_o | default "SAP-AG" }}
-user_domain_id_header = {{ .Values.api.cc_x509.user_domain_id_header | default "HTTP_X_USER_DOMAIN_ID" }}
-user_domain_name_header = {{ .Values.api.cc_x509.user_domain_name_header | default "HTTP_X_USER_DOMAIN_NAME" }}
-{{- end }}
+trusted_issuer = CN=SSO_CA,O=SAP-AG,C=DE
+trusted_issuer = CN=SAP SSO CA G2,O=SAP SE,L=Walldorf,C=DE
+user_domain_id_header: HTTP_X_USER_DOMAIN_ID
+user_domain_name_header: HTTP_X_USER_DOMAIN_NAME
 
 {{ if .Values.api.cc_external }}
 [cc_external]
