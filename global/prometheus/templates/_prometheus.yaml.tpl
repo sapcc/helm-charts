@@ -59,6 +59,7 @@ scrape_configs:
       - '{__name__=~"^vcenter_vcenter_node_info$"}'
       - '{__name__=~"^vcenter_esx_node_info$"}'
       - '{__name__=~"^vice_president_token_count_remaining$"}'
+      - '{__name__=~"^vice_president_sso_certificate_expires$"}'
       - '{__name__=~"^netapp_capacity_aggregate$"}'
 
   relabel_configs:
@@ -117,6 +118,8 @@ scrape_configs:
     match[]:
     - '{__name__=~"^ALERTS$"}'
     - '{__name__=~"^kubernikus_kluster_status_phase"}'
+    - '{__name__=~"^kubernikus_kluster_info"}'
+    - '{__name__=~"^kubernikus_servicing_nodes.+"}'
     - '{__name__=~"up"}'
 
   relabel_configs:
@@ -137,10 +140,8 @@ scrape_configs:
 
   static_configs:
   - targets:
-{{- range $region := .Values.regions }}
-{{- if ne $region "admin" }}
+{{- range $region := without .Values.regions "admin" "na-us-2" "staging" }}
     - "prometheus.kubernikus.{{ $region }}.cloud.sap"
-{{- end }}
 {{- end }}
 
 {{- if .Values.alerting.enabled }}

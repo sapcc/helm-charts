@@ -1,3 +1,4 @@
+{{- if .Values.global.prometheus_deploy.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -189,6 +190,7 @@ data:
           - '{__name__=~"^total"}'
           - '{__name__=~"^success"}'
           - '{__name__=~"^latency"}'
+          - '{__name__=~"^kubernikus_.*"}'
           - '{job="dns-sd"}'
 
       #add region label to all metrics, don't delete this without knowing what you are doing...
@@ -216,3 +218,4 @@ data:
         - targets:
           - "alertmanager.eu-de-1.cloud.sap"
           - "alertmanager.eu-nl-1.cloud.sap"
+{{- end }}

@@ -23,9 +23,6 @@ spec:
   - monsoon3/domain-hec-seed
   - monsoon3/domain-s4-seed
   - monsoon3/domain-wbs-seed
-{{- if .Values.tempest.enabled }}
-  - monsoon3/domain-tempest-seed
-{{- end }}
 
   roles:
   - cloud_sharedfilesystem_admin
@@ -491,43 +488,5 @@ spec:
       - domain: wbs
         role: sharedfilesystem_viewer
         inherited: true
-
-{{- if .Values.tempest.enabled }}
-  - name: tempest
-    projects:
-    - name: admin
-      roles:
-        - user: admin
-          role: cloud_sharedfilesystem_admin
-        - user: admin
-          role: member
-        - user: admin@Default
-          role: cloud_sharedfilesystem_admin
-    - name: tempest1
-      roles:
-        - user: admin@Default
-          role: cloud_sharedfilesystem_admin
-    - name: tempest2
-      roles:
-        - user: admin@Default
-          role: cloud_sharedfilesystem_admin
-    users:
-    - name: tempestuser1
-      roles:
-      - project: tempest1
-        role: sharedfilesystem_admin
-      - project: tempest1
-        role: member
-      - domain: tempest
-        role: sharedfilesystem_admin
-    - name: tempestuser2
-      roles:
-      - project: tempest2
-        role: sharedfilesystem_admin
-      - project: tempest2
-        role: member
-      - domain: tempest
-        role: sharedfilesystem_admin
-{{- end }}
 {{- end }}
 {{- end }}

@@ -20,9 +20,13 @@ actions:
       disable_action: False
     filters:
     - filtertype: pattern
-      kind: regex
-      value: '^.*-.*$'
-      exclude:
+      kind: prefix
+      value: .kibana
+      exclude: True
+    - filtertype: pattern
+      kind: prefix
+      value: .task
+      exclude: True
     - filtertype: space
       disk_space: {{.Values.elk_elasticsearch_data_retention_space}}
       use_age: True
@@ -44,8 +48,12 @@ actions:
     filters:
     - filtertype: pattern
       kind: prefix
-      value: '^.*-.*$'
-      exclude:
+      value: .kibana
+      exclude: True
+    - filtertype: pattern
+      kind: prefix
+      value: .task
+      exclude: True
     - filtertype: age
       source: name
       direction: older

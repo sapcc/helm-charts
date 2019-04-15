@@ -30,6 +30,9 @@ spec:
               - key: jump.key
                 path: authorized_keys.health
                 mode: 0600
+        - name: statsd-mapping-config
+          configMap:
+            name: statsd-mapping-config
       containers:
         - name: pytest
 {{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
@@ -133,9 +136,14 @@ spec:
         - name: statsd
           image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args:
+            - --statsd.mapping-config=/etc/statsd/statsd-mapping-config.yaml
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.global.port_metrics}}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/statsd

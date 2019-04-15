@@ -21,3 +21,7 @@ cache_url = {{ .Values.agent.cache_url | default .Values.global.cache_url | defa
 rpc_response_timeout = {{ .Values.metadata_rpc_response_timeout | default .Values.global.rpc_response_timeout | default 50 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 5 }}
 metadata_workers = {{ .Values.agent.metadata_workers | default .Values.global.metadata_workers | default 1 }}
+
+[cache]
+backend = dogpile.cache.memory
+expiration_time = 5

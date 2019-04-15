@@ -2,8 +2,8 @@ groups:
 - name: metal-ironic.alerts
   rules:      
   - alert: MetalIronicSensorCritical
-    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt)", maintenance="false", job="baremetal/ironic", provision_state=~"(deploy|active|available)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
-    for: 15m
+    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt)", maintenance="false", job="baremetal/ironic", provision_state=~"(deploy|active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    for: 10m
     labels:
       severity: critical
       tier: metal
@@ -16,8 +16,8 @@ groups:
       summary: "Hardware error for instance: {{ $labels.instance }}"
       
   - alert: MetalIronicSensorWarning
-    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", maintenance="false", job="baremetal/ironic", provision_state=~"(manageable)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot|Version Change|Cable/Interconnect)", maintenance="false", job="baremetal/ironic"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
-    for: 15m
+    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", maintenance="false", job="baremetal/ironic", provision_state=~"(manageable|available)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot|Version Change|Cable/Interconnect)", maintenance="false", job="baremetal/ironic"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    for: 10m
     labels:
       severity: warning
       tier: metal
@@ -30,8 +30,8 @@ groups:
       summary: "Hardware error for instance: {{ $labels.instance }}"
       
   - alert: MetalIronicSensorInfo
-    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Cable/Interconnect)", maintenance="true", job="baremetal/ironic"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
-    for: 15m
+    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change|Drive Slot|Power Supply|Cable/Interconnect)", job="baremetal/ironic"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    for: 10m
     labels:
       severity: info
       tier: metal
@@ -45,7 +45,7 @@ groups:
       
   - alert: MetalIronicMetricsDown
     expr: count(ipmi_up{job="baremetal/ironic"} == 0) by (server_name, maintenance) or count(up{job="baremetal/ironic"} == 0) by (server_name, maintenance)
-    for: 15m
+    for: 10m
     labels:
       severity: warning
       tier: metal
@@ -59,7 +59,7 @@ groups:
       
   - alert: MetalIronicSDDown
     expr: absent(ipmi_sd_up) or ipmi_sd_up == 0
-    for: 15m
+    for: 10m
     labels:
       severity: info
       tier: metal

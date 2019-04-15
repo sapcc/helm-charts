@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    system: openstack
+    service: monitoring
+    component: grafana
+spec:
+  clusterIP: None
+  selector:
+    app: grafana
+    component: grafana
+  ports:
+    - port: {{.Values.grafana.port.public}}
+      name: public
+{{- if .Values.nginx.enabled }}
+    - port: {{.Values.nginx.port.public}}
+      name: kiosk
+{{- end -}}

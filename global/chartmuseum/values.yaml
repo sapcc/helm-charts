@@ -1,0 +1,71 @@
+chartmuseum:
+  enabled: true
+
+  image:
+    repository: sapcc/chartmuseum
+    tag: v0.8.0-storage
+
+  # Not persistent volume. Use OpenStack Swift backend.
+  persistence:
+    enabled: false
+
+  service:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "8080"
+
+  ingress:
+    enabled: true
+    annotations:
+      vice-president: "true"
+      disco: "true"
+
+    # Defined in secrets.
+    hosts:
+      - name: "charts.tld"
+        tls: true
+        tlsSecret: tls-charts.tld
+
+  env:
+    open:
+      DISABLE_API: false
+      DISABLE_METRICS: false
+
+      # Store charts in OpenStack Swift backend.
+      STORAGE: "openstack"
+      # Defined in secrets.
+      # OS_AUTH_URL:
+      # OS_PROJECT_NAME:
+      # OS_DOMAIN_NAME:
+      # OS_USERNAME:
+      # OS_PASSWORD:
+      # STORAGE_OPENSTACK_CONTAINER:
+      # STORAGE_OPENSTACK_REGION:
+
+      # Use redis for caching of chart metadata.
+      # CACHE: redis
+      # CACHE_REDIS_ADDR: redis.chartmuseum.svc.cluster.local:6379
+      # CACHE_REDIS_DB: 0
+      # CACHE_REDIS_PASSWORD:
+
+# Seed OpenStack user and Swift container.
+seed:
+  enabled: false
+  # Defined in secrets.
+  #  openstack:
+  #    authURL:
+  #    regionName:
+  #    username:
+  #    userDomainName:
+  #    password:
+  #    projectName:
+  #    projectDomainName:
+  #    containerName:
+
+# Use redis for caching of chart metadata.
+redis:
+  enabled: false
+  metrics:
+    enabled: true
+  # Defined in secrets.
+  # password:

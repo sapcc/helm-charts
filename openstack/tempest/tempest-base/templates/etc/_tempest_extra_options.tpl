@@ -9,7 +9,7 @@ use_dynamic_credentials = False
 create_isolated_networks = False
 test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
 default_credentials_domain_name = tempest
-admin_project_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name }}
+admin_project_name = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name }}
 
 [identity]
 uri_v3 = http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}:5000/v3
@@ -63,6 +63,26 @@ vnc_server_header = WebSockify
 serial_console = true
 spice_console = true
 attach_encrypted_volume = false
+
+[share]
+share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
+alt_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
+admin_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
+run_revert_to_snapshot_tests = False
+run_multiple_share_replicas_tests = False
+run_share_group_tests = False
+run_quota_tests = False
+run_public_tests = False
+create_networks_when_multitenancy_enabled = False
+default_share_type_name = default
+catalog_type = sharev2
+max_api_microversion = 2.44
+suppress_errors_in_cleanup = True
+enable_ip_rules_for_protocols = nfs
+enable_protocols = nfs
+endpoint_type = internalURL
+v3_endpoint_type = internalURL
+region = {{ .Values.global.region }}
 
 [service_available]
 manila = True

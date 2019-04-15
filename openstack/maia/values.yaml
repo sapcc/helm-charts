@@ -1,7 +1,9 @@
-# global:
+global:
   # region: DEFINED-IN-REGION-SECRETS
   # domain: DEFINED-IN-REGION-SECRETS
   # imageRegistry: DEFINED-IN-REGION-SECRETS
+  clusterType: controlplane
+
 maia:
   # maia is on in all regions by default
   enabled: True
@@ -10,8 +12,8 @@ maia:
   # endpoint_host_public: DEFINED-IN-REGION-SECRETS
   endpoint_port_public: 443
   endpoint_protocol_public: https
-  docker_repo: DEFINED-IN-REGION-SECRETS
-  image_version: '20190313100650'
+  # docker_repo: DEFINED-IN-REGION-SECRETS
+  image_version: '20190411113204'
   debug: "0"
   listen_port: 9091
   # how long will label values be listed by the API (keep minimal)
@@ -26,7 +28,62 @@ maia:
     user_domain_name:    Default
     project_name:        service
     project_domain_name: Default
+  resources:
+    # reasonable defaults, should be reduced for small regions
+    memory:
+      expected: 100Mi
+      tolerated: 1000Mi
+    cpu:
+      # currently maia is used by very few concurrent users
+      expected: "10m"
+      tolerated: "500m"
 
+# this is the new reused prometheus
+prometheus_server:
+  enabled: False
+  image:
+    repository: prom/prometheus
+    tag: v2.8.0
+
+  name: maia-oprom
+
+  retentionTime: 30d
+
+  additionalScrapeConfigs:
+    name: maia
+    key: maia_scrape_config.yaml
+
+  ingress:
+    enabled: true
+    host: maia-prometheus-collector
+
+  # Store on disk
+  persistence:
+    enabled: true
+    # prom-operator does not support other accessModes than RWO
+    # accessMode: ReadWriteOnce
+    size: 300Gi
+  rbac:
+    create: false
+
+  serviceAccount:
+    create: false
+    name: default
+
+  # The log level of the Prometheus.
+  logLevel: info
+
+  # Kubernetes resource requests and limits for this Prometheus.
+  # Flagship configuration for now.
+  resources:
+    requests:
+      cpu: 2
+      memory: 8Gi
+    limits:
+      cpu: 4
+      memory: 16Gi
+
+# this is the old homegrown prometheus
 prometheus:
   enabled: True
   vice_president: true
@@ -49,6 +106,9 @@ prometheus:
     memory:
       expected: 4Gi
       tolerated: 8Gi
+    cpu:
+      expected: 0.25
+      tolerated: 4
 
 snmp_exporter:
   listen_port: 9116

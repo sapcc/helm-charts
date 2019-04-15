@@ -47,6 +47,19 @@ spec:
 {{ toYaml .Values.additionalScrapeConfigs | indent 4}}
   {{- end }}
 
+  {{ if .Values.configMaps }}
+  # Mount additional configmaps from the same namespace.
+  configMaps:
+{{ toYaml .Values.configMaps | indent 4 }}
+  {{- end }}
+
+  {{ if .Values.alertmanagers -}}
+  # Alertmanager configuration.
+  additionalAlertManagerConfigs:
+    name: {{ include "prometheus.name" . }}-alertmanager-config
+    key: config.yaml
+  {{- end }}
+
   {{- if .Values.ingress.host -}}
   # The external URL of the Prometheus.
   externalUrl: https://{{ include "prometheus.externalURL" . }}
@@ -63,7 +76,16 @@ spec:
   storage:
     {{- if .Values.persistence.enabled }}
     volumeClaimTemplate:
-      claimName: {{ include "pvc.name" . }}
+      metadata:
+        name: {{ include "pvc.name" . }}
+        labels:
+          prometheus: {{ include "prometheus.name" . }}
+      spec:
+        accessModes:
+          - {{ required ".Values.persistence.accessMode missing" .Values.persistence.accessMode | quote }}
+        resources:
+          requests:
+            storage: {{ required ".Values.persistence.size missing" .Values.persistence.size | quote }}
     {{ else }}
     emptyDir:
       medium: Memory
@@ -79,4 +101,16 @@ spec:
   # Kubernetes resource requests and limits if configured.
   resources:
 {{ toYaml .Values.resources | indent 4 }}
+  {{ end }}
+
+  {{ if .Values.securityContext }}
+  # A security context defines privilege and access control settings for a Pod or Container.
+  securityContext:
+{{ toYaml .Values.securityContext | indent 4 }}
+  {{ end }}
+
+  {{ if .Values.tolerations }}
+  # The pod tolerations.
+  tolerations:
+{{ toYaml .Values.tolerations | indent 4 }}
   {{ end }}
