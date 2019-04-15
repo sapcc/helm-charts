@@ -23,6 +23,7 @@ function process_config {
 
 function _start_application {
 
+    modprobe ip6table_filter || true
 
     echo "$MY_IP $(hostname)" >> etc/hosts
 
