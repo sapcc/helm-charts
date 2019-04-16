@@ -145,9 +145,9 @@ spec:
         # we need support for password overrides in case passwords have a / in them (that breaks the go pq url connection parser)
         # hence this special sauce (a %2F replacement for the / will help to please go)
         # PLEASE DO NOT REMOVE THIS
-        {{- if .Values.postgresPassword }}
+        {{- if .Values.metrics.postgresPassword }}
         - name: DATA_SOURCE_NAME
-          value: postgresql://{{ default .Values.postgresUser .Values.global.dbUser }}:{{ .Values.postgresPassword }}@127.0.0.1:5432/{{.Values.postgresDatabase}}?sslmode=disable
+          value: postgresql://{{ default .Values.global.dbUser .Values.metrics.postgresUser }}:{{ .Values.metrics.postgresPassword }}@127.0.0.1:5432/{{.Values.postgresDatabase}}?sslmode=disable
         {{ else }}
         - name: DATA_SOURCE_NAME
           value: postgresql://{{ default .Values.postgresUser .Values.global.dbUser }}:{{ default .Values.postgresPassword .Values.global.dbPassword }}@127.0.0.1:5432/{{.Values.postgresDatabase}}?sslmode=disable
