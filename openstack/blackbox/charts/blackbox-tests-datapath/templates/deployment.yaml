@@ -23,6 +23,9 @@ spec:
         - name: blackbox-tests-datapath
           persistentVolumeClaim:
             claimName: blackbox-tests-datapath
+        - name: statsd-mapping-config
+          configMap:
+            name: blackbox-tests-datapath-statsd-mapping-config
         - name: blackbox-jump-key
           secret:
             secretName: blackbox-tests-datapath
@@ -172,9 +175,14 @@ spec:
               memory: 800M
           image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args:
+            - --statsd.mapping-config=/etc/statsd/statsd-mapping-config.yaml
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.global.port_metrics}}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/statsd
