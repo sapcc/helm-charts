@@ -142,10 +142,10 @@ spec:
         image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
         env:
+        {{- if .Values.metrics.postgresPassword }}
         # we need support for password overrides in case passwords have a / in them (that breaks the go pq url connection parser)
         # hence this special sauce (a %2F replacement for the / will help to please go)
         # PLEASE DO NOT REMOVE THIS
-        {{- if .Values.metrics.postgresPassword }}
         - name: DATA_SOURCE_NAME
           value: postgresql://{{ default .Values.global.dbUser .Values.metrics.postgresUser }}:{{ .Values.metrics.postgresPassword }}@127.0.0.1:5432/{{.Values.postgresDatabase}}?sslmode=disable
         {{ else }}
