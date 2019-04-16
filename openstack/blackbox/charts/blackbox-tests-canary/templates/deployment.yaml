@@ -23,6 +23,9 @@ spec:
         - name: blackbox-tests-canary
           persistentVolumeClaim:
             claimName: blackbox-tests-canary
+        - name: statsd-mapping-config
+          configMap:
+            name: blackbox-tests-canary-statsd-mapping-config
         - name: blackbox-jump-key
           secret:
             secretName: blackbox-tests-canary
@@ -898,9 +901,14 @@ spec:
         - name: statsd
           image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args:
+            - --statsd.mapping-config=/etc/statsd/statsd-mapping-config.yaml
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.global.port_metrics}}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/statsd
