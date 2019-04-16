@@ -34,7 +34,6 @@ shared_physical_network= {{ .Values.tempest_common.shared_physical_network | def
 [network-feature-enabled]
 ipv6 = false
 
-
 [baremetal]
 min_microversion = 1.46
 max_microversion = 1.46
@@ -52,6 +51,7 @@ flavor_ref = 20
 flavor_ref_alt = 30
 min_microversio = 2.1
 max_microversion = latest
+fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
 
 [compute-feature-enabled]
 resize = true
