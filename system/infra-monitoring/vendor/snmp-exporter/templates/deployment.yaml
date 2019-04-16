@@ -1,4 +1,3 @@
-{{- if .Values.snmp_exporter.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -21,7 +20,7 @@ spec:
       labels:
         component: snmp-exporter
       annotations:
-        checksum/configmap.yaml: {{ include "configmap.yaml" $ | sha256sum }}
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
@@ -43,4 +42,3 @@ spec:
           ports:
             - name: metrics
               containerPort: {{ .Values.snmp_exporter.listen_port }}
-{{ end -}}

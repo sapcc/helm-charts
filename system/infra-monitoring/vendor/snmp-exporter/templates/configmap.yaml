@@ -1,4 +1,3 @@
-{{- if .Values.snmp_exporter.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,9 +8,8 @@ metadata:
 data:
   snmp-exporter.yaml: |
 {{- range $config := .Values.snmp_exporter.targets }}
-{{ include (print "_snmp-exporter-arista.yaml.tpl") . | indent 4 }}
+{{ include (print $.Template.BasePath "/_snmp-exporter-arista.yaml.tpl" ) . | b64enc | indent 4 }}
       version: {{ $config.version }}
       auth:
         community: {{ $config.community }}
-{{- end }}
 {{- end }}
