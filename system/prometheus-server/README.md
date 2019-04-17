@@ -33,6 +33,25 @@ metadata:
   ...
 ```
 
+## Integrate custom Service Discovery (SD)
+
+To integrate a [custom SD](https://prometheus.io/blog/2018/07/05/implementing-custom-sd/#implementing-custom-service-discovery) one needs to provide the scrape configuration
+```
+scrape_configs:
+  - job_name: "custom-sd"
+    scrape_interval: "15s"
+    file_sd_configs:
+    - files:
+      - /etc/prometheus/config/custom_sd.json
+```
+
+and have the Kubernetes configmap containing the `custom_sd.json` mounted to the Prometheus server by setting
+```
+configMaps:
+  - <name of the configmap containing the custom_sd.json`
+```
+
+
 ## Configuration
 
 The following table provides an overview of configurable parameters of this chart and their defaults.  
