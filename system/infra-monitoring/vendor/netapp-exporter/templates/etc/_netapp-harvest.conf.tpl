@@ -17,14 +17,14 @@ hostname = {{ $share.host }}
 username = {{ required "netapp.filers.*.username" $share.username }}
 password = {{ required "netapp.filers.*.password" $share.password }}
 
-{{- with $share.name | regexFind "bb|cp|bm|ma" }}
+{{- with $share.host | regexFind "bb|cp|bm|md" }}
 {{- if eq . "bb" }}
 group    = vpod
 {{- else if eq . "cp" }}
 group    = control-plane
 {{- else if eq . "bm" }}
 group    = bare-metal
-{{- else if eq . "ma" }}
+{{- else if eq . "md" }}
 group    = manila
 {{- else }}
 group    = others
