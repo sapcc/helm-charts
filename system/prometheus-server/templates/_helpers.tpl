@@ -34,9 +34,9 @@ prometheus-{{- (include "prometheus.name" .) -}}
 
 {{/* Alertmanager configuration. */}}
 {{- define "alertmanager.config" -}}
-- static_configs:
-  scheme: https
+- scheme: https
   timeout: 10s
+  static_configs:
   - targets:
 {{ toYaml .Values.alertmanagers | indent 6 }}
 {{- end -}}

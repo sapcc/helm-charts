@@ -1,3 +1,7 @@
+## v1.0.12
+
+* Fix missing base64 encoding of alertmanager configuration.
+
 ## v1.0.11
 
 * Update to prom/prometheus:v2.9.1
