@@ -11,7 +11,7 @@ function start_tempest_tests {
   export IMAGE_REF_ALT=$(openstack image list | grep {{ default "ubuntu-16.04-amd64-vmware" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref_alt }} | awk {' print $2 '})
   cp /{{ .Chart.Name }}-etc/tempest_extra_options /tmp
   sed -i "s/CHANGE_ME_IMAGE_REF/$(echo $IMAGE_REF)/g" /tmp/tempest_extra_options
-  sed -i "s/CHANGE_ME_IMAGE_REF_ALT/$(echo $IMAGE_REF_ALT)/g" /tmp/tempest_extra_options
+  sed -i "s/CHANGEMEIMAGEREFALT/$(echo $IMAGE_REF_ALT)/g" /tmp/tempest_extra_options
 
   echo -e "\n === CONFIGURING RALLY & TEMPEST === \n"
 
