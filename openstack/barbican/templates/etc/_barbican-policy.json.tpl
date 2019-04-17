@@ -5,7 +5,9 @@
     "member": "role:member",
     "viewer": "role:keymanager_viewer",
     "key_admin": "role:keymanager_admin",
-    "context_is_key_admin": "rule:context_is_admin or rule:key_admin",
+    "service_admin": "role:key-manager:service-admin",
+    "context_is_admin": "rule:service_admin",
+    "context_is_key_admin": "rule:context_is_admin or rule:key_admin or rule:service_admin",
     "context_is_editor": "rule:context_is_key_admin or rule:member",
     "context_is_viewer":  "rule:context_is_editor or rule:viewer",
 
