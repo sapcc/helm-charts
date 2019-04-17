@@ -1,3 +1,7 @@
+## v1.0.11
+
+* Update to prom/prometheus:v2.9.1
+
 ## v1.0.10
 
 * Add tolerations.
