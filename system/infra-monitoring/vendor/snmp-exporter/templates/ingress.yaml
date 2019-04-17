@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: snmp-exporter
+  namespace: infra-monitoring
+  annotations:
+    vice-president: {{ default true .Values.ingress.vice_president | quote }}
+    disco: {{ default true .Values.ingress.disco | quote }}
+
+spec:
+  rules:
+    - host: {{.Values.public_endpoint}}.{{.Values.global.region}}.{{.Values.global.domain}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: snmp-exporter
+            servicePort: {{.Values.listen_port}}
