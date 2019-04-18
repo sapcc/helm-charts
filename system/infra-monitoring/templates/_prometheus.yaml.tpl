@@ -17,6 +17,9 @@
     source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
     regex: true
   - action: keep
+    source_labels: [__meta_kubernetes_service_annotation_prometheus_io_targets]
+    regex: infra-prometheus
+  - action: keep
     source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_service_annotation_prometheus_io_port]
     regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
   - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
@@ -74,6 +77,9 @@
     source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
     regex: true
   - action: keep
+    source_labels: [__meta_kubernetes_service_annotation_prometheus_io_targets]
+    regex: infra-prometheus
+  - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port_1]
     regex: \d+
   - action: keep
@@ -112,6 +118,9 @@
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
     regex: true
   - action: keep
+    source_labels: [__meta_kubernetes_service_annotation_prometheus_io_targets]
+    regex: infra-prometheus
+  - action: keep
     source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_pod_annotation_prometheus_io_port]
     regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
@@ -140,6 +149,9 @@
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
     regex: true
+  - action: keep
+    source_labels: [__meta_kubernetes_service_annotation_prometheus_io_targets]
+    regex: infra-prometheus
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port_1]
     regex: \d+
