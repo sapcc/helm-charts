@@ -16,6 +16,8 @@ pagination_max_limit = 500
 max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 50}}
 # is often used together with multiple fixed IPs per port, keep the values similar
 max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
+# Maximum number of routes per router (integer value)
+max_routes = {{.Values.max_routes | default 30}}
 
 interface_driver = neutron.agent.linux.interface.OVSInterfaceDriver
 
