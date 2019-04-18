@@ -1,4 +1,5 @@
 {{ range .Values.teams }}
+{{ if eq .type "standalone" }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -151,8 +152,10 @@ spec:
               command:
               - "/land-worker/pre-stop.sh"
         env:
+        {{- if ne .name "main" }}
         - name: CONCOURSE_TEAM
           value: {{ .name | quote }}
+        {{- end }}
         - name: CONCOURSE_BIND_DEBUG_PORT
           value: "9099"
         - name: CONCOURSE_WORK_DIR
@@ -168,7 +171,11 @@ spec:
         - name: CONCOURSE_TSA_PUBLIC_KEY
           value: "{{ $.Values.concourse.worker.keySecretsPath }}/host_key.pub"
         - name: CONCOURSE_TSA_WORKER_PRIVATE_KEY
+        {{- if eq .name "main" }}
+          value: "{{ $.Values.concourse.worker.keySecretsPath }}/worker_key"
+        {{- else }}
           value: "/worker-keys/team_worker_key"
+        {{- end }}
         - name: CONCOURSE_GARDEN_BIND_PORT
           value: "7777"
         - name: CONCOURSE_BAGGAGECLAIM_DRIVER
@@ -244,4 +251,5 @@ spec:
           name: land-worker
           defaultMode: 0755
 ---
+{{ end }}
 {{ end }}
