@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: systemd-lldp-exporter
+spec:
+  selector:
+    matchLabels:
+      app: systemd-lldp-exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: systemd-lldp-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: "8081"
+    spec:
+      volumes:
+      - name: systemd
+        hostPath:
+          path: /run/systemd/netif/lldp
+      containers:
+      - name: systemd-lldp-exporter
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag}}"
+        args:
+          -  /lldp
+        ports:
+          - name: metrics
+            containerPort: 8081
+        volumeMounts:
+        - name: systemd
+          mountPath: /lldp
