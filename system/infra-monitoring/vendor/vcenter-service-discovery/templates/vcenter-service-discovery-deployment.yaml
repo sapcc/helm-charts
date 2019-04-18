@@ -1,0 +1,61 @@
+{{- if .Values.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: vcenter-service-discovery
+  namespace: infra-monitoring
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavalable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: vcenter-service-discovery
+    spec:
+      tolerations:
+      - key: "context"
+        operator: "Equal"
+        value: "monitoring"
+        effect: "PreferNoSchedule"
+      volumes:
+        - name: vcenter-service-discovery-etc
+          configMap:
+            name: vcenter-service-discovery
+      containers:
+        - name: vcenter-service-discovery
+          imagePullPolicy: IfNotPresent
+          image: {{ .Values.docker_repo }}/vcenter-service-discovery:{{ .Values.image_version | replace "string:" "" }}
+          args:
+            - /bin/sh
+            - -c
+            - while true; do sleep 10000; done
+          {{- if .Values.resources.enabled }}
+          resources:
+            requests:
+              memory: {{.Values.resources.requests.memory }}
+            limits:
+              memory: {{.Values.resources.limits.memory }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /vcenter-service-discovery-etc
+              name: vcenter-service-discovery-etc
+          env:
+          - name: OS_PASSWORD
+            value: {{ .Values.os_password | quote }}
+          - name: OS_AUTH_URL
+            value: {{ .Values.os_auth_url | quote }}
+          - name: OS_IDENTITY_API_VERSION
+            value: {{ .Values.os_identity_api_version | quote }}
+          - name: OS_REGION_NAME
+            value: {{ .Values.os_region_name | quote }}
+          - name: OS_USERNAME
+            value: {{ .Values.os_username | quote }}
+          - name: OS_USER_DOMAIN_NAME
+            value: {{ .Values.os_user_domain_name | quote }}
+          - name: OS_PROJECT_NAME
+            value: {{ .Values.os_project_name | quote }}
+{{- end }}
