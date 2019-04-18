@@ -1,0 +1,57 @@
+{{- if .Values.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: vcenter-service-discovery
+  namespace: infra-monitoring
+spec:
+  replicas: 1
+  tolerations:
+  - key: "context"
+    operator: "equals"
+    value: "monitoring"
+    effect: "PreferNoSchedule"
+  strategy:
+    type: RollingUpdate
+      maxUnavalable: 1
+      maxSurge: 1
+  template:
+    spec:
+      volumes:
+        - name: vcenter-service-discovery-etc
+          configMap:
+            name: vcenter-service-discovery
+      contianers:
+        - name: vcenter-service-discovery
+          imagePullPolicy: IfNotPresent
+          image: {{ .Values.docker_repo }}/vcenter-service-discovery:{{ .Values.image_version | replace "string:" "" }}
+          args:
+            - /bin/sh
+            - -c
+            - while true; do sleep 10000; done
+          {{- if .Values.resources.enabled }}
+          resources:
+            requests:
+              memory: {{.Values.resources.requests.memory }}
+            limits:
+              memory: {{.Values.resources.limits.memory }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /vcenter-service-discovery-etc
+              name: vcenter-service-discovery-etc
+        - env:
+          - name: OS_PASSWORD
+            value: {{ .Values.os_password }}
+          - name: OS_AUTH_URL
+            value: {{ .Values.os_auth_url }}
+          - name: OS_IDENTITY_API_VERSION
+            value: {{ .Values.os_identity_api_version}}
+          - name: OS_REGION_NAME
+            value: {{ .Values.os_region_name }}
+          - name: OS_USERNAME
+            value: {{ .Values.os_username }}
+          - name: OS_USER_DOMAIN_NAME
+            value: {{ .Values.os_user_domain_name }}
+          - name: OS_PROJECT_NAME
+            value: {{ .Values.os_project_name }}
+{{- end }}
