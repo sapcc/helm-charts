@@ -127,7 +127,7 @@ scrape_configs:
       source_labels: [__address__]
       target_label: region
       regex: prometheus.kubernikus.(.+).cloud.sap
-      replacement: k-$1
+      replacement: $1
     - action: replace
       target_label: cluster_type
       replacement: kubernikus-controlplane
