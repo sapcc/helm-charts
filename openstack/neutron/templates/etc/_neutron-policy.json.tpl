@@ -272,5 +272,43 @@
     "update_log": "rule:context_is_admin",
     "delete_log": "rule:context_is_admin",
     "get_logs": "rule:context_is_admin",
-    "get_log": "rule:context_is_admin"
+    "get_log": "rule:context_is_admin",
+
+    "create_bgpvpn": "rule:context_is_admin",
+    "update_bgpvpn": "rule:context_is_admin",
+    "delete_bgpvpn": "rule:context_is_admin",
+    "get_bgpvpn": "rule:context_is_admin",
+    "get_bgpvpn:tenant_id": "rule:context_is_admin",
+    "get_bgpvpn:route_targets": "rule:context_is_admin",
+    "get_bgpvpn:import_targets": "rule:context_is_admin",
+    "get_bgpvpn:export_targets": "rule:context_is_admin",
+    "get_bgpvpn:route_distinguishers": "rule:context_is_admin",
+    "get_bgpvpn:vni": "rule:context_is_admin",
+    "update_bgpvpn:tenant_id": "rule:context_is_admin",
+    "update_bgpvpn:route_targets": "rule:context_is_admin",
+    "update_bgpvpn:import_targets": "rule:context_is_admin",
+    "update_bgpvpn:export_targets": "rule:context_is_admin",
+    "update_bgpvpn:route_distinguishers": "rule:context_is_admin",
+    "update_bgpvpn:vni": "rule:context_is_admin",
+
+    "create_bgpvpn_network_association": "rule:context_is_admin",
+    "update_bgpvpn_network_association": "rule:context_is_admin",
+    "delete_bgpvpn_network_association": "rule:context_is_admin",
+    "get_bgpvpn_network_association": "rule:context_is_admin",
+    "get_bgpvpn_network_association:tenant_id": "rule:context_is_admin",
+
+
+    "create_bgpvpn_port_association": "rule:context_is_admin",
+    "update_bgpvpn_port_association": "rule:context_is_admin",
+    "delete_bgpvpn_port_association": "rule:context_is_admin",
+    "get_bgpvpn_port_association": "rule:context_is_admin",
+    "get_bgpvpn_port_association:tenant_id": "rule:context_is_admin",
+
+    "create_bgpvpn_router_association": "rule:context_is_admin",
+    "update_bgpvpn_router_association": "rule:context_is_admin",
+    "delete_bgpvpn_router_association": "rule:context_is_admin",
+    "get_bgpvpn_router_association": "rule:context_is_admin",
+    "get_bgpvpn_router_association:tenant_id": "rule:context_is_admin"
+
+
 }
