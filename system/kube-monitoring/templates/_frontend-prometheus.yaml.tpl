@@ -81,4 +81,4 @@
 
   static_configs:
     - targets:
-      - 'k8s-collector.{{ .Release.Namespace }}.svc.cluster.local:9090'
+      - 'k8s-collector.{{ .Release.Namespace }}.svc:9090'
