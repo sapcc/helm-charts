@@ -1,3 +1,7 @@
+## v1.0.13
+
+* Allow setting additional annotations on ingress.
+
 ## v1.0.12
 
 * Fix missing base64 encoding of alertmanager configuration.
