@@ -13,8 +13,8 @@ resources:
         api_name: os-aggregates
         custom_id: 'aggregate_id'
         custom_actions:
-            add_host: update/add-host
-            remove_host: update/remove-host
+            add_host: update/add/host
+            remove_host: update/remove/host
             set_metadata: update/metadata
     availability-zone:
         api_name: os-availability-zone
@@ -48,7 +48,7 @@ resources:
         api_name: os-instance-usage-audit-log
         singleton: true
         custom_actions:
-            # last path segment is used as filter parameter for list
+            # last path segment is used as filter parameter for list (timestamp)
             'GET:*': 'read'
     keypairs:
         api_name: os-keypairs
@@ -67,17 +67,19 @@ resources:
         # this is a legacy alternative to POST /servers used still in Devstack
         type_uri: compute/servers
         type_name: servers
-    quotas:
+    quota-sets:
         api_name: os-quota-sets
         children:
             defaults:
                 singleton: true
             detail:
                 singleton: true
-    quota-classes:
+    quota-class-sets:
         api_name: os-quota-class-sets
-        el_type_uri: compute/quota-class
     servers:
+        payloads:
+            exclude:
+              - adminPass
         custom_actions:
             # server actions
             addFloatingIp: update/add/floatingip
@@ -91,6 +93,10 @@ resources:
             lock: disable/lock
             migrate: update/migrate
             os-getConsoleOutput: read/console
+            os-getRDPConsole: update/start-console
+            os-getSerialConsole: update/start-console
+            os-getSPICEConsole: update/start-console
+            os-getVNCConsole: update/start-console
             os-migrateLive: update/migrate/live
             os-resetState: update/set/status
             os-start: start
@@ -128,7 +134,12 @@ resources:
                 custom_actions:
                     force_complete: update/force-completion
             interfaces:
+                api_name: os-attach-interfaces
+                type_name: interface_attachments
+                custom_id: port_id
+            interfacesv2:
                 api_name: os-interface
+                type_uri: compute/server/interfaces
                 type_name: interfaceAttachments
                 custom_id: port_id
             instance-actions:
@@ -142,6 +153,7 @@ resources:
                 api_name: os-server-password
                 singleton: true
             tags:
+                singleton: true
             volume-attachments:
                 api_name: os-volume_attachments
                 type_name: volumeAttachments
