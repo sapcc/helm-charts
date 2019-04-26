@@ -49,12 +49,31 @@ function configure_bridge {
         fi
 
         ovs-vsctl br-exists br-${interface}; rc=$?
-
         if [[ $rc != 0 ]]; then
             echo "Failed to create bridge configuration"
             exit 1
         fi
 
+         # Make sure the br-int MTU is correct
+         ip link set br-int mtu 8950; rc=$?
+         if [[ $rc != 0 ]]; then
+             echo "Failed to set MTU to 8950 on br-int"
+             exit 1
+         fi
+         
+         ovs-vsctl set int br-int mtu=8950; rc=$?
+         if [[ $rc != 0 ]]; then
+             echo "Failed to set MTU to 8950 for br-int in OpenVSwitch Database"
+             exit 1
+         fi     
+         
+         # Make sure the br-${interface} MTU is correct
+         ip link set br-${interface} mtu 8950; $rc=?;
+         
+         if [[ $rc != 0 ]]; then
+            echo "Failed to set MTU to 8950 on br-${interface}"
+            exit 1
+         fi
 
     done
 
