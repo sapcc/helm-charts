@@ -1,3 +1,7 @@
+## v1.0.14
+
+* Allow setting complete hostname via `.Values.ingress.hostNameOverride`
+
 ## v1.0.13
 
 * Allow setting additional annotations on ingress.

@@ -10,7 +10,11 @@ prometheus-{{- (include "prometheus.name" .) -}}
 
 {{/* External URL of this Prometheus. */}}
 {{- define "prometheus.externalURL" -}}
+{{- if .Values.ingress.hostNameOverride -}}
+{{- .Values.ingress.hostNameOverride -}}
+{{- else -}}
 {{- required ".Values.ingress.host missing" .Values.ingress.host -}}.{{- required ".Values.global.region missing" .Values.global.region -}}.{{- required ".Values.global.domain missing" .Values.global.domain -}}
+{{- end -}}
 {{- end -}}
 
 {{/* Prometheus image. */}}
