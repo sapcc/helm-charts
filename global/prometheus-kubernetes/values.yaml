@@ -1,0 +1,60 @@
+global:
+  region: global
+  domain: cloud.sap
+
+# Values for global kubernetes Prometheus.
+prometheus-kubernetes-global:
+  name: k8s-global
+
+  retentionTime: 90d
+
+  additionalScrapeConfigs:
+    name: k8s-global-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: true
+    # Will be `prometheus-kubernetes.global.cloud.sap
+    host: prometheus-kubernetes
+    annotations:
+      disco/zone-name: "global.cloud.sap."
+
+  persistence:
+    enabled: true
+    size: 300Gi
+
+  serviceAccount:
+    create: false
+    name: default
+
+  serviceDiscoveries:
+    endpoints:
+      enabled: false
+
+  # Disable alerting until the transition to the operated Prometheus was done in all regions.
+  # alertmanagers:
+  #  - alertmanager.eu-de-1.cloud.sap
+  #  - alertmanager.eu-nl-1.cloud.sap
+
+# Basic alerts for global Prometheus.
+alerts:
+  prometheus: k8s-global
+
+# List of regions to which the prometheus-kubernetes is deployed.
+regionList:
+  - "ap-au-1"
+  - "ap-cn-1"
+  - "ap-ae-1"
+  - "ap-sa-1"
+  - "ap-jp-1"
+  - "ap-jp-2"
+  - "eu-de-1"
+  - "eu-de-2"
+  - "eu-nl-1"
+  - "eu-ru-1"
+  - "la-br-1"
+  - "na-ca-1"
+  - "na-us-1"
+  - "na-us-2"
+  - "na-us-3"
+  - "qa-de-1"

@@ -1,0 +1,15 @@
+groups:
+- name: prometheus.alerts
+  rules:
+  - alert: OpenstackPrometheusFederationRegions
+    expr: absent(up{job="prometheus-regions-federation"}) or up{job="prometheus-regions-federation"} == 0
+    for: 15m
+    labels:
+      context: availability-global
+      meta: Prometheus global can't federate data from Prometheus in {{ $labels.region }}
+      service: prometheus
+      severity: critical
+      tier: os
+    annotations:
+      description: Prometheus Global can't federate data from {{ $labels.region }}. Alerting will be unavailable! This could mean the region is partly down!
+      summary: Global Prometheus Federation is having trouble
