@@ -1,4 +1,5 @@
 {{- $values := .Values }}
+{{- if $values.prometheusCollectorName }}
 {{- range $path, $bytes := .Files.Glob "aggregations/collector/*.rules" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -8,9 +9,10 @@ metadata:
   name: kubernetes-{{ printf "%s" $path | replace "/" "-"  }}
   labels:
     tier: k8s
-    prometheus: {{ required "$values.prometheusCollectorName missing" $values.prometheusCollectorName }}
+    prometheus: {{ $values.prometheusCollectorName }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
+{{- end }}
 {{- end }}
