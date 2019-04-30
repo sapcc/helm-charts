@@ -30,7 +30,7 @@ asr:
     type: gauge
     help: This object maintains a count of the number of entries that currently exist in the natAddrPortBindTable. - 1.3.6.1.2.1.123.1.7.0
   - name: snmp_asr_RedundancyGroup
-    oid: 1.3.6.1.2.1.90.1.2.1.1.3
+    oid: 1.3.6.1.2.1.90.1.2.1.1.3.2
     type: DisplayString
     help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3
     indexes:
@@ -103,13 +103,10 @@ asr:
       type: gauge
     - labelname: cempMemPoolIndex
       type: gauge
-  - name: snmp_asr_cneAddrTranslationNumActive
-    oid: 1.3.6.1.2.1.90.1.2.1.1.3.9.110.97.116.77.105.115.115.101.115.9.110.97.116.77.105.115.115.101.115
-    type: gauge
-    - name: snmp_asr_missingNatEntries
-    oid: 1.3.6.1.2.1.90.1.2.1.1.3
+  - name: snmp_asr_missingNatEntries
+    oid: 1.3.6.1.2.1.90.1.2.1.1.3.9
     type: DisplayString
-    help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3
+    help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3.9
     indexes:
     - labelname: expExpressionOwner
       type: DisplayString
