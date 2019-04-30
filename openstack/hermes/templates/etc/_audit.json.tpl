@@ -17,7 +17,7 @@
         "@version" : {
           "type" : "text",
           "fields" : {
-            "keyword" : {
+            "raw" : {
               "type" : "keyword",
               "ignore_above" : 256
             }
@@ -26,7 +26,7 @@
         "_unique_id" : {
           "type" : "text",
           "fields" : {
-            "keyword" : {
+            "raw" : {
               "type" : "keyword",
               "ignore_above" : 256
             }
@@ -35,7 +35,7 @@
         "action" : {
           "type" : "text",
           "fields" : {
-            "keyword" : {
+            "raw" : {
               "type" : "keyword",
               "ignore_above" : 256
             }
@@ -46,7 +46,7 @@
             "content" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -55,7 +55,7 @@
             "name" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -64,7 +64,7 @@
             "typeURI" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -78,7 +78,7 @@
         "eventType" : {
           "type" : "text",
           "fields" : {
-            "keyword" : {
+            "raw" : {
               "type" : "keyword",
               "ignore_above" : 256
             }
@@ -87,7 +87,7 @@
         "id" : {
           "type" : "text",
           "fields" : {
-            "keyword" : {
+            "raw" : {
               "type" : "keyword",
               "ignore_above" : 256
             }
@@ -98,7 +98,7 @@
             "domain" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -107,7 +107,7 @@
             "domain_id" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -118,7 +118,7 @@
                 "address" : {
                   "type" : "text",
                   "fields" : {
-                    "keyword" : {
+                    "raw" : {
                       "type" : "keyword",
                       "ignore_above" : 256
                     }
@@ -127,7 +127,7 @@
                 "agent" : {
                   "type" : "text",
                   "fields" : {
-                    "keyword" : {
+                    "raw" : {
                       "type" : "keyword",
                       "ignore_above" : 256
                     }
@@ -138,7 +138,7 @@
             "id" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -147,7 +147,7 @@
             "name" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -156,7 +156,7 @@
             "project_id" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -165,7 +165,7 @@
             "typeURI" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -178,7 +178,7 @@
             "id" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -187,7 +187,7 @@
             "name" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -196,7 +196,7 @@
             "typeURI" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -207,7 +207,7 @@
         "outcome" : {
           "type" : "text",
           "fields" : {
-            "keyword" : {
+            "raw" : {
               "type" : "keyword",
               "ignore_above" : 256
             }
@@ -218,7 +218,7 @@
             "reasonCode" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -227,7 +227,7 @@
             "reasonType" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -238,7 +238,7 @@
         "requestPath" : {
           "type" : "text",
           "fields" : {
-            "keyword" : {
+            "raw" : {
               "type" : "keyword",
               "ignore_above" : 256
             }
@@ -251,7 +251,7 @@
                 "content" : {
                   "type" : "text",
                   "fields" : {
-                    "keyword" : {
+                    "raw" : {
                       "type" : "keyword",
                       "ignore_above" : 256,
                       "doc_values": false
@@ -261,7 +261,7 @@
                 "name" : {
                   "type" : "text",
                   "fields" : {
-                    "keyword" : {
+                    "raw" : {
                       "type" : "keyword",
                       "ignore_above" : 256
                     }
@@ -270,7 +270,7 @@
                 "typeURI" : {
                   "type" : "text",
                   "fields" : {
-                    "keyword" : {
+                    "raw" : {
                       "type" : "keyword",
                       "ignore_above" : 256
                     }
@@ -281,7 +281,7 @@
             "domain_id" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -290,7 +290,7 @@
             "id" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -299,7 +299,7 @@
             "name" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -308,7 +308,7 @@
             "project_id" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -317,7 +317,7 @@
             "typeURI" : {
               "type" : "text",
               "fields" : {
-                "keyword" : {
+                "raw" : {
                   "type" : "keyword",
                   "ignore_above" : 256
                 }
@@ -328,7 +328,7 @@
         "typeURI" : {
           "type" : "text",
           "fields" : {
-            "keyword" : {
+            "raw" : {
               "type" : "keyword",
               "ignore_above" : 256
             }
