@@ -1,6 +1,10 @@
+## v1.0.15
+
+* Configurable global `.Values.scrapeInterval`.
+
 ## v1.0.14
 
-* Allow setting complete hostname via `.Values.ingress.hostNameOverride`
+* Allow setting complete hostname via `.Values.ingress.hostNameOverride`.
 
 ## v1.0.13
 
