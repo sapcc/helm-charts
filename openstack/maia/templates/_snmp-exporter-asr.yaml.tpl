@@ -7,61 +7,29 @@ asr:
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.24
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.25
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.26
-  - 1.3.6.1.4.1.9.9.532.1.1.1.1
+  - 1.3.6.1.4.1.9.9.532.1.1.1.2
   get:
   - 1.3.6.1.2.1.123.1.5.0
   - 1.3.6.1.2.1.123.1.7.0
-  - 1.3.6.1.2.1.90.1.2.1.1.3.9.110.97.116.77.105.115.115.101.115.9.110.97.116.77.105.115.115.101.115
-  - 1.3.6.1.4.1.9.10.77.1.2.1.0
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.18.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.20.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.22.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.24.7000.1
+  - 1.3.6.1.2.1.90.1.2.1.1.3.2.114.103.1.49
+  - 1.3.6.1.2.1.90.1.2.1.1.3.9.110.97.116.77.105.115.115.101.115.9.110.97.116.77.105.115.115.101.115
+  - 1.3.6.1.4.1.9.10.77.1.2.1.0
+  - 1.3.6.1.2.1.123.1.5.0
+  - 1.3.6.1.2.1.123.1.7.0
   metrics:
   - name: snmp_asr_natAddrBindNumberOfEntries
-    oid: 1.3.6.1.2.1.123.1.5
+    oid: 1.3.6.1.2.1.123.1.5.0
     type: gauge
-    help: This object maintains a count of the number of entries that currently exist
-      in the natAddrBindTable. - 1.3.6.1.2.1.123.1.5
+    help: This object maintains a count of the number of entriesthat currently exist in the natAddrBindTable. - 1.3.6.1.2.1.123.1.5.0
   - name: snmp_asr_natAddrPortBindNumberOfEntries
-    oid: 1.3.6.1.2.1.123.1.7
+    oid: 1.3.6.1.2.1.123.1.7.0
     type: gauge
-    help: This object maintains a count of the number of entries that currently exist
-      in the natAddrPortBindTable. - 1.3.6.1.2.1.123.1.7
-  - name: snmp_asr_ifDescr
-    oid: 1.3.6.1.2.1.2.2.1.2
-    type: DisplayString
-    help: A textual string containing information about the interface - 1.3.6.1.2.1.2.2.1.2
-    indexes:
-    - labelname: ifIndex
-      type: gauge
-  - name: snmp_asr_ifAdminStatus
-    oid: 1.3.6.1.2.1.2.2.1.7
-    type: gauge
-    help: The desired state of the interface - 1.3.6.1.2.1.2.2.1.7
-    indexes:
-    - labelname: ifIndex
-      type: gauge
-    enum_values:
-      1: up
-      2: down
-      3: testing
-  - name: snmp_asr_ifOperStatus
-    oid: 1.3.6.1.2.1.2.2.1.8
-    type: gauge
-    help: The current operational state of the interface - 1.3.6.1.2.1.2.2.1.8
-    indexes:
-    - labelname: ifIndex
-      type: gauge
-    enum_values:
-      1: up
-      2: down
-      3: testing
-      4: unknown
-      5: dormant
-      6: notPresent
-      7: lowerLayerDown
-  - name: snmp_asr_expExpression
+    help: This object maintains a count of the number of entries that currently exist in the natAddrPortBindTable. - 1.3.6.1.2.1.123.1.7.0
+  - name: snmp_asr_RedundancyGroup
     oid: 1.3.6.1.2.1.90.1.2.1.1.3
     type: DisplayString
     help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3
@@ -70,11 +38,10 @@ asr:
       type: DisplayString
     - labelname: expExpressionName
       type: DisplayString
-  - name: snmp_asr_cnatAddrBindNumberOfEntries
-    oid: 1.3.6.1.4.1.9.10.77.1.2.1
-    type: gauge
-    help: This object maintains a count of the number of entries that currently exist
-      in the cnatAddrBindTable. - 1.3.6.1.4.1.9.10.77.1.2.1
+    regex_extracts:
+      "":
+      - value: '$1'
+        regex: ^(?:(.*))$
   - name: snmp_asr_cpmCPULoadAvg1min
     oid: 1.3.6.1.4.1.9.9.109.1.1.1.1.24
     type: gauge
@@ -137,10 +104,39 @@ asr:
     - labelname: cempMemPoolIndex
       type: gauge
   - name: snmp_asr_cneAddrTranslationNumActive
-    oid: 1.3.6.1.4.1.9.9.532.1.1.1.1
+    oid: 1.3.6.1.2.1.90.1.2.1.1.3.9.110.97.116.77.105.115.115.101.115.9.110.97.116.77.105.115.115.101.115
     type: gauge
-    help: The total number of address translation entries that are currently available
-      in the NAT device - 1.3.6.1.4.1.9.9.532.1.1.1.1
+    - name: snmp_asr_missingNatEntries
+    oid: 1.3.6.1.2.1.90.1.2.1.1.3
+    type: DisplayString
+    help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3
     indexes:
-    - labelname: entPhysicalIndex
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+    regex_extracts:
+      "":
+      - value: '$1'
+        regex: ^(?:(.*))$
+  - name: snmp_asr_ifDescr
+    oid: 1.3.6.1.2.1.2.2.1.2
+    type: DisplayString
+    help: A textual string containing information about the interface - 1.3.6.1.2.1.2.2.1.2
+    indexes:
+    - labelname: ifIndex
+      type: gauge
+  - name: snmp_asr_ifAdminStatus
+    oid: 1.3.6.1.2.1.2.2.1.7
+    type: gauge
+    help: The desired state of the interface - 1.3.6.1.2.1.2.2.1.7
+    indexes:
+    - labelname: ifIndex
+      type: gauge
+  - name: snmp_asr_ifOperStatus
+    oid: 1.3.6.1.2.1.2.2.1.8
+    type: gauge
+    help: The current operational state of the interface - 1.3.6.1.2.1.2.2.1.8
+    indexes:
+    - labelname: ifIndex
       type: gauge
