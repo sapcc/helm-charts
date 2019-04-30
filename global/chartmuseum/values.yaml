@@ -27,9 +27,13 @@ chartmuseum:
         tlsSecret: tls-charts.tld
 
   env:
+    # Name of an existing secret to get the secret values from.
+    # existingSecret: chartmuseum-auth
+
     open:
       DISABLE_API: false
       DISABLE_METRICS: false
+      AUTH_ANONYMOUS_GET: true
 
       # Store charts in OpenStack Swift backend.
       STORAGE: "openstack"
@@ -68,4 +72,12 @@ redis:
   metrics:
     enabled: true
   # Defined in secrets.
+  # password:
+
+# Enable basic auth for all PUT, POST requests to the chartmuseum. Still allows anonymous GET requests.
+# The following parameters are provided via a Secret named `chartmuseum-auth`
+# which requires setting `.Values.chartmuseum.env.existingSecret=chartmuseum-auth.
+basicAuth:
+  enabled: false
+  # username:
   # password:
