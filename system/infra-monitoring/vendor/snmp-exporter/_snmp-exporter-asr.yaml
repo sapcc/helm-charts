@@ -7,12 +7,17 @@ asr:
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.24
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.25
   - 1.3.6.1.4.1.9.9.109.1.1.1.1.26
+  - 1.3.6.1.4.1.9.9.532.1.1.1.2
   get:
+  - 1.3.6.1.2.1.123.1.5.0
+  - 1.3.6.1.2.1.123.1.7.0
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.18.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.20.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.22.7000.1
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.24.7000.1
   - 1.3.6.1.2.1.90.1.2.1.1.3.2.114.103.1.49
+  - 1.3.6.1.2.1.90.1.2.1.1.3.9.110.97.116.77.105.115.115.101.115.9.110.97.116.77.105.115.115.101.115
+  - 1.3.6.1.4.1.9.10.77.1.2.1.0
   - 1.3.6.1.2.1.123.1.5.0
   - 1.3.6.1.2.1.123.1.7.0
   metrics:
@@ -25,7 +30,7 @@ asr:
     type: gauge
     help: This object maintains a count of the number of entries that currently exist in the natAddrPortBindTable. - 1.3.6.1.2.1.123.1.7.0
   - name: snmp_asr_RedundancyGroup
-    oid: 1.3.6.1.2.1.90.1.2.1.1.3
+    oid: 1.3.6.1.2.1.90.1.2.1.1.3.2
     type: DisplayString
     help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3
     indexes:
@@ -98,14 +103,19 @@ asr:
       type: gauge
     - labelname: cempMemPoolIndex
       type: gauge
-  - name: snmp_asr_cneAddrTranslationNumActive
-    oid: 1.3.6.1.4.1.9.9.532.1.1.1.1
-    type: gauge
-    help: The total number of address translation entries that are currently available
-      in the NAT device - 1.3.6.1.4.1.9.9.532.1.1.1.1
+  - name: snmp_asr_missingNatEntries
+    oid: 1.3.6.1.2.1.90.1.2.1.1.3.9
+    type: DisplayString
+    help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3.9
     indexes:
-    - labelname: entPhysicalIndex
-      type: gauge
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+    regex_extracts:
+      "":
+      - value: '$1'
+        regex: ^(?:(.*))$
   - name: snmp_asr_ifDescr
     oid: 1.3.6.1.2.1.2.2.1.2
     type: DisplayString
