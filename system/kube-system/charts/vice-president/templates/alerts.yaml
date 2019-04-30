@@ -1,4 +1,5 @@
 {{- $values := .Values }}
+{{- if $values.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -9,9 +10,10 @@ metadata:
   labels:
     tier: k8s
     type: alerting-rules
-    prometheus: kubernetes
+    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
+{{- end }}
 {{- end }}
