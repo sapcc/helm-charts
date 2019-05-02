@@ -29,7 +29,7 @@ spec:
       honorLabels: true
       relabelings:
         - action: keep
-          source_labels:
+          sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_scrape
           regex: 'true'
         - action: keep
@@ -37,27 +37,27 @@ spec:
             - __meta_kubernetes_pod_annotation_prometheus_io_targets
           regex: '.*{{ include "prometheus.name" . }}.*'
         - action: keep
-          source_labels:
+          sourceLabels:
             - __meta_kubernetes_pod_container_port_number
             - __meta_kubernetes_pod_container_port_name
             - __meta_kubernetes_pod_annotation_prometheus_io_port
           regex: '(9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)'
-        - source_labels:
+        - sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_path
-          target_label: __metrics_path__
+          targetLabel: __metrics_path__
           regex: '(.+)'
-        - source_labels:
+        - sourceLabels:
             - __address__
             - __meta_kubernetes_pod_annotation_prometheus_io_port
-          target_label: __address__
+          targetLabel: __address__
           regex: '([^:]+)(?::\d+);(\d+)'
           replacement: ${1}:${2}
         - action: labelmap
           regex: '__meta_kubernetes_pod_label_(.+)'
-        - source_labels:
+        - sourceLabels:
             - __meta_kubernetes_namespace
-          target_label: kubernetes_namespace
-        - source_labels:
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
             - __meta_kubernetes_pod_name
-          target_label: kubernetes_pod_name
+          targetLabel: kubernetes_pod_name
 {{ end }}

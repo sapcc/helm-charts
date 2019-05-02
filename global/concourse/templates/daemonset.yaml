@@ -105,10 +105,12 @@ spec:
           VOLUME_ID=`openstack volume show ${VOLUME_NAME} -f value -c id`
           VOLUME_PATH=/root/dev/disk/by-id/wwn-0x${VOLUME_ID//-/}
           MOUNT_PATH=/root{{ $.Values.concourse.concourse.worker.workDir }}
-          if [ ! $(df -h | grep ${MOUNT_PATH}) ]; then
-            mkfs.btrfs -f ${VOLUME_PATH} &&
-            mkdir -p /root{{ $.Values.concourse.concourse.worker.workDir }} &&
-            mount -t btrfs ${VOLUME_PATH} ${MOUNT_PATH}
+          if ! blkid $VOLUME_PATH | grep -q btrfs ; then
+            mkfs.btrfs -f $VOLUME_PATH
+          fi
+          if ! df -h | grep $MOUNT_PATH ; then
+            mkdir -p $MOUNT_PATH
+            mount -t btrfs $VOLUME_PATH $MOUNT_PATH
           fi
         env:
         - name: NODE_NAME
@@ -134,10 +136,10 @@ spec:
         command:
         - /bin/sh
         args:
-        - -ce
+        - -ec
         - |-
-          update-ca-certificates &&
-          /usr/local/concourse/bin/concourse worker --name=${NODE_NAME}
+          update-ca-certificates
+          exec /usr/local/concourse/bin/concourse worker --name=${NODE_NAME}
         livenessProbe:
           failureThreshold: 5
           initialDelaySeconds: 10
@@ -212,6 +214,7 @@ spec:
           mountPath: /usr/local/share/ca-certificates
         - name: pre-stop
           mountPath: /land-worker
+      terminationGracePeriodSeconds: 1800
       volumes:
       - name: sap-root-certs
         secret:

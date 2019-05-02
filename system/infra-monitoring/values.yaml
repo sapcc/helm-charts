@@ -1,19 +1,23 @@
 prometheus_server:
   enabled: false
 
-  name: infra-prometheus
+  name: prometheus-infra
 
   retentionTime: 7d
+  scrapeInterval: "60s"
 
   additionalScrapeConfigs:
-    name: infra-prometheus-additional-scrape-config
+    name: prometheus-infra-additional-scrape-config
     key: scrape-config.yaml
   configMaps:
     - snmp-exporter-targets
 
+  alertmanagers:
+    - alertmanager.eu-de-1.cloud.sap
+
   ingress:
     enabled: true
-    host: infra-prometheus-scaleout
+    host: prometheus-infra-scaleout
 
   # Store on disk
   persistence:
@@ -23,7 +27,9 @@ prometheus_server:
     size: 100Gi
 
   rbac:
-    create: false
+    create: true
+  serviceAccount:
+    name: prometheus-infra
 
   serviceAccount:
     create: false
