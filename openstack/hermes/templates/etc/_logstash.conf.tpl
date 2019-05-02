@@ -156,7 +156,7 @@ filter {
 output {
   if ([@metadata][index]) {
     elasticsearch {
-        index => "audit-%{[@metadata][index]}-%{+YYYY.MM}"
+        index => "audit-%{[@metadata][index]}-6-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
@@ -166,7 +166,7 @@ output {
     }
   } else {
     elasticsearch {
-        index => "audit-default-%{+YYYY.MM}"
+        index => "audit-default-6-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
@@ -178,7 +178,7 @@ output {
   # cc the target tenant
   if ([@metadata][index2] and [@metadata][index2] != [@metadata][index]) {
     elasticsearch {
-        index => "audit-%{[@metadata][index2]}-%{+YYYY.MM}"
+        index => "audit-%{[@metadata][index2]}-6-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
