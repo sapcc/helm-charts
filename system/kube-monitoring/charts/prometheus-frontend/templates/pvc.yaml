@@ -12,7 +12,9 @@ spec:
   resources:
     requests:
       storage: {{ required ".Values.persistence.size missing" .Values.persistence.size | quote }}
+  {{ if not (eq .Values.global.region "eu-de-2") }}
   selector:
     matchLabels:
       failure-domain.beta.kubernetes.io/zone: {{ required ".Values.global.region missing" .Values.global.region }}b
+  {{ end }}
 {{- end }}
