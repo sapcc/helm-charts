@@ -2,14 +2,17 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ .Values.persistence.name | quote }}
+  name: {{ required ".Values.persistence.name missing" .Values.persistence.name | quote }}
   labels:
     app: prometheus
     type: frontend
 spec:
   accessModes:
-    - {{ .Values.persistence.accessMode | quote }}
+    - {{ required ".Values.persistence.accessMode missing" .Values.persistence.accessMode | quote }}
   resources:
     requests:
-      storage: {{ .Values.persistence.size | quote }}
+      storage: {{ required ".Values.persistence.size missing" .Values.persistence.size | quote }}
+  selector:
+    matchLabels:
+      failure-domain.beta.kubernetes.io/zone: {{ required ".Values.global.region missing" .Values.global.region }}b
 {{- end }}
