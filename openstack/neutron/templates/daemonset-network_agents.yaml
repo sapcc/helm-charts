@@ -8,7 +8,11 @@ metadata:
     component: agent
 spec:
   updateStrategy:
+{{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "staging") }}
+    type: RollingUpdate
+{{- else }}
     type: OnDelete
+{{- end }}
   selector:
     matchLabels:
       component: agent
