@@ -60,6 +60,15 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+{{- if not .Values.pod.debug.api }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.global.placementApiPortInternal}}
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+            periodSeconds: 30
+{{- end }}
           resources:
             requests:
               cpu: "400m"
