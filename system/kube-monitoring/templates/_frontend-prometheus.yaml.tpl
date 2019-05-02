@@ -81,4 +81,4 @@
 
   static_configs:
     - targets:
-      - 'k8s-collector.{{ .Release.Namespace }}.svc:9090'
+      - 'prometheus-collector-kubernetes.{{ .Release.Namespace }}.svc:9090'
