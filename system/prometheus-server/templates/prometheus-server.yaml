@@ -106,10 +106,13 @@ spec:
       medium: Memory
     {{- end -}}
 
-  {{ if .Values.thanos }}
+  {{ if .Values.thanos.enabled }}
   # Thanos configuration.
   thanos:
-{{ toYaml .Values.thanos | indent 4 }}
+    {{- if not .Values.thanos.spec.peers }}
+    peers: {{ include "thanos.peers" . }}
+    {{ end }}
+{{ toYaml .Values.thanos.spec | indent 4 }}
   {{- end -}}
 
   {{ if .Values.resources }}

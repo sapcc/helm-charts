@@ -119,8 +119,40 @@ serviceAccount:
   # If not provided one will be generated in the format: prometheus-<name>.
   name:
 
-# Optional Thanos sidecar configuration.
-thanos: {}
+# Thanos configuration.
+
+thanos:
+  # Enable Thanos components and Prometheus sidecar.
+  enabled: false
+
+  # DNS name for Thanos to discover peers through.
+  # If `thanos.spec.peers` is set this values is ignored
+  # Defaults to `thanos-peers.{{ .Release.Namespace }}.svc:10900`
+  peers: ""
+
+  # Configuration for OpenStack Swift Thanos storage backend.
+  swiftStorageConfig: {}
+    # authURL:
+    # userName:
+    # password:
+    # domainName:
+    # tenantName:
+    # regionName:
+    # containerName:
+
+    # Currently not supported are:
+    # tenantID:
+    # domainID:
+    # userID:
+
+  # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
+  spec:
+    baseImage: "improbable/thanos:v0.4.0-rc.1"
+
+    objectStorageConfig:
+      name: thanos-storage-config
+      key: thanos.yaml
+      optional: true
 
 # The labels to add to any time series or alerts when communicating with
 # external systems (federation, remote storage, Alertmanager).

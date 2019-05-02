@@ -44,3 +44,16 @@ prometheus-{{- (include "prometheus.name" .) -}}
   - targets:
 {{ toYaml .Values.alertmanagers | indent 6 }}
 {{- end -}}
+
+{{/* Thanos image. */}}
+{{- define "thanos.image" -}}
+{{- required ".Values.image.repository missing" .Values.image.repository -}}:{{- required ".Values.image.tag missing" .Values.image.tag -}}
+{{- end -}}
+
+{{- define "thanos.peers" -}}
+{{- if .Values.thanos.spec.peers -}}
+{{- .Values.thanos.spec.peers -}}
+{{- else -}}
+thanos-peers.{{ .Release.Namespace }}.svc:10900
+{{- end -}}
+{{- end -}}
