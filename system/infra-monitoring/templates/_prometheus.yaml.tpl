@@ -177,7 +177,7 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/snmp-exporter-targets/snmp_exporter_targets.json
+        - /etc/prometheus/configmaps/snmp-exporter-targets/arista.json
   metrics_path: /snmp
   params:
       module: [arista]
@@ -194,7 +194,7 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/snmp-exporter-targets/snmp_exporter_targets.json
+        - /etc/prometheus/configmaps/snmp-exporter-targets/asa.json
   metrics_path: /snmp
   params:
       module: [asa]
@@ -211,7 +211,7 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/snmp-exporter-targets/snmp_exporter_targets.json
+        - /etc/prometheus/configmaps/snmp-exporter-targets/asr.json
   metrics_path: /snmp
   params:
       module: [asr]
@@ -228,7 +228,7 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/snmp-exporter-targets/snmp_exporter_targets.json
+        - /etc/prometheus/configmaps/snmp-exporter-targets/asr04.json
   metrics_path: /snmp
   params:
       module: [asr04]
@@ -245,7 +245,7 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/snmp-exporter-targets/snmp_exporter_targets.json
+        - /etc/prometheus/configmaps/snmp-exporter-targets/f5.json
   metrics_path: /snmp
   params:
       module: [f5]
@@ -262,7 +262,7 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/snmp-exporter-targets/snmp_exporter_targets.json
+        - /etc/prometheus/configmaps/snmp-exporter-targets/n7k.json
   metrics_path: /snmp
   params:
       module: [n7k]
