@@ -91,6 +91,10 @@ spec:
         resources:
           requests:
             storage: {{ required ".Values.persistence.size missing" .Values.persistence.size | quote }}
+        {{ if .Values.persistence.selector }}
+        selector:
+{{ toYaml .Values.persistence.selector | indent 10 }}
+        {{ end }}
     {{ else }}
     emptyDir:
       medium: Memory

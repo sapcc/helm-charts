@@ -1,3 +1,7 @@
+## v1.0.16
+
+* Configurable selector for persistent volume.
+
 ## v1.0.15
 
 * Configurable global `.Values.scrapeInterval`.
