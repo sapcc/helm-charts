@@ -1,3 +1,11 @@
+## v1.0.18
+
+* Configurable client certificate authentication. Enabled by default.
+
+## v1.0.17
+
+* Fix service name.
+
 ## v1.0.16
 
 * Configurable selector for persistent volume.
