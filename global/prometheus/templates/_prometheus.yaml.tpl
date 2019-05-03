@@ -25,7 +25,7 @@ scrape_configs:
       - '{__name__=~"^elektra_open_inquiry_metrics$"}'
       - '{__name__=~"^kube_node_.+"}'
       - '{__name__=~"^snmp_asr_.*"}'
-      - '{__name__=~"^snmp_arista_dot1qVlanFdbId"}'
+      - '{__name__=~"^snmp_arista_vlans_counted"}'
       - '{__name__=~"^snmp_f5_sysGlobalHostSwapUsedKb"}'
       - '{__name__=~"^snmp_f5_sysGlobalHostSwapTotalKb"}'
       - '{__name__=~"^snmp_f5_sysGlobalTmmStatMemoryUsedKb"}'
