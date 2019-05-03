@@ -1,3 +1,7 @@
+## v1.0.20
+
+* Support mounting additional secrets.
+
 ## v1.0.19
 
 * Prefix all resources (confimaps,ingress, service, etc.) with `prometheus-<name>`. 
