@@ -46,7 +46,7 @@ function cleanup_tempest_leftovers() {
     export OS_TENANT_NAME=$TEMPESTPROJECT
     export OS_PROJECT_NAME=$TEMPESTPROJECT
     for ip in $(openstack floating ip list | grep 10. | awk '{ print $2 }'); do openstack floating ip delete ${ip}; done
-    for network in $(openstack network list | awk '{ print $2 }'); do openstack network delete ${network}; done 
+    for network in $(openstack network list | awk 'NR > 3 { print $2 }' | head -n -1); do openstack network delete ${network}; done 
     for router in $(openstack router list | grep -E "tempest|test|abc" | awk '{ print $2 }'); do openstack router delete ${router}; done
   done
 
