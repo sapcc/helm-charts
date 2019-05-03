@@ -249,7 +249,7 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
-    - target_label region
+    - target_label: region
       replacement: {{ .Values.global.region }}
 
 - job_name: 'snmp-exporter-f5'
