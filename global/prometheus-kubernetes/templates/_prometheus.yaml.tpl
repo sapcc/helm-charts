@@ -42,6 +42,12 @@
       regex: global:(.+)
       replacement: $1
 
+  {{ if .Values.authentication.enabled }}
+  tls_config:
+    cert_file: /etc/prometheus/secrets/sso.crt
+    key_file: /etc/prometheus/secrets/sso.key
+  {{ end }}
+
   static_configs:
     - targets:
 {{- range $region := .Values.regionList }}
@@ -69,6 +75,13 @@
     - action: replace
       target_label: cluster_type
       replacement: controlplane
+
+  {{ if .Values.authentication.enabled }}
+  tls_config:
+    cert_file: /etc/prometheus/secrets/sso.crt
+    key_file: /etc/prometheus/secrets/sso.key
+  {{ end }}
+
 
   static_configs:
     - targets:
