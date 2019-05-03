@@ -172,10 +172,10 @@ spec:
         - name: CONCOURSE_TSA_HOST
           value: "concourse-web:2222"
         - name: CONCOURSE_TSA_PUBLIC_KEY
-          value: "{{ $.Values.concourse.worker.keySecretsPath }}/host_key.pub"
+          value: "/worker-keys/host_key.pub"
         - name: CONCOURSE_TSA_WORKER_PRIVATE_KEY
         {{- if eq .name "main" }}
-          value: "{{ $.Values.concourse.worker.keySecretsPath }}/worker_key"
+          value: "/worker-keys/worker_key"
         {{- else }}
           value: "/worker-keys/team_worker_key"
         {{- end }}
@@ -203,9 +203,6 @@ spec:
         securityContext:
           privileged: true
         volumeMounts:
-        - name: concourse-keys
-          mountPath: {{ $.Values.concourse.worker.keySecretsPath | quote }}
-          readOnly: true
         - name: worker-keys
           mountPath: /worker-keys
           readOnly: true
@@ -219,31 +216,24 @@ spec:
       volumes:
       - name: sap-root-certs
         secret:
-          secretName: concourse-concourse
+          secretName: concourse-web
           defaultMode: 256
           items:
           - key: github-ca-cert
             path: sap-root-certs.crt
-      - name: concourse-keys
-        secret:
-          secretName: {{ template "concourse.concourse.fullname" $ }}
-          defaultMode: 0400
-          items:
-          - key: host-key-pub
-            path: host_key.pub
-          - key: worker-key
-            path: worker_key
-          - key: worker-key-pub
-            path: worker_key.pub
       - name: worker-keys
         secret:
-          secretName: {{ template "concourse.concourse.fullname" $ }}-worker
+          secretName: concourse-worker
           defaultMode: 0400
           items:
           - key: {{ .name }}-team-authorized-key
             path: team_worker_key.pub
           - key: {{ .name }}-team-authorized-privkey
             path: team_worker_key
+          - key: host-key-pub
+            path: host_key.pub
+          - key: worker-key
+            path: worker_key
       - name: concourse-work-dir
         hostPath:
           path: {{ $.Values.concourse.concourse.worker.workDir }}
