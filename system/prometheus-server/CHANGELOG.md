@@ -1,3 +1,7 @@
+## v1.1.0
+
+* Changed defaults to `rbac.create=true`, `serviceAccount.create=true`.
+
 ## v1.0.20
 
 * Support mounting additional secrets.
