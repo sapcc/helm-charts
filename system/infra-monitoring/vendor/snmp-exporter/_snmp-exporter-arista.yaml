@@ -60,7 +60,69 @@ arista:
     indexes:
     - labelname: ifIndex
       type: gauge
-  - name: snmp_arista_hrStorageUsed
+  - name: hrStorageIndex
+    oid: 1.3.6.1.2.1.25.2.3.1.1
+    type: gauge
+    help: A unique value for each logical storage area contained by the host. - 1.3.6.1.2.1.25.2.3.1.1
+    indexes:
+    - labelname: hrStorageIndex
+      type: gauge
+    lookups:
+    - labels:
+      - hrStorageIndex
+      labelname: hrStorageDescr
+      oid: 1.3.6.1.2.1.25.2.3.1.3
+      type: DisplayString
+    - labels: []
+      labelname: hrStorageIndex
+  - name: hrStorageDescr
+    oid: 1.3.6.1.2.1.25.2.3.1.3
+    type: DisplayString
+    help: A description of the type and instance of the storage described by this
+      entry. - 1.3.6.1.2.1.25.2.3.1.3
+    indexes:
+    - labelname: hrStorageIndex
+      type: gauge
+    lookups:
+    - labels:
+      - hrStorageIndex
+      labelname: hrStorageDescr
+      oid: 1.3.6.1.2.1.25.2.3.1.3
+      type: DisplayString
+    - labels: []
+      labelname: hrStorageIndex
+  - name: hrStorageAllocationUnits
+    oid: 1.3.6.1.2.1.25.2.3.1.4
+    type: gauge
+    help: The size, in bytes, of the data objects allocated from this pool - 1.3.6.1.2.1.25.2.3.1.4
+    indexes:
+    - labelname: hrStorageIndex
+      type: gauge
+    lookups:
+    - labels:
+      - hrStorageIndex
+      labelname: hrStorageDescr
+      oid: 1.3.6.1.2.1.25.2.3.1.3
+      type: DisplayString
+    - labels: []
+      labelname: hrStorageIndex
+  - name: hrStorageSize
+    oid: 1.3.6.1.2.1.25.2.3.1.5
+    type: gauge
+    help: The size of the storage represented by this entry, in units of hrStorageAllocationUnits
+      - 1.3.6.1.2.1.25.2.3.1.5
+    indexes:
+    - labelname: hrStorageIndex
+      type: gauge
+    lookups:
+    - labels:
+      - hrStorageIndex
+      labelname: hrStorageDescr
+      oid: 1.3.6.1.2.1.25.2.3.1.3
+      type: DisplayString
+    - labels: []
+      labelname: hrStorageIndex
+  - name: hrStorageUsed
     oid: 1.3.6.1.2.1.25.2.3.1.6
     type: gauge
     help: The amount of the storage represented by this entry that is allocated, in
@@ -68,6 +130,30 @@ arista:
     indexes:
     - labelname: hrStorageIndex
       type: gauge
+    lookups:
+    - labels:
+      - hrStorageIndex
+      labelname: hrStorageDescr
+      oid: 1.3.6.1.2.1.25.2.3.1.3
+      type: DisplayString
+    - labels: []
+      labelname: hrStorageIndex
+  - name: hrStorageAllocationFailures
+    oid: 1.3.6.1.2.1.25.2.3.1.7
+    type: counter
+    help: The number of requests for storage represented by this entry that could
+      not be honored due to not enough storage - 1.3.6.1.2.1.25.2.3.1.7
+    indexes:
+    - labelname: hrStorageIndex
+      type: gauge
+    lookups:
+    - labels:
+      - hrStorageIndex
+      labelname: hrStorageDescr
+      oid: 1.3.6.1.2.1.25.2.3.1.3
+      type: DisplayString
+    - labels: []
+      labelname: hrStorageIndex
   - name: snmp_arista_hrProcessorLoad
     oid: 1.3.6.1.2.1.25.3.3.1.2
     type: gauge
