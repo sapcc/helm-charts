@@ -206,7 +206,7 @@
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
-      target_label: instance
+      target_label: target
     - target_label: __address__
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
     - target_label: region
