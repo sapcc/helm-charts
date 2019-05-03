@@ -1,3 +1,7 @@
+## v1.0.19
+
+* Prefix all resources (confimaps,ingress, service, etc.) with `prometheus-<name>`. 
+
 ## v1.0.18
 
 * Configurable client certificate authentication. Enabled by default.
