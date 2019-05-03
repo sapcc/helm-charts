@@ -9,9 +9,9 @@
   params:
     'match[]':
       - '{__name__=~"^ALERTS$"}'
+      - '{__name__=~"^global:.+"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^openstack_.+"}'
-      - '{__name__=~"^swift_cluster_storage_used_percent_.+"}'
 
   relabel_configs:
     - action: replace
