@@ -171,6 +171,7 @@
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
+
 - job_name: 'snmp-exporter-arista'
   scheme: https
   scrape_interval: 60s
@@ -188,6 +189,9 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
+    - target_label: region
+      replacement: {{ .Values.global.region }}
+
 - job_name: 'snmp-exporter-asa'
   scheme: https
   scrape_interval: 60s
@@ -205,6 +209,9 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
+    - target_label: region
+      replacement: {{ .Values.global.region }}
+
 - job_name: 'snmp-exporter-asr'
   scheme: https
   scrape_interval: 60s
@@ -222,6 +229,9 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
+    - target_label: region
+      replacement: {{ .Values.global.region }}
+
 - job_name: 'snmp-exporter-asr04'
   scheme: https
   scrape_interval: 60s
@@ -239,6 +249,9 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
+    - target_label region
+      replacement: {{ .Values.global.region }}
+
 - job_name: 'snmp-exporter-f5'
   scheme: https
   scrape_interval: 60s
@@ -256,6 +269,9 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
+    - target_label: region
+      replacement: {{ .Values.global.region }}
+
 - job_name: 'snmp-exporter-n7k'
   scheme: https
   scrape_interval: 60s
@@ -273,3 +289,5 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
+    - target_label: region
+      replacement: {{ .Values.global.region }}
