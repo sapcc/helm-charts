@@ -1,0 +1,44 @@
+global:
+  region: global
+  domain: cloud.sap
+
+# Values for global infrastructure Prometheus.
+prometheus-infra-global:
+  name: infra-global
+
+  retentionTime: 90d
+
+  additionalScrapeConfigs:
+    name: infra-global-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: true
+    hostNameOverride: prometheus-infra.global.cloud.sap
+    annotations:
+      disco/zone-name: "global.cloud.sap."
+
+  persistence:
+    enabled: true
+    size: 300Gi
+
+  serviceAccount:
+    create: false
+    name: default
+
+  serviceDiscoveries:
+    endpoints:
+      enabled: false
+
+  # Disable alerting until the transition to the operated Prometheus was done in all regions.
+  # alertmanagers:
+  #  - alertmanager.eu-de-1.cloud.sap
+  #  - alertmanager.eu-nl-1.cloud.sap
+
+# Basic alerts for global Prometheus.
+alerts:
+  prometheus: infra-global
+
+# List of regions to which the prometheus-openstack is deployed.
+regionList:
+  - "qa-de-1"
