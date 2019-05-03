@@ -9,6 +9,7 @@
   params:
     'match[]':
       - '{__name__=~"^ALERTS$"}'
+      - '{__name__=~"^global:.+"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^openstack_.+"}'
 
