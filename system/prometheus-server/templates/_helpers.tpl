@@ -47,7 +47,11 @@ prometheus-{{- (include "prometheus.name" .) -}}
 
 {{/* Thanos image. */}}
 {{- define "thanos.image" -}}
-{{- required ".Values.image.repository missing" .Values.image.repository -}}:{{- required ".Values.image.tag missing" .Values.image.tag -}}
+{{- if .Values.thanos.spec.image -}}
+{{- .Values.thanos.spec.image -}}
+{{- else -}}
+{{- required ".Values.thanos.spec.baseImage missing" .Values.thanos.spec.baseImage -}}:{{- required ".Values.thanos.spec.version missing" .Values.thanos.spec.version -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "thanos.peers" -}}

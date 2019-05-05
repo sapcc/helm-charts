@@ -1,3 +1,12 @@
+## v1.1.2
+
+* Fix OpenStack seed for Thanos.
+* Use `sapcc/thanos:v0.4.0-e697626a` with support for cross domain scoping.
+
+## v1.1.1
+
+* Adds Thanos support.
+
 ## v1.1.0
 
 * Changed defaults to `rbac.create=true`, `serviceAccount.create=true`.
