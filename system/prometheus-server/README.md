@@ -98,4 +98,4 @@ See the [values.yaml](./values.yaml) for more details.
 | `secrets`                              | List of secrets in the same namespace as the Prometheus that should be mounted to `/etc/prometheus/secrets`.            | `[]`                                                |
 | `thanos.enabled`                       | Enable Thanos support.                                                                                                  | `false`                                             |  
 | `thanos.swiftStorageConfig`            | Thanos storage configuration for use with OpenStack Swift. See values for details.                                      | `{}`                                                |
-| `thanos.spec.`                         | The [Thanos spec](https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec)            | `{}`                                                |
+| `thanos.spec`                          | The [Thanos spec](https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec)            | `{}`                                                |
