@@ -1,3 +1,7 @@
+## v1.1.3
+
+* Fix setting Thanos image in chart.
+
 ## v1.1.2
 
 * Fix OpenStack seed for Thanos.
