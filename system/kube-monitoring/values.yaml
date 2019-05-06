@@ -121,6 +121,7 @@ prometheus-node-exporter:
   extraArgs:
     - --collector.filesystem.ignored-mount-points=\"^/(sys|proc|dev|host|etc)($|/)\"
     - --collector.processes
+    - --path.rootfs=/rootfs
     # enabled by default. flag didn't make it to prom/node-exporter:v0.17.0 .
     #- --collector.systemd.enable-task-metrics
 
@@ -129,6 +130,11 @@ prometheus-node-exporter:
       hostPath: /var/run/dbus/system_bus_socket
       mountPath: /var/run/dbus/system_bus_socket
       readOnly: true
+    - name: rootfs
+      hostPath: /
+      mountPath: /rootfs
+      readOnly: true
+      mountPropagation: HostToContainer
 
   resources:
     requests:
