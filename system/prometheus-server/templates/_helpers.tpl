@@ -61,3 +61,7 @@ prometheus-{{- (include "prometheus.name" .) -}}
 thanos-peers.{{ .Release.Namespace }}.svc:10900
 {{- end -}}
 {{- end -}}
+
+{{- define "thanos.objectStorageConfig.name" -}}
+{{- include "prometheus.fullName" . -}}-{{- required ".Values.thanos.spec.objectStorageConfig.name missing" .Values.thanos.spec.objectStorageConfig.name -}}
+{{- end -}}

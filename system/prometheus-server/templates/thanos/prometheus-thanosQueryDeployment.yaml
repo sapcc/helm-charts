@@ -2,21 +2,25 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
+  name: {{ include "prometheus.fullName" . }}-thanos-query
   labels:
     app: thanos-query
     thanos-peers: "true"
-  name: thanos-query
+    prometheus: {{ include "prometheus.name" . }}
+
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: thanos-query
       thanos-peers: "true"
+      prometheus: {{ include "prometheus.name" . }}
   template:
     metadata:
       labels:
         app: thanos-query
         thanos-peers: "true"
+        prometheus: {{ include "prometheus.name" . }}
     spec:
       containers:
       - args:

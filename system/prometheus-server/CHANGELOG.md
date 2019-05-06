@@ -1,3 +1,7 @@
+## v1.1.4
+
+* Prefix Thanos components with `prometheus-<name>` and adjust labels to allow multiple Prometheis with Thanos instances per namespace.
+
 ## v1.1.3
 
 * Fix setting Thanos image in chart.

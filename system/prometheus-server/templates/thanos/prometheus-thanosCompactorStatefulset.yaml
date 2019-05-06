@@ -2,17 +2,22 @@
 apiVersion: apps/v1beta2
 kind: StatefulSet
 metadata:
-  name: thanos-compactor
+  name: {{ include "prometheus.fullName" . }}-thanos-compactor
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: thanos-compactor
+      prometheus: {{ include "prometheus.name" . }}
   serviceName: thanos-compactor
   template:
     metadata:
       labels:
         app: thanos-compactor
+        prometheus: {{ include "prometheus.name" . }}
     spec:
       containers:
       - args:
@@ -26,7 +31,7 @@ spec:
           valueFrom:
             secretKeyRef:
               key: {{ required ".Values.thanos.spec.objectStorageConfig.key missing" .Values.thanos.spec.objectStorageConfig.key }}
-              name: {{ required ".Values.thanos.spec.objectStorageConfig.name" .Values.thanos.spec.objectStorageConfig.name }}
+              name: {{ include "thanos.objectStorageConfig.name" . }}
         image: {{ include "thanos.image" . }}
         name: thanos-compactor
         ports:
