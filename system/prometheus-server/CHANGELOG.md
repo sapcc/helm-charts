@@ -1,3 +1,7 @@
+## v1.1.5
+
+* Fix for incorrect thanos config name introduced in v1.1.4.
+
 ## v1.1.4
 
 * Prefix Thanos components with `prometheus-<name>` and adjust labels to allow multiple Prometheis with Thanos instances per namespace.

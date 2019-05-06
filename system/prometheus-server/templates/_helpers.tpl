@@ -63,5 +63,17 @@ thanos-peers.{{ .Release.Namespace }}.svc:10900
 {{- end -}}
 
 {{- define "thanos.objectStorageConfig.name" -}}
-{{- include "prometheus.fullName" . -}}-{{- required ".Values.thanos.spec.objectStorageConfig.name missing" .Values.thanos.spec.objectStorageConfig.name -}}
+{{- if and .Values.thanos.spec.objectStorageConfig -}}
+{{- required ".Values.thanos.spec.objectStorageConfig.name missing" .Values.thanos.spec.objectStorageConfig.name -}}
+{{- else -}}
+{{- include "prometheus.fullName" . -}}-{{- required ".Values.thanos.objectStorageConfig.name missing" .Values.thanos.objectStorageConfig.name -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "thanos.objectStorageConfig.key" -}}
+{{- if .Values.thanos.spec.objectStorageConfig -}}
+{{- required ".Values.thanos.spec.objectStorageConfig.key missing" .Values.thanos.spec.objectStorageConfig.key -}}
+{{- else -}}
+{{- required ".Values.thanos.objectStorageConfig.key missing" .Values.thanos.objectStorageConfig.key -}}
+{{- end -}}
 {{- end -}}
