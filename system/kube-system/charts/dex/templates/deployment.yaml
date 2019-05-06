@@ -53,7 +53,7 @@ spec:
         - mountPath: /etc/dex/tls
           name: tls
 {{- end }}
-{{- if .Values.ingress.ca }}
+{{- if or (.Values.ingress.ca) (ne (len .Values.extraCAs) 0)}}
         - mountPath: /etc/dex/ca
           name: ca
 {{- end }}
@@ -74,7 +74,7 @@ spec:
           defaultMode: 420
           secretName: {{ template "dex.fullname" . }}-tls
 {{- end }}
-{{- if .Values.ingress.ca }}
+{{- if or (.Values.ingress.ca) (ne (len .Values.extraCAs) 0)}}
       - name: ca
         secret:
           defaultMode: 420
