@@ -8,7 +8,7 @@ graphite_proto    = tcp
 
 host_type         = FILER
 auth_type         = password
-data_update_freq  = 300
+data_update_freq  = 60
 
 {{- range $idx, $share := .Values.global.netapp.filers }}
 
