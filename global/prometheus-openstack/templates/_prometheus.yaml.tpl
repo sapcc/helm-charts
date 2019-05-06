@@ -32,8 +32,8 @@
 
   {{ if .Values.authentication.enabled }}
   tls_config:
-    cert_file: /etc/prometheus/secrets/prometheus-sso-cert/sso.crt
-    key_file: /etc/prometheus/secrets/prometheus-sso-cert/sso.key
+    cert_file: /etc/prometheus/secrets/prometheus-openstack-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-openstack-sso-cert/sso.key
   {{ end }}
 
   static_configs:
