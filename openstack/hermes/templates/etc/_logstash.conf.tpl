@@ -209,6 +209,7 @@ output {
       bucket => "{{.Values.logstash.bucket}}"
       prefix => "{{.Values.logstash.prefix}}"
       time_file => {{.Values.logstash.time_file}}
+      #encoding => "gzip"
       codec => "json_lines"
       validate_credentials_on_root_bucket => false
       additional_settings => {
