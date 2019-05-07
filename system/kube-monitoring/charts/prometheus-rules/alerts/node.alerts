@@ -71,6 +71,18 @@ groups:
       description: Insufficient memory
       summary: Node {{ $labels.node }} under pressure due to insufficient available memory
 
+  - alert: KubernetesNodeDiskUsagePercentage
+    expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext",job="kube-system/node"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext",job="kube-system/node"}) BY (instance,device)) > 85
+    for: 5m
+    labels:
+      tier: k8s
+      service: node
+      severity: info
+      context: node
+      meta: "Node disk usage above 85% on {{ $labels.instance }} device {{ $labels.device }}"
+    annotations: 
+      description: "Node disk usage above 85%"
+      summary: "Disk usage on target {{ $labels.instance }} at {{ $value }}%"
 
   ### Network health ###
 
