@@ -51,6 +51,10 @@ configMaps:
   - <name of the configmap containing the custom_sd.json`
 ```
 
+## Thanos
+
+This chart supports Thanos out-of-the-box.
+See [Thanos docs](./templates/thanos/README.md) for additional details specific to the SAP Converged Cloud Enterprise Edition.
 
 ## Configuration
 
