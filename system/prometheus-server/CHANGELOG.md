@@ -1,3 +1,7 @@
+## 1.1.6
+
+* Bump Thanos image.
+
 ## v1.1.5
 
 * Fix for incorrect thanos config name introduced in v1.1.4.
