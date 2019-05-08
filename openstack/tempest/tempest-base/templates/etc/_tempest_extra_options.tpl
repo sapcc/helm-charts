@@ -84,6 +84,12 @@ endpoint_type = internalURL
 v3_endpoint_type = internalURL
 region = {{ .Values.global.region }}
 
+[volume]
+catalog_type = volumev3
+endpoint_type = internal
+min_microversio = 3.0
+max_microversion = latest
+
 [service_available]
 manila = True
 neutron = True
