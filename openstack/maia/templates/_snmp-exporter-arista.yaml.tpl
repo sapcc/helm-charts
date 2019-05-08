@@ -166,11 +166,11 @@ arista:
       type: gauge
     lookups:
       - labels: [hrDeviceIndex]
-        oid: 10.46.178.5 1.3.6.1.2.1.25.3.2.1.3
+        oid: 1.3.6.1.2.1.25.3.2.1.3
         labelname: hrDeviceDescr
         type: DisplayString
       - labels: [hrDeviceIndex]
-        oid: 10.46.178.5 1.3.6.1.2.1.25.3.2.1.5
+        oid: 1.3.6.1.2.1.25.3.2.1.5
         labelname: hrDeviceStatus
         type: DisplayString                 
   - name: snmp_arista_HardwareUtilizationInUseEntries
