@@ -14,18 +14,18 @@ spec:
         component: bios-exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ .Values.bios_exporter.listen_port | quote }} 
+        prometheus.io/port: {{ .Values.listen_port }}
     spec:
       containers:
          - name: bios-exporter
            image: {{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.bios_exporter.image.namespace }}/{{ .Values.bios_exporter.image.name }}:{{ .Values.bios_exporter.image.tag }}
            ports:
              - name: metrics
-               containerPort: {{ .Values.bios_exporter.listen_port }}
+               containerPort: {{ .Values.listen_port }}
            command:
              - /bios_exporter/export.py
            args:
-             - -o {{ .Values.bios_exporter.listen_port | quote }}
+             - -o {{ .Values.listen_port }}
            env:
              - name: REMOTEUSER
                value: {{ .Values.bios_exporter.user }}
