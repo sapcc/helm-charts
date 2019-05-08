@@ -1,0 +1,8 @@
+groups:
+- name: sentry
+  rules:
+  - record: OpenstackSentryDown
+    expr: sum(probe_success{module="sentry"}) by (instance) == 0
+
+  - record: OpenstackSentryPostgresIsAlmostFull
+    expr: sum(pg_database_size_bytes{app="sentry-postgresql"}) by (app) > 40000000000
