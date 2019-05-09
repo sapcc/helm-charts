@@ -76,6 +76,7 @@ function start_application {
       fi
     else
       cp -a $i /var/lib/grafana/provisioning/datasources
+    fi
   done
   # fill in the region specific fields in the elasticsearch datasources
   sed -i 's,__ELASTICSEARCH_USER__,{{.Values.elasticsearch.admin.user}},g' /var/lib/grafana/provisioning/datasources/*
