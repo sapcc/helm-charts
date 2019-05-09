@@ -1,14 +1,13 @@
 {
     "openstack": {
-        "auth_url": "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3",
+        "auth_url": "http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{ required "Missing clusterDomain value!" .Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{required "Missing region value!" .Values.global.region}}.{{ required "Missing tld value!" .Values.global.tld}}{{end}}:5000/v3",
         "region_name": "{{ .Values.global.region }}",
-        "endpoint_type": "public",
+        "endpoint_type": "internal",
         "admin": {
             "username": "admin",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
-            "project_name": "admin",
-            "project_domain_name": "tempest"
+            "domain_name": "tempest"
     },
     "users": [
         {
