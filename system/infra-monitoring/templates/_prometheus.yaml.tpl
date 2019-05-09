@@ -328,6 +328,9 @@
         - /etc/prometheus/configmaps/atlas-targets/switches.json
   metrics_path: /snmp
   relabel_configs:
+    - source_labels: [job]
+      regex: '(switch_asr04/netbox|switch_qa-de-1-asw/netbox|switch_qa-de-1-asr/netbox|switch_n7k/netbox)'
+      action: drop
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
