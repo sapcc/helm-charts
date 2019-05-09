@@ -320,6 +320,7 @@
   scheme: https
   params:
     job: [switch_f5/netbox]
+    module: [f5]
   scrape_interval: 60s
   scrape_timeout: 55s
   file_sd_configs:
