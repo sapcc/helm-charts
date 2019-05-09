@@ -19,6 +19,23 @@ spec:
     spec:
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
+
+      initContainers:
+        # wait for database
+        - name: wait-for-database
+          image: alpine
+          command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 blackhole-postgresql 5432 && exit 0 || sleep 3; done; exit 1"]
+
+        # create, migrate and seed databse
+        - name: setup-database
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          volumeMounts:
+            - name: clients
+              mountPath: '/clients'
+              readOnly: true
+          command: ["yarn", "setupdb"]
+
       containers:
         - name: blackhole
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -29,12 +46,6 @@ spec:
           env:
             - name: REGION
               value: {{ .Values.region }}
-            - name: ADMIN_API_KEY
-              value: {{ .Values.admin_api_key}}
-            - name: ADMIN_API_SECRET
-              value: {{ .Values.admin_api_secret}}
-            - name: ALERTS_API_ENDPOINT
-              value: {{ .Values.alerts_api_endpoint }}
             - name: BLACKHOLE_DB_PASSWORD
               valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
           livenessProbe:
@@ -55,11 +66,6 @@ spec:
               exec:
                 #Give the ingress some time to reload its config
                 command: ["/bin/sh","-c","sleep 30"]
-          
-          volumeMounts:
-            - name: clients
-              mountPath: '/clients'
-              readOnly: true
 
       volumes:   
         - name: clients
