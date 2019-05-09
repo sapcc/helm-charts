@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+annotations:
+  "helm.sh/hook": "pre-install"
+  "helm.sh/hook": "pre-upgrade"
+
+metadata:
+  name:  {{ .Values.atlas.config_file }}
+  labels:
+    app: {{ include "atlas.name" . }}
+    chart: {{ include "atlas.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+
+data:
+  atlas.yaml: |
+    discoveries:
+      ironic:
+        refresh_interval: 600
+        targets_file_name: "ironic.json"
+        os_auth:
+          auth_url: "{{ .Values.os_auth_url }}"
+          user: "{{ .Values.global.ipmi_exporter_user }}"
+          password: "{{ .Values.global.ipmi_exporter_user_passwd }}"
+          user_domain_name: "{{ .Values.os_user_domain_name }}"
+          project_name: "{{ .Values.os_project_name }}"
+          domain_name: "{{ .Values.os_project_domain_name }}"
+      switch:
+        refresh_interval: 600
+        targets_file_name: "switches.json"
+        netbox_host: "{{ .Values.netbox_host }}"
+        netbox_api_token: {{ required "ipmi_service_discovery.netbox.api_token needs to be defined in global values" .Values.global.ipmi_service_discovery.netbox.api_token }}
+        switches:
+          - name: "f5"
+            manufacturer: "f5"
+          - name: "asr04"
+            manufacturer: "cisco"
+          - name: "{{ .Values.global.region }}-asw"
+            manufacturer: "arista"
+          - name: "{{ .Values.global.region }}-asr"
+            manufacturer: "cisco"
+          - name: "n7k"
+            manufacturer: "cisco"
