@@ -304,11 +304,11 @@
   metrics_path: /
   relabel_configs:
     - source_labels: [__address__]
-      target_label: __param_hostname
+      target_label: __param_target
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: ipmi-exporter:9290
+      replacement: bios-exporter:9059
     - source_labels: [manufacturer]
       target_label:  __param_manufacturer
     - source_labels: [model]
