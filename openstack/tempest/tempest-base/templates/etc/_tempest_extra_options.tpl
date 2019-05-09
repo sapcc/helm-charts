@@ -10,6 +10,10 @@ create_isolated_networks = False
 test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
 default_credentials_domain_name = tempest
 admin_project_name = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name }}
+admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
+admin_password = {{ required "A valid .Values.tempest.adminPassword required!" .Values.tempest.adminPassword }}
+admin_domain_name = tempest
+admin_domain_scope = True
 
 [identity]
 uri_v3 = http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}:5000/v3
@@ -19,11 +23,28 @@ region = {{ .Values.global.region }}
 default_domain_id = {{ .Values.tempest_common.domainId }}
 admin_domain_scope = True
 disable_ssl_certificate_validation = True
+auth_version = v3
+username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
+password = {{ required "A valid .Values.tempest.adminPassword required!" .Values.tempest.adminPassword }}
+domain_name = tempest
+admin_role = admin
+admin_domain_name = tempest
+admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
+admin_password = {{ required "A valid .Values.tempest.adminPassword required!" .Values.tempest.adminPassword }}
+catalog_type = identity
+user_unique_last_password_count = 5
+user_lockout_duration = 300
+user_lockout_failure_attempts = 5
 
 [identity-feature-enabled]
 domain_specific_drivers = True
 project_tags = True
 application_credentials = True
+api_v2 = False
+api_v2_admin = False
+api_v3 = True
+trust = True
+security_compliance = True
 
 [network]
 project_network_cidr = 10.199.0.0/16
@@ -97,5 +118,9 @@ cinder = True
 glance = True
 nova = True
 swift = True
+designate = True
+ironic = True
+barbican = True
+keystone = True
 
 {{ end }}
