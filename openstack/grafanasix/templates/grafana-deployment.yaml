@@ -32,9 +32,11 @@ spec:
         - name: grafana-etc
           configMap:
             name: grafana-etc
+{{- if .Values.authentication.enabled }}
         - name: grafana-ds-certs
           secret:
             secretName: grafana-ds-certs
+{{- end }}
         - name: grafana-content
           emptyDir: {}
       containers:
@@ -58,8 +60,10 @@ spec:
               mountPath: /grafana-bin
             - name: grafana-etc
               mountPath: /grafana-etc
+{{- if .Values.authentication.enabled }}
             - name: grafana-ds-certs
               mountPath: /grafana-ds-certs
+{{- end }}
             - name: grafana-content
               mountPath: /git
         - name: "gitsync"
