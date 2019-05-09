@@ -314,3 +314,24 @@
     - source_labels: [model]
       target_label:  __param_model
 {{- end }}
+
+{{- if .Values.global.altas.switches.enabled }}
+- job_name: 'switch_f5/netbox'
+  params:
+    job: [switch_f5/netbox]
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-targets/switches.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
+    - source_labels: [server_name]
+      target_label:  __param_server_name
+{{- end }}
