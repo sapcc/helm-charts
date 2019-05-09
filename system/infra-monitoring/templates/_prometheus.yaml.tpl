@@ -300,7 +300,7 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /custom_targets/atlas/ironic.json
+        - /etc/prometheus/configmaps/atlas-targets/ironic.json
   metrics_path: /
   relabel_configs:
     - source_labels: [__address__]
