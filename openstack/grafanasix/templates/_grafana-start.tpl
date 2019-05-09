@@ -51,7 +51,32 @@ function start_application {
     cp -a /git/grafana-content/dashboards-config-{{.Values.grafana.mode}} /var/lib/grafana/provisioning/dashboards
   fi
   rm -rf /var/lib/grafana/provisioning/datasources
-  cp -a /git/grafana-content/datasources-config /var/lib/grafana/provisioning/datasources
+  mkdir -p /var/lib/grafana/provisioning/datasources
+  cd /git/grafana-content/datasources-config
+  for i in * ; do
+    grep -qw "    tlsAuthWithCACert: true" $i
+    ADD_CERTS_YN_LC=$?
+    grep -qw "    tlsAuthWithCACert: True" $i
+    ADD_CERTS_YN_UC=$?
+    if [ "$ADD_CERTS_YN_LC" = "0" ] || [ "$ADD_CERTS_YN_UC" = "0" ]; then
+      cat $i | grep -v "json object of data that will be encrypted" | grep -v secureJsonData > /var/lib/grafana/provisioning/datasources/$i
+      echo "  # <string> json object of data that will be encrypted." >> /var/lib/grafana/provisioning/datasources/$i
+      echo "  secureJsonData:" >> /var/lib/grafana/provisioning/datasources/$i
+      if [ -f /grafana-ds-certs/cacert.crt ]; then
+        echo '    tlsCACert: |' >> /var/lib/grafana/provisioning/datasources/$i
+        cat /grafana-ds-certs/cacert.crt | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
+      fi
+      if [ -f /grafana-ds-certs/sso.crt ]; then
+        echo '    tlsClientCert: |' >> /var/lib/grafana/provisioning/datasources/$i
+        cat /grafana-ds-certs/sso.crt | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
+      fi
+      if [ -f /grafana-ds-certs/sso.key ]; then
+        echo '    tlsClientKey: |' >> /var/lib/grafana/provisioning/datasources/$i
+        cat /grafana-ds-certs/sso.key | sed 's/^/      /' >> /var/lib/grafana/provisioning/datasources/$i
+      fi
+    else
+      cp -a $i /var/lib/grafana/provisioning/datasources
+  done
   # fill in the region specific fields in the elasticsearch datasources
   sed -i 's,__ELASTICSEARCH_USER__,{{.Values.elasticsearch.admin.user}},g' /var/lib/grafana/provisioning/datasources/*
   sed -i 's,__ELASTICSEARCH_PASSWORD__,{{.Values.elasticsearch.admin.password}},g' /var/lib/grafana/provisioning/datasources/*
