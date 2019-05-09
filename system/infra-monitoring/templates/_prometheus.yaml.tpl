@@ -291,3 +291,26 @@
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
     - target_label: region
       replacement: {{ .Values.global.region }}
+ 
+{{- if .Values.global.altas.ironic.enabled }}
+- job_name: 'baremetal/ironic'
+  params:
+    job: [baremetal/ironic]
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-targets/ironic.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: bios-exporter:9059
+    - source_labels: [manufacturer]
+      target_label:  __param_manufacturer
+    - source_labels: [model]
+      target_label:  __param_model
+{{- end }}
