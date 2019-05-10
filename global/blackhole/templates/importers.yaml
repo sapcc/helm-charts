@@ -39,22 +39,3 @@ spec:
               value: {{ .Values.clients.coreImporter.key }}
             - name: IMPORTER_API_SECRET
               value: {{ .Values.clients.coreImporter.secret }}
-          livenessProbe:
-            httpGet:
-              path: /system/liveliness
-              port: 80
-            timeoutSeconds: 10
-            periodSeconds: 60
-            initialDelaySeconds: 60
-          readinessProbe:
-            httpGet:
-              path: /system/readiness
-              port: 80
-            timeoutSeconds: 5
-            periodSeconds: 5
-          lifecycle:
-            preStop:
-              exec:
-                #Give the ingress some time to reload its config
-                command: ["/bin/sh","-c","sleep 30"]
-
