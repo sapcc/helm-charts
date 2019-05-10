@@ -316,11 +316,8 @@
 {{- end }}
 
 {{- if .Values.global.altas.switches.enabled }}
-- job_name: 'switch_f5/netbox'
+- job_name: 'switches/netbox'
   scheme: https
-  params:
-    job: [switch_f5/netbox]
-    module: [f5]
   scrape_interval: 60s
   scrape_timeout: 55s
   file_sd_configs:
@@ -328,9 +325,10 @@
         - /etc/prometheus/configmaps/atlas-targets/switches.json
   metrics_path: /snmp
   relabel_configs:
+    - source_labels: [module]
+      target_label: __param_module
     - source_labels: [job]
-      regex: '(switch_asr04/netbox|switch_qa-de-1-asw/netbox|switch_qa-de-1-asr/netbox|switch_n7k/netbox)'
-      action: drop
+      target_label: __param_job
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
