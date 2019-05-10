@@ -127,7 +127,7 @@
     - action: replace
       source_labels: [__address__]
       target_label: region
-      regex: prometheus-kubernetes-scaleout.(.+).cloud.sap
+      regex: prometheus-kubernetes.scaleout.(.+).cloud.sap
       replacement: $1
     - action: replace
       target_label: cluster_type
@@ -148,6 +148,8 @@
 
   static_configs:
     - targets:
+      - "prometheus-kubernetes.internet.eu-de-2.cloud.sap"
+      - "prometheus-kubernetes.kubernetes-ccloudshell.eu-de-2.cloud.sap"
 {{- range $region := .Values.regionList }}
-      - "prometheus-kubernetes-scaleout.{{ $region }}.cloud.sap"
+      - "prometheus-kubernetes.scaleout.{{ $region }}.cloud.sap"
 {{- end }}
