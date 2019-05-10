@@ -32,12 +32,12 @@ spec:
           imagePullPolicy: {{.Values.image.pullPolicy}}
           volumeMounts:
             - name: clients
-              mountPath: '/clients'
+              mountPath: '/home/app/api/clients'
               readOnly: true
           command: ["yarn", "setupdb"]
           env:
             - name: PGHOST
-              value: {{ template "postgresql.fullname" . }}
+              value: {{ tVemplate "postgresql.fullname" . }}
             - name: PGPASSWORD
               valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
 
@@ -51,7 +51,9 @@ spec:
           env:
             - name: REGION
               value: {{ .Values.region }}
-            - name: BLACKHOLE_DB_PASSWORD
+            - name: PGHOST  
+              value: {{ tVemplate "postgresql.fullname" . }}
+            - name: PGPASSWORD
               valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
           livenessProbe:
             httpGet:
