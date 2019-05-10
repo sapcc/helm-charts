@@ -35,9 +35,26 @@ spec:
               value: {{ .Values.region }}
             - name: ALERTS_API_ENDPOINT
               value: {{ .Values.alerts_api_endpoint }}
-            - name: IMPORTER_API_ENDPOINT
-              value: blackhole
             - name: IMPORTER_API_KEY
               value: {{ .Values.clients.coreImporter.key }}
             - name: IMPORTER_API_SECRET
               value: {{ .Values.clients.coreImporter.secret }}
+          livenessProbe:
+            httpGet:
+              path: /system/liveliness
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /system/readiness
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                #Give the ingress some time to reload its config
+                command: ["/bin/sh","-c","sleep 30"]
+
