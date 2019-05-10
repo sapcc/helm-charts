@@ -1,3 +1,7 @@
+## 1.1.7
+
+* Bump Prometheus to v2.9.2
+
 ## 1.1.6
 
 * Bump Thanos image.
