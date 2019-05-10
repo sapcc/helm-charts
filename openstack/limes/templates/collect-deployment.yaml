@@ -26,6 +26,8 @@ spec:
         checksum: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
+        # The `openstack` Prometheus shall scrape metrics of OpenStack services.
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
     spec:
       volumes:
         - name: config
