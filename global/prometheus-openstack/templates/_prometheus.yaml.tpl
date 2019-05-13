@@ -11,6 +11,7 @@
       - '{__name__=~"^ALERTS$"}'
       - '{__name__=~"^global:.+"}'
       - '{__name__=~"up"}'
+      - '{__name__=~"^prometheus_build_version$"}'
 
   relabel_configs:
     - action: replace

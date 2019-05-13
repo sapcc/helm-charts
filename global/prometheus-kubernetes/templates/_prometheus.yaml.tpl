@@ -107,6 +107,7 @@
   params:
     'match[]':
       - '{__name__=~"^ALERTS$"}'
+      - '{__name__=~"^global:.+"}'
       - '{__name__=~"^alertmanager_.+"}'
       - '{__name__=~"^kube_node_.+"}'
       - '{__name__=~"^node_cpu_seconds_total",mode="idle"}'
@@ -122,6 +123,7 @@
       - '{__name__=~"^probe_(dns|duration|http|success).*"}'
       - '{__name__=~"^vice_president_token_count_remaining$"}'
       - '{__name__=~"^vice_president_sso_certificate_expires$"}'
+      - '{__name__=~"^prometheus_build_version$"}'
 
   relabel_configs:
     - action: replace
