@@ -1,0 +1,47 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ironic-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ironic-exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: ironic-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.port_number }}"
+    spec:
+      containers:
+      - name: ironic-exporter
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.port_number }}
+          name: metrics
+          protocol: TCP
+        env:
+        - name: LOGLEVEL
+          value: "{{ .Values.log_level }}"
+        - name: PORT_NUMBER
+          value: "{{ .Values.port_number }}"
+        - name: OS_VERSION
+          value: "{{ .Values.tag }}"
+        - name: OS_IRONIC_USERNAME
+          value: "{{ .Values.global.ipmi_exporter_user }}"
+        - name: OS_IRONIC_PASSWORD
+          value: "{{ .Values.global.ipmi_exporter_user_passwd }}"
+        - name: OS_USER_DOMAIN_NAME
+          value: "{{ .Values.os_user_domain_name }}"
+        - name: OS_PROJECT_NAME
+          value: "{{ .Values.os_project_name }}"
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: "{{ .Values.os_project_domain_name }}"
+        - name: REGION
+          value: "{{ .Values.global.region }}"
+        - name: NOTIFICATIONS
+          value: "{{ .Values.global.notifications }}"
