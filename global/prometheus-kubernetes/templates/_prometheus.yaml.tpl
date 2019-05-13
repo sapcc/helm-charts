@@ -123,7 +123,7 @@
       - '{__name__=~"^probe_(dns|duration|http|success).*"}'
       - '{__name__=~"^vice_president_token_count_remaining$"}'
       - '{__name__=~"^vice_president_sso_certificate_expires$"}'
-      - '{__name__=~"^prometheus_build_version$"}'
+      - '{__name__=~"prometheus_build_version"}'
 
   relabel_configs:
     - action: replace
