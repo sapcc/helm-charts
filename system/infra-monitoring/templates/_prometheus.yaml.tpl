@@ -293,11 +293,11 @@
       replacement: {{ .Values.global.region }}
  
 {{- if .Values.global.altas.ironic.enabled }}
-- job_name: 'baremetal/ironic'
+- job_name: 'bios/ironic'
   params:
-    job: [baremetal/ironic]
-  scrape_interval: 120s
-  scrape_timeout: 110s
+    job: [bios/ironic]
+  scrape_interval: 60s
+  scrape_timeout: 55s
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-targets/ironic.json
