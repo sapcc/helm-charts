@@ -10,6 +10,7 @@
     'match[]':
       - '{__name__=~"^ALERTS$"}'
       - '{__name__=~"up"}'
+      - '{__name__=~"^global:.+"}'
       - '{__name__=~"^snmp_.+"}'
 
   relabel_configs:
@@ -21,6 +22,13 @@
     - action: replace
       target_label: cluster_type
       replacement: controlplane
+
+  metric_relabel_configs:
+    - action: replace
+      source_labels: [__name__]
+      target_label: __name__
+      regex: global:(.+)
+      replacement: $1
 
   {{ if .Values.authentication.enabled }}
   tls_config:
