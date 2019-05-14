@@ -19,14 +19,15 @@ spec:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-{{- if .Values.remoteIP }}
         command:
           - sh
           - -exc
           - |
+{{- if .Values.remoteIP }}
             echo -e "\n{{ .Values.remoteIP }} {{.Values.remoteURL | trimPrefix "https://" | trimPrefix "http://"}}" >> /etc/hosts
-            exec /entrypoint.sh /etc/docker/registry/config.yml
 {{- end }}
+            cp /conf/tls.crt /tmp/tls.crt.livenesspobe
+            exec /entrypoint.sh /etc/docker/registry/config.yml
         env:
           - name: REGISTRY_PROXY_REMOTEURL
             value: {{ .Values.remoteURL }}
@@ -38,6 +39,14 @@ spec:
 {{- end }}
         ports:
         - containerPort: {{ .Values.service.internalPort }}
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - cmp -s /conf/tls.crt /tmp/tls.crt.livenesspobe
+          initialDelaySeconds: 60
+          periodSeconds: 60
         readinessProbe:
           httpGet:
             path: /
