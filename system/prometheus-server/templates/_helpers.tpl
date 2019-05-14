@@ -77,3 +77,19 @@ thanos-peers.{{ .Release.Namespace }}.svc:10900
 {{- required ".Values.thanos.objectStorageConfig.key missing" .Values.thanos.objectStorageConfig.key -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "thanos.projectName" -}}
+{{- if .Values.thanos.swiftStorageConfig.tenantName }}
+{{- .Values.thanos.swiftStorageConfig.tenantName | quote -}}
+{{- else -}}
+{{- required ".Values.thanos.swiftStorageConfig.projectName missing" .Values.thanos.swiftStorageConfig.projectName | quote -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "thanos.projectDomainName" -}}
+{{- if .Values.thanos.swiftStorageConfig.projectDomainName -}}
+{{- .Values.thanos.swiftStorageConfig.projectDomainName | quote -}}
+{{- else -}}
+{{- required ".Values.thanos.swiftStorageConfig.domainName missing" .Values.thanos.swiftStorageConfig.domainName | quote -}}
+{{- end -}}
+{{- end -}}

@@ -25,7 +25,7 @@ thanos:
     userDomainName:   <userDomainName>
     password:         <password>
     domainName:       <domainName>
-    tenantName:       <tenantName>
+    projectName:      <projectName>
     regionName:       <regionName>
     containerName:    <swiftContainerName>
 ```
