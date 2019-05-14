@@ -31,7 +31,9 @@ thanos:
     containerName:      <swiftContainerName>
 ```
 
-## Creating the OpenStack user
+## Troubleshooting
+
+### Creation of the OpenStack user
 
 Thanos, as configured in this chart, uses OpenStack Swift as the backend.
 Thus an OpenStack service user with sufficient access is required.

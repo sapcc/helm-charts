@@ -51,9 +51,9 @@ configMaps:
   - <name of the configmap containing the custom_sd.json`
 ```
 
-## Thanos
+## Thanos (Long-term storage for metrics)
 
-This chart supports Thanos out-of-the-box.
+This chart supports [Thanos](https://github.com/improbable-eng/thanos) out-of-the-box.
 See [Thanos docs](./templates/thanos/README.md) for additional details specific to the SAP Converged Cloud Enterprise Edition.
 
 ## Configuration
