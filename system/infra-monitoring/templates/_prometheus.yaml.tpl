@@ -292,7 +292,7 @@
     - target_label: region
       replacement: {{ .Values.global.region }}
  
-{{- if .Values.global.altas.ironic.enabled }}
+{{- if .Values.global.atlas.ironic.enabled }}
 - job_name: 'bios/ironic'
   params:
     job: [bios/ironic]
@@ -315,7 +315,7 @@
       target_label:  __param_model
 {{- end }}
 
-{{- if .Values.global.altas.switches.enabled }}
+{{- if .Values.global.atlas.switches.enabled }}
 - job_name: 'switches/netbox'
   scheme: https
   scrape_interval: 60s
