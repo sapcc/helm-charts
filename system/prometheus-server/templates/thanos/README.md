@@ -20,12 +20,25 @@ persistence:
 thanos:
   enabled: true
   swiftStorageConfig:
-    authURL:          https://<keystone>/v3
-    userName:         <userName>
-    userDomainName:   <userDomainName>
-    password:         <password>
-    domainName:       <domainName>
-    projectName:      <projectName>
-    regionName:       <regionName>
-    containerName:    <swiftContainerName>
+    authURL:            https://<keystone>/v3
+    userName:           <userName>
+    userDomainName:     <userDomainName>
+    password:           <password>
+    domainName:         <domainName>
+    projectName:        <projectName>
+    projectDomainName:  <projectDomainName>
+    regionName:         <regionName>
+    containerName:      <swiftContainerName>
 ```
+
+## Creating the OpenStack user
+
+Thanos, as configured in this chart, uses OpenStack Swift as the backend.
+Thus an OpenStack service user with sufficient access is required.
+Luckily it is created without manual intervention using a Kubernetes operator, the [Openstack Seeder](https://github.com/sapcc/kubernetes-operators/tree/master/openstack-seeder).
+Its configuration is deployed via [OpenStackSeed](thanos-seed.yaml) for the Thanos service user.  
+However, creation of the OpenStack service user for Thanos might take longer than the Thanos components need to be up & running.
+In which case they might end up in `Error` state.
+This needs manual intervention: 
+1. Ensure the OpenStack service user and container was successfully created.
+2. Delete the Pod of the Prometheus StatefulSet and of the related Thanos components.
