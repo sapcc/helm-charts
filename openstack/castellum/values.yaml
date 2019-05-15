@@ -1,0 +1,42 @@
+castellum:
+  image: sapcc/castellum
+  image_tag: latest
+  image_pull_policy: Always
+
+  service_user:
+    password: DEFINED_IN_VALUES_FILE
+
+  # # Whether to apply resource requests/limits to containers.
+  # resources:
+  #   enabled: false
+
+# Deploy Castellum Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+
+pgmetrics:
+  db_name: castellum
+
+  customMetrics:
+    castellum_db_critical_usage:
+      query: >
+        SELECT r.scope_uuid AS project_id, r.asset_type AS asset, COUNT(*) AS gauge
+          FROM resources r JOIN assets a ON a.resource_id = r.id
+         WHERE a.usage_percent > r.critical_threshold_percent
+           AND a.expected_size IS NULL
+           AND a.id NOT IN (
+                 SELECT asset_id FROM pending_operations WHERE reason = 'critical'
+               )
+         GROUP BY r.scope_uuid, r.asset_type
+      metrics:
+        - project_id:
+            usage: "LABEL"
+            description: "UUID of project"
+        - asset:
+            usage: "LABEL"
+            description: "Asset type"
+        - gauge:
+            usage: "GAUGE"
+            description: "Number of assets with critical usage, but no pending resize operation"
