@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: arista-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arista-exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: arista-exporter
+        type: exporter
+    spec:
+      containers:
+      - name: arista-exporter
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        env:
+        - name: APP_ENV
+          value: "{{ .Values.app_env }}"
+        - name: ARISTA_USERNAME
+          value: "{{ .Values.global.arista_username }}"
+        - name: ARISTA_PASSWORD
+          value: "{{ .Values.global.arista_password }}"
+        ports:
+        - containerPort: 9200
