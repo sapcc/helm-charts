@@ -1,0 +1,26 @@
+groups:
+- name: cinder
+  rules:
+  - record: OpenstackCinderVolumeInDeletingState
+    expr: sum(openstack_stuck_volumes_max_duration_gauge{status="deleting"}) BY (id,display_name) > 15
+
+  - record: OpenstackCinderVolumeInAttachingState
+    expr: sum(openstack_stuck_volumes_max_duration_gauge{status="attaching"}) BY (id,display_name) > 15
+
+  - record: OpenstackCinderVolumeInDetachingState
+    expr: sum(openstack_stuck_volumes_max_duration_gauge{status="detaching"}) BY (id,display_name) > 15
+
+  - record: OpenstackCinderApiDown
+    expr: blackbox_api_status_gauge{check=~"cinder"} == 1
+
+  - record: OpenstackCinderApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"cinder"}[30m]) > 8
+
+  - record: OpenstackCinderCanaryDown
+    expr: blackbox_canary_status_gauge{service=~"cinder"} == 1
+
+  - record: OpenstackCinderCanaryTimeout
+    expr: blackbox_canary_status_gauge{service=~"cinder"} == 0.5
+
+  - record: OpenstackCinderCanaryFlapping
+    expr: changes(blackbox_canary_status_gauge{service=~"cinder"}[2h]) > 8
