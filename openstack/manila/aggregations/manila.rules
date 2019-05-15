@@ -1,0 +1,50 @@
+groups:
+- name: manila
+  rules:
+  - record: OpenstackManilaSharesStuck
+    expr: (sum(openstack_manila_shares_stuck_count_gauge) BY (host, status)) > 0
+
+  - record: OpenstackManilaSharesStuckCreate
+    expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="creating"})
+
+  - record: OpenstackManilaSharesStuckDelete
+    expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="deleting"})
+
+  - record: OpenstackManilaShareServerHigh
+    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (host),
+
+  - record: OpenstackManilaShareServerFull
+    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (host),
+
+  - record: OpenstackManilaProbeSuccessValueIs0
+    expr: probe_success{instance=~".*stnp.*|.*ma.*"} == 0
+
+  - record: OpenstackManilaApiDown
+    expr: blackbox_api_status_gauge{check=~"manila"} == 1
+
+  - record: OpenstackManilaApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"manila"}[30m]) > 8
+
+  - record: OpenstackManilaDatapathDown
+    expr: blackbox_datapath_status_gauge{service=~"manila"} == 1
+
+  - record: OpenstackManilaDatapathHalfDown
+    expr: blackbox_datapath_status_gauge{service=~"manila"} == 0.5
+
+  - record: OpenstackManilaDatapathFlapping
+    expr: changes(blackbox_datapath_status_gauge{service=~"manila"}[30m]) > 8
+
+  - record: OpenstackManilaCanaryDown
+    expr: blackbox_canary_status_gauge{service=~"manila"} == 1
+
+  - record: OpenstackManilaCanaryTimeout
+    expr: blackbox_canary_status_gauge{service=~"manila"} == 0.5
+
+  - record: OpenstackManilaCanaryFlapping
+    expr: changes(blackbox_canary_status_gauge{service=~"manila"}[2h]) > 8
+
+  - record: OpenstackManilaNetappHighUsage
+    expr: netapp_capacity_aggregate{metric="percentage_used"} > 75
+
+  - record: OpenstackManilaNetappFull
+    expr: netapp_capacity_aggregate{metric="percentage_used"} > 90
