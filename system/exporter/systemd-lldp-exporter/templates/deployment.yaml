@@ -14,7 +14,8 @@ spec:
         type: exporter
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: "8081"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
       volumes:
       - name: systemd
@@ -27,7 +28,7 @@ spec:
           -  /lldp
         ports:
           - name: metrics
-            containerPort: 8081
+            containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
         volumeMounts:
         - name: systemd
           mountPath: /lldp

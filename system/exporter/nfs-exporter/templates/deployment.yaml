@@ -15,7 +15,8 @@ spec:
         type: exporter
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: "8086"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
       containers:
       - name: nfs-exporter
@@ -40,7 +41,7 @@ spec:
           - name: health
             containerPort: 8087
           - name: metrics
-            containerPort: 8086
+            containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
         livenessProbe:
           httpGet:
             path: /live
