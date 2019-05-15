@@ -49,14 +49,14 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
 {{- define "castellum_liveness_readiness_probes" }}
 livenessProbe:
   httpGet:
-    path: /
+    path: /healthcheck
     port: 8080
   timeoutSeconds: 10
   periodSeconds: 60
   initialDelaySeconds: 60
 readinessProbe:
   httpGet:
-    path: /
+    path: /healthcheck
     port: 8080
   timeoutSeconds: 5
   periodSeconds: 5
