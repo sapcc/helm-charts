@@ -11,8 +11,8 @@ groups:
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
     annotations:
-      description: Cinder Backup missing. Please check backup container.
-      summary: Cinder Backup missing
+      description: {{ template "fullname" . }} Backup missing. Please check backup container.
+      summary: {{ template "fullname" . }} Backup missing
 
   - alert: OpenstackDatabaseBackupAge2Hours
     expr: floor((time() - backup_last_success{app=~"{{ template "fullname" . }}"}) / 60 / 60) >= 2
