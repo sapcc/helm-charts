@@ -22,22 +22,22 @@ spec:
         app: castellum-api
       annotations:
         checksum: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
-      spec:
-        volumes:
-          - name: config
-            configMap:
-              name: castellum
-        containers:
-          - name: api
-            image: {{ include "castellum_image" . }}
-            imagePullPolicy: {{ .Values.castellum.image_pull_policy }}
-            args:
-              - api
-            env: {{ include "castellum_common_envvars" . | indent 14 }}
-            volumeMounts:
-              - mountPath: /etc/castellum
-                name: config
-            ports:
-              - name: http
-                containerPort: 8080
-            {{- include "castellum_liveness_readiness_probes" . | indent 12 }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: castellum
+      containers:
+        - name: api
+          image: {{ include "castellum_image" . }}
+          imagePullPolicy: {{ .Values.castellum.image_pull_policy }}
+          args:
+            - api
+          env: {{ include "castellum_common_envvars" . | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/castellum
+              name: config
+          ports:
+            - name: http
+              containerPort: 8080
+          {{- include "castellum_liveness_readiness_probes" . | indent 10 }}

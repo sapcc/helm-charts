@@ -42,7 +42,7 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: {{ quote .Values.global.region }}
 - name: OS_USER_DOMAIN_NAME
   value: Default
-- name: OS_USER_NAME
+- name: OS_USERNAME
   value: castellum
 {{- end -}}
 
