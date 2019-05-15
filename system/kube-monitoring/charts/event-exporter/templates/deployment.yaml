@@ -16,7 +16,8 @@ spec:
         app: {{ template "name" . }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ default 9102 .Values.metrics.port }}"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
@@ -33,7 +34,7 @@ spec:
           mountPath: /etc/eventexporter
         ports:
         - name: metrics
-          containerPort: {{ default 9102 .Values.metrics.port }}
+          containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
 {{- if .Values.rbac.create }}
