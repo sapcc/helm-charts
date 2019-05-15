@@ -43,17 +43,3 @@ groups:
     annotations:
       description: The last successful database backup for {{`{{ $labels.app }}`}} is {{`{{ $value }}`}} hours old.
       summary: Database Backup too old
-
-  - alert: OpenstackDatabaseBackupReplicationFailure
-    expr: backup_replication_last_run{kind="success", app=~"{{ template "fullname" . }}"} == 0
-    for: 24h
-    labels:
-      context: replicationage
-      dashboard: db-backup-replication
-      meta: "{{`{{ $labels.source_region }}`}} > {{`{{ $labels.region }}`}}"
-      service: {{ template "alerts.service" . }}
-      severity: warning
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-    annotations:
-      description: Database backup failed to replicate from {{`{{ $labels.source_region }}`}} to {{`{{ $labels.region }}`}}.
-      summary: Database Backup Replication Failed in {{`{{ $labels.region }}`}}
