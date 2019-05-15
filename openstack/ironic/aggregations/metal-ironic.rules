@@ -9,3 +9,6 @@ groups:
 
   - record: MetalIronicSensorInfo
     expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change|Drive Slot|Power Supply|Cable/Interconnect)", job="baremetal/ironic"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+
+  - record: MetalIronicMetricsDown
+    expr: count(ipmi_up{job="baremetal/ironic"} == 0) by (server_name, maintenance) or count(up{job="baremetal/ironic"} == 0) by (server_name, maintenance)

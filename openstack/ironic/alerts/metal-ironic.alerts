@@ -42,3 +42,17 @@ groups:
     annotations:
       description: "ironic node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for instance: {{ $labels.instance }}"
+
+  - alert: MetalIronicMetricsDown
+    expr: count(ipmi_up{job="baremetal/ironic"} == 0) by (server_name, maintenance) or count(up{job="baremetal/ironic"} == 0) by (server_name, maintenance)
+    for: 10m
+    labels:
+      severity: warning
+      tier: metal
+      service: ironic
+      context: "{{ $labels.server_name }}"
+      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}"
