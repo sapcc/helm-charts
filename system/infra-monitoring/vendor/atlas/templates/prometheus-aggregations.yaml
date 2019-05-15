@@ -1,4 +1,5 @@
 {{- $values := .Values }}
+{{- $name := include "atlas.name" . }}
 {{- if $values.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "aggregations/*.rules" }}
 ---
@@ -8,7 +9,7 @@ kind: PrometheusRule
 metadata:
   name: {{ printf "%s" $path | replace "/" "-" }}
   labels:
-    app: {{ include "atlas.name" . }}
+    app: {{ $name }}
     tier: infra
     type: aggregation-rules
     prometheus: {{ required "$values.alerts.prometheus missing" $values.alerts.prometheus }}
