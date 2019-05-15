@@ -1,0 +1,53 @@
+groups:
+- name: keystone
+  rules:
+  - record: OpenstackKeystoneScrapeMissing
+    expr: absent(up{component="keystone",type="api"})
+
+  - record: OpenstackKeystoneDatabaseScrapeMissing
+    expr: absent(up{app="keystone-postgresql", type="database"})
+
+  - record: OpenstackKeystoneApiDown
+    expr: up{component="keystone",type="api"} == 0
+
+  - record: OpenstackKeystoneDatabaseDown
+    expr: count(up{component="keystone-postgresql",type="database"} == 0) == count(up{component="keystone-postgresql",type="database"})
+
+  - record: OpenstackKeystoneAllDown
+    expr: count(up{component="keystone",type="api"} == 0) == count(up{component="keystone",type="api"})
+
+  - record: OpenstackActiveDirectoryNodeDown
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_node"} == 1
+
+  - record: OpenstackActiveDirectoryConnectFailed
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_dns"} == 1
+
+  - record: OpenstackActiveDirectorySearchUsersFailed
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_search_user"} == 1
+
+  - record: OpenstackActiveDirectorySearchGroupsFailed
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ad_search_group"} == 1
+
+  - record: OpenstackEWSDown
+    expr: blackbox_datapath_status_gauge{service="keystone", check="ping_ews"} == 1
+
+  - record: OpenstackKeystoneApiDown
+    expr: blackbox_api_status_gauge{check=~"keystone"} == 1
+
+  - record: OpenstackKeystoneApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"keystone"}[30m]) > 8
+
+  - record: OpenstackKeystoneApi5xx
+    expr: sum(irate(nginx_ingress_controller_requests{ingress=~"keystone", status=~"5.+"}[5m])) > 0
+
+  - record: OpenstackKeystoneDatapathDown
+    expr: blackbox_datapath_status_gauge{service=~"keystone"} == 1
+
+  - record: OpenstackKeystoneDatapathHalfDown
+    expr: blackbox_datapath_status_gauge{service=~"keystone"} == 0.5
+
+  - record: OpenstackKeystoneDatapathFlapping
+    expr: changes(blackbox_datapath_status_gauge{service=~"keystone"}[30m]) > 8
+
+  - record: OpenstackKeystoneDatabaseSize
+    expr: predict_linear(pg_database_size_bytes{datname="keystone"}[1h], 24 * 3600) >= 10 * 1024^3
