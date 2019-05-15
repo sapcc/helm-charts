@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: {{ include "atlas.fullname" . }}
   labels:
-    app: {{ include "atlas.name" . }}
+    service: {{ include "atlas.name" . }}
     chart: {{ include "atlas.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
@@ -11,14 +11,13 @@ metadata:
     component: service_discovery
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
+    prometheus.io/port: "9090"
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 spec:
   selector:
     app: {{ include "atlas.name" . }}
-    name: {{ include "atlas.fullname" . }}
   ports:
-    - port: 8080
+    - port: 9090
       name: metrics
       targetPort: metrics
       protocol: TCP
