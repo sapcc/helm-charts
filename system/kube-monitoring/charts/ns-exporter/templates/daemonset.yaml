@@ -19,7 +19,8 @@ spec:
         app: ns-exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9191"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
       name: ns-exporter
     spec:
       hostPID: true
@@ -29,7 +30,7 @@ spec:
           - -concurrency={{ default 1  .Values.concurrency }}
           - -interval={{ default "1m" .Values.interval }}
         ports:
-        - containerPort: 9191
+        - containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
           name: metrics
           protocol: TCP
         env:
