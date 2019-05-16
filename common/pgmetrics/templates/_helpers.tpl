@@ -35,3 +35,12 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- $user := index . 1 }}
     {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "postgres.password_for_fixed_user" }}
 {{- end }}
+
+{{/* Generate the service label for the templated Prometheus alerts. */}}
+{{- define "alerts.service" -}}
+{{- if .Values.alerts.service -}}
+{{- .Values.alerts.service -}}
+{{- else -}}
+{{- .Release.Name -}}
+{{- end -}}
+{{- end -}}
