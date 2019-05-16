@@ -6,7 +6,6 @@ groups:
     for: 1h
     labels:
       context: backupage
-      dashboard: db-backup
       service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
@@ -19,7 +18,6 @@ groups:
     for: 10m
     labels:
       context: backupage
-      dashboard: db-backup
       meta: "{{`{{ $labels.app }}`}}"
       service: {{ include "alerts.service" . }}
       severity: info
@@ -34,7 +32,6 @@ groups:
     for: 10m
     labels:
       context: backupage
-      dashboard: db-backup
       meta: "{{`{{ $labels.app }}`}}"
       service: {{ include "alerts.service" . }}
       severity: warning
