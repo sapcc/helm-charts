@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{.Values.name}}-mariadb
+  name: {{ include "fullName" . }}
   labels:
     system: openstack
     type: database
@@ -13,11 +13,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: {{.Values.name}}-mariadb
+      app: {{ include "fullName" . }}
   template:
     metadata:
       labels:
-        app: {{.Values.name}}-mariadb
+        app: {{ include "fullName" . }}
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secret.yaml") . | sha256sum }}
         checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
