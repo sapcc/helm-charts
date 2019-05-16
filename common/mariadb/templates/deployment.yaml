@@ -28,9 +28,11 @@ spec:
         image: {{.Values.image}}
         imagePullPolicy: IfNotPresent
         env:
-        - name: MYSQL_ROOT_PASSWORD
-          value:
-            {{.Values.root_password}}
+        - name:  MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: root-password
         ports:
           - name: mariadb
             containerPort: 3306
