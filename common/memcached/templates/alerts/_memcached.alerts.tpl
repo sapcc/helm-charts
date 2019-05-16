@@ -1,7 +1,7 @@
 groups:
 - name: memcached.alerts
   rules:
-  - alert: {{ include "alerts.service" . | upper }}MemcachedManyConnectionsThrottled
+  - alert: {{ include "alerts.service" . | title }}MemcachedManyConnectionsThrottled
     expr: (rate(memcached_connections_yielded_total{app="barbican-memcached"}[5m]) * 60) > 5
     for: 5m
     labels:
