@@ -1,25 +1,25 @@
 groups:
 - name: pg-database.alerts
   rules:
-  - alert: PostgresDatabaseTooLarge
+  - alert: {{ include "alerts.service" . | upper }}PostgresDatabaseTooLarge
     expr: max(pg_database_size_bytes{datname="{{ default .Release.Name .Values.db_name }}"}) by (app,datname) >= 8.589934592e+09
     for: 5m
     labels:
       context: database
-      service: {{ template "alerts.service" . }}
+      service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
     annotations:
       description: 'The size of the database {{`{{ $labels.datname }}`}} exceeds 8 GiB : {{`{{ $value }}`}} bytes.'
       summary: Postgres database too large.
 
-  - alert: PredictHighNumberOfDatabaseConnections
+  - alert: {{ include "alerts.service" . | upper }}PredictHighNumberOfDatabaseConnections
     expr: predict_linear(pg_stat_activity_count{datname="{{ default .Release.Name .Values.db_name }}"}[1h], 3*3600) >= 2000
     for: 5m
     labels:
       context: database
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      service: {{ template "alerts.service" . }}
+      service: {{ include "alerts.service" . }}
       severity: warning
       meta: "Predicting a high number of database connections for {{`{{ $labels.datname }}`}}"
     annotations:
