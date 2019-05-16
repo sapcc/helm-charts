@@ -1,4 +1,4 @@
-- job_name: 'prometheus-openstack-regions-federation'
+- job_name: 'prometheus-regions-federation'
   scheme: https
   scrape_interval: 30s
   scrape_timeout: 25s
