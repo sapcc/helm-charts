@@ -1,27 +1,27 @@
 groups:
 - name: backup.alerts
   rules:
-  - alert: OpenstackDatabaseBackupMissing
+  - alert: {{ include "alerts.service" . | upper }}DatabaseBackupMissing
     expr: absent(backup_last_success{app=~"{{ template "fullname" . }}"})
     for: 1h
     labels:
       context: backupage
       dashboard: db-backup
-      service: {{ template "alerts.service" . }}
+      service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
     annotations:
       description: {{ template "fullname" . }} Backup missing. Please check backup container.
       summary: {{ template "fullname" . }} Backup missing
 
-  - alert: OpenstackDatabaseBackupAge2Hours
+  - alert: {{ include "alerts.service" . | upper }}DatabaseBackupAge2Hours
     expr: floor((time() - backup_last_success{app=~"{{ template "fullname" . }}"}) / 60 / 60) >= 2
     for: 10m
     labels:
       context: backupage
       dashboard: db-backup
       meta: "{{`{{ $labels.app }}`}}"
-      service: {{ template "alerts.service" . }}
+      service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: docs/support/playbook/db_backup_issues.html
@@ -29,14 +29,14 @@ groups:
       description: The last successful database backup for {{`{{ $labels.app }}`}} is {{`{{ $value }}`}} hours old.
       summary: Database Backup too old
 
-  - alert: OpenstackDatabaseBackupAge4Hours
+  - alert: {{ include "alerts.service" . | upper }}DatabaseBackupAge4Hours
     expr: floor((time() - backup_last_success{app=~"{{ template "fullname" . }}"}) / 60 / 60) >= 4
     for: 10m
     labels:
       context: backupage
       dashboard: db-backup
       meta: "{{`{{ $labels.app }}`}}"
-      service: {{ template "alerts.service" . }}
+      service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: docs/support/playbook/db_backup_issues.html
