@@ -222,10 +222,6 @@
         - /etc/prometheus/configmaps/atlas-targets/switches.json
   metrics_path: /snmp
   relabel_configs:
-    - source_labels: [module]
-      target_label: __param_module
-    - source_labels: [job]
-      target_label: __param_job
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
@@ -234,4 +230,6 @@
       replacement: snmp-exporter.{{ .Values.global.region }}.{{ .Values.global.domain }}
     - source_labels: [server_name]
       target_label:  __param_server_name
+    - source_labels: [module]
+      target_label: __param_module
 {{- end }}
