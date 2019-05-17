@@ -10,5 +10,5 @@ groups:
       service: certificates
       severity: info
     annotations:
-      description: The certificate for {{ $labels.host }} expires in {{ $value | humanizeDuration }}. See secret {{ $labels.secret }}, key {{ $labels.key }}.
+      description: The certificate for {{`{{ $labels.host }}`}} expires in {{`{{ $value | humanizeDuration }}`}}. See secret {{`{{ $labels.secret }}`}}, key {{`{{ $labels.key }}`}}.
       summary: Certificate expires
