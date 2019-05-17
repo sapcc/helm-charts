@@ -1,15 +1,15 @@
+{{- $values := .Values.global }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: blackbox-{{ printf "%s" $path | replace "/" "-" }}
+  name: {{ printf "%s" $path | replace "/" "-" }}
   labels:
     app: blackbox-tests
     type: alerting-rules
-    tier: os
-    prometheus: {{ required ".Values.global.alerts.prometheus missing" .Values.global.alerts.prometheus }}
+    prometheus: {{ required "$values.alerts.prometheus missing" $values.alerts.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
