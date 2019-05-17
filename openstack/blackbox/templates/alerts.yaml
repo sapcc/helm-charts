@@ -1,5 +1,3 @@
-{{- $values := .Values.global }}
-{{- if $values.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -11,10 +9,9 @@ metadata:
     app: blackbox-tests
     type: alerting-rules
     tier: os
-    prometheus: {{ required "$values.alerts.prometheus missing" $values.alerts.prometheus }}
+    prometheus: {{ required ".Values.global.alerts.prometheus missing" .Values.global.alerts.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
-{{- end }}
 {{- end }}
