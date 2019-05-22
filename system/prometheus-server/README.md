@@ -13,7 +13,15 @@ It will set up:
 This chart relies on resources brought to you by the [Prometheus Operator](https://github.com/coreos/prometheus-operator).  
 It may be installed using the [official helm chart](https://github.com/helm/charts/tree/master/stable/prometheus-operator).
 
-## Providing addition scrape configurations
+## Scrape configuration
+
+A default scrape configuration ifor service, endpoint and pod service discovery is part of this chart and deployed via [ServiceMonitors](./templates/servicemonitors),
+[PodMonitors](./templates/podmonitors) and via [configuration](./examples/prometheus.yaml).
+It can be disabled via values.  
+See the official specification on [ServiceMonitor](https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#servicemonitor) 
+and [PodMonitor](https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#podmonitor) for additional information.  
+
+### Providing additional scrape configurations
 
 Additional scrape configuration is provided via a secret referenced by the `additionalScrapeConfigs.name` and `additionalScrapeConfigs.key` parameters.  
 See the `prometheus.yaml` and `additional-scrape-config.yaml` in the [examples](./examples) folder.
