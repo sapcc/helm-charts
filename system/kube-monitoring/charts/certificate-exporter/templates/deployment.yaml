@@ -15,6 +15,7 @@ spec:
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: {{ required ".Values.metricsPort missing" .Values.metricsPort | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       {{- if .Values.rbac.create }}
       serviceAccount: {{ required ".Values.rbac.serviceAccountName missing" .Values.rbac.serviceAccountName }}
@@ -22,7 +23,7 @@ spec:
       {{ end }}
       containers:
         - name: k8s-secrets-certificate-exporter
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: {{ include "image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
           args:
             - certificate-exporter
@@ -34,4 +35,6 @@ spec:
             - --namespace={{ .Values.namespace }}
             {{ end }}
           ports:
-            - containerPort: {{ required ".Values.metricsPort missing" .Values.metricsPort }}
+            - name: metrics
+              containerPort: {{ required ".Values.metricsPort missing" .Values.metricsPort }}
+              protocol: TCP

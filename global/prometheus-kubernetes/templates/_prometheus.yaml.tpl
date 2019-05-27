@@ -1,4 +1,4 @@
-- job_name: 'prometheus-kubernetes-regions-federation'
+- job_name: 'prometheus-regions-federation'
   scheme: https
   scrape_interval: 30s
   scrape_timeout: 25s
@@ -54,7 +54,7 @@
       - "prometheus-kubernetes.{{ $region }}.cloud.sap"
 {{- end }}
 
-- job_name: 'prometheus-kubernetes-collector-regions-federation'
+- job_name: 'prometheus-collector-regions-federation'
   scheme: https
   scrape_interval: 30s
   scrape_timeout: 25s

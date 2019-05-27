@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -27,11 +28,7 @@ kind: Deployment
 metadata:
   name: {{ .Values.graphite.name }}
 spec:
-  {{-  if .Values.graphite.enabled }}
-  replicas: 1
-  {{-  else }}
-  replicas: 0
-  {{- end }}
+  replicas: {{ .Values.graphite.replicas }}
   selector:
     matchLabels:
       app: {{ .Values.graphite.name }}
@@ -81,3 +78,4 @@ spec:
             cpu: {{ .Values.graphite.cpu }}
           limits:
             cpu: {{ .Values.graphite.cpulimit }}
+{{- end }}

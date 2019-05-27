@@ -23,7 +23,7 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: ":8080"
 - name: CASTELLUM_NFS_PROMETHEUS_URL
   # TODO: switch to prometheus-openstack when it carries the netapp-api-exporter metrics
-  value: "https://prometheus.{{ .Values.global.region }}.{{ .Values.global.region }}"
+  value: "https://prometheus-collector.{{ .Values.global.region }}.{{ .Values.global.tld }}"
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.json
 - name: OS_AUTH_URL
@@ -32,6 +32,8 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: "3"
 - name: OS_IDENTITY_API_VERSION
   value: "3"
+- name: OS_INTERFACE
+  value: internal
 - name: OS_PASSWORD
   value: {{ quote .Values.castellum.service_user.password }}
 - name: OS_PROJECT_DOMAIN_NAME

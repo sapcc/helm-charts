@@ -17,7 +17,8 @@ spec:
         app: {{ template "name" . }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ default 9102 .Values.metrics.port }}"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
       containers:
       - name: {{ template "name" . }}
@@ -42,7 +43,7 @@ spec:
           mountPath: /var/run/docker.sock 
         ports:
         - name: metrics
-          containerPort: {{ default 9102 .Values.metrics.port }}
+          containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
       volumes:
       - name: kmsg
         hostPath:

@@ -10,9 +10,12 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: {{ .Values.global.metrics_port | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus" .Values.alerts.prometheus |  quote }}
 spec:
   selector:
     name: manila-api
   ports:
     - name: manila-api
       port: {{.Values.api_port_internal}}
+    - name: metrics
+      port: {{ .Values.global.metrics_port }}
