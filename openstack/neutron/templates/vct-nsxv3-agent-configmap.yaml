@@ -35,7 +35,7 @@ template: |
       [NSXV3]
       # nsx-t has only admin / audit user
       nsxv3_login_user = admin
-      {%- set hostname = "nsx-ctl-" + name + "." + domain %}
+      {%- set hostname = "nsx-ctl-" + availability_zone + "-" + ( '%04d' % int(''.join(i for i in name if i.isdigit())) ) + "." + domain %}
       nsxv3_login_hostname = {= hostname =}
       nsxv3_login_password = {= username | derive_password(hostname) | quote =}
       {%- set tzname = name + "-vlan" %}
@@ -50,9 +50,10 @@ template: |
       [vsphere]
       # vcenter connection info for the migration functions
       # TODO - remove it after migration
-      vsphere_login_username = {= host =}
-      vsphere_login_password = {= username | quote =}
-      vsphere_login_hostname = {= password | quote =}
+      vsphere_login_username = {= username | quote =}
+      vsphere_login_password = {= password | quote =}
+      vsphere_login_hostname = {= host =}
+
       vsphere_suppress_ssl_wornings = True
   {% endif %}
 {{ end }}
