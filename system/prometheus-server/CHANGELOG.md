@@ -1,3 +1,7 @@
+## 1.1.9
+
+* Allow extending `prometheus.io/targets` annotations via `.Values.serviceDiscoveries.targetsOverride`.
+
 ## 1.1.8
 
 * Bump Thanos image.
