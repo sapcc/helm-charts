@@ -35,7 +35,8 @@ template: |
       [NSXV3]
       # nsx-t has only admin / audit user
       nsxv3_login_user = admin
-      {%- set hostname = "nsx-ctl-" + availability_zone + "-" + ( '%04d' % int(''.join(i for i in name if i.isdigit())) ) + "." + domain %}
+      {%- set bb = name | replace( "bb", "") | int %}
+      {%- set hostname = "nsx-ctl-" + availability_zone[-1] + "-bb" + ( '%03d' % bb ) + "." + domain %}
       nsxv3_login_hostname = {= hostname =}
       nsxv3_login_password = {= username | derive_password(hostname) | quote =}
       {%- set tzname = name + "-vlan" %}
