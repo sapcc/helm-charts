@@ -22,7 +22,7 @@ vni_ranges = 10000:20000
 
 
 [securitygroup]
-firewall_driver = neutron.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver
+firewall_driver = iptables_hybrid
 enable_security_group=True
 enable_ipset=True
 
@@ -30,6 +30,11 @@ enable_ipset=True
 polling_interval=5
 prevent_arp_spoofing = False
 
+[linux_bridge]
+physical_interface_mappings = {{required "A valid .Values.cp_physical_network required!" .Values.cp_physical_network}}:{{required "A valid .Values.cp_network_interface required!" .Values.cp_network_interface}}
+
+[vxlan]
+enable_vxlan = false
 
 [ovs]
 bridge_mappings = {{required "A valid .Values.cp_physical_network required!" .Values.cp_physical_network}}:br-{{required "A valid .Values.cp_network_interface required!" .Values.cp_network_interface}}

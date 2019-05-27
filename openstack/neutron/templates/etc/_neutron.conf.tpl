@@ -19,8 +19,6 @@ max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
 # Maximum number of routes per router (integer value)
 max_routes = {{.Values.max_routes | default 256}}
 
-interface_driver = neutron.agent.linux.interface.OVSInterfaceDriver
-
 allow_overlapping_ips = true
 core_plugin = ml2
 
