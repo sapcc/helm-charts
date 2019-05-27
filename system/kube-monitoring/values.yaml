@@ -4,15 +4,6 @@ global:
 
   clusterType: controlplane
 
-  prometheus:
-    image: prom/prometheus
-    tag: v2.8.0
-
-  configmap_reload:
-    image:
-      repository: jimmidyson/configmap-reload
-      tag: v0.2.2
-
   ipmi_service_discovery:
     enabled: false
     configmap_name: ipmi-sd
@@ -32,6 +23,16 @@ global:
   # placeholder. the full list of regions is set via the pipeline
   regions:
     - "staging"
+
+  # Remove the following after transition to operated Prometheus is completed.
+  prometheus:
+    image: prom/prometheus
+    tag: v2.8.0
+
+  configmap_reload:
+    image:
+      repository: jimmidyson/configmap-reload
+      tag: v0.2.2
 
   # Prometheus via deployment.
   prometheus_deploy:
@@ -66,9 +67,10 @@ prometheus-collector-operated:
     create: false
     name: default
 
+  # Discover targets with `prometheus.io/targets=kubernetes` annotation as well.
   serviceDiscoveries:
-    endpoints:
-      enabled: false
+    additionalTargets:
+      - kubernetes
 
 # Values for operated Prometheus frontend.
 # Only used if global.prometheus_operated.enabled: true.
@@ -104,7 +106,7 @@ prometheus-frontend-operated:
   #  - alertmanager.eu-nl-1.cloud.sap
 
 # Deploy basic set of Prometheus alert and aggregation rules for monitoring Kubernetes.
-prometheus-rules:
+kube-rules:
   prometheusName: kubernetes
   prometheusCollectorName: collector-kubernetes
 

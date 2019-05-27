@@ -35,7 +35,7 @@ spec:
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_targets
-          regex: '.*{{ include "prometheus.name" . }}.*'
+          regex: {{ include "prometheusTargetsValue" . | quote }}
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_container_port_number
@@ -49,6 +49,49 @@ spec:
         - sourceLabels:
             - __address__
             - __meta_kubernetes_pod_annotation_prometheus_io_port
+          targetLabel: __address__
+          regex: '([^:]+)(?::\d+);(\d+)'
+          replacement: ${1}:${2}
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_pod_name
+          targetLabel: kubernetes_pod_name
+
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: 60s
+      scrapeTimeout: 55s
+      port: metrics
+      scheme: http
+      honorLabels: true
+      relabelings:
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+          regex: 'true'
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_targets
+          regex: {{ include "prometheusTargetsValue" . | quote }}
+        - action: keep
+          source_labels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_port_1
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_container_port_number
+            - __meta_kubernetes_pod_container_port_name
+            - __meta_kubernetes_pod_annotation_prometheus_io_port_1
+          regex: '(9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)'
+        - sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_path
+          targetLabel: __metrics_path__
+          regex: '(.+)'
+        - sourceLabels:
+            - __address__
+            - __meta_kubernetes_pod_annotation_prometheus_io_port_1
           targetLabel: __address__
           regex: '([^:]+)(?::\d+);(\d+)'
           replacement: ${1}:${2}

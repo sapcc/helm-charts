@@ -93,3 +93,13 @@ thanos-peers.{{ .Release.Namespace }}.svc:10900
 {{- required ".Values.thanos.swiftStorageConfig.domainName missing" .Values.thanos.swiftStorageConfig.domainName | quote -}}
 {{- end -}}
 {{- end -}}
+
+{{/* Value for prometheus.io/targets annotation. */}}
+{{- define "prometheusTargetsValue" -}}
+{{- $value := printf ".*%s.*" (include "prometheus.name" . ) -}}
+{{- if .Values.serviceDiscoveries.additionalTargets -}}
+{{- $value -}}|.*{{- .Values.serviceDiscoveries.additionalTargets | join ".*|.*" -}}.*
+{{- else -}}
+{{- $value -}}
+{{- end -}}
+{{- end -}}
