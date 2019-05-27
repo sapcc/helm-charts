@@ -1,6 +1,17 @@
 groups:
 - name: blackbox.alerts
   rules:
+  - alert: BlackboxTestsDatapathScrapeMissing
+    expr: absent(up{component="blackbox-tests",type="datapath"})
+    for: 1h
+    labels:
+      service: blackbox-tests-datapath
+      severity: warning
+      tier: os
+    annotations:
+      description: Blackbox-Tests-Datapath failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: Blackbox-Tests-Datapath cannot be scraped
+
   - alert: BlackboxDatapathMetricsDown
     expr: absent(up{kubernetes_name="blackbox-tests-datapath",kubernetes_namespace="blackbox"}) == 1
     for: 15m

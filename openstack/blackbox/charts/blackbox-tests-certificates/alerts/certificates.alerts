@@ -1,6 +1,17 @@
 groups:
 - name: blackbox.alerts
   rules:
+  - alert: BlackboxTestsCertificatesScrapeMissing
+    expr: absent(up{component="blackbox-tests",type="certificates"})
+    for: 1h
+    labels:
+      service: blackbox-tests-certificates
+      severity: warning
+      tier: os
+    annotations:
+      description: Blackbox-Tests-Certificates failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: Blackbox-Tests-Certificates cannot be scraped
+
   - alert: BlackboxCertificatesMetricsDown
     expr: absent(up{kubernetes_name="blackbox-tests-certificates",kubernetes_namespace="blackbox"}) == 1
     for: 15m
