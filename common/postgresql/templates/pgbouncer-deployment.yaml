@@ -30,6 +30,7 @@ spec:
         {{- if $opts.prometheus }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9200"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
 {{ tuple . .Values.postgresDatabase "pgbouncer" | include "kubernetes_pod_anti_affinity" | indent 6 }}

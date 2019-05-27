@@ -120,6 +120,7 @@ metrics:
   imagePullPolicy: IfNotPresent
 
   port: 9187
+
   customMetrics:
     pg_database:
       query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
@@ -157,3 +158,16 @@ pgbouncer:
 
 cdc:
   enabled: false
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: true
+
+  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  prometheus: openstack
+
+  # The tier of the alert.
+  tier: os
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:
