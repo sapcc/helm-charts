@@ -1,0 +1,16 @@
+{{- if .Values.rbac.create }}
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.rbac.name | quote }}
+  namespace: {{ .Values.rbac.namespace | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: {{ default "ClusterRole" .Values.rbac.role.kind | quote }}
+  name: {{ .Values.rbac.role.name | quote }}
+subjects:
+  - kind: {{ default "ServiceAccount" .Values.rbac.subject.kind | quote }}
+    name: {{ .Values.rbac.subject.name | quote }}
+    namespace: {{ default "default" .Values.rbac.subject.namespace | quote }}
+{{- end -}}
