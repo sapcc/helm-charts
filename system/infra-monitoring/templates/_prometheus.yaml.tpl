@@ -233,3 +233,21 @@
     - source_labels: [module]
       target_label: __param_module
 {{- end }}
+
+{{- if .Values.global.arista_exporter.enabled }}
+- job_name: 'arista-{{ .Values.global.region }}'
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /custom_targets/arista/arista_targets.json
+  metrics_path: /arista
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: arista-exporter:9200
+{{- end }}
+
