@@ -14,3 +14,12 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
+
+{{/* Generate the service label for the templated Prometheus alerts. */}}
+{{- define "alerts.service" -}}
+{{- if .Values.alerts.service -}}
+{{- .Values.alerts.service -}}
+{{- else -}}
+{{- .Release.Name -}}
+{{- end -}}
+{{- end -}}
