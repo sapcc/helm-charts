@@ -240,7 +240,7 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/arista/arista_targets.json
+        - /etc/prometheus/configmaps/arista-sd/arista_targets.json
   metrics_path: /arista
   relabel_configs:
     - source_labels: [__address__]
