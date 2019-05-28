@@ -1,0 +1,36 @@
+groups:
+- name: backup-etcd.alerts
+  rules:
+  - alert: BackupEtcdMissing
+    expr: absent(backup_last_success{app="backup-etcd"})
+    for: 1h
+    labels:
+      context: backupage
+      service: backup
+      severity: warning
+      tier: k8s
+    annotations:
+      description: Controlplane Etcd Backup missing. Please check backup container.
+      summary: Controlplane Etcd Backup missing
+  - alert: BackupEtcdAge2Hours
+    expr: floor((time() - backup_last_success{app="backup-etcd"}) / 60 / 60) >= 2
+    for: 10m
+    labels:
+      context: backupage
+      service: backup
+      severity: info
+      tier: k8s
+    annotations:
+      description: The last successful backup for Controlplane Etcd is {{ $value }} hours old.
+      summary: Controlplane Etcd Backup too old
+  - alert: BackupEtcdBackupAge4Hours
+    expr: floor((time() - backup_last_success{app="backup-etcd"}) / 60 / 60) >= 4
+    for: 10m
+    labels:
+      context: backupage
+      service: backup
+      severity: warning
+      tier: k8s
+    annotations:
+      description: The last successful backup for Controlplane Etcd is {{ $value }} hours old.
+      summary: Controlplane Etcd Backup too old
