@@ -1,3 +1,7 @@
+## 1.1.11
+
+* Cleanup PodMonitors.
+
 ## 1.1.10
 
 * Fix metric port.
