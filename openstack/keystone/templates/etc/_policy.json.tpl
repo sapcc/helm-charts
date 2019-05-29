@@ -152,8 +152,8 @@
     "project_admin_for_list_grants": "(rule:admin_required or role:role_admin or role:role_viewer) and project_id:%(project_id)s",
 
     "admin_on_domain_filter": "rule:admin_required and domain_id:%(scope.domain.id)s",
-    "admin_on_project_filter": "(rule:admin_required or role:role_admin or role_role_viewer) and project_id:%(scope.project.id)s",
-    "admin_on_domain_of_project_filter": "(rule:admin_required or role:role_admin or role_role_viewer) and domain_id:%(target.project.domain_id)s",
+    "admin_on_project_filter": "(rule:admin_required or role:role_admin or role:role_viewer) and project_id:%(scope.project.id)s",
+    "admin_on_domain_of_project_filter": "(rule:admin_required or role:role_admin or role:role_viewer) and domain_id:%(target.project.domain_id)s",
     "identity:list_role_assignments": "rule:cloud_admin or rule:admin_on_domain_filter or rule:admin_on_project_filter or rule:cloud_viewer",
     "identity:list_role_assignments_for_tree": "rule:cloud_admin or rule:admin_on_domain_of_project_filter",
     "identity:get_policy": "rule:cloud_admin or rule:cloud_viewer",
