@@ -1,3 +1,7 @@
+## 1.1.10
+
+* Fix metric port.
+
 ## 1.1.9
 
 * Allow extending `prometheus.io/targets` annotations via `.Values.serviceDiscoveries.targetsOverride`.
