@@ -1,0 +1,19 @@
+{{- if and .Values.alerts.enabled .Values.metrics.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ template "fullname" . }}-rabbitmq-alerts
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: rabbitmq
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_rabbitmq.alerts.tpl") . | indent 2 }}
+
+{{- end }}
