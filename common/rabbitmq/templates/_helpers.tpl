@@ -47,3 +47,12 @@ rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users
 {{- define "rabbitmq.shell_quote" -}}
 "{{- replace `"` `\"`  . | replace `$` `\$` | replace "`" (print `\` "`") -}}"
 {{- end }}
+
+{{/* Generate the service label for the templated Prometheus alerts. */}}
+{{- define "alerts.service" -}}
+{{- if .Values.alerts.service -}}
+{{- .Values.alerts.service -}}
+{{- else -}}
+{{- .Release.Name -}}
+{{- end -}}
+{{- end -}}
