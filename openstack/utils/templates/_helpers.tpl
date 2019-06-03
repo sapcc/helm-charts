@@ -8,7 +8,8 @@
     {{- range $key, $value := $values}}
 {{ $key }} = {{ $value }}
     {{- end }}
-  {{- end }}
+
+{{ end }}
 {{- end }}
 
 {{- define "loggerIni" -}}
