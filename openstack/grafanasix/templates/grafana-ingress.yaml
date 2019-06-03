@@ -7,11 +7,14 @@ metadata:
   annotations:
     vice-president: {{ default false .Values.grafana.vice_president | quote }}
     disco: {{ default false .Values.grafana.disco | quote }}
+    {{- if .Values.ingress.global }}
+    disco/zone-name: "global.cloud.sap"
+    {{- end }}
   {{- if .Values.grafana.auth.tls_client_auth.enabled}}
     ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.grafana.auth.tls_client_auth.secret }}
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
-  {{ end }}
+  {{- end }}
 
 spec:
   tls:
