@@ -7,9 +7,6 @@ metadata:
   annotations:
     vice-president: {{ default false .Values.grafana.vice_president | quote }}
     disco: {{ default false .Values.grafana.disco | quote }}
-    {{- if .Values.ingress.global }}
-    disco/zone-name: "global.cloud.sap"
-    {{- end }}
   {{- if .Values.grafana.auth.tls_client_auth.enabled}}
     ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.grafana.auth.tls_client_auth.secret }}
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
@@ -28,4 +25,34 @@ spec:
           backend:
             serviceName: grafana
             servicePort: {{.Values.grafana.endpoint.port.public}}
+{{- if .Values.ingress.global }}
+--- 
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: grafana-global
+  annotations:
+    vice-president: {{ default false .Values.grafana.vice_president | quote }}
+    disco: {{ default false .Values.grafana.disco | quote }}
+    disco/zone-name: "global.cloud.sap"
+  {{- if .Values.grafana.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.grafana.auth.tls_client_auth.secret }}
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+  {{- end }}
+
+spec:
+  tls:
+     - secretName: "tls-{{.Values.grafana.endpoint.host.global | replace "." "-"}}"
+       hosts: ["{{.Values.grafana.endpoint.host.global}}"]
+  rules:
+    - host: "{{.Values.grafana.endpoint.host.global}}"
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: grafana
+            servicePort: {{.Values.grafana.endpoint.port.public}}
+{{- end }}
 {{- end }}
