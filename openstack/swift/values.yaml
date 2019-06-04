@@ -2,6 +2,8 @@ global:
   tld: DEFINED_IN_REGION_CHART
   region: DEFINED_IN_REGION_CHART
   imageRegistry: DEFINED_IN_REGION_CHART
+  serviceType: object-store
+  serviceName: "service/storage/object"
 
 debug: false
 
@@ -127,23 +129,51 @@ object_ring_base64: DEFINED_IN_REGION_CHART
 sapcc_ratelimit:
   enabled: false
 
+  # Rate limit by tuple of target type URI, action and scope.
+  # The scope can be one of:
+  # - initiator_project_id
+  # - target_project_id
+  # - initiator_host_address
+  rateLimitBy: initiator_project_id
+
+  # The backend used to store rate limits.
+  backend:
+    # Backend type. Defaults to redis.
+    # Can be one of:
+    # - redis
+    # - memcached
+    type: redis
+
+    # Backend port. Defaults to redis port.
+    port: 6379
+
+    # Backend host. Defaults to redis headless service using `{{ .Release.Name }}-sapcc-ratelimit-redis-headless`.
+    # Can be overwritten using the following parameter.
+    # host:
+
 # Redis datastore for sapcc ratelimit middleware.
 # Only deployed if sapcc_ratelimit.enabled=true.
 sapcc-ratelimit-redis:
   image:
-    repository: redis
-    tag: 5.0.5-alpine3.9
+    registry: docker.io
+    repository: bitnami/redis
+    tag: 5.0.5-debian-9-r14
     pullPolicy: IfNotPresent
 
-  # Require a password for the redis.
-  # Defined in secrets.
+  # Use a single redis.
+  cluster:
+    enabled: false
+
+  # No password required for redis.
   usePassword: false
-  # password:
+
+  # Enable init container that changes volume permissions in the registry.
+  volumePermissions:
+    enabled: true
 
   # Prometheus metrics via oliver006/redis_exporter sidecar.
   metrics:
     enabled: true
-
     service:
       annotations:
         prometheus.io/scrape: "true"

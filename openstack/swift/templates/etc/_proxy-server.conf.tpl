@@ -214,19 +214,22 @@ secret_cache_duration = {{$cluster.token_cache_time | default 600}}
 {{ if $context.watcher_enabled -}}
 [filter:watcher]
 use = egg:watcher-middleware#watcher
-service_type = object-store
-cadf_service_name = service/storage/object
-target_project_id_from_path = {{$context.watcher_project_id_from_path | default true}}
 config_file = /swift-etc/watcher.yaml
+service_type = {{ required ".Values.global.serviceType" $context.global.serviceType }}
+cadf_service_name = {{ required ".Values.global.serviceName" $context.global.serviceName }}
+target_project_id_from_path = {{ $context.watcher_project_id_from_path | default true }}
 {{- end }}
 
-{{ if $context.sapcc_ratelimit.enabled }}
+{{ if $context.sapcc_ratelimit.enabled -}}
 [filter:sapcc_ratelimit]
 use = egg:rate_limit_middleware#rate-limit
-service_type = object-store
-cadf_service_name = service/storage/object
-rate_limit_by = initiator_project_id
 config_file = /swift-etc/sapcc-ratelimit.yaml
-{{ end }}
-{{end}}
+service_type = {{ required ".Values.global.serviceType missing" $context.global.serviceType }}
+cadf_service_name = {{ required ".Values.global.serviceName missing" $context.global.serviceName }}
+rate_limit_by = {{ required ".Values.sapcc_ratelimit.rateLimitBy missing" $context.sapcc_ratelimit.rateLimitBy }}
+backend = {{ required ".Values.sapcc_ratelimit.backend.type missing" $context.sapcc_ratelimit.backend.type }}
+backend_host = {{ tuple $helm_release $context | include "sapcc_ratelimit_backend_host" }}
+backend_port = {{ required ".Values.sapcc_ratelimit.backend.port missing" $context.sapcc_ratelimit.backend.port }}
+{{- end }}
 
+{{ end }}
