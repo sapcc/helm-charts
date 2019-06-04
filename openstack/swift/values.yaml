@@ -122,3 +122,29 @@ clusters:
 account_ring_base64: DEFINED_IN_REGION_CHART
 container_ring_base64: DEFINED_IN_REGION_CHART
 object_ring_base64: DEFINED_IN_REGION_CHART
+
+# Use https://github.com/sapcc/openstack-rate-limit-middleware for watcher based rate limiting.
+sapcc_ratelimit:
+  enabled: false
+
+# Redis datastore for sapcc ratelimit middleware.
+# Only deployed if sapcc_ratelimit.enabled=true.
+sapcc-ratelimit-redis:
+  image:
+    repository: redis
+    tag: 5.0.5-alpine3.9
+    pullPolicy: IfNotPresent
+
+  # Require a password for the redis.
+  # Defined in secrets.
+  usePassword: false
+  # password:
+
+  # Prometheus metrics via oliver006/redis_exporter sidecar.
+  metrics:
+    enabled: true
+
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "openstack"
