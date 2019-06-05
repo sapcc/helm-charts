@@ -393,6 +393,8 @@
 </match>
 
 <match **>
+  @type copy
+  <store>
    @type elasticsearch
    host {{.Values.elk_elasticsearch_endpoint_host_internal}}
    port {{.Values.elk_elasticsearch_http_port}}
@@ -415,4 +417,32 @@
      flush_thread_count 4
      flush_interval 3s
    </buffer>
+  </store>
+  <store>
+   @type elasticsearch_dynamic
+   host {{.Values.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.cluster_region}}.{{.Values.domain}}
+   port {{.Values.elk_elasticsearch_ssl_port}}
+   user {{.Values.elk_elasticsearch_data_user}}
+   password {{.Values.elk_elasticsearch_data_password}}
+   scheme https
+   ssl_verify false
+   ssl_version TLSv1_2
+   logstash_format true
+   time_as_integer false
+   @log_level info
+   slow_flush_log_threshold 50.0
+   request_timeout 60s
+   include_tag_key true
+   resurrect_after 120
+   reconnect_on_error true
+   <buffer>
+     flush_at_shutdown true
+     flush_thread_interval 5
+     overflow_action block
+     retry_forever true
+     retry_wait 2s
+     flush_thread_count 4
+     flush_interval 3s
+   </buffer>
+  </store>
  </match>
