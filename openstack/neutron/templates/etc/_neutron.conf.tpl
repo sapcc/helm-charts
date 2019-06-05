@@ -35,6 +35,8 @@ allow_automatic_dhcp_failover = {{ .Values.allow_automatic_dhcp_failover | defau
 dhcp_agents_per_network = 2
 dhcp_lease_duration = {{ .Values.dhcp_lease_duration | default 86400 }}
 
+enable_new_agents = false
+
 # Designate configuration
 dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
 {{- if .Values.dns_external_driver }}
