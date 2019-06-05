@@ -31,13 +31,10 @@ template: |
     template:
       metadata:
         labels:
-          application: neutron
-          component: agent
+{{ tuple . "neutron" "nsxv3" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
           name: neutron-nsxv3-agent-{= name =}
         annotations:
           configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
-          prometheus.io/scrape: "true"
-          prometheus.io/port: "9102"
       spec:
         containers:
         - name: neutron-nsxv3-agent
@@ -47,11 +44,10 @@ template: |
           args: ["neutron-nsxv3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
           env:
           - name: SENTRY_DSN
-            value: {{ .Values.sentry_dsn | quote }}
-          - name: STATSD_HOST
-            value: "localhost"
-          - name: STATSD_PORT
-            value: "9125"
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: neutron.DSN.python
           - name: PYTHONWARNINGS
             value: "ignore:Unverified HTTPS request"
           - name: PGAPPNAME
@@ -85,15 +81,6 @@ template: |
             name: ml2-conf-nsxv3
             subPath: ml2-nsxv3.ini
             readOnly: true
-        - name: statsd
-          image: prom/statsd-exporter:v0.5.0
-          imagePullPolicy: IfNotPresent
-          ports:
-          - name: statsd
-            containerPort: 9125
-            protocol: UDP
-          - name: metrics
-            containerPort: 9102
         volumes:
         - name: etcneutron
           emptyDir: {}
