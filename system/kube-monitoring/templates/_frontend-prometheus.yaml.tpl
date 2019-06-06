@@ -11,6 +11,7 @@
       - '{__name__=~"^aggregated:.+"}'
       - '{__name__=~"^alertmanager_.+"}'
       - '{__name__=~"^apiserver_.+"}'
+      - '{__name__="backup_last_success"}'
       - '{__name__=~"^bind_.+"}'
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^broker_.+"}'
