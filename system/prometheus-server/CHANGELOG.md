@@ -1,3 +1,7 @@
+## 1.1.13
+
+* Fix alertmanager configuration secret name.
+
 ## 1.1.12
 
 * Re-add `ServiceMonitor.Spec.Selector` as required by k8s 1.10+.
