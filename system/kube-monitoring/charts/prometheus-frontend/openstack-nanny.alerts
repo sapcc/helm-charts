@@ -162,3 +162,14 @@ groups:
     annotations:
       description: "The {{ $labels.kubernetes_name }} denied to fix some problems as there are too many of them - this should be investigated ..."
       summary: "The {{ $labels.kubernetes_name }} denied to fix some problems - should be investigated ..."
+  - alert: OpenstackVcenterNannyConsistencyTooMuchToFixByHand
+    expr: sum(vcenter_nanny_consistency_cinder_volume_in_use_without_some_attachments) > vcenter_nanny_consistency_cinder_volume_attachment_max_fix_count
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} found a lot of problems which will have to be fixed by hand - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} lots of problems to manually fix - should be investigated ..."
