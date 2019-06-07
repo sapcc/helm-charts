@@ -26,12 +26,7 @@ spec:
 {{ tuple . "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
       nodeSelector:
-        species: network
-      tolerations:
-        - key: "species"
-          operator: "Equal"
-          value: "network"
-          effect: "NoSchedule"
+        multus: bond1
       containers:
         - name: neutron-dhcp-agent
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentDHCP | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
