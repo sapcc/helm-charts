@@ -2,11 +2,10 @@
     "admin": "role:cloud_keymanager_admin",
     "context_is_admin": "rule:admin",
     "service_user": "role:service",
-    "member": "role:member",
     "viewer": "role:keymanager_viewer",
     "key_admin": "role:keymanager_admin",
     "context_is_key_admin": "rule:context_is_admin or rule:key_admin",
-    "context_is_editor": "rule:context_is_key_admin or rule:member",
+    "context_is_editor": "rule:context_is_key_admin",
     "context_is_viewer":  "rule:context_is_editor or rule:viewer",
 
     "secret_project_match": "project:%(target.secret.project_id)s",
