@@ -31,7 +31,7 @@ spec:
         - name: neutron-dhcp-agent
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentDHCP | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -99,7 +99,7 @@ spec:
         - name: neutron-metadata-agent
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentMetadata | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/metadata-agent.ini"]
+          command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/metadata-agent.ini"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -134,7 +134,7 @@ spec:
         - name: neutron-l3-agent
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentL3 | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["neutron-l3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/l3-agent.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          command: ["dumb-init", "neutron-l3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/l3-agent.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -191,7 +191,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentLinuxBridge | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
           env:
             - name: SENTRY_DSN
               valueFrom:
