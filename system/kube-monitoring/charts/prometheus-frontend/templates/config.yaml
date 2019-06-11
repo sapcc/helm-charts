@@ -51,6 +51,13 @@ data:
 {{ printf "%s" $bytes | indent 4 }}
   {{- end }}
   {{- end }}
+  # add admin cluster alerts
+  {{- if eq .Values.global.region "admin" }}
+  {{- range $path, $bytes := .Files.Glob "admin-*.alerts" }}
+  {{ printf "%s" $path }}: |
+{{ printf "%s" $bytes | indent 4 }}
+  {{- end }}
+  {{- end }}
 {{- end }}
 
 {{- if .Values.additional_alerts }}
