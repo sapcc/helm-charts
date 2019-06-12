@@ -20,3 +20,6 @@ groups:
     - record: global:limes_consolidated_unit_multiplier
       expr: max(label_join(limes_unit_multiplier, "full_resource", "/", "service", "resource"))
           by (full_resource)
+
+    - record: aggregated:limes_container_memory_usage_percent
+      expr: '100 * max by (namespace,pod_name) (container_memory_usage_bytes{pod_name=~"limes-.+"}) / max by (pod_name, namespace) (label_replace(kube_pod_container_resource_limits_memory_bytes{pod=~"limes-.+"}, "pod_name", "$1", "pod", "(.*)"))'
