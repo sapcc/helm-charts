@@ -37,8 +37,8 @@
    @type elasticsearch
    host {{.Values.elk_elasticsearch_endpoint_host_internal}}
    port {{.Values.elk_elasticsearch_http_port}}
-   user {{.Values.elk_elasticsearch_admin_user}}
-   password {{.Values.elk_elasticsearch_admin_password}}
+   user {{.Values.elk_elasticsearch_data_user}}
+   password {{.Values.elk_elasticsearch_data_password}}
    index_name systemd
    type_name fluentd
    logstash_prefix systemd
@@ -64,8 +64,8 @@
    @type elasticsearch_dynamic
    host {{.Values.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.cluster_region}}.{{.Values.domain}}
    port {{.Values.elk_elasticsearch_ssl_port}}
-   user {{.Values.elk_elasticsearch_admin_user}}
-   password {{.Values.elk_elasticsearch_admin_password}}
+   user {{.Values.elk_elasticsearch_data_user}}
+   password {{.Values.elk_elasticsearch_data_password}}
    scheme https
    ssl_verify false
    ssl_version TLSv1_2
