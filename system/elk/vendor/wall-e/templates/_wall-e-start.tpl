@@ -13,14 +13,7 @@ function start_application {
   export STDOUT_LOC=${STDOUT_LOC:-/proc/1/fd/1}  
   export STDERR_LOC=${STDERR_LOC:-/proc/1/fd/2}
   unset http_proxy https_proxy all_proxy no_proxy
-  export ELK_ELASTICSEARCH_MASTER_PROJECT_ID={{.Values.master_project_id}}
-  cp -f /elk-content/elk-content/kibana/search.json /search.json
-  cp -f /elk-content/elk-content/kibana/visualization.json /visualization.json
-  cp -f /elk-content/elk-content/kibana/dashboard.json /dashboard.json
-  sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /search.json
-  sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /visualization.json
-  sed "s,ELK_ELASTICSEARCH_MASTER_PROJECT_ID,${ELK_ELASTICSEARCH_MASTER_PROJECT_ID},g" -i /dashboard.json
-
+  
   echo "INFO: setting discovery.zen.minimum_master_nodes to 2"  
   curl -s -u {{.Values.global.admin_user}}:{{.Values.global.admin_password}} -XPUT "http://{{.Values.global.endpoint_host_internal}}:{{.Values.global.http_port}}/_cluster/settings" -d '{"transient": { "discovery.zen.minimum_master_nodes": 2 }}'
 
@@ -50,7 +43,7 @@ function start_application {
 
   # run the creation of the index patterns and the index retention cleanup deletion once on startup and put them into cron to run once per night afterwards
   # echo "INFO: creating the indexes"
-  #  . /wall-e-bin/create-kibana-indexes.sh
+  #  . /wall-e-etc/create-kibana-indexes.sh
   echo ""
   echo "INFO: deleting old indexes in case we run out of space"
   /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml
