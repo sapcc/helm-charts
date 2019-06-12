@@ -1,0 +1,50 @@
+{{- if .Values.sftp.enabled }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: neutron-sftp-backup
+  labels:
+    release: "{{.Release.Name}}"
+spec:
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      component: neutron-sftp-backup
+  template:
+    metadata:
+      labels:
+        component: neutron-sftp-backup
+    spec:
+      containers:
+        - name: sftp
+          image: hub.global.cloud.sap/monsoon/swift-sftp:{{ .Values.sftp.image  }}
+          args: ['server', '-f', '/etc/swift/swift-sftp.conf']
+          env:
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "64Mi"
+            limits:
+              cpu: "1000m"
+              memory: "256Mi"
+          volumeMounts:
+            - mountPath: /etc/swift/swift-sftp.conf
+              name: neutron-sftp-backup
+              subPath: swift-sftp.conf
+              readOnly: true
+            - mountPath: /etc/swift/ssh_host_rsa_key
+              name: neutron-sftp-backup
+              subPath: ssh_host_rsa_key
+              readOnly: true
+            - mountPath: /etc/swift/passwd
+              name: neutron-sftp-backup
+              subPath: passwd
+              readOnly: true
+      volumes:
+        - name: neutron-sftp-backup
+          configMap:
+            name: neutron-sftp-backup
+{{- end}}
