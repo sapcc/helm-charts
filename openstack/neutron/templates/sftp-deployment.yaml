@@ -17,6 +17,8 @@ spec:
     metadata:
       labels:
         component: neutron-sftp-backup
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
     spec:
       containers:
         - name: sftp
@@ -43,8 +45,12 @@ spec:
               name: neutron-sftp-backup
               subPath: passwd
               readOnly: true
+            - mountPath: /tmp
+              name: cache-volume
       volumes:
         - name: neutron-sftp-backup
           configMap:
             name: neutron-sftp-backup
+        - name: cache-volume
+          emptyDir: {}
 {{- end}}
