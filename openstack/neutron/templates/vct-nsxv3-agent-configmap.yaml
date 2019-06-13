@@ -36,13 +36,10 @@ template: |
       # nsx-t has only admin / audit user
       nsxv3_login_user = admin
       {%- set bb = name | replace( "bb", "") | int %}
-      {%- set hostname = "nsx-ctl-" + availability_zone[-1] + "-bb" + ( '%03d' % bb ) + "." + domain %}
+      {%- set hostname = "nsx-ctl-" + "-bb" + ( '%03d' % bb ) + "." + domain %}
       nsxv3_login_hostname = {= hostname =}
       nsxv3_login_password = {= username | derive_password(hostname) | quote =}
-      {%- set tzname = name + "-vlan" %}
-      {% if name == "bb93" %}
-      {%- set tzname = "TZ-VLAN" %}
-      {% endif %}
+      {%- set tzname = "bb" + ( '%03d' % bb ) + "-vlan" %}
       nsxv3_transport_zone_name = {= tzname =}
       {{- range $k, $v := .Values.drivers.nsxv3.defaults.NSXV3 }}
       {{ $k }} = {{ $v }}
