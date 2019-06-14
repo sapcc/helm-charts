@@ -6,7 +6,11 @@ debug = {{.Values.debug}}
 dnsmasq_config_file = /etc/neutron/dnsmasq.conf
 force_metadata=True
 enable_isolated_metadata=True
-metadata_proxy_socket=/run/metadata_proxy
+{{- if .Values.agent.multus | default false }}
+metadata_proxy_socket = /run/metadata_proxy/metadata_proxy
+{{- else }}
+metadata_proxy_socket = /run/metadata_proxy
+{{- end }}
 dnsmasq_dns_servers = {{required "A valid .Values.dns_forwarders required!" .Values.dns_forwarders}}
 dhcp_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
 dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
