@@ -29,7 +29,13 @@ router_scheduler_driver = {{required "A valid .Values.router_scheduler_driver re
 router_auto_schedule = {{ .Values.router_auto_schedule | default "false" }}
 allow_automatic_l3agent_failover = {{ .Values.allow_automatic_l3agent_failover | default "false" }}
 
+# New DHCP Agent
+{{- if .Values.agent.multus }}
+network_scheduler_driver = neutron.scheduler.dhcp_agent_scheduler.AZAwareWeightScheduler
+allow_automatic_dhcp_failover = true
+{{- else }}
 allow_automatic_dhcp_failover = {{ .Values.allow_automatic_dhcp_failover | default "false" }}
+{{- end }}
 dhcp_agents_per_network = 2
 dhcp_lease_duration = {{ .Values.dhcp_lease_duration | default 86400 }}
 
