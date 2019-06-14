@@ -92,5 +92,5 @@
    </buffer>
   </store>
 {{ end -}}
-
+# second is missing, it it is only deployed to one elk cluster
  </match>
