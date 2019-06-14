@@ -176,8 +176,8 @@
 - job_name: 'bios/ironic'
   params:
     job: [bios/ironic]
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: 140s
+  scrape_timeout: 135s
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-targets/ironic.json
