@@ -53,7 +53,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:process} (\[)?(req-)?(%{REQUESTID:requestid})
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?(%{REQUESTID:requestid})
     custom_pattern_path /fluent-etc/pattern
   </parse>
 </filter>
