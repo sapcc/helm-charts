@@ -227,7 +227,8 @@ config_file = /swift-etc/sapcc-ratelimit.yaml
 service_type = {{ required ".Values.global.serviceType missing" $context.global.serviceType }}
 cadf_service_name = {{ required ".Values.global.serviceName missing" $context.global.serviceName }}
 rate_limit_by = {{ required ".Values.sapcc_ratelimit.rateLimitBy missing" $context.sapcc_ratelimit.rateLimitBy }}
-backend = {{ required ".Values.sapcc_ratelimit.backend.type missing" $context.sapcc_ratelimit.backend.type }}
+max_sleep_time_seconds = {{ required ".Values.sapcc_ratelimit.maxSleepTimeSeconds missing" $context.sapcc_ratelimit.maxSleepTimeSeconds }}
+log_sleep_time_seconds = {{ required ".Values.sapcc_ratelimit.logSleepTimeSeconds missing" $context.sapcc_ratelimit.logSleepTimeSeconds }}
 backend_host = {{ tuple $helm_release $context | include "sapcc_ratelimit_backend_host" }}
 backend_port = {{ required ".Values.sapcc_ratelimit.backend.port missing" $context.sapcc_ratelimit.backend.port }}
 {{- end }}
