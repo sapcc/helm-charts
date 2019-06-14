@@ -75,7 +75,7 @@ logging.quiet: true
 #logging.verbose: true
 
 # whitelist the headers we want to transfer from the ingress to elasticsearch
-elasticsearch.requestHeadersWhitelist: [ "X-Remote-User" ]
+elasticsearch.requestHeadersWhitelist: [ "Authorization", "X-Remote-User" ]
 
 xpack.monitoring.enabled: false
 xpack.xpack_main.telemetry.enabled: false

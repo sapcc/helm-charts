@@ -60,6 +60,7 @@
      flush_interval 3s
    </buffer>
   </store>
+{{- if .Values.scaleout.enabled }}
   <store>
    @type elasticsearch_dynamic
    host {{.Values.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.cluster_region}}.{{.Values.domain}}
@@ -90,4 +91,5 @@
      flush_interval 3s
    </buffer>
   </store>
+{{ end -}}
  </match>
