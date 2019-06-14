@@ -18,7 +18,7 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_annotations" }}
-scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":{{ .Values.species | quote }}}]'
+scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":{{ .Values.species | quote }}}, {"key":"multipath-disks","value":"true"}]'
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
