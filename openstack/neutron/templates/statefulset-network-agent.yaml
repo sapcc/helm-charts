@@ -1,37 +1,41 @@
 {{- if .Values.agent.multus | default false }}
+{{- range $az := list "a" "b" }}
+---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
-  name: neutron-network-agent
+  name: neutron-network-agent-{{ $az }}
   labels:
     system: openstack
     application: neutron
     component: agent
 spec:
   updateStrategy:
-{{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "staging") }}
+{{- if or (eq $.Values.global.region "qa-de-1") (eq $.Values.global.region "staging") }}
     type: RollingUpdate
 {{- else }}
     type: OnDelete
 {{- end }}
   selector:
     matchLabels:
-      component: agent
+      name: neutron-network-agent-{{ $az }}
   template:
     metadata:
       annotations:
-        k8s.v1.cni.cncf.io/networks: bond-conf@{{.Values.cp_network_interface}}
+        k8s.v1.cni.cncf.io/networks: cbr1-bridge@{{$.Values.cp_network_interface}}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
       labels:
-        name: neutron-network-agent
-{{ tuple . "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        name: neutron-network-agent-{{ $az }}
+{{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
       nodeSelector:
         multus: bond1
+        failure-domain.beta.kubernetes.io/zone: {{ $.Values.global.region}}{{ $az }}
       containers:
         - name: neutron-dhcp-agent
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentDHCP | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
+          image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -73,6 +77,10 @@ spec:
               subPath: linux-bridge.ini
               readOnly: true
             - name: neutron-etc
+              mountPath: /etc/neutron/az-{{$az}}.conf
+              subPath: az-{{$az}}.conf
+              readOnly: true
+            - name: neutron-etc
               mountPath: /etc/neutron/dnsmasq.conf
               subPath: dnsmasq.conf
               readOnly: true
@@ -97,9 +105,9 @@ spec:
               name: host-run-netns
               mountPropagation: Bidirectional
         - name: neutron-metadata-agent
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentMetadata | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
+          image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/metadata-agent.ini"]
+          command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/metadata-agent.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -114,8 +122,6 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
-          securityContext:
-            privileged: true
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -128,13 +134,17 @@ spec:
               subPath: metadata-agent.ini
               readOnly: true
             - name: neutron-etc
+              mountPath: /etc/neutron/az-{{$az}}.conf
+              subPath: az-{{$az}}.conf
+              readOnly: true
+            - name: neutron-etc
               mountPath: /etc/neutron/logging.conf
               subPath: logging.conf
               readOnly: true
         - name: neutron-l3-agent
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentL3 | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
+          image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-l3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/l3-agent.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          command: ["dumb-init", "neutron-l3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/l3-agent.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -149,6 +159,8 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
+          securityContext:
+            privileged: true
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -184,14 +196,18 @@ spec:
               subPath: l3.filters
               readOnly: true
             - name: neutron-etc
+              mountPath: /etc/neutron/az-{{$az}}.conf
+              subPath: az-{{$az}}.conf
+              readOnly: true
+            - name: neutron-etc
               mountPath: /etc/sudoers
               subPath: sudoers
               defaultMode: 0440
               readOnly: true
         - name: neutron-linuxbridge-agent
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNetworkAgentLinuxBridge | default .Values.imageVersionNetworkAgent | default .Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
+          image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -206,8 +222,9 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
-          securityContext:
-            privileged: true
+           capabilities:
+             add:
+               - NET_ADMIN
           volumeMounts:
             - mountPath: /var/run
               name: run
@@ -235,6 +252,10 @@ spec:
               subPath: rootwrap.conf
               readOnly: true
             - name: neutron-etc
+              mountPath: /etc/neutron/az-{{$az}}.conf
+              subPath: az-{{$az}}.conf
+              readOnly: true
+            - name: neutron-etc
               mountPath: /etc/sudoers
               subPath: sudoers
               defaultMode: 0440
@@ -252,4 +273,5 @@ spec:
         - name: host-run-netns
           hostPath:
             path: /run/netns
+{{- end }}
 {{- end }}
