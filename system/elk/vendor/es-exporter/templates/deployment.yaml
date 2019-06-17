@@ -1,0 +1,58 @@
+{{- range $i, $config := .Values.elasticsearch_config -}}
+{{ if ne $i 0 }}---{{ end }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: es-exporter-{{$config.name}}
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: es-exporter-{{$config.name}}
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: payload
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: es-exporter
+          image: justwatch/elasticsearch_exporter:{{ $.Values.version }}
+          imagePullPolicy: IfNotPresent
+          command: [ "/bin/elasticsearch_exporter", "--es.all", "--web.listen-address", ":{{ $.Values.listen_port }}", "--es.cluster_settings" ]
+          ports:
+            - name: metrics
+              containerPort: {{ $.Values.listen_port }}
+          env:
+            - name: ES_URI
+              value: "{{$config.protocol}}://{{ if $config.auth }}{{$config.username }}:{{$config.password }}@{{ end }}{{$config.hostname}}:{{$config.port}}"
+          securityContext:
+            capabilities:
+              drop:
+                - SETPCAP
+                - MKNOD
+                - AUDIT_WRITE
+                - CHOWN
+                - NET_RAW
+                - DAC_OVERRIDE
+                - FOWNER
+                - FSETID
+                - KILL
+                - SETGID
+                - SETUID
+                - NET_BIND_SERVICE
+                - SYS_CHROOT
+                - SETFCAP
+{{ end -}}
