@@ -10,32 +10,12 @@ metadata:
 
 data:
   config.yaml: |
-    chroot: /coreos
-    metrics-listen-address: ":9102"
-
+    {{- include "shared_config" . | indent 2 }}
     drives:
-    {{- if .Values.drives }}
-      {{- range $drives := .Values.drives }}
-      - {{ $drives }}
-      {{- end -}}
-    {{ else }}
       - /dev/sd[a-z]
       - /dev/sd[a-z][a-z]
-    {{ end }}
-
-    # the Swift user and group is UID/GID 1000 in the Kolla containers
-    chown:
-      user: "1000"
-      group: "1000"
-
-    {{ if .Values.encryption_key -}}
-    keys:
-      - secret: {{.Values.encryption_key}}
-    {{ end }}
-
-    swift-id-pool: {{ range $idx := until 99 }}
-      - swift-{{ printf "%02d" (add1 $idx) }}
-      {{- if eq 0 (mod (add1 $idx) $.Values.one_spare_disk_every) }}
-      - spare
-      {{- end -}}
-    {{ end -}}
+  config-multipath.yaml: |
+    {{- include "shared_config" . | indent 2 }}
+    drives:
+      - /dev/mapper/mpath[a-z]
+      - /dev/mapper/mpath[a-z][a-z]
