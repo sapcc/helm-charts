@@ -189,6 +189,7 @@ enabled_extensions_v2 = quotas, reports
 [keystone_authtoken]
 auth_plugin = v3password
 auth_version = v3
+auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.designate_service_user }}
@@ -199,6 +200,8 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 region_name = {{.Values.global.region}}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 insecure = True
+token_cache_time = 600
+include_service_catalog = false
 
 #-----------------------
 
