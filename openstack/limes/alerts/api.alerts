@@ -79,6 +79,24 @@ groups:
         The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
       summary: Limes cannot scrape {{ title $labels.service_name }}
 
+  - alert: OpenstackLimesSuspendedScrapes
+    # this has [15m] instead of [5m] because suspensions last for 10 minutes,
+    # therefore the limes_suspended_scrapes counter only increments that often
+    expr: sum(increase(limes_suspended_scrapes[15m])) BY (os_cluster, service, service_name) > 0
+    for: 1h
+    labels:
+      context: failedscrapes
+      dashboard: limes-overview
+      service: '{{ $labels.service_name }}'
+      severity: warning
+      tier: os
+    annotations:
+      description: Limes has suspended scraping from {{ title $labels.service_name }}
+        for more than an hour. Please check if the internal endpoint for
+        {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
+        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+      summary: Limes cannot find {{ title $labels.service_name }} endpoint
+
   - alert: OpenstackLimesFailedDomainDiscoveries
     expr: sum(increase(limes_failed_domain_discoveries[5m])) BY (os_cluster) > 0
     for: 30m
