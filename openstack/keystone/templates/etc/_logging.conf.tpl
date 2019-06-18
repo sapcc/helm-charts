@@ -2,7 +2,7 @@
 {{- if .Values.debug }}
 keys = root
 {{- else }}
-keys = root, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, amqp, amqplib, oslo_messaging {{ if .Values.sentry.enabled }}, raven{{ end }}
+keys = root, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, ldappool, amqp, amqplib, oslo_messaging {{ if .Values.sentry.enabled }}, raven{{ end }}
 {{- end }}
 
 [handlers]
@@ -82,13 +82,23 @@ qualname = oslo.messaging
 
 [logger_ldap]
 {{- if .Values.debug }}
-level = INFO
+level = DEBUG
 handlers = null
 {{- else }}
-level = INFO
+level = DEBUG
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{- end }}
 qualname = keystone.common.ldap.core
+
+[logger_ldappool]
+{{- if .Values.debug }}
+level = DEBUG
+handlers = null
+{{- else }}
+level = DEBUG
+handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
+qualname = ldappool
 
 [logger_amqp]
 {{- if .Values.debug }}
