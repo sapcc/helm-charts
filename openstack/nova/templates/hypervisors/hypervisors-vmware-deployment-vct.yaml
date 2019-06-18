@@ -97,6 +97,7 @@ template: |
             name: nova-etc
             subPath: compute.filters
             readOnly: true
+        {{- if .Values.neutron_dvs_agent_enabled }}
         - name: neutron-dvs-agent
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
           imagePullPolicy: IfNotPresent
@@ -152,6 +153,7 @@ template: |
             name: ml2-conf-vmware
             subPath: ml2-vmware.ini
             readOnly: true
+        {{- end }}
         - name: statsd
           image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -176,6 +178,7 @@ template: |
         - name: hypervisor-config
           configMap:
             name: nova-compute-vmware-{= name =}
+       {{- if .Values.neutron_dvs_agent_enabled }}
         - name: etcneutron
           emptyDir: {}
         - name: neutron-etc
@@ -184,4 +187,5 @@ template: |
         - name: ml2-conf-vmware
           configMap:
             name: neutron-ml2-vmware-{= name =}
+        {{- end }}
 {{- end }}
