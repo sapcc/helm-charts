@@ -1,0 +1,89 @@
+groups:
+- name: openstack-castellum.alerts
+  rules:
+
+    # NOTE: The delays on these alerts are quite low initially. We should
+    # consider increasing them if they turn out to be too trigger-happy.
+
+    - alert: OpenstackCastellumFailedResourceScrapes
+      expr: sum(increase(castellum_failed_resource_scrapes[5m])) BY (asset) > 0
+      for: 10m
+      labels:
+        context: resource-scraping
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning
+        tier: os
+      annotations:
+        description: |
+          Castellum cannot scrape {{$labels.asset}} resources.
+          Discovery of new {{$labels.asset}} assets may be impacted.
+          The `kubectl logs` for castellum-observer contain additional info.
+        summary: Castellum cannot scrape {{$labels.asset}} resources
+
+    - alert: OpenstackCastellumFailedAssetScrapes
+      expr: sum(increase(castellum_failed_asset_scrapes[5m])) BY (asset) > 0
+      for: 10m
+      labels:
+        context: asset-scraping
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning
+        tier: os
+      annotations:
+        description: |
+          Castellum cannot scrape {{$labels.asset}} assets.
+          Detection of changes in asset size/usage may be impacted.
+          The `kubectl logs` for castellum-observer contain additional info.
+        summary: Castellum cannot scrape {{$labels.asset}} assets
+
+    - alert: OpenstackCastellumErroredAssetResizes
+      expr: sum(increase(castellum_errored_asset_resizes[5m])) BY (asset) > 0
+      for: 10m
+      labels:
+        context: asset-resizing
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning
+        tier: os
+      annotations:
+        description: |
+          Castellum cannot resize {{$labels.asset}} assets.
+          The `kubectl logs` for castellum-worker contain additional info.
+        summary: Castellum cannot resize {{$labels.asset}} assets
+
+    - alert: OpenstackCastellumFailedAssetResizes
+      # A failed resize operation will only increment the counter *once*.
+      # (Castellum does not retry failed resizes at this point.) This alert is
+      # therefore set up such that we see an alert for every single increment
+      # of the counter.
+      # TODO Sentry would be a better fit for this kind of event-based alert.
+      expr: sum(increase(castellum_operation_state_transitions{to_state="failed"}[5m])) BY (asset) > 0
+      for: 1m
+      labels:
+        context: asset-resizing
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning
+        tier: os
+      annotations:
+        description: |
+          Castellum encountered backend errors while resizing {{$labels.asset}} assets.
+          The `kubectl logs` for castellum-worker contain additional info.
+        summary: Castellum encountered backend errors while resizing {{$labels.asset}} assets
+
+    - alert: OpenstackCastellumCriticalUsage
+      expr: sum(castellum_db_critical_usage_gauge) BY (asset) > 0
+      for: 5m # This can be very short. The gauge is designed such that it should never flap above 0 even momentarily.
+      labels:
+        context: critical-usage
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning # TODO: raise to critical when playbook is ready
+        tier: os
+      annotations:
+        description: |
+          Usage has reached critical levels for some {{$labels.asset}} assets managed by Castellum,
+          but Castellum is not creating resize operations accordingly.
+          The `kubectl logs` for castellum-observer may contain additional info.
+        summary: Castellum-managed {{$labels.asset}} assets show critical usage
