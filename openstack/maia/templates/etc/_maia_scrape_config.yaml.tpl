@@ -65,6 +65,7 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
+      - '{__name__=~"^castellum_.+",project_id!=""}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
       - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
       - '{__name__=~"^security_group_(max|total)_entanglement$"}'
