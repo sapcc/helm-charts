@@ -29,6 +29,7 @@ spec:
         name: neutron-network-agent-{{ $az }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
+{{ tuple $ "neutron" "agent" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       nodeSelector:
         multus: bond1
         failure-domain.beta.kubernetes.io/zone: {{ $.Values.global.region}}{{ $az }}
@@ -59,6 +60,13 @@ spec:
             timeoutSeconds: 10
           securityContext:
             privileged: true
+          resources:
+            requests:
+              cpu: "175m"
+              memory: "256Mi"
+            limit:
+              cpu: "256m"
+              memory: "512Mi"
           volumeMounts:
             - name: metadata-proxy
               mountPath: /run/metadata_proxy
@@ -188,6 +196,13 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
+          resources:
+            requests:
+              cpu: "64m"
+              memory: "256Mi"
+            limit:
+              cpu: "256m"
+              memory: "512Mi"
           volumeMounts:
             - mountPath: /lib/modules
               name: modules
