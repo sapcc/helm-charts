@@ -202,3 +202,17 @@ groups:
     annotations:
       description: '{{ $labels.application }} has more than 10 waiting database connections for 15 min, please check pgbouncer logs'
       summary: '{{ $labels.application }} waiting db connections'
+
+  - alert: OpenstackNeutronNetworkCountAsync
+    expr: kube_pod_container_status_ready{container="neutron-dhcp-agent"} == 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Not all networks have been synced by agent: {{ $labels.pod }}'
+      playbook: docs/support/playbook/neutron/dhcp_down.html
+    annotations:
+      description: 'Not all networks have been synced by agent for 5 min: {{ $labels.pod }}'
+      summary: Openstack Neutron DHCP Agent lost private networks
