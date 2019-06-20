@@ -1,0 +1,48 @@
+{{- if .Values.enabled }}
+
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: 1000eyes-exporter
+  namespace: infra-monitoring
+
+spec:
+  replicas: {{.Values.replicaCount}}
+  template:
+    metadata:
+      labels:
+         app: 1000eyes-exporter
+    spec:
+      containers:
+         - name: 1000eyes-exporter
+           image: {{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.image.namespace }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
+           imagePullPolicy: IfNotPresent
+           env:
+             - name: THOUSANDEYES_TOKEN
+               valueFrom:
+                 secretKeyRef:
+                   name: 1000eyes-exporter
+                   key: bearer_token
+           ports:
+             - name: metrics
+               containerPort: {{ .Values.metric_port}}
+               protocol: TCP
+
+           readinessProbe:
+             httpGet:
+               path: /
+               port: {{ .Values.metric_port}}
+             initialDelaySeconds: 5
+             timeoutSeconds: 5
+             periodSeconds: 10
+
+           livenessProbe:
+             httpGet:
+               path: /
+               port: {{ .Values.listen_port }}
+             initialDelaySeconds: 5
+             timeoutSeconds: 5
+             periodSeconds: 10
+
+{{ end -}}
