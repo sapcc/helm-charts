@@ -19,6 +19,7 @@ password_file = "/etc/swift/passwd"
 
 # Timeout for the connection of Swift (second)
 swift_timeout = 180
+swift_expire = 1209600
 
 # OpenStack configurations
 os_identity_endpoint   = "http://keystone.{{ default .Release.Namespace .Values.global.keystoneNamespace }}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3"
