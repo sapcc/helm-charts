@@ -1,16 +1,15 @@
 groups:
 - name: thousandeyes.alerts
   rules:
-  - alert: dummy
-    expr: thousandeyes_alert_reachability_ratio == 0
+  - alert: ThousandeyesReachability
+    expr: thousandeyes_alert_reachability_ratio{type="HTTP Server"} == 0
     for: 15m
     labels:
-      severity: warning
+      severity: info
       tier: net
-      service:
-      context: "{{ $labels.test_name }}"
-      meta: 'Cisco N7k device {{ $labels.component }} NTP is not in sync for 15 min.'
-      playbook: /docs/devops/alert/network/ntp.html
+      context: "{{ $labels.type}} {{ $labels.test_name }}"
+      meta: 'Thousendeyes Check: {{ $labels.type}} {{ $labels.rule_expression }} / {{ $labels.test_name }}.'
+      playbook: /docs/devops/alert/network/thousendeyescheck.html
     annotations:
-      description: 'Cisco N7k device {{ $labels.component }} NTP is not in sync for 15 min.'
-      summary: 'Cisco N7k  device {{ $labels.component }} NTP is not in sync for 15 min.'
+      description: 'Thousendeyes Check: {{ $labels.type}} {{ $labels.rule_expression }} / {{ $labels.test_name }}.'
+      summary: 'Thousendeyes Check: {{ $labels.type}} {{ $labels.rule_expression }} / {{ $labels.test_name }}.'
