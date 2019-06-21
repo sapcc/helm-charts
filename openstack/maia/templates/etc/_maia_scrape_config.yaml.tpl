@@ -61,11 +61,16 @@
   metric_relabel_configs:
     - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
       action: labeldrop
+    - action: replace
+      source_labels: [__name__]
+      target_label: __name__
+      regex: aggregated:(.+)
+      replacement: $1
   metrics_path: '/federate'
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^castellum_.+",project_id!=""}'
+      - '{__name__=~"^aggregated:castellum_.+",project_id!=""}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
       - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
       - '{__name__=~"^security_group_(max|total)_entanglement$"}'
