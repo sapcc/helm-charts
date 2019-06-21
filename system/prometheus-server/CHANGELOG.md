@@ -1,3 +1,7 @@
+## 1.1.14
+
+* Set `honor_labels: true` for endpoint SD.
+
 ## 1.1.13
 
 * Fix alertmanager configuration secret name.
