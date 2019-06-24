@@ -3,10 +3,30 @@ groups:
   rules:
 
     ############################################################################
+    # alerts concerning pgmetrics collector (alerting this condition separately
+    # allows to avoid a bunch of absent() checks in other alerts' expressions)
+
+    - alert: OpenstackCastellumMissingDatabaseMetrics
+      expr: absent(castellum_asset_count) or absent(castellum_resource_count) or absent(castellum_min_greenlit_at)
+      for: 10m
+      labels:
+        context: database-metrics
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning
+        tier: os
+      annotations:
+        description: The pgmetrics deployment is not sending all expected metrics.
+          Other alerts may not fire because of missing timeseries.
+          Check if castellum-pgmetrics is working correctly.
+        summary: Missing database metrics, alerting reliability impacted
+
+    ############################################################################
     # alerts concerning resource scraping in castellum-observer
 
     - alert: OpenstackCastellumNotScrapingAnyResources
-      expr: absent(rate(limes_successful_resource_scrapes[60m]) > 0)
+      expr: absent(rate(castellum_successful_resource_scrapes[60m]) > 0)
+        and max(castellum_resource_count) > 0
       for: 5m
       labels:
         context: resource-scraping
@@ -20,7 +40,8 @@ groups:
         summary: Castellum is not scraping any resources
 
     - alert: OpenstackCastellumNotScrapingSomeResources
-      expr: rate(limes_successful_resource_scrapes[60m]) == 0
+      expr: rate(castellum_successful_resource_scrapes[60m]) == 0
+        and on (asset) castellum_resource_count > 0
       for: 5m
       labels:
         context: resource-scraping
@@ -29,8 +50,8 @@ groups:
         severity: warning
         tier: os
       annotations:
-        description: There have been no successful scrapes of {{ $labels.asset }}
-          resources in the last hour. Check if castellum-observer is dead.
+        description: There have been no successful scrapes of {{ $labels.asset }} resources in the last hour.
+          The `kubectl logs` for castellum-observer contain additional info.
         summary: Castellum is not scraping {{ $labels.asset }} resources
 
     - alert: OpenstackCastellumFailedResourceScrapes
@@ -53,7 +74,8 @@ groups:
     # alerts concerning asset scraping in castellum-observer
 
     - alert: OpenstackCastellumNotScrapingAnyAssets
-      expr: absent(rate(limes_successful_asset_scrapes[60m]) > 0)
+      expr: absent(rate(castellum_successful_asset_scrapes[60m]) > 0)
+        and max(castellum_asset_count) > 0
       for: 5m
       labels:
         context: asset-scraping
@@ -67,7 +89,8 @@ groups:
         summary: Castellum is not scraping any assets
 
     - alert: OpenstackCastellumNotScrapingSomeAssets
-      expr: rate(limes_successful_asset_scrapes[60m]) == 0
+      expr: rate(castellum_successful_asset_scrapes[60m]) == 0
+        and on (asset) castellum_asset_count > 0
       for: 5m
       labels:
         context: asset-scraping
@@ -76,8 +99,8 @@ groups:
         severity: warning
         tier: os
       annotations:
-        description: There have been no successful scrapes of {{ $labels.asset }}
-          assets in the last hour. Check if castellum-observer is dead.
+        description: There have been no successful scrapes of {{ $labels.asset }} assets in the last hour.
+          The `kubectl logs` for castellum-observer contain additional info.
         summary: Castellum is not scraping {{ $labels.asset }} assets
 
     - alert: OpenstackCastellumFailedAssetScrapes

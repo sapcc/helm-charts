@@ -20,6 +20,30 @@ pgmetrics:
   db_name: castellum
 
   customMetrics:
+    castellum_asset_count:
+      query: >
+        SELECT r.asset_type AS asset, COUNT(*)
+          FROM assets a JOIN resources r ON r.id = a.resource_id
+         GROUP BY r.asset_type
+      metrics:
+        - asset:
+            usage: "LABEL"
+            description: "Asset type"
+        - gauge:
+            usage: "GAUGE"
+            description: "Total number of assets that are managed by Castellum"
+    castellum_resource_count:
+      query: >
+        SELECT asset_type AS asset, COUNT(*)
+          FROM resources
+         GROUP BY asset_type
+      metrics:
+        - asset:
+            usage: "LABEL"
+            description: "Asset type"
+        - gauge:
+            usage: "GAUGE"
+            description: "Total number of resources where autoscaling is enabled"
     castellum_min_greenlit_at:
       query: >
         SELECT r.scope_uuid AS project_id, r.asset_type AS asset, EXTRACT(epoch FROM MIN(o.greenlit_at)) AS gauge
