@@ -5,9 +5,13 @@ groups:
     ############################################################################
     # alerts concerning pgmetrics collector (alerting this condition separately
     # allows to avoid a bunch of absent() checks in other alerts' expressions)
+    #
+    # note that we do not check absent(castellum_min_greenlit_at_gauge); this
+    # condition will occur during normal operation whenever there are no
+    # operations in state "greenlit"
 
     - alert: OpenstackCastellumMissingDatabaseMetrics
-      expr: absent(castellum_asset_count_gauge) or absent(castellum_resource_count_gauge) or absent(castellum_min_greenlit_at_gauge)
+      expr: absent(castellum_asset_count_gauge) or absent(castellum_resource_count_gauge)
       for: 10m
       labels:
         context: database-metrics
