@@ -2,8 +2,36 @@ groups:
 - name: openstack-castellum-errors.alerts
   rules:
 
-    # NOTE: The delays on these alerts are quite low initially. We should
-    # consider increasing them if they turn out to be too trigger-happy.
+    ############################################################################
+    # alerts concerning resource scraping in castellum-observer
+
+    - alert: OpenstackCastellumNotScrapingAnyResources
+      expr: absent(rate(limes_successful_resource_scrapes[60m]) > 0)
+      for: 5m
+      labels:
+        context: resource-scraping
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning
+        tier: os
+      annotations:
+        description: There have been no successful resource scrapes at all
+          in the last hour. Check if castellum-observer is dead.
+        summary: Castellum is not scraping any resources
+
+    - alert: OpenstackCastellumNotScrapingSomeResources
+      expr: rate(limes_successful_resource_scrapes[60m]) == 0
+      for: 5m
+      labels:
+        context: resource-scraping
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning
+        tier: os
+      annotations:
+        description: There have been no successful scrapes of {{ $labels.asset }}
+          resources in the last hour. Check if castellum-observer is dead.
+        summary: Castellum is not scraping {{ $labels.asset }} resources
 
     - alert: OpenstackCastellumFailedResourceScrapes
       expr: sum(increase(castellum_failed_resource_scrapes[5m])) BY (asset) > 0
@@ -12,7 +40,7 @@ groups:
         context: resource-scraping
         dashboard: castellum-overview
         service: castellum
-        severity: warning
+        severity: info
         tier: os
       annotations:
         description: |
@@ -21,9 +49,12 @@ groups:
           The `kubectl logs` for castellum-observer contain additional info.
         summary: Castellum cannot scrape {{$labels.asset}} resources
 
-    - alert: OpenstackCastellumFailedAssetScrapes
-      expr: sum(increase(castellum_failed_asset_scrapes[5m])) BY (asset) > 0
-      for: 10m
+    ############################################################################
+    # alerts concerning asset scraping in castellum-observer
+
+    - alert: OpenstackCastellumNotScrapingAnyAssets
+      expr: absent(rate(limes_successful_asset_scrapes[60m]) > 0)
+      for: 5m
       labels:
         context: asset-scraping
         dashboard: castellum-overview
@@ -31,11 +62,57 @@ groups:
         severity: warning
         tier: os
       annotations:
+        description: There have been no successful asset scrapes at all
+          in the last hour. Check if castellum-observer is dead.
+        summary: Castellum is not scraping any assets
+
+    - alert: OpenstackCastellumNotScrapingSomeAssets
+      expr: rate(limes_successful_asset_scrapes[60m]) == 0
+      for: 5m
+      labels:
+        context: asset-scraping
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning
+        tier: os
+      annotations:
+        description: There have been no successful scrapes of {{ $labels.asset }}
+          assets in the last hour. Check if castellum-observer is dead.
+        summary: Castellum is not scraping {{ $labels.asset }} assets
+
+    - alert: OpenstackCastellumFailedAssetScrapes
+      expr: sum(increase(castellum_failed_asset_scrapes[5m])) BY (asset) > 0
+      for: 10m
+      labels:
+        context: asset-scraping
+        dashboard: castellum-overview
+        service: castellum
+        severity: info
+        tier: os
+      annotations:
         description: |
           Castellum cannot scrape {{$labels.asset}} assets.
           Detection of changes in asset size/usage may be impacted.
           The `kubectl logs` for castellum-observer contain additional info.
         summary: Castellum cannot scrape {{$labels.asset}} assets
+
+    ############################################################################
+    # alerts concerning asset resizing in castellum-worker
+
+    - alert: OpenstackCastellumWorkersNotWorking
+      expr: max(time() - castellum_min_greenlit_at) BY (asset) > 900
+      for: 15m
+      labels:
+        context: asset-resizing
+        dashboard: castellum-overview
+        service: castellum
+        severity: warning
+        tier: os
+      annotations:
+        description: |
+          Resize operations for {{ $labels.asset }} are not getting executed in a timely manner.
+          Either the Castellum workers are not doing their job, or resizing is taking too long.
+          The `kubectl logs` for castellum-worker may contain additional info.
 
     - alert: OpenstackCastellumErroredAssetResizes
       expr: sum(increase(castellum_errored_asset_resizes[5m])) BY (asset) > 0
@@ -64,26 +141,10 @@ groups:
         context: asset-resizing
         dashboard: castellum-overview
         service: castellum
-        severity: warning
+        severity: info
         tier: os
       annotations:
         description: |
           Castellum encountered backend errors while resizing {{$labels.asset}} assets.
           The `kubectl logs` for castellum-worker contain additional info.
         summary: Castellum encountered backend errors while resizing {{$labels.asset}} assets
-
-    - alert: OpenstackCastellumCriticalUsage
-      expr: sum(castellum_db_critical_usage_gauge) BY (asset) > 0
-      for: 5m # This can be very short. The gauge is designed such that it should never flap above 0 even momentarily.
-      labels:
-        context: critical-usage
-        dashboard: castellum-overview
-        service: castellum
-        severity: warning # TODO: raise to critical when playbook is ready
-        tier: os
-      annotations:
-        description: |
-          Usage has reached critical levels for some {{$labels.asset}} assets managed by Castellum,
-          but Castellum is not creating resize operations accordingly.
-          The `kubectl logs` for castellum-observer may contain additional info.
-        summary: Castellum-managed {{$labels.asset}} assets show critical usage

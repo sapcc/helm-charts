@@ -20,15 +20,13 @@ pgmetrics:
   db_name: castellum
 
   customMetrics:
-    castellum_db_critical_usage:
+    castellum_min_greenlit_at:
       query: >
-        SELECT r.scope_uuid AS project_id, r.asset_type AS asset, COUNT(*) AS gauge
-          FROM resources r JOIN assets a ON a.resource_id = r.id
-         WHERE a.usage_percent > r.critical_threshold_percent
-           AND a.expected_size IS NULL
-           AND a.id NOT IN (
-                 SELECT asset_id FROM pending_operations WHERE reason = 'critical'
-               )
+        SELECT r.scope_uuid AS project_id, r.asset_type AS asset, EXTRACT(epoch FROM MIN(o.greenlit_at)) AS gauge
+          FROM resources r
+          JOIN assets a ON a.resource_id = r.id
+          JOIN pending_operations o ON o.asset_id = a.id
+         WHERE o.greenlit_at IS NOT NULL
          GROUP BY r.scope_uuid, r.asset_type
       metrics:
         - project_id:
@@ -39,4 +37,4 @@ pgmetrics:
             description: "Asset type"
         - gauge:
             usage: "GAUGE"
-            description: "Number of assets with critical usage, but no pending resize operation"
+            description: "Lowest greenlit_at timestamp of any pending operation in this project resource"
