@@ -7,7 +7,7 @@ groups:
     # allows to avoid a bunch of absent() checks in other alerts' expressions)
 
     - alert: OpenstackCastellumMissingDatabaseMetrics
-      expr: absent(castellum_asset_count) or absent(castellum_resource_count) or absent(castellum_min_greenlit_at)
+      expr: absent(castellum_asset_count_gauge) or absent(castellum_resource_count_gauge) or absent(castellum_min_greenlit_at_gauge)
       for: 10m
       labels:
         context: database-metrics
@@ -26,7 +26,7 @@ groups:
 
     - alert: OpenstackCastellumNotScrapingAnyResources
       expr: absent(rate(castellum_successful_resource_scrapes[60m]) > 0)
-        and max(castellum_resource_count) > 0
+        and max(castellum_resource_count_gauge) > 0
       for: 5m
       labels:
         context: resource-scraping
@@ -41,7 +41,7 @@ groups:
 
     - alert: OpenstackCastellumNotScrapingSomeResources
       expr: rate(castellum_successful_resource_scrapes[60m]) == 0
-        and on (asset) castellum_resource_count > 0
+        and on (asset) castellum_resource_count_gauge > 0
       for: 5m
       labels:
         context: resource-scraping
@@ -75,7 +75,7 @@ groups:
 
     - alert: OpenstackCastellumNotScrapingAnyAssets
       expr: absent(rate(castellum_successful_asset_scrapes[60m]) > 0)
-        and max(castellum_asset_count) > 0
+        and max(castellum_asset_count_gauge) > 0
       for: 5m
       labels:
         context: asset-scraping
@@ -90,7 +90,7 @@ groups:
 
     - alert: OpenstackCastellumNotScrapingSomeAssets
       expr: rate(castellum_successful_asset_scrapes[60m]) == 0
-        and on (asset) castellum_asset_count > 0
+        and on (asset) castellum_asset_count_gauge > 0
       for: 5m
       labels:
         context: asset-scraping
@@ -123,7 +123,7 @@ groups:
     # alerts concerning asset resizing in castellum-worker
 
     - alert: OpenstackCastellumWorkersNotWorking
-      expr: max(time() - castellum_min_greenlit_at) BY (asset) > 900
+      expr: max(time() - castellum_min_greenlit_at_gauge) BY (asset) > 900
       for: 15m
       labels:
         context: asset-resizing
