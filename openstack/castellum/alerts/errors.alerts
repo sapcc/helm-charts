@@ -27,9 +27,12 @@ groups:
 
     ############################################################################
     # alerts concerning resource scraping in castellum-observer
+    #
+    # Those alerts fire really slow because of the glacial speed of the Manila
+    # API impacting resource scraping speed.
 
     - alert: OpenstackCastellumNotScrapingAnyResources
-      expr: absent(rate(castellum_successful_resource_scrapes[60m]) > 0)
+      expr: absent(rate(castellum_successful_resource_scrapes[120m]) > 0)
         and max(castellum_resource_count_gauge) > 0
       for: 5m
       labels:
@@ -44,7 +47,7 @@ groups:
         summary: Castellum is not scraping any resources
 
     - alert: OpenstackCastellumNotScrapingSomeResources
-      expr: rate(castellum_successful_resource_scrapes[60m]) == 0
+      expr: rate(castellum_successful_resource_scrapes[120m]) == 0
         and on (asset) castellum_resource_count_gauge > 0
       for: 5m
       labels:
@@ -59,7 +62,7 @@ groups:
         summary: Castellum is not scraping {{ $labels.asset }} resources
 
     - alert: OpenstackCastellumFailedResourceScrapes
-      expr: sum(increase(castellum_failed_resource_scrapes[5m])) BY (asset) > 0
+      expr: sum(increase(castellum_failed_resource_scrapes[120m])) BY (asset) > 0
       for: 10m
       labels:
         context: resource-scraping
