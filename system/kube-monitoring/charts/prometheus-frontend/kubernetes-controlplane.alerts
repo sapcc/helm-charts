@@ -15,7 +15,7 @@ groups:
       summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }} / Serial: {{ $labels.serial }}"
       
   - alert: KubernetesCPSDDown
-    expr: absent(ipmi_netbox_sd_up) or ipmi_netbox_sd_up == 0
+    expr: (absent(ipmi_netbox_sd_up) or ipmi_netbox_sd_up == 0) and sum(kube_node_info{region!="admin"}) > 0
     for: 15m
     labels:
       severity: info
