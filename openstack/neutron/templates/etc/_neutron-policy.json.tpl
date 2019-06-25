@@ -13,7 +13,7 @@
     "network_owner": "tenant_id:%(network:tenant_id)s",
     "network_owner_or_owner": "rule:network_owner or rule:owner",
     "network_member": "role:member and rule:network_owner_or_owner",
-    "network_viewer": "(role:network_viewer and rule:network_owner_or_owner) or rule:context_is_securitygroup_viewer or rule:context_is_securitygroup_admin",
+    "network_viewer": "(role:network_viewer and rule:network_owner_or_owner) or rule:context_is_securitygroup_viewer",
     "network_admin": "role:network_admin and rule:network_owner_or_owner",
     "context_is_network_network_admin": "rule:context_is_admin or rule:network_admin",
     "context_is_network_editor": "rule:context_is_network_network_admin or rule:network_member",
