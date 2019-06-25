@@ -85,7 +85,7 @@ qualname = oslo.messaging
 level = DEBUG
 handlers = null
 {{- else }}
-level = DEBUG
+level = INFO
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{- end }}
 qualname = keystone.common.ldap.core
@@ -95,7 +95,7 @@ qualname = keystone.common.ldap.core
 level = DEBUG
 handlers = null
 {{- else }}
-level = DEBUG
+level = INFO
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{- end }}
 qualname = ldappool
