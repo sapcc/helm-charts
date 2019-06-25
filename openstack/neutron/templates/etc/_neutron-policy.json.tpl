@@ -7,7 +7,7 @@
     "admin": "role:network_admin and rule:owner",
     "context_is_network_admin": "rule:context_is_admin or rule:admin",
     "context_is_editor": "rule:context_is_network_admin or rule:member",
-    "context_is_viewer":  "rule:context_is_editor or rule:viewer or rule:context_is_securitygroup_admin or rule:context_is_securitygroup_viewer",
+    "context_is_viewer":  "rule:context_is_editor or rule:viewer or rule:context_is_securitygroup_viewer",
     "network_view_all": "role:network_viewer or role:member or role:network_admin or rule:context_is_admin",
 
     "network_owner": "tenant_id:%(network:tenant_id)s",
