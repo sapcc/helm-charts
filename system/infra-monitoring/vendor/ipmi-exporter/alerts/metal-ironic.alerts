@@ -1,6 +1,6 @@
 groups:
 - name: metal-ironic.alerts
-  rules:
+  rules:      
   - alert: MetalIronicSensorCritical
     expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt)", maintenance="false", job="baremetal/ironic", provision_state=~"(deploy|active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 10m
@@ -42,17 +42,45 @@ groups:
     annotations:
       description: "ironic node {{ $labels.instance }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for instance: {{ $labels.instance }}"
-
-  - alert: MetalIronicMetricsDown
-    expr: count(ipmi_up{job="baremetal/ironic"} == 0) by (server_name, maintenance) or count(up{job="baremetal/ironic"} == 0) by (server_name, maintenance)
+      
+  - alert: MetalIronicMetricsDownWarn
+    expr: count(ipmi_up{job="baremetal/ironic", provision_state="active"} == 0 or up{job="baremetal/ironic", provision_state="active"} == 0) by (server_name, maintenance, provision_state) 
     for: 10m
     labels:
       severity: warning
       tier: metal
       service: ironic
       context: "{{ $labels.server_name }}"
-      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}"
+      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}"
-      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}"
+      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}"
+      
+  - alert: MetalIronicMetricsDownInfo
+    expr: count(ipmi_up{job="baremetal/ironic", provision_state!="active"} == 0 or up{job="baremetal/ironic", provision_state!="active"} == 0) by (server_name, maintenance, provision_state) 
+    for: 10m
+    labels:
+      severity: info
+      tier: metal
+      service: ironic
+      context: "{{ $labels.server_name }}"
+      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}"
+      
+  - alert: MetalIronicSDDown
+    expr: absent(ipmi_sd_up) or ipmi_sd_up == 0
+    for: 10m
+    labels:
+      severity: info
+      tier: metal
+      service: ironic
+      context: ipmi_sd
+      meta: "ipmi service discovery failure"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ipmi service discovery failed to get ironic nodes"
+      summary: "ipmi service discovery failed to get ironic nodes"
