@@ -8,7 +8,9 @@
     "admin": "role:compute_admin and rule:owner",
     "context_is_compute_admin": "rule:context_is_admin or rule:admin",
     "context_is_editor": "rule:context_is_compute_admin or rule:member",
-    "context_is_viewer":  "rule:context_is_editor or rule:viewer",
+    "context_is_viewer":  "rule:context_is_editor or rule:viewer or rule:context_is_securitygroup_viewer",
+    "context_is_securitygroup_admin": "role:securitygroup_admin and rule:owner",
+    "context_is_securitygroup_viewer": "role:securitygroup_viewer and rule:owner",
     "compute_admin_all": "role:compute_admin or role:cloud_compute_admin",
     "default": "rule:context_is_admin",
 
@@ -92,8 +94,8 @@
     "compute:soft_delete": "rule:context_is_editor",
     "compute:force_delete": "rule:context_is_editor",
 
-    "compute:security_groups:add_to_instance": "rule:context_is_compute_admin or rule:context_is_network_admin",
-    "compute:security_groups:remove_from_instance": "rule:context_is_compute_admin or rule:context_is_network_admin",
+    "compute:security_groups:add_to_instance": "rule:context_is_compute_admin or rule:context_is_network_admin or rule:context_is_securitygroup_admin",
+    "compute:security_groups:remove_from_instance": "rule:context_is_compute_admin or rule:context_is_network_admin or rule:context_is_securitygroup_admin",
 
     "compute:restore": "rule:context_is_editor",
 
