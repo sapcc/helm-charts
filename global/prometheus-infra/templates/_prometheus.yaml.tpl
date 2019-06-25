@@ -17,7 +17,7 @@
     - action: replace
       source_labels: [__address__]
       target_label: region
-      regex: prometheus-openstack.(.+).cloud.sap
+      regex: prometheus-infra.scaleout.(.+).cloud.sap
       replacement: $1
     - action: replace
       target_label: cluster_type
@@ -39,5 +39,5 @@
   static_configs:
     - targets:
 {{- range $region := .Values.regionList }}
-      - "prometheus-openstack.{{ $region }}.cloud.sap"
+      - "prometheus-infra.scaleout.{{ $region }}.cloud.sap"
 {{- end }}
