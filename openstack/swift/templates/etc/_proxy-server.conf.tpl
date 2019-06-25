@@ -208,6 +208,7 @@ force_swift_request_proxy_log = true
 [filter:s3token]
 use = egg:swift#s3token
 auth_uri = {{ $cluster.keystone_auth_url }}
+secret_cache_duration = {{$cluster.token_cache_time | default 600}}
 {{- end}}
 
 {{ if $context.watcher_enabled -}}
