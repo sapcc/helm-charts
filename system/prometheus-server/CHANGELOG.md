@@ -1,3 +1,7 @@
+## 1.1.17
+
+* Prometheus server to `v2.10.0`.
+
 ## 1.1.16
 
 * Fix Service and Pod SD regex.
