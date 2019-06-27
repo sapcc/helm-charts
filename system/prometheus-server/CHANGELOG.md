@@ -1,3 +1,11 @@
+## 1.1.16
+
+* Fix Service and Pod SD regex.
+
+## 1.1.15
+
+* Fix empty additionalScrapeConfigs by defaulting to `{}`.
+
 ## 1.1.14
 
 * Set `honor_labels: true` for endpoint SD.
