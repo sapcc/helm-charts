@@ -60,6 +60,14 @@ spec:
             role: admin
           - domain: cc3test
             role: admin
+      {{- if $.Values.velero_backup_password }}
+      - name: velero_backup
+        description: 'Velero Backup'
+        password: {{ .Values.velero_backup_password }}
+        roles:
+          - project: service
+            role: service
+      {{- end}}
 
     # TODO: move this to the Glance/image-build/Ironic/Backup/whatever chart
     - name: ccadmin
@@ -67,6 +75,10 @@ spec:
         - name: master
           swift:
             enabled: true
+          {{- if .Values.velero_backup_password }}
+          containers:
+            - name: velero-backup
+          {{- end }}
 
     - name: cc3test
       projects:
