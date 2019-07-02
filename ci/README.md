@@ -24,3 +24,8 @@ version: 0.1.0
 maintainers:
   - name: github-handle
 ```
+
+# Providing test values
+
+The chart test toolkit will use every `*-values.yaml` provided in the `ci` folder of the chart.  
+ 
