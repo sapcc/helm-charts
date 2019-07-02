@@ -55,17 +55,20 @@
       regex: /Project_.*/Project_(.*)
 
 # expose tenant-specific metrics collected by kube-system monitoring
+#
+# FIXME: This is a cross-dependency between different chains of Prometheus
+# instances which we want to avoid going forward. The pods supplying these
+# metrics should be scraped by Maia directly.
+#
+# Since some of these metrics are already aggregated (e.g. the ones for
+# Castellum), it may be necessary to add a maia-prometheus-collector that
+# performs the aggregations before metrics are pulled into this Prometheus.
 - job_name: 'kube-system'
   static_configs:
     - targets: ['prometheus-collector.kube-monitoring:9090']
   metric_relabel_configs:
     - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
       action: labeldrop
-    - action: replace
-      source_labels: [__name__]
-      target_label: __name__
-      regex: aggregated:(.+)
-      replacement: $1
   metrics_path: '/federate'
   params:
     'match[]':
