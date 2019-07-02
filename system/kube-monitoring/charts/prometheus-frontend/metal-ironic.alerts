@@ -44,18 +44,18 @@ groups:
       summary: "Hardware error for instance: {{ $labels.instance }}"
       
   - alert: MetalIronicMetricsDownCritical
-    expr: count(ipmi_up{job="baremetal/ironic", provision_state="active"} == 0 or up{job="baremetal/ironic", provision_state="active"} == 0) by (server_name, maintenance, provision_state) 
-    for: 10m
+    expr: count(ipmi_up{job="baremetal/ironic", provision_state="active"} == 0 or up{job="baremetal/ironic", provision_state="active"} == 0) by (server_name, maintenance, provision_state, project_id, server_id) 
+    for: 30m
     labels:
       severity: critical
       tier: metal
       service: ironic
       context: "{{ $labels.server_name }}"
-      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}"
+      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, project_id: {{ $labels.project_id }}, server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}"
-      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}"
+      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, project_id: {{ $labels.project_id }}, server_id: {{ $labels.server_id }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, project_id: {{ $labels.project_id }}, server_id: {{ $labels.server_id }}"
       
   - alert: MetalIronicMetricsDownWarning
     expr: count(ipmi_up{job="baremetal/ironic", provision_state!="active"} == 0 or up{job="baremetal/ironic", provision_state!="active"} == 0) by (server_name, maintenance, provision_state) 
