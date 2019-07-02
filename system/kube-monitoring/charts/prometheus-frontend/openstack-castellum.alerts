@@ -32,7 +32,7 @@ groups:
     # API impacting resource scraping speed.
 
     - alert: OpenstackCastellumNotScrapingAnyResources
-      expr: absent(rate(aggregated:castellum_successful_resource_scrapes[120m]) > 0)
+      expr: absent(rate(castellum_aggregated_successful_resource_scrapes[120m]) > 0)
         and max(castellum_resource_count_gauge) > 0
       for: 5m
       labels:
@@ -47,7 +47,7 @@ groups:
         summary: Castellum is not scraping any resources
 
     - alert: OpenstackCastellumNotScrapingSomeResources
-      expr: rate(aggregated:castellum_successful_resource_scrapes[120m]) == 0
+      expr: rate(castellum_aggregated_successful_resource_scrapes[120m]) == 0
         and on (asset) castellum_resource_count_gauge > 0
       for: 5m
       labels:
@@ -62,7 +62,7 @@ groups:
         summary: Castellum is not scraping {{ $labels.asset }} resources
 
     - alert: OpenstackCastellumFailedResourceScrapes
-      expr: sum(increase(aggregated:castellum_failed_resource_scrapes[120m])) BY (asset) > 0
+      expr: sum(increase(castellum_aggregated_failed_resource_scrapes[120m])) BY (asset) > 0
       for: 10m
       labels:
         context: resource-scraping
@@ -81,7 +81,7 @@ groups:
     # alerts concerning asset scraping in castellum-observer
 
     - alert: OpenstackCastellumNotScrapingAnyAssets
-      expr: absent(rate(aggregated:castellum_successful_asset_scrapes[60m]) > 0)
+      expr: absent(rate(castellum_aggregated_successful_asset_scrapes[60m]) > 0)
         and max(castellum_asset_count_gauge) > 0
       for: 5m
       labels:
@@ -96,7 +96,7 @@ groups:
         summary: Castellum is not scraping any assets
 
     - alert: OpenstackCastellumNotScrapingSomeAssets
-      expr: rate(aggregated:castellum_successful_asset_scrapes[60m]) == 0
+      expr: rate(castellum_aggregated_successful_asset_scrapes[60m]) == 0
         and on (asset) castellum_asset_count_gauge > 0
       for: 5m
       labels:
@@ -111,7 +111,7 @@ groups:
         summary: Castellum is not scraping {{ $labels.asset }} assets
 
     - alert: OpenstackCastellumFailedAssetScrapes
-      expr: sum(increase(aggregated:castellum_failed_asset_scrapes[5m])) BY (asset) > 0
+      expr: sum(increase(castellum_aggregated_failed_asset_scrapes[5m])) BY (asset) > 0
       for: 10m
       labels:
         context: asset-scraping
@@ -145,7 +145,7 @@ groups:
           The `kubectl logs` for castellum-worker may contain additional info.
 
     - alert: OpenstackCastellumErroredAssetResizes
-      expr: sum(increase(aggregated:castellum_errored_asset_resizes[5m])) BY (asset) > 0
+      expr: sum(increase(castellum_aggregated_errored_asset_resizes[5m])) BY (asset) > 0
       for: 10m
       labels:
         context: asset-resizing

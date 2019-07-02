@@ -34,6 +34,28 @@ groups:
   - record: aggregated:limes_failed_scrapes_rate
     expr: sum(increase(limes_failed_scrapes[5m])) by (cluster,service,kubernetes_namespace) + sum(0 * limes_successful_scrapes) by (cluster,service,kubernetes_namespace)
 
+- name: castellum
+  rules:
+  # aggregate success/failure counters for use in alert expressions
+  - record: castellum_aggregated_asset_resizes
+    expr: sum by (asset) (castellum_asset_resizes)
+  - record: castellum_aggregated_errored_asset_resizes
+    expr: sum by (asset) (castellum_errored_asset_resizes)
+  - record: castellum_aggregated_failed_asset_scrapes
+    expr: sum by (asset) (castellum_failed_asset_scrapes)
+  - record: castellum_aggregated_failed_resource_scrapes
+    expr: sum by (asset) (castellum_failed_resource_scrapes)
+  - record: castellum_aggregated_successful_asset_scrapes
+    expr: sum by (asset) (castellum_successful_asset_scrapes)
+  - record: castellum_aggregated_successful_resource_scrapes
+    expr: sum by (asset) (castellum_successful_resource_scrapes)
+
+  # aggregate counters from observer and workers into one aggregate counter;
+  # otherwise prometheus-maia will not ingest the metrics properly because
+  # they only differ in labels that are dropped by its relabel config
+  - record: castellum_aggregated_operation_state_transitions
+    expr: sum(castellum_operation_state_transitions) by (asset,project_id,from_state,to_state)
+
 - name: elasticsearch
   rules:
   - record: elasticsearch_data_diskspace_used_percentage

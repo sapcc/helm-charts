@@ -48,25 +48,3 @@ groups:
   - record: limes_consolidated_unit_multiplier
     expr: max(label_join(limes_unit_multiplier, "full_resource", "/", "service", "resource"))
           by (full_resource)
-
-- name: castellum
-  rules:
-    # aggregate success/failure counters for use in alert expressions
-    - record: aggregated:castellum_asset_resizes
-      expr: sum by (asset) (castellum_asset_resizes)
-    - record: aggregated:castellum_errored_asset_resizes
-      expr: sum by (asset) (castellum_errored_asset_resizes)
-    - record: aggregated:castellum_failed_asset_scrapes
-      expr: sum by (asset) (castellum_failed_asset_scrapes)
-    - record: aggregated:castellum_failed_resource_scrapes
-      expr: sum by (asset) (castellum_failed_resource_scrapes)
-    - record: aggregated:castellum_successful_asset_scrapes
-      expr: sum by (asset) (castellum_successful_asset_scrapes)
-    - record: aggregated:castellum_successful_resource_scrapes
-      expr: sum by (asset) (castellum_successful_resource_scrapes)
-
-    # aggregate counters from observer and workers into one aggregate counter;
-    # otherwise prometheus-maia will not ingest the metrics properly because
-    # they only differ in labels that are dropped by its relabel config
-    - record: aggregated:castellum_operation_state_transitions
-      expr: sum(castellum_operation_state_transitions) by (asset,project_id,from_state,to_state)
