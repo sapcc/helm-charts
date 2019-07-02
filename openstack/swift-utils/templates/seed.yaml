@@ -64,21 +64,23 @@ spec:
       - name: velero_backup
         description: 'Velero Backup'
         password: {{ .Values.velero_backup_password }}
-        roles:
-          - project: service
-            role: service
       {{- end}}
 
     # TODO: move this to the Glance/image-build/Ironic/Backup/whatever chart
     - name: ccadmin
       projects:
         - name: master
+          {{- if .Values.velero_backup_password }}
+          roles:
+            - user: velero_backup@Default
+              role: service
+          {{- end }}
           swift:
             enabled: true
-          {{- if .Values.velero_backup_password }}
-          containers:
-            - name: velero-backup
-          {{- end }}
+            {{- if .Values.velero_backup_password }}
+            containers:
+              - name: velero-backup
+            {{- end }}
 
     - name: cc3test
       projects:
