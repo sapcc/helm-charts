@@ -5,7 +5,9 @@
   "settings" : {
     "index" : {
       "number_of_shards": 1,
-      "number_of_replicas": 0
+      "number_of_replicas": 0,
+      "codec": "best_compression",
+      "max_result_window": 20000
     }
   },
   "mappings" : {
