@@ -1,3 +1,4 @@
+{{- $values := .Values }}
 {{- if .Values.snmp_exporter.enabled }}
 {{- range $i, $config := .Values.snmp_exporter.maia_snmp_config -}}
 {{ if ne $i 0 }}---{{ end }}
@@ -21,6 +22,7 @@ metadata:
     prometheus.io/scrape_param_module: "{{$config.configname}}"
     prometheus.io/port: "{{$.Values.snmp_exporter.listen_port}}"
     prometheus.io/path: "/snmp"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
 
 spec:
   selector:
@@ -54,6 +56,7 @@ metadata:
     prometheus.io/scrape_param_module: "arista"
     prometheus.io/port: "{{$.Values.snmp_exporter.listen_port}}"
     prometheus.io/path: "/snmp"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
 
 spec:
   selector:
