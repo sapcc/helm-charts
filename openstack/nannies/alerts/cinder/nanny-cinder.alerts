@@ -1,0 +1,26 @@
+groups:
+- name: nanny-cinder.alerts
+  rules:
+  - alert: OpenstackCinderNannyVolumeWithoutValidProject
+    expr: sum(cinder_nanny_delete_volume{kind="plan"}) > 0
+    for: 5m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: The cinder-nanny discovered a volume without a valid project id - this should not happen and be investigated ...
+      summary: Cinder nanny detected a volume without a valid project id
+
+  - alert: OpenstackCinderNannySnapshotWithoutValidProject
+    expr: sum(cinder_nanny_delete_snapshot{kind="plan"}) > 0
+    for: 5m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: The cinder-nanny discovered a snapshot without a valid project id - this should not happen and be investigated ...
+      summary: Cinder nanny detected a snapshot without a valid project id
