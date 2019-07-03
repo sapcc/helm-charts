@@ -30,10 +30,10 @@ log_custom_handlers = swift_sentry.sentry_logger
 [pipeline:main]
 {{- if le $swift_release "queens" }}
 # Queens pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not $context.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- else }}
 # Rocky or higher pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not $context.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
 
 [app:proxy-server]
@@ -131,6 +131,7 @@ set log_level = DEBUG
 [filter:sysmeta-domain-override]
 use = egg:sapcc-swift-addons#sysmeta_domain_override
 
+{{ if not $context.sapcc_ratelimit.enabled }}
 [filter:ratelimit]
 use = egg:swift#ratelimit
 set log_name = proxy-ratelimit
@@ -141,6 +142,7 @@ container_ratelimit_0 = 50
 container_ratelimit_100 = 50
 container_listing_ratelimit_0 = 100
 container_listing_ratelimit_100 = 100
+{{ end }}
 
 [filter:cname_lookup]
 use = egg:swift#cname_lookup
