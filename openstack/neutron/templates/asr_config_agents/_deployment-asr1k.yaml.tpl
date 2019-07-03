@@ -30,8 +30,9 @@ spec:
       annotations:
         pod.beta.kubernetes.io/hostname:  {{ $config_agent.hostname }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{$context.Values.port_l3_metrics |  default 9103}}"
-        prometheus.io/port_1: "{{$context.Values.port_l2_metrics |  default 9102}}"
+        prometheus.io/port: "{{$context.Values.l3_port_metrics |  default 9103}}"
+        prometheus.io/port_1: "{{$context.Values.l2_port_metrics |  default 9102}}"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $context.Values.alerts.prometheus | quote }}
     spec:
       {{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
       hostname:  {{ $config_agent.hostname }}
