@@ -1,0 +1,61 @@
+groups:
+- name: designate-unbound.alerts
+  rules:
+  - alert: OpenstackDesignateDnsBindDown
+    expr: max(bind_up) BY (region, kubernetes_name) < 1
+    for: 10m
+    labels:
+      context: bind
+      dashboard: designate-bind
+      meta: '{{ $labels.kubernetes_name }}'
+      service: designate
+      severity: critical
+      tier: os
+    annotations:
+      description: DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $labels.region }}.
+      summary: DNS Bind server {{ $labels.kubernetes_name }} down.
+
+  - alert: OpenstackDesignateDnsUnboundEndpointNotAvailable
+    expr: max(kube_endpoint_address_available{namespace=~"dns-recursor"})by(region,endpoint) < 1
+    for: 15m
+    labels:
+      context: unbound
+      dashboard: designate-unbound
+      meta: '{{ $labels.endpoint }}'
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+    annotations:
+      description: 'DNS Unbound endpoint {{ $labels.endpoint }} not available in {{ $labels.region }} region.'
+      summary: 'DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.'
+
+  - alert: OpenstackDesignateDnsUnbound1Down
+    expr: absent(unbound_time_up{kubernetes_name=~"unbound1"}) == 1
+    for: 60m
+    labels:
+      context: unbound
+      dashboard: designate-unbound
+      meta: unbound1
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+    annotations:
+      description: 'DNS Unbound1 recursor is down.'
+      summary: DNS Unbound1 recursor is down. DNS resolution might be handled by another region.
+
+  - alert: OpenstackDesignateDnsUnbound2Down
+    expr: absent(unbound_time_up{kubernetes_name=~"unbound2"}) == 1
+    for: 60m
+    labels:
+      context: unbound
+      dashboard: designate-unbound
+      meta: unbound2
+      service: designate
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+    annotations:
+      description: 'DNS Unbound2 recursor is down.'
+      summary: DNS Unbound2 recursor is down. DNS resolution might be handled by another region.
