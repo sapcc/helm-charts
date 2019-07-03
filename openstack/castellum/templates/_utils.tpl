@@ -26,6 +26,8 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: "https://prometheus-collector.{{ .Values.global.region }}.{{ .Values.global.tld }}"
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.json
+- name: CASTELLUM_SENTRY_DSN
+  valueFrom: { secretKeyRef: { name: sentry, key: castellum.DSN } }
 - name: OS_AUTH_URL
   value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
 - name: OS_AUTH_VERSION
