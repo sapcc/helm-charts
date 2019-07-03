@@ -16,15 +16,15 @@ groups:
       summary: Clients waiting connections > 100 since 5 minutes
   
   - alert: OpenstackPgBouncerNotReady
-    expr: count(kube_pod_container_status_ready{container="pgbouncer"} == 0) by (pod)
+    expr: sum(label_replace(kube_pod_container_status_ready{container="pgbouncer"}, "backend", "$1", "pod", "^(.*-pgbouncer)-.*")) by (backend,namespace) < 3
     for: 5m
     labels:
       dashboard: PgBouncer
       service: monsoon3
-      meta: "pgbouncer pod {{ $labels.pod }} failing readiness probe"
+      meta: "Less than 3 pgbouncer pods for {{ $labels.backend }} are ready"
       playbook: "docs/devops/alert/pgbouncer/#openstackpgbouncernotready"
       severity: warning
       tier: os
     annotations:
-      description: "pgbouncer pod {{ $labels.pod }} failing readiness probe"
-      summary: "pgbouncer pod {{ $labels.pod }} failing readiness probe"
+      description: "Less than 3 pgbouncer pods for {{ $labels.backend }} are ready. Investigate the missing replicas."
+      summary: "Less than 3 pgbouncer pods for {{ $labels.backend }} are ready"
