@@ -195,7 +195,7 @@ groups:
       description: The pod {{ $labels.pod_name }} was oomkilled recently
 
   - alert: OpenstackLimesPodOOMExceedingLimits
-    expr: predict_linear(container_memory_usage_bytes{pod_name=~"limes-.+"}[1h], 8* 3600) > ON (pod_name, namespace) label_replace(kube_pod_container_resource_limits_memory_bytes{pod=~"limes-.+"}, "pod_name", "$1", "pod", "(.*)")
+    expr: limes_container_memory_usage_percent > 70 and predict_linear(limes_container_memory_usage_percent[0h], 7*3600) > 100
     for: 30m
     labels:
       tier: os
