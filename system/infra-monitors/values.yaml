@@ -1,0 +1,47 @@
+global:
+  clusterType: controlplane
+  domain: cloud.sap
+  # Defined via secrets.
+  # region:
+  imageRegistry: hub.global.cloud.sap
+
+infra-collector-prometheus:
+  name: infra-collector
+  enabled: true
+
+  retentionTime: 10m
+  scrapeInterval: "60s"
+
+#  additionalScrapeConfigs:
+#    name: infra-collector-additional-scrape-config
+#    key: scrape-config.yaml
+#  configMaps:
+#    - atlas-targets
+
+  ingress:
+    enabled: true
+    host: prometheus-infra-collector
+
+  persistence:
+    enabled: false
+
+ resources:
+    requests:
+      cpu: 0.25
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 2Gi
+
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true
+
+  # alertmanagers:
+  #  - alertmanager.eu-de-1.cloud.sap
+  #  - alertmanager.eu-nl-1.cloud.sap
+
+cloudprober-exporter:
+  enabled: false

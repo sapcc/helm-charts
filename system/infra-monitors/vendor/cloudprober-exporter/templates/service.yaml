@@ -1,0 +1,41 @@
+{{- if .Values.enabled }}
+{{- range $i, $config := .Values.servers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: cloudprober-exporter-{{$config.name}}
+  labels:
+    app: cloudprober-exporter
+    release: "{{$.Release.Name}}"
+  annotations:
+    "prometheus.io/scrape": "true"
+    "prometheus.io/port": "9313"
+
+spec:
+  selector:
+    name: cloudprober-exporter-{{$config.name}}
+  externalIPs:
+    - {{$config.target}}
+  ports:
+    - name: prober-target-http
+      protocol: TCP
+      port: 1080
+      targetPort: 80
+    - name: prober-target-udp
+      protocol: UDP
+      port: 5201
+      targetPort: 5201
+    - name: prober-target-tcp
+      protocol: TCP
+      port: 5201
+      targetPort: 5201
+    - name: cloudprober
+      protocol: TCP
+      port: 9313
+      targetPort: 9313
+---
+{{ end -}}
+{{ end -}}
