@@ -109,9 +109,6 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
-            - mountPath: /run/netns
-              name: host-run-netns
-              mountPropagation: Bidirectional
 {{- if $.Values.agent.neutron_l3 | default false }}
         - name: neutron-l3-agent
           image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
@@ -241,8 +238,5 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
-        - name: host-run-netns
-          hostPath:
-            path: /run/netns
 {{- end }}
 {{- end }}
