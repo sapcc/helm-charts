@@ -131,7 +131,8 @@ set log_level = DEBUG
 [filter:sysmeta-domain-override]
 use = egg:sapcc-swift-addons#sysmeta_domain_override
 
-{{ if not $context.sapcc_ratelimit.enabled }}
+{{- if not $context.sapcc_ratelimit.enabled }}
+
 [filter:ratelimit]
 use = egg:swift#ratelimit
 set log_name = proxy-ratelimit
@@ -142,7 +143,7 @@ container_ratelimit_0 = 50
 container_ratelimit_100 = 50
 container_listing_ratelimit_0 = 100
 container_listing_ratelimit_100 = 100
-{{ end }}
+{{- end }}
 
 [filter:cname_lookup]
 use = egg:swift#cname_lookup
