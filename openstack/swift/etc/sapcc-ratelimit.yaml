@@ -1,0 +1,39 @@
+# Override default ratelimit response.
+ratelimit_response:
+  status: 498 Rate Limited
+  status_code: 498
+  body: "Rate Limit Exceeded"
+
+# Override default blacklist response.
+blacklist_response:
+  status: 497 Blacklisted
+  status_code: 497
+  body: "Your account has been blacklisted"
+
+# Group multiple CADF actions to one rate limit action.
+groups:
+  write:
+    - update
+    - delete
+
+rates:
+  # Global rate limits are counted across all projects and
+  # are meant to protect the backend from being overloaded.
+  global:
+    account/container:
+      - action: write
+        limit: 500r/s
+
+  # Default rate limits apply to each project.
+  # Rate limits specific to a project can only be set via Limes.
+  default:
+    account:
+      - action: write
+        limit: 10r/s
+
+    account/container:
+      - action: read/list
+        limit: 100r/s
+
+      - action: write
+        limit: 50r/s

@@ -30,10 +30,10 @@ log_custom_handlers = swift_sentry.sentry_logger
 [pipeline:main]
 {{- if le $swift_release "queens" }}
 # Queens pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not $context.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- else }}
 # Rocky or higher pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl ratelimit authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not $context.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 {{- end }}
 
 [app:proxy-server]
@@ -131,6 +131,7 @@ set log_level = DEBUG
 [filter:sysmeta-domain-override]
 use = egg:sapcc-swift-addons#sysmeta_domain_override
 
+{{ if not $context.sapcc_ratelimit.enabled }}
 [filter:ratelimit]
 use = egg:swift#ratelimit
 set log_name = proxy-ratelimit
@@ -141,6 +142,7 @@ container_ratelimit_0 = 50
 container_ratelimit_100 = 50
 container_listing_ratelimit_0 = 100
 container_listing_ratelimit_100 = 100
+{{ end }}
 
 [filter:cname_lookup]
 use = egg:swift#cname_lookup
@@ -214,9 +216,23 @@ secret_cache_duration = {{$cluster.token_cache_time | default 600}}
 {{ if $context.watcher_enabled -}}
 [filter:watcher]
 use = egg:watcher-middleware#watcher
-service_type = object-store
-cadf_service_name = service/storage/object
-target_project_id_from_path = {{$context.watcher_project_id_from_path | default true}}
 config_file = /swift-etc/watcher.yaml
+service_type = {{ required ".Values.global.serviceType" $context.global.serviceType }}
+cadf_service_name = {{ required ".Values.global.serviceName" $context.global.serviceName }}
+target_project_id_from_path = {{ $context.watcher_project_id_from_path | default true }}
 {{- end }}
-{{end}}
+
+{{ if $context.sapcc_ratelimit.enabled -}}
+[filter:sapcc_ratelimit]
+use = egg:rate_limit_middleware#rate-limit
+config_file = /swift-etc/sapcc-ratelimit.yaml
+service_type = {{ required ".Values.global.serviceType missing" $context.global.serviceType }}
+cadf_service_name = {{ required ".Values.global.serviceName missing" $context.global.serviceName }}
+rate_limit_by = {{ required ".Values.sapcc_ratelimit.rateLimitBy missing" $context.sapcc_ratelimit.rateLimitBy }}
+max_sleep_time_seconds = {{ required ".Values.sapcc_ratelimit.maxSleepTimeSeconds missing" $context.sapcc_ratelimit.maxSleepTimeSeconds }}
+log_sleep_time_seconds = {{ required ".Values.sapcc_ratelimit.logSleepTimeSeconds missing" $context.sapcc_ratelimit.logSleepTimeSeconds }}
+backend_host = {{ tuple $helm_release $context | include "sapcc_ratelimit_backend_host" }}
+backend_port = {{ required ".Values.sapcc_ratelimit.backend.port missing" $context.sapcc_ratelimit.backend.port }}
+{{- end }}
+
+{{ end }}

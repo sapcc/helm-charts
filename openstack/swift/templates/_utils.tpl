@@ -168,3 +168,14 @@ limit_req zone=req_limit burst={{ $cluster.rate_limit_burst }} nodelay;
 limit_req_status 429;
 {{- end }}
 {{- end -}}
+
+{{- /* Generate backend host for sapcc/openstack-ratelimit-middleware */ -}}
+{{- define "sapcc_ratelimit_backend_host" -}}
+{{- $release := index . 0 -}}
+{{- $context := index . 1 -}}
+{{- if $context.sapcc_ratelimit.backend.host -}}
+{{- $context.sapcc_ratelimit.backend.host -}}
+{{- else -}}
+{{- $release.Name -}}-sapcc-ratelimit-redis-headless
+{{- end -}}
+{{- end -}}
