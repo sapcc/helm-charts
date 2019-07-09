@@ -154,28 +154,11 @@ sapcc_ratelimit:
 # Redis datastore for sapcc ratelimit middleware.
 # Only deployed if sapcc_ratelimit.enabled=true.
 sapcc-ratelimit-redis:
-  image:
-    registry: docker.io
-    repository: bitnami/redis
-    tag: 5.0.5-debian-9-r14
-    pullPolicy: IfNotPresent
 
-  # Use a single redis.
-  cluster:
+  # Memory is sufficient.
+  persistence:
     enabled: false
-
-  # No persistence. Just memory.
-  master:
-    persistence:
-      enabled: false
-
-  # No password required for redis.
-  usePassword: false
 
   # Prometheus metrics via oliver006/redis_exporter sidecar.
   metrics:
     enabled: true
-    service:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: "openstack"
