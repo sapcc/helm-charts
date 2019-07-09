@@ -39,11 +39,13 @@ spec:
               value: {{ printf "%s:%d" ( include "redis.fullname" . ) (int .Values.redisPort) | quote }}
             - name: REDIS_ALIAS
               value: {{ template "redis.fullname" . }}
+            {{ if .Values.redisPassword }}
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ template "redis.fullname" . }}
                   key: redis-password
+            {{ end }}
           ports:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}

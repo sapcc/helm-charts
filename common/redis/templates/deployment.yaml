@@ -17,13 +17,20 @@ spec:
       - name: {{ template "redis.fullname" . }}
         image: {{ template "redis.image" . }}
         imagePullPolicy: {{ default "" .Values.image.pullPolicy | quote }}
-        args: [ {{- if .Values.config }} /etc/redis/redis.conf, {{- end }} --requirepass, $(REDIS_PASSWORD) ]
+        args:
+        {{- if .Values.config }}
+        - /etc/redis/redis.conf
+        {{- end }}
+        {{- if .Values.redisPassword }}
+        - --requirepass
+        - $(REDIS_PASSWORD)
         env:
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ template "redis.fullname" . }}
               key: redis-password
+        {{ end }}
         ports:
         - name: redis
           containerPort: {{ required ".Values.redisPort missing" .Values.redisPort }}
