@@ -37,7 +37,7 @@ spec:
         - name: neutron-dhcp-agent
           image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
+          command: ["dumb-init", "bash", "-c", "echo -e \"[DEFAULT]\\nhost = $NODE_NAME\\n\" > /etc/neutron/hostname.conf && neutron-dhcp-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/dhcp-agent.ini --config-file /etc/neutron/linux-bridge.ini --config-file /etc/neutron/az-{{ $az }}.conf --config-file /etc/neutron/hostname.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -46,6 +46,11 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
           readinessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--dhcp_ready"]
@@ -122,6 +127,11 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
           livenessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--binary", "neutron-l3-agent"]
@@ -174,7 +184,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          command: ["dumb-init", "bash", "-c", "echo -e \"[DEFAULT]\\nhost = $NODE_NAME\\n\" > /etc/neutron/hostname.conf && neutron-linuxbridge-agent --config-file", "/etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/linux-bridge.ini --config-file /etc/neutron/hostname.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
