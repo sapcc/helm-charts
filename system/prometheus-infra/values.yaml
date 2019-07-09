@@ -1,0 +1,55 @@
+global:
+  imageRegistry: hub.global.cloud.sap
+  domain: cloud.sap
+
+  # Defined via secrets.
+  # region:
+
+# Values for Infrastructure Prometheus Fronteend.
+prometheus-infra-frontend:
+  name: infra-frontend
+
+  retentionTime: 90d
+
+  additionalScrapeConfigs:
+    name: infra-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: true
+    host: prometheus-infra-frontend
+
+  persistence:
+    enabled: true
+    # prom-operator does not support other accessModes than RWO
+    # accessMode: ReadWriteOnce
+    size: 100Gi
+
+  # Comment the `prometheus-sso-cert` if SSO is not used (aka authentication.enabled=false)
+  #secrets:
+  #  - prometheus-openstack-sso-cert
+
+  # Disable alerting until the transition to the operated Prometheus was done in all regions.
+  # alertmanagers:
+  #  - alertmanager.eu-de-1.cloud.sap
+  #  - alertmanager.eu-nl-1.cloud.sap
+
+  # Kubernetes resource requests and limits for this Prometheus.
+  resources:
+    requests:
+      cpu: 0.25
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 2Gi
+
+# Basic alerts for global Prometheus.
+alerts:
+  prometheus: infra-frontend
+
+# Regional Prometheis are only accessible after presenting a valid SSO certificate.
+authentication:
+  enabled: false
+  # Defined via secrets.
+  # ssoCert:
+  # ssoKey:
