@@ -153,12 +153,19 @@ kube-state-metrics:
     prometheus.io/port_1: "8081"
     prometheus.io/targets: "kubernetes,openstack"
 
+  # This avoid double scraping of metrics caused by setting the `prometheus.io/scrape: "true"` annotation on the service.
+  # We already have the annotations on the kube-state-metrics pod.
+  prometheusScrape: false
+
   image:
     repository: sapcc/kube-state-metrics
 
   rbac:
     create: false
     serviceAccountName: default
+
+  serviceAccount:
+    create: false
 
   collectors:
     # not useful
