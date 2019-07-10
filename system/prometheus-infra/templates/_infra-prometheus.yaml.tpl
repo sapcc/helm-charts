@@ -40,4 +40,4 @@
 
   static_configs:
     - targets:
-      - "prometheus-infra-collector.{{ $region }}.cloud.sap"
+      - "prometheus-infra-collector.{{ .Values.global.region }}.cloud.sap"
