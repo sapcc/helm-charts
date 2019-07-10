@@ -1,12 +1,12 @@
-{{- range $index, $cluster := .Values.clusters }}
+{{- range $cluster_id, $cluster := .Values.clusters }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: swift-proxy-{{$cluster.name}}
+  name: swift-proxy-{{$cluster_id}}
   labels:
     release: "{{$.Release.Name}}"
-    os-cluster: {{$cluster.name}}
+    os-cluster: {{$cluster_id}}
 spec:
   revisionHistoryLimit: 5
   replicas: {{$cluster.replicas}}
@@ -21,11 +21,11 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      component: swift-proxy-{{$cluster.name}}
+      component: swift-proxy-{{$cluster_id}}
   template:
     metadata:
       labels:
-        component: swift-proxy-{{$cluster.name}}
+        component: swift-proxy-{{$cluster_id}}
       annotations:
         checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
@@ -35,7 +35,7 @@ spec:
       volumes:
         - name: tls-secret
           secret:
-            secretName: tls-swift-{{$cluster.name}}
+            secretName: tls-swift-{{$cluster_id}}
         - name: swift-bin
           configMap:
             name: swift-bin
@@ -44,7 +44,7 @@ spec:
             name: swift-etc
         - name: swift-etc-cluster
           configMap:
-            name: swift-etc-{{$cluster.name}}
+            name: swift-etc-{{$cluster_id}}
         - name: swift-account-ring
           configMap:
             name: swift-account-ring
@@ -193,4 +193,4 @@ spec:
               name: swift-etc
 
 ---
-{{end}}
+{{- end }}
