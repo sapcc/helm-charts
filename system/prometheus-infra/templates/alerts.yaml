@@ -14,19 +14,3 @@ spec:
 {{ printf "%s" $bytes | indent 2 }}
 
 {{- end }}
-
-{{- range $path, $bytes := .Files.Glob "../infra-monitoring/vendor/*/alerts/*.alerts" }}
----
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-
-metadata:
-  name: infra-frontend-{{ printf "%s" $path | replace "/" "-" }}
-  labels:
-    type: alerting-rules
-    prometheus: {{ required "$values.alerts.prometheus missing" $values.alerts.prometheus }}
-
-spec:
-{{ printf "%s" $bytes | indent 2 }}
-
-{{- end }}
