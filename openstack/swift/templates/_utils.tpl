@@ -176,6 +176,6 @@ limit_req_status 429;
 {{- if $context.sapcc_ratelimit.backend.host -}}
 {{- $context.sapcc_ratelimit.backend.host -}}
 {{- else -}}
-{{- $release.Name -}}-sapcc-ratelimit-redis-headless
+{{- $release.Name -}}-sapcc-ratelimit-redis
 {{- end -}}
 {{- end -}}
