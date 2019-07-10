@@ -10,10 +10,8 @@
     'match[]':
       - '{__name__=~"^ALERTS$"}'
       - '{__name__=~"up"}'
-      - '{__name__=~"success"}'
-      - '{__name__=~"latency"}'
-      - '{__name__=~"^global:.+"}'
-      - '{__name__=~"^snmp_.+"}'
+      - '{__name__=~"^success"}'
+      - '{__name__=~"^latency"}'
 
   relabel_configs:
     - action: replace
