@@ -11,6 +11,9 @@
       - '{__name__=~"^ALERTS"}'
       - '{__name__=~"up"}'
       - '{app="cloudprober-exporter"}'
+      - '{app="thousandeyes-exporter"}'
+      - '{app="netapp-harvest"}'
+      - '{app="netapp-api-exporter"}'
 
   relabel_configs:
     - action: replace
