@@ -1,4 +1,4 @@
-- job_name: 'prometheus-infra-frontend'
+- job_name: 'prometheus-infra-collection'
   scheme: https
   scrape_interval: 30s
   scrape_timeout: 25s
