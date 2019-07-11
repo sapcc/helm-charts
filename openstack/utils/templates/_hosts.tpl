@@ -94,6 +94,8 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 
 {{define "cfm_api_endpoint_host_public"}}cfm.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
+{{define "sftp_api_endpoint_host"}}sftp-bridge.{{ .Values.global.region }}.{{ .Values.global.tld }}{{end}}
+
 {{- define "utils.password_for_fixed_user_and_host" }}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}

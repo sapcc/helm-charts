@@ -1,1 +1,0 @@
-{{.Values.sftp.user}}:{{.Values.sftp.hash}}

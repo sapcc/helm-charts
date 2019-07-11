@@ -1,4 +1,3 @@
-{{- if .Values.sftp.enabled }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 
@@ -23,11 +22,10 @@ spec:
        hosts: [something]
   # DISCO creates CNAME bases on spec.rules[].host
   rules:
-    - host: "sftp-bridge.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+    - host: {{ include "sftp_api_endpoint_host" . | quote }}
       http:
         paths:
         - path: /
           backend:
             serviceName: sftp
             servicePort: 10022
-{{- end }}
