@@ -29,8 +29,15 @@ infra-frontend-prometheus:
     size: 300Gi
 
   # Comment the `prometheus-sso-cert` if SSO is not used (aka authentication.enabled=false)
-  #secrets:
-  #  - prometheus-openstack-sso-cert
+  secrets:
+    - prometheus-infra-frontend-sso-cert
+
+# Regional Prometheis are only accessible after presenting a valid SSO certificate.
+authentication:
+  enabled: true
+  # Defined via secrets.
+  # ssoCert:
+  # ssoKey:
 
   # Disable alerting until the transition to the operated Prometheus was done in all regions.
   # alertmanagers:
@@ -50,9 +57,3 @@ infra-frontend-prometheus:
 alerts:
   prometheus: infra-frontend
 
-# Regional Prometheis are only accessible after presenting a valid SSO certificate.
-authentication:
-  enabled: false
-  # Defined via secrets.
-  # ssoCert:
-  # ssoKey:
