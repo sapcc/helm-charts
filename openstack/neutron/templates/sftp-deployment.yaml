@@ -1,4 +1,3 @@
-{{- if .Values.sftp.enabled }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -22,9 +21,13 @@ spec:
     spec:
       containers:
         - name: sftp
-          image: hub.global.cloud.sap/monsoon/swift-sftp:{{ .Values.sftp.image  }}
+          image: hub.global.cloud.sap/monsoon/swift-sftp:20190711151344
           args: ['server', '-f', '/etc/swift/swift-sftp.conf']
           env:
+            - name: USERNAME
+              value: {{ .Values.sftp.user | quote }}
+            - name: PASSWORD
+              value: {{ derivePassword 1 "long" .Values.global.master_password .Values.sftp.user (include "sftp_api_endpoint_host" .) | quote }}
           resources:
             requests:
               cpu: "256m"
@@ -41,10 +44,6 @@ spec:
               name: neutron-sftp-backup
               subPath: ssh_host_rsa_key
               readOnly: true
-            - mountPath: /etc/swift/passwd
-              name: neutron-sftp-backup
-              subPath: passwd
-              readOnly: true
             - mountPath: /tmp
               name: cache-volume
       volumes:
@@ -53,4 +52,3 @@ spec:
             name: neutron-sftp-backup
         - name: cache-volume
           emptyDir: {}
-{{- end }}
