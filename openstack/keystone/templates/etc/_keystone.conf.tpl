@@ -93,6 +93,18 @@ expiration_buffer = 3600
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 
+{{- if eq .Values.release "stein" }}
+[fernet_receipts]
+key_repository = /fernet-keys
+max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
+{{- end }}
+
+{{- if eq .Values.release "stein" }}
+[access_rules_config]
+rules_file = /etc/keystone/access_rules.json
+permissive = true
+{{- end }}
+
 [database]
 connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@{{include "db_host" .}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
 
@@ -121,6 +133,7 @@ lockout_failure_attempts = 5
 lockout_duration = 300
 unique_last_password_count = 5
 
+{{- if ne .Values.release "stein" }}
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
 rabbit_password = {{ .Values.rabbitmq.users.default.password }}
@@ -132,9 +145,16 @@ rabbit_host = {{ include "rabbitmq_host" . }}
 rabbit_port = {{ .Values.rabbitmq.port | default 5672 }}
 rabbit_virtual_host = {{ .Values.rabbitmq.virtual_host | default "/" }}
 rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
+{{- end }}
 
 [oslo_messaging_notifications]
-driver = messaging
+{{- if eq .Values.release "stein" }}
+{{- if .Values.rabbitmq.host }}
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
+{{ else }}
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
+{{- end }}
+{{- end }}
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true

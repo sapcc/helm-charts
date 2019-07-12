@@ -20,13 +20,23 @@ COMMAND="${@:-start}"
 
 function start () {
 
-  for KEYSTONE_WSGI_SCRIPT in keystone-wsgi-public keystone-wsgi-admin; do
+  for KEYSTONE_WSGI_SCRIPT in keystone-wsgi-public; do
     cp -a $(type -p ${KEYSTONE_WSGI_SCRIPT}) /var/www/cgi-bin/keystone/
   done
 
   if [ -f /etc/apache2/envvars ]; then
      # Loading Apache2 ENV variables
      source /etc/apache2/envvars
+  fi
+
+  if [ ! -d "$APACHE_RUN_DIR" ]; then
+    # create a apache2 runtime directory
+    mkdir "$APACHE_RUN_DIR"
+  fi
+
+  if [ -f "$APACHE_PID_FILE" ]; then
+    # Remove the stale pid for debian/ubuntu images
+    rm -f "$APACHE_PID_FILE"
   fi
 
   # Start Apache2
