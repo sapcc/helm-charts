@@ -13,71 +13,38 @@ global:
   arista_exporter:
     enabled: true
 
-
 rbac:
   create: true
-  name: infra-monitoring-edit
-  namespace: infra-monitoring
+  name: infra-monitors-edit
+  namespace: infra-monitors
   role:
     kind: ClusterRole
     name: edit
   service_account:
     name: default
-    namespace: infra-monitoring
+    namespace: infra-monitors
 
-prometheus_server:
-  enabled: false
+prometheus_infra_collector:
+  name: infra-collector
+  enabled: true
 
-  name: prometheus-infra
-
-  retentionTime: 7d
+  retentionTime: 10m
   scrapeInterval: "60s"
 
   additionalScrapeConfigs:
-    name: prometheus-infra-additional-scrape-config
+    name: infra-collector-additional-scrape-config
     key: scrape-config.yaml
   configMaps:
-    - atlas-targets
-    - arista-sd
-
-  # alertmanagers:
-  #  - alertmanager.eu-de-1.cloud.sap
+#    - arista-sd
+#    - atlas-targets
 
   ingress:
     enabled: true
-    host: prometheus-infra.scaleout
+    host: prometheus-infra-collector
 
-  # Store on disk
   persistence:
-    enabled: true
-    # prom-operator does not support other accessModes than RWO
-    # accessMode: ReadWriteOnce
-    size: 100Gi
+    enabled: false
 
-  rbac:
-    create: true
-  serviceAccount:
-    name: prometheus-infra
-
-  serviceAccount:
-    create: false
-    name: default
-
-  # Basic alerts for infra Prometheus.
-  alerts:
-    prometheus: prometheus-infra
-
-  # The log level of the Prometheus.
-  logLevel: info
-
-  # Tolerations match the taint
-  #tolerations:
-  #  - key: "context"
-  #    operator: "Equal"
-  #    value: "monitoring"
-  #    effect: "PreferNoSchedule"
-
-  # Kubernetes resource requests and limits for this Prometheus.
   resources:
     requests:
       cpu: 0.25
@@ -86,35 +53,28 @@ prometheus_server:
       cpu: 1
       memory: 2Gi
 
-cloudprober-exporter:
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true
+
+  # alertmanagers:
+  #  - alertmanager.eu-de-1.cloud.sap
+  #  - alertmanager.eu-nl-1.cloud.sap
+
+# Basic alerts for infra Prometheus.
+alerts:
+  prometheus: infra-collector
+
+cloudprober_exporter:
   enabled: false
 
-netapp-exporter:
+blackbox_exporter:
   enabled: false
 
-apic_exporters:
+netapp_exporter:
   enabled: false
 
-snmp_exporter:
-  enabled: false
-
-vcenter-service-discovery:
-  enabled: false
-
-bios_exporter:
-  enabled: false
-
-ironic-exporter:
-  enabled: false
-
-ipmi-exporter:
-  enabled: false
-
-atlas:
-  enabled: false
-
-arista_exporter:
-  enabled: false
-
-thousandeyes-exporter:
+thousandeyes_exporter:
   enabled: false
