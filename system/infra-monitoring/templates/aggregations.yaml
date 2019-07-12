@@ -1,5 +1,5 @@
 {{- $values := .Values.prometheus_infra_collector }}
-{{- range $path, $bytes := .Files.Glob "vendor/*/alerts/*.alerts" }}
+{{- range $path, $bytes := .Files.Glob "vendor/*/aggregations/*.rules" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -7,7 +7,7 @@ kind: PrometheusRule
 metadata:
   name: {{ $values.name }}-{{ printf "%s" $path | replace "/" "-" }}
   labels:
-    type: alerting-rules
+    type: aggregation-rules
     prometheus: {{ required "$values.name missing" $values.name }}
 
 spec:
