@@ -1,4 +1,8 @@
 {{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
+
 {{- range $i, $config := .Values.servers -}}
 {{ if ne $i 0 }}---{{ end }}
 
@@ -11,8 +15,9 @@ metadata:
     app: cloudprober-exporter
     release: "{{$.Release.Name}}"
   annotations:
-    "prometheus.io/scrape": "true"
-    "prometheus.io/port": "9313"
+    prometheus.io/scrape: {{ $scrape | quote }}
+    prometheus.io/port: {{ $port | quote }}
+    prometheus.io/targets: {{ $targets | quote }}
 
 spec:
   selector:

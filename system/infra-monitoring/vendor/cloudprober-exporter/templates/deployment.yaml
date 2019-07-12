@@ -1,4 +1,7 @@
 {{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
 {{- range $i, $config := .Values.servers -}}
 {{ if ne $i 0 }}---{{ end }}
 
@@ -21,6 +24,9 @@ spec:
         app: cloudprober-exporter
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
+        prometheus.io/scrape: {{ $scrape | quote }}
+        prometheus.io/port: {{ $port | quote }}
+        prometheus.io/targets: {{ $targets | quote }}
     spec:
       nodeSelector:
         failure-domain.beta.kubernetes.io/zone: {{$config.name}}
