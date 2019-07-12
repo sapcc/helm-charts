@@ -1,0 +1,34 @@
+{{- if .Values.vasa_exporter.enabled }}
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: vasa-exporter
+  namespace: infra-monitoring
+
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+         app: vasa-exporter
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: vasa-exporter
+      containers:
+         - name: vasa-exporter
+           imagePullPolicy: IfNotPresent
+           image: {{ .Values.vasa_exporter.docker_repo }}/vasa-exporter:{{ .Values.vasa_exporter.image_version | replace "string:" "" }}
+           command:
+             - python3
+           args:
+             - /vasa-exporter/vasa_exporter.py
+             - /config/vasa-exporter.cfg
+           volumeMounts:
+             - name: config
+               mountPath: /config
+           ports:
+             - name: metrics
+               containerPort: {{ .Values.vasa_exporter.prometheus_port | quote }}
+{{- end }}
