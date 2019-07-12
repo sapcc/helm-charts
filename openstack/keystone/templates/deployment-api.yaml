@@ -145,10 +145,6 @@ spec:
               subPath: keystone.conf
               readOnly: true
             - name: keystone-etc
-              mountPath: /etc/keystone/keystone-paste.ini
-              subPath: keystone-paste.ini
-              readOnly: true
-            - name: keystone-etc
               mountPath: /etc/keystone/policy.json
               subPath: policy.json
               readOnly: true
@@ -174,6 +170,12 @@ spec:
               mountPath: /etc/apache2/mods-available/mpm_event.conf
               subPath: mpm_event.conf
               readOnly: true
+            {{- if eq .Values.release "stein" }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/access_rules.json
+              subPath: access_rules.json
+              readOnly: true
+            {{- end }}
             - name: fernet
               mountPath: /fernet-keys
               readOnly: true
