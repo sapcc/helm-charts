@@ -1,12 +1,15 @@
 {{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
 kind: Service
 apiVersion: v1
 metadata:
   name:  {{ .Values.harvest.name }}
   annotations:
-    prometheus.io/scrape: {{ .Values.metrics.scrape | quote }}
-    prometheus.io/port: {{ .Values.metrics.port | quote }}
-    prometheus.io/targets: {{ .Values.metrics.targets | quote }}
+    prometheus.io/scrape: {{ $scrape | quote }}
+    prometheus.io/port: {{ $port | quote }}
+    prometheus.io/targets: {{ $targets | quote }}
     maia.io/scrape: "true"
     maia.io/port: "9108"
 spec:
@@ -31,9 +34,9 @@ spec:
       labels:
         app: {{ .Values.harvest.name }}
     annotations:
-      prometheus.io/scrape: {{ .Values.metrics.scrape | quote }}
-      prometheus.io/port: {{ .Values.metrics.port | quote }}
-      prometheus.io/targets: {{ .Values.metrics.targets | quote }}
+      prometheus.io/scrape: {{ $scrape | quote }}
+      prometheus.io/port: {{ $port | quote }}
+      prometheus.io/targets: {{ $targets | quote }}
     spec:
       volumes:
         - name: netapp-harvest-conf
