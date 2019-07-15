@@ -170,6 +170,17 @@ config_file = /grafana-etc/ldap.toml
 allow_sign_up = true
 
 
+#################################### Anonymous Auth ##########################
+{{- if .Values.grafana.auth.anonymous.enabled}}
+[auth.anonymous]
+# enable anonymous access
+enabled = true
+
+# specify organization name that should be used for unauthenticated users
+org_name = "Main Org."
+{{- end }}
+
+
 #################################### Logging ##########################
 [log]
 level = {{.Values.grafana.log_level}}
