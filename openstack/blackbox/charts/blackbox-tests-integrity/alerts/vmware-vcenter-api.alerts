@@ -1,0 +1,33 @@
+groups:
+- name: vmware-vcenter-api.alerts
+  rules:
+  - alert: OpenstackVcenterApiDown
+    expr: blackbox_api_status_gauge{check=~"vcenter-.+"} == 1
+    for: 20m
+    labels:
+      severity: critical
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is down. See Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
+      summary: '{{ $labels.check }} API down'
+
+  - alert: OpenstackVcenterApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"vcenter-.+"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is flapping'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is flapping for 30 minutes.'
+      summary: '{{ $labels.check }} API flapping'
