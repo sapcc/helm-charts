@@ -68,3 +68,20 @@
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
 
+{{- $values := .Values.arista_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'arista-{{ .Values.global.region }}
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/arista-sd/arista_targets.json
+  metrics_path: /arista
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: arista-exporter:9200
+{{- end }}
