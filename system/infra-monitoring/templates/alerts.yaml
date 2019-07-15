@@ -1,6 +1,7 @@
 {{- define "prometheus.alerts" }}
 {{/* Generate Prometheus Alert Rules */}}
-{{- $values := .Values.prometheus_infra_collector }}
+{{- $values := .Values.global.alerts }}
+{{- if $values.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -10,10 +11,11 @@ metadata:
   name: {{ $values.name }}-{{ printf "%s" $path | replace "/" "-" }}
   labels:
     type: alerting-rules
-    prometheus: {{ required "$values.name missing" $values.name }}
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
+{{- end }}
 {{- end }}
 {{ end -}}
