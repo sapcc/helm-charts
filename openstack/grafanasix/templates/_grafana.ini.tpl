@@ -164,10 +164,12 @@ enabled = {{ default true .Values.grafana.auth.basic_auth.enabled }}
 
 
 #################################### Auth LDAP ##########################
+{{- if .Values.grafana.auth.ldap.enabled}}
 [auth.ldap]
 enabled = true
 config_file = /grafana-etc/ldap.toml
 allow_sign_up = true
+{{- end }}
 
 
 #################################### Anonymous Auth ##########################
