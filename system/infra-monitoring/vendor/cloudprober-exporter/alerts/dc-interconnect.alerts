@@ -1,0 +1,32 @@
+groups:
+- name: network-interconnect.alerts
+  rules:
+  - alert: NetworkDCInterconnectHTTPFailed
+    expr: (rate(total{ptype="http"}[5m]) - rate(success{ptype="http"}[5m])) / rate(total{ptype="http"}[5m]) > 0.15
+    for: 10m
+    labels:
+      severity: critical
+      tier: net
+      service: interconnect
+      context: interconnect
+      dashboard: network-dc-interconnect
+      meta: 'Prober {{ $labels.kubernetes_name }} could not reach target {{ $labels.probe }}'
+      playbook: 'docs/devops/alert/network/interconnect.html#dc_interconnect'
+    annotations:
+      description: 'Prober {{ $labels.kubernetes_name }} could not reach target {{ $labels.probe }}'
+      summary: 'Prober {{ $labels.kubernetes_name }} could not reach target {{ $labels.probe }}'
+
+  - alert: NetworkDCInterconnectPingFailed
+    expr: (rate(total{ptype="ping"}[5m]) - rate(success{ptype="ping"}[5m])) / rate(total{ptype="ping"}[5m]) > 0.15
+    for: 10m
+    labels:
+      severity: critical
+      tier: net
+      service: interconnect
+      context: interconnect
+      dashboard: network-dc-interconnect
+      meta: 'Prober {{ $labels.kubernetes_name }} could not reach target {{ $labels.probe }}'
+      playbook: 'docs/devops/alert/network/interconnect.html#dc_interconnect'
+    annotations:
+      description: 'Prober {{ $labels.kubernetes_name }} could not reach target {{ $labels.probe }} '
+      summary: 'Prober {{ $labels.kubernetes_name }} could not reach target {{ $labels.probe }}'
