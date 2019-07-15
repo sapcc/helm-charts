@@ -43,6 +43,27 @@ spec:
 {{- end }}
 {{- end }}
 
+# Check neutron nanny alerts.
+{{- if $values.neutron_nanny.enabled}}
+{{- range $path, $bytes := .Files.Glob "alerts/neutron/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    app: neutron-nanny
+    tier: os
+    type: alerting-rules
+    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+
 # Check Vcenter nanny alerts.
 {{- if $values.vcenter_nanny.enabled}}
 {{- range $path, $bytes := .Files.Glob "alerts/vcenter/*.alerts" }}
