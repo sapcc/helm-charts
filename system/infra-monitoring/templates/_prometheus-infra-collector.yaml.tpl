@@ -70,7 +70,7 @@
 
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
-- job_name: 'arista-{{ .Values.global.region }}
+- job_name: 'arista'
   scrape_interval: 60s
   scrape_timeout: 55s
   file_sd_configs:
