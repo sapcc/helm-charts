@@ -1,16 +1,21 @@
-{{- $values := .Values.prometheus_infra_collector }}
-{{- range $path, $bytes := .Files.Glob "vendor/*/aggregations/*.rules" }}
+{{- define "prometheus.aggregations" }}
+{{/* Generate Prometheus Aggregation Rules */}}
+{{- $values := .Values.global.aggregations }}
+{{- if $values.enabled }}
+{{- range $path, $bytes := .Files.Glob "aggregations/*.aggregations" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ $values.name }}-{{ printf "%s" $path | replace "/" "-" }}
+  name: {{ printf "%s" $path | replace "/" "-" }}
   labels:
     type: aggregation-rules
-    prometheus: {{ required "$values.name missing" $values.name }}
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
 {{- end }}
+{{- end }}
+{{ end -}}
