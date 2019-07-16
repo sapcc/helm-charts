@@ -101,7 +101,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: snmp-exporter
+      replacement: snmp-exporter:{{$values.listen_port}}
     - source_labels: [server_name]
       target_label:  __param_server_name
     - source_labels: [module]
