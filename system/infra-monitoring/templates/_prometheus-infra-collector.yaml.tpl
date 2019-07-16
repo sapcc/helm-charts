@@ -117,6 +117,30 @@
       target_label: device
 {{- end }}
 
+{{- $values := .Values.bios_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'bios/ironic'
+  params:
+    job: [bios/ironic]
+  scrape_interval: 140s
+  scrape_timeout: 135s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/ironic.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: bios-exporter:{{$values.listen_port}}
+    - source_labels: [manufacturer]
+      target_label:  __param_manufacturer
+    - source_labels: [model]
+      target_label:  __param_model
+{{- end }}
+
 
 
 

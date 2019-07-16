@@ -2,7 +2,6 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: bios-exporter
-  namespace: infra-monitoring
 
 spec:
   replicas: 1
@@ -13,8 +12,8 @@ spec:
     spec:
       containers:
          - name: bios-exporter
-           image: {{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.image.namespace }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
-           imagePullPolicy: Always
+           image: {{ .Values.global.imageRegistry }}/{{ required ".Values.docker_repo missing" .Values.docker_repo }}:{{ required ".Values.image_version missing" .Values.image_version }}
+           imagePullPolicy: IfNotPresent
            ports:
              - name: metrics
                containerPort: {{ .Values.listen_port }}
