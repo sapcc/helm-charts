@@ -106,7 +106,7 @@
       target_label: __param_module
   metric_relabel_configs:
     - source_labels: [server_name]
-      target_label:  __param_devicename
+      target_label:  devicename
     - source_labels: [devicename]
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$1'
