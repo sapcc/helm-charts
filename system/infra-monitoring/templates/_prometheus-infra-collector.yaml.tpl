@@ -103,21 +103,17 @@
     - target_label: __address__
       replacement: snmp-exporter:{{$values.listen_port}}
     - source_labels: [server_name]
-      target_label:  __param_server_name
+      target_label:  __param_devicename
     - source_labels: [module]
       target_label: __param_module
-    - source_labels: [component]
-      regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
+    - source_labels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$1'
       target_label: availability_zone
-    - source_labels: [component]
-      regex: 'snmp-exporter-(\w*-\w*-\w*)-(\S*)'
+    - source_labels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
-    - source_labels: [component]
-      regex: 'snmp-exporter-(.+)'
-      replacement: '$1'
-      target_label: devicename
 {{- end }}
 
 
