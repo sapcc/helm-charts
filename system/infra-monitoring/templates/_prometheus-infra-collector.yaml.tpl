@@ -102,6 +102,7 @@
       target_label: instance
     - target_label: __address__
       replacement: snmp-exporter:{{$values.listen_port}}
+  metric_relabel_configs:
     - source_labels: [server_name]
       target_label:  __param_devicename
     - source_labels: [module]
