@@ -85,3 +85,29 @@
     - target_label: __address__
       replacement: arista-exporter:9200
 {{- end }}
+
+{{- $values := .Values.snmp_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'snmp'
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/switches.json
+  metrics_path: /snmp
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: snmp-exporter
+    - source_labels: [server_name]
+      target_label:  __param_server_name
+    - source_labels: [module]
+      target_label: __param_module
+{{- end }}
+
+
+
+
