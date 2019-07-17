@@ -429,6 +429,9 @@
    ssl_verify false
    ssl_version TLSv1_2
    logstash_format true
+   template_name logstash
+   template_file /fluent-etc/logstash.json
+   template_overwrite true
    time_as_integer false
    @log_level info
    slow_flush_log_threshold 50.0
