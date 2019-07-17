@@ -1,5 +1,5 @@
 {{- if .Values.enabled }}
-{{ $v := .Values.global.aci.apic_hosts | split ":" }}
+{{ $v := .Values.aci.apic_hosts | split ":" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,14 +7,14 @@ metadata:
 {{- if .Values.exporter_types }}
 data:
   config-apic-exporters.yaml: |
-    prometheus_port: {{ .Values.prometheus_port }}
-    log_level: {{ .Values.device_information.log_level }}
+    prometheus_port: {{ .Values.listen_port }}
+    log_level: {{ .Values.aci.log_level }}
     device_information:
       hostname: {{ $v._0 | quote}}
-      username: {{ .Values.global.aci.apic_user }}
-      password: {{ .Values.global.aci.apic_password }}
-      tenant_name: {{ .Values.global.aci.apic_tenant_name }}
-      proxy: {{- range $key, $val := .Values.device_information.proxy }}
+      username: {{ .Values.aci.apic_user }}
+      password: {{ .Values.aci.apic_password }}
+      tenant_name: {{ .Values.aci.apic_tenant_name }}
+      proxy: {{- range $key, $val := .Values.aci.proxy }}
         {{ $key }}: {{ $val | quote }}
       {{- end }}
     exporter_types:
