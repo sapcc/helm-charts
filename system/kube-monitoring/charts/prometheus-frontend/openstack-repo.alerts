@@ -16,7 +16,7 @@ groups:
       summary: Content repo {{ $labels.repo }} outdated
 
   - alert: OpenstackRepoEntitlementForbidden
-    expr: repo_sync_check_success == -1
+    expr: repo_sync_check_success != 1 and repo_sync_check_httpcode == 403
     for: 1h
     labels:
       tier: os
@@ -31,7 +31,7 @@ groups:
       summary: Repo {{ $labels.repo }} entitlement lost
 
   - alert: OpenstackRepoEntitlement
-    expr: repo_sync_check_success == 0
+    expr: repo_sync_check_success != 1 and repo_sync_check_httpcode != 403
     for: 1h
     labels:
       tier: os
