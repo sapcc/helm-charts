@@ -1,0 +1,38 @@
+{{- if .Values.vcenter_exporters.enabled }}
+{{- if .Values.vcenter_exporters.exporter_types }}
+{{- range $exporter_type_values := .Values.exporter_types }}
+{{- range $vcenter := .Values.vcenters }}
+  ---
+  kind: Service
+  apiVersion: v1
+  metadata:
+    name: vcenter-exporter-{{ $vcenter.hostname }}-`}}{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
+    namespace: infra-monitoring
+    labels:
+      system: openstack
+      service: metrics
+      component: vcenter-exporter-{{ $vcenter.hostname }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
+    {{ if $exporter_type_values.collector }}
+    annotations:
+      {{- range $collector := $exporter_type_values.collector }}
+      {{- if eq $collector "maia" }}
+      maia.io/scrape: "true"
+      maia.io/port: {{ required ".Values.listen_port is missing" $global_values.listen_port | quote }}
+      {{- end }}
+      {{- if eq $collector "prometheus" }}
+      prometheus.io/scrape: "true"
+      prometheus.io/port: {{ required ".Values.prometheus_port is missing" .Values.listen_port | quote }}
+      prometheus.io/targets: {{ .Values.prometheus_target | quote }}
+      {{- end }}
+      {{- end }}
+    {{ end }}
+  spec:
+    selector:
+      component: vcenter-exporter-{{ $vcenter.hostname }}-`}}{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
+    ports:
+      - name: metrics
+        port: {{ required ".Values.listen_port is missing" .Values.listen_port }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

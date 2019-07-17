@@ -1,0 +1,45 @@
+{{- if .Values.exporter_types }}
+{{- range $exporter_type_values := .Values.exporter_types }}
+{{- range $vcenter := .Values.vcenters }}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: vcenter-exporter-{{ $vcenter.hostname }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
+  namespace: infra-monitoring
+  labels:
+    system: openstack
+    service: metrics
+    component: configuration
+data:
+  config-{{ $vcenter.hostname }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}.yaml: |
+    prometheus_port: {{ required ".Values.listen_port is missing" .Values.listen_port }}
+    log_level: {{ required ".Values.vcenters.log_level is missing" .Values.vcenters.log_level | quote }}
+    device_information:
+      hostname: {{ $vcenter.hostname | quote }}
+      username: {{ $vcenter.username | quote }}
+      password: {{ $vcenter.password | quote }}
+      port: {{ $vcenter.port | quote }}
+      ignore_ssl: {{ $vcenter.ignore_ssl | quote }}
+      availability_zone: {{ $vcenter.availability_zone | quote }}
+    exporter_types:
+      {{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}:
+        name: {{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name | quote }}
+      {{- range $key, $val := $exporter_type_values }}
+      {{ if eq $key "collector" }}
+        {{ $key }}:
+          {{- range $listitem := $val }}
+          - {{ $listitem }}
+          {{- end}}
+      {{ else if eq $key "vm_metrics" }}
+        {{ $key }}:
+          {{- range $listitem := $val }}
+          - {{ $listitem }}
+          {{- end }}
+      {{ else }}
+        {{ $key }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
