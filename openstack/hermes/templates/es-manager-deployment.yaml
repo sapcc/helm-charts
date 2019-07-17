@@ -8,8 +8,8 @@ metadata:
     service: audit
     component: elasticsearch
     role: manager
-  annotations:
-    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+  #annotations:
+  #  kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
 
 spec:
   replicas: 1
@@ -34,7 +34,7 @@ spec:
             name: es-manager-etc
       containers:
       - name: es-manager
-        image: {{.Values.docker_repo}}/elk-elasticsearch-manager:{{.Values.elk_image_version_elasticsearch_manager}}
+        image: {{.Values.docker_repo}}/elk-elasticsearch-manager:{{.Values.hermes_image_version_elasticsearch_manager}}
         imagePullPolicy: IfNotPresent
         command:
           - /usr/local/bin/dumb-init
@@ -54,4 +54,4 @@ spec:
             name: es-etc
         ports:
           - name: manager
-            containerPort: {{.Values.elk_elasticsearch_manager_port_internal}}
+            containerPort: {{.Values.hermes.elasticsearch.manager_port_internal}}
