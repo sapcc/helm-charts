@@ -158,5 +158,5 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: ipmi-exporter:9290
+      replacement: ipmi-exporter:{{$values.listen_port}}
 {{- end }}
