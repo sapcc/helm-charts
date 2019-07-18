@@ -1,4 +1,10 @@
+## 1.1.19
+
+* Prometheus server to `v2.11.1`.
+
 ## 1.1.18
+
+* [CI] Helm chart tests.
 
 ## 1.1.17
 
