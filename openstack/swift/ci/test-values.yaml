@@ -1,0 +1,69 @@
+global:
+  tld: example.com
+  region: regionOne
+
+image_version: stein-20190101094554
+
+# shared secrets and credentials
+hash_path_prefix: 123
+hash_path_suffix: 456
+
+# health check only
+dispersion_auth_url: http://keystone-a.example.corp:5000/v3
+dispersion_password: aBc
+
+object_replicator_concurrency: 4
+
+memcached_servers:
+  - memcached
+  - memcached-tokens
+
+
+clusters:
+  cluster-a:
+    seed: true
+    endpoint_host: objectstore-a
+    sans: [repo, "*.content"] # Subject Alternate Names for TLS cert
+    keystone_auth_uri: http://keystone-a.example.corp:5000
+    keystone_auth_url: http://keystone-a.example.corp:5000/v3
+
+    token_memcached: memcached-tokens
+
+    swift_service_user: swift
+    swift_service_user_domain: Default
+    swift_service_project: service
+    swift_service_project_domain: Default
+    swift_service_password: aBc
+    proxy_public_ip: 192.168.0.10
+    proxy_public_port: 443
+    replicas: 3
+    proxy_public_http_port: 8080
+    sans_http: [repo]
+
+
+  cluster-b:
+    endpoint_host: objectstore-b
+    keystone_auth_uri: https://keystone-a.example.corp:5000
+    keystone_auth_url: https://keystone-a.example.corp:5000/v3
+    keystone_insecure: true
+
+    swift_token_cache: true
+
+    swift_service_user: swift
+    swift_service_user_domain: Default
+    swift_service_project: service
+    swift_service_project_domain: Default
+    swift_service_password: aBc
+    proxy_public_ip: 192.168.0.20
+    proxy_public_port: 443
+    replicas: 3
+    reseller_admin_role: swiftreseller
+
+account_ring_base64: |
+  account
+
+container_ring_base64: |
+  container
+
+object_ring_base64: |
+  object
