@@ -2,6 +2,22 @@ Testing helm charts
 -------------------
 
 Helm charts used for the SAP Converged Cloud Enterprise Edition are validated using [concourse](https://concourse-ci.org) and the [helm chart testing utility](https://github.com/helm/chart-testing) with the configuration provided in this folder.  
+Assuming a chart looks like this:
+```
+.
+└── myChart
+    ├── ci
+    │   └── test-values.yaml
+    ├── aggregations
+    │   └── *.rules
+    ├── alerts
+    │   └── *.alerts
+    ├── templates
+    │   └── ...
+    ...
+    ├── Chart.yaml
+    └── values.yaml
+```
 
 A `Chart.yaml` must have the following mandatory attributes:
 ```yaml
@@ -28,4 +44,14 @@ maintainers:
 # Providing test values
 
 The chart test toolkit will use every `*-values.yaml` provided in the `ci` folder of the chart.  
- 
+
+# What is tested
+
+1. Lint helm chart
+    
+    The helm chart is linted according to the [configuration](config.yaml).
+
+2. Prometheus alert- & aggregation rules
+
+    If Prometheus alert- (`*.alerts`) or aggregation rules `(*.rules)` are part of the Helm chart, they are validated using the [promtool](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#syntax-checking-rules).
+
