@@ -2,22 +2,21 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 
 metadata:
-  name: es-manager
+  name: es-manager-hermes
   namespace: hermes
-    {{- if .Values.vice_president }}
   annotations:
-    vice-president: "true"
-  {{- end}}
+    vice-president: {{ default true .Values.ingress.vice_president | quote }}
+    disco: {{ default true .Values.ingress.disco | quote }}
 
 spec:
   tls:
-     - secretName: elasticsearch-manager
-       hosts: [{{.Values.hermes.elasticsearch.manager_endpoint_host_public}}]
+     - secretName: elasticsearch-manager-hermes
+       hosts: [{{.Values.endpoint_host_public}}.{{.Values.global.region}}.{{.Values.global.domain}}]
   rules:
-    - host: {{.Values.hermes.elasticsearch.manager_endpoint_host_public}}
+    - host: {{.Values.endpoint_host_public}}.{{.Values.global.region}}.{{.Values.global.domain}}
       http:
         paths:
         - path: /
           backend:
-            serviceName: es-manager
-            servicePort: {{.Values.hernes.elasticsearch.manager_port_internal}}
+            serviceName: es-manager-hermes
+            servicePort: {{.Values.port_internal}}
