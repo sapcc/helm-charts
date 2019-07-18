@@ -1,8 +1,9 @@
 groups:
-- name: prometheus.alerts
+- name: federation.alerts
   rules:
-  - alert: KubernetesPrometheusFrontendDown
-    expr: count by(region) (up{job="prometheus-regions-federation"}) unless count by(region) (up{job="prometheus-frontend"})
+
+  - alert: KubernetesControlPlanePrometheusDown
+    expr: count by(region) (up{job="controlplane-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type="controlplane"})
     for: 15m
     labels:
       context: availability
@@ -11,25 +12,27 @@ groups:
       service: prometheus
       severity: critical
       tier: k8s
+      playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: Prometheus Frontend is DOWN. Alerting and dashboards are unavailable
+      description: Prometheus Frontend in region {{ $labels.region }} is DOWN. Alerting and dashboards are unavailable.
       summary: Prometheus Frontend is DOWN
 
-  - alert: KubernetesPrometheusCollectorDown
-    expr: count by(region) (up{job="prometheus-collector-regions-federation"}) unless count by(region) (up{job="prometheus-collector"})
+  - alert: KubernetesScaleoutPrometheusDown
+    expr: count by(region) (up{job="scaleout-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type="kubernikus-scaleout"})
     for: 15m
     labels:
       context: availability
-      dashboard: kubernetes-prometheus?var-instance=collector
-      meta: Prometheus collector is down
+      dashboard: kubernetes-prometheus
+      meta: Prometheus frontend is down
       service: prometheus
       severity: critical
       tier: k8s
+      playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: Prometheus Collector is DOWN. Alerting and dashboards are currently based on outdated data
-      summary: Prometheus Collector is DOWN
+      description: "Prometheus in scaleout cluster in region {{ $labels.region }} is DOWN. Alerting and dashboards are unavailable."
+      summary: Prometheus is DOWN
 
-  - alert: KubernetesPrometheusFederationCollector
+  - alert: KubernetesControlplanePrometheusFederationCollectorDown
     expr: absent(up{job="prometheus-collector-federation"}) or up{job="prometheus-collector-federation"} == 0
     for: 15m
     labels:
@@ -39,12 +42,13 @@ groups:
       service: prometheus
       severity: warning
       tier: k8s
+      playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: Prometheus Frontend can't federate data from the Collector. Data will be stale
+      description: Prometheus Frontend can't federate data from the collector. Data will be stale
       summary: Prometheus Frontend Federation is DOWN
 
   - alert: KubernetesPrometheusFederationRegions
-    expr: absent(up{job="prometheus-regions-federation"}) or up{job="prometheus-regions-federation"} == 0
+    expr: absent(up{job="controlplane-federation"}) or up{job="prometheus-regions-federation", cluster_type="controlplane"} == 0
     for: 15m
     labels:
       context: availability-global
@@ -52,6 +56,7 @@ groups:
       service: prometheus
       severity: critical
       tier: k8s
+      playbook: docs/support/playbook/prometheus/federation.html
     annotations:
       description: Prometheus Global can't federate data from {{ $labels.region }}. Alerting will be unavailable! This could mean the region is partly down!
       summary: Global Prometheus Federation is having trouble
