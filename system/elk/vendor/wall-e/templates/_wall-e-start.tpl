@@ -31,6 +31,7 @@ function start_application {
      echo "INFO: creating index-pattern in Kibana for $i logs"
      curl -XPOST --header "content-type: application/JSON" -u {{.Values.global.admin_user}}:{{.Values.global.admin_password}} "http://{{.Values.global.kibana_service}}:{{.Values.global.kibana_port_public}}/api/saved_objects/index-pattern/${i}-*" -H "kbn-xsrf: true" -d @${i}-index-pattern.json
 
+     curl -XPOST --header "content-type: application/JSON" -u {{.Values.global.admin_user}}:{{.Values.global.admin_password}} "http://{{.Values.global.kibana_service}}:{{.Values.global.kibana_port_public}}/api/kibana/settings/defaultIndex" -H "kbn-xsrf: true" -d "{\"value\":\"logstash-*\"}"
     fi
   done
 
