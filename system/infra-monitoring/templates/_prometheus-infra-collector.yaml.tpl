@@ -141,6 +141,22 @@
       target_label:  __param_model
 {{- end }}
 
-
-
-
+{{- $values := .Values.ipmi_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'ipmi/ironic'
+  params:
+    job: [baremetal/ironic]
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/ironic.json
+  metrics_path: /ipmi
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: ipmi-exporter:9290
+{{- end }}
