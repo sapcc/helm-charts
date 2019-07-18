@@ -1,15 +1,17 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: snmp-exporter
+  name: {{ include "infraMonitoring.fullname" . }}
   labels:
-    system: openstack
-    service: metrics
-    component: snmp-exporter
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 
 spec:
   selector:
-    component: snmp-exporter
+    app: {{ include "infraMonitoring.name" . }}
   ports:
     - name: metrics
       port: {{.Values.listen_port}}
