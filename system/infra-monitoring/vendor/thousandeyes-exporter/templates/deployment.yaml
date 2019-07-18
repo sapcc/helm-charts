@@ -1,10 +1,14 @@
-{{- if .Values.enabled }}
-
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: thousandeyes-exporter
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 
 spec:
   revisionHistoryLimit: 5
@@ -17,14 +21,16 @@ spec:
   template:
     metadata:
       labels:
-         app: thousandeyes-exporter
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: service_discovery
       annotations:
         prometheus.io/scrape: {{ .Values.metrics.scrape | quote }}
         prometheus.io/port: {{ .Values.metrics.port | quote }}
         prometheus.io/targets: {{ .Values.metrics.targets | quote }}
     spec:
       containers:
-         - name: thousandeyes-exporter
+         - name: {{ include "infraMonitoring.name" . }}
            image: {{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.image.namespace }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
            imagePullPolicy: IfNotPresent
            env:
@@ -50,5 +56,3 @@ spec:
              initialDelaySeconds: 5
              timeoutSeconds: 5
              periodSeconds: 10
-
-{{ end -}}

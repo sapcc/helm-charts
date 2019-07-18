@@ -2,14 +2,20 @@ apiVersion: v1
 kind: Service
 
 metadata:
-  name: thousandeyes-exporter
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
   annotations:
     prometheus.io/scrape: {{ .Values.metrics.scrape | quote }}
     prometheus.io/port: {{ .Values.metrics.port | quote }}
     prometheus.io/targets: {{ .Values.metrics.targets | quote }}
 spec:
   selector:
-    app: thousandeyes-exporter
+    app: {{ include "infraMonitoring.name" . }}
   ports:
     - port: {{ .Values.metrics.port }}
       name: metrics
