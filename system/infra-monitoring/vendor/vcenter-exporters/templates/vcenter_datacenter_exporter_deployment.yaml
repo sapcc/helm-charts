@@ -32,13 +32,13 @@
         containers:
           - name: vcenter-exporter
             imagePullPolicy: IfNotPresent
-            image: {{ required ".Values.docker_repo is missing" .Values.docker_repo }}/infrastructure-exporters:{{ .Values.image_version | replace "string:" "" }}
+            image: {{ required ".Values.docker_repo is missing" $global_values.docker_repo }}/infrastructure-exporters:{{ $global_values.image_version | replace "string:" "" }}
             args:
               - -f
               - /maia-etc/config-{{ $vcenter.hostname }}-`}}{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}.yaml
               - -t
               - {{ $exporter_type_values.name }}
-            {{- if .Values.resources.enabled }}
+            {{- if $global_values.resources.enabled }}
             livenessProbe:
               exec:
                 command: 
@@ -49,16 +49,16 @@
               periodSeconds: 5
             resources:
               requests:
-                memory: {{ required ".Values.resources.requests.memory is missing" .Values.resources.requests.memory | quote }}
+                memory: {{ required ".Values.resources.requests.memory is missing" $global_values.resources.requests.memory | quote }}
               limits:
-                memory: {{ required ".Values.resources.limits.memory is missing" .Values.resources.limits.memory | quote }}
+                memory: {{ required ".Values.resources.limits.memory is missing" $global_values.resources.limits.memory | quote }}
             {{- end }}
             volumeMounts:
               - mountPath: /maia-etc
                 name: maia-etc
             ports:
               - name: metrics
-                containerPort: {{ required ".Values.prometheus_port is missing" .Values.listen_port | quote}}
+                containerPort: {{ required ".Values.prometheus_port is missing" $global_values.listen_port | quote}}
 {{- end }}
 {{- end }}
 {{- end }}
