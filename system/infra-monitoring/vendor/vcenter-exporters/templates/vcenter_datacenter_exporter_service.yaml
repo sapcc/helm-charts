@@ -18,12 +18,12 @@
       {{- range $collector := $exporter_type_values.collector }}
       {{- if eq $collector "maia" }}
       maia.io/scrape: "true"
-      maia.io/port: {{ required ".Values.prometheus_port is missing" .Values.prometheus_port | quote }}
+      maia.io/port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port | quote }}
       {{- end }}
       {{- if eq $collector "prometheus" }}
       prometheus.io/scrape: "true"
-      prometheus.io/port: {{ required ".Values.prometheus_port is missing" .Values.prometheus_port | quote }}
-      prometheus.io/targets: {{ .Values.prometheus_target | quote }}
+      prometheus.io/port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port | quote }}
+      prometheus.io/targets: {{ $global_values.prometheus_target | quote }}
       {{- end }}
       {{- end }}
     {{ end }}
@@ -32,7 +32,7 @@
       component: vcenter-exporter-{{ $vcenter.hostname }}-`}}{{ required ".Values.<exporter_type_values>.name is missing" $exporter_type_values.name }}
     ports:
       - name: metrics
-        port: {{ required ".Values.prometheus_port is missing" .Values.prometheus_port }}
+        port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port }}
 {{- end }}
 {{- end }}
 {{- end }}
