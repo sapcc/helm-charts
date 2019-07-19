@@ -52,7 +52,7 @@
     - action: replace
       source_labels: [__address__]
       target_label: region
-      regex: prometheus-kubernetes.scaleout.(.+).cloud.sap
+      regex: .+\.(.+).cloud.sap
       replacement: $1
 
     - action: replace
