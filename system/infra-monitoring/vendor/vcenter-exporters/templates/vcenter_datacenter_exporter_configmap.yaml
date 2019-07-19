@@ -2,18 +2,19 @@
 {{- if .Values.exporter_types }}
 {{ $global_values := .Values }}
 {{- range $vcenter := .Values.vcenters }}
+{{- $vchostname := split "." $vcenter.hostname }}
 {{- range $exporter_type_values := $global_values.exporter_types }}
 ---
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: vcenter-exporter-{{ $vcenter.hostname }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
+  name: vcenter-exporter-{{ $vchostname._0 }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
   labels:
     system: openstack
     service: metrics
     component: configuration
 data:
-  config-{{ $vcenter.hostname }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}.yaml: |
+  config-{{ $vchostname._0 }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}.yaml: |
     prometheus_port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port }}
     log_level: {{ required ".Values.vcenters.log_level is missing" $global_values.log_level | quote }}
     device_information:
