@@ -1,0 +1,44 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: OpenstackCanaryHealthCheckFailing
+    expr: blackbox_canary_status_gauge{service!="nova", service!="neutron", service!="cinder", service!="manila", service!="lbaas", service!="swift", service!="designate", service!="arc", service!="hermes"} == 1
+    for: 1h
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: '{{ $labels.check }}'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.check }} test is failing for 5 time in a row.'
+      summary: Blackbox canary test
+
+  - alert: OpenstackCanaryHealthCheckFlapping
+    expr: changes(blackbox_canary_status_gauge{service!="nova", service!="neutron", service!="cinder", service!="manila", service!="lbaas", service!="swift", service!="designate", service!="arc", service!="hermes"}[2h]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: '{{ $labels.check }}'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.check }} test is flapping for 120 minutes.'
+      summary: Blackbox canary test
+
+  - alert: BlackboxCanaryMetricsDown
+    expr: absent(up{kubernetes_name="blackbox-tests-canary",kubernetes_namespace="blackbox"}) == 1
+    for: 30m
+    labels:
+      service: blackbox-tests-canary
+      severity: info
+      tier: os
+    annotations:
+      description: Canary metrics are down for 15 times in a row.
+      summary: Blackbox canary metrics
