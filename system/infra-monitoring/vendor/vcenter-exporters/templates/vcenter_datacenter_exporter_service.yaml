@@ -3,36 +3,35 @@
 {{ $global_values := .Values }}
 {{- range $exporter_type_values := .Values.exporter_types }}
 {{- range $vcenter := $global_values.vcenters }}
-  ---
-  kind: Service
-  apiVersion: v1
-  metadata:
-    name: vcenter-exporter-{{ $vcenter.hostname }}-`}}{{ required ".Values.<exporter_type_values>.name is missing" $exporter_type_values.name }}
-    namespace: infra-monitoring
-    labels:
-      system: openstack
-      service: metrics
-      component: vcenter-exporter-{{ $vcenter.hostname }}-{{ required ".Values.<exporter_type>_values.name is missing" $exporter_type_values.name }}
-    {{ if $exporter_type_values.collector }}
-    annotations:
-      {{- range $collector := $exporter_type_values.collector }}
-      {{- if eq $collector "maia" }}
-      maia.io/scrape: "true"
-      maia.io/port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port | quote }}
-      {{- end }}
-      {{- if eq $collector "prometheus" }}
-      prometheus.io/scrape: "true"
-      prometheus.io/port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port | quote }}
-      prometheus.io/targets: {{ $global_values.prometheus_target | quote }}
-      {{- end }}
-      {{- end }}
-    {{ end }}
-  spec:
-    selector:
-      component: vcenter-exporter-{{ $vcenter.hostname }}-`}}{{ required ".Values.<exporter_type_values>.name is missing" $exporter_type_values.name }}
-    ports:
-      - name: metrics
-        port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: vcenter-exporter-{{ $vcenter.hostname }}-`}}{{ required ".Values.<exporter_type_values>.name is missing" $exporter_type_values.name }}
+  namespace: infra-monitoring
+  labels:
+    system: openstack
+    service: metrics
+    component: vcenter-exporter-{{ $vcenter.hostname }}-{{ required ".Values.<exporter_type>_values.name is missing" $exporter_type_values.name }}
+  {{ if $exporter_type_values.collector }}
+  annotations:
+    {{- range $collector := $exporter_type_values.collector }}
+    {{- if eq $collector "maia" }}
+    maia.io/scrape: "true"
+    maia.io/port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port | quote }}
+    {{- end }}
+    {{- if eq $collector "prometheus" }}
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port | quote }}
+    prometheus.io/targets: {{ $global_values.prometheus_target | quote }}
+    {{- end }}
+    {{- end }}
+  {{ end }}
+spec:
+  selector:
+    component: vcenter-exporter-{{ $vcenter.hostname }}-`}}{{ required ".Values.<exporter_type_values>.name is missing" $exporter_type_values.name }}
+  ports:
+    - name: metrics
+      port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port }}
 {{- end }}
 {{- end }}
 {{- end }}
