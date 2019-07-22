@@ -1,12 +1,11 @@
 {{- $root := . -}}
 {{- $values := .Values -}}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts.tpl" }}
-{{- if not (has (base $path | trimSuffix ".alerts.tpl" ) $values.disableAlerts) }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: kubernetes-{{ printf "%s" $path | replace "/" "-" | trimSuffix ".tpl" }}
+  name: {{ printf "kubernetes-%s" $path | replace "/" "-" | trimSuffix ".tpl" }}
   labels:
     tier: {{ required ".Values.tier missing" $values.tier }}
     type: alerting-rules
@@ -18,5 +17,4 @@ spec:
 {{ tpl $content . | indent 2 }}
 {{- end }}
 ---
-{{- end }}
 {{- end }}
