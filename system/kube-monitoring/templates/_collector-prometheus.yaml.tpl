@@ -88,26 +88,6 @@
     source_labels: [__meta_kubernetes_pod_node_name]
     target_label: instance
 
-- job_name: 'kube-system/apiserver'
-  tls_config:
-    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-  scheme: https
-  kubernetes_sd_configs:
-  - role: pod
-  relabel_configs:
-  - action: keep
-    source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system
-  - action: keep
-    source_labels: [__meta_kubernetes_pod_name]
-    regex: (kubernetes-master[^\.]+).+
-  - target_label: component
-    replacement: apiserver
-  - action: replace
-    source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
-
 - job_name: 'kube-system/controller-manager'
   kubernetes_sd_configs:
   - role: pod
@@ -303,3 +283,35 @@
       action: drop
     - regex: ^id$
       action: labeldrop
+
+- job_name: 'kube-system/apiserver'
+  tls_config:
+    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+  scheme: https
+{{- if eq .Values.global.clusterType "controlplane" -}}
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_namespace]
+    regex: kube-system
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_name]
+    regex: (kubernetes-master[^\.]+).+
+  - target_label: component
+    replacement: apiserver
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: instance
+{{ else }}
+  static_configs:
+  - targets:
+    - $(KUBERNETES_SERVICE_HOST)
+  relabel_configs:
+    - target_label: component
+      replacement: apiserver
+  metric_relabel_configs:
+{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubeAPIServer | indent 4 }}
+
+{{ end -}}
