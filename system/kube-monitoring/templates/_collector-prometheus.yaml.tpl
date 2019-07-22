@@ -225,7 +225,7 @@
     regex: ([^:]+)(:\d+)?
     replacement: ${1}:9101
 
-- job_name: 'kubernetes-kubelets'
+- job_name: 'kube-system/kubelet'
   scheme: https
   kubernetes_sd_configs:
   - role: node
