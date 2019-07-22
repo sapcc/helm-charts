@@ -22,7 +22,7 @@ spec:
         prometheus.io/targets: {{ .Values.metrics.targets | quote }}
     spec:
       containers:
-        - name: {{ include "infraMonitoring.name" . }}
+        - name: {{ include "infraMonitoring.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -32,7 +32,7 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/blackbox-exporter
-        - name: {{ include "infraMonitoring.name" . }}-configmap-reloader
+        - name: {{ include "infraMonitoring.fullname" . }}-configmap-reloader
           image: "{{ .Values.configmap_reload.image.repository }}:{{ .Values.configmap_reload.image.tag }}"
           imagePullPolicy: {{ .Values.configmap_reload.image.pullPolicy }}
           args:
@@ -45,4 +45,4 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ .Chart.Name }}
+            name: {{ include "infraMonitoring.fullname" . }}
