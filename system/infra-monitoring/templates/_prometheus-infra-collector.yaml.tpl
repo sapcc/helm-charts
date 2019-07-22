@@ -211,9 +211,9 @@
 {{- if .Values.blackbox_exporter.static_config }}
 {{- range $module, $module_config := .Values.blackbox_exporter.static_config }}
 - job_name: 'blackbox/static-targets-{{ $module }}'
-  params:
-    job: [blackbox/{{ $module }}]
   metrics_path: /probe
+  params:
+    module: [{{ $module }}]
   static_configs:
     - targets:
       {{- range  $module_config.targets }}
@@ -237,10 +237,10 @@
 {{- if .Values.blackbox_exporter.tcp_probe_targets }}
 {{- range $region := .Values.global.regions }}
 - job_name: 'blackbox/tcp-{{ $region }}'
-  params:
-    job: [blackbox/tcp-connect]
   metrics_path: /probe
   scrape_interval: 15s
+  params:
+    module: [tcp_connect]
   static_configs:
     - targets:
       {{- range $.Values.blackbox_exporter.tcp_probe_targets }}
