@@ -1,10 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ include "infraMonitoring.fullname" . }}
   labels:
-    app: {{ template "blackbox-exporter.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 spec:
   type: {{ .Values.service.type }}
   ports:
