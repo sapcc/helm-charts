@@ -15,14 +15,14 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "blackbox-exporter.name" . }}
+        app: {{ include "infraMonitoring.name" . }}
       annotations:
         prometheus.io/scrape: {{ .Values.metrics.scrape | quote }}
         prometheus.io/port: {{ .Values.service.port | quote }}
         prometheus.io/targets: {{ .Values.metrics.targets | quote }}
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ include "infraMonitoring.name" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
