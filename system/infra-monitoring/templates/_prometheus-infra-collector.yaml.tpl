@@ -161,11 +161,60 @@
       replacement: ipmi-exporter:{{$values.listen_port}}
 {{- end }}
 
+{{- range $region := .Values.global.regions }}
+- job_name: 'blackbox/ingress-{{ $region }}'
+  params:
+    job: [blackbox/ingress-{{ $region }}]
+  metrics_path: /probe
+  params:
+    # Look for a HTTP 200 response per default.
+    # Can be overwritten by annotating the ingress resource with the expected return codes, e.g. `prometheus.io/probe_code: "4xx"`
+    module: [http_2xx]
+  scheme: https
+  kubernetes_sd_configs:
+  - role: ingress
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe]
+    action: keep
+    regex: true
+  # consider prometheus.io/probe_code annotation. mind below regex.
+  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_code]
+    regex: ^(\d).+
+    replacement: http_${1}xx
+    target_label: __param_module
+  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_module]
+    regex: (.+)
+    target_label: __param_module
+  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_path]
+    regex: ^(\/.+)
+    target_label: __meta_kubernetes_ingress_path
+  - source_labels: [__meta_kubernetes_ingress_scheme,__address__,__meta_kubernetes_ingress_path]
+    regex: (.+);(.+);(.+)
+    replacement: ${1}://${2}${3}
+    target_label: __param_target
+  - target_label: __address__
+    replacement: prober.{{ $region }}.cloud.sap
+  - source_labels: [__param_target]
+    target_label: instance
+  - action: labelmap
+    regex: __meta_kubernetes_ingress_label_(.+)
+  - source_labels: [__meta_kubernetes_namespace]
+    target_label: kubernetes_namespace
+  - source_labels: [__meta_kubernetes_ingress_name]
+    target_label: ingress_name
+  - source_labels: [__param_module]
+    target_label: module
+  - target_label: region_probed_from
+    replacement: {{ $region }}
+{{- end }}
+
 {{ $root := .Values }}
 {{- if .Values.blackbox_exporter }}
 {{- if .Values.blackbox_exporter.static_config }}
 {{- range $module, $module_config := .Values.blackbox_exporter.static_config }}
-- job_name: 'blackbox-static-targets-{{ $module }}'
+- job_name: 'blackbox/static-targets-{{ $module }}'
+  params:
+    job: [blackbox/static-targets-{{ $module }}]
   metrics_path: /probe
   params:
     module: [{{ $module }}]
@@ -191,7 +240,9 @@
 
 {{- if .Values.blackbox_exporter.tcp_probe_targets }}
 {{- range $region := .Values.global.regions }}
-- job_name: 'blackbox-tcp-{{ $region }}'
+- job_name: 'blackbox/tcp-{{ $region }}'
+  params:
+    job: [blackbox/tcp-{{ $region }}]
   metrics_path: /probe
   scrape_interval: 15s
   params:
