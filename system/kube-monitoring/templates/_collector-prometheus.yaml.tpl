@@ -311,7 +311,6 @@
   relabel_configs:
     - target_label: component
       replacement: apiserver
+{{- end }}
   metric_relabel_configs:
 {{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubeAPIServer | indent 4 }}
-
-{{ end -}}
