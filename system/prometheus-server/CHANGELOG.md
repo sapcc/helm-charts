@@ -1,3 +1,8 @@
+## 1.1.20
+
+* Extend clusterrole to for kubelet (`nodes/metrics`), cAdvisor (`nodes/metrics/cAdvisor`) metrics.
+* Do not create serviceaccount with name `default` but generate the name in the format `prometheus-<name>` instead.
+
 ## 1.1.19
 
 * Prometheus server to `v2.11.1`.

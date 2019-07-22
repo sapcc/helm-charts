@@ -29,10 +29,15 @@ prometheus-{{- (include "prometheus.name" .) -}}
 
 {{/* The name of the serviceAccount. */}}
 {{- define "serviceAccount.name" -}}
+{{- $name := .Values.serviceAccount.name -}}
 {{- if .Values.serviceAccount.create -}}
-{{- default (include "prometheus.fullName" . ) .Values.serviceAccount.name -}}
+{{- if and $name (ne $name "default") -}}
+{{- $name -}}
 {{- else -}}
-{{- default "default" .Values.serviceAccount.name -}}
+{{- (include "prometheus.fullName" . ) -}}
+{{- end -}}
+{{- else -}}
+{{- default "default" $name -}}
 {{- end -}}
 {{- end -}}
 
