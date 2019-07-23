@@ -55,3 +55,13 @@ The chart test toolkit will use every `*-values.yaml` provided in the `ci` folde
 
     If Prometheus alert- (`*.alerts`) or aggregation rules `(*.rules)` are part of the Helm chart, they are validated using the [promtool](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#syntax-checking-rules).
 
+
+# Running the tests locally
+
+Tests can be done locally using the Docker image found in the `sapcc/chart-testing` repository.
+The tag `$version-promtool` indicates a pre-installed [promtool](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#syntax-checking-rules).
+
+Example: 
+```
+docker run --rm -v $helm-charts.git:/charts sapcc/chart-testing:v2.3.3-8b1a29ac-promtool sh -c "cd charts && ct lint --chart-yaml-schema ci/chart_schema.yaml --lint-conf ci/lintconf.yaml --config ci/config.yaml --charts openstack/nova"
+```
