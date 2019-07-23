@@ -63,6 +63,9 @@ This has the benefits that:
   * Pods and other Kubernetes primitives are reflected at a known place in
       Kubernetes
 
+### Test a Chart
+
+Opening a PR to this repository triggers the Helm chart tests which are described in detail [here](./ci/README.md).  
 
 ### Install/Update of a Chart/Release 
 
