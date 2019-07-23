@@ -1,7 +1,7 @@
 Testing helm charts
 -------------------
 
-Helm charts used for the SAP Converged Cloud Enterprise Edition are validated using [concourse](https://concourse-ci.org) and the [helm chart testing utility](https://github.com/helm/chart-testing) with the configuration provided in this folder.  
+Helm charts used for the SAP Converged Cloud are validated the [helm chart testing utility](https://github.com/helm/chart-testing) with the configuration provided in this folder and [kube-score](https://github.com/zegl/kube-score) to make our charts more secure and resilient. 
 Assuming a chart looks like this:
 ```
 .
