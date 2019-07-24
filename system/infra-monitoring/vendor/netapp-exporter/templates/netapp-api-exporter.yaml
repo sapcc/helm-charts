@@ -1,11 +1,15 @@
 {{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
 kind: Service
 apiVersion: v1
 metadata:
   name:  {{ .Values.api_exporter.name }}
   annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "9108"
+    prometheus.io/scrape: {{ $scrape | quote }}
+    prometheus.io/port: {{ $port | quote }}
+    prometheus.io/targets: {{ $targets | quote }}
     maia.io/scrape: "true"
     maia.io/port: "9108"
 spec:
@@ -28,7 +32,11 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ .Values.api_exporter.name }} 
+        app: {{ .Values.api_exporter.name }}
+      annotations:
+       prometheus.io/scrape: {{ $scrape | quote }}
+       prometheus.io/port: {{ $port | quote }}
+       prometheus.io/targets: {{ $targets | quote }}
     spec:
       volumes:
         - name: netap-etc

@@ -15,9 +15,11 @@ spec:
     metadata:
       labels:
         component: apic-exporters
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+        prometheus.io/targets: "infra-collector"
     spec:
-      nodeSelector:
-        ccloud.sap.com/nodepool: payload
       volumes:
         - name: apic-exporters-etc
           configMap:
@@ -25,24 +27,17 @@ spec:
       containers:
         - name: apic-exporters
           imagePullPolicy: IfNotPresent
-          image: {{ .Values.docker_repo }}/infrastructure-exporters:{{ .Values.image_version | replace "string:" "" }}
+          image: {{ .Values.docker_repo }}:{{ .Values.image_version | replace "string:" "" }}
           args:
             - -f
             - /apic-exporters-etc/config-apic-exporters.yaml
             - -t
             - apichealth
-          {{- if .Values.resources.enabled }}
-          resources:
-            requests:
-              memory: {{ .Values.resources.requests.memory | quote }}
-            limits:
-              memory: {{ .Values.resources.limits.memory | quote }}
-          {{- end }}
           volumeMounts:
             - mountPath: /apic-exporters-etc
               name: apic-exporters-etc
           ports:
             - name: metrics
-              containerPort: {{ .Values.prometheus_port }}
+              containerPort: {{ .Values.listen_port }}
 {{- end }}
 {{- end }}

@@ -1,0 +1,13 @@
+{{- $values := .Values.prometheus_infra_collector }}
+{{- if $values.enabled }}
+apiVersion: v1
+kind: Secret
+
+metadata:
+  name: {{ $values.name }}-additional-scrape-config
+  labels:
+    prometheus: {{ $values.name }}
+
+data:
+  scrape-config.yaml: {{ include (print $.Template.BasePath "/_prometheus-infra-collector.yaml.tpl") . | b64enc }}
+{{- end }}

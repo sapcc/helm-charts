@@ -1,16 +1,24 @@
-enabled: "false"
-log_level: "debug"
 image: monsoon/atlas
 tag: "ae2939d3"
-namespace: "infra-monitoring"
-prom_configmap_name: "atlas-targets"
+
+#enabled: "false"
+log_level: "debug"
+configmap:
+  namespace: "infra-monitors"
+  name: "atlas-sd"
 config_file: "/etc/config/atlas.yaml"
 write_to: "configmap"
+
 os_user_domain_name: "Default"
 os_project_name: "master"
 os_project_domain_name: "ccadmin"
 
-alerts:
+ironic:
   enabled: true
-  # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: prometheus-infra
+switches:
+  enabled: true
+
+metrics:
+  scrape: true
+  port: 8080
+  targets: infra-collector

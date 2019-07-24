@@ -1,21 +1,29 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: ipmi-exporter
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: ipmi-exporter
-      type: exporter
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
-        app: ipmi-exporter
-        type: exporter
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: ipmi
     spec:
       containers:
-      - name: ipmi-exporter
+      - name: {{ include "infraMonitoring.name" . }}
         image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
         env:
         - name: APP_ENV
@@ -33,4 +41,4 @@ spec:
           value: {{ required "ipmi_password_cp needs to be defined in global values" .Values.global.ipmi_password_cp }}
         {{- end }}
         ports:
-        - containerPort: 9290
+        - containerPort: {{ .Values.listen_port }}

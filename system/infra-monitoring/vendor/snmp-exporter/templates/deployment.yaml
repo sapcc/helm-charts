@@ -1,11 +1,13 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: snmp-exporter
-  namespace: infra-monitoring
+  name: {{ include "infraMonitoring.fullname" . }}
   labels:
-    system: openstack
-    service: metrics
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 
 spec:
   revisionHistoryLimit: 5
@@ -18,7 +20,9 @@ spec:
   template:
     metadata:
       labels:
-        component: snmp-exporter
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: snmp
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -27,9 +31,9 @@ spec:
       volumes:
         - name: snmp-exporter-etc
           configMap:
-            name: snmp-exporter
+            name: {{ include "infraMonitoring.fullname" . }}
       containers:
-        - name: snmp-exporter
+        - name: {{ include "infraMonitoring.name" . }}
           image: {{ required "docker_repo variable is missing" .Values.docker_repo}}:{{ required "image_version variable is missing" .Values.image_version }}
           imagePullPolicy: IfNotPresent
           command:

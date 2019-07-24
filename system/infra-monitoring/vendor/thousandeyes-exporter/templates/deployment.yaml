@@ -1,21 +1,36 @@
-{{- if .Values.enabled }}
-
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: thousandeyes-exporter
-  namespace: infra-monitoring
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 
 spec:
-  replicas: {{.Values.replicaCount}}
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
-         app: thousandeyes-exporter
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: thousandeyes
+      annotations:
+        prometheus.io/scrape: {{ .Values.metrics.scrape | quote }}
+        prometheus.io/port: {{ .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ .Values.metrics.targets | quote }}
     spec:
       containers:
-         - name: thousandeyes-exporter
+         - name: {{ include "infraMonitoring.name" . }}
            image: {{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.image.namespace }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
            imagePullPolicy: IfNotPresent
            env:
@@ -23,13 +38,13 @@ spec:
                value: {{ .Values.bearer_token }}
            ports:
              - name: metrics
-               containerPort: {{ .Values.metric_port}}
+               containerPort: {{ .Values.metrics.port}}
                protocol: TCP
 
            readinessProbe:
              httpGet:
                path: /
-               port: {{ .Values.metric_port}}
+               port: {{ .Values.metrics.port}}
              initialDelaySeconds: 5
              timeoutSeconds: 5
              periodSeconds: 10
@@ -37,9 +52,7 @@ spec:
            livenessProbe:
              httpGet:
                path: /
-               port: {{ .Values.metric_port }}
+               port: {{ .Values.metrics.port }}
              initialDelaySeconds: 5
              timeoutSeconds: 5
              periodSeconds: 10
-
-{{ end -}}

@@ -1,20 +1,32 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: bios-exporter
-  namespace: infra-monitoring
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
-         app: bios-exporter
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: bios
     spec:
       containers:
-         - name: bios-exporter
-           image: {{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.image.namespace }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
-           imagePullPolicy: Always
+         - name: {{ include "infraMonitoring.name" . }}
+           image: {{ .Values.global.imageRegistry }}/{{ required ".Values.docker_repo missing" .Values.docker_repo }}:{{ required ".Values.image_version missing" .Values.image_version }}
+           imagePullPolicy: IfNotPresent
            ports:
              - name: metrics
                containerPort: {{ .Values.listen_port }}

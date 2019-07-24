@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "infraMonitoring.name" . }}
+      annotations:
+        prometheus.io/scrape: {{ .Values.metrics.scrape | quote }}
+        prometheus.io/port: {{ .Values.service.port | quote }}
+        prometheus.io/targets: {{ .Values.metrics.targets | quote }}
+    spec:
+      containers:
+        - name: {{ include "infraMonitoring.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          args:
+            - --config.file=/etc/blackbox-exporter/blackbox.yaml
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox-exporter
+        - name: {{ include "infraMonitoring.fullname" . }}-configmap-reloader
+          image: "{{ .Values.configmap_reload.image.repository }}:{{ .Values.configmap_reload.image.tag }}"
+          imagePullPolicy: {{ .Values.configmap_reload.image.pullPolicy }}
+          args:
+            - --volume-dir=/etc/blackbox-exporter
+            - --webhook-url=http://localhost:{{ .Values.service.port }}/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox-exporter
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "infraMonitoring.fullname" . }}
