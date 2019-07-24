@@ -39,6 +39,8 @@ spec:
 {{- end }}
         - name: grafana-content
           emptyDir: {}
+        - name: grafana-content-out
+          emptyDir: {}
       containers:
         - name: "grafana"
           image: {{.Values.grafana.image}}:{{.Values.grafana.image_version}}
@@ -79,6 +81,23 @@ spec:
           volumeMounts:
             - name: grafana-content
               mountPath: /tmp/git
+        - name: "minitrue"
+          image: hub.global.cloud.sap/monsoon/grafana-minitrue:v0.0.1
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          command:
+            - /minitrue.sh
+          env:
+            - name: PATH_IN
+              value: "/gitsync_in"
+            - name: PATH_OUT
+              value: "/minitrue_out"
+            - name: SLEEP_TIME_IN_SEC
+              value: "60"
+          volumeMounts:
+            - name: grafana-content
+              mountPath: /gitsync_in
+            - name: grafana-content-out
+              mountPath: /minitrue_out
 {{- if .Values.nginx.enabled }}
         - name: nginx
           image: "{{ .Values.nginx.image }}:{{ .Values.nginx.image_version }}"
