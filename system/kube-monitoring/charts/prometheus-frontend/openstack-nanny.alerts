@@ -173,3 +173,14 @@ groups:
     annotations:
       description: "The {{ $labels.kubernetes_name }} found a lot of problems which will have to be fixed by hand - this should be investigated ..."
       summary: "The {{ $labels.kubernetes_name }} lots of problems to manually fix - should be investigated ..."
+  - alert: OpenstackNeutronNannyPendingLB
+    expr: sum(neutron_nanny_pending_lb) > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: The neutron-nanny discovered a load balancer which is in pending state for too long
+      summary: Neutron nanny detected a pending lb

@@ -154,6 +154,8 @@ transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbi
 {{ else }}
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
 {{- end }}
+{{ else }}
+driver = messaging
 {{- end }}
 
 [oslo_middleware]

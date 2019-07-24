@@ -141,7 +141,7 @@ scrape_configs:
 
   static_configs:
   - targets:
-{{- range $region := without .Values.regions "admin" "na-us-2" "staging" }}
+{{- range $region := without .Values.regions "admin" "staging" }}
     - "prometheus.kubernikus.{{ $region }}.cloud.sap"
 {{- end }}
 

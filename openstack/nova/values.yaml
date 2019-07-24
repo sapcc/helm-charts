@@ -57,7 +57,7 @@ defaults:
       default:
         compute_driver: libvirt.LibvirtDriver
         firewall_driver: nova.virt.firewall.NoopFirewallDriver
-        resume_guests_state_on_host_boot: True
+        resume_guests_state_on_host_boot: true
 
 pod:
   replicas:
@@ -74,8 +74,8 @@ pod:
         revision_history: 5
         podReplacementStrategy: RollingUpdate
         rollingUpdate:
-           maxUnavailable: 0
-           maxSurge: 1
+          maxUnavailable: 0
+          maxSurge: 1
   debug:
     api: false
 
@@ -147,7 +147,7 @@ vspc:
 
 # I would move all that to the neutron deployment
 neutron: {}
-neutron_dvs_agent_enabled: True
+neutron_dvs_agent_enabled: true
 
 cross_az_attach: 'False'
 
@@ -155,7 +155,7 @@ api:
   DEFAULT:
     api_paste_config: /etc/nova/api-paste.ini
     enabled_apis: osapi_compute,metadata
-    use_forwarded_for: True
+    use_forwarded_for: true
 
   api:
     list_records_by_skipping_down_cells: false
@@ -164,7 +164,7 @@ api_metadata:
   DEFAULT:
     api_paste_config: /etc/nova/api-paste.ini
     enabled_apis: metadata
-    use_forwarded_for: True
+    use_forwarded_for: true
 
 consoles:
   novnc:
@@ -182,9 +182,9 @@ consoles:
 
 scheduler:
   driver: "filter_scheduler"
-  scheduler_tracks_instance_changes: False
+  scheduler_tracks_instance_changes: false
   scheduler_instance_sync_interval: 120
-  default_filters: "AvailabilityZoneFilter, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter, BaremetalExactRamFilter, BaremetalExactCoreFilter, BaremetalExactDiskFilter"
+  default_filters: "AvailabilityZoneFilter, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, AggregateInstanceExtraSpecsFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter, BaremetalExactRamFilter, BaremetalExactCoreFilter, BaremetalExactDiskFilter"
   ram_weight_multiplier: 1.0
   disk_weight_multiplier: 1.0
   io_ops_weight_multiplier: 0.0
@@ -194,9 +194,9 @@ compute:
     default:
       max_concurrent_builds_per_project: 3
     vmware:
-      insecure: True
-      use_linked_clone: False
-      pbm_enabled: False
+      insecure: true
+      use_linked_clone: false
+      pbm_enabled: false
       pbm_default_policy: "nova-ephemeral"
 
 conductor: {}
@@ -216,245 +216,245 @@ quota:
 
 
 placement:
-  enabled: False
+  enabled: false
 
 pgmetrics:
   name: nova
   customMetrics:
-     openstack_compute_instances:
-       query: "SELECT coalesce(instances.host,'N/A') AS host, instances.project_id, COUNT(*) AS gauge, instances.vm_state, coalesce(instance_types.name,'N/A') AS flavor_name FROM instances JOIN instance_types ON instances.instance_type_id=instance_types.id GROUP BY instances.vm_state, instances.host, instances.project_id, instance_types.name"
-       metrics:
-         - project_id:
-             usage: "LABEL"
-             description: "Project ID"
-         - vm_state:
-             usage: "LABEL"
-             description: "State of the VM"
-         - host:
-             usage: "LABEL"
-             description: "Host Name"
-         - flavor_name:
-             usage: "LABEL"
-             description: "Flavor Name of Instance"
-         - gauge:
-             usage: "GAUGE"
-             description: "VM Count"
-     openstack_compute_stuck_instances:
-       query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, vm_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE vm_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, vm_state"
-       metrics:
-         - project_id:
-             usage: "LABEL"
-             description: "Project ID"
-         - vm_state:
-             usage: "LABEL"
-             description: "State of the VM"
-         - host:
-             usage: "LABEL"
-             description: "Host Name"
-         - uuid:
-             usage: "LABEL"
-             description: "Instance ID"
-         - availability_zone:
-             usage: "LABEL"
-             description: "AZ Name"
-         - count_gauge:
-             usage: "GAUGE"
-             description: "VM Count"
-         - max_duration_gauge:
-             usage: "GAUGE"
-             description: "Maximum duration of state"
-     openstack_compute_instance_launch:
-       query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND NOT host LIKE 'nova-compute-ironic%' GROUP BY host, project_id, uuid, vm_state"
-       metrics:
-         - host:
-             usage: "LABEL"
-             description: "Name of host"
-         - project_id:
-             usage: "LABEL"
-             description: "Project ID of the instance"
-         - uuid:
-             usage: "LABEL"
-             description: "Instance UUID"
-         - vm_state:
-             usage: "LABEL"
-             description: "instance current state"
-         - time_taken_gauge:
-             usage: "GAUGE"
-             description: "Instances termination time in past 24hrs"
-     openstack_compute_instance_termination:
-       query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND NOT host LIKE 'nova-compute-ironic%' GROUP BY host, project_id, uuid, vm_state"
-       metrics:
-         - host:
-             usage: "LABEL"
-             description: "Name of host"
-         - project_id:
-             usage: "LABEL"
-             description: "Project ID of the instance"
-         - uuid:
-             usage: "LABEL"
-             description: "Instance UUID"
-         - vm_state:
-             usage: "LABEL"
-             description: "instance current state"
-         - time_taken_gauge:
-             usage: "GAUGE"
-             description: "Instances termination time in past 24hrs"
-     openstack_compute_instance_created:
-       query: "SELECT coalesce(host, 'N/A') AS host, uuid, vm_state, COUNT(*) AS in_24hrs_gauge FROM instances WHERE (created_at >= now() - interval '24 hours') AND NOT host LIKE 'nova-compute-ironic%' AND deleted=0 GROUP BY host, uuid, vm_state"
-       metrics:
-         - host:
-             usage: "LABEL"
-             description: "Name of host"
-         - vm_state:
-             usage: "LABEL"
-             description: "instance current state"
-         - uuid:
-             usage: "LABEL"
-             description: "Instance UUID"
-         - in_24hrs_gauge:
-             usage: "GAUGE"
-             description: "Instances created past 24hrs"
-     openstack_ironic_instances_launch:
-       query: "SELECT project_id, uuid, node AS node_id, hostname, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND host LIKE 'nova-compute-ironic%' GROUP BY project_id, uuid, vm_state, hostname, node"
-       metrics:
-         - project_id:
-             usage: "LABEL"
-             description: "Project ID of the Node"
-         - uuid:
-             usage: "LABEL"
-             description: "Node UUID"
-         - vm_state:
-             usage: "LABEL"
-             description: "Node current state"
-         - node_id:
-             usage: "LABEL"
-             description: "Node ID"
-         - hostname:
-             usage: "LABEL"
-             description: "Node Name"
-         - time_taken_gauge:
-             usage: "GAUGE"
-             description: "Nodes Launch time in past 24hrs"
-     openstack_ironic_instances_termination:
-       query: "SELECT project_id, uuid, hostname, node AS node_id, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host LIKE 'nova-compute-ironic%' GROUP BY project_id, uuid, vm_state, hostname, node"
-       metrics:
-         - project_id:
-             usage: "LABEL"
-             description: "Project ID of the Node"
-         - uuid:
-             usage: "LABEL"
-             description: "Node UUID"
-         - vm_state:
-             usage: "LABEL"
-             description: "Node current state"
-         - hostname:
-             usage: "LABEL"
-             description: "Node Name"
-         - node_id:
-             usage: "LABEL"
-             description: "Node ID"
-         - time_taken_gauge:
-             usage: "GAUGE"
-             description: "Nodes termination time in past 24hrs"
-     openstack_ironic_instances_created:
-       query: "SELECT uuid, hostname, node AS node_id, vm_state, COUNT(*) AS in_24hrs FROM instances WHERE (created_at >= now() - interval '24 hours') AND host LIKE 'nova-compute-ironic%' GROUP BY uuid, vm_state, hostname, node"
-       metrics:
-         - vm_state:
-             usage: "LABEL"
-             description: "Node current state"
-         - uuid:
-             usage: "LABEL"
-             description: "Node UUID"
-         - node_id:
-             usage: "LABEL"
-             description: "Node ID"
-         - hostname:
-             usage: "LABEL"
-             description: "Node Name"
-         - in_24hrs_gauge:
-             usage: "GAUGE"
-             description: "Nodes created past 24hrs"
-     openstack_ironic_instances:
-       query: "SELECT instances.uuid, instances.node AS node_id, instances.project_id, instances.hostname, instances.node AS node_id, instances.vm_state, coalesce(instance_types.name,'N/A') AS flavor_name, COUNT(*) AS gauge FROM instances JOIN instance_types ON instances.instance_type_id=instance_types.id where host LIKE 'nova-compute-ironic%' GROUP BY instances.vm_state, instances.project_id, instance_types.name, instances.uuid, instances.hostname, instances.node"
-       metrics:
-         - uuid:
-             usage: "LABEL"
-             description: "Node UUID"
-         - project_id:
-             usage: "LABEL"
-             description: "Project ID of the Node"
-         - vm_state:
-             usage: "LABEL"
-             description: "Node current state"
-         - flavor_name:
-             usage: "LABEL"
-             description: "Node flavor Name"
-         - node_id:
-             usage: "LABEL"
-             description: "Node Name"
-         - hostname:
-             usage: "LABEL"
-             description: "Node Name"
-         - gauge:
-             usage: "GAUGE"
-             description: "Node Count"
-     openstack_compute_nodes:
-       query: "SELECT compute_nodes.host, compute_nodes.uuid, aggregate_metadata.value AS availability_zone, compute_nodes.hypervisor_type, compute_nodes.free_disk_gb AS free_disk_gb_gauge, compute_nodes.local_gb AS local_gb_gauge, compute_nodes.local_gb_used AS local_gb_used_gauge, compute_nodes.free_ram_mb AS free_ram_mb_gauge, compute_nodes.memory_mb AS memory_mb_gauge, compute_nodes.memory_mb_used AS memory_mb_used_gauge, compute_nodes.vcpus_used AS vcpus_used_gauge, compute_nodes.vcpus AS vcpus_gauge, compute_nodes.running_vms AS running_vms_gauge from compute_nodes join aggregate_hosts on compute_nodes.host=aggregate_hosts.host join aggregate_metadata on aggregate_hosts.aggregate_id=aggregate_metadata.aggregate_id WHERE compute_nodes.deleted = 0 AND aggregate_hosts.deleted=0 AND aggregate_metadata.deleted=0 AND aggregate_metadata.key='availability_zone'"
-       metrics:
-         - availability_zone:
-             usage: "LABEL"
-             description: "Availability Zone details from aggregate_metadata table"
-         - uuid:
-             usage: "LABEL"
-             description: "Compute Node UUID"
-         - host:
-             usage: "LABEL"
-             description: "Name of the host"
-         - hypervisor_type:
-             usage: "LABEL"
-             description: "Type of the hypervisor"
-         - free_disk_gb_gauge:
-             usage: "GAUGE"
-             description: "Total Free disk size in GB"
-         - local_gb_gauge:
-             usage: "GAUGE"
-             description: "Total local disk size in GB"
-         - local_gb_used_gauge:
-             usage: "GAUGE"
-             description: "Total used local disk size in GB"
-         - free_ram_mb_gauge:
-             usage: "GAUGE"
-             description: "Free RAM in MiB"
-         - memory_mb_gauge:
-             usage: "GAUGE"
-             description: "Total RAM in MiB"
-         - memory_mb_used_gauge:
-             usage: "GAUGE"
-             description: "Total Used RAM in MiB"
-         - vcpus_used_gauge:
-             usage: "GAUGE"
-             description: "vCPUs used"
-         - vcpus_gauge:
-             usage: "GAUGE"
-             description: "Total vCPUs"
-         - running_vms_gauge:
-             usage: "GAUGE"
-             description: "Number of VMs running"
-     openstack_compute_service:
-       query: 'select id, host, "binary", version from services where deleted_at is null'
-       metrics:
-       - id:
-           usage: "LABEL"
-           description: "ID of the service"
-       - host:
-           usage: "LABEL"
-           description: "Name of the host"
-       - binary:
-           usage: "LABEL"
-           description: "Name of the executable"
-       - version:
-           usage: "GAUGE"
-           description: "Version of the service running"
+    openstack_compute_instances:
+      query: "SELECT coalesce(instances.host,'N/A') AS host, instances.project_id, COUNT(*) AS gauge, instances.vm_state, coalesce(instance_types.name,'N/A') AS flavor_name FROM instances JOIN instance_types ON instances.instance_type_id=instance_types.id GROUP BY instances.vm_state, instances.host, instances.project_id, instance_types.name"
+      metrics:
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID"
+        - vm_state:
+            usage: "LABEL"
+            description: "State of the VM"
+        - host:
+            usage: "LABEL"
+            description: "Host Name"
+        - flavor_name:
+            usage: "LABEL"
+            description: "Flavor Name of Instance"
+        - gauge:
+            usage: "GAUGE"
+            description: "VM Count"
+    openstack_compute_stuck_instances:
+      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, vm_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE vm_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, vm_state"
+      metrics:
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID"
+        - vm_state:
+            usage: "LABEL"
+            description: "State of the VM"
+        - host:
+            usage: "LABEL"
+            description: "Host Name"
+        - uuid:
+            usage: "LABEL"
+            description: "Instance ID"
+        - availability_zone:
+            usage: "LABEL"
+            description: "AZ Name"
+        - count_gauge:
+            usage: "GAUGE"
+            description: "VM Count"
+        - max_duration_gauge:
+            usage: "GAUGE"
+            description: "Maximum duration of state"
+    openstack_compute_instance_launch:
+      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND NOT host LIKE 'nova-compute-ironic%' GROUP BY host, project_id, uuid, vm_state"
+      metrics:
+        - host:
+            usage: "LABEL"
+            description: "Name of host"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the instance"
+        - uuid:
+            usage: "LABEL"
+            description: "Instance UUID"
+        - vm_state:
+            usage: "LABEL"
+            description: "instance current state"
+        - time_taken_gauge:
+            usage: "GAUGE"
+            description: "Instances termination time in past 24hrs"
+    openstack_compute_instance_termination:
+      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND NOT host LIKE 'nova-compute-ironic%' GROUP BY host, project_id, uuid, vm_state"
+      metrics:
+        - host:
+            usage: "LABEL"
+            description: "Name of host"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the instance"
+        - uuid:
+            usage: "LABEL"
+            description: "Instance UUID"
+        - vm_state:
+            usage: "LABEL"
+            description: "instance current state"
+        - time_taken_gauge:
+            usage: "GAUGE"
+            description: "Instances termination time in past 24hrs"
+    openstack_compute_instance_created:
+      query: "SELECT coalesce(host, 'N/A') AS host, uuid, vm_state, COUNT(*) AS in_24hrs_gauge FROM instances WHERE (created_at >= now() - interval '24 hours') AND NOT host LIKE 'nova-compute-ironic%' AND deleted=0 GROUP BY host, uuid, vm_state"
+      metrics:
+        - host:
+            usage: "LABEL"
+            description: "Name of host"
+        - vm_state:
+            usage: "LABEL"
+            description: "instance current state"
+        - uuid:
+            usage: "LABEL"
+            description: "Instance UUID"
+        - in_24hrs_gauge:
+            usage: "GAUGE"
+            description: "Instances created past 24hrs"
+    openstack_ironic_instances_launch:
+      query: "SELECT project_id, uuid, node AS node_id, hostname, vm_state, MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge FROM instances WHERE (launched_at IS NOT NULL AND launched_at >= now() - interval '24 hours') AND host LIKE 'nova-compute-ironic%' GROUP BY project_id, uuid, vm_state, hostname, node"
+      metrics:
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the Node"
+        - uuid:
+            usage: "LABEL"
+            description: "Node UUID"
+        - vm_state:
+            usage: "LABEL"
+            description: "Node current state"
+        - node_id:
+            usage: "LABEL"
+            description: "Node ID"
+        - hostname:
+            usage: "LABEL"
+            description: "Node Name"
+        - time_taken_gauge:
+            usage: "GAUGE"
+            description: "Nodes Launch time in past 24hrs"
+    openstack_ironic_instances_termination:
+      query: "SELECT project_id, uuid, hostname, node AS node_id, vm_state, MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge FROM instances WHERE (terminated_at IS NOT NULL AND terminated_at >= now() - interval '24 hours') AND host LIKE 'nova-compute-ironic%' GROUP BY project_id, uuid, vm_state, hostname, node"
+      metrics:
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the Node"
+        - uuid:
+            usage: "LABEL"
+            description: "Node UUID"
+        - vm_state:
+            usage: "LABEL"
+            description: "Node current state"
+        - hostname:
+            usage: "LABEL"
+            description: "Node Name"
+        - node_id:
+            usage: "LABEL"
+            description: "Node ID"
+        - time_taken_gauge:
+            usage: "GAUGE"
+            description: "Nodes termination time in past 24hrs"
+    openstack_ironic_instances_created:
+      query: "SELECT uuid, hostname, node AS node_id, vm_state, COUNT(*) AS in_24hrs FROM instances WHERE (created_at >= now() - interval '24 hours') AND host LIKE 'nova-compute-ironic%' GROUP BY uuid, vm_state, hostname, node"
+      metrics:
+        - vm_state:
+            usage: "LABEL"
+            description: "Node current state"
+        - uuid:
+            usage: "LABEL"
+            description: "Node UUID"
+        - node_id:
+            usage: "LABEL"
+            description: "Node ID"
+        - hostname:
+            usage: "LABEL"
+            description: "Node Name"
+        - in_24hrs_gauge:
+            usage: "GAUGE"
+            description: "Nodes created past 24hrs"
+    openstack_ironic_instances:
+      query: "SELECT instances.uuid, instances.node AS node_id, instances.project_id, instances.hostname, instances.node AS node_id, instances.vm_state, coalesce(instance_types.name,'N/A') AS flavor_name, COUNT(*) AS gauge FROM instances JOIN instance_types ON instances.instance_type_id=instance_types.id where host LIKE 'nova-compute-ironic%' GROUP BY instances.vm_state, instances.project_id, instance_types.name, instances.uuid, instances.hostname, instances.node"
+      metrics:
+        - uuid:
+            usage: "LABEL"
+            description: "Node UUID"
+        - project_id:
+            usage: "LABEL"
+            description: "Project ID of the Node"
+        - vm_state:
+            usage: "LABEL"
+            description: "Node current state"
+        - flavor_name:
+            usage: "LABEL"
+            description: "Node flavor Name"
+        - node_id:
+            usage: "LABEL"
+            description: "Node Name"
+        - hostname:
+            usage: "LABEL"
+            description: "Node Name"
+        - gauge:
+            usage: "GAUGE"
+            description: "Node Count"
+    openstack_compute_nodes:
+      query: "SELECT compute_nodes.host, compute_nodes.uuid, aggregate_metadata.value AS availability_zone, compute_nodes.hypervisor_type, compute_nodes.free_disk_gb AS free_disk_gb_gauge, compute_nodes.local_gb AS local_gb_gauge, compute_nodes.local_gb_used AS local_gb_used_gauge, compute_nodes.free_ram_mb AS free_ram_mb_gauge, compute_nodes.memory_mb AS memory_mb_gauge, compute_nodes.memory_mb_used AS memory_mb_used_gauge, compute_nodes.vcpus_used AS vcpus_used_gauge, compute_nodes.vcpus AS vcpus_gauge, compute_nodes.running_vms AS running_vms_gauge from compute_nodes join aggregate_hosts on compute_nodes.host=aggregate_hosts.host join aggregate_metadata on aggregate_hosts.aggregate_id=aggregate_metadata.aggregate_id WHERE compute_nodes.deleted = 0 AND aggregate_hosts.deleted=0 AND aggregate_metadata.deleted=0 AND aggregate_metadata.key='availability_zone'"
+      metrics:
+        - availability_zone:
+            usage: "LABEL"
+            description: "Availability Zone details from aggregate_metadata table"
+        - uuid:
+            usage: "LABEL"
+            description: "Compute Node UUID"
+        - host:
+            usage: "LABEL"
+            description: "Name of the host"
+        - hypervisor_type:
+            usage: "LABEL"
+            description: "Type of the hypervisor"
+        - free_disk_gb_gauge:
+            usage: "GAUGE"
+            description: "Total Free disk size in GB"
+        - local_gb_gauge:
+            usage: "GAUGE"
+            description: "Total local disk size in GB"
+        - local_gb_used_gauge:
+            usage: "GAUGE"
+            description: "Total used local disk size in GB"
+        - free_ram_mb_gauge:
+            usage: "GAUGE"
+            description: "Free RAM in MiB"
+        - memory_mb_gauge:
+            usage: "GAUGE"
+            description: "Total RAM in MiB"
+        - memory_mb_used_gauge:
+            usage: "GAUGE"
+            description: "Total Used RAM in MiB"
+        - vcpus_used_gauge:
+            usage: "GAUGE"
+            description: "vCPUs used"
+        - vcpus_gauge:
+            usage: "GAUGE"
+            description: "Total vCPUs"
+        - running_vms_gauge:
+            usage: "GAUGE"
+            description: "Number of VMs running"
+    openstack_compute_service:
+      query: 'select id, host, "binary", version from services where deleted_at is null'
+      metrics:
+      - id:
+          usage: "LABEL"
+          description: "ID of the service"
+      - host:
+          usage: "LABEL"
+          description: "Name of the host"
+      - binary:
+          usage: "LABEL"
+          description: "Name of the executable"
+      - version:
+          usage: "GAUGE"
+          description: "Version of the service running"
 
 
 postgresql:
@@ -572,52 +572,52 @@ rabbitmq_notifications:
     enabled: false
 
 logging:
-    formatters:
-        context:
-            class: oslo_log.formatters.ContextFormatter
-        default:
-            format: "%(message)s"
-    handlers:
-        stdout:
-            class: StreamHandler
-            args: "(sys.stdout,)"
-            formatter: context
-        "null":
-            class: logging.NullHandler
-            args: "()"
-            formatter: default
-        sentry:
-            class: raven.handlers.logging.SentryHandler
-            level: ERROR
-            args: "()"
-    loggers:
-        root:
-            handlers: stdout, sentry
-            level: WARNING
-        migrate:
-            handlers: stdout, sentry
-            level: INFO
-        nova:
-            handlers: stdout, sentry
-            level: INFO
-        nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
-            handlers: stdout, sentry
-            level: INFO
-        nova.virt.vmwareapi:
-            handlers: stdout, sentry
-            level: DEBUG
-        eventlet.wsgi.server:
-            handlers: stdout, sentry
-            level: INFO
-        oslo.privsep:
-            handlers: stdout, sentry
-            level: INFO
-        suds:
-            handlers: "null"
-            level: ERROR
-        oslo_vmware.common.loopingcall:
-            handlers: "null"
-            level: ERROR
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    migrate:
+      handlers: stdout, sentry
+      level: INFO
+    nova:
+      handlers: stdout, sentry
+      level: INFO
+    nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
+      handlers: stdout, sentry
+      level: INFO
+    nova.virt.vmwareapi:
+      handlers: stdout, sentry
+      level: DEBUG
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    oslo.privsep:
+      handlers: stdout, sentry
+      level: INFO
+    suds:
+      handlers: "null"
+      level: ERROR
+    oslo_vmware.common.loopingcall:
+      handlers: "null"
+      level: ERROR
 
 # openstack-watcher-middleware
 watcher:

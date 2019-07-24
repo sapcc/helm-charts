@@ -6,6 +6,5 @@ The global Kubernetes Prometheus federates selected metrics from the regional Ku
 
 ## Federation
 
-Per convention all metrics prefixed with `global:` found in a regional Kubernetes Prometheus are automatically federated to the global Kubernetes Prometheus.
-Moreover, all `ALERTS` and `up` metrics are federated.
-Further metrics can be added as needed.
+Per convention all metrics prefixed with `global:` are automatically federated from the regional Kubernetes Prometheis. Moreover, all `ALERTS` and `up` metrics are federated.
+Further metrics can be added via [values](.values.yaml) as needed.

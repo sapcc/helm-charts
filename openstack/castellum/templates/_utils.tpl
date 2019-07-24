@@ -16,7 +16,7 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
 - name: CASTELLUM_DEBUG
   value: "false"
 - name: CASTELLUM_ASSET_MANAGERS
-  value: "nfs-shares"
+  value: "nfs-shares{{if eq .Values.global.region "qa-de-1"}},project-quota{{end}}"
 - name: CASTELLUM_DB_URI
   value: "postgres://postgres:{{ .Values.postgresql.postgresPassword }}@castellum-postgresql.{{ .Release.Namespace }}.svc/castellum?sslmode=disable"
 - name: CASTELLUM_HTTP_LISTEN_ADDRESS

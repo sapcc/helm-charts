@@ -14,6 +14,12 @@
       - '{app="thousandeyes-exporter"}'
       - '{app="netapp-harvest"}'
       - '{app="netapp-api-exporter"}'
+      - '{job="baremetal/arista"}'
+      - '{job="bios/ironic"}'
+      - '{job="ipmi/ironic"}'
+      - '{job="snmp"}'
+      - '{job=~"vcenter-exporter-.+"}'
+      - '{job=~"blackbox/.+"}'
 
   relabel_configs:
     - action: replace

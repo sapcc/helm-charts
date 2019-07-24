@@ -164,10 +164,26 @@ enabled = {{ default true .Values.grafana.auth.basic_auth.enabled }}
 
 
 #################################### Auth LDAP ##########################
+{{- if .Values.grafana.auth.ldap.enabled}}
 [auth.ldap]
 enabled = true
 config_file = /grafana-etc/ldap.toml
 allow_sign_up = true
+{{- end }}
+
+
+#################################### Anonymous Auth ##########################
+{{- if .Values.grafana.auth.anonymous.enabled}}
+[auth.anonymous]
+# enable anonymous access
+enabled = true
+
+# specify organization name that should be used for unauthenticated users
+org_name = "Main Org."
+
+# Role for unauthenticated users, other valid values are `Editor` and `Admin`
+org_role = Viewer
+{{- end }}
 
 
 #################################### Logging ##########################

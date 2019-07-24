@@ -1,0 +1,52 @@
+{{ if ne .Values.global.region "staging" }}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: nova-bigvm-aggregates
+  labels:
+    system: openstack
+    type: configuration
+    component: nova
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Replace
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: nova-bigvm-aggregates  
+            image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/bigvm-aggregates:latest
+            imagePullPolicy: Always
+            command:
+            - "/create_bigvm_aggregates.sh"
+            env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "nova-api"
+            - name: DEPENDENCY_JOBS
+              value: "nova-migration"
+            - name: OS_AUTH_URL
+              value: {{ include "keystone_url" . }}
+            - name: OS_IDENTITY_API_VERSION
+              value: "3"
+            - name: OS_USERNAME
+              value: {{ .Values.global.nova_service_user | default "nova" }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{.Values.global.keystone_service_domain | default "Default" }}
+            - name: OS_PROJECT_NAME
+              value: {{.Values.global.keystone_service_project |  default "service" }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{.Values.global.keystone_service_domain | default "Default" }}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.region }}
+            - name: OS_PASSWORD
+              value: {{ .Values.global.nova_service_password | required "Please set Values.global.nova_service_password" | quote }}
+{{ end }}
