@@ -77,14 +77,18 @@ endpoint_type = internal
 
 [designate]
 url =  {{.Values.global.designate_api_endpoint_protocol_admin | default "http"}}://{{include "designate_api_endpoint_host_admin" .}}:{{ .Values.global.designate_api_port_admin| default 9001 }}/v2
-admin_auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
-admin_username = {{ .Values.global.designate_service_user | default "designate" | replace "$" "$$"}}
-admin_password = {{ .Values.global.designate_service_password | default "" | replace "$" "$$"}}
-admin_tenant_name = {{.Values.global.keystone_service_project | default "master"}}
-insecure=True
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
+auth_plugin = v3password
+auth_type = v3password
+region_name = {{.Values.global.region}}
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = master
+project_domain_name = ccadmin
+username = {{ .Values.global.designate_service_user | default "designate" | replace "$" "$$"}}
+password = {{ .Values.global.designate_service_password | default "" | replace "$" "$$"}}
+insecure = True
 allow_reverse_dns_lookup = {{.Values.global.designate_allow_reverse_dns_lookup | default "False"}}
 ipv4_ptr_zone_prefix_size = 24
-
 
 [oslo_concurrency]
 lock_path = /var/lib/neutron/tmp
