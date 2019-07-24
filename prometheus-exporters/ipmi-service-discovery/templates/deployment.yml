@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ipmi-service-discovery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ipmi-sd
+      type: service-discovery
+  template:
+    metadata:
+      labels:
+        app: ipmi-sd
+        type: service-discovery
+    spec:
+      containers:
+      - name: ipmi-sd
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
+        env:
+        - name: APP_ENV
+          value: "{{ .Values.app_env }}"
+        {{- if .Values.global.ipmi_service_discovery.ironic.enabled }}
+        - name: IRONIC
+          value: "true"
+        - name: OS_VERSION
+          value: "{{ .Values.tag }}"
+        - name: OS_AUTH_URL
+          value: "{{ .Values.os_auth_url }}"
+        - name: OS_USERNAME
+          value: "{{ .Values.global.ipmi_exporter_user }}"
+        - name: OS_PASSWORD
+          value: "{{ .Values.global.ipmi_exporter_user_passwd }}"
+        - name: OS_USER_DOMAIN_NAME
+          value: "{{ .Values.os_user_domain_name }}"
+        - name: OS_PROJECT_NAME
+          value: "{{ .Values.os_project_name }}"
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: "{{ .Values.os_project_domain_name }}"
+        {{- end }}
+        - name: OS_PROM_CONFIGMAP_NAME
+          value: "{{ .Values.global.ipmi_service_discovery.configmap_name }}"
+        {{- if .Values.global.ipmi_service_discovery.netbox.enabled }}
+        - name: NETBOX
+          value: "true"
+        - name: NETBOX_API_TOKEN
+          value: {{ required "ipmi_service_discovery.netbox.api_token needs to be defined in global values" .Values.global.ipmi_service_discovery.netbox.api_token }}
+        - name: OS_REGION
+          value: {{ .Values.global.region }}
+        {{- end }}

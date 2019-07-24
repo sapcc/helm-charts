@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ipmi-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ipmi-exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: ipmi-exporter
+        type: exporter
+    spec:
+      containers:
+      - name: ipmi-exporter
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        env:
+        - name: APP_ENV
+          value: "{{ .Values.app_env }}"
+        {{- if .Values.global.ipmi_exporter.ironic.enabled }}
+        - name: IPMI_USER
+          value: "{{ .Values.global.ipmi_username | default .Values.ipmi_username }}"
+        - name: IPMI_PASSWORD
+          value: "{{ .Values.global.ipmi_password | default .Values.ipmi_password }}"
+        {{- end }}
+        {{- if .Values.global.ipmi_exporter.netbox.enabled }}
+        - name: NETBOX_CP_USER
+          value: {{ required "ipmi_username_cp needs to be defined in global values" .Values.global.ipmi_username_cp }}
+        - name: NETBOX_CP_PASSWORD
+          value: {{ required "ipmi_password_cp needs to be defined in global values" .Values.global.ipmi_password_cp }}
+        {{- end }}
+        ports:
+        - containerPort: 9290
