@@ -13,8 +13,8 @@ spec:
       labels:
         app: {{ .Values.harvest.name }}
     spec:
-      containers:
-      - name: harvest
+      containers: 
+      - name: harvest                       # container: harvest
         image: {{ .Values.harvest.image }}
         resources:
           requests:
@@ -34,6 +34,36 @@ spec:
         volumeMounts:
         - name: netapp-perf-etc
           mountPath: /opt/netapp-harvest/config
+      - name: exporter                      # container: exporter
+        image: {{ .Values.exporter.image }}
+        args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
+        ports:
+        - containerPort: 9108
+        volumeMounts:
+        - name: netapp-perf-etc
+          subPath: graphite-mapping.conf
+          mountPath: /graphite-mapping.conf
+        resources:
+          requests:
+            memory: {{ .Values.exporter.memory }}
+            cpu: {{ .Values.exporter.cpu }}
+      - name: sd                            # container: netappsd
+        image: {{ .Values.netappsd.image }}
+        args: [ 
+          "-configmap",
+          "netapp-perf-etc",
+          "-key",
+          "netapp-filers.yaml",
+          "-namespace",
+          {{ .Release.Namespace }},
+          "-token",
+          {{ .Values.netbox.token }}
+        ]
+        resources:
+          requests:
+            memory: {{ .Values.netappsd.memory }}
+            cpu: {{ .Values.netappsd.cpu }}
+ 
       volumes:
         - name: netapp-perf-etc
           configMap:
@@ -43,4 +73,6 @@ spec:
                 path: netapp-harvest.conf
               - key: netapp-filers.yaml
                 path: netapp-filers.yaml
+              - key: graphite-mapping.conf
+                path: graphite-mapping.conf
 {{- end }}
