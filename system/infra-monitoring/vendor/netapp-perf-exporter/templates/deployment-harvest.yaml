@@ -1,0 +1,35 @@
+{{- if .Values.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.harvest.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.harvest.name }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.harvest.name }}
+    spec:
+      containers:
+      - name: harvest
+        image: {{ .Values.harvest.image }}
+        resources:
+          requests:
+            memory: {{ .Values.harvest.memory }}
+            cpu: {{ .Values.harvest.cpu }}
+        volumeMounts:
+        - name: netapp-perf-etc
+          mountPath: /opt/netapp-harvest/config
+      volumes:
+        - name: netapp-perf-etc
+          configMap:
+            name: netapp-perf-etc
+            items:
+              - key: netapp-harvest.conf
+                path: netapp-harvest.conf
+              - key: netapp-filers.yaml
+                path: netapp-filers.yaml
+{{- end }}
