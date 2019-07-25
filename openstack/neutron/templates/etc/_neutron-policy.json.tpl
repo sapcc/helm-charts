@@ -147,7 +147,7 @@
     "get_security_group": "rule:context_is_securitygroup_viewer",
     "get_security_groups": "rule:context_is_securitygroup_viewer",
     "update_security_group": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg)",
-    "delete_security_group": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg",
+    "delete_security_group": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg)",
 
     "create_security_group_rule": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg)",
     "get_security_group_rule": "rule:context_is_securitygroup_viewer",
