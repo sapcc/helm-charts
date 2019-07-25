@@ -2,7 +2,7 @@
 {{- if .Values.debug }}
 keys = root
 {{- else }}
-keys = root, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, ldappool, amqp, amqplib, oslo_messaging {{ if .Values.sentry.enabled }}, raven{{ end }}
+keys = root, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, ldappool, amqp, amqplib, oslo_messaging, sqlalchemy {{ if .Values.sentry.enabled }}, raven{{ end }}
 {{- end }}
 
 [handlers]
@@ -121,8 +121,13 @@ handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 qualname = amqplib
 
 [logger_sqlalchemy]
+{{- if .Values.debug }}
+level = INFO
+handlers = null
+{{- else }}
 level = WARNING
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
 qualname = sqlalchemy
 # "level = INFO" logs SQL queries.
 # "level = DEBUG" logs SQL queries and results.
