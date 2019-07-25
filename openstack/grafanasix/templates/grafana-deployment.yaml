@@ -37,9 +37,9 @@ spec:
           secret:
             secretName: grafana-ds-certs
 {{- end }}
-        - name: grafana-content
+        - name: grafana-git
           emptyDir: {}
-        - name: grafana-content-out
+        - name: grafana-content
           emptyDir: {}
       containers:
         - name: "grafana"
@@ -79,7 +79,7 @@ spec:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
           volumeMounts:
-            - name: grafana-content
+            - name: grafana-git
               mountPath: /tmp/git
         - name: "minitrue"
           image: hub.global.cloud.sap/monsoon/grafana-minitrue:v0.0.4
@@ -94,9 +94,9 @@ spec:
             - name: SLEEP_TIME_IN_SEC
               value: "60"
           volumeMounts:
-            - name: grafana-content
+            - name: grafana-git
               mountPath: /gitsync_in
-            - name: grafana-content-out
+            - name: grafana-content
               mountPath: /minitrue_out
 {{- if .Values.nginx.enabled }}
         - name: nginx
