@@ -37,7 +37,7 @@ function start_application {
   #    (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
        (while [ `curl -s http://localhost:3000 > /dev/null ; echo $?` != "0" ]; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
   fi
-  while [ ! -d /git/grafana-content/datasources-config ]; do
+  while [ ! -d /git/grafana-content/dashboards-config-regional ]; do
     echo "waiting 5 more seconds for the grafana-content to be mounted and synced via git-sync ..."
     sleep 5
   done
