@@ -197,3 +197,15 @@ arista:
       type: DisplayString
     - labelname: aristaHardwareUtilizationForwardingElement
       type: DisplayString
+  - name: snmp_arista_HardwareUtilizationMaxEntries
+    oid: 1.3.6.1.4.1.30065.3.22.1.1.1.7
+    type: counter
+    help: This MIB object represents the number of max entries in the specific hardware
+      resource. - 1.3.6.1.4.1.30065.3.22.1.1.1.7
+    indexes:
+    - labelname: aristaHardwareUtilizationResource
+      type: DisplayString
+    - labelname: aristaHardwareUtilizationFeature
+      type: DisplayString
+    - labelname: aristaHardwareUtilizationForwardingElement
+      type: DisplayString
