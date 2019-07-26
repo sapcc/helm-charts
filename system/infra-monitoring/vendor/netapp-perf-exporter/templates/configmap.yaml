@@ -1,0 +1,14 @@
+{{- if .Values.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: netapp-perf-etc
+data:
+  netapp.username: {{ .Values.netapp.username }}
+  netapp.password: {{ .Values.netapp.password }}
+  netapp-filers.yaml: "TO BE POPULATED BY SIDECAR"
+  netapp-harvest.conf: |
+{{ include (print .Template.BasePath "/_netapp-harvest.conf.tpl") . | indent 4 }}
+  graphite-mapping.conf: |
+{{ include (print .Template.BasePath "/_graphite-mapping.conf.tpl") . | indent 4 }}
+{{- end }}

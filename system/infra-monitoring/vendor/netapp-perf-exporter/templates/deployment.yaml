@@ -1,0 +1,82 @@
+{{- if .Values.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers: 
+      - name: harvest                       # container: harvest
+        image: {{ .Values.harvest.image }}
+        resources:
+          requests:
+            memory: {{ .Values.harvest.memory }}
+            cpu: {{ .Values.harvest.cpu }}
+        env:
+        - name: NETAPP_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: netapp-perf-etc
+              key: netapp.username
+        - name: NETAPP_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: netapp-perf-etc
+              key: netapp.password
+        volumeMounts:
+        - name: netapp-perf-etc
+          mountPath: /opt/netapp-harvest/config
+      - name: exporter                      # container: exporter
+        image: {{ .Values.exporter.image }}
+        args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
+        ports:
+        - containerPort: 9108
+        volumeMounts:
+        - name: netapp-perf-etc
+          subPath: graphite-mapping.conf
+          mountPath: /graphite-mapping.conf
+        resources:
+          requests:
+            memory: {{ .Values.exporter.memory }}
+            cpu: {{ .Values.exporter.cpu }}
+      - name: sd                            # container: netappsd
+        image: {{ .Values.netappsd.image }}
+        args: [ 
+          -configmap,
+          netapp-perf-etc,
+          -key,
+          netapp-filers.yaml,
+          -namespace,
+          {{ .Release.Namespace }},
+          -token,
+          {{ .Values.netbox.token }},
+          -region,
+          {{ .Values.global.region }},
+          -query,
+          {{ .Values.netbox.query }} 
+        ]
+        resources:
+          requests:
+            memory: {{ .Values.netappsd.memory }}
+            cpu: {{ .Values.netappsd.cpu }}
+ 
+      volumes:
+        - name: netapp-perf-etc
+          configMap:
+            name: netapp-perf-etc
+            items:
+              - key: netapp-harvest.conf
+                path: netapp-harvest.conf
+              - key: netapp-filers.yaml
+                path: netapp-filers.yaml
+              - key: graphite-mapping.conf
+                path: graphite-mapping.conf
+{{- end }}
