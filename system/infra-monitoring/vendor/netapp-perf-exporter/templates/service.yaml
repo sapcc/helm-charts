@@ -1,0 +1,22 @@
+{{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
+kind: Service
+apiVersion: v1
+metadata:
+  name:  {{ .Values.name }}
+  annotations:
+    prometheus.io/scrape: {{ $scrape | quote }}
+    prometheus.io/port: {{ $port | quote }}
+    prometheus.io/targets: {{ $targets | quote }}
+    maia.io/scrape: {{ $scrape | quote }}
+    maia.io/port: {{ $port | quote }}
+spec:
+  selector:
+    app:  {{ .Values.name }}
+  ports:
+  - name:  prometheus
+    port:  {{ $port }}
+    targetPort: {{ $port }}
+{{- end }}

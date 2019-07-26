@@ -2,16 +2,16 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ .Values.harvest.name }}
+  name: {{ .Values.name }}
 spec:
   selector:
     matchLabels:
-      app: {{ .Values.harvest.name }}
+      app: {{ .Values.name }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ .Values.harvest.name }}
+        app: {{ .Values.name }}
     spec:
       containers: 
       - name: harvest                       # container: harvest
@@ -50,14 +50,18 @@ spec:
       - name: sd                            # container: netappsd
         image: {{ .Values.netappsd.image }}
         args: [ 
-          "-configmap",
-          "netapp-perf-etc",
-          "-key",
-          "netapp-filers.yaml",
-          "-namespace",
+          -configmap,
+          netapp-perf-etc,
+          -key,
+          netapp-filers.yaml,
+          -namespace,
           {{ .Release.Namespace }},
-          "-token",
-          {{ .Values.netbox.token }}
+          -token,
+          {{ .Values.netbox.token }},
+          -region,
+          {{ .Values.global.region }},
+          -query,
+          {{ .Values.netbox.query }} 
         ]
         resources:
           requests:

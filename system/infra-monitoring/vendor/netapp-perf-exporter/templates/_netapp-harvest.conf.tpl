@@ -3,7 +3,7 @@
 [default]
 graphite_enabled  = 1
 graphite_server   = localhost
-graphite_port     = 2003
+graphite_port     = {{ .Values.exporter.graphitePort }}
 graphite_proto    = tcp
 
 host_type         = FILER
