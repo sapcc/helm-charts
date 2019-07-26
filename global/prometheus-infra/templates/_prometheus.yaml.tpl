@@ -11,7 +11,6 @@
       - '{__name__=~"^ALERTS$"}'
       - '{__name__=~"up"}'
       - '{__name__=~"^global:.+"}'
-      - '{__name__=~"^snmp_.+"}'
       - '{__name__=~"^probe_(dns|duration|http|success).*"}'
 
   relabel_configs:
