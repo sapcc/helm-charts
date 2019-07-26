@@ -1,0 +1,161 @@
+apiVersion: pxc.percona.com/v1
+kind: PerconaXtraDBCluster
+metadata:
+  name: {{ include "fullName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    system: openstack
+    type: database
+    component: {{ .Values.name }}
+  finalizers:
+    - delete-pxc-pods-in-order
+    - delete-proxysql-pvc
+    - delete-pxc-pvc
+spec:
+  secretsName: {{ .Values.name }}-mysql-cluster-secrets
+  sslSecretName: {{ .Values.name }}-mysql-cluster-ssl
+  sslInternalSecretName: {{ .Values.name }}-mysql-cluster-ssl-internal
+  updateStrategy: RollingUpdate
+  pxc:
+    size: {{ .Values.cluster_size }}
+    allowUnsafeConfigurations: {{ .Values.disable_tls | default true }}
+    image: percona/percona-xtradb-cluster-operator:{{ .Values.pxc_release_version }}-pxc
+    readinessDelaySec: {{ .Values.readinessProbe.initialDelaySeconds | default 30 }}
+    livenessDelaySec: {{ .Values.livenessProbe.initialDelaySeconds | default 300 }}
+    forceUnsafeBootstrap: {{ .Values.force_unsafe_bootstap | default false }}
+    configuration: |
+      [mysqld]
+      max_connections=500
+      innodb_file_per_table=ON
+      innodb_buffer_pool_size=768M
+      innodb_flush_method=O_DIRECT
+      innodb_flush_log_at_trx_commit=1
+      sync_binlog=1
+      wsrep_provider_options="gcache.size=1G; gcache.recover=yes"
+    resources:
+      requests:
+        memory: 1G
+        cpu: 500m
+    affinity:
+      advanced:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: instance
+                operator: In
+                values:
+                - {{ include "fullName" . }}
+              - key: component
+                operator: In
+                values:
+                - pxc
+              - key: managed-by
+                operator: In
+                values:
+                - percona-xtradb-cluster-operator
+            topologyKey: "kubernetes.io/hostname"
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: instance
+                  operator: In
+                  values:
+                  - {{ include "fullName" . }}
+                - key: component
+                  operator: In
+                  values:
+                  - pxc
+                - key: managed-by
+                  operator: In
+                  values:
+                  - percona-xtradb-cluster-operator
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+    podDisruptionBudget:
+      maxUnavailable: 1
+    volumeSpec:
+      persistentVolumeClaim:
+        resources:
+          requests:
+            storage: {{ .Values.mysql_pvc_size }}
+    gracePeriod: 600
+  proxysql:
+    enabled: true
+    size: {{ .Values.cluster_size_proxy }}
+    image: percona/percona-xtradb-cluster-operator:{{ .Values.pxc_release_version }}-proxysql
+    serviceType: ClusterIP
+    resources:
+      requests:
+        memory: 1G
+        cpu: 500m
+    affinity:
+      advanced:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: instance
+                operator: In
+                values:
+                - {{ include "fullName" . }}
+              - key: component
+                operator: In
+                values:
+                - proxysql
+              - key: managed-by
+                operator: In
+                values:
+                - percona-xtradb-cluster-operator
+            topologyKey: "kubernetes.io/hostname"
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: instance
+                  operator: In
+                  values:
+                  - {{ include "fullName" . }}
+                - key: component
+                  operator: In
+                  values:
+                  - proxysql
+                - key: managed-by
+                  operator: In
+                  values:
+                  - percona-xtradb-cluster-operator
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+    podDisruptionBudget:
+      maxUnavailable: 1
+    volumeSpec:
+      persistentVolumeClaim:
+        resources:
+          requests:
+            storage: {{ .Values.proxysql_pvc_size | default "1Gi" }}
+    gracePeriod: 30
+  pmm:
+    enabled: false
+  backup:
+{{- if .Values.backup.enabled }}
+    image: percona/percona-xtradb-cluster-operator:{{ .Values.pxc_release_version }}-backup
+    serviceAccountName: percona-xtradb-cluster-operator
+    storages:
+      s3-{{ .Values.global.region }}:
+        type: s3
+        s3:
+          bucket: {{ .Values.name }}-mysql-backup
+          credentialsSecret: {{ .Values.name }}-mysql-backup-secret
+          region: {{ .Values.global.region }}
+          endpoint: https://objectstore-3.{{ .Values.global.region }}.cloud.sap
+    schedule:
+      - name: {{ .Values.name }}-mysql-daily-backup
+        schedule: "0 0 * * *"
+        keep: 60
+        storageName: s3-{{ .Values.global.region }}
+      - name: {{ .Values.name }}-mysql-hourly-backup
+        schedule: "0 * * * *"
+        keep: 120
+        storageName: s3-{{ .Values.global.region }}
+{{- end }}

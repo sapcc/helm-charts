@@ -1,0 +1,55 @@
+# Default values for Percona XtraDB Cluster.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+
+# temporary switch for dependency handling
+enabled: false
+
+name: DEFINED-IN-COMPONENT-CHART
+
+root_password: DEFINED-IN-REGION-SECRETS
+backup_password: DEFINED-IN-REGION-SECRETS
+monitor_password: DEFINED-IN-REGION-SECRETS 
+
+pxc_release_version: 1.1.0
+
+cluster_size: 3
+cluster_size_proxy: 2
+disable_tls: true
+force_unsafe_bootstap: false
+
+# the actually consumed is cluster_size X storage_size
+mysql_pvc_size: 10Gi
+proxysql_pvc_size: 1Gi
+
+
+livenessProbe:
+  initialDelaySeconds: 300
+readinessProbe:
+  initialDelaySeconds: 30
+
+
+backup:
+  enabled: false
+
+  interval_full: 1 days
+  interval_incr: 1 hours
+  os_password: DEFINED-IN-REGION-SECRETS
+  os_username: db_backup
+  os_user_domain: Default
+  os_project_name: master
+  os_project_domain: ccadmin
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: true
+
+  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  prometheus: openstack
+
+  # The tier of the alert.
+  tier: os
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:
