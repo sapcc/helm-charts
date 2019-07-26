@@ -1,4 +1,7 @@
 {{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -12,6 +15,12 @@ spec:
     metadata:
       labels:
         app: {{ .Values.name }}
+      annotations:
+        prometheus.io/scrape: {{ $scrape | quote }}
+        prometheus.io/port: {{ $port | quote }}
+        prometheus.io/targets: {{ $targets | quote }}
+        maia.io/scrape: {{ $scrape | quote }}
+        maia.io/port: {{ $port | quote }}
     spec:
       containers: 
       - name: harvest                       # container: harvest
@@ -57,7 +66,7 @@ spec:
           -namespace,
           {{ .Release.Namespace }},
           -token,
-          {{ .Values.netbox.token }},
+          {{ required "netbox_api_token needs to be defined in global values" .Values.global.netbox_api_token }},
           -region,
           {{ .Values.global.region }},
           -query,
