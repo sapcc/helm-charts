@@ -32,6 +32,7 @@ template: |{{`
           name: cinder-volume-vmware-{{ name }}
       spec:
         hostname: cinder-volume-vmware-{{ name }}
+`}}{{ tuple "{{ availability_zone }}" | include "kubernetes_pod_az_affinity" | indent 8 }}{{`
         containers:
         - name: cinder-volume-vmware-{{ name }}
           image: `}}{{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-scheduler:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}{{`

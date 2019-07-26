@@ -23,3 +23,17 @@ affinity:
             values:
             - {{$component}}
 {{- end }}
+
+{{ define "kubernetes_pod_az_affinity" -}}
+{{- $availability_zone := index . 0 -}}
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: "failure-domain.beta.kubernetes.io/zone"
+              operator: In
+              values:
+                - {{$availability_zone}}
+{{- end }}
