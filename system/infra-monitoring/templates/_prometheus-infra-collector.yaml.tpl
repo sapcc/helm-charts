@@ -163,6 +163,25 @@
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:{{$values.listen_port}}
+      
+- job_name: 'cp/netbox'
+  params:
+    job: [cp/netbox]
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/control_plane.json
+  metrics_path: /ipmi
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: ipmi-exporter:{{$values.listen_port}}
+    - source_labels: [__meta_serial]
+      target_label: server_serial
 {{- end }}
 
 {{- range $region := .Values.global.regions }}
