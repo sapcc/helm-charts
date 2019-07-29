@@ -115,6 +115,10 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
+    - source_labels: [__name__, device]
+      regex: 'snmp_asr_RedundancyGroup,(\S*).$'
+      replacement: '$1'
+      target_label: device
 {{- end }}
 
 {{- $values := .Values.bios_exporter -}}
