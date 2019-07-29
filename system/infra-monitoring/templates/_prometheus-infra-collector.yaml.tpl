@@ -163,7 +163,7 @@
       target_label: instance
     - target_label: __address__
       replacement: ipmi-exporter:{{$values.listen_port}}
-      
+
 - job_name: 'cp/netbox'
   params:
     job: [cp/netbox]
