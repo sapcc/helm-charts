@@ -112,7 +112,7 @@
       replacement: '$1'
       target_label: availability_zone
     - source_labels: [devicename]
-      regex: '(\w*-\w*-\w*)-(\S*)'
+      regex: '(\w*-\w*-\w*)-(\S*).$'
       replacement: '$2'
       target_label: device
 {{- end }}
