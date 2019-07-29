@@ -6,7 +6,7 @@ groups:
     for: 15m
     labels:
       context: availability
-      dashboard: kubernetes-etcd
+      dashboard: etcd
       service: etcd
       severity: warning
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -19,7 +19,7 @@ groups:
     for: 3m
     labels:
       context: availability
-      dashboard: kubernetes-etcd
+      dashboard: etcd
       service: etcd
       severity: info
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -32,7 +32,7 @@ groups:
     for: 3m
     labels:
       context: availability
-      dashboard: kubernetes-etcd
+      dashboard: etcd
       service: etcd
       severity: critical
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -45,7 +45,7 @@ groups:
     for: 10m
     labels:
       context: system
-      dashboard: kubernetes-etcd
+      dashboard: etcd
       service: etcd
       severity: warning
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -59,7 +59,7 @@ groups:
     for: 10m
     labels:
       context: system
-      dashboard: kubernetes-etcd
+      dashboard: etcd
       service: etcd
       severity: critical
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -72,7 +72,7 @@ groups:
     expr: increase(etcd_server_proposal_failed_total[1h]) > 12
     labels:
       context: proposals
-      dashboard: kubernetes-etcd
+      dashboard: etcd
       playbook: https://coreos.com/etcd/docs/latest/admin_guide.html
       service: etcd
       severity: warning
@@ -87,7 +87,7 @@ groups:
     for: 10m
     labels:
       context: filesystem
-      dashboard: kubernetes-etcd
+      dashboard: etcd
       playbook: https://coreos.com/etcd/docs/latest/admin_guide.html
       service: etcd
       severity: warning
