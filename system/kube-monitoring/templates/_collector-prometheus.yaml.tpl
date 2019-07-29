@@ -289,7 +289,7 @@
     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
   scheme: https
-{{- if eq .Values.global.clusterType "controlplane" -}}
+{{- if eq .Values.global.clusterType "controlplane" }}
   kubernetes_sd_configs:
   - role: pod
   relabel_configs:
@@ -304,7 +304,7 @@
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
     target_label: instance
-{{ else }}
+{{- else }}
   static_configs:
   - targets:
     - $(KUBERNETES_SERVICE_HOST)
@@ -313,4 +313,4 @@
       replacement: apiserver
 {{- end }}
   metric_relabel_configs:
-{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubeAPIServer | indent 4 }}
+{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubeAPIServer | indent 2 }}
