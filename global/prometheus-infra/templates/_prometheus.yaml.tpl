@@ -12,6 +12,7 @@
       - '{__name__=~"up"}'
       - '{__name__=~"^global:.+"}'
       - '{__name__=~"^probe_(dns|duration|http|success).*"}'
+      - '{__name__=~"^snmp_asa_.+"}'
 
   relabel_configs:
     - action: replace
