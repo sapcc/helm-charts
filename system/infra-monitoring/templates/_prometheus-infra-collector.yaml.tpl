@@ -111,12 +111,12 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$1'
       target_label: availability_zone
-    - source_labels: [__name__, devicename]
-      regex: 'snmp_asr_RedundancyGroup,(\w*-\w*-\w*)-(\S*).$'
-      replacement: '$2'
-      target_label: device
     - source_labels: [devicename]
       regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$2'
+      target_label: device
+    - source_labels: [__name__, devicename]
+      regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
       replacement: '$2'
       target_label: device
 {{- end }}
