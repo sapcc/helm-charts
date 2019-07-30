@@ -3,7 +3,16 @@ Prometheus exporters
 
 This folder contains independent Helm charts for Prometheus exporters used in the SAP Converged Cloud.
 
-Helm charts are can be consumed via `requirements.yaml` from our Helm Chart registry:
+
+
+
+Helm charts are pushed to our Helm Chart registry, which can be added via:
+```
+helm repo add sapcc https://charts.global.cloud.sap
+```
+
+Example `requirements.yaml` to consume the charts:
+
 ```yaml
 dependencies:
   - name: $chartName
