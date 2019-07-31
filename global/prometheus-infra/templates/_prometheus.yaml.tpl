@@ -13,6 +13,13 @@
       - '{__name__=~"^global:.+"}'
       - '{__name__=~"^probe_(dns|duration|http|success).*"}'
       - '{__name__=~"^snmp_asa_.+"}'
+      - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio5s"}'
+      - '{__name__=~"snmp_f5_sysGlobalHostOtherMemUsedKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalHostOtherMemTotalKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalTmmStatMemoryUsedKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalTmmStatMemoryTotalKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalHostSwapUsedKb"}'
+      - '{__name__=~"snmp_f5_sysGlobalHostSwapTotalKb"}'
 
   relabel_configs:
     - action: replace
