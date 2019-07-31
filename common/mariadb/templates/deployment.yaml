@@ -57,9 +57,11 @@ spec:
           failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
         {{- end }}
         volumeMounts:
+{{- if .Values.persistence_claim }}
           - name: mariadb-persistent-storage
             mountPath: /var/lib/mysql
             readOnly: false
+{{- end }}
           - mountPath: /etc/mysql/conf.d/mariadb.cnf
             name: mariadb-etc
             subPath: mariadb.cnf
@@ -101,9 +103,11 @@ spec:
           - name: BACKUP_MYSQL_INCR
             value: {{ .Values.backup.interval_incr | quote }}
         volumeMounts:
+{{- if .Values.persistence_claim }}
         - mountPath: /db/data
           name: mariadb-persistent-storage
           readOnly: true
+{{- end }}
         - mountPath: /db/socket
           name: db-socket
 {{- end }}
