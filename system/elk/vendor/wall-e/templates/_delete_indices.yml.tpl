@@ -9,7 +9,7 @@ actions:
   1:
     action: delete_indices
     description: >-
-      Delete indices so that we stay below {{.data_retention_space}}
+      Delete indices so that we stay below {{.Values.data_retention_space}}
       gb of used disk space for indices (total summed up over all data nodes). The oldest
       indices will be deleted first. Ignore the error if the filter does not result in an
       actionable list of indices (ignore_empty_list) and exit cleanly.
@@ -29,6 +29,7 @@ actions:
       exclude: True
     - filtertype: space
       disk_space: {{.Values.data_retention_space}}
+      threshold_behavior: less_than
       use_age: True
       source: creation_date
       exclude:
