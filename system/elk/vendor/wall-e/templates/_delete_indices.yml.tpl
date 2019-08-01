@@ -29,7 +29,6 @@ actions:
       exclude: True
     - filtertype: space
       disk_space: {{.Values.data_retention_space}}
-      threshold_behavior: less_than
       use_age: True
       source: creation_date
       exclude:
