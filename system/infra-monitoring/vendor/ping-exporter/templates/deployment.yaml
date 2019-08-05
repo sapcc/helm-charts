@@ -2,7 +2,6 @@
 {{- $scrape := .Values.metrics.scrape -}}
 {{- $port := .Values.metrics.port -}}
 {{- $prometheus := .Values.metrics.prometheus -}}
-{{- $replicaCount := .Values.replicaCount -}}
 
 {{- range $i, $prober := .Values.pingProbers -}}
 {{ if ne $i 0 }}---{{ end }}
@@ -17,7 +16,7 @@ metadata:
     release: "{{$.Release.Name}}"
 
 spec:
-  replicas: {{ $replicaCount }}
+  replicas: 1
   template:
     metadata:
       labels:
@@ -37,15 +36,12 @@ spec:
             name: ping-exporter
       containers:
         - name: ping-exporter-{{$prober}}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: czerwonk/ping_exporter:latest
+          imagePullPolicy: Always
           command:
             - /app/ping_exporter
           args:
-            - --ping.interval={{ .Values.pingInterval }}
-            - --ping.timeout={{ .Values.pingTimeout }}
-            - --ping.history-size={{ .Values.pingHistorySize }}
-            - --log.level={{ .Values.logLevel }}
+            - --log.level=info
             - --metrics.deprecated=disable
             - --config.path /config.yaml
           volumeMounts:
