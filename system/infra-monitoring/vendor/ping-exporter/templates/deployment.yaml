@@ -17,9 +17,18 @@ spec:
         name: ping-exporter
         app: ping-exporter
     spec:
+      volumes:
+        - name: ping-exporter
+          configMap:
+            name: ping-exporter
       containers:
         - name: ping-exporter
           image: czerwonk/ping_exporter:latest
           imagePullPolicy: Always
-
+          env:
+            - name: CONFIG_FILE
+              value: /config.yaml
+          volumeMounts:
+            - name: ping-exporter
+              mountPath: /
 {{ end }}
