@@ -38,20 +38,16 @@ spec:
         - name: ping-exporter-{{$prober}}
           image: czerwonk/ping_exporter:latest
           imagePullPolicy: Always
-          command:
-          - /app/ping_exporter
-          args: [
-            "--config.path ", "/config.yaml",
-            "--log.level=info",
-            "--metrics.deprecated=disable"
-          ]
+          env:
+            - name: CONFIG_FILE
+              value: /config.yaml
           volumeMounts:
-          - name: ping-exporter
-            mountPath: /
+            - name: ping-exporter
+              mountPath: /
           ports:
-          - name: metrics
-            containerPort: 9427
-            protocol: TCP
+            - name: metrics
+              containerPort: 9427
+              protocol: TCP
          livenessProbe:
             httpGet:
               path: /
