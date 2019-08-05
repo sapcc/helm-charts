@@ -40,13 +40,18 @@ spec:
           imagePullPolicy: Always
           command:
             - /app/ping_exporter
+          args: [
+            "--config.path ", "/config.yaml",
+            "--log.level=info",
+            "--metrics.deprecated=disable"
+          ]
           volumeMounts:
-            - name: ping-exporter
-              mountPath: /
+          - name: ping-exporter
+            mountPath: /
           ports:
-            - name: metrics
-              containerPort: 9427
-              protocol: TCP
+          - name: metrics
+            containerPort: 9427
+            protocol: TCP
          livenessProbe:
             httpGet:
               path: /
