@@ -1,63 +1,23 @@
 {{- if .Values.enabled }}
-{{- $scrape := .Values.metrics.scrape -}}
-{{- $port := .Values.metrics.port -}}
-{{- $prometheus := .Values.metrics.prometheus -}}
 
-{{- range $i, $prober := .Values.pingProbers -}}
-{{ if ne $i 0 }}---{{ end }}
+{{ range $i, $prober := .Values.pingProbers -}}
+{{ if ne $i 0}}--{{ end }}
 
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
   name: ping-exporter-{{$prober}}
-  labels:
-    app: ping-exporter
-    release: "{{$.Release.Name}}"
 
 spec:
   replicas: 1
-  template:
-    metadata:
-      labels:
-        name: ping-exporter-{{$prober}}
-        app: ping-exporter
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
-        prometheus.io/scrape: {{ $scrape | quote }}
-        prometheus.io/port: {{ $port | quote }}
-        prometheus.io/targets: {{ $prometheus | quote }}
+  templates:
     spec:
-      nodeSelector:
-        failure-domain.beta.kubernetes.io/zone: {{$prober}}
-      volumes:
-        - name: ping-exporter
-          configMap:
-            name: ping-exporter
       containers:
         - name: ping-exporter-{{$prober}}
           image: czerwonk/ping_exporter:latest
           imagePullPolicy: Always
-          env:
-            - name: CONFIG_FILE
-              value: /config.yaml
-          volumeMounts:
-            - name: ping-exporter
-              mountPath: /
-          ports:
-            - name: metrics
-              containerPort: 9427
-              protocol: TCP
-         livenessProbe:
-            httpGet:
-              path: /
-              port: metrics
-            timeoutSeconds: 10
-            periodSeconds: 15
-          readinessProbe:
-            httpGet:
-              path: /
-              port: metrics
+
 ---
 {{ end -}}
 {{ end -}}
