@@ -7,13 +7,12 @@ groups:
       severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       service:  {{ include "alerts.service" . }}
-      context: '{{`{{ $labels.service }}`}}'
+      context: '{{`{{ $labels.app }}`}}'
       dashboard: rabbitmq
-      meta: '{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 1000 unacknowledged messages in {{`{{ $labels.kubernetes_name }}`}}.'
-      playbook: 'docs/devops/alert/rabbitmq/#{{`{{ $labels.check }}`}}'
+      meta: '{{`{{ $labels.app }}`}} has over 1000 unacknowledged messages.'
+      playbook: 'docs/devops/alert/rabbitmq/'
     annotations:
-      description: '{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} RPC Messages are not being collected.
-        {{`{{ $labels.check }}`}} has over 1000 unacknowledged messages in {{`{{ $labels.kubernetes_name }}`}}.'
+      description: 'RPC Messages are not being collected. {{`{{ $labels.app }}`}} has over 1000 unacknowledged messages.'
       summary: 'RPC messages are not being collected.'
 
   - alert: {{ include "alerts.service" . | title }}RabbitMQRPCReadyTotal
@@ -22,11 +21,10 @@ groups:
       severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       service: {{ include "alerts.service" . }}
-      context: '{{`{{ $labels.service }}`}}'
+      context: '{{`{{ $labels.app }}`}}'
       dashboard: rabbitmq
-      meta: '{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} RPC Messages are not being collected. {{`{{ $labels.check }}`}} has over 1000 rpc messages waiting in {{`{{ $labels.kubernetes_name }}`}}.'
-      playbook: 'docs/devops/alert/rabbitmq/#{{`{{ $labels.check }}`}}'
+      meta: 'RPC Messages are not being collected. {{`{{ $labels.app }}`}} has over 1000 rpc messages waiting.'
+      playbook: 'docs/devops/alert/rabbitmq/'
     annotations:
-      description: '{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} RPC Messages are not being collected.
-        {{`{{ $labels.check }}`}} has over 1000 rpc messages waiting in {{`{{ $labels.kubernetes_name }}`}}.'
+      description: 'RPC Messages are not being collected. {{`{{ $labels.app }}`}} has over 1000 rpc messages waiting.'
       summary: 'RPC messages are not being collected.'
