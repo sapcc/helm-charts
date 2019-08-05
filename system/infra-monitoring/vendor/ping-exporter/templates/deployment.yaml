@@ -1,0 +1,69 @@
+{{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $prometheus := .Values.metrics.prometheus -}}
+
+{{- range $i, $prober := .Values.pingProbers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: ping-exporter-{{$prober}}
+  labels:
+    app: ping-exporter
+    release: "{{$.Release.Name}}"
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        name: ping-exporter-{{$prober}}
+        app: ping-exporter
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
+        prometheus.io/scrape: {{ $scrape | quote }}
+        prometheus.io/port: {{ $port | quote }}
+        prometheus.io/targets: {{ prometheus | quote }}
+    spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{$prober}}
+      volumes:
+        - name: ping-exporter
+          configMap:
+            name: ping-exporter
+      containers:
+        - name: ping-exporter-{{$prober}}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /app/ping_exporter
+          args:
+            - --ping.interval={{ .Values.pingInterval }}
+            - --ping.timeout={{ .Values.pingTimeout }}
+            - --ping.history-size={{ .Values.pingHistorySize }}
+            - --log.level={{ .Values.logLevel }}
+            - --metrics.deprecated=disable
+            - --config.path /config.yaml
+          volumeMounts:
+            - name: ping-exporter
+              mountPath: /
+          ports:
+            - name: metrics
+              containerPort: 9427
+              protocol: TCP
+         livenessProbe:
+            httpGet:
+              path: /
+              port: metrics
+            timeoutSeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: metrics
+---
+{{ end -}}
+{{ end -}}
