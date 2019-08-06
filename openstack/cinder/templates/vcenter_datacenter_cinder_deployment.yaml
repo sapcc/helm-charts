@@ -61,14 +61,10 @@ template: |
             value: cinder-volume-vmware-{= name =}
           livenessProbe:
             exec:
-              command:
-              - bash
-              - -e
-              - -c
-              - source <(grep -Pzo '\[keystone_authtoken\][^[]*' /etc/cinder/cinder.conf | tr -d '\000' | while read var equal val; do test "$equal" = "=" && echo export OS_${var^^}=${val} ; done); export OS_IDENTITY_API_VERSION=3; for backend in $(grep "^enabled_backends = " /etc/cinder/cinder-volume.conf | while read _ _ val; do tr -d ',' <<<"$val"; done); do test "$(openstack volume service list -f value --host "cinder-volume-vmware-{= name =}@$backend" -c State)" = "up"; done
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf"]
             initialDelaySeconds: 60
-            periodSeconds: 10
-            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 20
           resources:
             requests:
               cpu: "500m"
