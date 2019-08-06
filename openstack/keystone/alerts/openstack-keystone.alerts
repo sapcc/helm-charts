@@ -27,7 +27,7 @@ groups:
       description: Keystones database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
       summary: Keystone database cannot be scraped
 
-  - alert: OpenstackKeystoneApiDown
+  - alert: OpenstackKeystoneApiUp
     expr: up{component="keystone",type="api"} == 0
     for: 5m
     labels:
@@ -41,7 +41,7 @@ groups:
       description: A keystone-api pod on {{ $labels.instance}} is DOWN. The remaining ones should keep the service up.
       summary: A keystone server is DOWN
 
-  - alert: OpenstackKeystoneDatabaseDown
+  - alert: OpenstackKeystoneDatabaseUp
     expr: count(up{component="keystone-postgresql",type="database"} == 0) == count(up{component="keystone-postgresql",type="database"})
     for: 5m
     labels:
@@ -144,12 +144,12 @@ groups:
     labels:
       severity: critical
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: keystone
+      context: availability
       dashboard: health-blackbox-details
       meta: '{{ $labels.check }} API is down. See Sentry for details.'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+      playbook: 'docs/devops/alert/keystone/#{{ $labels.check }}'
     annotations:
       description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
       summary: '{{ $labels.check }} API down'
@@ -159,12 +159,12 @@ groups:
     labels:
       severity: critical
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: keystone
+      context: availability
       dashboard: health-blackbox-details
       meta: '{{ $labels.check }} API is flapping'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+      playbook: 'docs/devops/alert/keystone/#{{ $labels.check }}'
     annotations:
       description: '{{ $labels.check }} API is flapping for 30 minutes.'
       summary: '{{ $labels.check }} API flapping'
@@ -191,15 +191,15 @@ groups:
     labels:
       severity: critical
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: keystone
+      context: availability
       dashboard: health-datapath-details
-      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      meta: 'Datapath keystone {{ $labels.check }} is down for 15 minutes. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+      playbook: 'docs/devops/alert/keystone/#{{ $labels.check }}'
     annotations:
-      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
-      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is down'
+      description: 'Datapath keystone {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      summary: 'Datapath keystone {{ $labels.check }} is down'
 
   - alert: OpenstackKeystoneDatapathHalfDown
     expr: blackbox_datapath_status_gauge{service=~"keystone"} == 0.5
@@ -207,30 +207,30 @@ groups:
     labels:
       severity: warning
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: keystone
+      context: availability
       dashboard: health-datapath-details
-      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      meta: 'Datapath keystone {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+      playbook: 'docs/devops/alert/keystone/#{{ $labels.check }}'
     annotations:
-      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
-      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
+      description: 'Datapath keystone {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      summary: 'Datapath keystone {{ $labels.check }} is half down'
 
   - alert: OpenstackKeystoneDatapathFlapping
     expr: changes(blackbox_datapath_status_gauge{service=~"keystone"}[30m]) > 8
     labels:
       severity: warning
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: keystone
+      context: availability
       dashboard: health-datapath-details
-      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      meta: 'Datapath keystone {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+      playbook: 'docs/devops/alert/keystone/#{{ $labels.check }}'
     annotations:
-      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
-      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'
+      description: 'Datapath keystone {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      summary: 'Datapath keystone {{ $labels.check }} is flapping'
 
   - alert: OpenstackKeystoneDatabaseSize
     expr: predict_linear(pg_database_size_bytes{datname="keystone"}[1h], 24 * 3600) >= 10 * 1024^3
