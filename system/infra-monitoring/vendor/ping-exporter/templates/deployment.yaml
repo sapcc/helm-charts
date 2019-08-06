@@ -25,10 +25,23 @@ spec:
         - name: ping-exporter
           image: czerwonk/ping_exporter:latest
           imagePullPolicy: Always
-          env:
-            - name: CONFIG_FILE
-              value: "/ping-exporter/config.yaml"
-          volumeMounts:
-            - name: ping-exporter
-              mountPath: /ping-exporter
+          command:
+            - /app/ping_exporter
+          args:
+            - --ping.interval={{ .Values.pingInterval }}
+            - --ping.timeout={{ .Values.pingTimeout }}
+            - --ping.history-size={{ .Values.pingHistorySize }}
+            - --log.level={{ .Values.logLevel }}
+            - --metrics.deprecated=disable
+            {{- range $i, $config := .Values.static_ping_targets }}
+            - {{ $config.target | trim }}
+            {{- end }}
+          ports:
+            - name: metrics
+              containerPort: 9427
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: metrics
 {{ end }}
