@@ -92,3 +92,32 @@
       - '{__name__=~"^openstack_.+",project_id!=""}'
       - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
       - '{__name__=~"^security_group_(max|total)_entanglement$"}'
+
+- job_name: 'promtheus-infra-collector'
+  static_configs:
+    - targets: ['prometheus-infra-collector.infra-monitoring:9090']
+  metric_relabel_configs:
+    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
+      action: labeldrop
+    - action: drop
+      source_labels: [vmware_name]
+      regex: c_blackbox.*|c_regression.*
+    - source_labels: [ltmVirtualServStatName]
+      target_label: project_id
+      regex: /Project_(.*)/Project_.*
+    - source_labels: [ltmVirtualServStatName]
+      target_label: lb_id
+      regex: /Project_.*/Project_(.*)
+
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      # import any tenant-specific metric, except for those which already have been imported
+      - '{__name__=~"^snmp_f5_.+"}'
+      - '{__name__=~"^vcenter_cpu_.+"}'
+      - '{__name__=~"^vcenter_disk_.+"}'
+      - '{__name__=~"^vcenter_mem_.+"}'
+      - '{__name__=~"^vcenter_net_.+"}'
+      - '{__name__=~"^vcenter_virtualDisk_.+"}'
+      - '{__name__=~"^netapp_capacity_.+"}'
+      - '{__name__=~"^netapp_perf_.+"}'
