@@ -1,7 +1,4 @@
 {{ if .Values.enabled }}
-{{- $scrape := .Values.metrics.scrape -}}
-{{- $port := .Values.metrics.port -}}
-{{- $prometheus := .Values.metrics.prometheus -}}
 {{- $values := .Values -}}
 {{- range $i, $prober := .Values.pingProbers -}}
 {{ if ne $i 0 }}---{{ end }}
@@ -16,7 +13,7 @@ metadata:
     release: "{{$.Release.Name}}"
 
 spec:
-  replicas: 1
+  replicas: {{ $values.replicaCount }}
   template:
     metadata:
       labels:
@@ -24,9 +21,9 @@ spec:
         app: ping-exporter
         source: {{$prober}}
       annotations:
-        prometheus.io/scrape: {{ $scrape | quote }}
-        prometheus.io/port: {{ $port | quote }}
-        prometheus.io/targets: {{ $prometheus | quote }}
+        prometheus.io/scrape: {{ $values.metrics.scrape | quote }}
+        prometheus.io/port: {{ $values.metrics.port | quote }}
+        prometheus.io/targets: {{ $values.metrics.prometheus | quote }}
     spec:
       nodeSelector:
         failure-domain.beta.kubernetes.io/zone: {{$prober}}
