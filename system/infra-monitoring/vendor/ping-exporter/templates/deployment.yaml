@@ -23,14 +23,15 @@ spec:
             name: ping-exporter
       containers:
         - name: ping-exporter
-          image: czerwonk/ping_exporter:latest
-          imagePullPolicy: Always
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.pullPolicy }}
           command:
             - /app/ping_exporter
           args:
             - --ping.interval={{ .Values.pingInterval }}
             - --ping.timeout={{ .Values.pingTimeout }}
             - --ping.history-size={{ .Values.pingHistorySize }}
+            - --ping.size={{ .Values.pingPayloadSize }}
             - --log.level={{ .Values.logLevel }}
             - --metrics.deprecated=disable
             {{- range $i, $config := .Values.static_ping_targets }}
