@@ -2,6 +2,7 @@
 {{- $scrape := .Values.metrics.scrape -}}
 {{- $port := .Values.metrics.port -}}
 {{- $prometheus := .Values.metrics.prometheus -}}
+{{- $values := .Values -}}
 {{- range $i, $prober := .Values.pingProbers -}}
 {{ if ne $i 0 }}---{{ end }}
 
@@ -31,18 +32,18 @@ spec:
         failure-domain.beta.kubernetes.io/zone: {{$prober}}
       containers:
         - name: ping-exporter-{{$prober}}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.pullPolicy }}
+          image: "{{ $values.image.repository }}:{{ $values.image.tag }}"
+          imagePullPolicy: {{ $values.pullPolicy }}
           command:
             - /app/ping_exporter
           args:
-            - --ping.interval={{ .Values.pingInterval }}
-            - --ping.timeout={{ .Values.pingTimeout }}
-            - --ping.history-size={{ .Values.pingHistorySize }}
-            - --ping.size={{ .Values.pingPayloadSize }}
-            - --log.level={{ .Values.logLevel }}
+            - --ping.interval={{ $values.pingInterval }}
+            - --ping.timeout={{ $values.pingTimeout }}
+            - --ping.history-size={{ $values.pingHistorySize }}
+            - --ping.size={{ $values.pingPayloadSize }}
+            - --log.level={{ $values.logLevel }}
             - --metrics.deprecated=disable
-            {{- range $i, $config := .Values.static_ping_targets }}
+            {{- range $i, $config := $values.static_ping_targets }}
             - {{ $config.target | trim }}
             {{- end }}
           ports:
