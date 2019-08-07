@@ -63,9 +63,24 @@
 # Since some of these metrics are already aggregated (e.g. the ones for
 # Castellum), it may be necessary to add a maia-prometheus-collector that
 # performs the aggregations before metrics are pulled into this Prometheus.
-- job_name: 'kube-system'
+#- job_name: 'kube-system'
+#  static_configs:
+#    - targets: ['prometheus-collector.kube-monitoring:9090']
+#  metric_relabel_configs:
+#    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
+#      action: labeldrop
+#  metrics_path: '/federate'
+#  params:
+#    'match[]':
+#      # import any tenant-specific metric, except for those which already have been imported
+#      - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
+#      - '{__name__=~"^openstack_.+",project_id!=""}'
+#      - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
+#      - '{__name__=~"^security_group_(max|total)_entanglement$"}'
+
+- job_name: 'promtheus-openstack'
   static_configs:
-    - targets: ['prometheus-collector.kube-monitoring:9090']
+    - targets: ['prometheus-openstack.prometheus-openstack:9090']
   metric_relabel_configs:
     - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
       action: labeldrop
