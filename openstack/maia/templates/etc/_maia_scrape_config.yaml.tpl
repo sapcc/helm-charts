@@ -78,7 +78,7 @@
 #      - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
 #      - '{__name__=~"^security_group_(max|total)_entanglement$"}'
 
-- job_name: 'promtheus-openstack'
+- job_name: 'prometheus-openstack'
   static_configs:
     - targets: ['prometheus-openstack.prometheus-openstack:9090']
   metric_relabel_configs:
