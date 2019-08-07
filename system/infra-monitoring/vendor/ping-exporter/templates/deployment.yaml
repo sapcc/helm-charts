@@ -1,4 +1,7 @@
 {{ if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $prometheus := .Values.metrics.prometheus -}}
 
 kind: Deployment
 apiVersion: extensions/v1beta1
@@ -16,6 +19,10 @@ spec:
       labels:
         name: ping-exporter
         app: ping-exporter
+      annotations:
+        prometheus.io/scrape: {{ $scrape | quote }}
+        prometheus.io/port: {{ $port | quote }}
+        prometheus.io/targets: {{ $prometheus | quote }}
     spec:
       containers:
         - name: ping-exporter
