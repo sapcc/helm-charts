@@ -93,7 +93,7 @@
       - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
       - '{__name__=~"^security_group_(max|total)_entanglement$"}'
 
-- job_name: 'promtheus-infra-collector'
+- job_name: 'prometheus-infra-collector'
   static_configs:
     - targets: ['prometheus-infra-collector.infra-monitoring:9090']
   metric_relabel_configs:
