@@ -1,4 +1,4 @@
-{{- if and (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (contains ",nsxv3" .Values.ml2_mechanismdrivers ) }}
+{{- if  (contains ",nsxv3" .Values.ml2_mechanismdrivers ) }}
 apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
@@ -94,6 +94,26 @@ template: |
             name: ml2-conf-nsxv3
             subPath: ml2-nsxv3.ini
             readOnly: true
+        - name: exporter
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/nsx-t-exporter:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            {%- set bb = name | replace( "bb", "") | int %}
+            {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
+            - name: NSXV3_LOGIN_HOST
+              value: {= hostname =}
+            - name: NSXV3_LOGIN_PORT
+              value: "443"
+            - name: NSXV3_LOGIN_USER
+              value: "admin"
+            - name: NSXV3_LOGIN_PASSWORD
+              value: {= username | derive_password(hostname) | quote =}
+            - name: NSXV3_REQUESTS_PER_SECOND
+              value: "10"
+            - name: NSXV3_SUPPRESS_SSL_WORNINGS
+              value: "true"
+            - name: SCRAP_PORT
+              value: "9191"
         volumes:
         - name: etcneutron
           emptyDir: {}
