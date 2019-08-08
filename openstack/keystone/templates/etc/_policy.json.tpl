@@ -43,15 +43,15 @@
     "identity:update_limit": "rule:admin_required",
     "identity:delete_limit": "rule:admin_required",
 
-    "identity:get_domain": "rule:cloud_admin or rule:admin_and_matching_domain_id or project.domain.id:%(target.domain.id)s or rule:cloud_viewer",
-    "identity:list_domains": "rule:cloud_admin or rule:cloud_viewer",
+    "identity:get_domain": "rule:cloud_admin or rule:admin_and_matching_domain_id or project.domain.id:%(target.domain.id)s or rule:cloud_viewer or role:role_viewer",
+    "identity:list_domains": "rule:cloud_admin or rule:cloud_viewer or role:role_viewer",
     "identity:create_domain": "rule:cloud_admin",
     "identity:update_domain": "rule:cloud_admin",
     "identity:delete_domain": "rule:cloud_admin",
 
     "admin_and_matching_target_project_domain_id": "rule:admin_required and domain_id:%(target.project.domain_id)s",
     "admin_and_matching_project_domain_id": "rule:admin_required and domain_id:%(project.domain_id)s",
-    "identity:get_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id or project_id:%(target.project.id)s or rule:cloud_viewer",
+    "identity:get_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id or project_id:%(target.project.id)s or rule:cloud_viewer or role:role_viewer",
     "identity:list_projects": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:cloud_viewer",
     "identity:list_user_projects": "rule:owner or rule:admin_and_matching_domain_id or rule:cloud_viewer",
     "identity:create_project": "rule:cloud_admin or rule:admin_and_matching_project_domain_id",
@@ -67,7 +67,7 @@
 
     "admin_and_matching_target_user_domain_id": "rule:admin_required and domain_id:%(target.user.domain_id)s",
     "admin_and_matching_user_domain_id": "rule:admin_required and domain_id:%(user.domain_id)s",
-    "identity:get_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id or rule:owner or rule:cloud_viewer",
+    "identity:get_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id or rule:owner or rule:cloud_viewer or role:role_viewer",
     "identity:list_users": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:cloud_viewer",
     "identity:create_user": "rule:cloud_admin or rule:admin_and_matching_user_domain_id",
     "identity:update_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id",
@@ -75,7 +75,7 @@
 
     "admin_and_matching_target_group_domain_id": "rule:admin_required and domain_id:%(target.group.domain_id)s",
     "admin_and_matching_group_domain_id": "rule:admin_required and domain_id:%(group.domain_id)s",
-    "identity:get_group": "rule:cloud_admin or rule:admin_and_matching_target_group_domain_id or rule:cloud_viewer",
+    "identity:get_group": "rule:cloud_admin or rule:admin_and_matching_target_group_domain_id or rule:cloud_viewer or role:role_viewer",
     "identity:list_groups": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:cloud_viewer",
     "identity:list_groups_for_user": "rule:cloud_admin or rule:owner or rule:admin_and_matching_target_user_domain_id or rule:cloud_viewer",
     "identity:create_group": "rule:cloud_admin or rule:admin_and_matching_group_domain_id",
