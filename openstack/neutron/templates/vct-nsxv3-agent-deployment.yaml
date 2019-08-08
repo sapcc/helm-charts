@@ -1,4 +1,4 @@
-{{- if  (contains ",nsxv3" .Values.ml2_mechanismdrivers ) }}
+{{- if and (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (contains ",nsxv3" .Values.ml2_mechanismdrivers) }}
 apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
@@ -35,6 +35,9 @@ template: |
           name: neutron-nsxv3-agent-{= name =}
         annotations:
           configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "9191"
+          prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
       spec:
         containers:
         - name: neutron-nsxv3-agent
