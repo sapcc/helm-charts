@@ -1,4 +1,6 @@
 - job_name: 'maia-exporters'
+  scrape_interval: 1m
+  scrape_timeout: 55s
   kubernetes_sd_configs:
     - role: endpoints
   relabel_configs:
@@ -79,6 +81,8 @@
 #      - '{__name__=~"^security_group_(max|total)_entanglement$"}'
 
 - job_name: 'prometheus-openstack'
+  scrape_interval: 1m
+  scrape_timeout: 55s
   static_configs:
     - targets: ['prometheus-openstack.prometheus-openstack:9090']
   metric_relabel_configs:
@@ -94,6 +98,8 @@
       - '{__name__=~"^security_group_(max|total)_entanglement$"}'
 
 - job_name: 'prometheus-infra-collector'
+  scrape_interval: 1m
+  scrape_timeout: 55s
   static_configs:
     - targets: ['prometheus-infra-collector.infra-monitoring:9090']
   metric_relabel_configs:
