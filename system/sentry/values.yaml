@@ -97,10 +97,10 @@ pgmetrics:
 
     sentry_unresolved_issues_nova:
       query: >
-        SELECT o.slug AS organization, p.slug AS project, message FROM sentry_groupedmessage gm
+        SELECT o.slug AS organization, p.slug AS project, message, COUNT(*) FROM sentry_groupedmessage gm
           JOIN sentry_project p ON gm.project_id = p.id
           JOIN sentry_organization o ON p.organization_id = o.id
-         WHERE gm.status = 0 AND gm.project_id = 22
+         WHERE gm.status = 0 AND p.slug = 'nova'
          GROUP BY o.slug, p.slug, message
       metrics:
         - organization: { usage: LABEL, description: "Sentry organization" }
