@@ -32,6 +32,9 @@
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
+  metric_relabel_configs:
+    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
+      action: labeldrop
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
