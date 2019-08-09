@@ -20,6 +20,7 @@
       - '{job="snmp"}'
       - '{job=~"vcenter-exporter-.+"}'
       - '{job=~"blackbox/.+"}'
+      - '{job=~"ping_.+"}'
 
   relabel_configs:
     - action: replace
@@ -31,12 +32,14 @@
       target_label: cluster_type
       replacement: controlplane
   metric_relabel_configs:
-  - source_labels: [component, cluster]
-    separator: ;
-    regex: es-exporter-logs;(.+)
-    target_label: elastic_cluster
-    replacement: $1
-    action: replace
+    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
+      action: labeldrop
+    - source_labels: [component, cluster]
+      separator: ;
+      regex: es-exporter-logs;(.+)
+      target_label: elastic_cluster
+      replacement: $1
+      action: replace
 
   {{ if .Values.authentication.enabled }}
   tls_config:
