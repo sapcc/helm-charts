@@ -32,10 +32,8 @@ allow_automatic_l3agent_failover = {{ .Values.allow_automatic_l3agent_failover |
 # New DHCP Agent
 {{- if .Values.agent.multus }}
 network_scheduler_driver = neutron.scheduler.dhcp_agent_scheduler.AZAwareWeightScheduler
-allow_automatic_dhcp_failover = true
-{{- else }}
-allow_automatic_dhcp_failover = {{ .Values.allow_automatic_dhcp_failover | default "false" }}
 {{- end }}
+allow_automatic_dhcp_failover = {{ .Values.allow_automatic_dhcp_failover | default "false" }}
 dhcp_agents_per_network = 2
 dhcp_lease_duration = {{ .Values.dhcp_lease_duration | default 86400 }}
 
