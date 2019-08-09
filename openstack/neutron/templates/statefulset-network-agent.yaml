@@ -21,6 +21,7 @@ spec:
       name: neutron-network-agent-{{ $az }}
   serviceName: neutron-network-agent
   podManagementPolicy: "Parallel"
+  replicas: 3
   template:
     metadata:
       annotations:
@@ -38,7 +39,7 @@ spec:
         - name: neutron-dhcp-agent
           image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "bash", "-c", "echo -e \"[DEFAULT]\\nhost = $NODE_NAME\\n\" > /etc/neutron/hostname.conf && neutron-dhcp-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/dhcp-agent.ini --config-file /etc/neutron/linux-bridge.ini --config-file /etc/neutron/az-{{ $az }}.conf --config-file /etc/neutron/hostname.conf"]
+          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -47,11 +48,6 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
-            - name: NODE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
           readinessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/hostname.conf", "--dhcp_ready"]
@@ -180,7 +176,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "bash", "-c", "echo -e \"[DEFAULT]\\nhost = $NODE_NAME\\n\" > /etc/neutron/hostname.conf && neutron-linuxbridge-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/linux-bridge.ini --config-file /etc/neutron/hostname.conf"]
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -189,11 +185,6 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
-            - name: NODE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
           livenessProbe:
             exec:
               command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/hostname.conf", "--binary", "neutron-linuxbridge-agent"]
