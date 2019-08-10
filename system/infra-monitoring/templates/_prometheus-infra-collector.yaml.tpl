@@ -121,9 +121,13 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
-# hack to mitigate false-positive snmp_asr_RedundancyGroup alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
+# hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
     - source_labels: [__name__, devicename]
       regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
+      replacement: '$2'
+      target_label: device
+    - source_labels: [__name__, devicename]
+      regex: 'snmp_asr_nat.+;(\w*-\w*-\w*)-(\S*).$'
       replacement: '$2'
       target_label: device
 {{- end }}
