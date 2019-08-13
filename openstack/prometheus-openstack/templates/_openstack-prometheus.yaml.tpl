@@ -32,6 +32,10 @@
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
+  # Add region label to all metrics, don't delete this without knowing what you are doing.
+  - action: replace
+    target_label: region
+    replacement: {{ required ".Values.global.region undefined" .Values.global.region }}
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -67,3 +71,7 @@
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
+  # Add region label to all metrics, don't delete this without knowing what you are doing.
+  - action: replace
+    target_label: region
+    replacement: {{ required ".Values.global.region undefined" .Values.global.region }}    
