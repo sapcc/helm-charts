@@ -73,6 +73,18 @@
   metric_relabel_configs:
     - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
       action: labeldrop
+    - source_labels: [__name__, prober ]
+      regex: 'ping_.+;(\w*-\w*-\w*)'
+      replacement: '$1'
+      target_label: probed_from
+    - source_labels: [__name__, target]
+      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
+      replacement: '$2'
+      target_label: probed_to
+    - source_labels: [__name__, target]
+      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
+      replacement: '$1'
+      target_label: probed_to_type
 
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
