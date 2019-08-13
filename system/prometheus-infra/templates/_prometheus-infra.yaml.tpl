@@ -8,8 +8,6 @@
 
   params:
     'match[]':
-      - '{__name__=~"^ALERTS"}'
-      - '{__name__=~"up"}'
       - '{app="cloudprober-exporter"}'
       - '{app="thousandeyes-exporter"}'
       - '{app="netapp-harvest"}'
