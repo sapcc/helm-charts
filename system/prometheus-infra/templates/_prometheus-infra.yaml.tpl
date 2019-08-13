@@ -14,6 +14,7 @@
       - '{app="thousandeyes-exporter"}'
       - '{app="netapp-harvest"}'
       - '{app="netapp-api-exporter"}'
+      - '{app="vasa-exporter"}'
       - '{job="baremetal/arista"}'
       - '{job="bios/ironic"}'
       - '{job="ipmi/ironic"}'
