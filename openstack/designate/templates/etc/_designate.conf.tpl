@@ -383,6 +383,8 @@ notify = {{ .Values.worker_notify }}
 #connection = sqlite:///$state_path/designate.sqlite
 connection = mysql+pymysql://root:{{.Values.mariadb.root_password}}@designate-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/{{.Values.db_name}}
 
+mysql_sql_mode = TRADITIONAL
+
 #connection_debug = 0
 #connection_trace = False
 #sqlite_synchronous = True
