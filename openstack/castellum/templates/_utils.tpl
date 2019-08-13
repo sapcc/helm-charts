@@ -27,6 +27,10 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: /etc/castellum/policy.json
 - name: CASTELLUM_SENTRY_DSN
   valueFrom: { secretKeyRef: { name: sentry, key: castellum.DSN.public } }
+- name: CASTELLUM_RABBITMQ_URI
+  value: "{{ .Values.rabbitmq.uri }}"
+- name: CASTELLUM_RABBITMQ_QUEUE_NAME
+  value: "{{ .Values.rabbitmq.queue_name }}"
 - name: OS_AUTH_URL
   value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
 - name: OS_AUTH_VERSION
