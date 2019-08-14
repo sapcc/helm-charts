@@ -5,10 +5,16 @@ Helm chart for Kubernetes Control Plane Monitoring and Metrics Collection.
 
 The default installation contains multiple components:
 - [prometheus-server](https://prometheus.io/)
-- [node-exporter](https://github.com/helm/charts/tree/master/stable/prometheus-node-exporter)
+- [prometheus-node-exporter](https://github.com/helm/charts/tree/master/stable/prometheus-node-exporter)
+- [event-exporter](../../prometheus-exporters/event-exporter)
+- [fluent-bit](https://github.com/helm/charts/tree/master/stable/fluent-bit)
 - [kube-state-metrics](https://github.com/helm/charts/tree/master/stable/kube-state-metrics)
-- Additional Prometheus exporters. See [requirements.yaml](./requirements.yaml)
-
+- [k8s-secrets-certificate-exporter](../../prometheus-exporters/k8s-secrets-certificate-exporter)
+- [ntp-exporter](../../prometheus-exporters/ntp-exporter)
+- [oomkill-exporter](../../prometheus-exporters/oomkill-exporter)
+- [ping-exporter](../../prometheus-exporters/ping-exporter)
+- [prometheus-kubernetes-rules](../../prometheus-rules/prometheus-kubernetes-rules)
+- Additional Prometheus exporters. See full list in [requirements.yaml](./requirements.yaml)
 
 ## Prometheis
 
