@@ -1,7 +1,7 @@
 - job_name: 'prometheus-infra-collection'
   scheme: https
-  scrape_interval: 30s
-  scrape_timeout: 25s
+  scrape_interval: 60s
+  scrape_timeout: 55s
 
   honor_labels: true
   metrics_path: '/federate'
