@@ -1,3 +1,7 @@
+## 1.1.21
+
+* Configurable `affinity` and `nodeSelector` for Prometheus server instances.
+
 ## 1.1.20
 
 * Extend clusterrole to for kubelet (`nodes/metrics`), cAdvisor (`nodes/metrics/cAdvisor`) metrics.
