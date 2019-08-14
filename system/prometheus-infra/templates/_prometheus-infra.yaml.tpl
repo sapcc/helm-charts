@@ -31,7 +31,7 @@
       target_label: cluster_type
       replacement: controlplane
   metric_relabel_configs:
-    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
+    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|prometheus|prometheus_replica"
       action: labeldrop
     - source_labels: [component, cluster]
       separator: ;
