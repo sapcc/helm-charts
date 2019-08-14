@@ -34,11 +34,9 @@
     - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|cluster|cluster_type|prometheus|prometheus_replica"
       action: labeldrop
     - source_labels: [component, cluster]
-      separator: ;
       regex: es-exporter-logs;(.+)
       target_label: elastic_cluster
-      replacement: $1
-      action: replace
+      replacement: '$1'
 
   {{ if .Values.authentication.enabled }}
   tls_config:
