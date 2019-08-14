@@ -108,8 +108,13 @@ region = {{ .Values.global.region }}
 [volume]
 catalog_type = volumev3
 endpoint_type = internal
-min_microversio = 3.0
+min_microversion = 3.0
 max_microversion = latest
+vendor_name = VMware
+disk_format = vmdk
+
+[volume-feature-enabled]
+backup = false
 
 [service_available]
 manila = True
