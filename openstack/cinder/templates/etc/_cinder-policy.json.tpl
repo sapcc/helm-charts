@@ -70,7 +70,7 @@
   "volume_extension:volume_admin_actions:migrate_volume_completion": "rule:context_is_admin",
 
   "volume_extension:volume_host_attribute": "rule:context_is_admin",
-  "volume_extension:volume_tenant_attribute": "rule:context_is_admin",
+  "volume_extension:volume_tenant_attribute": "rule:context_is_viewer",
   "volume_extension:volume_mig_status_attribute": "rule:context_is_admin",
   "volume_extension:hosts": "rule:context_is_admin",
   "volume_extension:services:index": "rule:context_is_admin",
