@@ -132,6 +132,19 @@ thanos:
   # Defaults to `thanos-peers.{{ .Release.Namespace }}.svc:10900`
   peers: ""
 
+  # Deploy an OpenstackSeed custom resource triggering creation of an Openstack user and Swift container used to persist Prometheus metrics.
+  # See: https://github.com/sapcc/kubernetes-operators/tree/master/openstack-seeder
+  seed:
+    # If disabled the user and container need to exist.
+    enabled: true
+
+    # List of required OpenstackSeeds that need to be resolved before.
+    # Warning: This list is rather specific to SAP Converged Cloud.
+    requires:
+      - swift/swift-seed
+      - monsoon3/domain-ccadmin-seed
+      - monsoon3/domain-default-seed
+
   # Configuration for OpenStack Swift Thanos storage backend.
   swiftStorageConfig: {}
     # authURL:

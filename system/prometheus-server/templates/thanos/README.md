@@ -1,12 +1,18 @@
 Thanos
 ------
 
-[Thanos](https://github.com/improbable-eng/thanos) ready for SAP Converged Cloud Enterprise Edition.  
-Comes with OpenStack Swift storage backend configuration, OpenStackSeed for Swift, etc. .
+[Thanos](https://github.com/improbable-eng/thanos) ready for SAP Converged Cloud.
+
+Enabling Thanos will install the following components:
+- Thanos compactor
+- Thanos query
+- Thanos store
+- OpenstackSeed for Swift service user and container
+- Thanos sidecar for Prometheus server
 
 ## Configuration
 
-Minimal configuration for Thanos@SAP Converged Cloud Enterprise Edition:
+Minimal configuration for Thanos@SAP Converged Cloud:
 
 ```
 # How long metrics are retained. 
@@ -19,6 +25,8 @@ persistence:
 
 thanos:
   enabled: true
+  
+  # Create an OpenStack user in the given scope with required permissions and initialize container in Swift.
   swiftStorageConfig:
     authURL:            https://<keystone>/v3
     userName:           <userName>
@@ -30,6 +38,18 @@ thanos:
     regionName:         <regionName>
     containerName:      <swiftContainerName>
 ```
+
+An existing OpenStack user and Swift container can be used by disabled the OpenStack seed:
+```
+thanos:
+  seed:
+    enabled: false
+  
+  swiftStorageConfig:
+    ...
+```
+
+**Note**: The user must have permissions to read from/write to the Swift container in the given scope.  
 
 ## Troubleshooting
 

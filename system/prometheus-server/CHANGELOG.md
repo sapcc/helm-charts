@@ -1,3 +1,7 @@
+## 1.1.22
+
+* Configurable OpenstackSeed for Thanos integration. Extend [Thanos README](./templates/thanos/README.md).
+
 ## 1.1.21
 
 * Configurable `affinity` and `nodeSelector` for Prometheus server instances.
