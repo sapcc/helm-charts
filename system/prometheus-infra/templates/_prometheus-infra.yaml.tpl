@@ -18,8 +18,9 @@
       - '{job="bios/ironic"}'
       - '{job="ipmi/ironic"}'
       - '{job="snmp"}'
-      - '{job=~"vcenter-exporter-.+"}'
       - '{job=~"blackbox/.+"}'
+      - '{__name__=~"^vcenter_.+"}'
+      - '{__name__=~"^network_apic_.+"}'
 
   relabel_configs:
     - action: replace
