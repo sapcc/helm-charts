@@ -4,43 +4,11 @@ global:
 
   clusterType: controlplane
 
-  ipmi_service_discovery:
-    enabled: false
-    configmap_name: ipmi-sd
-    netbox:
-      enabled: false
-    # api_token:
-
-  ipmi_exporter:
-    enabled: false
-    netbox:
-      enabled: false
-
-  arista_exporter:
-    enabled: false
-    configmap_name: arista-sd
-
-  # placeholder. the full list of regions is set via the pipeline
-  regions:
-    - "staging"
-
-  # Remove the following after transition to operated Prometheus is completed.
-  prometheus:
-    image: prom/prometheus
-    tag: v2.8.0
-
-  configmap_reload:
-    image:
-      repository: jimmidyson/configmap-reload
-      tag: v0.2.2
-
-  # Prometheus via deployment.
-  prometheus_deploy:
-    enabled: true
-
   # Prometheus via operator.
   prometheus_operated:
-    # The Prometheus collector is only used in the bm controlplane to aggregate cpu metrics.
+    # The Prometheus collector is only used in the baremetal controlplane to aggregate cpu metrics and
+    # might be unnecessary in other environments.
+    # If the collector is disabled a `frontend` Prometheus is deployed.
     collector:
       enabled: true
 
@@ -256,11 +224,6 @@ fluent-bit:
 
   serviceAccount:
     create: true
-
-# OpenStack namespace exporter.
-# Disabled by default. Enabled via regional secrets.
-ns-exporter:
-  enabled: false
 
 ping-exporter:
   enabled: false
