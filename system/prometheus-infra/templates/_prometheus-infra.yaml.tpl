@@ -31,6 +31,8 @@
       target_label: cluster_type
       replacement: controlplane
   metric_relabel_configs:
+    - regex: "prometheus|prometheus_replica|job|exported_job|cluster|cluster_type|kubernetes_namespace|kubernetes_name|namespace|pod"
+      action: labeldrop
     - source_labels: [component, cluster]
       regex: es-exporter-logs;(.+)
       target_label: elastic_cluster
