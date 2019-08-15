@@ -13,7 +13,7 @@ groups:
     annotations:
       description: The disk usage on {{ $labels.host }}:{{ $labels.mount }} in the {{ $labels.cluster }} cluster is above 85% now.
                    Please consider cleaning up elastic search or lower the retention period for the logs.
-      summary: Elastic Search might run out of disk space
+      summary: {{ $labels.region }} Elastic Search might run out of disk space
 
   - alert: OpenstackElkClusterRed
     expr: elasticsearch_cluster_health_status{color="red"} == 1
@@ -26,7 +26,7 @@ groups:
       playbook: docs/support/playbook/elk_kibana_issues.html
     annotations:
       description: Cluster {{ $labels.cluster }} is RED. Please check all nodes.
-      summary: Elastic Search {{ $labels.cluster }} cluster is RED
+      summary: {{ $labels.region }} Elastic Search {{ $labels.cluster }} cluster is RED
 
   - alert: OpenstackElkClusterYellow
     expr: elasticsearch_cluster_health_status{cluster="elkelasticsearch",color="yellow"}
@@ -41,4 +41,4 @@ groups:
     annotations:
       description: Cluster {{ $labels.cluster }} is YELLOW. Please check the data
         nodes one or more are missing.
-      summary: Elastic Search {{ $labels.cluster }} cluster status is YELLOW
+      summary: {{ $labels.region }} Elastic Search {{ $labels.cluster }} cluster status is YELLOW
