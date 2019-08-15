@@ -1,4 +1,3 @@
-{{- if .Values.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 
@@ -14,12 +13,12 @@ spec:
         app: disco
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ default 9091 .Values.metricPort | quote }}
-        prometheus.io/targets: "kubernetes"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
       containers:
         - name: disco
-          image: "{{.Values.image.repository}}:{{.Values.image.tag}}"
+          image: {{ include "image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
           args:
             - disco
@@ -38,9 +37,8 @@ spec:
               mountPath: /etc/disco/config/
           ports:
             - name: metrics
-              containerPort: {{ default 9091 .Values.metricPort }}
+              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
       volumes:
         - name: config
           configMap:
             name: disco-config
-{{- end }}

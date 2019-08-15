@@ -1,4 +1,3 @@
-{{- if .Values.vice }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -17,6 +16,7 @@ spec:
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: {{ default 9091 .Values.president.metricsPort | quote }}
+        prometheus.io/targets:  {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
@@ -56,4 +56,3 @@ spec:
       serviceAccount: {{ required ".Values.president.rbac.serviceAccountName" .Values.president.rbac.serviceAccountName }}
       serviceAccountName: {{ required ".Values.president.rbac.serviceAccountName" .Values.president.rbac.serviceAccountName }}
       {{- end }}
-{{- end}}
