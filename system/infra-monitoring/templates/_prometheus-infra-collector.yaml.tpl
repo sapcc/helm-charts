@@ -115,9 +115,12 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/switches.json
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
   metrics_path: /snmp
   relabel_configs:
+    - source_labels: [job]
+      regex: snmp
+      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
@@ -194,9 +197,12 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/control_plane.json
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
   metrics_path: /ipmi
   relabel_configs:
+    - source_labels: [job]
+      regex: cp/netbox
+      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
