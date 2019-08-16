@@ -2,7 +2,7 @@ groups:
 - name: openstack-elk.alerts
   rules:
   - alert: OpenstackElkPredictOutOfDiskSpace
-    expr: elasticsearch_data_diskspace_used_percentage{mount=~"/data \\(10.*"} > 85
+    expr: elasticsearch_filesystem_data_free_bytes * 100 / elasticsearch_filesystem_data_size_bytes < 5
     for: 30m
     labels:
       context: diskspace
@@ -11,9 +11,9 @@ groups:
       tier: os
       playbook: docs/support/playbook/elk_kibana_issues.html
     annotations:
-      description: {{ $labels.region }} The disk usage for the {{ $labels.cluster }} cluster is above 85% now.
+      description: '{{ $labels.region }} The disk usage for the {{ $labels.cluster }} cluster is above 95% now.'
                    Please consider cleaning up elastic search or lower the retention period for the logs.
-      summary: ELK in {{ $labels.region }} might run out of disk space
+      summary: 'ELK in {{ $labels.region }} might run out of disk space'
 
   - alert: OpenstackElkClusterRed
     expr: elasticsearch_cluster_health_status{color="red"} == 1
@@ -25,8 +25,8 @@ groups:
       tier: os
       playbook: docs/support/playbook/elk_kibana_issues.html
     annotations:
-      description: ELK cluster {{ $labels.cluster }} in {{ $labels.region }} is RED. Please check all nodes.
-      summary: ELK {{ $labels.cluster }} cluster in {{ $labels.region }}  }} is RED
+      description: 'ELK cluster {{ $labels.cluster }} in {{ $labels.region }} is RED. Please check all nodes.'
+      summary: 'ELK {{ $labels.cluster }} cluster in {{ $labels.region }}  }} is RED'
 
   - alert: OpenstackElkClusterYellow
     expr: elasticsearch_cluster_health_status{cluster="elkelasticsearch",color="yellow"}
@@ -39,6 +39,6 @@ groups:
       tier: os
       playbook: docs/support/playbook/elk_kibana_issues.html
     annotations:
-      description: ELK cluster {{ $labels.cluster }} in {{ $labels.region }} is YELLOW. Please check all nodes.
+      description: 'ELK cluster {{ $labels.cluster }} in {{ $labels.region }} is YELLOW. Please check all nodes.'
         nodes one or more are missing.
-      summary: ELK {{ $labels.cluster }} cluster in {{ $labels.region }}  }} is YELLOW
+      summary: 'ELK {{ $labels.cluster }} cluster in {{ $labels.region }}  }} is YELLOW'
