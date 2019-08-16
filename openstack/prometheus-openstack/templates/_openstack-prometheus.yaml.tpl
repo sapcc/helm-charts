@@ -36,6 +36,16 @@
   - action: replace
     target_label: region
     replacement: {{ required ".Values.global.region undefined" .Values.global.region }}
+  {{ if .Values.global.clusterType }}
+  - action: replace
+    target_label: cluster_type
+    replacement: {{ .Values.global.clusterType }}
+  {{ end }}
+  {{ if .Values.global.cluster }}
+  - action: replace
+    target_label: cluster
+    replacement: {{ .Values.global.cluster }}
+  {{ end }}
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -75,3 +85,13 @@
   - action: replace
     target_label: region
     replacement: {{ required ".Values.global.region undefined" .Values.global.region }}    
+  {{ if .Values.global.clusterType }}
+  - action: replace
+    target_label: cluster_type
+    replacement: {{ .Values.global.clusterType }}
+  {{ end }}
+  {{ if .Values.global.cluster }}
+  - action: replace
+    target_label: cluster
+    replacement: {{ .Values.global.cluster }}
+  {{ end }}
