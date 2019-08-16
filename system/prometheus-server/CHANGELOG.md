@@ -1,3 +1,7 @@
+## 1.1.23
+
+* Adds `region` and if set add `cluster_type`, `cluster` label to all metrics. 
+
 ## 1.1.22
 
 * Configurable OpenstackSeed for Thanos integration. Extend [Thanos README](./templates/thanos/README.md).
