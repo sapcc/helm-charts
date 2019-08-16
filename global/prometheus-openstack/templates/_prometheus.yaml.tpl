@@ -12,6 +12,7 @@
       - '{__name__=~"^global:.+"}'
       - '{__name__=~"up"}'
       - '{__name__=~"prometheus_build_version"}'
+      - '{__name__=~"blackbox_regression_duration_gauge"}'
 
   relabel_configs:
     - action: replace
