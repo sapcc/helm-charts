@@ -4,7 +4,7 @@ Kube monitoring
 Helm chart for Kubernetes Control Plane Monitoring and Metrics Collection.
 
 The default installation contains multiple components:
-- [prometheus-server](https://prometheus.io/)
+- [prometheus-server](../prometheus-server)
 - [prometheus-node-exporter](https://github.com/helm/charts/tree/master/stable/prometheus-node-exporter)
 - [event-exporter](../../prometheus-exporters/event-exporter)
 - [fluent-bit](https://github.com/helm/charts/tree/master/stable/fluent-bit)
