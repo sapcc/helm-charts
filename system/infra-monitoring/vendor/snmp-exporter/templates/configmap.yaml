@@ -35,12 +35,6 @@ data:
       version: {{ .Values.f5.version }}
       auth:
         community: {{ .Values.f5.community }}
-{{- if .Values.n9k.enabled }}
-{{ .Files.Get "_snmp-exporter-n9k.yaml" | indent 4}}
-      version: {{ .Values.n9k.version }}
-      auth:
-        community: {{ .Values.n9k.community }}
-{{- end }}
     asr04:
 {{ .Files.Get "_snmp-exporter-asr04.yaml" | indent 4}}
       version: {{ .Values.asr04.version }}
@@ -76,4 +70,19 @@ data:
         priv_password: {{ $switch.priv_password }}
         context_name: {{ $switch.context_name }}
 {{- end }}
+{{- end }}
+{{- if .Values.n9k.enabled }}
+    n9k:
+{{ .Files.Get "_snmp-exporter-n9k.yaml" | indent 4}}
+      version: {{ .Values.n9k.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.n9k.security_level }}
+        username: {{ .Values.n9k.username }}
+        password: {{ .Values.n9k.password }}
+        auth_protocol: {{ .Values.n9k.auth_protocol }}
+        priv_protocol: {{ .Values.n9k.priv_protocol }}
+        priv_password: {{ .Values.n9k.priv_password }}
 {{- end }}
