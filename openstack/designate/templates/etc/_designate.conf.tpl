@@ -381,7 +381,7 @@ notify = {{ .Values.worker_notify }}
 # Database connection string - to configure options for a given implementation
 # like sqlalchemy or other see below
 #connection = sqlite:///$state_path/designate.sqlite
-connection = mysql+pymysql://root:{{.Values.mariadb.root_password}}@designate-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/{{.Values.db_name}}
+connection = {{ include "db_url_mysql" . }}
 
 mysql_sql_mode = TRADITIONAL
 
