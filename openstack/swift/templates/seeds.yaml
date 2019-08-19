@@ -21,8 +21,8 @@ spec:
   - monsoon3/domain-cc3test-seed
 
   roles:
-  - swiftoperator
-  - swiftreseller
+  - name: swiftoperator
+  - name: swiftreseller
 
   services:
   - name: swift
@@ -43,13 +43,13 @@ spec:
   - name: Default
     users:
     - name: admin
-      roles:
+      role_assignments:
       - project: admin
         role: swiftreseller # used by openstack-seeder to create Swift accounts
     - name: swift
       description: 'Swift Service'
       password: '{{ $cluster.swift_service_password }}'
-      roles:
+      role_assignments:
       - project: service
         role: service
     - name: swift_dispersion
@@ -59,11 +59,11 @@ spec:
   - name: ccadmin
     projects:
     - name: cloud_admin
-      roles:
+      role_assignments:
       - group: CCADMIN_CLOUD_ADMINS
         role: swiftreseller
     - name: master # Swift account is enabled in swift-utils-seed
-      roles:
+      role_assignments:
       - group: CCADMIN_CLOUD_ADMINS
         role: swiftoperator
       - group: CCADMIN_DOMAIN_ADMINS
@@ -84,7 +84,7 @@ spec:
   - name: monsoon3
     projects:
     - name: cc-demo
-      roles:
+      role_assignments:
       - group: MONSOON3_DOMAIN_ADMINS
         role: swiftoperator
 {{- end }}

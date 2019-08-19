@@ -17,7 +17,7 @@ spec:
 {{- end }}
 
   roles:
-  - cloud_image_admin
+  - name: cloud_image_admin
 
   services:
   - name: glance
@@ -38,7 +38,7 @@ spec:
   - name: Default
     users:
     - name: admin
-      roles:
+      role_assignments:
       - domain: Default
         role: cloud_image_admin
       - project: admin
@@ -46,12 +46,12 @@ spec:
     - name: glance
       description: 'Glance Service'
       password: '{{.Values.global.glance_service_password}}'
-      roles:
+      role_assignments:
       - project: service
         role: service
     groups:
     - name: administrators
-      roles:
+      role_assignments:
       - domain: Default
         role: cloud_image_admin
       - project: admin
@@ -59,17 +59,17 @@ spec:
   - name: ccadmin
     projects:
     - name: master
-      roles:
+      role_assignments:
       - user: image-build@Default
         role: cloud_image_admin
     - name: BaremetalMonitoring
       description: 'Appliances used for monitoring bare metal servers'
-      roles:
+      role_assignments:
       - user: image-build@Default
         role: cloud_image_admin
     groups:
     - name: CCADMIN_CLOUD_ADMINS
-      roles:
+      role_assignments:
       - project: master
         role: cloud_image_admin
       - project: cloud_admin
@@ -79,17 +79,17 @@ spec:
   - name: tempest
     projects:
     - name: admin
-      roles:
+      role_assignments:
         - user: admin
           role: cloud_image_admin
         - user: admin@Default
           role: cloud_image_admin
     - name: tempest1
-      roles:
+      role_assignments:
         - user: admin@Default
           role: cloud_image_admin
     - name: tempest2
-      roles:
+      role_assignments:
         - user: admin@Default
           role: cloud_image_admin
 {{- end }}

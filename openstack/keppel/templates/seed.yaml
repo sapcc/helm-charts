@@ -19,10 +19,10 @@ spec:
   # - support seed
 
   roles:
-    - cloud_registry_admin
-    - cloud_registry_viewer
-    - registry_admin
-    - registry_viewer
+    - name: cloud_registry_admin
+    - name: cloud_registry_viewer
+    - name: registry_admin
+    - name: registry_viewer
 
   domains:
     - name: Default
@@ -30,18 +30,18 @@ spec:
         - name: keppel
           description: Keppel Service
           password: '{{.Values.keppel.service_password}}'
-          roles:
+          role_assignments:
             - project: service
               role:    service
         - name: admin
-          roles:
+          role_assignments:
           - domain: Default
             role: cloud_registry_admin
           - project: admin
             role: cloud_registry_admin
       groups:
         - name: administrators
-          roles:
+          role_assignments:
             - domain: Default
               role: cloud_registry_admin
             - project: admin
@@ -50,11 +50,11 @@ spec:
     - name: ccadmin
       groups:
         - name: CCADMIN_CLOUD_ADMINS
-          roles:
+          role_assignments:
             - project: cloud_admin
               role: cloud_registry_admin
         - name: CCADMIN_DOMAIN_REGISTRY_ADMINS
-          roles:
+          role_assignments:
             - domain: ccadmin
               role: registry_admin
 
@@ -62,7 +62,7 @@ spec:
     - name: {{.}}
       groups:
         - name: {{. | upper}}_DOMAIN_REGISTRY_ADMINS
-          roles:
+          role_assignments:
             - domain: {{.}}
               role: registry_admin
     {{- end }}

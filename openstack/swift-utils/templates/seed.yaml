@@ -33,7 +33,7 @@ spec:
       - name: swift_caretaker
         description: 'Swift Account Caretaker'
         password: {{ $.Values.swift_account_caretaker.password }}
-        roles:
+        role_assignments:
           - project: service
             role: service
           # needs to be admin in all domains to list projects
@@ -74,7 +74,7 @@ spec:
       projects:
         - name: master
           {{- if .Values.velero_backup_password }}
-          roles:
+          role_assignments:
             - user: velero_backup@Default
               role: service
           {{- end }}
@@ -89,14 +89,14 @@ spec:
       projects:
         - name: swift_dispersion
           description: 'dispersion of objects and containers'
-          roles:
+          role_assignments:
             - user: swift_dispersion@Default
               role: swiftoperator
           swift:
             enabled: true
         - name: swift_test
           description: 'used by automatic tests for Swift and related components'
-          roles:
+          role_assignments:
             - user: swift_caretaker@Default
               role: swiftoperator
           swift:
@@ -108,7 +108,7 @@ spec:
                   meta-web-listings: 'true'
       groups:
         - name: CC3TEST_DOMAIN_ADMINS
-          roles:
+          role_assignments:
             - project: swift_test
               role: admin
             - project: swift_test

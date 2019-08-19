@@ -19,11 +19,11 @@ spec:
   - monsoon3/domain-wbs-seed
 
   roles:
-  - compute_admin
-  - compute_viewer
-  - cloud_compute_admin
-  - cloud_network_admin
-  - cloud_volume_admin
+  - name: compute_admin
+  - name: compute_viewer
+  - name: cloud_compute_admin
+  - name: cloud_network_admin
+  - name: cloud_volume_admin
 
   services:
   - name: nova
@@ -71,7 +71,7 @@ spec:
   - name: Default
     users:
     - name: admin
-      roles:
+      role_assignments:
       - domain: Default
         role: cloud_compute_admin
       - project: admin
@@ -79,7 +79,7 @@ spec:
     - name: {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix | default "" }}
       description: Nova Service
       password: {{ .Values.global.nova_service_password | default (tuple . .Values.global.nova_service_user | include "identity.password_for_user") | quote }}
-      roles:
+      role_assignments:
       - project: service
         role: service
       - project: service
@@ -94,14 +94,14 @@ spec:
     - name: placement
       description: Placement API Service User
       password: {{ .Values.global.placement_service_password | default (tuple . .Values.global.placement_service_user | include "identity.password_for_user") | quote }}
-      roles:
+      role_assignments:
       - project: service
         role: service
       - project: service
         role: admin
     groups:
     - name: administrators
-      roles:
+      role_assignments:
       - domain: Default
         role: cloud_compute_admin
       - project: admin
@@ -110,7 +110,7 @@ spec:
   - name: ccadmin
     projects:
     - name: cloud_admin
-      roles:
+      role_assignments:
       - user: admin@Default
         role: cloud_compute_admin
       # permission to enumerate all projects and domains
@@ -123,11 +123,11 @@ spec:
         role: cloud_volume_admin
     groups:
     - name: CCADMIN_CLOUD_ADMINS
-      roles:
+      role_assignments:
       - project: cloud_admin
         role: cloud_compute_admin
     - name: CCADMIN_API_SUPPORT
-      roles:
+      role_assignments:
        - project: api_support
          role: cloud_compute_admin
        - project: api_tools
@@ -136,7 +136,7 @@ spec:
          role: cloud_compute_admin
          inherited: true
     - name: CCADMIN_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: cloud_compute_admin
       - project: compute_tools
@@ -145,7 +145,7 @@ spec:
         role: cloud_compute_admin
         inherited: true
     - name: CCADMIN_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - project: network_tools
@@ -154,7 +154,7 @@ spec:
         role: compute_viewer
         inherited: true
     - name: CCADMIN_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - project: storage_tools
@@ -163,7 +163,7 @@ spec:
         role: compute_viewer
         inherited: true
     - name: CCADMIN_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: ccadmin
@@ -173,35 +173,35 @@ spec:
   - name: bs
     groups:
     - name: BS_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: bs
         role: compute_admin
         inherited: true
     - name: BS_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: bs
         role: compute_admin
         inherited: true
     - name: BS_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: bs
         role: compute_viewer
         inherited: true
     - name: BS_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: bs
         role: compute_viewer
         inherited: true
     - name: BS_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: bs
@@ -211,35 +211,35 @@ spec:
   - name: cp
     groups:
     - name: CP_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: cp
         role: compute_admin
         inherited: true
     - name: CP_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: cp
         role: compute_admin
         inherited: true
     - name: CP_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: cp
         role: compute_viewer
         inherited: true
     - name: CP_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: cp
         role: compute_viewer
         inherited: true
     - name: CP_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: cp
@@ -249,35 +249,35 @@ spec:
   - name: fsn
     groups:
     - name: FSN_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: fsn
         role: compute_admin
         inherited: true
     - name: FSN_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: fsn
         role: compute_admin
         inherited: true
     - name: FSN_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: fsn
         role: compute_viewer
         inherited: true
     - name: FSN_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: fsn
         role: compute_viewer
         inherited: true
     - name: FSN_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: fsn
@@ -287,35 +287,35 @@ spec:
   - name: hcm
     groups:
     - name: HCM_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: hcm
         role: compute_admin
         inherited: true
     - name: HCM_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: hcm
         role: compute_admin
         inherited: true
     - name: HCM_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: hcm
         role: compute_viewer
         inherited: true
     - name: HCM_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: hcm
         role: compute_viewer
         inherited: true
     - name: HCM_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: hcm
@@ -325,35 +325,35 @@ spec:
   - name: hcp03
     groups:
     - name: HCP03_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: hcp03
         role: compute_admin
         inherited: true
     - name: HCP03_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: hcp03
         role: compute_admin
         inherited: true
     - name: HCP03_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: hcp03
         role: compute_viewer
         inherited: true
     - name: HCP03_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: hcp03
         role: compute_viewer
         inherited: true
     - name: HCP03_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: hcp03
@@ -363,35 +363,35 @@ spec:
   - name: hec
     groups:
     - name: HEC_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: hec
         role: compute_admin
         inherited: true
     - name: HEC_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: hec
         role: compute_admin
         inherited: true
     - name: HEC_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: hec
         role: compute_viewer
         inherited: true
     - name: HEC_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: hec
         role: compute_viewer
         inherited: true
     - name: HEC_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: hec
@@ -401,39 +401,39 @@ spec:
   - name: monsoon3
     groups:
     - name: MONSOON3_DOMAIN_ADMINS
-      roles:
+      role_assignments:
       - project: cc-demo
         role: compute_admin
     - name: MONSOON3_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: monsoon3
         role: compute_admin
         inherited: true
     - name: MONSOON3_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: monsoon3
         role: compute_admin
         inherited: true
     - name: MONSOON3_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: monsoon3
         role: compute_viewer
         inherited: true
     - name: MONSOON3_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: monsoon3
         role: compute_viewer
         inherited: true
     - name: MONSOON3_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: monsoon3
@@ -443,35 +443,35 @@ spec:
   - name: neo
     groups:
     - name: NEO_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: neo
         role: compute_admin
         inherited: true
     - name: NEO_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: neo
         role: compute_admin
         inherited: true
     - name: NEO_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: neo
         role: compute_viewer
         inherited: true
     - name: NEO_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: neo
         role: compute_viewer
         inherited: true
     - name: NEO_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: neo
@@ -481,35 +481,35 @@ spec:
   - name: s4
     groups:
     - name: S4_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: s4
         role: compute_admin
         inherited: true
     - name: S4_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: s4
         role: compute_admin
         inherited: true
     - name: S4_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: s4
         role: compute_viewer
         inherited: true
     - name: S4_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: s4
         role: compute_viewer
         inherited: true
     - name: S4_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: s4
@@ -519,35 +519,35 @@ spec:
   - name: wbs
     groups:
     - name: WBS_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: compute_admin
       - domain: wbs
         role: compute_admin
         inherited: true
     - name: WBS_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: compute_admin
       - domain: wbs
         role: compute_admin
         inherited: true
     - name: WBS_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: compute_admin
       - domain: wbs
         role: compute_viewer
         inherited: true
     - name: WBS_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: compute_admin
       - domain: wbs
         role: compute_viewer
         inherited: true
     - name: WBS_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: compute_admin
       - domain: wbs

@@ -18,14 +18,14 @@ spec:
         - name: {{ required ".Values.thanos.swiftStorageConfig.userName missing" .Values.thanos.swiftStorageConfig.userName }}
           description: Thanos Service User
           password: {{ required ".Values.thanos.swiftStorageConfig.password missing" .Values.thanos.swiftStorageConfig.password | quote }}
-          roles:
+          role_assignments:
             - project: service
               role:    service
 
     - name: {{ required ".Values.thanos.swiftStorageConfig.domainName missing" .Values.thanos.swiftStorageConfig.domainName }}
       projects:
         - name: {{ include "thanos.projectName" . }}
-          roles:
+          role_assignments:
             # Read/write permission to $domain/$project containers.
             - user: {{ required ".Values.thanos.swiftStorageConfig.userName missing" .Values.thanos.swiftStorageConfig.userName }}@{{ required ".Values.thanos.swiftStorageConfig.userDomainName missing" .Values.thanos.swiftStorageConfig.userDomainName }}
               role: swiftoperator
