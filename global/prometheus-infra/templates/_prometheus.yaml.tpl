@@ -20,6 +20,7 @@
       - '{__name__=~"snmp_f5_sysGlobalTmmStatMemoryTotalKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostSwapUsedKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostSwapTotalKb"}'
+      - '{__name__=~"^ping_.+"}'
 
   relabel_configs:
     - action: replace
