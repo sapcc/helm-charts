@@ -144,10 +144,17 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
+{{- if eq .Values.release "stein" }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+{{- else }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.json
               subPath: policy.json
               readOnly: true
+{{- end }}
             - name: keystone-etc
               mountPath: /etc/keystone/logging.conf
               subPath: logging.conf
