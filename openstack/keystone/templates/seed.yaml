@@ -10,12 +10,26 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   roles:
-  - admin
-  - member
-  - service
-  - cloud_identity_viewer
-  - role_admin
-  - role_viewer
+  - name: admin
+    description: Keystone Administrator
+  - name: member
+    description: Keystone Member
+  - name: reader
+    description: Keystone Read-Only
+  - name: service
+    description: Keystone Service
+  - name: cloud_identity_viewer
+    description: Keystone Cloud Read-Only (deprecated)
+  - name: role_admin
+    description: Keystone Role Administrator
+  - name: role_viewer
+    description: Keystone Role Read-Only
+
+  role_inferences:
+    - prior_role: admin
+      implied_role: member
+    - prior_role: member
+      implied_role: reader
 
   regions:
   - id: af
@@ -125,29 +139,33 @@ spec:
     - name: admin
       description: Openstack Cloud Administrator
       enabled: true
-      roles:
+      role_assignments:
       - domain: Default
         role: admin
       - project: admin
         role: admin
       - project: service
+        role: admin
+      - system: all
         role: admin
 
     groups:
     - name: administrators
       description: Administrators
-      roles:
+      role_assignments:
       - domain: Default
         role: admin
       - project: admin
         role: admin
       - project: service
         role: admin
+      - system: all
+        role: admin
       users:
       - admin
     - name: members
       description: Members
-      roles:
+      role_assignments:
       - domain: Default
         role: member
     projects:
