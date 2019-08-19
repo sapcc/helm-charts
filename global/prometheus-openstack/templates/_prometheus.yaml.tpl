@@ -13,7 +13,9 @@
       - '{__name__=~"up"}'
       - '{__name__=~"prometheus_build_version"}'
       - '{__name__=~"blackbox_regression_status_gauge"}'
+      - '{__name__=~"openstack_ironic_nodes_list_gauge"}'
 
+openstack_ironic_nodes_list_gauge
   relabel_configs:
     - action: replace
       source_labels: [__address__]
