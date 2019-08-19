@@ -58,6 +58,16 @@ spec:
         - name: config
           mountPath: /etc/config
           readOnly: true
+      - name: atlas-config-reloader
+        args:
+        - -volume-dir=/etc/config
+        - -webhook-url=http://localhost:8080/-/reload
+        image: jimmidyson/configmap-reload:v0.3.0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /etc/config
+          name: config
+          readOnly: true 
       volumes:
         - name: config
           configMap:
