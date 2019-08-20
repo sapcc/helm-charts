@@ -22,6 +22,7 @@
       - '{__name__=~"snmp_f5_sysGlobalHostSwapUsedKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostSwapTotalKb"}'
       - '{__name__=~"^ping_.+"}'
+      - '{__name__=~"^ipmi_sensor_state$",job=~"baremetal/ironic",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change"}'
 
   relabel_configs:
     - action: replace
