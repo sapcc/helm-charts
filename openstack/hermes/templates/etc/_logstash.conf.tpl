@@ -10,6 +10,8 @@ rabbitmq {
     queue => {{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name | quote }}
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
+    heartbeat => 30 
+    connect_retry_interval => 60
     durable => {{ $value.durable | default false }}
   }
 {{ end }}
