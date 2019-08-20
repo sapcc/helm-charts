@@ -13,7 +13,8 @@
       - '{__name__=~"up"}'
       - '{__name__=~"prometheus_build_version"}'
       - '{__name__=~"blackbox_regression_status_gauge"}'
-      - '{__name__=~"openstack_ironic_nodes_list_gauge"}'
+      - '{__name__=~"^openstack_ironic_nodes_.+"}'
+      - '{__name__=~"^openstack_ironic_leftover_ports$"}'      
 
   relabel_configs:
     - action: replace
