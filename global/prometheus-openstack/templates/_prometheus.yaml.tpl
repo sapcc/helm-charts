@@ -15,6 +15,8 @@
       - '{__name__=~"blackbox_regression_status_gauge"}'
       - '{__name__=~"^openstack_ironic_nodes_.+"}'
       - '{__name__=~"^openstack_ironic_leftover_ports$"}'      
+      - '{__name__=~"^limes_domain_quota$", resource=~"instances_z.*"}'
+      - '{__name__=~"^limes_project_.+$", resource=~"instances_z.*"}'
 
   relabel_configs:
     - action: replace
