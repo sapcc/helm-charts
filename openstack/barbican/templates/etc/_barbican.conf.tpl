@@ -33,7 +33,12 @@ backlog = 4096
 max_allowed_secret_in_bytes = 10000
 max_allowed_request_size_in_bytes = 1000000
 
+{{ if eq .Values.postgresql.enabled false }}
+sql_connection = {{ include "db_url_mysql" . }}
+{{ else }}
 sql_connection = {{ include "db_url" . }}
+{{ end }}
+
 {{ include "ini_sections.default_transport_url" . }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
