@@ -13,6 +13,7 @@
       - '{__name__=~"^snmp_asa_.+"}'
       - '{__name__=~"^snmp_asr_nat.+"}'
       - '{__name__=~"^snmp_asr_missingNat.+"}'
+      - '{__name__=~"^snmp_scrape.+"}'
       - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio5s"}'
       - '{__name__=~"snmp_f5_sysGlobalHostOtherMemUsedKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostOtherMemTotalKb"}'
