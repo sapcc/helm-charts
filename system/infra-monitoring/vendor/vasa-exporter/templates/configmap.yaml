@@ -1,0 +1,23 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+    labels:
+      app: {{ include "infraMonitoring.name" . }}
+      chart: {{ include "infraMonitoring.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      system: infra_monitoring
+data:
+  vasa-exporter.cfg:|
+  [Default]
+  port = {{ .Values.vasa_exporter.vp_port | quote }}
+  vc_user = {{ .Values.vasa_exporter.vc_user }}
+  vc_pass = {{ .Values.global.master_password }}
+  vp_user = {{ .Values.vasa_exporter.vp_user }}
+  vp_pass = {{ .Values.vasa_exporter.vp_pass }}
+  vvol_user = {{ .Values.vasa_exporter.vvol_user }}
+  vvol_pass = {{ .Values.vasa_exporter.vvol_pass }}
+  prometheus_port = {{ .Values.vasa_exporter.prometheus_port | quote }}
+{{- end }}
