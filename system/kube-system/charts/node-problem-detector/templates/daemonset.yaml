@@ -11,9 +11,11 @@ spec:
         app: node-problem-detector
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        {{ if .Values.prometheus.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ required ".Values.prometheus.port missing" .Values.prometheus.port | quote }}
         prometheus.io/targets: {{ required ".Values.prometheus.targets missing" .Values.prometheus.targets | quote }}
+        {{ end }}
     spec:
       tolerations:
       - key: "species"
@@ -24,8 +26,10 @@ spec:
         command:
         - /node-problem-detector
         - --logtostderr
+        {{- if .Values.prometheus.enabled }}
         - --prometheus-address={{ required ".Values.prometheusAddress missing" .Values.prometheus.address }}
         - --prometheus-port={{ required ".Values.prometheusPort missing " .Values.prometheus.port }}
+        {{- end }}
         {{- if .Values.systemLogMonitors }}
         - --config.system-log-monitor={{- range $index, $monitor := .Values.systemLogMonitors }}{{if ne $index 0}},{{end}}{{ printf "/config/%s" $monitor }}{{- end }}
         {{- end }}
@@ -42,6 +46,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        hostNetwork: true
         volumeMounts:
         - name: log
           mountPath: /var/log
@@ -53,16 +58,16 @@ spec:
         - name: config
           mountPath: /config
           readOnly: true
-{{- range $_, $mount := .Values.additionalHostVolumeMounts }}
+        {{- range $_, $mount := .Values.additionalHostVolumeMounts }}
         - name: {{ $mount.name | lower }}
           mountPath: {{ $mount.mountPath }}
           readOnly: {{ default true $mount.readOnly }}
-{{- end }}
+        {{- end }}
+        {{- if .Values.prometheus.enabled }}
         ports:
-          - name: healthz
-            containerPort: 10256
           - name: metrics
             containerPort: {{ required ".Values.prometheus.port missing" .Values.prometheus.port }}
+        {{- end }}
       volumes:
       - name: log
         # Config `log` to your system log directory.
