@@ -1,3 +1,29 @@
 image:
   repository: sapcc/node-problem-detector
-  tag: v0.4.1
+  tag: v0.7.0
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 100Mi
+  requests:
+    cpu: 20m
+    memory: 20Mi
+
+prometheus:
+  address: 0.0.0.0
+  port: 20257
+  targets: kubernetes
+
+systemLogMonitors:
+  - kernel-monitor.json
+
+customPluginMonitors:
+  - bridge-monitor.json
+
+additionalHostVolumeMounts:
+  # Required by the bridge monitor.
+  - name: hostproc
+    hostPath: /proc
+    mountPath: /host/proc
+    readOnly: true
