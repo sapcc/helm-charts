@@ -2,22 +2,28 @@
 apiVersion: v1
 kind: Deployment
 metadata:
-  name: vasa-exporter
-  namespace: infra-monitoring
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-         app: vasa-exporter
+         app: {{ include "infraMonitoring.name" . }}
+           release: {{ .Release.Name }}
     spec:
       volumes:
         - name: config
           configMap:
-            name: vasa-exporter
+            name: {{ include "infraMonitoring.name" . }}
       containers:
-         - name: vasa-exporter
+         - name: {{ include "infraMonitoring.name" . }}
            imagePullPolicy: IfNotPresent
            image: {{ .Values.vasa_exporter.docker_repo }}/vasa-exporter:{{ .Values.vasa_exporter.image_version | replace "string:" "" }}
            command:
