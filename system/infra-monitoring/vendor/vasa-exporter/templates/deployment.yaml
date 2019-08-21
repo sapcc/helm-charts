@@ -1,4 +1,3 @@
-{{- if .Values.vasa_exporter.enabled }}
 apiVersion: v1
 kind: Deployment
 metadata:
@@ -25,7 +24,7 @@ spec:
       containers:
          - name: {{ include "infraMonitoring.name" . }}
            imagePullPolicy: IfNotPresent
-           image: {{ .Values.vasa_exporter.docker_repo }}/vasa-exporter:{{ .Values.vasa_exporter.image_version | replace "string:" "" }}
+           image: {{ .Values.docker_repo }}/vasa-exporter:{{ .Values.image_version | replace "string:" "" }}
            command:
              - python3
            args:
@@ -36,5 +35,4 @@ spec:
                mountPath: /config
            ports:
              - name: metrics
-               containerPort: {{ .Values.vasa_exporter.prometheus_port | quote }}
-{{- end }}
+               containerPort: {{ .Values.prometheus_port | quote }}
