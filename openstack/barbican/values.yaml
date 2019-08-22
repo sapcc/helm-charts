@@ -94,7 +94,7 @@ mysql_metrics:
           secrets.id,
           secrets.status,
           secrets.name  AS secret_name,
-          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')),
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
           projects.external_id  AS project_id,
           secrets.secret_type ,
           COUNT(*)  AS count_gauge
@@ -102,7 +102,7 @@ mysql_metrics:
         INNER JOIN projects
         on secrets.project_id=projects.id
         where secrets.deleted='false'
-        GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type;
+        GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
       values:
       - "count_gauge"
     - help: Barbican container expiration date
