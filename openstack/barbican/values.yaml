@@ -56,7 +56,7 @@ mysql_metrics:
       - "container_name"
       - "project_id"
       - "type"
-      name: openstack_barbican_containers
+      name: openstack_barbican_containers_count_gauge
       query: |
         SELECT
           containers.name  AS container_name,
@@ -88,13 +88,13 @@ mysql_metrics:
       - "expiration"
       - "project_id"
       - "secret_type"
-      name: openstack_barbican_secrets
+      name: openstack_barbican_secrets_count_gauge
       query: |
         SELECT
           secrets.id,
           secrets.status,
           secrets.name  AS secret_name,
-          IFNULL(secrets.expiration,""),
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')),
           projects.external_id  AS project_id,
           secrets.secret_type ,
           COUNT(*)  AS count_gauge
@@ -111,11 +111,11 @@ mysql_metrics:
       - "expiration_date"
       - "certificate_name"
       - "project_id"
-      name: openstack_barbican_certificate
+      name: openstack_barbican_certificate_expiration_date
       query: |
         SELECT
           secrets.status,
-          IFNULL(secrets.expiration,"") AS expiration_date,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration_date,
           secrets.name  AS certificate_name,
           projects.external_id  AS project_id,
           COUNT(*)  AS count_gauge
@@ -125,7 +125,7 @@ mysql_metrics:
         where secrets.deleted='false' AND secret_type='certificate'
         GROUP BY secrets.status, secrets.name, projects.external_id, secrets.expiration;
       values:
-      - "count"
+      - "expiration_date"
 
 postgresql:
   enabled: true
