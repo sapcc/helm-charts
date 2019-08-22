@@ -43,6 +43,11 @@
       target_label: __name__
       regex: global:(.+)
       replacement: $1
+    - source_labels: [__name__, prometheus_source, prometheus]
+      regex: '^up;^$;(.+)'
+      replacement: '$1'
+      target_label: prometheus_source
+      action: replace
 
   {{ if .Values.authentication.enabled }}
   tls_config:
