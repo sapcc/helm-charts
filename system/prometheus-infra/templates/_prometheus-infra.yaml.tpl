@@ -33,7 +33,7 @@
       target_label: cluster_type
       replacement: controlplane
   metric_relabel_configs:
-    - regex: "prometheus|prometheus_replica|job|exported_job|cluster|cluster_type|kubernetes_namespace|kubernetes_name|namespace|pod"
+    - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod"
       action: labeldrop
 
   {{ if .Values.authentication.enabled }}
