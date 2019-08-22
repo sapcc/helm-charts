@@ -47,3 +47,19 @@ groups:
       annotations:
         description: Node {{ $labels.node }} is missing the correct taint. It is currently set to value='{{ $labels.value}}' Possible scheduling issues.
         summary: Node {{ $labels.node }} is missing the correct taint label.
+
+    ### Node Bridge ###
+
+    - alert: KubernetesNodeBridgeFilterVLANTagged
+      expr: kube_node_status_condition{condition="BridgeFilterVLANTagged", status="true"} == 1
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: warning
+        context: label
+        meta: "{{ $labels.node }}"
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bridge_filter_iptables.html"
+      annotations:
+        description: VLAN-tagged ARP/IP traffic is filtered by ARPtables/IPtables on {{ $labels.node }}. Network datapath threatened!
+        summary: Bridged VLAN-tagged traffic is filtered by IPtables.

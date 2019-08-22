@@ -4,8 +4,8 @@ metadata:
   name: node-problem-detector-config
 
 data:
-  {{- $files := .Files }}
-  {{ range tuple "kernel-monitor.json" }}
-  {{ . }}: |
-{{ $files.Get . | indent 4 }}
-  {{- end }}
+{{- $root := . }}
+{{- range $path, $bytes := .Files.Glob "monitors/*" }}
+{{ base $path | indent 2 }}: |
+{{ $root.Files.Get $path | indent 4 }}
+{{- end }}
