@@ -85,6 +85,7 @@ mysql_metrics:
       - "id"
       - "status"
       - "secret_name"
+      - "expiration"
       - "project_id"
       - "secret_type"
       name: openstack_barbican_secrets
@@ -93,6 +94,7 @@ mysql_metrics:
           secrets.id,
           secrets.status,
           secrets.name  AS secret_name,
+          secrets.expiration,
           projects.external_id  AS project_id,
           secrets.secret_type ,
           COUNT(*)  AS count_gauge
@@ -106,12 +108,14 @@ mysql_metrics:
     - help: Barbican container expiration date
       labels:
       - "status"
+      - "expiration_date"
       - "certificate_name"
       - "project_id"
       name: openstack_barbican_certificate
       query: |
         SELECT
           secrets.status,
+          secrets.expiration AS expiration_date,
           secrets.name  AS certificate_name,
           projects.external_id  AS project_id,
           COUNT(*)  AS count_gauge
@@ -119,7 +123,7 @@ mysql_metrics:
         INNER JOIN projects
         on secrets.project_id=projects.id
         where secrets.deleted='false' AND secret_type='certificate'
-        GROUP BY secrets.status, secrets.name, projects.external_id;
+        GROUP BY secrets.status, secrets.name, projects.external_id, secrets.expiration;
       values:
       - "count"
 
