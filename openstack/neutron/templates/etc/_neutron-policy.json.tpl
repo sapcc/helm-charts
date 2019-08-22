@@ -143,17 +143,17 @@
     "create_router:external_gateway_info:external_fixed_ips": "rule:context_is_network_admin",
     "update_router:external_gateway_info:external_fixed_ips": "rule:context_is_network_admin",
 
-    "create_security_group": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg)",
+    "create_security_group": "rule:context_is_securitygroup_admin",
     "get_security_group": "rule:context_is_securitygroup_viewer",
     "get_security_groups": "rule:context_is_securitygroup_viewer",
-    "update_security_group": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg)",
-    "delete_security_group": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg)",
+    "update_security_group": "rule:context_is_securitygroup_admin",
+    "delete_security_group": "rule:context_is_securitygroup_admin",
 
-    "create_security_group_rule": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg)",
+    "create_security_group_rule": "rule:context_is_securitygroup_admin",
     "get_security_group_rule": "rule:context_is_securitygroup_viewer",
     "get_security_group_rules": "rule:context_is_securitygroup_viewer",
-    "update_security_group_rule": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg)",
-    "delete_security_group_rule": "rule:context_is_securitygroup_admin and (not rule:compute_admin_wsg)",
+    "update_security_group_rule": "rule:context_is_securitygroup_admin",
+    "delete_security_group_rule": "rule:context_is_securitygroup_admin",
 
     "create_firewall": "rule:context_is_admin",
     "get_firewall": "rule:context_is_admin",
