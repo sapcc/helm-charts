@@ -2,7 +2,7 @@ groups:
 - name: thousandeyes.alerts
   rules:
   - alert: ThousandeyesSTARGATEReachability
-    expr: count(thousandeyes_alert{test_name~=".*Stargate"}) by (rule_name, test_name, rule_expression, type) > 1
+    expr: count(thousandeyes_alert{test_name=~".*Stargate"}) by (rule_name, test_name, rule_expression, type) > 1
     for: 5m
     labels:
       severity: warning
@@ -27,7 +27,7 @@ groups:
       description: "`{{ $labels.test_name }}`: {{ $labels.rule_expression }}."
       summary: "{{ $labels.type }} Alert fires!"
       
- - alert: ThousandeyesBGPReachability
+  - alert: ThousandeyesBGPReachability
     expr: count(thousandeyes_alert{type="BGP"}) by (rule_name, test_name, rule_expression, type) > 1
     for: 5m
     labels:
