@@ -21,6 +21,7 @@
       - '{job=~"blackbox/.+"}'
       - '{__name__=~"^vcenter_.+"}'
       - '{__name__=~"^network_apic_.+"}'
+      - '{__name__=~"up"}'
 
   relabel_configs:
     - action: replace
