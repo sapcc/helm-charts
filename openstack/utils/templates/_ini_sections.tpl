@@ -21,8 +21,8 @@ transport_url = {{ include "rabbitmq.transport_url" . }}
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}
 max_overflow = -1
     {{- else }}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 5 }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 10 }}
+max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}
+max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
     {{- end }}
 {{- end }}
 

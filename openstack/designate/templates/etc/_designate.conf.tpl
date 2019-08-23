@@ -54,8 +54,8 @@ rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 5 }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 10 }}
+max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}
+max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
 #transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}/{{ .Values.rabbitmq.virtual_host | default "/" }}
 
@@ -390,7 +390,7 @@ mysql_sql_mode = TRADITIONAL
 #sqlite_synchronous = True
 #idle_timeout = 3600
 #max_retries = 10
-#retry_interval = 10
+retry_interval = 1
 
 ########################
 ## Handler Configuration
