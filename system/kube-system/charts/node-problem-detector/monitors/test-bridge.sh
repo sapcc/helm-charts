@@ -11,8 +11,9 @@ UNKNOWN=2
 result=$(cat /host/proc/sys/net/bridge/bridge-nf-filter-vlan-tagged)
 
 if [[ $result -ne 0 ]]; then
-    echo "VLAN tagged traffic was passed to arptables/iptables"
+    echo "Bridged VLAN-tagged traffic is not filtered by IPtables"
     exit $NOTOK
 fi
 
+echo "Bridged VLAN-tagged traffic is filtered by IPtables"
 exit $OK
