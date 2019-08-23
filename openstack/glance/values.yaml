@@ -128,6 +128,7 @@ pgmetrics:
             description: "Image Count"
 
 postgresql:
+  enabled: true
   custom_repository: true
   imageTag: '9.4.14'
   postgresDatabase: glance
@@ -150,6 +151,45 @@ postgresql:
 
   shared_preload_libraries: pg_stat_statements
   track_activity_query_size: 2048
+
+db_name: glance
+
+mariadb:
+  enabled: false
+  name: glance
+  initdb_configmap: glance-initdb
+  persistence_claim: db-glance-pvclaim
+
+mysql_metrics:
+  db_name: glance
+  db_user: root
+  db_password: DEFINED-IN-REGION-CHART
+  customMetrics:
+    - help: Glance Image count
+      labels:
+      - "id"
+      - "name"
+      - "status"
+      - "size"
+      - "owner"
+      - "visibility"
+      name: openstack_glance_image_gauge
+      query: |
+        SELECT
+          id,
+          name,
+          status,
+          size,
+          owner,
+          visibility,
+          COUNT(*) AS gauge
+        from images
+        where
+          deleted='false'
+        GROUP BY
+          id;
+      values:
+      - "gauge"
 
 logging:
   formatters:
