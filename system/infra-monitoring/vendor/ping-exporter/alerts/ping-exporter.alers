@@ -1,0 +1,13 @@
+groups:
+- name: pingexporter.alerts
+  rules:
+  - alert: InfraPingExporterNotRunning
+    expr: absent(ping_up) or ping_up == 0
+    for: 15m
+    labels:
+      meta: Ping exporter is not running in {{ $labels.region }}
+      severity: info
+      tier: os
+    annotations:
+      description: Ping exporter is not running in {{ $labels.region }}
+      summary: Ping exporter is not running in {{ $labels.region }}
