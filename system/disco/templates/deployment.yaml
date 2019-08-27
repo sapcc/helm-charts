@@ -21,6 +21,12 @@ spec:
         - name: disco
           image: {{ include "image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
+          env:
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: disco-secret
+                  key: os-password
           args:
             - disco
             - --ingress-annotation={{ default "disco" .Values.ingressAnnotation }}
