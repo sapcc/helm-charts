@@ -11,3 +11,19 @@ groups:
     annotations:
       description: Ping exporter is not running in {{ $labels.region }}
       summary: Ping exporter is not running in {{ $labels.region }}
+
+- name: interconnect.alerts
+  - alert: InterconnectDown
+    expr: ping_loss_percent == 1
+    for: 5m
+    labels:
+      context: interconnect
+#      dashboard: must be a regional
+     playbook: /docs/devops/alert/network/interconnect.html
+     meta: '{{ $labels.probed_from }} cannot ping target in {{ $labels.probed_to }}'
+     service: interconnect
+     severity: info
+     tier: net
+   annotations:
+     description: '{{ $labels.probed_from }} cannot ping target in {{ $labels.probed_to }}'
+     summary: '{{ $labels.probed_from }} cannot ping target in {{ $labels.probed_to }}'
