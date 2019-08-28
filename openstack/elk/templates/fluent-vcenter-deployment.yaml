@@ -21,6 +21,9 @@ spec:
         component: fluent-vcenter
       annotations:
         checksum/fluent-vcenter-configmap.yaml: {{ include "elk/templates/fluent-vcenter-configmap.yaml" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{.Values.fluent_vcenter.prometheus_port}}"
+        prometheus.io/targets: {{ .Values.fluent_vcenter.prometheus | quote }}
     spec:
       nodeSelector:
         zone: farm
