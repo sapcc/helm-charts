@@ -33,7 +33,7 @@ spec:
           region: {{required ".Values.global.region missing" $values.global.region}}
           service: "keystone"
           api: "token-create"
-      expr: {{ $values.sre.slo.api_latency_ratio_percent.token_create | quote }}
+      expr: {{ $values.sre.slo.api_latency_violations_per_request_ratio_percent.token_create | quote }}
 
 {{- range $period := $values.sre.periods }}
     - record: global:api_latency_violations_per_request_sli:ratio_rate{{$period}}
@@ -44,7 +44,7 @@ spec:
       expr: |2
         (
         sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity", target_type_uri="data/security/auth/tokens", action="authenticate", status="201", le="+Inf"}[{{$period}}])) -
-        sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity", target_type_uri="data/security/auth/tokens", action="authenticate", status="201", le={{ $values.sre.slo.api_latency_target.token_create | quote}}}[{{$period}}]))
+        sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity", target_type_uri="data/security/auth/tokens", action="authenticate", status="201", le={{ $values.sre.slo.api_latency_violations_per_request.token_create | quote}}}[{{$period}}]))
         )
         /
         sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity", target_type_uri="data/security/auth/tokens", action="authenticate", status="201", le="+Inf"}[{{$period}}]))
@@ -67,7 +67,7 @@ spec:
           service: "keystone"
           api: "token-validate"
           region: {{required ".Values.global.region missing" $values.global.region}}
-      expr: {{ $values.sre.slo.api_latency_ratio_percent.token_validate | quote }}
+      expr: {{ $values.sre.slo.api_latency_violations_per_request_ratio_percent.token_validate | quote }}
 
 {{- range $period := $values.sre.periods }}
     - record: global:api_latency_violations_per_request_sli:ratio_rate{{$period}}
@@ -78,7 +78,7 @@ spec:
       expr: |2
         (
         sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity", target_type_uri="data/security/auth/tokens", action="read/list", status="200", le="+Inf"}[{{$period}}])) -
-        sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity", target_type_uri="data/security/auth/tokens", action="read/list", status="200", le={{ $values.sre.slo.api_latency_target.token_validate | quote}}}[{{$period}}]))
+        sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity", target_type_uri="data/security/auth/tokens", action="read/list", status="200", le={{ $values.sre.slo.api_latency_violations_per_request.token_validate | quote}}}[{{$period}}]))
         )
         /
         sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity", target_type_uri="data/security/auth/tokens", action="read/list", status="200", le="+Inf"}[{{$period}}]))
