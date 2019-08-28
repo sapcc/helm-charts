@@ -1,3 +1,4 @@
+{{- if .Values.imageVersionGlanceRegistry }}
 [DEFAULT]
 debug = {{.Values.registry.debug}}
 
@@ -38,3 +39,6 @@ flavor = keystone
 driver = noop
 
 {{- include "ini_sections.cache" . }}
+
+
+{{- end }}

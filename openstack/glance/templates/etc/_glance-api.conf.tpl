@@ -44,7 +44,9 @@ enable_proxy_headers_parsing = true
 stores = {{ .Values.stores | default "file" | quote }}
 default_store = {{ .Values.default_store | default "file" | quote }}
 
+{{- if .Values.file.persistence.enabled }}
 filesystem_store_datadir = /glance_store
+{{- end }}
 
 {{- if .Values.swift.enabled }}
 swift_store_region={{.Values.global.region}}
