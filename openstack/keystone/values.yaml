@@ -359,7 +359,7 @@ alerts:
 
 # Deploy SRE monitoring & alerting
 sre:
-  enabled: false
+  enabled: true
   # Name of the Prometheus to which the sre metrics & alerts should be assigned to.
   prometheus:
     aggregations: openstack
@@ -373,10 +373,15 @@ sre:
     - 6h
     - 1d
     - 3d
+
+  # keystone latency slo settings
   slo:
+    # which 'seconds' bucket in the openstack-watcher histogramm to evaluate (target value)
+    # the chosen value needs to match an existing bucket size in the histogram
     api_latency_violations_per_request:
       token_create: 0.1
       token_validate: 0.025
+    # max. failure rate that is tolerable
     api_latency_violations_per_request_ratio_percent:
       token_create: 0.1
       token_validate: 0.1
