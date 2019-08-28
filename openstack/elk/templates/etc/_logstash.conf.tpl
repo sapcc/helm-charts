@@ -15,6 +15,7 @@ input {
 
 
 output {
+{{- if .Values.controlplane.enabled }}
 if  [type] == "netflow" {
   elasticsearch {
     index => "netflow-%{+YYYY.MM.dd}"
@@ -37,6 +38,7 @@ elseif [type] == "syslog" {
     password => "{{.Values.elk_elasticsearch_data_password}}"
   }
 }
+{{ end -}}
 {{- if .Values.scaleout.enabled }}
 if  [type] == "netflow" {
   elasticsearch {

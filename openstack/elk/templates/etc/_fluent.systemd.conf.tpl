@@ -33,6 +33,7 @@
 
 <match **>
   @type copy
+{{- if .Values.controlplane.enabled }}
   <store>
    @type elasticsearch
    host {{.Values.elk_elasticsearch_endpoint_host_internal}}
@@ -60,6 +61,7 @@
      flush_interval 3s
    </buffer>
   </store>
+{{ end -}}
 {{- if .Values.scaleout.enabled }}
   <store>
    @type elasticsearch_dynamic
