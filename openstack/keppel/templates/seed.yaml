@@ -14,15 +14,26 @@ spec:
   - monsoon3/domain-{{.}}-seed
   {{- end }}
 
-  # TODO:
-  # - service catalog entry
-  # - support seed
+  # TODO: support seed
 
   roles:
     - name: cloud_registry_admin
     - name: cloud_registry_viewer
     - name: registry_admin
     - name: registry_viewer
+
+  services:
+    - name:        keppel
+      type:        keppel
+      description: 'Multi-tenant container image registry'
+      enabled:     true
+      endpoints:
+        {{- range (list "public" "internal") }}
+        - region:    '{{ $.Values.global.region }}'
+          interface: {{.}}
+          enabled:   true
+          url:       'https://keppel.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+        {{- end }}
 
   domains:
     - name: Default
