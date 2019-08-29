@@ -112,6 +112,11 @@ data:
           severity: info|warning|critical
           service: arc|backup|barbican|castellum|cinder|cfm|designate|elektra|elk|glance|hermes|ironic|keystone|limes|lyra|maia|manila|neutron|nova|sentry|swift
 
+      # owner: Martin Vossen / Tilo Geissler
+      - receiver: slack_sre
+        continue: false
+        match_re:
+          tier: sre
 
       # ======= DUTY ROUTING =======
 
@@ -266,7 +271,7 @@ data:
     receivers:
     - name: dev-null
       slack_configs:
-        - api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        - api_url: {{ required "slack.devnull_webhook_url undefined" .Values.slack.webhook_url | quote }}
           username: "Control Plane"
           channel: "#dev-null"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
@@ -703,6 +708,19 @@ data:
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           color: {{`'{{template "slack.sapcc.color" . }}'`}}
           send_resolved: true
+
+    - name: slack_sre
+      slack_configs:
+        - channel: '#cc-sre'
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
+          send_resolved: true         
 
     # ----  PagerDuty Setup ---- Hint: service_key causes using api v1, check internet ----
     - name: pagerduty_api
