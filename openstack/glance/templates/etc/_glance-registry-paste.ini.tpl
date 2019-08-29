@@ -1,3 +1,5 @@
+{{- if .Values.imageVersionGlanceRegistry }}
+
 # Use this pipeline for no auth - DEFAULT
 [pipeline:glance-registry]
 pipeline = healthcheck http_proxy_to_wsgi osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} registryapp
@@ -42,4 +44,6 @@ paste.filter_factory = oslo_middleware:HTTPProxyToWSGI.factory
 use = egg:watcher-middleware#watcher
 service_type = image
 config_file = /etc/glance/watcher.yaml
+{{- end }}
+
 {{- end }}
