@@ -13,9 +13,11 @@
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
     regex: true
+  {{- if not (eq .Values.global.region "admin") }}
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_targets]
     regex: .*kubernetes.*
+  {{- end }}
   - action: keep
     source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_pod_annotation_prometheus_io_port]
     regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
@@ -45,9 +47,11 @@
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
     regex: true
+  {{- if not (eq .Values.global.region "admin") }}
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_targets]
     regex: .*kubernetes.*
+  {{- end }}
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port_1]
     regex: \d+
