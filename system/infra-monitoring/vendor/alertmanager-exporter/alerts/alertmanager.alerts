@@ -1,0 +1,36 @@
+groups:
+- name: alertmanager.alerts
+  rules:
+  - alert: AlertmamagerNotificationFail
+    expr: rate(alertmanager_notifications_failed_total[5m]) > 10
+    for: 10m
+    labels:
+      tier: os
+      service: alertmanager
+      severity: warning
+      meta: "{{ $labels.integration }}"
+    annotations:
+      description: Alertmanager has Problems to deliver Alerts.
+      summary: Alertmanager has Problems to deliver Alerts.
+
+  - alert: AlertmamagerQueueTooLarge
+    expr: alertmanager_cluster_messages_queued > 10000
+    for: 10m
+    labels:
+      tier: os
+      service: alertmanager
+      severity: warning
+    annotations:
+      description: Alertmanager queues notifications.
+      summary: Alertmanager queues notifications.
+
+  - alert: AlertmamagerPrunesMessages
+    expr: rate(alertmanager_cluster_messages_pruned_total[5m]) > 1000
+    for: 10m
+    labels:
+      tier: os
+      service: alertmanager
+      severity: warning
+    annotations:
+      description: Alertmanager prunes notifications.
+      summary: Alertmanager prunes notifications.
