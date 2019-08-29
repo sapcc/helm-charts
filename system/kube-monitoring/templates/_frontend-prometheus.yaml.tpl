@@ -26,6 +26,7 @@
       - '{__name__=~"^container_task_state"}'
       - '{__name__=~"^dnsmasq.+"}'
       - '{__name__=~"^etcd_.+"}'
+      - '{__name__=~"^etcdbr_.+"}'
       - '{__name__=~"^go_.+"}'
       - '{__name__=~"^http_.+"}'
       - '{__name__=~"^ingress_.+"}'
