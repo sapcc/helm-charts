@@ -29,7 +29,11 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 {{- define "ini_sections.database" }}
 
 [database]
+{{- if eq .Values.postgresql.enabled false }}
+connection = {{ include "db_url_mysql" . }}
+{{- else }}
 connection = {{ include "db_url" . }}
+{{- end }}
 {{- include "ini_sections.database_options" . }}
 {{- end }}
 
