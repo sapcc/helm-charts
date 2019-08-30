@@ -1,3 +1,7 @@
+## 1.2.1
+
+* Fix playbook links.
+
 ## 1.2.0
 
 * Bump Prometheus server to `v2.12.0`.
