@@ -1,0 +1,44 @@
+{{- if .Values.backup.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: concourse-backup
+spec:
+  template:
+    metadata:
+      labels:
+        name: concourse-backup
+    spec:
+      containers:
+      - name: concourse-backup
+        image: "{{ index .Values "backup" "image" }}:{{ index .Values "backup" "imageTag" }}"
+        env:
+        - name: MY_POD_NAME
+          value: "concourse-postgresql"
+        - name: MY_POD_NAMESPACE
+          value: {{ .Release.Namespace | quote }}
+        - name: OS_AUTH_URL
+          value: {{ .Values.backup.os_auth_url | quote }}
+        - name: OS_AUTH_VERSION
+          value: "3"
+        - name: OS_USERNAME
+          value: {{ .Values.backup.os_username | quote }}
+        - name: OS_USER_DOMAIN_NAME
+          value: {{ .Values.backup.os_user_domain | quote }}
+        - name: OS_PROJECT_NAME
+          value: {{ .Values.backup.os_project_name | quote }}
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: {{ .Values.backup.os_project_domain | quote }}
+        - name: OS_REGION_NAME
+          value: {{ .Values.backup.os_region_name | quote }}
+        - name: OS_PASSWORD
+          value: {{ .Values.backup.os_password | quote }}
+        - name: BACKUP_PGSQL_FULL
+          value: {{ .Values.backup.interval_full | quote }}
+        - name: PGSQL_HOST
+          value: {{ .Values.concourse.concourse.web.postgres.host | quote }}
+        - name: PGSQL_USER
+          value: {{ .Values.concourse.postgresql.postgresqlUsername | quote }}
+        - name: PGPASSWORD
+          value: {{ .Values.concourse.postgresql.postgresqlPassword | quote }}
+{{- end }}
