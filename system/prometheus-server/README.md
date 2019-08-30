@@ -115,4 +115,4 @@ See the [values.yaml](./values.yaml) for more details.
 | `thanos.seed.enabled`                  | Enable Openstack seed triggering creation of an OpenStack user and Swift container.                                     | `true`                                              |   
 | `thanos.swiftStorageConfig`            | Thanos storage configuration for use with OpenStack Swift. See values for details.                                      | `{}`                                                |
 | `thanos.spec`                          | The [Thanos spec](https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec)            | `{}`                                                |
-| `alerts.tier`                          | The `tier` to which the Prometheus alerts are assigned to.                                                              | `k8s`                                               |
+| `alerts.tier`                          | The `tier` to which the Prometheus alerts are assigned to. <br>`$values.global.tier` takes precedence if set.           | `$values.global.tier` or `k8s`                      |

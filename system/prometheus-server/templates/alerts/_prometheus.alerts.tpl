@@ -8,7 +8,7 @@ groups:
       context: availability
       service: prometheus
       severity: critical
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_config_reload.html'
       meta: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} failed to load it`s configuration.'
     annotations:
@@ -21,7 +21,7 @@ groups:
       context: availability
       service: prometheus
       severity: warning
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
       meta: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} failed to evaluate rules.'
     annotations:
@@ -35,7 +35,7 @@ groups:
       context: availability
       service: prometheus
       severity: info
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/rule_evaluation.html'
       meta: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} rule evaluation is slow.'
     annotations:
@@ -48,7 +48,7 @@ groups:
       context: availability
       service: prometheus
       severity: info
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/wal.html'
       meta: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} has {{`{{ $value }}`}} WAL corruptions.'
     annotations:
@@ -62,7 +62,7 @@ groups:
       context: availability
       service: prometheus
       severity: info
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_tsdb_reload.html'
       meta: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} failed to reload TSDB.'
     annotations:
@@ -76,8 +76,8 @@ groups:
       context: availability
       service: prometheus
       severity: info
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/prometheus/failed_rule_evaluation.html'
+      tier: {{ include "alerts.tier" . }}
+      playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
       meta: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} failed to evaluate rules.'
     annotations:
       description: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} failed to evaluate rules. Aggregation or alerting rules may not be loaded or provide false results.'
@@ -90,8 +90,8 @@ groups:
       context: availability
       service: prometheus
       severity: info
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/prometheus/failed_rule_evaluation.html'
+      tier: {{ include "alerts.tier" . }}
+      playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
       meta: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} rejects many samples'
     annotations:
       description: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} has many samples rejected due to duplicate timestamps but different values. This indicates metric duplication.'
@@ -103,8 +103,8 @@ groups:
       context: availability
       service: prometheus
       severity: info
-      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/prometheus/failed_rule_evaluation.html'
+      tier: {{ include "alerts.tier" . }}
+      playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
       meta: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} fails to scrape targets'
     annotations:
       description: 'Prometheus {{`{{ $externalLabels.region }}`}}/{{`{{ $labels.prometheus }}`}} has many scrapes that exceed the sample limit'

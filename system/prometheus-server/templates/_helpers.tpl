@@ -108,3 +108,11 @@ thanos-peers.{{ .Release.Namespace }}.svc:10900
 {{- $value -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "alerts.tier" -}}
+{{- if and .Values.global .Values.global.tier }}
+  {{- .Values.global.tier -}}
+{{- else -}}
+  {{- required ".Values.alerts.tier missing" .Values.alerts.tier -}}
+{{- end -}}
+{{- end -}}
