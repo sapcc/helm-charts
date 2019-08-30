@@ -124,6 +124,24 @@ mysql_metrics:
                 status,
                 tenant_id
 
+    - name: openstack_designate_zones_stuck_pending
+      help: "zones that stuck in pending state at least for 5 mins"
+      labels:
+        - "zone_name"
+        - "project_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                name AS zone_name,
+                tenant_id AS project_id,
+                COUNT(*) AS count_gauge
+              FROM zones
+              WHERE status='PENDING' AND (updated_at < DATE_SUB(now(), INTERVAL 5 MINUTE))
+              GROUP BY
+                name,
+                tenant_id;
+
     - name: openstack_designate_records
       help: "records count grouped by status"
       labels:
