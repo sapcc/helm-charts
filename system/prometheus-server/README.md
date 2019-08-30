@@ -1,5 +1,5 @@
-Prometheus Chart
-----------------
+Prometheus server Chart
+-----------------------
 
 This chart shall serve as a template to deploy your own Prometheus.  
 It will set up:
@@ -7,6 +7,7 @@ It will set up:
 - Persistent volume claim (if configured; default off)
 - Ingress to manage external access for the Prometheus instance. (default off)
 - RBAC resources for the Prometheus. Might be required if e.g. when service discoveries are used. (default off)
+- A basic set of [alerts for the Prometheus server](./templates/alerts) itself
 
 ## Prerequisite
 
