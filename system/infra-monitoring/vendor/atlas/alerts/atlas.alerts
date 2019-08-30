@@ -1,21 +1,20 @@
 groups:
 - name: atlas.alerts
   rules:
-  - alert: MetalIronicSDDown
+  - alert: AtlasIronicSDDown
     expr: absent(atlas_sd_up{discovery= "ironic"}) or atlas_sd_up{discovery= "ironic"} == 0
     for: 10m
     labels:
       severity: info
-      tier: metal
+      tier: infra
       service: ironic
       context: atlas
-      meta: "ipmi service discovery failure"
-      playbook: docs/devops/alert/baremetal
+      meta: "ironic service discovery failure"
     annotations:
       description: "ironic service discovery failed to get ironic nodes"
       summary: "ironic service discovery failed to get ironic nodes"
 
-  - alert: NetboxSDDown
+  - alert: AtlasNetboxSDDown
     expr: absent(atlas_sd_up{discovery= "netbox"}) or atlas_sd_up{discovery= "netbox"} == 0
     for: 10m
     labels:
@@ -23,7 +22,7 @@ groups:
       tier: infra
       service: snmp
       context: atlas
-      meta: "ipmi service discovery failure"
+      meta: "netbox service discovery failure"
     annotations:
-      description: "switch service discovery failed to get switches from netbox"
-      summary: "switch service discovery failed to get switches from netbox"
+      description: "netbox discovery failed"
+      summary: "netbox discovery failed"
