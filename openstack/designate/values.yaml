@@ -136,12 +136,14 @@ mysql_metrics:
               SELECT
                 name AS zone_name,
                 tenant_id AS project_id,
+                updated_at,
                 COUNT(*) AS count_gauge
               FROM zones
               WHERE status='PENDING' AND (updated_at < DATE_SUB(now(), INTERVAL 5 MINUTE))
               GROUP BY
                 name,
-                tenant_id;
+                tenant_id,
+                updated_at;
 
     - name: openstack_designate_records
       help: "records count grouped by status"
