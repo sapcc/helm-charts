@@ -1,3 +1,8 @@
+## 1.2.0
+
+* Bump Prometheus server to `v2.12.0`.
+* Introduce [alerts for common Prometheus failures](./templates/alerts).
+
 ## 1.1.23
 
 * Adds `region` and if set add `cluster_type`, `cluster` label to all metrics. 
