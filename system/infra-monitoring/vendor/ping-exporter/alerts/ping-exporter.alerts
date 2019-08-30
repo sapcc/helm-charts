@@ -28,20 +28,3 @@ groups:
     annotations:
       description: '{{ $labels.probed_from }} cannot ping target in {{ $labels.probed_to }}'
       summary: '{{ $labels.probed_from }} cannot ping target in {{ $labels.probed_to }}'
-
-- name: sre.alerts
-  rules:
-  - alert: NetworkInterconnectSLOAvailabilityViolated
-    expr: (1 - avg_over_time(ping_loss_percent{probed_to_type='server'}[12h])) * 100 < 99.95
-    for: 5m
-    labels:
-      context: sre_interconnect_availability
-      dashboard: interconnect-slo-availability
-#      playbook: /docs/devops/alert/network/interconnect.html
-      meta: 'Datapath availability from {{ $labels.probed_from }} to {{ $labels.probed_to }} violates SLO'
-      service: interconnect
-      severity: info
-      tier: sre
-    annotations:
-      description: 'Datapath availability from {{ $labels.probed_from }} to {{ $labels.probed_to }} violates SLO'
-      summary: 'Datapath availability from {{ $labels.probed_from }} to {{ $labels.probed_to }} violates SLO'
