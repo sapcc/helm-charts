@@ -97,7 +97,7 @@
   scrape_timeout: 55s
   static_configs:
     targets:
-      - {{ .Values.alertmanager_exporter.target }}
+      - {{ $values.target }}
   metrics_path: /metrics
 {{- end }}
 
