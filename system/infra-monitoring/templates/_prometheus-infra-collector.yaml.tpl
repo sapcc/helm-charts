@@ -312,4 +312,24 @@
     replacement: {{ $region }}
 {{- end }}
 {{- end }}
+
+{{- $values := .Values.vasa_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'vasa'
+  params:
+    job: [vcenter]
+  scrape_interval: 140s
+  scrape_timeout: 135s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_server_name
+    - source_labels: [__param_server_name]
+      target_label: instance
+    - target_label: __address__
+      replacement: vasa-exporter:{{$values.listen_port}}
+{{- end }}
 {{- end }}
