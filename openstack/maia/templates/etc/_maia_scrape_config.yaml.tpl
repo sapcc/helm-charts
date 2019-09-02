@@ -78,7 +78,6 @@
 #      - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
 #      - '{__name__=~"^openstack_.+",project_id!=""}'
 #      - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
-#      - '{__name__=~"^security_group_(max|total)_entanglement$"}'
 
 - job_name: 'prometheus-openstack'
   scrape_interval: 1m
@@ -95,7 +94,6 @@
       - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
       - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
-      - '{__name__=~"^security_group_(max|total)_entanglement$"}'
 
 - job_name: 'prometheus-infra-collector'
   scrape_interval: 1m
