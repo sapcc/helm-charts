@@ -343,4 +343,5 @@
       {{- range $.Values.alertmanager_exporter.targets }}
       - {{ . }}
       {{- end }}
+  scheme: https
 {{- end }}
