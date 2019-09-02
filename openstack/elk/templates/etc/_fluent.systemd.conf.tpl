@@ -32,7 +32,6 @@
 #</match>
 
 <match **>
-  <store>
    @type elasticsearch_dynamic
    host {{.Values.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.cluster_region}}.{{.Values.domain}}
    port {{.Values.elk_elasticsearch_ssl_port}}
@@ -64,5 +63,4 @@
      flush_thread_count 4
      flush_interval 3s
    </buffer>
-  </store>
  </match>
