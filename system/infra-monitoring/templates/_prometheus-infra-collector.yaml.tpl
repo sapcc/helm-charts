@@ -90,17 +90,6 @@
       replacement: '$1'
       target_label: probed_to_type
 
-{{- $values := .Values.alertmanager_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'alertmanager'
-  scrape_interval: 60s
-  scrape_timeout: 55s
-  static_configs:
-    targets:
-      - {{ $values.target }}
-  metrics_path: /metrics
-{{- end }}
-
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'arista'
