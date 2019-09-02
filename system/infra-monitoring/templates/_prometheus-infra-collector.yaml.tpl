@@ -313,3 +313,14 @@
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{- if .Values.alertmanager_exporter.enabled }}
+- job_name: 'prometheus/alertmanager'
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  static_configs:
+    - targets:
+      {{- range $.Values.alertmanager_exporter.targets }}
+      - {{ . }}
+      {{- end }}
+{{- end }}
