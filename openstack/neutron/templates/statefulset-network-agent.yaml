@@ -48,17 +48,17 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
-          readinessProbe:
+          livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--dhcp_ready"]
+              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "DHCP agent"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
-          livenessProbe:
+          readinessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--binary", "neutron-dhcp-agent"]
+              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
             initialDelaySeconds: 30
-            periodSeconds: 30
+            periodSeconds: 60
             timeoutSeconds: 10
           securityContext:
             privileged: true
@@ -66,7 +66,7 @@ spec:
             requests:
               cpu: "175m"
               memory: "256Mi"
-            limit:
+            limits:
               cpu: "256m"
               memory: "512Mi"
           volumeMounts:
@@ -129,9 +129,9 @@ spec:
               value: "false"
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--binary", "neutron-l3-agent"]
+              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "L3 agent"]
             initialDelaySeconds: 30
-            periodSeconds: 30
+            periodSeconds: 60
             timeoutSeconds: 10
           securityContext:
             privileged: true
@@ -190,9 +190,15 @@ spec:
               value: "false"
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--binary", "neutron-linuxbridge-agent"]
+              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
             initialDelaySeconds: 30
-            periodSeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
             timeoutSeconds: 10
           securityContext:
             capabilities:
@@ -202,7 +208,7 @@ spec:
             requests:
               cpu: "64m"
               memory: "256Mi"
-            limit:
+            limits:
               cpu: "256m"
               memory: "512Mi"
           volumeMounts:
