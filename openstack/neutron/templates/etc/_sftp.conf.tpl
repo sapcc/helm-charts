@@ -8,13 +8,13 @@ create_container = true
 bind_address = "0.0.0.0:10022"
 
 # File name of server key
-server_key = "/etc/swift/ssh_host_rsa_key"
+server_key = "/etc/ssh_host_id_ec"
 
 # File name of authorized keys
 authorized_keys = "/dev/null"
 
 # File name of password list.
-# password_file = "/etc/swift/passwd"
+# password_file = "/etc/passwd"
 
 # Timeout for the connection of Swift (second)
 swift_timeout = 180
