@@ -326,14 +326,10 @@
     - source_labels: [job]
       regex: vcenter
       action: keep
-    - source_labels: [__address__]
+    - source_labels: [server_name]
       target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
     - target_label: __address__
       replacement: vasa-exporter:{{$values.listen_port}}
-    - source_labels: [target]
-      target_label: [__param_server_name]
 {{- end }}
 {{- end }}
 
