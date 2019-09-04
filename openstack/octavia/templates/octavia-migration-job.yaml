@@ -12,7 +12,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: octavia-migration
-          image: "loci/octavia:master-ubuntu"
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
           command: ["/var/lib/openstack/bin/octavia-db-manage", "upgrade", "head"]
           volumeMounts:
             - name: octavia-etc
