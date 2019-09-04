@@ -26,7 +26,8 @@
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^ipmi_up"}'
-      
+      - '{__name__=~"^netapp_capacity_aggregate"}'
+
   relabel_configs:
     - action: replace
       source_labels: [__address__]
