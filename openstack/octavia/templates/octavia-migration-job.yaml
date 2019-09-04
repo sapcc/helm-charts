@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: octavia-migration
+  labels:
+    system: openstack
+    type: configuration
+    component: octavia
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: octavia-migration
+          image: "loci/octavia:master-ubuntu"
+          command: ["/var/lib/openstack/bin/octavia-db-manage", "upgrade", "head"]
+          volumeMounts:
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia.conf
+              subPath: octavia.conf
+              readOnly: true
+      volumes:
+        - name: octavia-etc
+          configMap:
+            name: octavia-etc
