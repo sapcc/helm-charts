@@ -145,3 +145,17 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: OpenstackHermesElasticsearchOutputPlugins
+    expr: sum(increase(logstash_node_plugin_events_out_total[5m])) by (plugin) <= 0
+    labels:
+      context: elasticsearch
+      severity: info
+      tier: os
+      service: hermes
+      dashboard: hermes-elasticsearch-metrics
+      meta: 'Hermes elasticsearch pugin {{ $labels.plugin }} has stopped sending data'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Hermes elasticsearch pugin {{ $labels.plugin }} has stopped sending data'
+      summary: 'Hermes elasticsearch pugin {{ $labels.plugin }} has stopped sending data'
