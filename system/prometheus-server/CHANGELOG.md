@@ -1,3 +1,7 @@
+## 1.2.2
+
+* Add alerts for Prometheus/Alertmanager issues.
+
 ## 1.2.1
 
 * Fix playbook links.
