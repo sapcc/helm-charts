@@ -31,7 +31,7 @@ spec:
     users:
     - name: octavia
       description: 'Octavia Service'
-      password: '{{.Values.global.octavia_service_password}}'
+      password: {{ .Values.global.octavia_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "$$" | quote }}
       role_assignments:
       - project: service
         role: service
