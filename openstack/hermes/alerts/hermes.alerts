@@ -145,3 +145,17 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: OpenstackHermesLogstashPlugins
+    expr: sum(increase(logstash_node_plugin_events_out_total[5m])) by (plugin) <= 0
+    labels:
+      context: logstash
+      severity: warning
+      tier: os
+      service: hermes
+      dashboard: hermes-logstash-metrics
+      meta: 'Hermes logstash plugin {{ $labels.plugin }} has stopped transmitting data'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Hermes logstash plugin {{ $labels.plugin }} has stopped transmitting data'
+      summary: 'Hermes logstash plugin {{ $labels.plugin }} has stopped transmitting data'
