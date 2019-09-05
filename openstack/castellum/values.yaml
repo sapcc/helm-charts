@@ -25,17 +25,12 @@ pgmetrics:
   db_name: castellum
 
   customMetrics:
-    # When adding new asset managers, add the corresponding to the WITH subquery as follows:
-    #   SELECT 'nfs-shares' UNION SELECT 'other-thing' UNION ...
-    # TODO: have Castellum generate this asset_types table
     castellum_asset_count:
       query: >
-        WITH asset_types(type) AS (SELECT 'nfs-shares')
-        SELECT t.type AS asset, COUNT(a.id) AS gauge
-          FROM asset_types t
-          LEFT OUTER JOIN resources r ON r.asset_type = t.type
+        SELECT r.asset_type AS asset, COUNT(a.id) AS gauge
+          FROM resources r
           LEFT OUTER JOIN assets a ON a.resource_id = r.id
-         GROUP BY t.type
+         GROUP BY r.asset_type
       metrics:
         - asset:
             usage: "LABEL"
@@ -45,11 +40,9 @@ pgmetrics:
             description: "Total number of assets that are managed by Castellum"
     castellum_resource_count:
       query: >
-        WITH asset_types(type) AS (SELECT 'nfs-shares')
-        SELECT t.type AS asset, COUNT(r.id) AS gauge
-          FROM asset_types t
-          LEFT OUTER JOIN resources r ON r.asset_type = t.type
-         GROUP BY t.type
+        SELECT asset_type AS asset, COUNT(id) AS gauge
+          FROM resources
+         GROUP BY asset_type
       metrics:
         - asset:
             usage: "LABEL"
