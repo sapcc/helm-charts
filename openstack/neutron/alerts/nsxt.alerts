@@ -1,0 +1,62 @@
+groups:
+- name: nsxt.alerts
+  rules:
+  - alert: NSXTManagementNodeOffline
+    expr: nsxv3_cluster_management_offline_nodes > 0
+    for: 1m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Management Node offline: {{ $labels.host }}'
+      dashbaord: nsx-t
+    annotations:
+      description: 'NSX-T Management Node offline: {{ $labels.host }}'
+      summary: 'NSX-T Management Node offline: {{ $labels.host }}'
+
+  - alert: NSXTClusterControlStatusNoControllers
+    expr: nsxv3_cluster_control_status == 0
+    for: 1m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Cluster Control Status has no Controllers: {{ $labels.host }}'
+      dashbaord: nsx-t
+    annotations:
+      description: 'NSX-T Cluster Control Status has no Controllers: {{ $labels.host }}'
+      summary: 'NSX-T Cluster Control Status has no Controllers: {{ $labels.host }}'
+
+  - alert: NSXTClusterControlStatusUnstable
+    expr: nsxv3_cluster_control_status == -1
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Cluster Control Status is unstable: {{ $labels.host }}'
+      dashbaord: nsx-t
+    annotations:
+      description: 'NSX-T Cluster Control Status is unstable: {{ $labels.host }}'
+      summary: 'NSX-T Cluster Control Status is unstable: {{ $labels.host }}'
+
+  - alert: NSXTClusterControlStatusDegraded
+    expr: nsxv3_cluster_control_status == -2
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Cluster Control Status degraded: {{ $labels.host }}'
+      dashbaord: nsx-t
+    annotations:
+      description:  'NSX-T Cluster Control Status degraded: {{ $labels.host }}'
+      summary:  'NSX-T Cluster Control Status degraded: {{ $labels.host }}'
+
+  - alert: NSXTClusterControlStatusUnkown
+    expr: nsxv3_cluster_control_status < -2
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Cluster Control Status unkown: {{ $labels.host }}'
+      dashbaord: nsx-t
+    annotations:
+      description:  'NSX-T Cluster Control Status unkown: {{ $labels.host }}'
+      summary:  'NSX-T Cluster Control Status unkown: {{ $labels.host }}'
