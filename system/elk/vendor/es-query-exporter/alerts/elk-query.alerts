@@ -1,0 +1,28 @@
+groups:
+- name: openstack-elk-query.alerts
+  rules:
+  - alert: ElkControlplanelogstashLogsMissing
+    expr: elasticsearch_logstash_logs_doc_count < 0
+    for: 15m
+    labels:
+      context: logshipping
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html#fluent-logs-are-missing
+    annotations:
+      description: '{{ $labels.logs }} is not shipping any logs. Check controlplane fluent in elk namespace.
+      summary: 'ELK in {{ $labels.region }} Controlplane node: {{ $labels.logs }} is not shipping logs'
+
+  - alert: ElkControlplaneSystemdLogsMissing
+    expr: elasticsearch_systemd_logs_doc_count < 0
+    for: 15m
+    labels:
+      context: logshipping
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html#fluent-systemd-logs-are-missing
+    annotations:
+      description: '{{ $labels.logs }} is not shipping any logs. Check controlplane fluent-systemd in elk namespace.
+      summary: 'ELK in {{ $labels.region }} Controlplane node: {{ $labels.logs }} is not shipping logs'
