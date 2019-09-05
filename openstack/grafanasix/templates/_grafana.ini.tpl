@@ -120,6 +120,9 @@ admin_password = {{.Values.admin.password}}
 # data source proxy whitelist (ip_or_domain:port separated by spaces)
 ;data_source_proxy_whitelist =
 
+# allow embedding of grafana in a frame etc. - required for the kiosk mode
+allow_embedding = true
+
 [snapshots]
 # snapshot sharing options
 ;external_enabled = true
