@@ -252,6 +252,78 @@ mariadb:
   initdb_configmap: keystone-initdb
   persistence_claim: db-keystone-pvclaim
 
+mysql_metrics:
+  db_name: keystone
+  db_user: keystone
+  db_password: DEFINED-IN-REGION-CHART
+  customMetrics:
+    - help: Total keystone role count
+      labels:
+      - "guage"
+      name: openstack_roles_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge 
+        FROM role
+      values:
+      - "gauge"
+    - help: Total keystone user count
+      labels:
+      - "guage"
+      name: openstack_users_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge 
+        FROM id_mapping 
+        WHERE entity_type = 'user'
+      values:
+      - "gauge"
+    - help: Total keystone project count
+      labels:
+      - "guage"
+      name: openstack_projects_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge
+        FROM project
+        WHERE domain_id != '<<keystone.domain.root>>'
+      values:
+      - "gauge"
+    - help: Total keystone role-assignment count
+      labels:
+      - "guage"
+      name: openstack_assignments_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge 
+        FROM assignment
+      values:
+      - "gauge"
+    - help: Total keystone token revocation count
+      labels:
+      - "guage"
+      name: openstack_revocations_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge 
+        FROM revocation_event
+      values:
+      - "gauge"
+    - help: Total keystone role-assignment count per role
+      labels:
+      - "guage"
+      name: openstack_assignments_per_role
+      query: |
+        SELECT
+          r.name AS name,
+          COUNT(*) as gauge 
+        FROM assignment a
+        JOIN role r ON r.id = a.role_id
+        GROUP BY r.name
+      values:
+      - "name"
+      - "gauge"
+
 postgresql:
   enabled: false
   custom_repository: true
