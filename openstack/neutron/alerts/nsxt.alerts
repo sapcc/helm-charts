@@ -5,25 +5,27 @@ groups:
     expr: nsxv3_cluster_management_offline_nodes > 0
     for: 1m
     labels:
-      severity: warning
+      severity: info
       tier: vmware
       meta: 'NSX-T Management Node offline: {{ $labels.nsxv3_manager_hostname }}'
-      dashboard: nsx-t
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#management_node_offline
     annotations:
       description: 'NSX-T Management Node offline: {{ $labels.nsxv3_manager_hostname }}'
-      summary: 'NSX-T Management Node offline: {{ $labels.nsxv3_manager_hostname }}'
+      summary: 'NSX-T Management Node offline'
 
   - alert: NSXTClusterControlStatusNoControllers
     expr: nsxv3_cluster_control_status == 0
     for: 1m
     labels:
-      severity: warning
+      severity: critical
       tier: vmware
       meta: 'NSX-T Cluster Control Status has no Controllers: {{ $labels.nsxv3_manager_hostname }}'
-      dashboard: nsx-t
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_no_controllers
     annotations:
       description: 'NSX-T Cluster Control Status has no Controllers: {{ $labels.nsxv3_manager_hostname }}'
-      summary: 'NSX-T Cluster Control Status has no Controllers: {{ $labels.nsxv3_manager_hostname }}'
+      summary: 'NSX-T Cluster Control Status has no Controllers'
 
   - alert: NSXTClusterControlStatusUnstable
     expr: nsxv3_cluster_control_status == -1
@@ -32,10 +34,11 @@ groups:
       severity: warning
       tier: vmware
       meta: 'NSX-T Cluster Control Status is unstable: {{ $labels.nsxv3_manager_hostname }}'
-      dashboard: nsx-t
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_unstable
     annotations:
       description: 'NSX-T Cluster Control Status is unstable: {{ $labels.nsxv3_manager_hostname }}'
-      summary: 'NSX-T Cluster Control Status is unstable: {{ $labels.nsxv3_manager_hostname }}'
+      summary: 'NSX-T Cluster Control Status is unstable'
 
   - alert: NSXTClusterControlStatusDegraded
     expr: nsxv3_cluster_control_status == -2
@@ -44,10 +47,11 @@ groups:
       severity: warning
       tier: vmware
       meta: 'NSX-T Cluster Control Status degraded: {{ $labels.nsxv3_manager_hostname }}'
-      dashboard: nsx-t
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_degraded
     annotations:
       description:  'NSX-T Cluster Control Status degraded: {{ $labels.nsxv3_manager_hostname }}'
-      summary:  'NSX-T Cluster Control Status degraded: {{ $labels.nsxv3_manager_hostname }}'
+      summary:  'NSX-T Cluster Control Status degraded'
 
   - alert: NSXTClusterControlStatusUnkown
     expr: nsxv3_cluster_control_status < -2
@@ -56,7 +60,8 @@ groups:
       severity: warning
       tier: vmware
       meta: 'NSX-T Cluster Control Status unkown: {{ $labels.nsxv3_manager_hostname }}'
-      dashboard: nsx-t
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_unkown
     annotations:
       description:  'NSX-T Cluster Control Status unkown: {{ $labels.nsxv3_manager_hostname }}'
-      summary:  'NSX-T Cluster Control Status unkown: {{ $labels.nsxv3_manager_hostname }}'
+      summary:  'NSX-T Cluster Control Status unkown'
