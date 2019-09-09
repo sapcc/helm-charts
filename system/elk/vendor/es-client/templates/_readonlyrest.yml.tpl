@@ -31,7 +31,7 @@ readonlyrest:
     
     - name: promuser
       actions: ["indices:data/read/*"]
-      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", "syslog-*", "jump-*"]
+      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", "jump-*", "kubernikus-*", "scaleout-*"]
       auth_key: {{.Values.global.prom_user}}:{{.Values.global.prom_password}}
 
     # admin user
