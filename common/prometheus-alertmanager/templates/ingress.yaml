@@ -1,0 +1,36 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: {{ include "alertmanager.fullname" . }}
+
+  labels:
+    app: prometheus-alertmanager
+    alertmanager: {{ include "alertmanager.name" . }}
+
+  annotations:
+    vice-president: {{ default true .Values.ingress.vicePresident | quote }}
+    disco: {{ default true .Values.ingress.disco | quote }}
+    {{- if .Values.ingress.authentication.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.authTLSSecret missing" .Values.ingress.authentication.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.authTLSVerifyDepth missing" .Values.ingress.authentication.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.authTLSVerifyClient missing" .Values.ingress.authentication.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if .Values.ingress.annotations }}
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+    {{ end }}
+
+spec:
+  rules:
+    - host: {{ include "alertmanager.externalURL" . }}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: {{ include "alertmanager.fullname" . }}
+            servicePort: 9093
+  tls:
+    - secretName: tls-{{ include "alertmanager.externalURL" . | replace "." "-" }}
+      hosts: [{{ include "alertmanager.externalURL" . }}]
+{{ end }}
