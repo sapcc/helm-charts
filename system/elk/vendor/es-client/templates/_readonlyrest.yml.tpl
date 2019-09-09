@@ -27,6 +27,12 @@ readonlyrest:
       kibana_access: ro
       auth_key: {{.Values.global.monsoon_user}}:{{.Values.global.monsoon_password}}
       indices: [".kibana*", ".kibana-devnull", {{.Values.global.indexes}}]
+    # access for logstash to write to the logstash indexes
+    
+    - name: promuser
+      actions: ["indices:data/read/*"]
+      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", "syslog-*", "jump-*"]
+      auth_key: {{.Values.global.prom_user}}:{{.Values.global.prom_password}}
 
     # admin user
     - name: Admin
