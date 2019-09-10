@@ -12,7 +12,7 @@
       - '{app="thousandeyes-exporter"}'
       - '{app="netapp-harvest"}'
       - '{app="netapp-api-exporter"}'
-      - '{app="vasa-exporter"}'
+      - '{instance="vasa-exporter:9202"}'
       - '{app="ping-exporter"}'
       - '{job="baremetal/arista"}'
       - '{job="bios/ironic"}'
