@@ -1,3 +1,7 @@
+## 1.2.3
+
+* Add alerts for Thanos sidecar, store, query, compactor and playbooks.
+
 ## 1.2.2
 
 * Add alerts for Prometheus/Alertmanager issues.

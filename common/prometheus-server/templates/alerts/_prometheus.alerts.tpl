@@ -97,6 +97,19 @@ groups:
       description: 'Prometheus {{`{{ $labels.prometheus }}`}} has many samples rejected due to duplicate timestamps but different values. This indicates metric duplication.'
       summary: Prometheus rejects many samples
 
+  - alert: PrometheusOutOfOrderTimestamps
+    expr: rate(prometheus_target_scrapes_sample_out_of_order_total[5m]) > 0
+    labels:
+      context: availability
+      service: prometheus
+      severity: info
+      tier: {{ include "alerts.tier" . }}
+      playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
+      meta: 'Prometheus {{`{{ $labels.prometheus }}`}} drops samples with out-of-order timestamps.'
+    annotations:
+      description: 'Prometheus {{`{{ $labels.prometheus }}`}} has many samples rejected due to out-of-order timestamps.'
+      summary: Prometheus drops samples with out-of-order timestamps
+
   - alert: PrometheusLargeScrapes
     expr: increase(prometheus_target_scrapes_exceeded_sample_limit_total[30m]) > 60
     labels:
