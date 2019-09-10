@@ -1,3 +1,7 @@
+## 2.0.1
+
+* Fix infinite redirect when accessing `/thanos` sub path.
+
 ## 2.0.0
 
 * Resilience and fine-tuning for Thanos components. Prepare for upgrade to newer versions.
