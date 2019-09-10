@@ -2,29 +2,43 @@ groups:
 - name: designate-zone.alerts
   rules:
   - alert: OpenstackDesignateZoneError
-    expr: sum(sql_openstack_designate_zones{status="ERROR"}) BY (zone_name) > 0
+    expr: sum(openstack_designate_zones{status="ERROR"}) BY (zone_name) > 0
     for: 15m
     labels:
       context: zone_replication
       dashboard: designate
-      meta: 'Designate zone {{ $labels.zone_name }} in Error State.'
+      meta: 'Designate zone {{ $labels.zone_name }} in ERROR state.'
       service: designate
       severity: info
       tier: os
     annotations:
-      description: '{{ $labels.zone_name }} in Error State.'
-      summary: Designate Zone in Error State
+      description: '{{ $labels.zone_name }} in ERROR state.'
+      summary: Designate Zone in Error state
 
   - alert: OpenstackDesignateMultipleZoneErrors
-    expr: sum(sql_openstack_designate_zones{status="ERROR"}) > 1
+    expr: sum(openstack_designate_zones{status="ERROR"}) > 1
     for: 5m
     labels:
       context: zone_replication
       dashboard: designate
-      meta: '{{ $value }} Designate Zones in Error State.'
+      meta: '{{ $value }} Designate Zones in ERROR state.'
       service: designate
       severity: warning
       tier: os
     annotations:
-      description: '{{ $value }} Designate Zones in Error State.'
-      summary: Designate Zones in Error State
+      description: '{{ $value }} Designate Zones in ERROR state.'
+      summary: Designate Zones in Error state
+
+  - alert: OpenstackDesignateZoneStuckPending
+    expr: sum(openstack_designate_zones_stuck_pending) BY (zone_name) > 0
+    for: 5m
+    labels:
+      context: zone_replication
+      dashboard: designate
+      meta: 'Designate zone {{ $labels.zone_name }} in PENDING state too long.'
+      service: designate
+      severity: info
+      tier: os
+    annotations:
+      description: '{{ $labels.zone_name }} in PENDING state too long.'
+      summary: Designate Zone in Pending state
