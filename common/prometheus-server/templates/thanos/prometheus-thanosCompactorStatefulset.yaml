@@ -22,6 +22,7 @@ spec:
       containers:
       - args:
         - compact
+        - --http-address=0.0.0.0:{{ required ".Values.thanos.compactor.service.httpPort missing" .Values.thanos.compactor.service.httpPort }}
         - --log.level={{ .Values.logLevel }}
         - --data-dir=/var/thanos/store
         - --objstore.config=$(OBJSTORE_CONFIG)
@@ -35,7 +36,7 @@ spec:
         image: {{ include "thanos.image" . }}
         name: thanos-compactor
         ports:
-        - containerPort: 10902
+        - containerPort: {{ required ".Values.thanos.compactor.service.httpPort missing" .Values.thanos.compactor.service.httpPort }}
           name: http
         volumeMounts:
         - mountPath: /var/thanos/store

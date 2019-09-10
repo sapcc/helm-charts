@@ -9,6 +9,7 @@ metadata:
   annotations:
     vice-president: {{ default true .Values.ingress.vice_president | quote }}
     disco: {{ default true .Values.ingress.disco | quote }}
+    ingress.kubernetes.io/rewrite-target: /
     {{- if .Values.ingress.authentication.enabled}}
     ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.authTLSSecret missing" .Values.ingress.authentication.authTLSSecret | quote }}
     ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.authTLSVerifyDepth missing" .Values.ingress.authentication.authTLSVerifyDepth | quote }}
@@ -26,7 +27,13 @@ spec:
         - path: /
           backend:
             serviceName: {{ include "prometheus.fullName" . }}
-            servicePort: 9090
+            servicePort: http
+        {{- if .Values.thanos.enabled }}
+        - path: {{ required ".Values.thanos.querier.webRouteprefix missing" .Values.thanos.querier.webRouteprefix }}
+          backend:
+            serviceName: {{ include "prometheus.fullName" . }}-thanos-query
+            servicePort: http
+        {{- end }}
   tls:
     - secretName: tls-{{ include "prometheus.externalURL" . | replace "." "-" }}
       hosts: [{{ include "prometheus.externalURL" . }}]

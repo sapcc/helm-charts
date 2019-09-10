@@ -10,9 +10,13 @@ metadata:
 spec:
   ports:
     - name: http
-      port: 9090
+      port: {{ required ".Values.thanos.store.service.httpPort missing" .Values.thanos.store.service.httpPort }}
       targetPort: http
+    - name: grpc
+      port: {{ required ".Values.thanos.store.service.grpcPort missing" .Values.thanos.store.service.grpcPort }}
+      targetPort: grpc
+
   selector:
     app: thanos-store
     prometheus: {{ include "prometheus.name" . }}
-  {{- end }}
+{{- end }}

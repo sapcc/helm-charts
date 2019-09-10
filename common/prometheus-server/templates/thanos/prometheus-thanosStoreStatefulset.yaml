@@ -23,10 +23,14 @@ spec:
       containers:
       - args:
         - store
+        - --http-address=0.0.0.0:{{ required ".Values.thanos.store.service.httpPort missing" .Values.thanos.store.service.httpPort }}
+        - --grpc-address=0.0.0.0:{{ required ".Values.thanos.store.service.grpcPort missing" .Values.thanos.store.service.grpcPort }}
         - --log.level={{ .Values.logLevel }}
-        - --data-dir=/var/thanos/store
-        - --cluster.peers={{ include "thanos.peers" . }}
+        - --data-dir=/data
         - --objstore.config=$(OBJSTORE_CONFIG)
+        - --cluster.peers={{ include "thanos.peers" . }}
+        - --index-cache-size={{ .Values.thanos.store.indexCacheSize }}
+        - --chunk-pool-size={{ .Values.thanos.store.chunkPoolSize }}
         env:
         - name: OBJSTORE_CONFIG
           valueFrom:
@@ -36,18 +40,34 @@ spec:
         image: {{ include "thanos.image" . }}
         name: thanos-store
         ports:
+        - containerPort: {{ required ".Values.thanos.store.service.grpcPort missing" .Values.thanos.store.service.grpcPort }}
+          name: grpc
+        - containerPort: {{ required ".Values.thanos.store.service.httpPort missing" .Values.thanos.store.service.httpPort }}
+          name: http
         - containerPort: 10900
           name: cluster
-        - containerPort: 10901
-          name: grpc
-        - containerPort: 10902
-          name: http
         volumeMounts:
-        - mountPath: /var/thanos/store
+        - mountPath: /data
           name: data
           readOnly: false
+{{- if not .Values.thanos.store.persistence.enabled }}
       volumes:
-      - emptyDir: {}
-        name: data
-  volumeClaimTemplates: []
+        - emptyDir: {}
+          name: data
+{{- else }}
+        volumeMounts:
+          - mountPath: /data
+            name: {{ include "prometheus.fullName" . }}-thanos-store
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ include "prometheus.fullName" . }}-thanos-store
+        labels:
+          prometheus: {{ include "prometheus.name" . }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ required ".Values.thanos.store.persistence.size missing" .Values.thanos.store.persistence.size | quote }}
+{{- end }}
 {{ end }}

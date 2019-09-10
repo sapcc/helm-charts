@@ -176,7 +176,50 @@ thanos:
   # Specification for Thanos sidecar to Prometheus server.
   # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
   spec:
-    image: "sapcc/thanos:v0.4.0-2-ga680c93"
+    baseImage: sapcc/thanos
+    # Contains fix for cross-domain authentication (user in different domain than Swift container).
+    # See https://github.com/thanos-io/thanos/pull/1118 .
+    version: v0.4.0-2-ga680c93
+
+  # Values for Thanos components.
+  compactor:
+    # How long to retain raw samples in bucket. 0d - disables this retention.
+    retentionResolutionRaw: 30d
+
+    # How long to retain samples of resolution 1 (5 minutes) in bucket. 0d - disables this retention.
+    retentionResolution5m: 30d
+
+    # How long to retain samples of resolution 2 (1 hour) in bucket. 0d - disables this retention.
+    retentionResolution1h: 1y
+
+    # Minimum age of fresh (non-compacted) blocks before they are being processed. Malformed blocks older than the maximum of consistency-delay and 30m0s will be removed.
+    consistencyDelay: 30m
+
+    service:
+      httpPort: 9090
+
+  store:
+    # Maximum size of items held in the index cache.
+    indexCacheSize: 500MB
+
+    # Maximum size of concurrently allocatable bytes for chunks.
+    chunkPoolSize: 500MB
+
+    # Persistent volume for Thanos store.
+    persistence:
+      enabled: true
+      size: 2Gi
+
+    service:
+      httpPort: 9090
+      grpcPort: 10901
+
+  querier:
+    # Prefix is used to expose the Thanos querier component via ingress using the following sub path.
+    webRouteprefix: /thanos
+    service:
+      httpPort: 9090
+      grpcPort: 10901
 
 # The labels to add to any time series or alerts when communicating with
 # external systems (federation, remote storage, Alertmanager).

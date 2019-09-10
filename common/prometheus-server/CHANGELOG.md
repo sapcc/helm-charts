@@ -1,3 +1,8 @@
+## 2.0.0
+
+* Resilience and fine-tuning for Thanos components. Prepare for upgrade to newer versions.
+* Expose Thanos' Query components via ingress using subpath `/thanos`.
+
 ## 1.2.3
 
 * Add alerts for Thanos sidecar, store, query, compactor and playbooks.

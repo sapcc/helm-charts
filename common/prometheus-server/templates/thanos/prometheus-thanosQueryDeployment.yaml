@@ -10,31 +10,39 @@ metadata:
 
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: thanos-query
       thanos-peers: "true"
       prometheus: {{ include "prometheus.name" . }}
+
   template:
     metadata:
       labels:
         app: thanos-query
         thanos-peers: "true"
         prometheus: {{ include "prometheus.name" . }}
+
     spec:
       containers:
       - args:
         - query
+        - --http-address=0.0.0.0:{{ required ".Values.thanos.querier.service.httpPort missing" .Values.thanos.querier.service.httpPort }}
+        - --grpc-address=0.0.0.0:{{ required ".Values.thanos.querier.service.grpcPort missing" .Values.thanos.querier.service.grpcPort }}
         - --log.level={{ .Values.logLevel }}
         - --query.replica-label=prometheus_replica
         - --query.auto-downsampling
+        - --store={{ include "prometheus.fullName" . }}-thanos-store:{{ required ".Values.thanos.store.service.grpcPort missing" .Values.thanos.querier.service.grpcPort }}
+        - --web.route-prefix={{ required ".Values.thanos.querier.webRouteprefix missing" .Values.thanos.querier.webRouteprefix }}
+        - --web.external-prefix={{ required ".Values.thanos.querier.webRouteprefix missing" .Values.thanos.querier.webRouteprefix }}
         - --cluster.peers={{ include "thanos.peers" . }}
         image: {{ include "thanos.image" . }}
         name: thanos-query
         ports:
-        - containerPort: 10902
+        - containerPort: {{ required ".Values.thanos.querier.service.httpPort missing" .Values.thanos.querier.service.httpPort }}
           name: http
-        - containerPort: 10901
+        - containerPort: {{ required ".Values.thanos.querier.service.grpcPort missing" .Values.thanos.querier.service.grpcPort }}
           name: grpc
         - containerPort: 10900
           name: cluster
