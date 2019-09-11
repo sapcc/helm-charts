@@ -31,10 +31,12 @@ spec:
           sourceLabels:
             - __meta_kubernetes_service_annotation_prometheus_io_scrape
           regex: 'true'
+        {{- if .Values.serviceDiscoveries.endpoints.limitToPrometheusTargets }}
         - action: keep
           sourceLabels:
             - __meta_kubernetes_service_annotation_prometheus_io_targets
           regex: {{ include "prometheusTargetsValue" . | quote }}
+        {{- end }}
         - action: keep
           sourceLabels:
             - __meta_kubernetes_pod_container_port_number
