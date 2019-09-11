@@ -50,20 +50,12 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{ toYaml .Values.alertmanagers | indent 6 }}
 {{- end -}}
 
-{{/* Thanos image. */}}
+{{/* Image for Thanos components. Do not use for Thanos sidecar! */}}
 {{- define "thanos.image" -}}
-{{- if .Values.thanos.spec.image -}}
-{{- .Values.thanos.spec.image -}}
+{{- if and .Values.thanos.components.baseImage .Values.thanos.components.version -}}
+{{- .Values.thanos.components.baseImage -}}:{{- .Values.thanos.components.version -}}
 {{- else -}}
 {{- required ".Values.thanos.spec.baseImage missing" .Values.thanos.spec.baseImage -}}:{{- required ".Values.thanos.spec.version missing" .Values.thanos.spec.version -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "thanos.peers" -}}
-{{- if .Values.thanos.spec.peers -}}
-{{- .Values.thanos.spec.peers -}}
-{{- else -}}
-thanos-peers.{{ .Release.Namespace }}.svc:10900
 {{- end -}}
 {{- end -}}
 

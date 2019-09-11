@@ -178,10 +178,17 @@ thanos:
   spec:
     baseImage: sapcc/thanos
     # Contains fix for cross-domain authentication (user in different domain than Swift container).
-    # See https://github.com/thanos-io/thanos/pull/1118 .
+    # See https://github.com/thanos-io/thanos/pull/1118, which is part of >=v0.5.0 .
+    # Cannot upgrade to anything newer as the below given value as the Prometheus operator has hardcoded the deprecated `--cluster` flags for the sidecar.
+    # So the operator needs to be upgraded first, but requires newer k8s versions supporting apps/v1.StatefulSet -.-
     version: v0.4.0-2-ga680c93
 
-  # Values for Thanos components.
+  # Image for Thanos components.
+  components:
+    baseImage: thanosio/thanos
+    version: v0.7.0
+
+  # Specification for Thanos components.
   compactor:
     # How long to retain raw samples in bucket. 0d - disables this retention.
     retentionResolutionRaw: 30d
@@ -200,10 +207,17 @@ thanos:
 
   store:
     # Maximum size of items held in the index cache.
-    indexCacheSize: 500MB
+    indexCacheSize: 1GB
 
     # Maximum size of concurrently allocatable bytes for chunks.
-    chunkPoolSize: 500MB
+    chunkPoolSize: 4GB
+
+    # Limit the amount of samples that might be retrieved on a single Series() call.
+    # 0 = unlimited.
+    seriesSampleLimit: 0
+
+    # Limit number of concurrent Series() calls in Thanos store.
+    seriesMaxConcurrency: 20
 
     # Persistent volume for Thanos store.
     persistence:

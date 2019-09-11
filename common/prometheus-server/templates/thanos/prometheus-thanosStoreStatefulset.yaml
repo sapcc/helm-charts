@@ -28,9 +28,10 @@ spec:
         - --log.level={{ .Values.logLevel }}
         - --data-dir=/data
         - --objstore.config=$(OBJSTORE_CONFIG)
-        - --cluster.peers={{ include "thanos.peers" . }}
-        - --index-cache-size={{ .Values.thanos.store.indexCacheSize }}
-        - --chunk-pool-size={{ .Values.thanos.store.chunkPoolSize }}
+        - --index-cache-size={{ required ".Values.thanos.store.indexCacheSize missing" .Values.thanos.store.indexCacheSize }}
+        - --chunk-pool-size={{ required ".Values.thanos.store.chunkPoolSize missing" .Values.thanos.store.chunkPoolSize }}
+        - --store.grpc.series-sample-limit={{ required ".Values.thanos.store.seriesSampleLimit missing" .Values.thanos.store.seriesSampleLimit }}
+        - --store.grpc.series-max-concurrency={{ required ".Values.thanos.store.seriesMaxConcurrency missing" .Values.thanos.store.seriesMaxConcurrency }}
         env:
         - name: OBJSTORE_CONFIG
           valueFrom:
