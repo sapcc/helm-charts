@@ -10,7 +10,10 @@ Enabling Thanos will install the following components:
 - OpenstackSeed for Swift service user and container
 - Thanos sidecar for Prometheus server
 
-If the Ingress is enabled (`.Values.ingress.enabled`) then Thanos can be accessed via `https://$host/thanos`.
+If the Ingress is enabled (`.Values.ingress.enabled`), Thanos can be accessed via `https://$host/thanos`.
+
+**NOTE:** Prometheus still requires persistence for 2 hours of metrics.  
+Prometheus organizes ingested samples in blocks of 2 hours. To avoid loosing this data on restart persistent volume should be used.
 
 ## Configuration
 
