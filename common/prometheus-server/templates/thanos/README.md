@@ -10,6 +10,8 @@ Enabling Thanos will install the following components:
 - OpenstackSeed for Swift service user and container
 - Thanos sidecar for Prometheus server
 
+If the Ingress is enabled (`.Values.ingress.enabled`) then Thanos can be accessed via `https://$host/thanos`.
+
 ## Configuration
 
 Minimal configuration for Thanos@SAP Converged Cloud:
