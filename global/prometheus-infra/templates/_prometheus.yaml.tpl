@@ -12,7 +12,7 @@
       - '{__name__=~"^probe_(dns|duration|http|success).*"}'
       - '{__name__=~"^snmp_asa_.+"}'
       - '{__name__=~"^snmp_asr_nat.+"}'
-      - '{__name__=~"^snmp_asr_missingNat.+"}'
+      - '{__name__=~"^snmp_asr_snmp_asr_disman.+"}'
       - '{__name__=~"^snmp_scrape.+"}'
       - '{__name__=~"^atlas_targets"}'
       - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio5s"}'
