@@ -64,11 +64,11 @@ groups:
         sentry: 'castellum/'
       annotations:
         description: |
-          Some {{ $labels.asset }} resources are older than 45 minutes, even though they should be scraped every 30 minutes.
+          Some `{{ $labels.asset }}` resources are older than 45 minutes, even though they should be scraped every 30 minutes.
           The scrapes are either taking too long or failing entirely.
           In the latter case, the `kubectl logs` for castellum-observer contains more information.
           There may also be an error logged in Sentry.
-        summary: "{{ $labels.asset }} resources are not getting scraped"
+        summary: "`{{ $labels.asset }}` resources are not getting scraped"
 
     ############################################################################
     # alerts concerning asset scraping in castellum-observer
@@ -105,10 +105,10 @@ groups:
         meta: "Some {{ $labels.asset }} asset scrapes are taking too long - Check castellum-observer log!"
       annotations:
         description: |
-          Some {{ $labels.asset }} assets are older than 15 minutes, even though they should be scraping every 5 minutes.
+          Some `{{ $labels.asset }}` assets are older than 15 minutes, even though they should be scraping every 5 minutes.
           It looks like the asset scraping is taking too long.
           The `kubectl logs` for castellum-observer may contain more information.
-        summary: "{{ $labels.asset }} asset scrapes are taking too long"
+        summary: "`{{ $labels.asset }}` asset scrapes are taking too long"
     - alert: OpenstackCastellumAssetScrapingFailing
       expr: (max by (asset) (time() - castellum_asset_min_scraped_at)) / 60 >= 45
       for: 3m
@@ -121,10 +121,10 @@ groups:
         meta: "Some {{ $labels.asset }} asset scrapes are failing - Check castellum-observer log!"
       annotations:
         description: |
-          Some {{ $labels.asset }} assets are older than 15 minutes, even though they should be scraped every 5 minutes.
+          Some `{{ $labels.asset }}` assets are older than 15 minutes, even though they should be scraped every 5 minutes.
           It looks like asset scrapes are failing because of backend errors.
           The `kubectl logs` for castellum-observer contain more information.
-        summary: "{{ $labels.asset }} assets are not getting scraped"
+        summary: "`{{ $labels.asset }}` assets are not getting scraped"
 
     ############################################################################
     # alerts concerning asset resizing in castellum-worker
@@ -140,7 +140,7 @@ groups:
         dashboard: castellum
       annotations:
         description: |
-          Resize operations for {{ $labels.asset }} are not getting executed in a timely manner.
+          Resize operations for `{{ $labels.asset }}` are not getting executed in a timely manner.
           Either the Castellum workers are not doing their job, or resizing is taking too long.
           The `kubectl logs` for castellum-worker may contain additional info.
 
@@ -155,9 +155,9 @@ groups:
         dashboard: castellum
       annotations:
         description: |
-          Castellum cannot resize {{$labels.asset}} assets.
+          Castellum cannot resize `{{$labels.asset}}` assets.
           The `kubectl logs` for castellum-worker contain additional info.
-        summary: Castellum cannot resize {{$labels.asset}} assets
+        summary: Castellum cannot resize `{{$labels.asset}}` assets
 
     - alert: OpenstackCastellumFailedAssetResizes
       # This is only a fallback alert if reporting to Sentry is not working,
@@ -172,8 +172,8 @@ groups:
         dashboard: castellum
       annotations:
         description: |
-          Castellum encountered backend errors while resizing {{$labels.asset}} assets.
+          Castellum encountered backend errors while resizing `{{$labels.asset}}` assets.
           The `kubectl logs` for castellum-worker contain additional info.
           This alert shows up because Sentry has not collected the exception correctly.
           *Please have a look at the castellum-worker logs even after this alert resolves.*
-        summary: Castellum encountered backend errors while resizing {{$labels.asset}} assets
+        summary: Castellum encountered backend errors while resizing `{{$labels.asset}}` assets
