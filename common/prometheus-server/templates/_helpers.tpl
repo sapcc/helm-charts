@@ -41,15 +41,6 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- end -}}
 {{- end -}}
 
-{{/* Alertmanager configuration. */}}
-{{- define "alertmanager.config" -}}
-- scheme: https
-  timeout: 10s
-  static_configs:
-  - targets:
-{{ toYaml .Values.alertmanagers | indent 6 }}
-{{- end -}}
-
 {{/* Image for Thanos components. Do not use for Thanos sidecar! */}}
 {{- define "thanos.image" -}}
 {{- if and .Values.thanos.components.baseImage .Values.thanos.components.version -}}
@@ -107,4 +98,23 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- else -}}
   {{- required ".Values.alerts.tier missing" .Values.alerts.tier -}}
 {{- end -}}
+{{- end -}}
+
+{{/* If Thanos is enabled the prefix `thanos_` is added to external labels to avoid overriding existing ones (region, cluster) which were added by previous Prometheis in the federation hierarchy. */}}
+{{- define "thanosPrefix" -}}
+{{- if .Values.thanos.enabled -}}
+{{- "thanos_" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "prometheus.defaultRelabelConfig" -}}
+- action: replace
+  targetLabel: region
+  replacement: {{ required ".Values.global.region missing" .Values.global.region }}
+- action: replace
+  targetLabel: cluster_type
+  replacement: {{ required ".Values.global.clusterType missing" .Values.global.clusterType }}
+- action: replace
+  targetLabel: cluster
+  replacement: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
 {{- end -}}

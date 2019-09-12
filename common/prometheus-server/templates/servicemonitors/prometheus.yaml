@@ -1,3 +1,4 @@
+# This ServiceMonitor is used for monitoring the Prometheus itself and - if enabled - its Thanos components deployed alongside.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 
@@ -21,9 +22,6 @@ spec:
       scheme: http
       relabelings:
         - action: replace
-          targetLabel: region
-          replacement: {{ required ".Values.global.region undefined" .Values.global.region }}
-        - action: replace
           targetLabel: prometheus
           replacement: {{ include "prometheus.name" . }}
         - action: labelmap
@@ -34,13 +32,4 @@ spec:
         - sourceLabels:
             - __meta_kubernetes_service_name
           targetLabel: kubernetes_name
-        {{ if .Values.global.clusterType }}
-        - action: replace
-          targetLabel: cluster_type
-          replacement: {{ .Values.global.clusterType }}
-        {{ end }}
-        {{ if .Values.global.cluster }}
-        - action: replace
-          targetLabel: cluster
-          replacement: {{ .Values.global.cluster }}
-        {{ end }}
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}

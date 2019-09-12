@@ -1,3 +1,11 @@
+## 2.1.0
+
+* **[Breaking change]** If Thanos is being used the external labels `region`, `cluster`, `cluster_type` will be prefixed with `thanos_` to avoid the are being overwritten by the Thanos sidecar.   
+  One has to ensure these labels are set during scrape via `relabel_config`. This is already if the default service discovery for endpoints, pods via ServiceMonitor, PodMonitor is being used.
+* Added `alert_relabel_configs` to ensure `region`, `cluster`, `cluster_type` labels exist on alerts.
+* Adds alert and playbook for out-of-order ingestion of metrics.
+* The label `cluster_type` is no longer optional and pre-set to `controlplane`.
+
 ## 2.0.1
 
 * Fix infinite redirect when accessing `/thanos` sub path.

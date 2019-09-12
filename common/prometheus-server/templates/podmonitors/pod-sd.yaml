@@ -60,19 +60,7 @@ spec:
         - sourceLabels:
             - __meta_kubernetes_pod_name
           targetLabel: kubernetes_pod_name
-        - action: replace
-          targetLabel: region
-          replacement: {{ required ".Values.global.region undefined" .Values.global.region }}
-        {{ if .Values.global.clusterType }}
-        - action: replace
-          targetLabel: cluster_type
-          replacement: {{ .Values.global.clusterType }}
-        {{ end }}
-        {{ if .Values.global.cluster }}
-        - action: replace
-          targetLabel: cluster
-          replacement: {{ .Values.global.cluster }}
-        {{ end }}
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
 
     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       interval: 60s
@@ -114,17 +102,5 @@ spec:
         - sourceLabels:
             - __meta_kubernetes_pod_name
           targetLabel: kubernetes_pod_name
-        - action: replace
-          targetLabel: region
-          replacement: {{ required ".Values.global.region undefined" .Values.global.region }}
-        {{ if .Values.global.clusterType }}
-        - action: replace
-          targetLabel: cluster_type
-          replacement: {{ .Values.global.clusterType }}
-        {{ end }}
-        {{ if .Values.global.cluster }}
-        - action: replace
-          targetLabel: cluster
-          replacement: {{ .Values.global.cluster }}
-        {{ end }}
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
 {{ end }}
