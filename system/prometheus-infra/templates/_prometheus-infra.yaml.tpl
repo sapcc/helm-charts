@@ -23,6 +23,7 @@
       - '{__name__=~"^network_apic_.+"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^atlas_targets"}'
+      - '{instance="esxi-exporter:9203"}'
 
   relabel_configs:
     - action: replace

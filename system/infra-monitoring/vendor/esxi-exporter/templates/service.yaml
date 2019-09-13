@@ -1,0 +1,16 @@
+apiVersion: v1 
+kind: Service
+metadata:
+  name: {{ include "infraMonitoring.name" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+spec:
+  selector:
+    app: {{ include "infraMonitoring.name" . }}
+  ports:
+    - name: metrics
+      port: {{ .Values.listen_port }}
