@@ -45,7 +45,7 @@
       target_label: probed_to_type
     - source_labels: [__name__, target]
       regex: 'ping_.+;([a-zA-Z]*)(\d)\.cc\.(.+)\.cloud\.sap'
-      replacement: '$3_$2'
+      replacement: ${3}_${2}
       target_label: probed_to
     - source_labels: [__name__, target]
       regex: 'ping_.+;([a-zA-Z]*)(\d)\.cc\.(.+)\.cloud\.sap'
