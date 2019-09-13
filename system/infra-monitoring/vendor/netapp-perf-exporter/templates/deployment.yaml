@@ -39,7 +39,7 @@ spec:
               name: {{ .Values.name }}
               key: netappPassword
         volumeMounts:
-        - name: netapp-perf-etc
+        - name: {{ .Values.name }}
           mountPath: /opt/netapp-harvest/config
       - name: exporter                      # container: exporter
         image: {{ .Values.exporter.image }}
@@ -47,7 +47,7 @@ spec:
         ports:
         - containerPort: 9108
         volumeMounts:
-        - name: netapp-perf-etc
+        - name: {{ .Values.name }}
           subPath: graphite-mapping.conf
           mountPath: /graphite-mapping.conf
         resources:
@@ -58,7 +58,7 @@ spec:
         image: {{ .Values.netappsd.image }}
         args: [ 
           -configmap,
-          netapp-perf-etc,
+          {{ .Values.name }},
           -key,
           netapp-filers.yaml,
           -namespace,
@@ -78,9 +78,9 @@ spec:
             cpu: {{ .Values.netappsd.cpu }}
  
       volumes:
-        - name: netapp-perf-etc
+        - name: {{ .Values.name }}
           configMap:
-            name: netapp-perf-etc
+            name: {{ .Values.name }}
             items:
               - key: netapp-harvest.conf
                 path: netapp-harvest.conf
