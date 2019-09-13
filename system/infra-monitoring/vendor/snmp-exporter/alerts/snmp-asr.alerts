@@ -1,6 +1,21 @@
 groups:
   - name: asr
     rules:
+    
+    - alert: NetworkAsrNatSpike
+      expr: increase(snmp_asr_disman_expExpression{expExpressionOwner="btob_delete_fail_counter"}[5m]) > 0 and on (server_id) snmp_asr_disman_expExpression{expExpressionOwner="btob_queue"} == 1
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        playbook: 'docs/devops/alert/network/router.html#asr_nat_spike'
+        dashboard: network-asr-nat-table 
+      annotations:
+        description: "ASR devicename `{{ $labels.devicename }}` is experiencing a stuck queue-full bit. Risk of outage is present, peer-sync is not working. Immediate action required"
+        summary: "ASR devicename `{{ $labels.devicename }}` risk of NAT spikes and table overflow."
+        
     - alert: NetworkAsrDeviceIsDown
       expr: sum(snmp_asr_natAddrBindNumberOfEntries + snmp_asr_natAddrPortBindNumberOfEntries) by (devicename) > 3500000
       for: 15m
