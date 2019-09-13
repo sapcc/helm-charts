@@ -44,11 +44,11 @@
       replacement: '$1'
       target_label: probed_to_type
     - source_labels: [__name__, target]
-      regex: 'ping_.+;ping_.+;([a-zA-Z]*)\d*\.cc\.(.+)\.cloud\.sap'
+      regex: 'ping_.+;([a-zA-Z]*)\d*\.cc\.(.+)\.cloud\.sap'
       replacement: '$2'
       target_label: probed_to
     - source_labels: [__name__, target]
-      regex: 'ping_.+;ping_.+;([a-zA-Z]*)\d*\.cc\.(.+)\.cloud\.sap'
+      regex: 'ping_.+;([a-zA-Z]*)\d*\.cc\.(.+)\.cloud\.sap'
       replacement: '$1'
       target_label: probed_to_type
 
