@@ -36,11 +36,11 @@
     - regex: "instance|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance"
       action: labeldrop
     - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+|([a-zA-Z]*)\d*\.cc\.(.+)\.cloud\.sap)'
+      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+|ping_.+;([a-zA-Z]*)\d*\.cc\.(.+)\.cloud\.sap'
       replacement: '$2'
       target_label: probed_to
     - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+|([a-zA-Z]*)\d*\.cc\.(.+)\.cloud\.sap)'
+      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+|ping_.+;([a-zA-Z]*)\d*\.cc\.(.+)\.cloud\.sap'
       replacement: '$1'
       target_label: probed_to_type
 
