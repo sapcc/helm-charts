@@ -84,7 +84,12 @@ spec:
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
+{{- if .Values.postgresql.enabled }}
+          value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
+{{- end }}
+{{- if .Values.mariadb.enabled }}
           value: {{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached
+{{- end }}
         - name: COMMAND
           value: "true"
       containers:

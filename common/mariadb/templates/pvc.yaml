@@ -1,16 +1,19 @@
-
-{{- if and .Values.persistence_claim .Values.persistence_claim_autoprovision }}
+{{- if and .Values.persistence_claim.enabled .Values.persistence_claim.autoprovision }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{.Values.persistence_claim }}
+  name: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
 spec:
+{{- if .Values.persistence_claim.access_modes }}
   accessModes:
-  - ReadWriteOnce
-  - ReadWriteMany
-  - ReadOnlyMany
+  {{- range $accessMode := .Values.persistence_claim.access_modes }}
+  - {{ $accessMode }}
+  {{- end }}
+{{- end }}
   resources:
     requests:
-      storage: {{ .Values.persistence_claim_size }}
-  storageClassName: default
+      storage: {{ .Values.persistence_claim.size }}
+  {{- if .Values.persistence_claim.storage_class }}
+  storageClassName: .Values.persistence_claim.storage_class
+  {{- end }}
 {{ end }}

@@ -42,7 +42,12 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
+{{- if .Values.postgresql.enabled }}
+              value: {{ .Release.Name }}-postgresql
+{{- end }}
+{{- if .Values.mariadb.enabled }}
               value: {{ .Release.Name }}-mariadb
+{{- end }}
             - name: DEPENDENCY_JOBS
               value: keystone-job-migration
             {{- if .Values.sentry.enabled }}
