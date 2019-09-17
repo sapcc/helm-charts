@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
@@ -8,7 +9,6 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "netapp-cap-exporter.name" . }}
@@ -19,33 +19,55 @@ spec:
         app.kubernetes.io/name: {{ include "netapp-cap-exporter.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      volumes:
+        - name: etc
+          configMap:
+            name: {{ include "netapp-cap-exporter.fullname" . }}
+
       containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: exporter
+          image: "{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
+          imagePullPolicy: {{ .Values.exporter.image.pullPolicy }}
+          args: [ --config=/etc/netapp/netapp-filers.yaml ]
+          env:
+          - name: NETAPP_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "netapp-cap-exporter.fullname" . }}
+                key: netappUser
+          - name: NETAPP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "netapp-cap-exporter.fullname" . }}
+                key: netappPassword
           ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+            - name: prometheus
+              containerPort: {{ .Values.exporter.port }}
           resources:
-{{ toYaml .Values.resources | indent 12 }}
-    {{- with .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-    {{- with .Values.affinity }}
-      affinity:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-    {{- with .Values.tolerations }}
-      tolerations:
-{{ toYaml . | indent 8 }}
-    {{- end }}
+{{ toYaml .Values.exporter.resources | indent 12 }}
+          volumeMounts:
+            - name: etc
+              mountPath: /etc/netapp
+
+        - name: netappsd
+          args: [
+            -configmap,
+            {{ include "netapp-cap-exporter.fullname" . }},
+            -key,
+            netapp-filers.yaml,
+            -namespace,
+            {{ .Release.Namespace }},
+            -netbox-host,
+            {{ required "Value global.netbox_host needs to be defined" .Values.global.netbox_host }},
+            -netbox-api-token,
+            {{ required "Value global.netbox_api_token needs to be defined" .Values.global.netbox_api_token }},
+            -region,
+            {{ .Values.global.region }},
+            -query,
+            {{ .Values.netappsd.query }} 
+          ]
+          image: "{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}"
+          imagePullPolicy: {{ .Values.netappsd.image.pullPolicy }}
+          resources:
+{{ toYaml .Values.netappsd.resources | indent 12 }}
+{{- end }}
