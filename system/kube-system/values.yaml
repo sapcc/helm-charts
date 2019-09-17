@@ -33,12 +33,11 @@ nginx-ingress:
   controller:
     image:
       repository: sapcc/nginx-ingress-controller
-      tag: "0.19.0"
+      tag: "0.25.1"
 
     livenessProbe:
       initialDelaySeconds: 30
 
-    defaultBackendService: "kube-system/kube-system-nginx-ingress-default-backend"
     kind: Deployment
     replicaCount: 3
 
@@ -64,16 +63,14 @@ nginx-ingress:
       map-hash-bucket-size: '128'
       worker-processes: '8'
       disable-ipv6: 'true'
-      ssl-redirect: 'false'
+      ssl-redirect: 'true'
       enable-underscores-in-headers: "true"
       # worker shutdown timeout to 5h
       worker-shutdown-timeout: "18000s"
 
     extraArgs:
-      enable-dynamic-configuration:
-      # disabled until https://github.com/kubernetes/ingress-nginx/issues/3034 is fixed
-      enable-dynamic-certificates: "false"
       annotations-prefix: ingress.kubernetes.io
+      metrics-per-host: true
 
     stats:
       enabled: true
@@ -83,7 +80,7 @@ nginx-ingress:
       service:
         annotations:
           prometheus.io/scrape: "true"
-          prometheus.io/probe: "10254"
+          prometheus.io/port: "10254"
           prometheus.io/targets: "kubernetes,openstack"
 
     service:
@@ -96,9 +93,9 @@ nginx-ingress:
         http: http
         https: https
 
-      # set in regional values
-      #externalIPs:
-      #  - DEFINED-AS-VALUE
+      # Set via regional values.
+      # externalIPs:
+      #   - DEFINED-AS-VALUE
 
     # ingress controller only on master nodes
     nodeSelector:
@@ -119,23 +116,6 @@ nginx-ingress:
                 operator: In
                 values:
                 - controller
-
-#    resources:
-#      limits:
-#        cpu: 100m
-#        memory: 64Mi
-#      requests:
-#        cpu: 100m
-#        memory: 64Mi
-
-#  statsExporter:
-#    resources:
-#      limits:
-#        cpu: 10m
-#        memory: 20Mi
-#      requests:
-#        cpu: 10m
-#        memory: 20Mi
 
   defaultBackend:
     enabled: true
@@ -171,11 +151,3 @@ nginx-ingress:
                 operator: In
                 values:
                 - default-backend
-
-#    resources:
-#      limits:
-#        cpu: 10m
-#        memory: 20Mi
-#      requests:
-#        cpu: 10m
-#        memory: 20Mi
