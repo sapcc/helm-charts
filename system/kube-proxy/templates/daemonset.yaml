@@ -98,6 +98,22 @@ spec:
         securityContext:
             privileged: true
 {{- end }}
+{{- if .Values.sidecars.nanny }}
+      - name: nanny
+        imagePullPolicy: IfNotPresent
+        image: "{{ .Values.images.nanny.repository }}:{{ .Values.images.nanny.tag }}"
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+{{- end }}
       hostNetwork: true
       nodeSelector:
         beta.kubernetes.io/os: linux
