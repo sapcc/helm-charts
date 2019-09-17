@@ -53,7 +53,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:process} (\[)?(req-)?(%{REQUESTID:requestid})
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?(%{REQUESTID:requestid})
     custom_pattern_path /fluent-etc/pattern
   </parse>
 </filter>
@@ -393,12 +393,18 @@
 </match>
 
 <match **>
-   @type elasticsearch
-   host {{.Values.elk_elasticsearch_endpoint_host_internal}}
-   port {{.Values.elk_elasticsearch_http_port}}
+   @type elasticsearch_dynamic
+   host {{.Values.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.cluster_region}}.{{.Values.domain}}
+   port {{.Values.elk_elasticsearch_ssl_port}}
    user {{.Values.elk_elasticsearch_data_user}}
    password {{.Values.elk_elasticsearch_data_password}}
+   scheme https
+   ssl_verify false
+   ssl_version TLSv1_2
    logstash_format true
+   template_name logstash
+   template_file /fluent-bin/logstash.json
+   template_overwrite true
    time_as_integer false
    @log_level info
    slow_flush_log_threshold 50.0
@@ -415,4 +421,5 @@
      flush_thread_count 4
      flush_interval 3s
    </buffer>
+# second is missing, it it is only deployed to one elk cluster
  </match>

@@ -1,4 +1,3 @@
-{{- if .Values.fluent_vcenter.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -20,7 +19,10 @@ spec:
       labels:
         component: fluent-vcenter
       annotations:
-        checksum/fluent-vcenter-configmap.yaml: {{ include "elk/templates/fluent-vcenter-configmap.yaml" . | sha256sum }}
+        checksum/configmap.yaml: {{ include "elk/templates/configmap.yaml" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{.Values.prometheus_port}}"
+        prometheus.io/targets: {{ .Values.prometheus | quote }}
     spec:
       nodeSelector:
         zone: farm
@@ -30,17 +32,17 @@ spec:
             name: fluent-vcenter
       containers:
         - name: fluent-vcenter
-          image: {{.Values.docker_repo}}/fluentd-vcenter-prometheus:{{.Values.fluent_vcenter.image_version}}
+          image: {{.Values.docker_repo}}/fluentd-vcenter-prometheus:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           ports:
             - name: vclogs
-              containerPort: {{.Values.fluent_vcenter.vcenter_logs_in_port}}
-              protocol: {{.Values.fluent_vcenter.vcenter_logs_in_proto | upper}}
+              containerPort: {{.Values.vcenter_logs_in_port}}
+              protocol: {{.Values.vcenter_logs_in_proto | upper}}
             - name: esxlogs
-              containerPort: {{.Values.fluent_vcenter.esx_logs_in_port}}
-              protocol: {{.Values.fluent_vcenter.esx_logs_in_proto | upper}}
+              containerPort: {{.Values.esx_logs_in_port}}
+              protocol: {{.Values.esx_logs_in_proto | upper}}
             - name: metrics
-              containerPort: {{.Values.fluent_vcenter.prometheus_port}}
+              containerPort: {{.Values.prometheus_port}}
               protocol: TCP
           env:
             - name: NAMESPACE
@@ -50,4 +52,3 @@ spec:
           volumeMounts:
             - name: fluent-vcenter-etc
               mountPath: /fluentd/etc
-{{- end }}
