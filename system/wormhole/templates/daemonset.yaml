@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: wormhole
+spec:
+  selector:
+    matchLabels:
+      name: wormhole
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: wormhole
+    spec:
+      hostNetwork: true
+      containers:
+      - name: wormhole
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        command:
+        - "sh"
+        - "-c"
+        - "wormhole client --listen {{ .Values.interface.ipAddress }}:{{ .Values.interface.port }} --kubeconfig={{ .Values.global.kubeConfig }}"
+        volumeMounts:
+          - mountPath: /etc/kubernetes
+            name: etc-kubernetes
+            readOnly: true
+        securityContext:
+          privileged: true
+      volumes:
+        - name: etc-kubernetes
+          hostPath:
+            path: /etc/kubernetes
