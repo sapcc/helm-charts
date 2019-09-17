@@ -1,4 +1,4 @@
-{{- if (semverCompare ">= 1.9" .Values.kubernetes.version) }} 
+{{- if (semverCompare ">= 1.9-0" .Capabilities.KubeVersion.GitVersion) }} 
 apiVersion: apps/v1
 {{- else }}
 apiVersion: extensions/v1beta1 
@@ -19,17 +19,17 @@ spec:
       labels:
         name: kube-proxy
         k8s-app: kube-proxy
-{{- if (semverCompare "< 1.13" .Values.kubernetes.version) }}
+{{- if (semverCompare "< 1.13-0" .Capabilities.KubeVersion.GitVersion ) }}
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
 {{- end }}
     spec:
-{{- if (semverCompare ">= 1.10" .Values.kubernetes.version) }} 
+{{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
       priorityClassName: system-node-critical
 {{- end }}
       containers:
-      - name: kube-proxy
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+      - name: proxy
+        image: "{{ .Values.images.proxy.repository }}:{{ .Values.images.proxy.tag }}"
         imagePullPolicy: IfNotPresent
         command:
           - /hyperkube
@@ -59,9 +59,9 @@ spec:
           - mountPath: /lib/modules
             name: lib-modules
             readOnly: true
-{{- if .Values.parrot.enabled }}
+{{- if .Values.sidecars.parrot.enabled }}
       - name: parrot
-        image: "{{ .Values.parrot.image.repository }}:{{ .Values.parrot.image.tag }}"
+        image: "{{ .Values.images.parrot.repository }}:{{ .Values.images.parrot.tag }}"
         imagePullPolicy: IfNotPresent
         command:
           - /parrot
