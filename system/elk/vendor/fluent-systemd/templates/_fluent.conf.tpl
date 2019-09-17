@@ -33,10 +33,10 @@
 
 <match **>
    @type elasticsearch_dynamic
-   host {{.Values.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.cluster_region}}.{{.Values.domain}}
-   port {{.Values.elk_elasticsearch_ssl_port}}
-   user {{.Values.elk_elasticsearch_data_user}}
-   password {{.Values.elk_elasticsearch_data_password}}
+   host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+   port {{.Values.global.elk_elasticsearch_ssl_port}}
+   user {{.Values.global.elk_elasticsearch_data_user}}
+   password {{.Values.global.elk_elasticsearch_data_password}}
    scheme https
    ssl_verify false
    ssl_version TLSv1_2

@@ -5,7 +5,7 @@ metadata:
   name: fluent-systemd
   namespace: elk
   annotations:
-    kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
 spec:
   minReadySeconds: 15
   updateStrategy:
@@ -34,7 +34,7 @@ spec:
             path: /var/log
       containers:
         - name: fluent-systemd
-          image: {{.Values.docker_repo}}/elk-fluent:{{.Values.elk_image_version_fluent}}
+          image: {{.Values.global.docker_repo}}/elk-fluent:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/dumb-init", "/usr/local/bin/fluentd", "-c", "/fluent-systemd-etc/fluent.conf", "--use-v1-config", "--suppress-repeated-stacktrace"]
           env:
