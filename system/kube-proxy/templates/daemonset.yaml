@@ -18,6 +18,7 @@ spec:
     metadata:
       labels:
         name: kube-proxy
+        k8s-app: kube-proxy
 {{- if (semverCompare "< 1.13" .Values.kubernetes.version) }}
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
@@ -58,6 +59,25 @@ spec:
           - mountPath: /lib/modules
             name: lib-modules
             readOnly: true
+{{- if .Values.parrot.enabled }}
+      - name: parrot
+        image: "{{ .Values.parrot.image.repository }}:{{ .Values.parrot.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /parrot
+          - --as={{ required ".Values.parrot.as" .Values.parrot.as }}
+          - --nodename=$(NODE_NAME)
+          - --hostip=$(HOST_IP)
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP 
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+{{- end }}
       hostNetwork: true
       nodeSelector:
         beta.kubernetes.io/os: linux
