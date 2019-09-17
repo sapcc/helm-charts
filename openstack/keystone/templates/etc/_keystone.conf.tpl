@@ -107,10 +107,10 @@ permissive = true
 {{- end }}
 
 [database]
-{{- if .Values.postgresql.enabled }}
+{{- if eq .Values.global.database "postgres" }}
 connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@{{include "db_host" .}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase }}
 {{- end }}
-{{- if .Values.mariadb.enabled }}
+{{- if eq .Values.global.database "mariadb" }}
 connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
 {{- end }}
 
