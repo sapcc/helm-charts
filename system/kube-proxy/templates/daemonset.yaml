@@ -68,6 +68,7 @@ spec:
           - --as={{ required ".Values.parrot.as" .Values.parrot.as }}
           - --nodename=$(NODE_NAME)
           - --hostip=$(HOST_IP)
+          - --logtostderr
         env:
           - name: NODE_NAME
             valueFrom:
@@ -78,6 +79,25 @@ spec:
               fieldRef:
                 fieldPath: status.hostIP
 {{- end }}
+{{- if .Values.sidecars.externalip }}
+      - name: externalip
+        image: "{{ .Values.images.externalip.repository }}:{{ .Values.images.externalip.tag }}"
+        command:
+          - /externalip 
+{{- if .Values.externalip.ignoreaddress }}
+          - --ignore-address={{ .Values.externalip.ignoreaddress}} 
+{{- end }}}
+          - --source-address=${HOST_IP} 
+          - --interface=dummy0 
+          - --logtostderr 
+        env: 
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        securityContext:
+            privileged: true
+{{- end }}
       hostNetwork: true
       nodeSelector:
         beta.kubernetes.io/os: linux
@@ -85,6 +105,7 @@ spec:
         kubernetes.cloud.sap/provisioned-by: kubernikus
 {{- end }}
       serviceAccountName: kube-proxy
+      terminationGracePeriodSeconds: 5
       tolerations:
 {{- if .Values.toleration }}
         - key: "kubernetes.cloud.sap/unification"
