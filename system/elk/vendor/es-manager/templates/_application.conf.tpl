@@ -31,10 +31,6 @@ hosts = [
       username = "{{.Values.global.admin_user}}"
       password = "{{.Values.global.admin_password}}"
     }
-  },
-  {
-    host = "http://elasticsearch.hermes:9200"
-    name = "hermes cluster"
   }
 ]
 
