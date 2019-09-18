@@ -7,18 +7,7 @@ global:
   dbUser: cinder
 
   hypervisors_vmware: []
-  #  - name: DEFINED-IN-REGION-CHART
-  #    username: DEFINED-IN-REGION-CHART
-  #    password: DEFINED-IN-REGION-CHART
-  #    host: DEFINED-IN-REGION-CHART
-  #    availability_zone: DEFINED-IN-REGION-CHART
   volumes_netapp: []
-  #  - name: DEFINED-IN-REGION-CHART
-  #    username: DEFINED-IN-REGION-CHART
-  #    password: DEFINED-IN-REGION-CHART
-  #    host: DEFINED-IN-REGION-CHART
-  #    vserver: DEFINED-IN-REGION-CHART
-  #    availability_zone: DEFINED-IN-REGION-CHART
   volumes: []
   osprofiler: {}
   pgbouncer:
@@ -72,7 +61,6 @@ mariadb:
 mysql_metrics:
   db_name: cinder
   db_user: cinder
-  db_password: DEFINED-IN-REGION-CHART
   customMetrics:
     - help: Cinder stuck volumes
       labels:
@@ -91,10 +79,10 @@ mysql_metrics:
           display_name,
           availability_zone,
           status,
-          COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge
+          COUNT(*) AS count_gauge
         FROM volumes
         WHERE
-          status IN ('attaching', 'deleting', 'detaching')
+          status IN ('attaching', 'deleting', 'detaching') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           host,
           availability_zone,
@@ -121,7 +109,7 @@ mysql_metrics:
           display_name,
           availability_zone,
           status,
-          MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge
+          MAX(NOW() - updated_at) AS max_duration_gauge
         FROM volumes
         WHERE
           status IN ('attaching', 'deleting', 'detaching')
