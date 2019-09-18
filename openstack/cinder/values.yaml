@@ -64,7 +64,7 @@ mysql_metrics:
   customMetrics:
     - help: Cinder stuck volumes
       labels:
-      - "host"
+      - "cinder_host"
       - "availability_zone"
       - "project_id"
       - "status"
@@ -73,7 +73,7 @@ mysql_metrics:
       name: openstack_stuck_volumes_count_gauge
       query: |
         SELECT
-          host,
+          host as cinder_host,
           project_id,
           id,
           display_name,
@@ -84,7 +84,7 @@ mysql_metrics:
         WHERE
           status IN ('attaching', 'deleting', 'detaching') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
-          host,
+          cinder_host,
           availability_zone,
           project_id,
           status,
@@ -94,7 +94,7 @@ mysql_metrics:
       - "count_gauge"
     - help: Cinder stuck volumes max duration
       labels:
-      - "host"
+      - "cinder_host"
       - "availability_zone"
       - "project_id"
       - "status"
@@ -103,7 +103,7 @@ mysql_metrics:
       name: openstack_stuck_volumes_max_duration_gauge
       query: |
         SELECT
-          host,
+          host as cinder_host,
           project_id,
           id,
           display_name,
@@ -114,7 +114,7 @@ mysql_metrics:
         WHERE
           status IN ('attaching', 'deleting', 'detaching')
         GROUP BY
-          host,
+          cinder_host,
           availability_zone,
           project_id,
           status,
@@ -124,7 +124,7 @@ mysql_metrics:
       - "max_duration_gauge"
     - help: Cinder volumes count
       labels:
-      - "host"
+      - "cinder_host"
       - "availability_zone"
       - "volume_type_id"
       - "project_id"
@@ -133,7 +133,7 @@ mysql_metrics:
       name: openstack_volumes_count_gauge
       query: |
         SELECT
-          host,
+          host as cinder_host,
           availability_zone,
           volume_type_id,
           project_id,
@@ -142,7 +142,7 @@ mysql_metrics:
           COUNT(*) AS count_gauge
         FROM volumes
         GROUP BY
-          host,
+          cinder_host,
           availability_zone,
           volume_type_id,
           project_id,
@@ -152,7 +152,7 @@ mysql_metrics:
       - "count_gauge"
     - help: Cinder volumes size
       labels:
-      - "host"
+      - "cinder_host"
       - "availability_zone"
       - "volume_type_id"
       - "project_id"
@@ -161,7 +161,7 @@ mysql_metrics:
       name: openstack_volumes_size_gauge
       query: |
         SELECT
-          host,
+          host as cinder_host,
           availability_zone,
           volume_type_id,
           project_id,
@@ -170,7 +170,7 @@ mysql_metrics:
           SUM(size) size_gauge
         FROM volumes
         GROUP BY
-          host,
+          cinder_host,
           availability_zone,
           volume_type_id,
           project_id,
@@ -182,39 +182,39 @@ mysql_metrics:
       labels:
       - "status"
       - "project_id"
-      - "host"
+      - "cinder_host"
       name: openstack_snapshots_count_gauge
       query: |
         SELECT
           snapshots.status,
           snapshots.project_id,
-          volumes.host,
+          volumes.host as cinder_host,
           COUNT(*) AS count_gauge
         from snapshots
         join volumes on snapshots.volume_id=volumes.id
         GROUP BY
           snapshots.status,
           snapshots.project_id,
-          volumes.host;
+          cinder_host;
       values:
       - "count_gauge"
     - help: Cinder Snapshots size
       labels:
       - "project_id"
-      - "host"
+      - "cinder_host"
       - "status"
       name: openstack_snapshots_size_gauge
       query: |
         SELECT
           snapshots.project_id,
-          volumes.host,
+          volumes.host as cinder_host,
           snapshots.status,
           SUM(volume_size) size_gauge
         from snapshots
         join volumes on snapshots.volume_id=volumes.id
         GROUP BY
           snapshots.project_id,
-          volumes.host,
+          cinder_host,
           snapshots.status;
       values:
       - "size_gauge"
