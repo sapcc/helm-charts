@@ -56,9 +56,9 @@ imageName: 'monsoon/loci-neutron'
 # imageVersionNetworkAgentOVS:
 # imageVersionIronicAgent:
 
-service_plugins: lbaasv2,asr1k_l3_routing
-default_router_type: ASR1k_m3_router
-router_scheduler_driver: asr1k_neutron_l3.plugins.l3.schedulers.simple_asr1k_scheduler.SimpleASR1KScheduler
+service_plugins: neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2,networking_cisco.plugins.cisco.service_plugins.cisco_device_manager_plugin.CiscoDeviceManagerPlugin,networking_cisco.plugins.cisco.service_plugins.cisco_router_plugin.CiscoRouterPlugin
+default_router_type: ASR1k_router
+router_scheduler_driver: neutron.scheduler.l3_agent_scheduler.LeastRoutersScheduler
 
 aci:
   apic_application_profile: converged_cloud_openstack
@@ -261,6 +261,15 @@ pgmetrics:
         - gauge:
             usage: "GAUGE"
             description: "Internet IPs used per subnet"
+    openstack_neutron_monitor_sec_grp:
+     query: "select securitygroupportbindings.security_group_id AS security_group_id, count(*) as count from securitygroupportbindings join securitygrouprules on securitygroupportbindings.security_group_id = securitygrouprules.security_group_id group by securitygroupportbindings.security_group_id order by count desc limit 10"
+     metrics:
+        - security_group_id:
+            usage: "LABEL"
+            description: "security group id details"
+        - count:
+            usage: "GAUGE"
+            description: "Estimate on number of filter rules"
     openstack_neutron_sg_count:
      query: "select count(*) as count from securitygrouprules"
      metrics:
