@@ -1,17 +1,17 @@
 # Default values for grafana.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-replicaCount: 1
-image:
-  repository: "@/cc/secrets"
-  pullPolicy: IfNotPresent
-  version: "@/cc/secrets"
-namespace: '@/cc/secrets'
-service:
-  name: grafana
-  type: ClusterIP
-  externalPort: 3000
-  internalPort: 3000
+#REMOVEreplicaCount: 1
+#REMOVEimage:
+#REMOVE  repository: "@/cc/secrets"
+#REMOVE  pullPolicy: IfNotPresent
+#REMOVE  version: "@/cc/secrets"
+#REMOVEnamespace: '@/cc/secrets'
+#REMOVEservice:
+#REMOVE  name: grafana
+#REMOVE  type: ClusterIP
+#REMOVE  externalPort: 3000
+#REMOVE  internalPort: 3000
 #resources:
 #  limits:
 #    cpu: 100m
@@ -40,16 +40,17 @@ service:
 #    os_project_domain: ccadmin
 #    os_region_name: DEFINED-IN-REGION-SECRETS
 #    os_password: DEFINED-IN-REGION-SECRETS
-persistence:
+#REMOVEpersistence:
 #  enabled: false
-  name: storage-grafana-postgres-0
-  accessMode: ReadWriteMany
-  size: 10Gi
+#REMOVE  name: storage-grafana-postgres-0
+#REMOVE  accessMode: ReadWriteMany
+#REMOVE  size: 10Gi
 
 ingress:
   enabled: false
   global: false
 
+#REMOVE - this will go soon - start
 elasticsearch:
   # version may be overridden to 5 in some landscapes
   version: 5
@@ -57,18 +58,18 @@ elasticsearch:
     user: 'admin'
     password: '@/cc/secrets'
   master_project_id: '@/cc/secrets'
-admin:
-  project:
-    domain:
-      name: '@/cc/secrets'
+#REMOVE - this will go soon - end
+#REMOVEadmin:
+#REMOVE  project:
+#REMOVE    domain:
+#REMOVE      name: '@/cc/secrets'
 grafana:
   vice_president: true
   disco: true
   image: grafana/grafana
   image_version: 6.3.5
   minitrue_version: v0.9.5
-  # image_version: 5.4.3
-  seeding_enabled: true
+#REMOVE  seeding_enabled: true
   log_level: 'Info'
   admin:
     user: 'grafana_admin'
@@ -84,8 +85,8 @@ grafana:
     viewer: 'monitoring_viewer'
     editor: 'monitoring_editor'
     admin: 'monitoring_admin'
-  aes:
-    key: '@/cc/secrets'
+#REMOVE  aes:
+#REMOVE    key: '@/cc/secrets'
   port:
     public: '3000'
   endpoint:
@@ -116,6 +117,25 @@ nginx:
       public: '3001'
     host:
       public: '@/cc/secrets'
+
+postgresql:
+  image: '@/cc/secrets'
+  imageTag: '9.4.21'
+  metrics:
+    enabled: false
+  postgresDatabase: grafana
+  postgresUser: postgres
+  postgresPassword: '@/cc/secrets'
+  persistence:
+    enabled: false
+    existingClaim: storage-grafana-postgres-0
+  backup:
+    enabled: true
+    metrics: true
+    os_password: '@/cc/secrets'
+  pgbouncer:
+    enabled: false
+  nameOverride: pgsql
 
 # certs required for some datasources
 authentication:
