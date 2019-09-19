@@ -101,10 +101,10 @@ session_life_time = 604800
 #################################### Security ####################################
 [security]
 # default admin user, created on startup
-admin_user = {{.Values.admin.user}}
+admin_user = {{.Values.grafana.admin.user}}
 
 # default admin password, can be changed before first start of grafana,  or in profile settings
-admin_password = {{.Values.admin.password}}
+admin_password = {{.Values.grafana.admin.password}}
 
 # used for signing
 ;secret_key = SW2YcwTIb9zpOOhoPsMm
