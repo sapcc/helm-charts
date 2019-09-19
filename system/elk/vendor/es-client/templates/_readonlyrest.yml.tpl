@@ -54,6 +54,7 @@ readonlyrest:
       ldap_authorization:
         name: "ldap1"
         groups: [{{.Values.global.ldap.es_user_groups}}]
+      kibana_access: rw
 
     # get the user from the x-remote-user header
     proxy_auth_configs:
