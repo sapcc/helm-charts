@@ -68,6 +68,12 @@ spec:
 {{- end }}
             - name: grafana-content
               mountPath: /git
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 3000
+            initialDelaySeconds: 120
+            periodSeconds: 30
         - name: "gitsync"
           image: hub.global.cloud.sap/monsoon/git-sync:v3_1_1__linux_amd64
           imagePullPolicy: {{.Values.image.pullPolicy}}
