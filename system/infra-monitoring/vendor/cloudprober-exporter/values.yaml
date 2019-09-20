@@ -1,9 +1,31 @@
-# Default values for cloudprober-exporter.
+# Default values for ping-exporter.
 # This is a YAML-formatted file.
-index: >-
-  <h1>Hello</h1>
-  <p>This is a test</p>
+# Declare variables to be passed into your templates.
+
+image:
+  repository: cloudprober/cloudprober
+  tag: v0.10.4
+  pullPolicy: IfNotPresent
+
+fullnameOverride: cloudprober-exporter
+replicaCount: 1
+revisionHistoryLimit: 5
+
 metrics:
   scrape: true
   port: 9313
   targets: infra-collector
+
+pingIntervalMsec: 5000  # 5s
+pingTimeoutMsec: 2000   # 2s
+httpIntervalMsec: 5000  # 5s
+httpTimeoutMsec: 2000   # 2s
+
+probers:
+  - DEFINED-IN-REGIONS-SECRETS
+
+static_ping_targets:
+  - DEFINED-IN-REGIONS-SECRETS
+
+static_http_targets:
+  - DEFINED-IN-REGIONS-SECRETS

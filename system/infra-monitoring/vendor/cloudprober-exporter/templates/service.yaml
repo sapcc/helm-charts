@@ -1,42 +1,33 @@
 {{- if .Values.enabled }}
-{{- $scrape := .Values.metrics.scrape -}}
-{{- $port := .Values.metrics.port -}}
+{{- $values := .Values -}}
 {{- $targets := .Values.metrics.targets -}}
 
-{{- range $i, $config := .Values.servers -}}
+{{- range $i, $prober := .Values.probers -}}
 {{ if ne $i 0 }}---{{ end }}
 
 apiVersion: v1
 kind: Service
 
 metadata:
-  name: cloudprober-exporter-{{$config.name}}
+  name: cloudprober-exporter-{{$prober.name}}
   labels:
     app: cloudprober-exporter
     release: "{{$.Release.Name}}"
 
 spec:
   selector:
-    name: cloudprober-exporter-{{$config.name}}
+    name: cloudprober-exporter-{{$prober.name}}
   externalIPs:
-    - {{$config.target}}
+    - {{$prober.ip}}
   ports:
-    - name: prober-target-http
+    - name: http
       protocol: TCP
       port: 1080
       targetPort: 80
-    - name: prober-target-udp
-      protocol: UDP
-      port: 5201
-      targetPort: 5201
-    - name: prober-target-tcp
+    - name: metrics
       protocol: TCP
-      port: 5201
-      targetPort: 5201
-    - name: cloudprober
-      protocol: TCP
-      port: 9313
-      targetPort: 9313
+      port: {{ $values.metrics.port }}
+      targetPort: {{ $values.metrics.port }}
 ---
 {{ end -}}
 {{ end -}}

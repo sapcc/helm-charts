@@ -10,7 +10,6 @@ metadata:
     release: "{{$.Release.Name}}"
 
 data:
-  index.html: {{ .Values.index }}
   cloudprober.cfg: |
     {{- range $i, $config := .Values.static_ping_targets }}
     probe {
@@ -22,8 +21,8 @@ data:
       ping_probe {
         use_datagram_socket: false
       }
-      interval_msec: 5000  # 5s
-      timeout_msec: 2000   # 2s
+      interval_msec: {{ .Values.pingIntervalMsec }}
+      timeout_msec: {{ .Values.pingTimeoutMsec }}
     }
     {{- end }}
     {{- range $i, $config := .Values.static_http_targets }}
@@ -35,23 +34,24 @@ data:
       }
       http_probe {
         port: {{ $config.port }}
+        relative_url: "/data_4096"
       }
-      interval_msec: 5000  # 5s
-      timeout_msec: 2000   # 2s
+      interval_msec: {{ .Values.httpIntervalMsec }}
+      timeout_msec: {{ .Values.httpTimeoutMsec }}
     }
     {{- end }}
-    {{- range $i, $config := .Values.static_udp_targets }}
-    probe {
-      type: UDP
-      name: "probe-udp-{{ $config.name }}"
-      targets {
-        host_names: "{{ $config.target }}"
-      }
-      udp_probe {
-        port: {{ $config.port }}
+    server {
+      type: HTTP
+      http_server {
+        port: 80
+
+        # Return a repeated pattern of "cloudprobe" at the URL /data_4096.
+        pattern_data_handler {
+           response_size: 4096
+           pattern: "cloudprober"
+        }
       }
     }
-    {{- end }}
     surfacer {
       type: PROMETHEUS
 
@@ -59,5 +59,4 @@ data:
         metrics_prefix: "cloudprober_"
       }
     }
-
   {{ end -}}
