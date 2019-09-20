@@ -60,12 +60,12 @@
       replacement: ${2}b
       target_label: probed_to
     - source_labels: [__name__, probe]
-      regex: 'cloudprober_.+;ping|http-([a-zA-Z]*)-.+'
-      replacement: '$1'
+      regex: 'cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
+      replacement: '$2'
       target_label: probed_to_type
     - source_labels: [__name__, probe]
-      regex: 'cloudprober_.+;ping|http-[a-zA-Z]*-(.+)'
-      replacement: '$1'
+      regex: 'cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
+      replacement: '$3'
       target_label: probed_to
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
