@@ -60,11 +60,11 @@
       replacement: ${2}b
       target_label: probed_to
     - source_labels: [__name__, probe]
-      regex: 'cloudprober_.+;ping-([a-zA-Z]*)-.+'
+      regex: 'cloudprober_.+;[ping|http]-([a-zA-Z]*)-.+'
       replacement: '$1'
       target_label: probed_to_type
     - source_labels: [__name__, probe]
-      regex: 'cloudprober_.+;ping-[a-zA-Z]*-(.+)'
+      regex: 'cloudprober_.+;[ping|http]-[a-zA-Z]*-(.+)'
       replacement: '$1'
       target_label: probed_to
 
