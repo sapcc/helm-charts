@@ -49,21 +49,23 @@ spec:
           ports:
           - name: metrics
             containerPort: {{ $values.metrics.port | quote }}
+            protocol: TCP
           - name: http
             containerPort: 80
+            protocol: TCP
           env:
           - name: CLOUDPROBER_PORT
             value: {{ $values.metrics.port | quote }}
           livenessProbe:
             httpGet:
               path: /status
-              port: {{ $values.metrics.port | quote }}
+              port: metrics
             timeoutSeconds: 10
             periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /status
-              port: {{ $values.metrics.port | quote }}
+              port: metrics
             timeoutSeconds: 5
             periodSeconds: 15
 
