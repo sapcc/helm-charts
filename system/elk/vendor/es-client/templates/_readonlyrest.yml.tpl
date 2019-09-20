@@ -55,6 +55,7 @@ readonlyrest:
         name: "ldap1"
         groups: [{{.Values.global.ldap.es_user_groups}}]
       kibana_access: rw
+      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", "jump-*", "kubernikus-*", "scaleout-*", ".kibana"]
 
     # get the user from the x-remote-user header
     proxy_auth_configs:
