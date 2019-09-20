@@ -1,5 +1,6 @@
 {{- if .Values.enabled }}
 {{- $values := .Values -}}
+
 {{- range $i, $prober := .Values.probers -}}
 {{ if ne $i 0 }}---{{ end }}
 
@@ -46,8 +47,10 @@ spec:
           - name: cloudprober-exporter
             mountPath: /cfg
           ports:
-          - name: http
+          - name: metrics
             containerPort: {{ $values.metrics.port | quote }}
+          - name: http
+            containerPort: 80
           env:
           - name: CLOUDPROBER_PORT
             value: {{ $values.metrics.port | quote }}
