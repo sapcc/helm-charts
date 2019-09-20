@@ -1,4 +1,5 @@
 {{ if .Values.enabled }}
+{{- $values := .Values -}}
 
 apiVersion: v1
 kind: ConfigMap
@@ -21,8 +22,8 @@ data:
       ping_probe {
         use_datagram_socket: false
       }
-      interval_msec: {{ .Values.pingIntervalMsec }}
-      timeout_msec: {{ .Values.pingTimeoutMsec }}
+      interval_msec: {{ $values.pingIntervalMsec }}
+      timeout_msec: {{ $values.pingTimeoutMsec }}
     }
     {{- end }}
     {{- range $i, $config := .Values.static_http_targets }}
@@ -36,8 +37,8 @@ data:
         port: {{ $config.port }}
         relative_url: "/data_4096"
       }
-      interval_msec: {{ .Values.httpIntervalMsec }}
-      timeout_msec: {{ .Values.httpTimeoutMsec }}
+      interval_msec: {{ $values.httpIntervalMsec }}
+      timeout_msec: {{ $values.httpTimeoutMsec }}
     }
     {{- end }}
     server {
