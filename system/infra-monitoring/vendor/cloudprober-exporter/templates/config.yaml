@@ -24,10 +24,6 @@ data:
       }
       interval_msec: {{ $values.pingIntervalMsec }}
       timeout_msec: {{ $values.pingTimeoutMsec }}
-      additional_label {
-        key: "probed_to"
-        value: "{{ $config.target }}"
-      }
     }
     {{- end }}
     {{- range $i, $config := .Values.static_http_targets }}
@@ -43,10 +39,6 @@ data:
       }
       interval_msec: {{ $values.httpIntervalMsec }}
       timeout_msec: {{ $values.httpTimeoutMsec }}
-      additional_label {
-        key: "probed_to"
-        value: "{{ $config.target }}"
-      }
     }
     {{- end }}
     server {
@@ -59,6 +51,12 @@ data:
            response_size: 4096
            pattern: "cloudprober"
         }
+      }
+    }
+    server {
+      type: UDP
+      udp_server {
+        port: 81
       }
     }
     surfacer {
