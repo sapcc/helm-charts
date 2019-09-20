@@ -59,6 +59,14 @@
       regex: 'ping_.+;([a-zA-Z]*)1\.cc\.(.+)\.cloud\.sap'
       replacement: ${2}b
       target_label: probed_to
+    - source_labels: [__name__, probe]
+      regex: 'cloudprober_.+;ping-([a-zA-Z]*)-.+'
+      replacement: '$1'
+      target_label: probed_to_type
+    - source_labels: [__name__, probe]
+      regex: 'cloudprober_.+;ping-[a-zA-Z]*-(.+)'
+      replacement: '$1'
+      target_label: probed_to
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
