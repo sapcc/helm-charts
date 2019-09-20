@@ -37,12 +37,20 @@
       action: labeldrop
     - source_labels: [__name__, target]
       regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$2'
-      target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
       replacement: '$1'
       target_label: probed_to_type
+    - source_labels: [__name__, target]
+      regex: 'ping_.+;([a-zA-Z]*)(\d)\.cc\.(.+)\.cloud\.sap'
+      replacement: '$1'
+      target_label: probed_to_type
+    - source_labels: [__name__, target]
+      regex: 'ping_.+;[.0-9]*'
+      replacement: 'pod'
+      target_label: probed_to_type
+    - source_labels: [__name__, target]
+      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
+      replacement: '$2'
+      target_label: probed_to
     - source_labels: [__name__, target]
       regex: 'ping_.+;([a-zA-Z]*)0\.cc\.(.+)\.cloud\.sap'
       replacement: ${2}a
@@ -51,10 +59,6 @@
       regex: 'ping_.+;([a-zA-Z]*)1\.cc\.(.+)\.cloud\.sap'
       replacement: ${2}b
       target_label: probed_to
-    - source_labels: [__name__, target]
-      regex: 'ping_.+;([a-zA-Z]*)(\d)\.cc\.(.+)\.cloud\.sap'
-      replacement: '$1'
-      target_label: probed_to_type
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
