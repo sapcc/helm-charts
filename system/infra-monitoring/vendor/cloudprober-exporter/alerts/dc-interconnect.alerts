@@ -1,32 +1,17 @@
 groups:
 - name: network-interconnect.alerts
   rules:
-  - alert: NetworkDCInterconnectHTTPFailed
-    expr: (rate(cloudprober_total{ptype="http"}[5m]) - rate(cloudprober_success{ptype="http"}[5m])) / rate(cloudprober_total{ptype="http"}[5m]) > 0.15
+  - alert: NetworkInterconnectPingFailed
+    expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping"}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) > 0.15
     for: 10m
     labels:
       severity: critical
       tier: net
       service: interconnect
       context: interconnect
-      dashboard: network-dc-interconnect
-      meta: 'Prober {{ $labels._name }} could not reach target {{ $labels.probe }}'
-      playbook: 'docs/devops/alert/network/interconnect.html#dc_interconnect'
+      dashboard: network-interconnect
+      meta: 'Prober {{ $labels.name }} cannot ping target {{ $labels.dst }} in {{ $labels.probed_to }} from {{ $labels.src }} in {{ $labels.probed_from }}'
+      playbook: 'docs/devops/alert/network/interconnect.html
     annotations:
-      description: 'Prober {{ $labels.name }} could not reach target {{ $labels.probe }}'
-      summary: 'Prober {{ $labels.name }} could not reach target {{ $labels.probe }}'
-
-  - alert: NetworkDCInterconnectPingFailed
-    expr: (rate(cloudprober_total{ptype="ping"}[5m]) - rate(cloudprober_success{ptype="ping"}[5m])) / rate(cloudprober_total{ptype="ping"}[5m]) > 0.15
-    for: 10m
-    labels:
-      severity: critical
-      tier: net
-      service: interconnect
-      context: interconnect
-      dashboard: network-dc-interconnect
-      meta: 'Prober {{ $labels.name }} could not reach target {{ $labels.probe }}'
-      playbook: 'docs/devops/alert/network/interconnect.html#dc_interconnect'
-    annotations:
-      description: 'Prober {{ $labels.name }} could not reach target {{ $labels.probe }} '
-      summary: 'Prober {{ $labels.name }} could not reach target {{ $labels.probe }}'
+      description: 'Prober {{ $labels.name }} cannot ping target {{ $labels.dst }} in {{ $labels.probed_to }} from {{ $labels.src }} in {{ $labels.probed_from }}'
+      summary: 'Prober {{ $labels.name }} cannot ping target {{ $labels.dst }} in {{ $labels.probed_to }} from {{ $labels.src }} in {{ $labels.probed_from }}'
