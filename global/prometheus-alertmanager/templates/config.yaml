@@ -64,6 +64,12 @@ data:
           severity: critical|warning|info
           region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+      # owner: Thomas Grainchen / Olaf Heydorn
+      - receiver: slack_snmp
+        continue: true
+        match_re:
+          context: snmp
+
       # owner: Michael Schmidt / Fabian Ruff
       - receiver: slack_k8s
         continue: true
@@ -697,6 +703,19 @@ data:
     - name: slack_nannies
       slack_configs:
         - channel: '#cc-nannies'
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
+          send_resolved: true
+
+    - name: slack_snmp
+      slack_configs:
+        - channel: '#cc-snmp'
           api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
           username: "Control Plane"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
