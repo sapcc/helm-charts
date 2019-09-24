@@ -1,3 +1,4 @@
+# keystone configuration settings
 [DEFAULT]
 debug = {{.Values.debug}}
 insecure_debug = {{.Values.insecure_debug}}
