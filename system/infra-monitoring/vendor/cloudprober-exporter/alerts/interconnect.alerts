@@ -1,17 +1,32 @@
 groups:
 - name: network-interconnect.alerts
   rules:
-  - alert: NetworkInterconnectPingFailed
-    expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping"}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) > 0.15
-    for: 10m
+  - alert: NetworkInterconnectDown
+    expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping"}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) > 0.9
+    for: 5m
     labels:
-      severity: critical
+      severity: info
       tier: net
       service: interconnect
       context: interconnect
       dashboard: network-interconnect
-      meta: 'Prober {{ $labels.name }} cannot ping target {{ $labels.dst }} in {{ $labels.probed_to }} from {{ $labels.src }} in {{ $labels.probed_from }}'
+      meta: 'Network interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
       playbook: 'docs/devops/alert/network/interconnect.html
     annotations:
-      description: 'Prober {{ $labels.name }} cannot ping target {{ $labels.dst }} in {{ $labels.probed_to }} from {{ $labels.src }} in {{ $labels.probed_from }}'
-      summary: 'Prober {{ $labels.name }} cannot ping target {{ $labels.dst }} in {{ $labels.probed_to }} from {{ $labels.src }} in {{ $labels.probed_from }}'
+      description: 'Network interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
+      summary: 'Network interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
+
+  - alert: NetworkInterconnectFails
+    expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping"}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) > 0.3
+    for: 5m
+    labels:
+      severity: info
+      tier: net
+      service: interconnect
+      context: interconnect
+      dashboard: network-interconnect
+      meta: 'Prober fails to ping target {{ $labels.dst }} in {{ $labels.probed_to }} from {{ $labels.src }} in {{ $labels.probed_from }}'
+      playbook: 'docs/devops/alert/network/interconnect.html
+    annotations:
+      description: 'Prober fails to ping target {{ $labels.dst }} in {{ $labels.probed_to }} from {{ $labels.src }} in {{ $labels.probed_from }}'
+      summary: 'Prober fails to ping target {{ $labels.dst }} in {{ $labels.probed_to }} from {{ $labels.src }} in {{ $labels.probed_from }}'
