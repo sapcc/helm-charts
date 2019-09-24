@@ -41,6 +41,10 @@
       replacement: '$1'
       target_label: prometheus_source
       action: replace
+    - source_labels: ['ifIndex', 'server_id']
+      separator: '@'
+      target_label: uniqueident
+      action: replace
 
   {{ if .Values.authentication.enabled }}
   tls_config:
