@@ -24,6 +24,7 @@
       - '{__name__=~"snmp_f5_sysGlobalHostSwapUsedKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostSwapTotalKb"}'
       - '{__name__=~"^ping_.+"}'
+      - '{__name__=~"^cloudprober_.+"}'
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^ipmi_up"}'
