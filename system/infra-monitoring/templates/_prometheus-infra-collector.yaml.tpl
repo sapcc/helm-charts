@@ -67,11 +67,11 @@
       regex: 'cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
       replacement: '$3'
       target_label: probed_to
-    - source_labels: [probe_to]
+    - source_labels: [probed_to]
       regex: '^{{ .Values.global.region }}.*'
       replacement: 'yes'
       target_label: probed_inter_dc
-    - source_labels: [probe_to]
+    - source_labels: [probed_to]
       regex: '^(?!{{ .Values.global.region }}).*'
       replacement: 'no'
       target_label: probed_inter_dc
