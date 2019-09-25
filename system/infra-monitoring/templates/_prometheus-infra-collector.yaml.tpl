@@ -36,39 +36,39 @@
     - regex: "instance|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance"
       action: labeldrop
     - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
+      regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
       replacement: '$1'
       target_label: probed_to_type
     - source_labels: [__name__, target]
-      regex: 'ping_.+;([a-zA-Z]*)(\d)\.cc\.(.+)\.cloud\.sap'
+      regex: '^ping_.+;([a-zA-Z]*)(\d)\.cc\.(.+)\.cloud\.sap'
       replacement: '$1'
       target_label: probed_to_type
     - source_labels: [__name__, target]
-      regex: 'ping_.+;[.0-9]*'
+      regex: '^ping_.+;[.0-9]*'
       replacement: 'pod'
       target_label: probed_to_type
     - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
+      regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
       replacement: '$2'
       target_label: probed_to
     - source_labels: [__name__, target]
-      regex: 'ping_.+;([a-zA-Z]*)0\.cc\.(.+)\.cloud\.sap'
+      regex: '^ping_.+;([a-zA-Z]*)0\.cc\.(.+)\.cloud\.sap'
       replacement: ${2}a
       target_label: probed_to
     - source_labels: [__name__, target]
-      regex: 'ping_.+;([a-zA-Z]*)1\.cc\.(.+)\.cloud\.sap'
+      regex: '^ping_.+;([a-zA-Z]*)1\.cc\.(.+)\.cloud\.sap'
       replacement: ${2}b
       target_label: probed_to
     - source_labels: [__name__, probe]
-      regex: 'cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
+      regex: '^cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
       replacement: '$2'
       target_label: probed_to_type
     - source_labels: [__name__, probe]
-      regex: 'cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
+      regex: '^cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
       replacement: '$3'
       target_label: probed_to
     - source_labels: [__name__, probe]
-      regex: 'ping_.+;[a-zA-Z]*\d\.cc\.{{ .Values.global.region }}.*\.cloud\.sap'
+      regex: '^cloudprober_.+;[a-zA-Z]*\d\.cc\.{{ .Values.global.region }}.*\.cloud\.sap'
       replacement: 'dc'
       target_label: interconnect_type
 
