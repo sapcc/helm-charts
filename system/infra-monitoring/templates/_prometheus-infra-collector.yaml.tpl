@@ -71,10 +71,6 @@
       regex: '^{{ .Values.global.region }}.*'
       replacement: 'dc'
       target_label: interconnect_type
-    - source_labels: [probed_to]
-      regex: '^(?!{{ .Values.global.region }}).*'
-      replacement: 'region'
-      target_label: interconnect_type
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
