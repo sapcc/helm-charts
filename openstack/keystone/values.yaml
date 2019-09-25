@@ -259,12 +259,10 @@ mariadb:
 
 mysql_metrics:
   db_name: keystone
-  db_user: keystone
+  db_user: root
   db_password: DEFINED-IN-REGION-CHART
   customMetrics:
     - help: Total keystone role count
-      labels:
-      - "guage"
       name: openstack_roles_total
       query: |
         SELECT 
@@ -273,8 +271,6 @@ mysql_metrics:
       values:
       - "gauge"
     - help: Total keystone user count
-      labels:
-      - "guage"
       name: openstack_users_total
       query: |
         SELECT 
@@ -284,8 +280,6 @@ mysql_metrics:
       values:
       - "gauge"
     - help: Total keystone project count
-      labels:
-      - "guage"
       name: openstack_projects_total
       query: |
         SELECT 
@@ -295,8 +289,6 @@ mysql_metrics:
       values:
       - "gauge"
     - help: Total keystone role-assignment count
-      labels:
-      - "guage"
       name: openstack_assignments_total
       query: |
         SELECT 
@@ -305,8 +297,6 @@ mysql_metrics:
       values:
       - "gauge"
     - help: Total keystone token revocation count
-      labels:
-      - "guage"
       name: openstack_revocations_total
       query: |
         SELECT 
@@ -316,17 +306,16 @@ mysql_metrics:
       - "gauge"
     - help: Total keystone role-assignment count per role
       labels:
-      - "guage"
+      - "role_name"
       name: openstack_assignments_per_role
       query: |
         SELECT
-          r.name AS name,
-          COUNT(*) as gauge 
+          COUNT(*) as gauge,
+          r.name AS role_name
         FROM assignment a
         JOIN role r ON r.id = a.role_id
         GROUP BY r.name
       values:
-      - "name"
       - "gauge"
 
 postgresql:
