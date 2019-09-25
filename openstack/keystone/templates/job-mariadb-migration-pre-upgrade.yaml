@@ -2,13 +2,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: keystone-mariadb-migration-job
+  name: keystone-mariadb-migration-pre-upgrade-job
+  annotations:
+    "helm.sh/hook": "pre-upgrade"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+    "helm.sh/hook-weight": "0"
   labels:
     app: {{ template "fullname" . }}
     component: keystone
     type: config
 spec:
-  backoffLimit: 1
   template:
     spec:
 {{- if .Values.rbac.enabled }}
@@ -16,30 +19,28 @@ spec:
 {{- end }}
       restartPolicy: Never
       containers:
-        - name: keystone-mariadb-migration
-          image: hub.global.cloud.sap/d062392/keystone-mariadb-migration:latest
-          imagePullPolicy: Always
+        - name: keystone-pre-upgrade
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+          imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/psql2mysql.sh"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
+              value: "/scripts/pre-upgrade.sh"
             - name: DEPENDENCY_SERVICE
               value: keystone-mariadb,keystone-postgresql
-{{- if or .Values.run_db_migration }}
-            - name: DEPENDENCY_JOBS
-              value: keystone-job-migration
-{{- end }}
-            - name: SERVICE
-              value: keystone
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
             - name: POSTGRES_URL
               value: postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@{{if .Values.global.clusterDomain }}{{.Release.Name}}-postgresql.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase }}
             - name: MARIADB_URL
               value: mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{- if .Values.global.clusterDomain }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
-            - name: REPLICA_COUNT
-              value: "{{ .Values.api.replicas }}"
-            - name: BACKUP
-              value: "{{ .Values.postgresql.backup.enabled }}"
+          volumeMounts:
+            - mountPath: /scripts
+              name: scripts
+      volumes:
+        - name: scripts
+          configMap:
+            name: keystone-mariabdb-migration
+            defaultMode: 0755
 {{- end }}
