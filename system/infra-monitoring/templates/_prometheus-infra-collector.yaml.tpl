@@ -67,8 +67,8 @@
       regex: 'cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
       replacement: '$3'
       target_label: probed_to
-    - source_labels: [probed_to]
-      regex: '^{{ .Values.global.region }}.*'
+    - source_labels: [__name__, probe]
+      regex: 'ping_.+;[a-zA-Z]*\d\.cc\.{{ .Values.global.region }}.*\.cloud\.sap'
       replacement: 'dc'
       target_label: interconnect_type
 
