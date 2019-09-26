@@ -3,9 +3,8 @@
 set -ex
 
 # install psql2mysql
-git clone https://github.com/sapcc/psql2mysql /tmp/psql2mysql
-pip install --upgrade pip  --trusted-host pypi.org --trusted-host files.pythonhosted.org
-cd /tmp/psql2mysql; pip install -r requirements.txt --trusted-host pypi.org --trusted-host files.pythonhosted.org ; python setup.py install
+git clone https://github.com/ruvr/psql2mysql.git /tmp/psql2mysql
+cd /tmp/psql2mysql; pip install --constraint upper-constraints.txt -r requirements.txt ; python setup.py install
 
 # install kubectl
 curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.10.2/bin/linux/amd64/kubectl
