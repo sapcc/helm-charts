@@ -24,5 +24,5 @@ alertmanager-{{- (include "alertmanager.name" .) -}}
 
 {{/* Name of the PVC. */}}
 {{- define "pvc.name" -}}
-{{- default .Values.name .Values.persistence.name | quote -}}
+{{- default (include "alertmanager.fullname" .) .Values.persistence.name | quote -}}
 {{- end -}}
