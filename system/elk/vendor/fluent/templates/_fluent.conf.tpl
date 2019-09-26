@@ -136,7 +136,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel} msg="Error scraping target %{IPV4:ip}: error getting target %{IPV4}: %{SNMP_ERROR:snmp_error}
+    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel} msg="Error scraping target %{IPV4:ip}: error (walking|getting) target %{IPV4}: %{SNMP_ERROR:snmp_error}
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
