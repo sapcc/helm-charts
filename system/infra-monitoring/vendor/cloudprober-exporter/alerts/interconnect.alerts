@@ -1,8 +1,8 @@
 groups:
 - name: network-interconnect.alerts
   rules:
-  - alert: NetworkInterconnectDown
-    expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping"}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping"}[5m]) > 0.9
+  - alert: NetworkDatacenterInterconnectDown
+    expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='dc'}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping",interconnect_type='dc'}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='dc'}[5m]) > 0.9
     for: 5m
     labels:
       severity: critical
@@ -10,8 +10,23 @@ groups:
       service: interconnect
       context: interconnect
       dashboard: network-interconnect
-      meta: 'Network interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
-      playbook: 'docs/devops/alert/network/interconnect.html'
+      meta: 'Datacenter interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
+      playbook: 'docs/devops/alert/network/interconnect_dc.html'
     annotations:
-      description: 'Network interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
-      summary: 'Network interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
+      description: 'Datacenter interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
+      summary: 'Datacenter interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
+
+  - alert: NetworkRegionInterconnectDown
+    expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='region'}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping",interconnect_type='region'}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='region'}[5m]) > 0.9
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: interconnect
+      context: interconnect
+      dashboard: network-interconnect
+      meta: 'Region interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
+      playbook: 'docs/devops/alert/network/interconnect_region.html'
+    annotations:
+      description: 'Region interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
+      summary: 'Region interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
