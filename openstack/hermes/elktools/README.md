@@ -16,7 +16,7 @@ Restore process:
 
  3. Helm install the chart.  Note that you must override the value for hermes.elastic_search_restore_enabled in order to deploy the chart.
     
-         `helm install --upgrade . --set hermes.elastic_search_restore_enabled=true -f <location to values file>`
+         `helm upgrade --install hermes-elastic-restore . --namespace hermes --set hermes.elasticsearch_restore_enabled=true -f <location to values file>`
 
  4. Optionally override the elasticsearch host location in your values file by adding an override to the helm install command:
         
