@@ -42,7 +42,12 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
+{{- if eq .Values.global.database "postgres" }}
               value: {{ .Release.Name }}-postgresql
+{{- end }}
+{{- if eq .Values.global.database "mariadb" }}
+              value: {{ .Release.Name }}-mariadb
+{{- end }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
@@ -61,7 +66,7 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
-{{- if eq .Values.release "stein" }}
+{{- if eq .Values.release "train" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
               subPath: policy.yaml

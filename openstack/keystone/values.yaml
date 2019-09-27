@@ -10,12 +10,16 @@ global:
   dbUser: keystone
   dbPassword: ""
 # imageRegistry: hub.global.cloud.sap
+  database: postgres
 
 debug: false
 insecure_debug: false
 
 # run a db_sync to migrate the db schema ?
 run_db_migration: false
+
+# migrate postgres to mariadb - both database pods need to be up & running - be carefull!
+run_mariabdb_migration: false
 
 # ignore invalid role assignments
 skipRepairRoleAssignments: false
@@ -245,6 +249,72 @@ memcached:
     requests:
       memory: 2560Mi
       cpu: 500m
+
+mariadb:
+  enabled: false
+  name: keystone
+  initdb_configmap: keystone-initdb
+
+mysql_metrics:
+  db_name: keystone
+  db_user: root
+  db_password: DEFINED-IN-REGION-CHART
+  customMetrics:
+    - help: Total keystone role count
+      name: openstack_roles_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge 
+        FROM role
+      values:
+      - "gauge"
+    - help: Total keystone user count
+      name: openstack_users_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge 
+        FROM id_mapping 
+        WHERE entity_type = 'user'
+      values:
+      - "gauge"
+    - help: Total keystone project count
+      name: openstack_projects_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge
+        FROM project
+        WHERE domain_id != '<<keystone.domain.root>>'
+      values:
+      - "gauge"
+    - help: Total keystone role-assignment count
+      name: openstack_assignments_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge 
+        FROM assignment
+      values:
+      - "gauge"
+    - help: Total keystone token revocation count
+      name: openstack_revocations_total
+      query: |
+        SELECT 
+          COUNT(*) as gauge 
+        FROM revocation_event
+      values:
+      - "gauge"
+    - help: Total keystone role-assignment count per role
+      labels:
+      - "role_name"
+      name: openstack_assignments_per_role
+      query: |
+        SELECT
+          COUNT(*) as gauge,
+          r.name AS role_name
+        FROM assignment a
+        JOIN role r ON r.id = a.role_id
+        GROUP BY r.name
+      values:
+      - "gauge"
 
 postgresql:
   enabled: true

@@ -57,7 +57,7 @@ spec:
           failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
         {{- end }}
         volumeMounts:
-{{- if .Values.persistence_claim }}
+{{- if .Values.persistence_claim.enabled }}
           - name: mariadb-persistent-storage
             mountPath: /var/lib/mysql
             readOnly: false
@@ -65,8 +65,10 @@ spec:
           - mountPath: /etc/mysql/conf.d/mariadb.cnf
             name: mariadb-etc
             subPath: mariadb.cnf
+{{- if .Values.initdb_configmap }}
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
+{{ end }}
 {{- if .Values.backup.enabled }}
           - name: db-socket
             mountPath: /var/run/mysqld
@@ -103,7 +105,7 @@ spec:
           - name: BACKUP_MYSQL_INCR
             value: {{ .Values.backup.interval_incr | quote }}
         volumeMounts:
-{{- if .Values.persistence_claim }}
+{{- if .Values.persistence_claim.enabled }}
         - mountPath: /db/data
           name: mariadb-persistent-storage
           readOnly: true
@@ -115,10 +117,10 @@ spec:
         - name: mariadb-etc
           configMap:
             name: mariadb-{{.Values.name}}-etc
-{{- if .Values.persistence_claim }}
+{{- if .Values.persistence_claim.enabled }}
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
-           claimName: {{.Values.persistence_claim }}
+           claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
 {{- end }}
 {{- if .Values.backup.enabled }}
         - name: db-socket

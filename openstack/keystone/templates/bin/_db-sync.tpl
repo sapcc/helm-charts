@@ -44,5 +44,3 @@ keystone-manage --config-file=/etc/keystone/keystone.conf doctor
 
 # don't let the doctor break stuff (as usual not qualified enough and you allways need another opinion :P )
 exit 0
-
-
