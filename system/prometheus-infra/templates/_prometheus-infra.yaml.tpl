@@ -43,7 +43,7 @@
       action: replace
     - source_labels: [__name__, ifIndex, server_id]
       regex: '^snmp_[a-z0-9]*_if.+;(.+);(.+)'
-      replacement: '$2@$3'
+      replacement: '$1@$2'
       target_label: uniqueident
       action: replace
 
