@@ -41,8 +41,7 @@
       replacement: '$1'
       target_label: prometheus_source
       action: replace
-    - regex: 'snmp_(.+)?_if.+'
-      source_labels: ['ifIndex', 'server_id']
+    - source_labels: [ifIndex, server_id]
       separator: '@'
       target_label: uniqueident
       action: replace
