@@ -15,6 +15,7 @@
   {{ if eq .Labels.severity "critical" }}:fire: {{ end -}}
   {{ if eq .Labels.severity "info" }}:information_source: {{ end -}}
   {{ .Annotations.description }} {{ if .Labels.sentry }}*<https://sentry.{{ .Labels.region }}.cloud.sap/monsoon/{{ .Labels.sentry }}|:sentry:>*{{ end }} {{ if .Labels.cloudops }}*<https://dashboard.{{ .Labels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/{{ .Labels.cloudops }}|:ccloud:>*{{ end }}
+  {{- if .Annotations.mail_body}} <mailto:?to={{ .Annotations.mail_to | urlquery }}&body={{ .Annotations.mail_body | urlquery | reReplaceAll "\\+" "%20" }}&subject={{ .Annotations.mail_subject | urlquery | reReplaceAll "\\+" "%20" }}|:email:>{{ end }}
 {{- $generatorURL = .GeneratorURL }}
 {{ end -}}
 {{ range .Alerts.Resolved -}}
