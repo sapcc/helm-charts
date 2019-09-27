@@ -42,7 +42,7 @@
       target_label: prometheus_source
       action: replace
     - source_labels: [__name__, ifIndex, server_id]
-      regex: '^snmp_(.+)?_if.+;(.+);(.+)'
+      regex: '^snmp_[a-z0-9]*_if.+;(.+);(.+)'
       replacement: '$2@$3'
       target_label: uniqueident
       action: replace
