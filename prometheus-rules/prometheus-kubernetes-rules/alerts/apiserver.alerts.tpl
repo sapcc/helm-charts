@@ -7,7 +7,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
-      severity: critical
+      severity: warning
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
       dashboard: kubernetes-health
@@ -35,7 +35,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
-      severity: warning
+      severity: info
       context: apiserver
       dashboard: kubernetes-health
     annotations:
