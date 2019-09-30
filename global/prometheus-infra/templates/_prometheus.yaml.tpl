@@ -17,7 +17,7 @@
       - '{__name__=~"^snmp_scrape.+"}'
       - '{__name__=~"^elasticsearch_snmp_error.+"}'
       - '{__name__=~"^atlas_targets"}'
-      - '{__name__=~"^atlas_up"}'
+      - '{__name__=~"^atlas_sd_up"}'
       - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio5s"}'
       - '{__name__=~"snmp_f5_sysGlobalHostOtherMemUsedKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostOtherMemTotalKb"}'
