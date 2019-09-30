@@ -346,6 +346,7 @@
     replacement: {{ $root.global.region }}
 {{ end }}
 {{ end }}
+{{ end }}
 
 {{- if .Values.blackbox_exporter.tcp_probe_targets }}
 {{- range $region := .Values.global.regions }}
