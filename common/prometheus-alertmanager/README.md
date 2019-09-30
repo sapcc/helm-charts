@@ -27,7 +27,7 @@ See the [example](./examples)
 **NOTE:** To use the notification templates the alertmanager configuration must include:
 ```yaml
 templates:
-  - /etc/alertmanager/configmaps/notification-templates/*.tmpl
+  - /notification-templates/*.tmpl
 ```
 
 ## Chart configuration

@@ -2,7 +2,7 @@ global:
   resolve_timeout: 16m
 
 templates:
-  - /etc/alertmanager/configmaps/alertmanager-primary-notification-templates/*.tmpl
+  - /notification-templates/*.tmpl
 
 inhibit_rules:
   # More severe alerts mute less urgent ones.

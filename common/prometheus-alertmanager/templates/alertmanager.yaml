@@ -8,7 +8,7 @@ metadata:
     alertmanager: {{ include "alertmanager.name" . }}
 
 spec:
-  replicas: 1
+  replicas: {{ required ".Values.replicas missing" .Values.replicas }}
 
   image: {{ include "alertmanager.image" . }}
 
@@ -18,26 +18,37 @@ spec:
   # Can only use s/m/h as unit. 168h = 7d.
   retention: {{ required ".Values.retention missing" .Values.retention }}
 
-  {{ if .Values.additionalPeers -}}
   # AdditionalPeers allows injecting a set of additional Alertmanagers to peer with to form a highly available cluster.
+  {{ if .Values.additionalPeers -}}
   additionalPeers:
-{{ toYaml .Values.additionalPeers | indent 4}}
+{{ toYaml .Values.additionalPeers | indent 2 }}
   {{- end }}
 
   # Mount additional configmaps from the same namespace.
+  {{ if .Values.configMaps -}}
   configMaps:
-    - {{ include "alertmanager.fullname" . }}-notification-templates
-  {{- if .Values.configMaps }}
 {{ toYaml .Values.configMaps | indent 4 }}
   {{- end }}
 
-  {{- if .Values.secrets }}
+  {{ if .Values.secrets -}}
   # Mount additional secrets from the same namespace.
   secrets:
 {{ toYaml .Values.secrets | indent 4 }}
   {{- end }}
 
-  {{- if .Values.resources }}
+  # Additional volumes for the Alertmanager Pod.
+  volumes:
+    - name: {{ include "alertmanager.fullname" . }}-notification-templates
+      configMap:
+        name: {{ include "alertmanager.fullname" . }}-notification-templates
+
+  # Additional volume mounts for the Alermanager Pod.
+  volumeMounts:
+    - name: {{ include "alertmanager.fullname" . }}-notification-templates
+      mountPath: /notification-templates
+      readOnly: true
+
+  {{ if .Values.resources -}}
   # Kubernetes resource requests and limits for this Alertmanager.
   # See: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container .
   resources:
