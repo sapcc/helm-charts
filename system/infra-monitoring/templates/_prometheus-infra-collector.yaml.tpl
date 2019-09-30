@@ -252,6 +252,26 @@
       replacement: ipmi-exporter:{{$values.listen_port}}
     - source_labels: [__meta_serial]
       target_label: server_serial
+
+- job_name: 'ipmi/esxi'
+  params:
+    job: [esxi]
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  metrics_path: /ipmi
+  relabel_configs:
+    - source_labels: [job]
+      regex: vmware-esxi
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: ipmi-exporter:{{$values.listen_port}}
 {{- end }}
 
 {{- range $region := .Values.global.regions }}
