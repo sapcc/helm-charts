@@ -32,6 +32,14 @@ spec:
         - name: api
           image: {{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}
           imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          command:
+            - sh
+            - -exc
+            - |
+{{- if .Values.api.tls.enabled }}
+              cp /tls/tls.crt /tmp/tls.crt.livenesspobe
+{{- end }}
+              exec /entrypoint.sh api-server
           ports:
             - name: api
               containerPort: {{ .Values.api.service.internalPort }}
@@ -42,11 +50,22 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 1
           livenessProbe:
+{{- if .Values.api.tls.enabled }}
+            exec:
+              command:
+                - cmp
+                - -s
+                - /tls/tls.crt
+                - /tmp/tls.crt.livenesspobe
+            initialDelaySeconds: 60
+            periodSeconds: 60
+{{- else }}
             httpGet:
               path: /healthcheck
               port: {{ .Values.api.service.internalPort }}
             initialDelaySeconds: 20
             timeoutSeconds: 5
+{{- end }}
           env:
             - name: ARC_LISTEN
               value: 0.0.0.0:{{ .Values.api.service.internalPort }}

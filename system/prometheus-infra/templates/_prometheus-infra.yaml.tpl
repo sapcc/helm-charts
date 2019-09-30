@@ -18,11 +18,10 @@
       - '{job="bios/ironic"}'
       - '{job="ipmi/ironic"}'
       - '{job="snmp"}'
-      - '{job=~"blackbox/.+"}'
+      - '{job="infra-monitoring-atlas-sd"}'
       - '{__name__=~"^vcenter_.+"}'
       - '{__name__=~"^network_apic_.+"}'
       - '{__name__=~"^up"}'
-      - '{__name__=~"^atlas_targets"}'
 
   relabel_configs:
     - action: replace
