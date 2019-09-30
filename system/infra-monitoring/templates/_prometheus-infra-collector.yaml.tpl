@@ -292,7 +292,6 @@
     - target_label: __address__
       replacement: vasa-exporter:{{$values.listen_port}}
 {{- end }}
-{{- end }}
 
 {{- if .Values.alertmanager_exporter.enabled }}
 - job_name: 'prometheus/alertmanager'
