@@ -53,8 +53,8 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:process} (\[)?(req-)?(%{REQUESTID:requestid})
-    custom_pattern_path /fluent-etc/pattern
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?(%{REQUESTID:requestid})
+    custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
 
@@ -73,7 +73,7 @@
   <parse>
     @type grok
     grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}\"?( )?(%{NOTSPACE:request_time})
-    custom_pattern_path /fluent-etc/pattern
+    custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
 
@@ -130,14 +130,25 @@
   </parse>
 </filter>
 
+<filter kubernetes.var.log.containers.snmp-exporter**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel} msg="Error scraping target %{IPV4:ip}: error (walking|getting) target %{IPV4}: %{SNMP_ERROR:snmp_error}
+    custom_pattern_path /fluent-bin/pattern
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.ingress-controller**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
-      grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
-      custom_pattern_path /fluent-etc/pattern
+    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
+    custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
 
@@ -172,7 +183,7 @@
   <parse>
     @type grok
     grok_pattern %{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}: %{HOSTNAME:client_ip} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{SWIFTREQPATH:request_path}(?:%{SWIFTREQPARAM:request_param})? %{NOTSPACE:protocol} %{NUMBER:response} (?<referer>\S{,255})\S*? %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client_etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{NOTSPACE:request_time} %{NOTSPACE:source} %{NOTSPACE:log_info} %{NUMBER:request_start_time} %{NUMBER:request_end_time} %{NOTSPACE:policy_index}
-    custom_pattern_path /fluent-etc/pattern
+    custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
 
@@ -393,12 +404,18 @@
 </match>
 
 <match **>
-   @type elasticsearch
-   host {{.Values.elk_elasticsearch_endpoint_host_internal}}
-   port {{.Values.elk_elasticsearch_http_port}}
-   user {{.Values.elk_elasticsearch_data_user}}
-   password {{.Values.elk_elasticsearch_data_password}}
+   @type elasticsearch_dynamic
+   host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+   port {{.Values.global.elk_elasticsearch_ssl_port}}
+   user {{.Values.global.elk_elasticsearch_data_user}}
+   password {{.Values.global.elk_elasticsearch_data_password}}
+   scheme https
+   ssl_verify false
+   ssl_version TLSv1_2
    logstash_format true
+   template_name logstash
+   template_file /fluent-bin/logstash.json
+   template_overwrite true
    time_as_integer false
    @log_level info
    slow_flush_log_threshold 50.0
@@ -415,4 +432,5 @@
      flush_thread_count 4
      flush_interval 3s
    </buffer>
+# second is missing, it it is only deployed to one elk cluster
  </match>

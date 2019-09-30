@@ -12,11 +12,13 @@ spec:
 
   image: {{ include "alertmanager.image" . }}
 
+  logLevel: {{ required ".Values.logLevel missing" .Values.logLevel }}
+
   # The retention time of the Alertmanager.
   # Can only use s/m/h as unit. 168h = 7d.
   retention: {{ required ".Values.retention missing" .Values.retention }}
 
-  {{- if .Values.additionalPeers }}
+  {{ if .Values.additionalPeers -}}
   # AdditionalPeers allows injecting a set of additional Alertmanagers to peer with to form a highly available cluster.
   additionalPeers:
 {{ toYaml .Values.additionalPeers | indent 4}}
@@ -24,7 +26,7 @@ spec:
 
   # Mount additional configmaps from the same namespace.
   configMaps:
-    - notification-templates
+    - {{ include "alertmanager.fullname" . }}-notification-templates
   {{- if .Values.configMaps }}
 {{ toYaml .Values.configMaps | indent 4 }}
   {{- end }}

@@ -83,8 +83,15 @@ spec:
           value: keystone-job-migration
   {{- end }}
 {{- end }}
+{{- if not .Values.run_mariabdb_migration }}
         - name: DEPENDENCY_SERVICE
+{{- if eq .Values.global.database "postgres" }}
           value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
+{{- end }}
+{{- if eq .Values.global.database "mariadb" }}
+          value: {{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached
+{{- end }}
+{{- end }}
         - name: COMMAND
           value: "true"
       containers:
@@ -144,7 +151,7 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
-{{- if eq .Values.release "stein" }}
+{{- if eq .Values.release "train" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
               subPath: policy.yaml

@@ -17,13 +17,15 @@ transport_url = {{ include "rabbitmq.transport_url" . }}
 {{- end }}
 
 {{- define "ini_sections.database_options" }}
-    {{- if or .Values.postgresql.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
+{{- if or .Values.postgresql.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}
 max_overflow = -1
-    {{- else }}
+{{- end }}
+{{- end }}
+
+{{- define "ini_sections.database_options_mysql" }}
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
-    {{- end }}
 {{- end }}
 
 {{- define "ini_sections.database" }}
@@ -31,10 +33,11 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 [database]
 {{- if eq .Values.postgresql.enabled false }}
 connection = {{ include "db_url_mysql" . }}
+{{- include "ini_sections.database_options_mysql" . }}
 {{- else }}
 connection = {{ include "db_url" . }}
-{{- end }}
 {{- include "ini_sections.database_options" . }}
+{{- end }}
 {{- end }}
 
 {{- define "ini_sections.cache" }}

@@ -7,18 +7,7 @@ global:
   dbUser: cinder
 
   hypervisors_vmware: []
-  #  - name: DEFINED-IN-REGION-CHART
-  #    username: DEFINED-IN-REGION-CHART
-  #    password: DEFINED-IN-REGION-CHART
-  #    host: DEFINED-IN-REGION-CHART
-  #    availability_zone: DEFINED-IN-REGION-CHART
   volumes_netapp: []
-  #  - name: DEFINED-IN-REGION-CHART
-  #    username: DEFINED-IN-REGION-CHART
-  #    password: DEFINED-IN-REGION-CHART
-  #    host: DEFINED-IN-REGION-CHART
-  #    vserver: DEFINED-IN-REGION-CHART
-  #    availability_zone: DEFINED-IN-REGION-CHART
   volumes: []
   osprofiler: {}
   pgbouncer:
@@ -49,9 +38,6 @@ debug: "True"
 sentry:
   enabled: true
 
-dbName: cinder
-# dbPassword:
-
 port_metrics: 9102
 
 backend_defaults:
@@ -63,6 +49,177 @@ backend_defaults:
 cinderApiPortPublic: 443
 cinderApiPortInternal: 8776
 cinderApiPortAdmin: 8776
+
+db_name: cinder
+
+mariadb:
+  enabled: false
+  name: cinder
+  initdb_configmap: cinder-initdb
+  persistence_claim:
+    name: db-cinder-pvclaim
+
+mysql_metrics:
+  db_name: cinder
+  db_user: cinder
+  customMetrics:
+    - help: Cinder stuck volumes
+      labels:
+      - "cinder_host"
+      - "availability_zone"
+      - "project_id"
+      - "status"
+      - "id"
+      - "display_name"
+      name: openstack_stuck_volumes_count_gauge
+      query: |
+        SELECT
+          host as cinder_host,
+          project_id,
+          id,
+          display_name,
+          availability_zone,
+          status,
+          COUNT(*) AS count_gauge
+        FROM volumes
+        WHERE
+          status IN ('attaching', 'deleting', 'detaching') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        GROUP BY
+          cinder_host,
+          availability_zone,
+          project_id,
+          status,
+          id,
+          display_name;
+      values:
+      - "count_gauge"
+    - help: Cinder stuck volumes max duration
+      labels:
+      - "cinder_host"
+      - "availability_zone"
+      - "project_id"
+      - "status"
+      - "id"
+      - "display_name"
+      name: openstack_stuck_volumes_max_duration_gauge
+      query: |
+        SELECT
+          host as cinder_host,
+          project_id,
+          id,
+          display_name,
+          availability_zone,
+          status,
+          MAX(NOW() - updated_at) AS max_duration_gauge
+        FROM volumes
+        WHERE
+          status IN ('attaching', 'deleting', 'detaching')
+        GROUP BY
+          cinder_host,
+          availability_zone,
+          project_id,
+          status,
+          id,
+          display_name;
+      values:
+      - "max_duration_gauge"
+    - help: Cinder volumes count
+      labels:
+      - "cinder_host"
+      - "availability_zone"
+      - "volume_type_id"
+      - "project_id"
+      - "status"
+      - "attach_status"
+      name: openstack_volumes_count_gauge
+      query: |
+        SELECT
+          host as cinder_host,
+          availability_zone,
+          volume_type_id,
+          project_id,
+          status,
+          attach_status,
+          COUNT(*) AS count_gauge
+        FROM volumes
+        GROUP BY
+          cinder_host,
+          availability_zone,
+          volume_type_id,
+          project_id,
+          status,
+          attach_status;
+      values:
+      - "count_gauge"
+    - help: Cinder volumes size
+      labels:
+      - "cinder_host"
+      - "availability_zone"
+      - "volume_type_id"
+      - "project_id"
+      - "status"
+      - "attach_status"
+      name: openstack_volumes_size_gauge
+      query: |
+        SELECT
+          host as cinder_host,
+          availability_zone,
+          volume_type_id,
+          project_id,
+          status,
+          attach_status,
+          SUM(size) size_gauge
+        FROM volumes
+        GROUP BY
+          cinder_host,
+          availability_zone,
+          volume_type_id,
+          project_id,
+          status,
+          attach_status;
+      values:
+      - "size_gauge"
+    - help: Cinder Snapshots count
+      labels:
+      - "status"
+      - "project_id"
+      - "cinder_host"
+      name: openstack_snapshots_count_gauge
+      query: |
+        SELECT
+          snapshots.status,
+          snapshots.project_id,
+          volumes.host as cinder_host,
+          COUNT(*) AS count_gauge
+        from snapshots
+        join volumes on snapshots.volume_id=volumes.id
+        GROUP BY
+          snapshots.status,
+          snapshots.project_id,
+          cinder_host;
+      values:
+      - "count_gauge"
+    - help: Cinder Snapshots size
+      labels:
+      - "project_id"
+      - "cinder_host"
+      - "status"
+      name: openstack_snapshots_size_gauge
+      query: |
+        SELECT
+          snapshots.project_id,
+          volumes.host as cinder_host,
+          snapshots.status,
+          SUM(volume_size) size_gauge
+        from snapshots
+        join volumes on snapshots.volume_id=volumes.id
+        GROUP BY
+          snapshots.project_id,
+          cinder_host,
+          snapshots.status;
+      values:
+      - "size_gauge"
+
 
 pgmetrics:
   name: cinder

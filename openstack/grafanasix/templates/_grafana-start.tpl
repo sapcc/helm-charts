@@ -26,6 +26,7 @@ function start_application {
   # since grafana version 4.6.2 the histogram feature is part of the normal graph in the axes tab, so this plugin is no longer needed
   # grafana-cli plugins install mtanda-histogram-panel
   grafana-cli plugins install grafana-worldmap-panel
+  grafana-cli plugins install yesoreyeram-boomtable-panel
   # install sapcc/grafana-prometheus-alertmanager-datasource
   grafana-cli --pluginUrl https://github.com/sapcc/grafana-prometheus-alertmanager-datasource/archive/master.zip plugins install prometheus-alertmanager
   # install sapcc/Grafana_Status_panel
@@ -78,11 +79,6 @@ function start_application {
       cp -a $i /var/lib/grafana/provisioning/datasources
     fi
   done
-  # fill in the region specific fields in the elasticsearch datasources
-  sed -i 's,__ELASTICSEARCH_USER__,{{.Values.elasticsearch.admin.user}},g' /var/lib/grafana/provisioning/datasources/*
-  sed -i 's,__ELASTICSEARCH_PASSWORD__,{{.Values.elasticsearch.admin.password}},g' /var/lib/grafana/provisioning/datasources/*
-  sed -i 's,__ELASTICSEARCH_MASTER_PROJECT_ID__,{{.Values.elasticsearch.master_project_id}},g' /var/lib/grafana/provisioning/datasources/*
-  sed -i 's,__ELASTICSEARCH_VERSION__,{{.Values.elasticsearch.version}},g' /var/lib/grafana/provisioning/datasources/*
   sed -i 's,__ALERTMANAGER_PASSWORD__,{{.Values.alertmanager.password}},g' /var/lib/grafana/provisioning/datasources/*
   sed -i 's,__PROMETHEUS_REGION__,{{.Values.global.region}},g' /var/lib/grafana/provisioning/datasources/*
   #for i in /var/lib/grafana/provisioning/datasources/elasticsearch* ; do

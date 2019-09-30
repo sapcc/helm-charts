@@ -36,13 +36,54 @@
     - regex: "instance|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance"
       action: labeldrop
     - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
+      regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
+      replacement: '$1'
+      target_label: probed_to_type
+    - source_labels: [__name__, target]
+      regex: '^ping_.+;([a-zA-Z]*)(\d)\.cc\.(.+)\.cloud\.sap'
+      replacement: '$1'
+      target_label: probed_to_type
+    - source_labels: [__name__, target]
+      regex: '^ping_.+;[.0-9]*'
+      replacement: 'pod'
+      target_label: probed_to_type
+    - source_labels: [__name__, target]
+      regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
       replacement: '$2'
       target_label: probed_to
     - source_labels: [__name__, target]
-      regex: 'ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
-      replacement: '$1'
+      regex: '^ping_.+;([a-zA-Z]*)0\.cc\.(.+)\.cloud\.sap'
+      replacement: ${2}a
+      target_label: probed_to
+    - source_labels: [__name__, target]
+      regex: '^ping_.+;([a-zA-Z]*)1\.cc\.(.+)\.cloud\.sap'
+      replacement: ${2}b
+      target_label: probed_to
+    - source_labels: [__name__, probe]
+      regex: '^cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
+      replacement: '$2'
       target_label: probed_to_type
+    - source_labels: [__name__, probe]
+      regex: '^cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
+      replacement: '$3'
+      target_label: probed_to
+    - source_labels: [__name__]
+      regex: '^cloudprober_.+'
+      replacement: 'region'
+      target_label: interconnect_type
+    - source_labels: [__name__, probe]
+      regex: '^cloudprober_.+;(ping|http)-[a-zA-Z]*-{{ .Values.global.region }}.+'
+      replacement: 'dc'
+      target_label: interconnect_type
+    - source_labels: [__name__]
+      regex: '^ping_.+'
+      replacement: 'region'
+      target_label: interconnect_type
+    - source_labels: [__name__, target]
+      regex: '^ping_.+;([a-zA-Z]*)\d\.cc\.{{ .Values.global.region }}\.cloud\.sap'
+      replacement: 'dc'
+      target_label: interconnect_type
+
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -211,106 +252,26 @@
       replacement: ipmi-exporter:{{$values.listen_port}}
     - source_labels: [__meta_serial]
       target_label: server_serial
-{{- end }}
 
-{{- range $region := .Values.global.regions }}
-- job_name: 'blackbox/ingress-{{ $region }}'
-  metrics_path: /probe
+- job_name: 'ipmi/esxi'
   params:
-    # Look for a HTTP 200 response per default.
-    # Can be overwritten by annotating the ingress resource with the expected return codes, e.g. `prometheus.io/probe_code: "4xx"`
-    module: [http_2xx]
-  scheme: https
-  kubernetes_sd_configs:
-  - role: ingress
+    job: [esxi]
+  scrape_interval: 60s
+  scrape_timeout: 55s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  metrics_path: /ipmi
   relabel_configs:
-  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe]
-    action: keep
-    regex: true
-  # consider prometheus.io/probe_code annotation. mind below regex.
-  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_code]
-    regex: ^(\d).+
-    replacement: http_${1}xx
-    target_label: __param_module
-  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_module]
-    regex: (.+)
-    target_label: __param_module
-  - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_path]
-    regex: ^(\/.+)
-    target_label: __meta_kubernetes_ingress_path
-  - source_labels: [__meta_kubernetes_ingress_scheme,__address__,__meta_kubernetes_ingress_path]
-    regex: (.+);(.+);(.+)
-    replacement: ${1}://${2}${3}
-    target_label: __param_target
-  - target_label: __address__
-    replacement: prober.{{ $region }}.cloud.sap
-  - source_labels: [__param_target]
-    target_label: instance
-  - action: labelmap
-    regex: __meta_kubernetes_ingress_label_(.+)
-  - source_labels: [__meta_kubernetes_namespace]
-    target_label: kubernetes_namespace
-  - source_labels: [__meta_kubernetes_ingress_name]
-    target_label: ingress_name
-  - source_labels: [__param_module]
-    target_label: module
-  - target_label: region_probed_from
-    replacement: {{ $region }}
-{{- end }}
-
-{{ $root := .Values }}
-{{- if .Values.blackbox_exporter }}
-{{- if .Values.blackbox_exporter.static_config }}
-{{- range $module, $module_config := .Values.blackbox_exporter.static_config }}
-- job_name: 'blackbox/static-targets-{{ $module }}'
-  metrics_path: /probe
-  params:
-    module: [{{ $module }}]
-  static_configs:
-    - targets:
-      {{- range  $module_config.targets }}
-      - {{ . }}
-      {{- end }}
-  scheme: https
-  relabel_configs:
-  - source_labels: [__address__]
-    target_label: __param_target
-  - source_labels: [__param_target]
-    target_label: instance
-  - target_label: __address__
-    replacement: prober.{{ $root.global.region }}.cloud.sap
-  - source_labels: [__param_module]
-    target_label: module
-  - target_label: region_probed_from
-    replacement: {{ $root.global.region }}
-{{ end }}
-{{ end }}
-
-{{- if .Values.blackbox_exporter.tcp_probe_targets }}
-{{- range $region := .Values.global.regions }}
-- job_name: 'blackbox/tcp-{{ $region }}'
-  metrics_path: /probe
-  scrape_interval: 15s
-  params:
-    module: [tcp_connect]
-  static_configs:
-    - targets:
-      {{- range $.Values.blackbox_exporter.tcp_probe_targets }}
-      - {{ . }}
-      {{- end }}
-  scheme: https
-  relabel_configs:
-  - source_labels: [__address__]
-    target_label: __param_target
-  - source_labels: [__param_target]
-    target_label: instance
-  - target_label: __address__
-    replacement: prober.{{ $region }}.cloud.sap
-  - source_labels: [__param_module]
-    target_label: module
-  - target_label: region_probed_from
-    replacement: {{ $region }}
-{{- end }}
+    - source_labels: [job]
+      regex: vmware-esxi
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: ipmi-exporter:{{$values.listen_port}}
 {{- end }}
 
 {{- $values := .Values.vasa_exporter -}}
@@ -330,7 +291,6 @@
       target_label: __param_target
     - target_label: __address__
       replacement: vasa-exporter:{{$values.listen_port}}
-{{- end }}
 {{- end }}
 
 {{- if .Values.alertmanager_exporter.enabled }}

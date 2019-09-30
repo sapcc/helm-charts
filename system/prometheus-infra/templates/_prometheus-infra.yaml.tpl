@@ -12,13 +12,13 @@
       - '{app="thousandeyes-exporter"}'
       - '{app="netapp-harvest"}'
       - '{app="netapp-api-exporter"}'
-      - '{app="vasa-exporter"}'
+      - '{instance="vasa-exporter:9202"}'
       - '{app="ping-exporter"}'
       - '{job="baremetal/arista"}'
       - '{job="bios/ironic"}'
       - '{job="ipmi/ironic"}'
       - '{job="snmp"}'
-      - '{job=~"blackbox/.+"}'
+      - '{job="infra-monitoring-atlas-sd"}'
       - '{__name__=~"^vcenter_.+"}'
       - '{__name__=~"^network_apic_.+"}'
       - '{__name__=~"^up"}'
@@ -41,6 +41,11 @@
       regex: '^up;(.+)'
       replacement: '$1'
       target_label: prometheus_source
+      action: replace
+    - source_labels: [__name__, ifIndex, server_id]
+      regex: '^snmp_[a-z0-9]*_if.+;(.+);(.+)'
+      replacement: '$1@$2'
+      target_label: uniqueident
       action: replace
 
   {{ if .Values.authentication.enabled }}

@@ -24,7 +24,7 @@ spec:
       chart-version: {{.Chart.Version}}
       checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
       prometheus.io/scrape: "true"
-      prometheus.io/port: "{{ .Values.port_metrics }}"
+      prometheus.io/port: {{ required ".Values.port_metrics missing" .Values.port_metrics | quote }}
       prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
    spec:
     volumes:
@@ -43,16 +43,16 @@ spec:
           timeoutSeconds: 10
         env:
           - name: LOGLEVEL
-            value: {{ .Values.loglevel }}
+            value: {{ required ".Values.loglevel missing" .Values.loglevel }}
           - name: CONFIG
             value: /conf/config.yml
         ports:
           - name: metrics
-            containerPort: {{ .Values.port_metrics }}
+            containerPort: {{ required ".Values.port_metrics missing" .Values.port_metrics }}
         readinessProbe:
           httpGet:
             path: /healthz
-            port: {{ .Values.port_metrics }}
+            port: {{ required ".Values.port_metrics missing" .Values.port_metrics }}
           initialDelaySeconds: 10
           timeoutSeconds: 10
         resources:

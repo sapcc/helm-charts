@@ -48,7 +48,7 @@ groups:
       context: availability
       dashboard: kubernetes-health
       service: dns
-      severity: warning
+      severity: info
       tier: {{ required ".Values.tier missing" .Values.tier }}
     annotations:
       description: Kube-dns failed to be scraped.

@@ -8,7 +8,7 @@ readonlyrest:
     # access for logstash to write to the logstash indexes
     - name: data
       actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
-      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", ".kibana*"]
+      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", ".kibana*", "kubernikus-*", "scaleout-*",  "virtual-*"]
       auth_key: {{.Values.global.data_user}}:{{.Values.global.data_password}}
 
     # access to write to the jump server log indexes
@@ -31,7 +31,7 @@ readonlyrest:
     
     - name: promuser
       actions: ["indices:data/read/*"]
-      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", "jump-*", "kubernikus-*", "scaleout-*"]
+      indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", "jump-*", "kubernikus-*", "scaleout-*", "virtual-*"]
       auth_key: {{.Values.global.prom_user}}:{{.Values.global.prom_password}}
 
     # admin user

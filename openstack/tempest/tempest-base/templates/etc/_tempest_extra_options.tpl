@@ -111,6 +111,7 @@ endpoint_type = internal
 min_microversion = 3.0
 max_microversion = latest
 vendor_name = VMware
+storage_protocol = vmdk
 disk_format = vmdk
 
 [volume-feature-enabled]

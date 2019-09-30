@@ -3,7 +3,6 @@
 # Declare variables to be passed into your templates.
 global:
   imageNamespace: monsoon
-#  imageRegistry: DEFINED-IN-REGION-CHART
   dbUser: glance
   master_password: ""
   pgbouncer:
@@ -101,71 +100,18 @@ tempest:
 unittest:
   enabled: false
 
-pgmetrics:
-  name: glance
-  customMetrics:
-    openstack_glance_image:
-      query: "SELECT id, name, status, size, owner, visibility, COUNT(*) AS gauge from images where deleted='false' GROUP BY id"
-      metrics:
-        - id:
-            usage: "LABEL"
-            description: "Image ID"
-        - name:
-            usage: "LABEL"
-            description: "Image Name"
-        - status:
-            usage: "LABEL"
-            description: "Image Status"
-        - size:
-            usage: "LABEL"
-            description: "Image Size"
-        - owner:
-            usage: "LABEL"
-            description: "Image Owner"
-        - visibility:
-            usage: "LABEL"
-            description: "Image visibility"
-        - gauge:
-            usage: "GAUGE"
-            description: "Image Count"
-
-postgresql:
-  enabled: true
-  custom_repository: true
-  imageTag: '9.4.14'
-  postgresDatabase: glance
-  dbUser: glance
-  dbInit: glance-db-init
-  dbMaintain: glance-db-maintain
-  pgbouncer:
-    enabled: true
-  persistence:
-    enabled: true
-    existingClaim: db-glance-pvclaim
-  backup:
-    enabled: true
-    metrics: true
-    os_password: null
-  resources:
-    requests:
-      cpu: "500m" # 1/2 cpu
-      memory: "300Mi" # 140Mi high recorded
-
-  shared_preload_libraries: pg_stat_statements
-  track_activity_query_size: 2048
-
 db_name: glance
 
 mariadb:
   enabled: false
   name: glance
   initdb_configmap: glance-initdb
-  persistence_claim: db-glance-pvclaim
+  persistence_claim:
+    name: db-glance-pvclaim
 
 mysql_metrics:
   db_name: glance
   db_user: glance
-  db_password: DEFINED-IN-REGION-CHART
   customMetrics:
     - help: Glance Image count
       labels:
@@ -192,6 +138,9 @@ mysql_metrics:
           id;
       values:
       - "gauge"
+
+postgresql:
+  enabled: false
 
 logging:
   formatters:

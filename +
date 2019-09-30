@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: editors
+
+data:
+{{- $dict := dict }}
+{{- range $group, $users := .Values.groups }}
+{{ if eq $group "CCADMIN_API_SUPPORT" }}
+{{- range $user := $users}}
+{{ $_ := set $user "id" (toString $user.sAMAccountName) }}
+{{ $_ := set $user "email" (toString $user.mail) }}
+{{- $user := pick $user "mail" "displayName" "id"}}
+{{- $_ := set $dict (toString $user.id) $user }}
+{{- end }}
+{{- end }}
+{{- end}}
+  editors.json: |
+{{ toPrettyJson $dict | indent 4}}

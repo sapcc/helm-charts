@@ -2,10 +2,10 @@ global:
   resolve_timeout: 16m
 
 templates:
-  - /etc/alertmanager/configmaps/notification-templates/*.tmpl
+  - /etc/alertmanager/configmaps/alertmanager-primary-notification-templates/*.tmpl
 
 inhibit_rules:
-  # Alerts with higher severity inhibit less severe alerts that fire in the same region, cluster, context.
+  # More severe alerts mute less urgent ones.
   - source_match:
       severity: 'critical'
     target_match:
@@ -39,10 +39,37 @@ route:
   group_wait: 1m
   group_interval: 7m
   repeat_interval: 12h
-  receiver: 'web.hook'
+  receiver: dev-null
 
+  routes:
+    - receiver: pagerduty_api_warning
+      continue: true
+      match_re:
+        tier: os|k8s
+        severity: warning
+        cluster_type: controlplane
+        region: qa-de-1
 
 receivers:
-  - name: 'web.hook'
+  - name: dev-null
     webhook_configs:
-      - url: 'http://127.0.0.1:5001/'
+      - url: 'http://127.0.0.1:5001'
+
+  - name: pagerduty_api_warning
+    pagerduty_configs:
+      - service_key: {{ required "pagerduty.api.serviceKey undefined" .Values.pagerduty.api.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+        details:
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Fingerprint: {{"'{{template \"pagerduty.sapcc.fingerprint\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}

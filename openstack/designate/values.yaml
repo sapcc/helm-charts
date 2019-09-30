@@ -43,8 +43,8 @@ pod:
         revision_history: 5
         pod_replacement_strategy: RollingUpdate
         rolling_update:
-           max_unavailable: 0
-           max_surge: 1
+          max_unavailable: 0
+          max_surge: 1
 
 # image_version_designate_api:  DEFINED-IN-REGION-CHART
 # image_version_designate_central:  DEFINED-IN-REGION-CHART
@@ -87,7 +87,8 @@ rndc_keys:
 mariadb:
   name: designate
   initdb_configmap: designate-initdb
-  persistence_claim: db-designate-pvclaim
+  persistence_claim:
+    name: db-designate-pvclaim
 
 rabbitmq:
   ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
@@ -103,7 +104,6 @@ rabbitmq:
 mysql_metrics:
   db_name: designate
   db_user: root
-  db_password: DEFINED-IN-REGION-CHART
   customMetrics:
     - name: openstack_designate_zones
       help: "zones grouped by status and project"
@@ -163,49 +163,49 @@ mysql_metrics:
                 status
 
 logging:
-    formatters:
-        context:
-            class: oslo_log.formatters.ContextFormatter
-        default:
-            format: "%(message)s"
-    handlers:
-        stdout:
-            class: StreamHandler
-            args: "(sys.stdout,)"
-            formatter: context
-        "null":
-            class: logging.NullHandler
-            args: "()"
-            formatter: default
-        sentry:
-            class: raven.handlers.logging.SentryHandler
-            level: ERROR
-            args: "()"
-    loggers:
-        root:
-            handlers: stdout, sentry
-            level: WARNING
-        designate:
-            handlers: stdout, sentry
-            level: DEBUG
-        amqp:
-            handlers: stdout, sentry
-            level: WARNING
-        amqplib:
-            handlers: stdout, sentry
-            level: WARNING
-        boto:
-            handlers: stdout, sentry
-            level: WARNING
-        eventlet.wsgi.server:
-            handlers: stdout, sentry
-            level: INFO
-        sqlalchemy:
-            handlers: stdout, sentry
-            level: WARNING
-        auditmiddleware:
-            handlers: stdout, sentry
-            level: INFO
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    designate:
+      handlers: stdout, sentry
+      level: DEBUG
+    amqp:
+      handlers: stdout, sentry
+      level: WARNING
+    amqplib:
+      handlers: stdout, sentry
+      level: WARNING
+    boto:
+      handlers: stdout, sentry
+      level: WARNING
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    sqlalchemy:
+      handlers: stdout, sentry
+      level: WARNING
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
 
 audit:
   enabled: true

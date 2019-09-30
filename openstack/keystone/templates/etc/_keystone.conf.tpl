@@ -1,3 +1,4 @@
+# keystone configuration settings
 [DEFAULT]
 debug = {{.Values.debug}}
 insecure_debug = {{.Values.insecure_debug}}
@@ -107,7 +108,12 @@ permissive = true
 {{- end }}
 
 [database]
-connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@{{include "db_host" .}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
+{{- if eq .Values.global.database "postgres" }}
+connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@{{include "db_host" .}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase }}
+{{- end }}
+{{- if eq .Values.global.database "mariadb" }}
+connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
+{{- end }}
 
 [assignment]
 driver = sql

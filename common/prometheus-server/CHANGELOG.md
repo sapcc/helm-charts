@@ -1,3 +1,7 @@
+## 2.1.1
+
+* Fix alerts for THanos compactor: `s/compact/compactor/g`.
+
 ## 2.1.0
 
 * **[Breaking change]** If Thanos is being used the external labels `region`, `cluster`, `cluster_type` will be prefixed with `thanos_` to avoid the are being overwritten by the Thanos sidecar.   
