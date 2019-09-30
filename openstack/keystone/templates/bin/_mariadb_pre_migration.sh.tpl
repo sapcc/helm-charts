@@ -74,15 +74,16 @@ else
    exit 1
 fi
 
+{{- if .Values.postgresql.backup.enabled }}
+# create a database backup - what sucks: we can't do this after scaling down keystone, since then swift can't auth* against keystone :(
+# so we have to live with a small risk of backing up a live db that is still being operated on
+kubectl exec -it `kubectl get pods --selector=app=keystone-postgresql | awk '{ print $1 }' | tail -1` --container=backup -- bash -c 'BACKUP_PGSQL_FULL="1 mins" /usr/local/sbin/db-backup.sh' || exit 1
+{{- end }}
+
 # scale down the respective Deployments
 kubectl -n ${NAMESPACE} scale --replicas=0 deployment/keystone-api --timeout=10s
 kubectl -n ${NAMESPACE} scale --replicas=0 deployment/keystone-memcached --timeout=10s
 sleep 20
-
-{{- if .Values.postgresql.backup.enabled }}
-# create a database backup
-kubectl exec -it `kubectl get pods --selector=app=keystone-postgresql | awk '{ print $1 }' | tail -1` --container=backup -- bash -c 'BACKUP_PGSQL_FULL="1 mins" /usr/local/sbin/db-backup.sh' || exit 1
-{{- end }}
 
 # Do an actual migration to MariaDB
 psql2mysql --source "${POSTGRES_URL}" --target "${MARIADB_URL}" migrate || exit 1
