@@ -274,6 +274,61 @@
       replacement: ipmi-exporter:{{$values.listen_port}}
 {{- end }}
 
+{{ $root := .Values }}
+{{- if .Values.blackbox_exporter }}
+{{- if .Values.blackbox_exporter.static_config }}
+{{- range $module, $module_config := .Values.blackbox_exporter.static_config }}
+- job_name: 'blackbox/static-targets-{{ $module }}'
+  metrics_path: /probe
+  params:
+    module: [{{ $module }}]
+  static_configs:
+    - targets:
+      {{- range  $module_config.targets }}
+      - {{ . }}
+      {{- end }}
+  scheme: https
+  relabel_configs:
+  - source_labels: [__address__]
+    target_label: __param_target
+  - source_labels: [__param_target]
+    target_label: instance
+  - target_label: __address__
+    replacement: prober.{{ $root.global.region }}.cloud.sap
+  - source_labels: [__param_module]
+    target_label: module
+  - target_label: region_probed_from
+    replacement: {{ $root.global.region }}
+{{ end }}
+{{ end }}
+
+{{- if .Values.blackbox_exporter.tcp_probe_targets }}
+{{- range $region := .Values.global.regions }}
+- job_name: 'blackbox/tcp-{{ $region }}'
+  metrics_path: /probe
+  scrape_interval: 15s
+  params:
+    module: [tcp_connect]
+  static_configs:
+    - targets:
+      {{- range $.Values.blackbox_exporter.tcp_probe_targets }}
+      - {{ . }}
+      {{- end }}
+  scheme: https
+  relabel_configs:
+  - source_labels: [__address__]
+    target_label: __param_target
+  - source_labels: [__param_target]
+    target_label: instance
+  - target_label: __address__
+    replacement: prober.{{ $region }}.cloud.sap
+  - source_labels: [__param_module]
+    target_label: module
+  - target_label: region_probed_from
+    replacement: {{ $region }}
+{{- end }}
+{{- end }}
+
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vasa'
