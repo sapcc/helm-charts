@@ -30,11 +30,26 @@ data:
       auth:
         community: {{ .Values.arista.community }}
 {{- end }}
+{{- if .Values.arista.snmpv3.enabled }}
     asw9:
+  {{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
+      version: {{ .Values.arista.snmpv3.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.arista.snmpv3.security_level }}
+        username: {{ .Values.arista.snmpv3.username }}
+        password: {{ .Values.arista.snmpv3.password }}
+        auth_protocol: {{ .Values.arista.snmpv3.auth_protocol }}
+        priv_protocol: {{ .Values.arista.snmpv3.priv_protocol }}
+        priv_password: {{ .Values.arista.snmpv3.priv_password }}
+{{- else }}
 {{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
       version: {{ .Values.arista.version }}
       auth:
         community: {{ .Values.arista.community }}
+{{- end }}
 {{- if .Values.asa.snmpv3.enabled }}
 {{ .Files.Get "_snmp-exporter-asa.yaml" | indent 4}}
       version: {{ .Values.asa.snmpv3.version }}
