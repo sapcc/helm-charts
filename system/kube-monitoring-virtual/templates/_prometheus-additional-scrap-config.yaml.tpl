@@ -13,11 +13,9 @@
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
     regex: true
-  {{- if not (eq .Values.global.region "admin") }}
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_targets]
     regex: .*kubernetes.*
-  {{- end }}
   - action: keep
     source_labels: [__meta_kubernetes_pod_container_port_number, __meta_kubernetes_pod_container_port_name, __meta_kubernetes_pod_annotation_prometheus_io_port]
     regex: (9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)
@@ -47,11 +45,9 @@
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
     regex: true
-  {{- if not (eq .Values.global.region "admin") }}
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_targets]
     regex: .*kubernetes.*
-  {{- end }}
   - action: keep
     source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port_1]
     regex: \d+
@@ -293,28 +289,13 @@
     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
   scheme: https
-{{- if eq .Values.global.clusterType "controlplane" }}
-  kubernetes_sd_configs:
-  - role: pod
-  relabel_configs:
-  - action: keep
-    source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system
-  - action: keep
-    source_labels: [__meta_kubernetes_pod_name]
-    regex: (kubernetes-master[^\.]+).+
-  - target_label: component
-    replacement: apiserver
-  - action: replace
-    source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
-{{- else }}
+
   static_configs:
   - targets:
     - $(KUBERNETES_SERVICE_HOST)
   relabel_configs:
     - target_label: component
       replacement: apiserver
-{{- end }}
+
   metric_relabel_configs:
 {{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubeAPIServer | indent 2 }}
