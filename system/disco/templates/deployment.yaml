@@ -45,6 +45,11 @@ spec:
           ports:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+{{- if and .Values.rbac.create .Values.rbac.serviceAccountName }}
+{{- if not (eq .Values.rbac.serviceAccountName "default") }}
+          serviceAccountName: {{ required .Values.rbac.serviceAccountName }}
+{{- end -}}
+{{- end -}}
       volumes:
         - name: config
           configMap:
