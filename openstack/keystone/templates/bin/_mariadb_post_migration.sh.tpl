@@ -46,6 +46,4 @@ kubectl -n ${NAMESPACE} get pods
 memcached_pod=$(kubectl get pods -n ${NAMESPACE} -l app=keystone-memcached --no-headers -o=custom-columns=name:.metadata.name)
 kubectl -n ${NAMESPACE} delete pod $memcached_pod
 
-# scale down the postgress deployments
 kubectl -n ${NAMESPACE} scale --replicas=0 deployment/keystone-pgmetrics --timeout=10s
-kubectl -n ${NAMESPACE} scale --replicas=0 deployment/keystone-postgresql --timeout=10s
