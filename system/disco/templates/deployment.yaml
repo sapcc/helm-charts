@@ -17,6 +17,11 @@ spec:
         prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
+{{- if and .Values.rbac.create .Values.rbac.serviceAccountName }}
+{{- if not (eq .Values.rbac.serviceAccountName "default") }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+{{- end -}}
+{{- end }}
       containers:
         - name: disco
           image: {{ include "image" . }}
@@ -45,11 +50,7 @@ spec:
           ports:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
-{{- if and .Values.rbac.create .Values.rbac.serviceAccountName }}
-{{- if not (eq .Values.rbac.serviceAccountName "default") }}
-      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
-{{- end -}}
-{{- end -}}
+
       volumes:
         - name: config
           configMap:
