@@ -1,9 +1,49 @@
 modules:
   ipn:
-    walk:
-    - 1.3.6.1.4.1.9.9.42.1.3.5.1.34
-    - 1.3.6.1.4.1.9.9.42.1.3.5.1.35
-    - 1.3.6.1.4.1.9.9.42.1.3.5.1.36
-    - 1.3.6.1.4.1.9.9.42.1.2.10.1.1
-    - 1.3.6.1.4.1.9.9.42.1.2.10.1.2
-    - 1.3.6.1.4.1.9.9.42.1.2.10.1.5
+    walk: [ifInOctets, ifInUcastPkts, ifInNUcastPkts, ifInDiscards, ifInErrors, ifInUnknownProtos, ifOutOctets, ifOutUcastPkts, ifOutNUcastPkts, ifOutDiscards, ifOutErrors, ifOutQLen, ifLastChange, rttMonLatestRttOperCompletionTime, rttMonLatestRttOperSense, rttMonLatestRttOperTime, rttMonJitterStatsPacketLossSD, rttMonJitterStatsPacketLossDS, rttMonJitterStatsPacketOutOfSequence]
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: ifAlias
+      - source_indexes: [ifIndex]
+        lookup: ifDescr
+      - source_indexes: [ifIndex]
+        lookup: ifType
+      - source_indexes: [ifIndex]
+        lookup: ifMtu
+      - source_indexes: [ifIndex]
+        lookup: ifHighSpeed
+      - source_indexes: [ifIndex]
+        lookup: ifPhysAddress
+      - source_indexes: [ifIndex]
+        lookup: ifAdminStatus
+      - source_indexes: [ifIndex]
+        lookup: ifOperStatus
+      - source_indexes: [ifIndex]
+        lookup: ifAlias
+      - source_indexes: [rttMonCtrlAdminIndex]
+        lookup: rttMonCtrlAdminOwner
+      - source_indexes: [rttMonCtrlAdminIndex]
+        lookup: rttMonCtrlAdminTag
+    overrides:
+      ifAlias:
+        ignore: true # Lookup metric
+      ifDescr:
+        ignore: true
+      ifName:
+        ignore: true
+      ifType:
+        type: EnumAsInfo
+      ifMtu:
+        ignore: true
+      ifHighSpeed:
+        ignore: true
+      ifPhysAddress:
+        type: PhysAddress48
+      ifAdminStatus:
+        ignore: true
+      ifOperStatus:
+        ignore: true
+      rttMonCtrlAdminOwner:
+        ignore: true
+      rttMonCtrlAdminTag:
+        ignore: true
