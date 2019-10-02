@@ -1,25 +1,39 @@
 modules:
   asa:
-    walk:
-      - cfwHardwareStatusValue
-      - ifIndex
-      - ifDescr
-      - ifType
-      - ifMtu
-      - ifSpeed
-      - ifPhysAddress
-      - ifAdminStatus
-      - ifOperStatus
-      - ifLastChange
-      - ifInOctets
-      - ifInUcastPkts
-      - ifInNUcastPkts
-      - ifInDiscards
-      - ifInErrors
-      - ifOutOctets
-      - ifOutUcastPkts
-      - ifOutNUcastPkts
-      - ifOutDiscards
-      - ifOutErrors
-      - ifOutQLen
-      - ifSpecific
+    walk: [cfwHardwareStatusValue, ifInUcastPkts, ifInNUcastPkts, ifInDiscards, ifInErrors, ifInUnknownProtos, ifOutOctets, ifOutUcastPkts, ifOutNUcastPkts, ifOutDiscards, ifOutErrors, ifOutQLen, ifLastChange]
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: ifDescr
+      - source_indexes: [ifIndex]
+        lookup: ifType
+      - source_indexes: [ifIndex]
+        lookup: ifMtu
+      - source_indexes: [ifIndex]
+        lookup: ifHighSpeed
+      - source_indexes: [ifIndex]
+        lookup: ifPhysAddress
+      - source_indexes: [ifIndex]
+        lookup: ifAdminStatus
+      - source_indexes: [ifIndex]
+        lookup: ifOperStatus
+      - source_indexes: [ifIndex]
+        lookup: ifAlias
+    overrides:
+      ifAlias:
+        ignore: true # Lookup metric
+      ifDescr:
+        ignore: true
+      ifName:
+        ignore: true
+      ifType:
+        type: EnumAsInfo
+      ifMtu:
+        ignore: true
+      ifHighSpeed:
+        ignore: true
+      ifPhysAddress:
+        type: PhysAddress48
+      ifAdminStatus:
+        ignore: true
+      ifOperStatus:
+        ignore: true
