@@ -42,11 +42,10 @@ chmod 644 ~/.kube/config
 kubectl version
 kubectl -n ${NAMESPACE} get pods
 
+# kill the memcached pod, since it might contain outdated cached content
+memcached_pod=$(kubectl get pods -n ${NAMESPACE} -l app=keystone-memcached --no-headers -o=custom-columns=name:.metadata.name)
+kubectl -n ${NAMESPACE} delete pod $memcached_pod
+
 # scale down the postgress deployments
 kubectl -n ${NAMESPACE} scale --replicas=0 deployment/keystone-pgmetrics --timeout=10s
 kubectl -n ${NAMESPACE} scale --replicas=0 deployment/keystone-postgresql --timeout=10s
-
-# scale up the keystone deployments
-kubectl -n ${NAMESPACE} scale --replicas=1 deployment/keystone-memcached --timeout=10s
-kubectl -n ${NAMESPACE} scale --replicas={{ .Values.api.replicas }} deployment/keystone-api --timeout=10s
-
