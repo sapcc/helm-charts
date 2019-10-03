@@ -118,3 +118,9 @@ prometheus-{{- (include "prometheus.name" .) -}}
   targetLabel: cluster
   replacement: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
 {{- end -}}
+
+{{- define "prometheus.keep-metrics.metric-relabel-config" -}}
+- sourceLabels: [ __name__ ]
+  regex: ^({{ . | join "|" }})$
+  action: keep
+{{- end -}}

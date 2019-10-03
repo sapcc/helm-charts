@@ -267,6 +267,12 @@ serviceDiscoveries:
   # additionalTargets:
   #   - ...
 
+  # Scrape interval for all jobs.
+  scrapeInterval: 60s
+
+  # Scrape timeout for all jobs.
+  scrapeTimeout: 55s
+
   # SD for Kubernetes services and endpoints.
   endpoints:
     enabled: true
@@ -280,6 +286,56 @@ serviceDiscoveries:
     # Only scrape pods with annotation prometheus.io/targets: $prometheusName.
     # If set to false, all targets are scraped.
     limitToPrometheusTargets: true
+
+  # SD for kubernetes API server.
+  kubeAPIServer:
+    enabled: false
+    # Full list of APIserver metrics: https://github.com/kubernetes/apiserver/blob/master/pkg/endpoints/metrics/metrics.go .
+    allowedMetrics:
+      - apiserver_request_count
+      - apiserver_request_latencies_bucket
+      - etcd_object_counts
+      - process_max_fds
+      - process_open_fds
+
+  # Scrape cAdvisor metrics.
+  cAdvisor:
+    enabled: false
+    # Full list of cAdvisor metrics: https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md .
+    allowedMetrics:
+      - container_cpu_cfs_periods_total
+      - container_cpu_cfs_throttled_seconds_total
+      - container_cpu_cfs_throttled_periods_total
+      - container_cpu_usage_seconds_total
+      - container_cpu_user_seconds_total
+      - container_cpu_system_seconds_total
+      - container_fs_inodes_total
+      - container_fs_limit_bytes
+      - container_fs_usage_bytes
+      - container_last_seen
+      - container_memory_usage_bytes
+      - container_memory_working_set_bytes
+      - container_network_receive_bytes_total
+      - container_network_transmit_bytes_total
+      - container_start_time_seconds
+
+  # Scrape kubelet metrics.
+  kubelet:
+    enabled: false
+    # Full list of kubelet metrics: https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/metrics/metrics.go#L33 .
+    allowedMetrics:
+      - kubelet_pod_start_latency_microseconds
+      - kubelet_running_pod_count
+      - process_max_fds
+      - process_open_fds
+
+  # Scrape kube-dns pods.
+  kubeDNS:
+    enabled: false
+
+  # Scrape all node exporters.
+  nodeExporter:
+    enabled: false
 
 # The pod's tolerations.
 # See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration

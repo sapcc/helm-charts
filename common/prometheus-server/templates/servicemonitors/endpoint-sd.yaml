@@ -22,8 +22,8 @@ spec:
 
   endpoints:
     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      interval: 60s
-      scrapeTimeout: 55s
+      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       honorLabels: true
       relabelings:
@@ -71,8 +71,8 @@ spec:
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
 
     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      interval: 60s
-      scrapeTimeout: 55s
+      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       honorLabels: true
       relabelings:
@@ -85,7 +85,7 @@ spec:
             - __meta_kubernetes_service_annotation_prometheus_io_targets
           regex: {{ include "prometheusTargetsValue" . | quote }}
         - action: keep
-          source_labels:
+          sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_port_1
           regex: '\d+'
         - action: keep

@@ -1,0 +1,69 @@
+{{- if .Values.serviceDiscoveries.cAdvisor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: {{ include "prometheus.fullName" . }}-cadvisor
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  jobLabel: kubernetes-cadvisor
+
+  selector:
+    matchLabels:
+      k8s-app: kubelet
+
+  # Find endpoints in any namespace.
+  namespaceSelector:
+    any: true
+
+  endpoints:
+    - port: https-metrics
+      path: /metrics/cadvisor
+      scheme: https
+      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      honorLabels: true
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecureSkipVerify: true
+
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          separator: ;
+          regex: ^(.*)$
+          targetLabel: nodename
+          replacement: $1
+          action: replace
+        - targetLabel: component
+          replacement: cadvisor
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+
+      metricRelabelings:
+        - sourceLabels: [ id ]
+          action: replace
+          regex: '^/system\.slice/(.+)\.service$'
+          targetLabel: systemd_service_name
+          replacement: '${1}'
+        - sourceLabels: [ id ]
+          action: replace
+          regex: '^/system\.slice/(.+)\.service$'
+          targetLabel: container_name
+          replacement: '${1}'
+        - sourceLabels:
+            - container_name
+            - __name__
+          # The system container POD is used for networking.
+          regex: POD;({{ without .Values.serviceDiscoveries.cAdvisor.allowedMetrics "container_network_receive_bytes_total" "container_network_transmit_bytes_total" | join "|" }})
+          action: drop
+        - sourceLabels: [ container_name ]
+          regex: '^$'
+          action: drop
+        - regex: '^id$'
+          action: labeldrop
+        - regex: '^name$'
+          action: labeldrop
+{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.serviceDiscoveries.cAdvisor.allowedMetrics | indent 8 }}
+{{- end }}
