@@ -70,6 +70,22 @@ spec:
             timeoutSeconds: 5
             periodSeconds: 15
 
+        - name: iperf3-client
+          image: hub.global.cloud.sap/monsoon/iperf3
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "iperf3 -v"]
+            timeoutSeconds: 5
+            periodSeconds: 60
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "iperf3 -v"]
+            timeoutSeconds: 5
+            periodSeconds: 60
+            initialDelaySeconds: 15
+
         - name: iperf3-server
           image: hub.global.cloud.sap/monsoon/iperf3
           imagePullPolicy: IfNotPresent
@@ -81,7 +97,7 @@ spec:
               containerPort: 5201
               protocol: TCP
             - name: udp
-              containerPort: 5202
+              containerPort: 5201
               protocol: UDP
           livenessProbe:
             exec:
