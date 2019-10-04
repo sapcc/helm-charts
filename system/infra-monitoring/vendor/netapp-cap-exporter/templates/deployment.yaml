@@ -1,13 +1,15 @@
 {{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $targets := .Values.metrics.targets -}}
+{{- $port := .Values.exporter.port -}}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: {{ include "netapp-cap-exporter.fullname" . }}
-  labels:
-    app.kubernetes.io/name: {{ include "netapp-cap-exporter.name" . }}
-    helm.sh/chart: {{ include "netapp-cap-exporter.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    prometheus.io/scrape: {{ $scrape | quote }}
+    prometheus.io/targets: {{ $targets | quote }}
+    prometheus.io/port: {{ $port | quote }}
 spec:
   selector:
     matchLabels:
@@ -42,7 +44,7 @@ spec:
                 key: netappPassword
           ports:
             - name: prometheus
-              containerPort: {{ .Values.exporter.port }}
+              containerPort: {{ $port }}
           resources:
 {{ toYaml .Values.exporter.resources | indent 12 }}
           volumeMounts:

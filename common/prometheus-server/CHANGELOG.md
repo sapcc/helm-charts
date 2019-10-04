@@ -1,3 +1,7 @@
+## 2.2.0
+
+* Add service discoveries for `kube-dns`, `cAdvisor`, `kubelet`, `kubernetes API server`, `node-exporter`. Disabled by default.
+
 ## 2.1.1
 
 * Fix alerts for THanos compactor: `s/compact/compactor/g`.

@@ -20,6 +20,13 @@ spec:
     matchLabels:
       prometheus: {{ include "prometheus.name" . }}
 
+  {{ if or .Values.serviceDiscoveries.pods.enabled .Values.serviceDiscoveries.kubeDNS.enabled -}}
+  # Select all PodMonitors with the label 'prometheus: <name>'.
+  podMonitorSelector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" . }}
+  {{- end }}
+
   # Select all (aggregation, alerting) PrometheusRules with the label 'prometheus: <name>'.
   ruleSelector:
     matchLabels:
