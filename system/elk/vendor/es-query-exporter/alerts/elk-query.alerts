@@ -2,7 +2,7 @@ groups:
 - name: elkquery.alerts
   rules:
   - alert: ElkControlplaneLogstashLogsMissing
-    expr: sum(count(avg_over_time(elasticsearch_logstash_logs_doc_count[15m] offset 1h)) by (logs)) - sum(count(avg_over_time(elasticsearch_logstash_logs_doc_count[15m])) by (logs)) < 0
+    expr: delta(elasticsearch_logstash_logs_doc_count[15m]) == 0
     for: 15m
     labels:
       context: logshipping
@@ -15,7 +15,7 @@ groups:
       summary: 'ELK in {{ $labels.region }} one or more fluent nodes are  not shipping any logs. Check controlplane fluent in elk namespace.'
 
   - alert: ElkControlplaneSystemdLogsMissing
-    expr: sum(count(avg_over_time(elasticsearch_systemd_logs_doc_count[15m] offset 1h)) by (logs)) - sum(count(avg_over_time(elasticsearch_systemd_logs_doc_count[15m])) by (logs)) < 0
+    expr: delta(elasticsearch_systemd_logs_doc_count[15m]) == 0
     for: 15m
     labels:
       context: logshipping
