@@ -15,7 +15,12 @@ groups:
       summary: Keystone cannot be scraped
 
   - alert: OpenstackKeystoneDatabaseScrapeMissing
+{{- if eq .Values.global.database "postgres" }}
     expr: absent(up{app="keystone-postgresql", type="database"})
+{{- end }}
+{{- if eq .Values.global.database "mariadb" }}
+    expr: absent(up{app="keystone-mariadb"})
+{{- end }}
     for: 1h
     labels:
       context: availability
@@ -42,7 +47,12 @@ groups:
       summary: A keystone server is DOWN
 
   - alert: OpenstackKeystoneDatabaseUp
+{{- if eq .Values.global.database "postgres" }}
     expr: count(up{component="keystone-postgresql",type="database"} == 0) == count(up{component="keystone-postgresql",type="database"})
+{{- end }}
+{{- if eq .Values.global.database "mariadb" }}
+    expr: count(up{component="keystone-mariadb"} == 0) == count(up{component="keystone-mariadb"})
+{{- end }}
     for: 5m
     labels:
       context: availability
