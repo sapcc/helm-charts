@@ -1,5 +1,5 @@
 {
-    "admin": "role:cloud_keymanager_admin",
+    "admin": "role:cloud_keymanager_admin or role:key-manager:service-admin",
     "context_is_admin": "rule:admin",
     "service_user": "role:service",
     "viewer": "role:keymanager_viewer",
