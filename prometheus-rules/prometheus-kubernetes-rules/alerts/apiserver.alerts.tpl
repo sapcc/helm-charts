@@ -2,7 +2,7 @@ groups:
 - name: apiserver.alerts
   rules:
   - alert: KubernetesApiServerAllDown
-    expr: count(up{job="kube-system/apiserver"} == 0) == count(up{job="kube-system/apiserver"})
+    expr: count(up{job=~".+kubernetes-apiserver"} == 0) == count(up{job=~".+kubernetes-apiserver"})
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -16,7 +16,7 @@ groups:
       summary: All apiservers are down. Kubernetes API is unavailable!
 
   - alert: KubernetesApiServerDown
-    expr: up{job="kube-system/apiserver"} == 0
+    expr: up{job=~".+kubernetes-apiserver"} == 0
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -30,7 +30,7 @@ groups:
       summary: An ApiServer is DOWN
 
   - alert: KubernetesApiServerScrapeMissing
-    expr: absent(up{job="kube-system/apiserver"})
+    expr: absent(up{job=~".+kubernetes-apiserver"})
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}

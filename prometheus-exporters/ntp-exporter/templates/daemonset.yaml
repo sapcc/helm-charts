@@ -4,33 +4,35 @@ metadata:
   name: ntp-exporter
 spec:
   minReadySeconds: 5
+
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
+
   template:
     metadata:
       name: ntp-exporter
       labels:
         app: ntp-exporter
+
     spec:
       tolerations:
       - key: "species"
         operator: "Exists"
         effect: "NoSchedule"
+
       containers:
         - name:  ntp-exporter
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          image: {{ required ".Values.image.repository missing" .Values.image.repository }}:{{ required ".Values.image.tag missing" .Values.image.tag }}
           args:
-            - "-ntp.server={{ .Values.ntp.server }}"
+            - "-ntp.server={{ required ".Values.ntp.server missing" .Values.ntp.server }}"
           ports:
             - name: metrics
-              containerPort: 9100
-              hostPort: 9101
+              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+              hostPort: {{ required ".Values.metrics.hostPort missing" .Values.metrics.hostPort }}
+
+          {{- if .Values.resources }}
           resources:
-            requests:
-              memory: 40Mi
-              cpu: 10m
-            limits:
-              memory: 100Mi
-              cpu: 20m
+{{ toYaml .Values.resources | indent 12 }}
+          {{- end }}
