@@ -72,7 +72,7 @@ groups:
       summary: Pod is in a restart loop
 
   - alert: KubernetesTooManyOpenFiles
-    expr: 100*process_open_fds{job=~"kube-system/kubelet|kube-system/apiserver"} / process_max_fds > 50
+    expr: 100*process_open_fds{job=~"kubernetes-kubelet|kubernetes-apiserver"} / process_max_fds > 50
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
