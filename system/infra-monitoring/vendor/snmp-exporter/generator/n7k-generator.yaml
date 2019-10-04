@@ -1,57 +1,63 @@
 modules:
   n7k:
-    walk:
-    - 1.3.6.1.4.1.9.9.168.1.1.9
-    - 1.3.6.1.2.1.10.166.11.1.2.2.1.1
-    - 1.3.6.1.2.1.10.166.11.1.3.1.1.3
-    - mplsL3VpnVrfPerfRoutesDeleted
-    - mplsL3VpnVrfPerfRoutesAdded
-    - mplsL3VpnVrfPerfDiscTime
-    - 1.3.6.1.2.1.15.3.1.7
-    - 1.3.6.1.4.1.9.9.187.1.2.3.1.1
-    - 1.3.6.1.4.1.9.9.187.1.2.3.1.2
-    - 1.3.6.1.4.1.9.9.187.1.2.4.1.1
-    - 1.3.6.1.4.1.9.9.187.1.2.4.1.2
-    - 1.3.6.1.4.1.9.9.187.1.2.4.1.6
-    - 1.3.6.1.4.1.9.9.187.1.2.4.1.7
-    - 1.3.6.1.4.1.9.9.187.1.2.4.1.8
-    - cbgpPeer2FsmEstablishedTime
-    - cbgpPeer2AdminStatus
-    - cbgpPeer2State
-    - 1.3.6.1.2.1.1.3
-    - ifDescr
-    - ifType
-    - ifOperStatus
-    - ifAdminStatus
-    - ifHighSpeed
-    - ifLastChange
-    - ifInOctets
-    - ifOutOctets
-    - ifInErrors
-    - ifOutErrors
-    - ifInDiscards
-    - ifOutDiscards
-    - entSensorValue
-    - entSensorType
-    - entSensorThresholdSeverity
-    - entSensorThresholdValue
-    - entSensorStatus
-    - entPhysicalContainedIn
-    - entAliasMappingIdentifier
-    - entPhysicalName
-    - entPhysicalClass
-    - cpmCPUMemoryFree
-    - cpmCPUMemoryUsed
-    - cpmCPUTotalPhysicalIndex
-    - cseSysCPUUtilization
-    - cHsrpGrpVirtualIpAddr
-    - cHsrpGrpStandbyState
-    - cefcFRUPowerOperStatus
-    - cefcFRUPowerAdminStatus
-    - ccmHistoryRunningLastChanged
-    - ccmHistoryRunningLastSaved
-    - ciscoImageString
-    - clmLicenseExpiryDate
-    - clmNoOfLicenseCurrentUsages
-    - clmLicenseFlag
-    - clmNoOfMissingUsageLicenses
+    walk: [bgpPeerRemoteAddr, cHsrpGrpStandbyState, cbgpPeer2AdminStatus, cbgpPeer2FsmEstablishedTime, cbgpPeer2State, cbgpPeerAcceptedPrefixes, cbgpPeerAddrFamilyAfi, cbgpPeerAddrFamilySafi, cbgpPeerAdvertisedPrefixes, cbgpPeerDeniedPrefixes, cbgpPeerSuppressedPrefixes, cbgpPeerWithdrawnPrefixes, ccmHistoryRunningLastChanged, ccmHistoryRunningLastSaved, cefcFRUPowerAdminStatus, cefcFRUPowerAdminStatus, cefcFRUPowerOperStatus, cefcFRUPowerOperStatus, ciscoImageString, clmLicenseExpiryDate, clmLicenseFlag, clmNoOfLicenseCurrentUsages, clmNoOfMissingUsageLicenses, cntpSysPeer, cpmCPULoadAvg15min, cpmCPULoadAvg1min, cpmCPULoadAvg5min, cpmCPUMemoryFree, cpmCPUMemoryUsed, cpmCPUTotal1minRev, cpmCPUTotalPhysicalIndex, cseSysCPUUtilization, entPhysicalName, entSensorThresholdSeverity, entSensorThresholdValue, entSensorType, entSensorValue, ifInDiscards, ifInErrors, ifInNUcastPkts, ifInOctets, ifInUcastPkts, ifInUnknownProtos, ifLastChange, ifOutDiscards, ifOutErrors, ifOutNUcastPkts, ifOutOctets, ifOutQLen, ifOutUcastPkts, mplsL3VpnVrfName, mplsL3VpnVrfPerfCurrNumRoutes, mplsL3VpnVrfPerfRoutesAdded, mplsL3VpnVrfPerfRoutesDeleted, sysUpTime]
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: ifDescr
+      - source_indexes: [ifIndex]
+        lookup: ifType
+      - source_indexes: [ifIndex]
+        lookup: ifMtu
+      - source_indexes: [ifIndex]
+        lookup: ifHighSpeed
+      - source_indexes: [ifIndex]
+        lookup: ifPhysAddress
+      - source_indexes: [ifIndex]
+        lookup: ifAdminStatus
+      - source_indexes: [ifIndex]
+        lookup: ifOperStatus
+      - source_indexes: [ifIndex]
+        lookup: ifAlias
+      - source_indexes: [ifIndex]
+        lookup: cHsrpGrpVirtualIpAddr
+      - source_indexes: [clmgmtLicenseIndex]
+        lookup: clmgmtLicenseFeatureName
+      - source_indexes: [clmgmtLicenseIndex]
+        lookup: clmgmtLicenseType
+      - source_indexes: [entPhysicalIndex]
+        lookup: entPhysicalName
+      - source_indexes: [entPhysicalIndex]
+        lookup: cpmCPUTotalPhysicalIndex
+      - source_indexes: [cpmCPUTotalIndex]
+        lookup: cpmCPUTotalPhysicalIndex
+    overrides:
+      ifAlias:
+        ignore: true # Lookup metric
+      ifDescr:
+        ignore: true
+      ifName:
+        ignore: true
+      ifType:
+        type: EnumAsInfo
+      ifMtu:
+        ignore: true
+      ifHighSpeed:
+        ignore: true
+      ifPhysAddress:
+        type: PhysAddress48
+      ifAdminStatus:
+        ignore: true
+      ifOperStatus:
+        ignore: true
+      cHsrpGrpVirtualIpAddr:
+        ignore: true
+      FeatureName:
+        ignore: true
+      LicenseType:
+        ignore: true
+      entPhyscalName:
+        ignore: true
+      mplsL3VpnVrfName:
+        type: DisplayString
+      clmLicenseFlag:
+        type: DisplayString
