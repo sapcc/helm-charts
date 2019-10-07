@@ -1,0 +1,137 @@
+global:
+  region:
+  domain:
+  clusterType: kubernikus
+
+# Disable prometheus-operator Grafana sub-chart. We deploy independently.
+grafana:
+  enabled: false
+
+# Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
+kubeStateMetrics:
+  enabled: false
+
+prometheus-operator:
+  # Just `prometheus`. The operator appends `-operator`.
+  nameOverride: prometheus
+  fullnameOverride: prometheus
+
+  prometheusOperator:
+    serviceAccount:
+      create: false
+    admissionWebhooks:
+      enabled: false
+    tlsProxy:
+      enabled: false
+
+  operator:
+    serviceAccountName: default
+  # Disable creation of default aggregation and alerting rules.
+  defaultRules:
+    create: false
+  # Disable the Prometheus instance. We deploy our own Prometheis.
+  prometheus:
+    enabled: false
+  # Disable the Alertmanager instance. We deploy our own Alertmanagers.
+  alertmanager:
+    enabled: false
+  # Disable all exporters.
+  kubeApiServer:
+    enabled: false
+  kubelet:
+    enabled: false
+  kubeControllerManager:
+    enabled: false
+  coreDns:
+    enabled: false
+  kubeDns:
+    enabled: false
+  kubeEtcd:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+  kubeStateMetrics:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  grafana:
+    enabled: false
+
+kube-state-metrics:
+  customLabels:
+    app: kube-state-metrics
+
+  service:
+    annotations:
+      prometheus.io/port: "8080"
+      prometheus.io/port_1: "8081"
+      prometheus.io/targets: "kubernikus"
+
+  resources:
+    requests:
+      memory: 150Mi
+      cpu: 100m
+
+prometheus-node-exporter:
+  image:
+    repository: prom/node-exporter
+
+  extraArgs:
+    - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
+    - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
+    - --path.rootfs=/rootfs
+    - --collector.systemd.enable-task-metrics
+    - --collector.systemd.enable-restarts-metrics
+    - --collector.systemd.enable-start-time-metrics
+    - --collector.processes
+
+  extraHostVolumeMounts:
+    - name: dbus
+      hostPath: /var/run/dbus/system_bus_socket
+      mountPath: /var/run/dbus/system_bus_socket
+      readOnly: true
+    - name: rootfs
+      hostPath: /
+      mountPath: /rootfs
+      readOnly: true
+      mountPropagation: HostToContainer
+
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+
+prometheus-server:
+  name: kubernikus
+
+  retentionTime: 7d
+
+  ingress:
+    enabled: true
+    host: prometheus.kubernikus
+
+  # Store in memory.
+  persistence:
+    enabled: true
+    size: 100Gi
+
+  serviceDiscoveries:
+    pods:
+      enabled: true
+    kubeAPIServer:
+      enabled: true
+    cAdvisor:
+      enabled: true
+    kubelet:
+      enabled: true
+    nodeExporter:
+      enabled: true
+    kubeDNS:
+      enabled: true
+
+  # Send alerts to these alertmanagers.
+  alertmanagers:
+    - alertmanager.eu-de-1.cloud.sap
+
+prometheus-kubernetes-rules:
+  prometheusName: kubernikus
