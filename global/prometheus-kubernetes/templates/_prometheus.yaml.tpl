@@ -57,7 +57,7 @@
 
     - action: replace
       target_label: cluster_type
-      replacement: kubernikus-scaleout
+      replacement: scaleout
 
   metric_relabel_configs:
     - action: replace

@@ -1,0 +1,14 @@
+{{- if and .Values.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: ntp-exporter-alerts
+  labels:
+    app: ntp-exporter
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_ntp.alerts.tpl") . | indent 2 }}
+
+{{- end }}

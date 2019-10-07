@@ -1,32 +1,81 @@
-kube-state-metrics:
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
-    prometheus.io/port_1: "8081"
-    prometheus.io/targets: "kubernetes"
+global:
+  region:
+  domain:
+  clusterType: virtual
 
-  # This avoid double scraping of metrics caused by setting the `prometheus.io/scrape: "true"` annotation on the service.
-  # We already have the annotations on the kube-state-metrics pod.
-  prometheusScrape: false
+# Disable prometheus-operator Grafana sub-chart. We deploy independently.
+grafana:
+  enabled: false
+
+# Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
+kubeStateMetrics:
+  enabled: false
+
+prometheus-operator:
+  # Just `prometheus`. The operator appends `-operator`.
+  nameOverride: prometheus
+  fullnameOverride: prometheus
+
+  prometheusOperator:
+    serviceAccount:
+      create: false
+    admissionWebhooks:
+      enabled: false
+    tlsProxy:
+      enabled: false
+
+  operator:
+    serviceAccountName: default
+  # Disable creation of default aggregation and alerting rules.
+  defaultRules:
+    create: false
+  # Disable the Prometheus instance. We deploy our own Prometheis.
+  prometheus:
+    enabled: false
+  # Disable the Alertmanager instance. We deploy our own Alertmanagers.
+  alertmanager:
+    enabled: false
+  # Disable all exporters.
+  kubeApiServer:
+    enabled: false
+  kubelet:
+    enabled: false
+  kubeControllerManager:
+    enabled: false
+  coreDns:
+    enabled: false
+  kubeDns:
+    enabled: false
+  kubeEtcd:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+  kubeStateMetrics:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  grafana:
+    enabled: false
+
+kube-state-metrics:
+  customLabels:
+    app: kube-state-metrics
+
+  service:
+    annotations:
+      prometheus.io/port: "8080"
+      prometheus.io/port_1: "8081"
+      prometheus.io/targets: "kubernetes"
 
   resources:
     requests:
       memory: 150Mi
       cpu: 100m
 
-ntp-exporter:
-  image:
-    repository: hub.eu-de-1.cloud.sap/monsoon/ntp-exporter
-    tag: v1.0-7-gf28483e
-  ntp:
-    server: timehost1.cc.cloud.sap
-
 ping-exporter:
   targets: 
     - ingress.admin.cloud.sap
     - 8.8.8.8
-
-
 
 prometheus-node-exporter:
   image:
@@ -62,10 +111,6 @@ prometheus-server:
 
   retentionTime: 7d
 
-  additionalScrapeConfigs:
-    name: prometheus-additional-scrape-config
-    key: scrape-config.yaml
-
   ingress:
     enabled: true
     host: prometheus-kubernetes
@@ -76,47 +121,23 @@ prometheus-server:
     size: 100Gi
 
   serviceDiscoveries:
-    endpoints:
-      enabled: false
+    pods:
+      enabled: true
+    kubeAPIServer:
+      enabled: true
+    cAdvisor:
+      enabled: true
+    kubelet:
+      enabled: true
+    nodeExporter:
+      enabled: true
+    kubeDNS:
+      enabled: true
 
   # Send alerts to these alertmanagers.
   alertmanagers:
     - alertmanager.eu-de-1.cloud.sap
     - alertmanager.internet.eu-de-2.cloud.sap
-
-allowedMetrics:
-  # Full list of cAdvisor metrics: https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md .
-  cAdvisor:
-    - container_cpu_cfs_periods_total
-    - container_cpu_cfs_throttled_seconds_total
-    - container_cpu_cfs_throttled_periods_total
-    - container_cpu_usage_seconds_total
-    - container_cpu_user_seconds_total
-    - container_cpu_system_seconds_total
-    - container_fs_inodes_total
-    - container_fs_limit_bytes
-    - container_fs_usage_bytes
-    - container_last_seen
-    - container_memory_usage_bytes
-    - container_memory_working_set_bytes
-    - container_network_receive_bytes_total
-    - container_network_transmit_bytes_total
-    - container_start_time_seconds
-
-  # Full list of kubelet metrics: https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/metrics/metrics.go#L33 .
-  kubelet:
-    - kubelet_pod_start_latency_microseconds
-    - kubelet_running_pod_count
-    - process_max_fds
-    - process_open_fds
-
-  # Full list of APIserver metrics: https://github.com/kubernetes/apiserver/blob/master/pkg/endpoints/metrics/metrics.go .
-  kubeAPIServer:
-    - apiserver_request_count
-    - apiserver_request_latencies_bucket
-    - etcd_object_counts
-    - process_max_fds
-    - process_open_fds
 
 prometheus-kubernetes-rules:
   prometheusName: kubernetes

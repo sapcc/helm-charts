@@ -18,6 +18,7 @@
       - '{job="baremetal/arista"}'
       - '{job="bios/ironic"}'
       - '{job="ipmi/ironic"}'
+      - '{job="ipmi/esxi"}'
       - '{job="snmp"}'
       - '{job="infra-monitoring-atlas-sd"}'
       - '{__name__=~"^vcenter_.+"}'

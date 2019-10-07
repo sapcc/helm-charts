@@ -1,3 +1,7 @@
+## 2.2.1
+
+* Fix regex for pod and endpoint service discovery for metrics on an additional port.
+
 ## 2.2.0
 
 * Add service discoveries for `kube-dns`, `cAdvisor`, `kubelet`, `kubernetes API server`, `node-exporter`. Disabled by default.

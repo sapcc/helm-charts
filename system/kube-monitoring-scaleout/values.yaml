@@ -17,7 +17,6 @@ prometheus-operator:
   fullnameOverride: prometheus
 
   prometheusOperator:
-    createCustomResource: false
     serviceAccount:
       create: false
     admissionWebhooks:
@@ -36,13 +35,9 @@ prometheus-operator:
   # Disable the Alertmanager instance. We deploy our own Alertmanagers.
   alertmanager:
     enabled: false
-  # Exporter section:
-  # Enable/Disable exporters.
-  # Deploys the service and servicemonitor.
+  # Disable all exporters.
   kubeApiServer:
-    enabled: true
-    serviceMonitor:
-      jobLabel: kube-apiserver
+    enabled: false
   kubelet:
     enabled: false
   kubeControllerManager:
@@ -63,15 +58,14 @@ prometheus-operator:
     enabled: false
 
 kube-state-metrics:
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
-    prometheus.io/port_1: "8081"
-    prometheus.io/targets: "kubernetes"
+  customLabels:
+    app: kube-state-metrics
 
-  # This avoid double scraping of metrics caused by setting the `prometheus.io/scrape: "true"` annotation on the service.
-  # We already have the annotations on the kube-state-metrics pod.
-  prometheusScrape: false
+  service:
+    annotations:
+      prometheus.io/port: "8080"
+      prometheus.io/port_1: "8081"
+      prometheus.io/targets: "kubernetes"
 
   resources:
     requests:
@@ -85,11 +79,11 @@ prometheus-node-exporter:
   extraArgs:
     - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
     - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
-    - --collector.processes
     - --path.rootfs=/rootfs
     - --collector.systemd.enable-task-metrics
     - --collector.systemd.enable-restarts-metrics
     - --collector.systemd.enable-start-time-metrics
+    - --collector.processes
 
   extraHostVolumeMounts:
     - name: dbus
@@ -124,7 +118,7 @@ prometheus-server:
   serviceDiscoveries:
     pods:
       enabled: true
-    kubeApiServer:
+    kubeAPIServer:
       enabled: true
     cAdvisor:
       enabled: true

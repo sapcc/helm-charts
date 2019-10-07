@@ -4,7 +4,7 @@ groups:
 - name: node.alerts
   rules:
   - alert: KubernetesHostHighCPUUsage
-    expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle", instance=~".*cloud.sap"}[5m])) * 100) > 90
+    expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -17,22 +17,8 @@ groups:
       summary: High load on node
       description: "Node {{`{{ $labels.instance }}`}} has more than {{`{{ $value }}`}}% CPU load"
 
-  - alert: KubernetesNodeClockDrift
-    expr: abs(ntp_drift_seconds) > 0.3
-    for: 1h
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      severity: warning
-      context: availability
-      meta: "Clock drift on {{`{{ $labels.instance }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{$labels.instance}}`}}
-    annotations:
-      description: High NTP drift
-      summary: The clock on node {{`{{ $labels.instance }}`}} is more than 300ms apart from its NTP server. This can cause service degradation in Swift
-
   - alert: KubernetesNodeKernelDeadlock
-    expr: kube_node_status_condition{condition="KernelDeadlock",status="true"} == 1
+    expr: kube_node_status_condition{condition="KernelDeadlock", status="true"} == 1
     for: 96h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -72,7 +58,7 @@ groups:
       summary: Node {{`{{ $labels.node }}`}} under pressure due to insufficient available memory
 
   - alert: KubernetesNodeDiskUsagePercentage
-    expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext",job="kube-system/node"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext",job="kube-system/node"}) BY (instance,device)) > 85
+    expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"}) BY (instance,device)) > 85
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -87,7 +73,7 @@ groups:
   ### Network health ###
 
   - alert: KubernetesNodeHighNumberOfOpenConnections
-    expr: node_netstat_Tcp_CurrEstab{instance=~".*cloud.sap"} > 20000
+    expr: node_netstat_Tcp_CurrEstab > 20000
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -101,7 +87,7 @@ groups:
       summary: The node {{`{{ $labels.instance }}`}} has more than 20000 active TCP connections. The maximally possible amount is 32768 connections
 
   - alert: KubernetesNodeHighRiseOfOpenConnections
-    expr: predict_linear(node_netstat_Tcp_CurrEstab{instance=~".*cloud.sap"}[20m], 3600) > 32768
+    expr: predict_linear(node_netstat_Tcp_CurrEstab[20m], 3600) > 32768
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -127,7 +113,7 @@ groups:
       summary: More than 3 OOM killed pods on node {{`{{ $labels.instance }}`}} within 24h
 
   - alert: KubernetesNodeHighNumberOfThreads
-    expr: node_processes_threads{instance=~".*.cloud.sap"} > 31000
+    expr: node_processes_threads > 31000
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}

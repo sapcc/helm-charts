@@ -8,8 +8,6 @@ metadata:
     prometheus: {{ include "prometheus.name" . }}
 
 spec:
-  jobLabel: kubernetes-apiserver
-
   selector:
     matchLabels:
       component: apiserver
@@ -41,6 +39,8 @@ spec:
           replacement: $(KUBERNETES_SERVICE_HOST)
         - targetLabel: component
           replacement: apiserver
+        - targetLabel: job
+          replacement: kubernetes-apiserver
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
 
       metricRelabelings:
