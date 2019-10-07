@@ -28,6 +28,12 @@ spec:
         api: "token-create"
       expr: sum(openstack_watcher_api_requests_duration_seconds_sum{service="identity", target_type_uri="data/security/auth/tokens", action="authenticate"}) by (region, status, le)
 
+    - record: global:api_request_count_sum
+      labels:
+        service: "keystone"
+        api: "token-create"
+      expr: sum(openstack_watcher_api_requests_total{service="identity", target_type_uri="data/security/auth/tokens", action="authenticate"}) by (region, status)
+
     - record: global:api_latency_violations_per_request_slo:percent
       labels:
         region: {{required ".Values.global.region missing" $values.global.region}}
@@ -61,6 +67,12 @@ spec:
         service: "keystone"
         api: "token-validate"
       expr: sum(openstack_watcher_api_requests_duration_seconds_sum{service="identity", target_type_uri="data/security/auth/tokens", action="read/list"}) by (region, status, le)
+
+    - record: global:api_request_count_sum
+      labels:
+        service: "keystone"
+        api: "token-validate"
+      expr: sum(openstack_watcher_api_requests_total{service="identity", target_type_uri="data/security/auth/tokens", action="read/list"}) by (region, status)
 
     - record: global:api_latency_violations_per_request_slo:percent
       labels:
