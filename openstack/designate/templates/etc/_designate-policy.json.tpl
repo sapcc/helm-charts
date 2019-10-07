@@ -135,7 +135,7 @@
     "get_pool": "rule:admin",
     "update_pool": "rule:admin",
     "delete_pool": "rule:admin",
-    "zone_create_forced_pool": "rule:admin or rule:context_is_zonemaster",
+    "zone_create_forced_pool": "rule:admin or role:cloud_dns_support or role:cloud_dns_ops or role:dns_zonemaster",
     "diagnostics_ping": "rule:admin",
     "diagnostics_sync_zones": "rule:admin",
     "diagnostics_sync_zone": "rule:admin",
