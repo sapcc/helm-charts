@@ -12,6 +12,18 @@ image: hub.global.cloud.sap/monsoon/sql_exporter
 imageTag: 0.2.2
 imagePullPolicy: IfNotPresent
 
+customMetrics:
+  - name: mysql_database_size
+    help: Total database size
+    labels:
+    - "schema_name"
+    query: |
+        SELECT table_schema AS schema_name,
+          ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) AS size_in_mb
+        FROM information_schema.tables
+        GROUP BY table_schema
+    values:
+    - "size_in_mb"
 
 # Default Prometheus alerts and rules.
 alerts:
