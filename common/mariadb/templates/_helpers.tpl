@@ -11,3 +11,7 @@
 {{- .Release.Name -}}
 {{- end -}}
 {{- end -}}
+
+{{/* Needed for testing purposes only. */}}
+{{define "RELEASE-NAME_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "testRelease_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
