@@ -1,0 +1,15 @@
+groups:
+- name: apicduplicateips.alerts
+  rules:
+  - alert: ApicDuplicateIps
+    expr: network_apic_duplicate_ip
+    labels:
+      severity: info
+      tier: net
+      service: apic
+      context: "{{ $labels.interfaceID }}"
+      dashboard: apic-health
+      meta: "{{ $labels.interfaceID }} has a duplicate id for {{ $labels.ip }} on node {{ $labels.node_id }}."
+    annotations:
+      description: "{{ $labels.interfaceID }} has a duplicate id for {{ $labels.ip }} on node {{ $labels.node_id }}."
+      summary: "Duplicate Ip {{ $lables.ip }} found on apic {{ $lables.interfaceID }} node {{ $labels.node_id }}"
