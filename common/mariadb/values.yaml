@@ -5,6 +5,7 @@
 
 name: DEFINED-IN-COMPONENT-CHART
 image: mariadb:10.4
+imagePullPolicy: IfNotPresent
 port_public: 3306
 #
 #root_password:
@@ -41,6 +42,14 @@ readinessProbe:
   successThreshold: 1
   failureThreshold: 3
 
+resources: {}
+#  limits:
+#    memory: 256Mi
+#    cpu: 500m
+#  requests:
+#    memory: 256Mi
+#    cpu: 500m
+
 backup:
   enabled: false
   image: monsoon/backup-tools
@@ -52,6 +61,23 @@ backup:
   os_user_domain: Default
   os_project_name: master
   os_project_domain: ccadmin
+
+metrics:
+  enabled: true
+  image: prom/mysqld-exporter
+  image_version: v0.12.1
+  port: '9104'
+  flags:
+    - collect.binlog_size
+    - collect.info_schema.processlist
+  resources:
+    enabled: true
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 5m
+      memory: 32Mi
 
 # Default Prometheus alerts and rules.
 alerts:
