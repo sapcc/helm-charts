@@ -1,5 +1,8 @@
 [DEFAULT]
 log_config_append = /etc/cinder/logging.ini
+backup_swift_url = https://objectstore-3.{{.Values.global.region}}.{{.Values.global.tld}}:443/v1/AUTH_
+backup_swift_auth_version = 2
+backup_driver = cinder.backup.drivers.swift.SwiftBackupDriver
 
 {{- template "ini_sections.default_transport_url" . }}
 
