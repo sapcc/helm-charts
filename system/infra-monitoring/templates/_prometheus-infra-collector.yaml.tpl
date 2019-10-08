@@ -277,8 +277,8 @@
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vasa'
-  scrape_interval: 140s
-  scrape_timeout: 135s
+  scrape_interval: 200s
+  scrape_timeout: 195s
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
