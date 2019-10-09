@@ -4,13 +4,13 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     app: {{ template "name" . }}
-  name: {{ template "name" . }}
+  name: "{{ .Release.Name }}:{{ template "name" . }}"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ template "name" . }}
+  name: "{{ .Release.Name }}:{{ template "name" . }}"
 subjects:
   - kind: ServiceAccount
     name: {{ required ".Values.rbac.serviceAccountName missing" .Values.rbac.serviceAccountName }}
-    namespace: kube-system
+    namespace: {{ .Release.Namespace }}
 {{- end }}
