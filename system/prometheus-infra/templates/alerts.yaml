@@ -1,4 +1,4 @@
-{{- $values := .Values }}
+{{- $values := .Values.global.alerts }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -8,7 +8,7 @@ metadata:
   name: infra-frontend-{{ printf "%s" $path | replace "/" "-" }}
   labels:
     type: alerting-rules
-    prometheus: {{ required "$values.alerts.prometheus missing" $values.alerts.prometheus }}
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
