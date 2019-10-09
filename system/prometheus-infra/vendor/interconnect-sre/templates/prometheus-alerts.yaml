@@ -13,7 +13,7 @@ spec:
   groups:
   - name: network-interconnect-sre.alerts
     rules:
-    - alert: InterconnectSRE2PctErrorBudgetBurn
+    - alert: InterconnectSRE2PctErrorBudgetBurnOver1Hour
       expr: |2
           (100 * global:network_interconnect_errors_sli:ratio_rate1h > on (interconnect_type) 14.4 * global:network_interconnect_errors_slo:percent)
           and
@@ -26,9 +26,9 @@ spec:
         tier: sre
       annotations:
         summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} burns its availability error budget very fast"
-        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over the last 1 hour."
+        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over the last 1h"
 
-    - alert: InterconnectSRE5PctErrorBudgetBurn
+    - alert: InterconnectSRE5PctErrorBudgetBurnOver6Hours
       expr: |2
           (100 * global:network_interconnect_errors_sli:ratio_rate6h > on (interconnect_type) 6 * global:network_interconnect_errors_slo:percent)
           and
@@ -41,21 +41,13 @@ spec:
         tier: sre
       annotations:
         summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} burns its availability error budget very fast"
-        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over the last 1 hour."
+        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over the last 6h."
 
-    - alert: InterconnectSRE10PctErrorBudgetBurn
+    - alert: InterconnectSRE10PctErrorBudgetBurnOver1Day
       expr: |2
-          (
-            (100 * global:network_interconnect_errors_sli:ratio_rate1d > on (interconnect_type) 3 * global:network_interconnect_errors_slo:percent)
-            and
-            (100 * global:network_interconnect_errors_sli:ratio_rate2h > on (interconnect_type) 3 * global:network_interconnect_errors_slo:percent)
-          )
-          or
-          (
-            (100 * global:network_interconnect_errors_sli:ratio_rate3d > on (interconnect_type) global:network_interconnect_errors_slo:percent)
-            and
-            (100 * global:network_interconnect_errors_sli:ratio_rate6h > on (interconnect_type) global:network_interconnect_errors_slo:percent)
-          )
+          (100 * global:network_interconnect_errors_sli:ratio_rate1d > on (interconnect_type) 3 * global:network_interconnect_errors_slo:percent)
+          and
+          (100 * global:network_interconnect_errors_sli:ratio_rate2h > on (interconnect_type) 3 * global:network_interconnect_errors_slo:percent)
       for: 1h
       labels:
         context: availability
@@ -64,4 +56,19 @@ spec:
         tier: sre
       annotations:
         summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} has consumed its availability error budget by 10%"
-        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over 1d/3d."
+        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over 1d."
+
+    - alert: InterconnectSRE10PctErrorBudgetBurnOver3Days
+      expr: |2
+          (100 * global:network_interconnect_errors_sli:ratio_rate3d > on (interconnect_type) global:network_interconnect_errors_slo:percent)
+          and
+          (100 * global:network_interconnect_errors_sli:ratio_rate6h > on (interconnect_type) global:network_interconnect_errors_slo:percent)
+      for: 1h
+      labels:
+        context: availability
+        service: "{{`{{$labels.interconnect_type}}`}}"
+        severity: warning
+        tier: sre
+      annotations:
+        summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} has consumed its availability error budget by 10%"
+        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over 3d."
