@@ -12,13 +12,13 @@ metadata:
 
 spec:
   tls:
-    - secretName: {{ .Chart.Name }}
-      hosts: [{{.Values.ingress.hostName}}.{{.Values.global.region}}.{{.Values.global.domain}}]
+    - secretName: tls-{{ include "hostname" . }}
+      hosts: [{{ include "hostname" . }}]
   rules:
-    - host: {{.Values.ingress.hostName}}.{{.Values.global.region}}.{{.Values.global.domain}}
+    - host: {{ include "hostname" . }}
       http:
         paths:
         - path: /
           backend:
             serviceName: {{ .Chart.Name }}
-            servicePort: {{ .Values.service.port }}
+            servicePort: {{ required ".Values.service.port missing" .Values.service.port }}
