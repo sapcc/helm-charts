@@ -21,6 +21,20 @@ ingress:
     enabled: false
     #ip:
 
+node-problem-detector:
+  systemLogMonitors:
+    - kernel-monitor.json
+
+  customPluginMonitors:
+    - bridge-monitor.json
+
+  additionalHostVolumeMounts:
+    # Required by the bridge monitor.
+    - name: hostproc
+      hostPath: /proc
+      mountPath: /host/proc
+      readOnly: true
+
 # values for stable/nginx-ingress chart
 nginx-ingress:
   revisionHistoryLimit: 5
