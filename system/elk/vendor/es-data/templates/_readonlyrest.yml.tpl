@@ -1,9 +1,9 @@
 # rbac for elasticsearch
 readonlyrest:
-  enable: ${READONLYREST_ENABLE}
-  response_if_req_forbidden: <h1>Forbidden</h1>
+    enable: ${READONLYREST_ENABLE}
+    response_if_req_forbidden: <h1>Forbidden</h1>
 
-  access_control_rules:
+    access_control_rules:
 
     # access for logstash to write to the logstash indexes
     - name: data
