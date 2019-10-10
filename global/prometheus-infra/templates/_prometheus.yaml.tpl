@@ -31,6 +31,7 @@
       - '{__name__=~"snmp_f5_ltmPoolMemberCnt"}'
       - '{__name__=~"snmp_f5_ltmNodeAddrNumber"}'
       - '{__name__=~"snmp_f5_ltmTransAddrNumber"}'
+      - '{__name__=~"snmp_f5_ltmVirtualAddrName"}'
       - '{__name__=~"^vcenter_vcenter.*"}'
       - '{__name__=~"^vcenter_esx.*"}'
       - '{__name__=~"^ping_.+"}'
