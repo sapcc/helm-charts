@@ -1,0 +1,16 @@
+groups:
+- name: jumpserver.alerts
+  rules:
+  - alert: JumpserverRSAForwardingDown
+    expr: jump_rsa_forwarding_up == 1 or absent(jump_rsa_forwarding_up)
+    for: 15m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: warning
+      tier: os
+      meta: '{{ $labels.server }} RSA forwarding to RADIUS server down on {{ $labels.port }}/{{$labels.protocol }} since 15m'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver_rsa.htm'
+    annotations:
+      description: 'RSA authentication on port {{ $labels.port }}/{{$labels.protocol }} is not working anymore.'
+      summary: '{{ $labels.server }} RSA forwarding to RADIUS server down since 15m.'

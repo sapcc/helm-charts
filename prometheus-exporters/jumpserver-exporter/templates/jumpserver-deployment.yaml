@@ -1,0 +1,40 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: jumpserver-exporter 
+  namespace: infra-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: jumpserver-exporter 
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: jumpserver-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.jumpserver.port_number | quote }}
+        prometheus.io/targets: {{ required ".Values.jumpserver.alerts.prometheus missing" .Values.jumpserver.alerts.prometheus | quote }}
+    spec:
+      containers:
+         - name: jumpserver-exporter
+           image: {{ required ".Values.jumpserver.image.imageRegistry variable missing" .Values.jumpserver.image.imageRegistry }}/{{ .Values.jumpserver.image.namespace }}/{{ .Values.jumpserver.image.name }}:{{ .Values.jumpserver.image.tag }}
+           ports:
+             - name: metrics
+               containerPort: {{ .Values.jumpserver.port_number }}
+           livenessProbe:
+             httpGet:
+               path: /metrics
+               port: {{ .Values.jumpserver.port_number }}
+             initialDelaySeconds: 30
+             timeoutSeconds: 10
+             periodSeconds: 15
+           env:
+           - name: REGION
+             value: {{ .Values.jumpserver.region }}
+           - name: RADIUS_SECRET
+             value: {{ required "jumpserver.radius_secret variable is missing" .Values.jumpserver.radius_secret }}
+           - name: EXPORT_PORT
+             value: {{ .Values.jumpserver.port_number | quote }}

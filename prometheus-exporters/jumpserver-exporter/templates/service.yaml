@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: jumpserver-exporter 
+  namespace: infra-monitoring
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.jumpserver.port_number | quote }}
+    prometheus.io/targets: {{ required ".Values.jumpserver.alerts.prometheus missing" .Values.jumpserver.alerts.prometheus | quote }}
+spec:
+  selector:
+    app: jumpserver-exporter
+  ports:
+    - name: metrics
+      port: {{ .Values.jumpserver.port_number }}
