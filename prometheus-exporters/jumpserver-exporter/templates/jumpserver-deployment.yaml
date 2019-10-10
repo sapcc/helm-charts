@@ -24,6 +24,13 @@ spec:
            ports:
              - name: metrics
                containerPort: {{ .Values.jumpserver.port_number }}
+           livenessProbe:
+             httpGet:
+               path: /metrics
+               port: {{ .Values.jumpserver.port_number }}
+				 initialDelaySeconds: 30
+             timeoutSeconds: 10
+             periodSeconds: 15
            env:
            - name: REGION
              value: {{ .Values.jumpserver.region }}
