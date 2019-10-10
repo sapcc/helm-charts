@@ -13,7 +13,7 @@ maia:
   endpoint_port_public: 443
   endpoint_protocol_public: https
   # docker_repo: DEFINED-IN-REGION-SECRETS
-  image_version: '20190510150242'
+  image_version: '20191009114011'
   debug: "0"
   listen_port: 9091
   # how long will label values be listed by the API (keep minimal)
@@ -32,7 +32,7 @@ maia:
     # reasonable defaults, should be reduced for small regions
     memory:
       expected: 100Mi
-      tolerated: 1000Mi
+      tolerated: 200Mi
     cpu:
       # currently maia is used by very few concurrent users
       expected: "10m"
@@ -83,33 +83,6 @@ prometheus_server:
     limits:
       cpu: 4
       memory: 16Gi
-
-# this is the old homegrown prometheus
-prometheus:
-  enabled: False
-  vice_president: true
-  image:
-    repository: prom/prometheus
-    tag: v2.5.0
-  retention: 30d
-  listen_port: 9090
-  configmap_reload:
-    image:
-      repository: jimmidyson/configmap-reload
-      tag: v0.2.2
-  persistence:
-    name: data-prometheus-maia-0
-    # this should be ReadWriteOnce but change is not possible
-    access_mode: ReadWriteMany
-    size: 100Gi
-  resources:
-    # reasonable defaults, should be reduced for small regions
-    memory:
-      expected: 4Gi
-      tolerated: 8Gi
-    cpu:
-      expected: 0.25
-      tolerated: 4
 
 jumpserver:
    image:
