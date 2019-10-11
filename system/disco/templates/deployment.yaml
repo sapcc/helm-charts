@@ -34,15 +34,16 @@ spec:
                   key: os-password
           args:
             - disco
-            - --ingress-annotation={{ default "disco" .Values.ingressAnnotation }}
             - --config=/etc/disco/config/disco.conf
-            - --metric-port={{ default 9091 .Values.metricPort }}
-            - --recordset-ttl={{ default 1800 .Values.recordsetTTL }}
+            - --ingress-annotation={{ required ".Values.ingressAnnotation missing" .Values.ingressAnnotation }}
+            - --metric-port={{ required ".Values.metrics.port missing" .Values.metrics.port }}
+            - --recordset-ttl={{ required ".Values.recordsetTTL missing" .Values.recordsetTTL }}
             - --record={{ required ".Values.record missing" .Values.record }}
             - --zone-name={{ required ".Values.openstack.zoneName missing" .Values.openstack.zoneName }}
-            - --recheck-period={{ default 5 .Values.recheckPeriod }}
-            - --resync-period={{ default 2 .Values.resyncPeriod }}
-            - --threadiness={{ default 1 .Values.threadiness }}
+            - --recheck-period={{ required ".Values.recheckPeriod missing" .Values.recheckPeriod }}
+            - --resync-period={{ required ".Values.resyncPeriod missing" .Values.resyncPeriod }}
+            - --threadiness={{ required ".Values.threadiness missing" .Values.threadiness }}
+            - --install-crd={{ required ".Values.installCRD missing" .Values.installCRD }}
             - --debug={{ default false .Values.debug }}
           volumeMounts:
             - name: config
