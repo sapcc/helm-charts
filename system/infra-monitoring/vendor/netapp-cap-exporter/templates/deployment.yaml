@@ -44,11 +44,10 @@ spec:
             - name: prometheus
               containerPort: {{ $port }}
           resources:
-{{ toYaml .Values.exporter.resources | indent 12 }}
+            {{- toYaml .Values.exporter.resources | nindent 12 }}
           volumeMounts:
             - name: etc
               mountPath: /etc/netapp
-
         - name: netappsd
           args: [
             -configmap,
@@ -69,5 +68,5 @@ spec:
           image: "{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}"
           imagePullPolicy: {{ .Values.netappsd.image.pullPolicy }}
           resources:
-{{ toYaml .Values.netappsd.resources | indent 12 }}
+            {{- toYaml .Values.netappsd.resources | nindent 12 }}
 {{- end }}
