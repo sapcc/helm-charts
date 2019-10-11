@@ -1,18 +1,21 @@
 {{- if .Values.enabled }}
 {{- $scrape := .Values.metrics.scrape -}}
 {{- $targets := .Values.metrics.targets -}}
-{{- $port := .Values.service.port -}}
+{{- $port := .Values.listenPort -}}
+{{- $servicetype := .Values.service.type -}}
+{{- range $app := .Values.apps }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "netapp-cap-exporter.fullname" . }}
+  name: {{ $app.name }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ required "Value service.type" $servicetype }}
   ports:
-    - port: {{ $port }}
-      targetPort: {{ $port }}
+    - port: {{ required "Value listenPort" $port }}
+      targetPort: {{ required "Value listenPort" $port }}
       protocol: TCP
       name: prometheus
   selector:
-    app: {{ include "netapp-cap-exporter.fullname" . }}
+    app: {{ $app.name }}
+{{- end -}}
 {{- end }}
