@@ -183,3 +183,18 @@ groups:
     annotations:
       summary: Scheduling failed due to insufficient cpu
       description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
+
+  - alert: OpenstackLimesUnmatchedNovaHypervisors
+    expr: limes_unmatched_nova_hypervisors > 0
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: limes
+      context: capacity-nova
+      meta: "Cannot determine AZ for some Nova hypervisors."
+    annotations:
+      summary: Unmatched Nova hypervisors
+      description: Limes cannot determine the AZ of some Nova hypervisors. Their
+        capacity will be reported in the AZ "unknown" in the resource management
+        UI until this issue is fixed.
