@@ -1,20 +1,25 @@
 {{- if .Values.enabled }}
+{{- $values := .Values -}}
+{{- $release := .Release -}}
 {{- $scrape := .Values.metrics.scrape -}}
 {{- $targets := .Values.metrics.targets -}}
-{{- $port := .Values.exporter.port -}}
+{{- $port := .Values.listenPort -}}
+{{- $secretName := include "netapp-cap-exporter.fullname" . -}}
+{{- range $app := .Values.apps }}
+{{- $configmapName := $app.name -}}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ include "netapp-cap-exporter.fullname" . }}
+  name: {{ $app.name }}
 spec:
   selector:
     matchLabels:
-      app: {{ include "netapp-cap-exporter.fullname" . }}
+      app: {{ $app.name }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ include "netapp-cap-exporter.fullname" . }}
+        app: {{ $app.name }}
       annotations:
         prometheus.io/scrape: {{ $scrape | quote }}
         prometheus.io/targets: {{ $targets | quote }}
@@ -23,51 +28,51 @@ spec:
       volumes:
         - name: etc
           configMap:
-            name: {{ include "netapp-cap-exporter.fullname" . }}
+            name: {{ $configmapName }}
       containers:
         - name: exporter
-          image: "{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
-          imagePullPolicy: {{ .Values.exporter.image.pullPolicy }}
+          image: "{{ $values.exporter.image.repository }}:{{ $values.exporter.image.tag }}"
+          imagePullPolicy: {{ $values.exporter.image.pullPolicy }}
           args: [ --config=/etc/netapp/netapp-filers.yaml ]
           env:
           - name: NETAPP_USERNAME
             valueFrom:
               secretKeyRef:
-                name: {{ include "netapp-cap-exporter.fullname" . }}
+                name: {{ $secretName }}
                 key: netappUser
           - name: NETAPP_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ include "netapp-cap-exporter.fullname" . }}
+                name: {{ $secretName }}
                 key: netappPassword
           ports:
             - name: prometheus
               containerPort: {{ $port }}
           resources:
-{{ toYaml .Values.exporter.resources | indent 12 }}
+            {{- toYaml $values.exporter.resources | nindent 12 }}
           volumeMounts:
             - name: etc
               mountPath: /etc/netapp
-
         - name: netappsd
           args: [
             -configmap,
-            {{ include "netapp-cap-exporter.fullname" . }},
+            {{ $configmapName }},
             -key,
             netapp-filers.yaml,
             -namespace,
-            {{ .Release.Namespace }},
+            {{ $release.Namespace }},
             -netbox-host,
-            {{ required "Value global.netbox_host needs to be defined" .Values.global.netbox_host }},
+            {{ required "Value global.netbox_host" $values.global.netbox_host }},
             -netbox-api-token,
-            {{ required "Value global.netbox_api_token needs to be defined" .Values.global.netbox_api_token }},
+            {{ required "Value global.netbox_api_token" $values.global.netbox_api_token }},
             -region,
-            {{ .Values.global.region }},
+            {{ required "Value global.region" $values.global.region }},
             -query,
-            {{ .Values.netappsd.query }} 
+            {{ required "Value .netappsd.query of group" .netappsd.query }}
           ]
-          image: "{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}"
-          imagePullPolicy: {{ .Values.netappsd.image.pullPolicy }}
+          image: "{{ $values.netappsd.image.repository }}:{{ $values.netappsd.image.tag }}"
+          imagePullPolicy: {{ $values.netappsd.image.pullPolicy }}
           resources:
-{{ toYaml .Values.netappsd.resources | indent 12 }}
+            {{- toYaml $values.netappsd.resources | nindent 12 }}
+{{- end }}
 {{- end }}
