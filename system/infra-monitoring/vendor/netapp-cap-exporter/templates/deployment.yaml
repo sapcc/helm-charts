@@ -7,7 +7,8 @@
 {{- $secretName := include "netapp-cap-exporter.fullname" . -}}
 {{- range $app := .Values.apps }}
 {{- $configmapName := $app.name -}}
-
+{{- if $app.enabled }}
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -76,5 +77,6 @@ spec:
           resources:
             {{- toYaml $values.netappsd.resources | nindent 12 }}
 
+{{- end }}
 {{- end }}
 {{- end }}
