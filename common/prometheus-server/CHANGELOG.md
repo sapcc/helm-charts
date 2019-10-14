@@ -1,3 +1,9 @@
+## 2.2.3
+
+* Fix naming of jobs for `kube-dns`, `cAdvisor`, `kubelet`, `kubernetes API server`, `node-exporter` service discoveries.
+
+## 2.2.2
+
 ## 2.2.1
 
 * Fix regex for pod and endpoint service discovery for metrics on an additional port.

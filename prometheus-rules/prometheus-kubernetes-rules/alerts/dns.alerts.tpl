@@ -16,7 +16,7 @@ groups:
       summary: Unusual high kube-dns errors
 
   - alert: KubernetesDNSDown
-    expr: up{job=~".+kubernetes-dns"} == 0
+    expr: up{job="kube-dns"} == 0
     for: 15m
     labels:
       context: availability
@@ -29,7 +29,7 @@ groups:
       summary: An kube-dns is DOWN
 
   - alert: KubernetesDNSAllDown
-    expr: count(up{job=~".+kubernetes-dns"} == 0) == count(up{job=~".+kubernetes-dns"})
+    expr: count(up{job="kube-dns"} == 0) == count(up{job="kube-dns"})
     for: 5m
     labels:
       context: availability
@@ -42,7 +42,7 @@ groups:
       summary: Kube-DNS is unavailable
 
   - alert: KubernetesDNSScrapeMissing
-    expr: absent(up{job=~".+kubernetes-dns"})
+    expr: absent(up{job="kube-dns"})
     for: 1h
     labels:
       context: availability

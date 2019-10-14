@@ -2,7 +2,7 @@ groups:
 - name: kubelet.alerts
   rules:
   - alert: KubernetesKubeletManyDown
-    expr: count(up{job=~".+kubernetes-kubelet"}) - sum(up{job=~".+kubernetes-kubelet"}) > 2
+    expr: count(up{job="kubernetes-kubelet"}) - sum(up{job="kubernetes-kubelet"}) > 2
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -16,7 +16,7 @@ groups:
       summary: More than 2 Kubelets are DOWN
 
   - alert: KubernetesKubeletDown
-    expr: up{job=~".+kubernetes-kubelet"} == 0
+    expr: up{job="kubernetes-kubelet"} == 0
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -31,7 +31,7 @@ groups:
       summary: A Kubelet is DOWN
 
   - alert: KubernetesKubeletScrapeMissing
-    expr: absent(up{job=~".+kubernetes-kubelet"})
+    expr: absent(up{job="kubernetes-kubelet"})
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -102,7 +102,7 @@ groups:
       summary: Docker on {{`{{$labels.instance}}`}} is hanging
 
   - alert: KubernetesHighNumberOfGoRoutines
-    expr: go_goroutines{job=~".+kubernetes-kubelet"} > 5000
+    expr: go_goroutines{job="kubernetes-kubelet"} > 5000
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -115,7 +115,7 @@ groups:
       summary: High number of Go routines
 
   - alert: KubernetesPredictHighNumberOfGoRoutines
-    expr: abs(predict_linear(go_goroutines{job=~".+kubernetes-kubelet"}[1h], 2*3600)) > 10000
+    expr: abs(predict_linear(go_goroutines{job="kubernetes-kubelet"}[1h], 2*3600)) > 10000
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
