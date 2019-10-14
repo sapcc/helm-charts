@@ -44,7 +44,7 @@
       replacement: '$1'
       target_label: probed_to_type
     - source_labels: [__name__, target]
-      regex: '^ping_.+;[.0-9]*'
+      regex: '^ping_.+;cloudprober-.+'
       replacement: 'pod'
       target_label: probed_to_type
     - source_labels: [__name__, target]
