@@ -13,15 +13,15 @@ metadata:
     app: cloudprober-exporter
     release: "{{$.Release.Name}}"
   annotations:
-    vice-president: {{ default false .Values.ingress.vice_president | quote }}
-    disco: {{ default false .Values.ingress.disco | quote }}
+    vice-president: {{ default false $values.ingress.vice_president | quote }}
+    disco: {{ default false $values.ingress.disco | quote }}
 
 spec:
   tls:
     - secretName: {{ include "infraMonitoring.fullname" . }}
-      hosts: [{{.Values.ingress.hostName_prefix}}-{{$prober.name}}.{{.Values.global.region}}.{{.Values.global.domain}}]
+      hosts: [{{$values.ingress.hostName_prefix}}-{{$prober.name}}.{{$values.global.region}}.{{$values.global.domain}}]
   rules:
-    - host: {{.Values.ingress.hostName_prefix}}-{{$prober.name}}.{{.Values.global.region}}.{{.Values.global.domain}}
+    - host: {{$values.ingress.hostName_prefix}}-{{$prober.name}}.{{$values.global.region}}.{{$values.global.domain}}
       http:
         paths:
         - path: /metrics
