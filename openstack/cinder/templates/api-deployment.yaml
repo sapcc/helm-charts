@@ -49,7 +49,11 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "{{ .Release.Name }}-migration"
             - name: DEPENDENCY_SERVICE
+{{- if eq .Values.postgresql.enabled false }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
+{{- end }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
