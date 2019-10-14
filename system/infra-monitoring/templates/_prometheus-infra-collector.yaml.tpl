@@ -59,6 +59,10 @@
       regex: '^ping_.+;([a-zA-Z]*)1\.cc\.(.+)\.cloud\.sap'
       replacement: ${2}b
       target_label: probed_to
+    - source_labels: [__name__, target]
+      regex: '^ping_.+;cloudprober-(\w*-\w*-\w*).+'
+      replacement: '$1'
+      target_label: probed_to
     - source_labels: [__name__, probe]
       regex: '^cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
       replacement: '$2'
