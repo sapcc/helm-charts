@@ -126,6 +126,38 @@ prometheus-kubernetes-rules:
   prometheusName: kubernikus
   tier: kks
 
+prometheus-node-exporter:
+  image:
+    repository: prom/node-exporter
+
+  rbac:
+    pspEnabled: false
+
+  extraArgs:
+    - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
+    - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
+    - --path.rootfs=/rootfs
+    - --collector.systemd.enable-task-metrics
+    - --collector.systemd.enable-restarts-metrics
+    - --collector.systemd.enable-start-time-metrics
+    - --collector.processes
+
+  extraHostVolumeMounts:
+    - name: dbus
+      hostPath: /var/run/dbus/system_bus_socket
+      mountPath: /var/run/dbus/system_bus_socket
+      readOnly: true
+    - name: rootfs
+      hostPath: /
+      mountPath: /rootfs
+      readOnly: true
+      mountPropagation: HostToContainer
+
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+
 eventexporter:
   rbac:
     create: true
