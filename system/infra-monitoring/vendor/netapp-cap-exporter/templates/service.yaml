@@ -3,13 +3,13 @@
 {{- $targets := .Values.metrics.targets -}}
 {{- $port := .Values.listenPort -}}
 {{- $servicetype := .Values.service.type -}}
-{{- range $app := .Values.apps }}
+{{- range $name, $app := .Values.apps }}
 {{- if $app.enabled }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $app.name }}
+  name: {{ $app.fullname }}
 spec:
   type: {{ required "Value service.type" $servicetype }}
   ports:
@@ -18,7 +18,7 @@ spec:
       protocol: TCP
       name: prometheus
   selector:
-    app: {{ $app.name }}
+    app: {{ $app.fullname }}
 {{- end }}
 {{- end }}
 {{- end }}

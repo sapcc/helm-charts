@@ -5,23 +5,23 @@
 {{- $targets := .Values.metrics.targets -}}
 {{- $port := .Values.listenPort -}}
 {{- $secretName := include "netapp-cap-exporter.fullname" . -}}
-{{- range $app := .Values.apps }}
-{{- $configmapName := $app.name -}}
+{{- range $name, $app := .Values.apps }}
+{{- $configmapName := $app.fullname -}}
 {{- if $app.enabled }}
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ $app.name }}
+  name: {{ $app.fullname }}
 spec:
   selector:
     matchLabels:
-      app: {{ $app.name }}
+      app: {{ $app.fullname }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ $app.name }}
+        app: {{ $app.fullname }}
       annotations:
         prometheus.io/scrape: {{ $scrape | quote }}
         prometheus.io/targets: {{ $targets | quote }}
