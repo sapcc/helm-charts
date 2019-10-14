@@ -40,6 +40,7 @@
       - '{__name__=~"^up"}'
       - '{__name__=~"^ipmi_up"}'
       - '{__name__=~"^netapp_capacity_aggregate"}'
+      - '{__name__=~"^netapp_aggregate_.*"}'
 
   relabel_configs:
     - action: replace
