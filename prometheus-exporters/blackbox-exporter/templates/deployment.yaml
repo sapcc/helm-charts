@@ -15,25 +15,25 @@ spec:
         app: {{ template "blackbox-exporter.name" . }}
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: {{ .Values.service.port | quote }}
+        prometheus.io/port: {{ required ".Values.service.port missing" .Values.service.port | quote }}
         prometheus.io/targets: "kubernetes,openstack"
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: {{ required ".Values.image.repository missing" .Values.image.repository }}:{{ required ".Values.image.tag missing" .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.port }}
+            - containerPort: {{ required ".Values.service.port missing" .Values.service.port }}
           args:
             - --config.file=/etc/blackbox-exporter/blackbox.yaml
           volumeMounts:
             - name: config
               mountPath: /etc/blackbox-exporter
         - name: {{ .Chart.Name }}-configmap-reloader
-          image: "{{ .Values.configmap_reload.image.repository }}:{{ .Values.configmap_reload.image.tag }}"
+          image: {{ required ".Values.configmapReload.image.repository missing" .Values.configmapReload.image.repository }}:{{ required ".Values.configmapReload.image.tag missing" .Values.configmapReload.image.tag }}"
           args:
             - --volume-dir=/etc/blackbox-exporter
-            - --webhook-url=http://localhost:{{ .Values.service.port }}/-/reload
+            - --webhook-url=http://localhost:{{ required ".Values.service.port missing" .Values.service.port }}/-/reload
           volumeMounts:
             - name: config
               mountPath: /etc/blackbox-exporter
