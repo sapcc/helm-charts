@@ -5,19 +5,19 @@ groups:
         expr: irate(netapp_filer_scrape_failure[5m]) > 0
         labels:
           severity: warning
-          tier: infra
-          service: storage
-          context: netapp-exporter
+          tier: storage
+          service: netapp-exporter
+          context: exporter-health
         annotations:
           description: 'Netapp filer {{ $labels.filer }} '
-          summary: Fails to request Netapp filer ONTAP API
+          summary: Netapp ONTAP API inaccessible
 
       - alert: ManilaStorageAggregateHighUsage
         expr: netapp_aggregate_used_percentage{app=~".*manila"} > 75
         labels:
           severity: warning
-          tier: infra
-          service: storage
+          tier: storage
+          service: netapp-exporter
           context: netapp-usage
           dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
           meta: '{{ $value }}% used'
@@ -30,8 +30,8 @@ groups:
         expr: netapp_aggregate_used_percentage{app=~".*manila"} > 90
         labels:
           severity: critical
-          tier: infra
-          service: storage
+          tier: storage
+          service: netapp-exporter
           context: netapp-usage
           dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
           meta: '{{ $value }}% used'
@@ -44,8 +44,8 @@ groups:
         expr: netapp_aggregate_used_percentage{app=~".*cinder"} > 75
         labels:
           severity: warning
-          tier: infra
-          service: storage
+          tier: storage
+          service: netapp-exporter
           context: netapp-usage
           dashboard: netapp-capacity-cinder?&var-region={{$labels.region}}&var-node={{$labels.node}}
           meta: '{{ $value }}% used'
@@ -58,8 +58,8 @@ groups:
         expr: netapp_aggregate_used_percentage{app=~".*cinder"} > 90
         labels:
           severity: critical
-          tier: infra
-          service: storage
+          tier: storage
+          service: netapp-exporter
           context: netapp-usage
           dashboard: netapp-capacity-cinder?&var-region={{$labels.region}}&var-node={{$labels.node}}
           meta: '{{ $value }}% used'
