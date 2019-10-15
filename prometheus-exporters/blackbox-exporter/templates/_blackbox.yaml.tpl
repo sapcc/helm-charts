@@ -61,7 +61,7 @@ modules:
       fail_if_not_ssl: true
       preferred_ip_protocol: "ip4"
       no_follow_redirects: false
-      fail_if_not_matches_regexp:
+      fail_if_body_not_matches_regexp:
         - '"WarningStatusCheck":true'
         - '"CeleryAppVersionCheck":true'
         - '"CeleryAliveCheck":true'
