@@ -2,7 +2,7 @@ groups:
   - name: netapp-capacity.alerts
     rules:
       - alert: NetappFilerScrapeFailure
-        expr: irate(netapp_filer_scrape_failure[5m]) >0
+        expr: irate(netapp_filer_scrape_failure[5m]) > 0
         labels:
           severity: warning
           tier: infra
@@ -10,7 +10,8 @@ groups:
           context: netapp-exporter
           meta: 'region: {{ $labels.cluster }} filer: {{ $labels.filer }}'
         annotations:
-          summary: Netapp capacity exporter scraping failure
+          description: 'Netapp filer {{ $labels.filer }} '
+          summary: Fails to request Netapp filer ONTAP API
 
       - alert: ManilaStorageAggregateHighUsage
         expr: netapp_aggregate_used_percentage{app=~".*manila"} > 75
