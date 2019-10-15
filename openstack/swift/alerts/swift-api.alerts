@@ -2,7 +2,7 @@ groups:
 - name: openstack-swift-api.alerts
   rules:
   - alert: OpenstackSwiftFirstByteTiming
-    expr: max(swift_proxy_firstbyte{type!="container",quantile="0.5",status="200"}) BY (os_cluster, type, instance) > 1000
+    expr: min(sum(irate(swift_proxy_firstbyte_bucket{le="1",type!="container",status=~"20[0-9]"}[5m])) by (os_cluster, type, instance) / sum(irate(swift_proxy_firstbyte_bucket{le="+Inf",type!="container",status=~"20[0-9]"}[5m])) by (os_cluster, type, instance)) by (os_cluster, type, instance) < 0.5
     for: 15m
     labels:
       context: firtsbytetiming
