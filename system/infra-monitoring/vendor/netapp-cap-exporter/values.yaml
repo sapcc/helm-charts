@@ -1,7 +1,7 @@
 # Default values for netapp-cap-exporter.
 apps:
   manila:
-    enabled: true
+    enabled: false
     fullname: "netapp-capacity-exporter-manila"
     netappsd:
       query: md
@@ -27,7 +27,7 @@ listenPort: 9108
 exporter:
   image:
     repository: hub.global.cloud.sap/monsoon/netapp-api-exporter
-    tag: c7581011
+    tag: v20191015123435-master-5c5d408
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -43,7 +43,13 @@ netappsd:
     requests:
       memory: 50Mi
       cpu: 50m
-  query: bb
+  livenessProbe:
+    httpGet:
+      port: 8086
+      path: /live
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
 
 service:
   type: ClusterIP
