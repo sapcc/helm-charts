@@ -1,3 +1,9 @@
+## 3.0.0
+
+* **[Breaking change]** Introduce `ingress.hosts=[]` for setting the hostnames. The first host will be used to generate the external URL for the Prometheus. Remainder is used as SANs.
+  The values `ingress.host`, `ingress.hostNameOverride` are deprecated.
+* Update Prometheus to `v2.13.0`.
+
 ## 2.2.3
 
 * Fix naming of jobs for `kube-dns`, `cAdvisor`, `kubelet`, `kubernetes API server`, `node-exporter` service discoveries.
