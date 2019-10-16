@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullname" . }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccount: {{ include "fullname" . }}
+      containers:
+      - name: {{ include "fullname" . }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
