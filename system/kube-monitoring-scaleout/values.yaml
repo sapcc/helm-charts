@@ -3,10 +3,6 @@ global:
   domain:
   clusterType: scaleout
 
-# Disable prometheus-operator Grafana sub-chart. We deploy independently.
-grafana:
-  enabled: false
-
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
 kubeStateMetrics:
   enabled: false
@@ -54,8 +50,114 @@ prometheus-operator:
     enabled: false
   nodeExporter:
     enabled: false
+
   grafana:
-    enabled: false
+    enabled: true
+    defaultDashboardsEnabled: false
+    admin:
+      existingSecret: kube-monitoring-scaleout-grafana-admin
+      userKey: adminUser
+      passwordKey: adminPassword
+      # Defined via secrets.
+      # username: admin-user
+      # password: admin-password
+
+    rbac:
+      pspEnabled: false
+
+    # Ingress disabled by default as hosts and tls are set via secrets.
+    ingress:
+      enabled: false
+      annotations:
+        vice-president: "true"
+        disco: "true"
+        nginx.ingress.kubernetes.io/auth-tls-secret: "kube-system/ingress-cacrt"
+        nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+        nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+
+      # Defined via secrets.
+      # hosts:
+      #   - grafana.domain.tld
+      #
+      # tls:
+      #  - secretName: tls-grafana-domain-tld
+      #    hosts:
+      #      - grafana.domain.tld
+
+    plugins: grafana-piechart-panel,natel-discrete-panel,grafana-worldmap-panel
+
+    additionalDataSources:
+      apiVersion: 1
+      datasources:
+        - access: proxy
+          isDefault: true
+          name: Prometheus
+          type: prometheus
+          url: http://prometheus-kubernetes:9090/
+
+    # Sidecar for discovering & reloading dashboard, datasource configmaps.
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana-dashboard
+
+      datasources:
+        enabled: true
+        defaultDatasourceEnabled: false
+        # Label that configmaps with datasources should have to be added.
+        label: grafana-datasource
+
+    grafana.ini:
+      paths:
+        data: /var/lib/grafana/data
+        logs: /var/log/grafana
+        plugins: /var/lib/grafana/plugins
+        provisioning: /var/lib/grafana/provisioning
+
+      server:
+        protocol: http
+        http_addr:
+        http_port: 3000
+        domain: localhost
+        enforce_domain: false
+        root_url: "%(protocol)s://%(domain)s:%(http_port)s"
+        router_logging: false
+        static_root_path: public
+        enable_gzip: false
+        cert_file:
+        cert_key:
+        socket: /tmp/grafana.sock
+
+      users:
+        allow_sign_up: false
+        allow_org_create: false
+        auto_assign_org: true
+        auto_assign_org_role: Admin
+        default_theme: dark
+
+      auth.anonymous:
+        enabled: true
+        org_name: Main Org.
+        org_role: Admin
+
+      auth.proxy:
+        enabled: true
+        header_name: X-REMOTE-USER
+        header_property: username
+        auto_sign_up: true
+
+      auth.basic:
+        enabled: false
+
+      smtp:
+        enabled: false
+
+      log:
+        mode: console
+        level: debug
+
+      alerting:
+        enabled: false
 
 kube-state-metrics:
   customLabels:
