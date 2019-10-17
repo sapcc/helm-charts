@@ -3,7 +3,7 @@ groups:
   rules:
 
   - alert: KubernetesControlPlanePrometheusDown
-    expr: count by(region) (up{job="controlplane-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type="controlplane"})
+    expr: count by(region) (up{job="controlplane-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type=~"controlplane|metal"})
     for: 15m
     labels:
       context: availability
@@ -48,7 +48,7 @@ groups:
       summary: Prometheus Frontend Federation is DOWN
 
   - alert: KubernetesPrometheusFederationRegions
-    expr: absent(up{job="controlplane-federation"}) or up{job="prometheus-regions-federation", cluster_type="controlplane"} == 0
+    expr: absent(up{job="controlplane-federation"}) or up{job="prometheus-regions-federation", cluster_type=~"controlplane|metal"} == 0
     for: 15m
     labels:
       context: availability-global
