@@ -142,9 +142,12 @@
   scrape_timeout: 55s
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/arista-sd/arista_targets.json
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
   metrics_path: /arista
   relabel_configs:
+    - source_labels: [job]
+      regex: asw-eapi
+      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
