@@ -221,7 +221,7 @@
 - job_name: 'ipmi/ironic'
   params:
     job: [baremetal/ironic]
-  scrape_interval: 60s
+  scrape_interval: 120s
   scrape_timeout: 55s
   file_sd_configs:
       - files :
