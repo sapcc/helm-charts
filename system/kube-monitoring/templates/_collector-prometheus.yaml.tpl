@@ -153,7 +153,7 @@
     source_labels: [__meta_kubernetes_pod_node_name]
     target_label: instance
 
-- job_name: 'kube-system/dns'
+- job_name: 'kube-dns'
   kubernetes_sd_configs:
   - role: pod
   relabel_configs:
@@ -209,7 +209,7 @@
     regex: ([^:]+)(:\d+)?
     replacement: ${1}:9101
 
-- job_name: 'kube-system/kubelet'
+- job_name: 'kubernetes-kubelet'
   scheme: https
   kubernetes_sd_configs:
   - role: node
@@ -288,7 +288,7 @@
     - regex: ^id$
       action: labeldrop
 
-- job_name: 'kube-system/apiserver'
+- job_name: 'kubernetes-apiserver'
   tls_config:
     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
