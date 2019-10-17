@@ -1,4 +1,5 @@
 {{- if .Values.enabled }}
+{{- $template := .Template }}
 {{- range $name, $app := .Values.apps }}
 {{- if $app.enabled }}
 ---
@@ -9,9 +10,9 @@ metadata:
 data:
   netapp-filers.yaml: "TO BE POPULATED BY SIDECAR"
   netapp-harvest.conf: |
-{{ include (print .Template.BasePath "/_netapp-harvest.conf.tpl") . | indent 4 }}
+    {{ include (print $template.BasePath "/_netapp-harvest.conf.tpl") . | nindent 4 }}
   graphite-mapping.conf: |
-{{ include (print .Template.BasePath "/_graphite-mapping.conf.tpl") . | indent 4 }}
+    {{ include (print $template.BasePath "/_graphite-mapping.conf.tpl") . | nindent 4 }}
 {{- end }}
 {{- end }}
 {{- end }}
