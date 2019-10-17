@@ -1,12 +1,17 @@
 {{- if and .Values.rbac.create .Values.enabled }}
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
-    app: {{ .Values.name }}
-  name: {{ .Values.name }}
+    app: {{ $app.fullname }}
+  name: {{ $app.fullname }}
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "watch", "list", "update"]
+{{- end}}
+{{- end}}
 {{- end}}

@@ -1,16 +1,22 @@
 {{- if and .Values.rbac.create .Values.enabled }}
+{{- $release := .Release }}
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
-    app: {{ .Values.name }}
-  name: {{ .Values.name }}
+    app: {{ $app.name }}
+  name: {{ $app.name }}
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ $release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: {{ .Values.name }}
+  name: {{ $app.name }}
   apiGroup: rbac.authorization.k8s.io
 {{- end }}
+{{- end}}
+{{- end}}

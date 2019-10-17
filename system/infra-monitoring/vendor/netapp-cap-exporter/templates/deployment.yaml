@@ -56,22 +56,21 @@ spec:
             - name: etc
               mountPath: /etc/netapp
         - name: netappsd
-          args: [
-            -configmap,
-            {{ $configmapName }},
-            -key,
-            netapp-filers.yaml,
-            -namespace,
-            {{ $release.Namespace }},
-            -netbox-host,
-            {{ required "Value global.netbox_host" $values.global.netbox_host }},
-            -netbox-api-token,
-            {{ required "Value global.netbox_api_token" $values.global.netbox_api_token }},
-            -region,
-            {{ required "Value global.region" $values.global.region }},
-            -query,
-            {{ required "Value .netappsd.query of group" $app.netappsd.query }}
-          ]
+          args:
+            - -configmap,
+            - {{ $configmapName }}
+            - -key
+            - netapp-filers.yaml
+            - -namespace
+            - {{ $release.Namespace }}
+            - -netbox-host
+            - {{ required "Value global.netbox_host" $values.global.netbox_host }}
+            - -netbox-api-token
+            - {{ required "Value global.netbox_api_token" $values.global.netbox_api_token }}
+            - -region
+            - {{ required "Value global.region" $values.global.region }}
+            - -query
+            - {{ required "Value .netappsd.query of group" $app.netappsd.query }}
           image: "{{ $values.netappsd.image.repository }}:{{ $values.netappsd.image.tag }}"
           imagePullPolicy: {{ $values.netappsd.image.pullPolicy }}
           resources:

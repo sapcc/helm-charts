@@ -1,12 +1,17 @@
 {{- if .Values.enabled }}
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ .Values.name }}
+  name: {{ $app.fullname }}
 data:
   netapp-filers.yaml: "TO BE POPULATED BY SIDECAR"
   netapp-harvest.conf: |
 {{ include (print .Template.BasePath "/_netapp-harvest.conf.tpl") . | indent 4 }}
   graphite-mapping.conf: |
 {{ include (print .Template.BasePath "/_graphite-mapping.conf.tpl") . | indent 4 }}
+{{- end }}
+{{- end }}
 {{- end }}
