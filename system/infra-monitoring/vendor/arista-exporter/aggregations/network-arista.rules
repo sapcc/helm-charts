@@ -8,10 +8,10 @@ groups:
     expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 90)  by (instance, model, serial, table)
       
   - record: MetalIronicAristaMonEFPCritical
-    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 90)  by (instance, model, serial, table)
-      
-  - record: MetalIronicAristaMonSwitchDownCritical
     expr: sum(arista_tcam{table=~"EFP", feature !~ ""}) by (instance, model, serial, chip, table)  > 275
+
+  - record: MetalIronicAristaMonSwitchDownCritical
+    expr: count(arista_up == 0) by (instance)
 
   - record: MetalIronicAristaMonDiscoveryWar
     expr: count(up{job="baremetal/arista"} == 0) by (instance)
