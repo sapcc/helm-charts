@@ -25,6 +25,7 @@ spec:
 
 {{- range $period := $values.periods }}
     - record: global:network_interconnect_errors_sli:ratio_rate{{$period}}
-      expr: |2
-          (rate(cloudprober_total{probed_to_type="master"}[{{$period}}])-rate(cloudprober_success{probed_to_type="master"}[{{$period}}]))/rate(cloudprober_success{probed_to_type="master"}[{{$period}}])
+      expr: (rate(cloudprober_total{ptype="ping"}[{{$period}}])-rate(cloudprober_success{ptype="ping"}[{{$period}}]))/rate(cloudprober_success{ptype="ping"}[{{$period}}])
+    - record: global:network_interconnect_latency_sli:milliseconds_rate{{$period}}
+      expr: rate(cloudprober_latency_sum{ptype="ping"}[{{$period}}])/rate(cloudprober_latency_count{ptype="ping"}[{{$period}}])
 {{- end }}
