@@ -33,7 +33,7 @@ groups:
       description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} above 80% for 60 min"
       summary: "TCAM usage warning for switch {{ $labels.instance }}"
       
-  - alert: MetalIronicAristaMonEFPCritical
+  - alert: MetalIronicAristaMonEFPInfo
     # sum of EFP Slices per chip is above 275%
     expr: sum(arista_tcam{table=~"EFP", feature !~ ""}) by (instance, model, serial, chip, table)  > 275
     for: 30m
@@ -43,7 +43,7 @@ groups:
       service: arista
       context: "{{ $labels.instance }}"
       meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }}, Chip {{ $labels.chip }} usage"
-      playbook: /docs/devops/alert/network/switch.html#arista
+      playbook: /docs/devops/alert/network/switch.html#arista_efp
       dashboard: arista-monitoring-tcam-details?var-instance={{ $labels.instance }}&var-table={{ $labels.table }}
     annotations:
       description: "Switch {{ $labels.instance }}: Sum of {{ $labels.table }} TCAM Slice usage of {{ $labels.chip }} above 260% for 30 min"
