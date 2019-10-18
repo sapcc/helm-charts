@@ -72,67 +72,6 @@
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
 
-- job_name: 'kube-system/etcd'
-  kubernetes_sd_configs:
-  - role: pod
-  relabel_configs:
-  - action: keep
-    source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system
-  - action: keep
-    source_labels: [__meta_kubernetes_pod_name]
-    regex: (etcd-[^\.]+).+
-  - source_labels: [__address__]
-    target_label: __address__
-    regex: ([^:]+)(:\d+)?
-    replacement: ${1}:2379
-  - target_label: component
-    replacement: etcd
-  - action: replace
-    source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
-
-- job_name: 'kube-system/controller-manager'
-  kubernetes_sd_configs:
-  - role: pod
-  relabel_configs:
-  - action: keep
-    source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system
-  - action: keep
-    source_labels: [__meta_kubernetes_pod_name]
-    regex: (kubernetes-master[^\.]+).+
-  - source_labels: [__address__]
-    action: replace
-    regex: ([^:]+)(:\d+)?
-    replacement: ${1}:10252
-    target_label: __address__
-  - target_label: component
-    replacement: controller-manager
-  - action: replace
-    source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
-
-- job_name: 'kube-system/scheduler'
-  kubernetes_sd_configs:
-  - role: pod
-  relabel_configs:
-  - action: keep
-    source_labels: [__meta_kubernetes_namespace]
-    regex: kube-system
-  - action: keep
-    source_labels: [__meta_kubernetes_pod_name]
-    regex: (kubernetes-master[^\.]+).+
-  - source_labels: [__address__]
-    replacement: ${1}:10251
-    regex: ([^:]+)(:\d+)?
-    target_label: __address__
-  - target_label: component
-    replacement: scheduler
-  - action: replace
-    source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
-
 - job_name: 'kube-system/dnsmasq'
   kubernetes_sd_configs:
   - role: pod
@@ -172,42 +111,6 @@
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
     target_label: instance
-
-- job_name: 'prometheus-node-exporters'
-  kubernetes_sd_configs:
-  - role: node
-  relabel_configs:
-  - action: labelmap
-    regex: __meta_kubernetes_node_label_(.+)
-  - target_label: component
-    replacement: node
-  - action: replace
-    source_labels: [__meta_kubernetes_node_name]
-    target_label: instance
-  - source_labels: [__address__]
-    target_label: __address__
-    regex: ([^:]+)(:\d+)?
-    replacement: ${1}:9100
-  - source_labels: [mountpoint]
-    target_label: mountpoint
-    regex: '(/host/)(.+)'
-    replacement: '${1}'
-
-- job_name: 'kube-system/ntp'
-  kubernetes_sd_configs:
-  - role: node
-  relabel_configs:
-  - action: labelmap
-    regex: __meta_kubernetes_node_label_(.+)
-  - target_label: component
-    replacement: node
-  - action: replace
-    source_labels: [__meta_kubernetes_node_name]
-    target_label: instance
-  - source_labels: [__address__]
-    target_label: __address__
-    regex: ([^:]+)(:\d+)?
-    replacement: ${1}:9101
 
 - job_name: 'kubernetes-kubelet'
   scheme: https
@@ -293,7 +196,6 @@
     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
   scheme: https
-{{- if eq .Values.global.clusterType "controlplane" }}
   kubernetes_sd_configs:
   - role: pod
   relabel_configs:
@@ -308,13 +210,68 @@
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
     target_label: instance
-{{- else }}
-  static_configs:
-  - targets:
-    - $(KUBERNETES_SERVICE_HOST)
-  relabel_configs:
-    - target_label: component
-      replacement: apiserver
-{{- end }}
   metric_relabel_configs:
 {{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubeAPIServer | indent 2 }}
+
+{{- if .Values.isStaticPodsScrapeConfig }}
+- job_name: 'kube-system/etcd'
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_namespace]
+    regex: kube-system
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_name]
+    regex: (etcd-[^\.]+).+
+  - source_labels: [__address__]
+    target_label: __address__
+    regex: ([^:]+)(:\d+)?
+    replacement: ${1}:2379
+  - target_label: component
+    replacement: etcd
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: instance
+
+- job_name: 'kube-system/controller-manager'
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_namespace]
+    regex: kube-system
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_name]
+    regex: (kubernetes-master[^\.]+).+
+  - source_labels: [__address__]
+    action: replace
+    regex: ([^:]+)(:\d+)?
+    replacement: ${1}:10252
+    target_label: __address__
+  - target_label: component
+    replacement: controller-manager
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: instance
+
+- job_name: 'kube-system/scheduler'
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_namespace]
+    regex: kube-system
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_name]
+    regex: (kubernetes-master[^\.]+).+
+  - source_labels: [__address__]
+    replacement: ${1}:10251
+    regex: ([^:]+)(:\d+)?
+    target_label: __address__
+  - target_label: component
+    replacement: scheduler
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: instance
+{{ end }}
