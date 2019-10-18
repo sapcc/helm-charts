@@ -21,7 +21,7 @@ metadata:
 
 spec:
   rules:
-    {{- range $_, $host := .Values.ingress.hosts }}
+    {{- range $host := .Values.ingress.hosts }}
     - host: {{ include "fqdnHelper" (list $host $root) }}
       http:
         paths:
@@ -36,10 +36,28 @@ spec:
             servicePort: http
         {{- end }}
     {{- end }}
+    {{- range $host := .Values.ingress.hostsFQDN }}
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: {{ include "prometheus.fullName" $root }}
+              servicePort: http
+        {{- if $root.Values.thanos.enabled }}
+        - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+          backend:
+            serviceName: {{ $host }}-thanos-query
+            servicePort: http
+        {{- end }}
+    {{- end }}
   tls:
     - secretName: tls-{{ include "prometheus.externalURL" $root | replace "." "-" }}
       hosts:
         {{- range $host := .Values.ingress.hosts }}
         - {{ include "fqdnHelper" (list $host $root) }}
+        {{- end }}
+        {{- range $host := .Values.ingress.hostsFQDN }}
+        - {{ $host }}
         {{- end }}
 {{- end }}

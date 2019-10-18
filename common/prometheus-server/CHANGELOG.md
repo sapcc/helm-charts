@@ -1,3 +1,11 @@
+## 3.0.2
+
+* Allow setting fully qualified hostnames via `.Values.ingress.hostsFQDN`. Mutually exclusive with `.Values.ingress.hosts`.
+
+## 3.0.1
+
+* Alert if Prometheus is not ingesting samples.
+
 ## 3.0.0
 
 * **[Breaking change]** Introduce `ingress.hosts=[]` for setting the hostnames. The first host will be used to generate the external URL for the Prometheus. Remainder is used as SANs.

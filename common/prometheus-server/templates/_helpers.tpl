@@ -10,8 +10,11 @@ prometheus-{{- (include "prometheus.name" .) -}}
 
 {{/* External URL of this Prometheus. */}}
 {{- define "prometheus.externalURL" -}}
-{{- $firstHost := first .Values.ingress.hosts -}}
-{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" .Values.global.region -}}.{{- required ".Values.global.domain missing" .Values.global.domain -}}
+{{- if and .Values.ingress.hosts .Values.ingress.hostsFQDN -}}
+{{- fail ".Values.ingress.hosts and .Values.ingress.hostsFQDN are mutually exclusive." -}}
+{{- end -}}
+{{- $firstHost := or (first .Values.ingress.hosts) (first .Values.ingress.hostsFQDN) -}}
+{{- required ".Values.ingress.hosts or .Values.ingress.hostsFQDN must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" .Values.global.region -}}.{{- required ".Values.global.domain missing" .Values.global.domain -}}
 {{- end -}}
 
 {{- define "fqdnHelper" -}}
