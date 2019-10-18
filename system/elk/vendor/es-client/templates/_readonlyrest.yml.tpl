@@ -1,6 +1,6 @@
 # rbac for elasticsearch
 readonlyrest:
-    enable: ${READONLYREST_ENABLE}
+    enable: true
     response_if_req_forbidden: <h1>Forbidden</h1>
 
     access_control_rules:
