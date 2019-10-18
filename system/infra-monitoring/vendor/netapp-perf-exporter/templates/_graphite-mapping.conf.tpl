@@ -12,7 +12,7 @@ mappings:
   labels:
     Group: $1
     Cluster: $2
-    Vserver: $3
+    VServer: $3
     Tag: $4
     Metric: $5
 - match: netapp.perf.*.*.svm.*.*.*.*
@@ -20,18 +20,18 @@ mappings:
   labels:
     Group: $1
     Cluster: $2
-    Vserver: $3
-    TagType: $4
-    TagValue: $5
+    VServer: $3
+    LabelName: $4
+    LabelValue: $5
     Metric: $6
 - match: netapp.perf.*.*.svm.*.*.*.*.*
   name: netapp_perf_svm
   labels:
     Group: $1
     Cluster: $2
-    Vserver: $3
-    TagType: $4
-    TagValue: $5
+    VServer: $3
+    LabelName: $4
+    LabelValue: $5
     Tag: $6
     Metric: $7
 - match: netapp.perf.*.*.svm.*.*.*.*.*.*
@@ -39,11 +39,11 @@ mappings:
   labels:
     Group: $1
     Cluster: $2
-    Vserver: $3
-    TagType: $4
-    TagValue: $5
-    SubTagType: $6
-    SubTagValue: $7
+    VServer: $3
+    LabelName: $4
+    LabelValue: $5
+    SubLabelType: $6
+    SubLabelValue: $7
     Metric: $8
 - match: .
   match_type: regex
