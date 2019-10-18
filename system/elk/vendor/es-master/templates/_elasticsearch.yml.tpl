@@ -6,7 +6,7 @@ node:
 cluster.name: elkelasticsearch
 cluster.initial_master_nodes:
   {{- range $i, $e := untilStep 0 .Values.master_replicas 1 -}}
-{{ $uname }}-{{ es-master-$i }},
+ -{{ es-master-$i }},
   {{- end -}}
 
 path:
