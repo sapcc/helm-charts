@@ -1,3 +1,7 @@
+## 3.0.3
+
+* Fix externalURL if `.Values.ingress.hostsFQDN` are set.
+
 ## 3.0.2
 
 * Allow setting fully qualified hostnames via `.Values.ingress.hostsFQDN`. Mutually exclusive with `.Values.ingress.hosts`.

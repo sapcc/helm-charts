@@ -40,14 +40,14 @@ spec:
     - host: {{ $host }}
       http:
         paths:
-          - path: /
-            backend:
-              serviceName: {{ include "prometheus.fullName" $root }}
-              servicePort: http
+        - path: /
+          backend:
+            serviceName: {{ include "prometheus.fullName" $root }}
+            servicePort: http
         {{- if $root.Values.thanos.enabled }}
         - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
           backend:
-            serviceName: {{ $host }}-thanos-query
+            serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
             servicePort: http
         {{- end }}
     {{- end }}
