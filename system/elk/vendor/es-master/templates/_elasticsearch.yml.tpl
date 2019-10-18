@@ -4,7 +4,10 @@ node:
 
 
 cluster.name: elkelasticsearch
-node.name: ${NODE_NAME}
+cluster.initial_master_nodes:
+  {{- range $i, $e := untilStep 0 .Values.master_replicas 1 -}}
+{{ $uname }}-{{ es-master-$i }},
+  {{- end -}}
 
 path:
   data: /data/data
