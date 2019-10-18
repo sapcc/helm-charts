@@ -1,3 +1,7 @@
+## 3.0.4
+
+* Fix `PrometheusNotIngestingSamples` alert.
+
 ## 3.0.3
 
 * Fix externalURL if `.Values.ingress.hostsFQDN` are set.

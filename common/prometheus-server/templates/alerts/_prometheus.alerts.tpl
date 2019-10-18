@@ -2,7 +2,7 @@ groups:
 - name: prometheus.alerts
   rules:
   - alert: PrometheusFailedConfigReload
-    expr: prometheus_config_last_reload_successful == 0
+    expr: prometheus_config_last_reload_successful{prometheus="{{ include "prometheus.name" . }}"} == 0
     for: 5m
     labels:
       context: availability
@@ -16,7 +16,7 @@ groups:
       summary: Prometheus configuration reload has failed
 
   - alert: PrometheusRuleEvaluationFailed
-    expr: increase(prometheus_rule_evaluation_failures_total[5m]) > 0
+    expr: increase(prometheus_rule_evaluation_failures_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
       context: availability
       service: prometheus
@@ -29,7 +29,7 @@ groups:
       summary: Prometheus rule evaluation failed
 
   - alert: PrometheusRuleEvaluationSlow
-    expr: prometheus_rule_evaluation_duration_seconds{quantile="0.9"} > 60
+    expr: prometheus_rule_evaluation_duration_seconds{quantile="0.9", prometheus="{{ include "prometheus.name" . }}"} > 60
     for: 10m
     labels:
       context: availability
@@ -43,7 +43,7 @@ groups:
       summary: Prometheus rule evaluation is slow
 
   - alert: PrometheusWALCorruption
-    expr: increase(prometheus_tsdb_wal_corruptions_total[5m]) > 0
+    expr: increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
       context: availability
       service: prometheus
@@ -56,7 +56,7 @@ groups:
       summary: Prometheus has WAL corruptions
 
   - alert: PrometheusTSDBReloadsFailing
-    expr: increase(prometheus_tsdb_reloads_failures_total[2h]) > 0
+    expr: increase(prometheus_tsdb_reloads_failures_total{prometheus="{{ include "prometheus.name" . }}"}[2h]) > 0
     for: 12h
     labels:
       context: availability
@@ -70,7 +70,7 @@ groups:
       summary: Prometheus has issues reloading data blocks from disk
 
   - alert: PrometheusNotIngestingSamples
-    expr: rate(prometheus_tsdb_head_samples_appended_total[5m]) <= 0 or absent(prometheus_tsdb_head_samples_appended_total) or absent(scrape_samples_scraped) or scrape_samples_scraped == 0
+    expr: rate(prometheus_tsdb_head_samples_appended_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) <= 0 or absent(prometheus_tsdb_head_samples_appended_total{prometheus="{{ include "prometheus.name" . }}"}) or absent(scrape_samples_scraped{prometheus="{{ include "prometheus.name" . }}"})
     for: 10m
     labels:
       context: availability
@@ -84,7 +84,7 @@ groups:
       summary: Prometheus not ingesting samples.
 
   - alert: PrometheusTargetScrapesDuplicate
-    expr: increase(prometheus_target_scrapes_sample_duplicate_timestamp_total[5m]) > 0
+    expr: increase(prometheus_target_scrapes_sample_duplicate_timestamp_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     for: 10m
     labels:
       context: availability
@@ -98,7 +98,7 @@ groups:
       summary: Prometheus rejects many samples
 
   - alert: PrometheusOutOfOrderTimestamps
-    expr: rate(prometheus_target_scrapes_sample_out_of_order_total[5m]) > 0
+    expr: rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
     labels:
       context: availability
       service: prometheus
@@ -111,7 +111,7 @@ groups:
       summary: Prometheus drops samples with out-of-order timestamps
 
   - alert: PrometheusLargeScrapes
-    expr: increase(prometheus_target_scrapes_exceeded_sample_limit_total[30m]) > 60
+    expr: increase(prometheus_target_scrapes_exceeded_sample_limit_total{prometheus="{{ include "prometheus.name" . }}"}[30m]) > 60
     labels:
       context: availability
       service: prometheus
