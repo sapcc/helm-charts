@@ -10,7 +10,8 @@ function start_application {
 
   export STDOUT_LOC=${STDOUT_LOC:-/proc/1/fd/1}  
   export STDERR_LOC=${STDERR_LOC:-/proc/1/fd/2}
-  unset http_proxy https_proxy all_proxy no_proxy
+  export LC_ALL=C.UTF-8
+  export LANG=C.UTF-8
   
   echo "INFO: setting discovery.zen.minimum_master_nodes to 2"  
   curl -s -u {{.Values.global.admin_user}}:{{.Values.global.admin_password}} --header "content-type: application/JSON" -XPUT "http://{{.Values.global.endpoint_host_internal}}:{{.Values.global.http_port}}/_cluster/settings" -d '{"transient": { "discovery.zen.minimum_master_nodes": 2 }}'
