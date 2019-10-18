@@ -70,7 +70,7 @@ groups:
       summary: Prometheus has issues reloading data blocks from disk
 
   - alert: PrometheusNotIngestingSamples
-    expr: rate(prometheus_tsdb_head_samples_appended_total[5m]) <= 0
+    expr: rate(prometheus_tsdb_head_samples_appended_total[5m]) <= 0 or absent(prometheus_tsdb_head_samples_appended_total) or absent(scrape_samples_scraped) or scrape_samples_scraped == 0
     for: 10m
     labels:
       context: availability
@@ -78,10 +78,10 @@ groups:
       severity: info
       tier: {{ include "alerts.tier" . }}
       playbook: 'docs/support/playbook/prometheus/failed_scrapes.html'
-      meta: 'Prometheus {{`{{ $labels.prometheus }}`}} failed to evaluate rules.'
+      meta: 'Prometheus {{`{{ $labels.prometheus }}`}} not ingesting samples.'
     annotations:
-      description: 'Prometheus {{`{{ $labels.prometheus }}`}} failed to evaluate rules. Aggregation or alerting rules may not be loaded or provide false results.'
-      summary: Prometheus rule evaluation failed
+      description: 'Prometheus {{`{{ $labels.prometheus }}`}} not ingesting samples. Aggregation or alerting rules may not be loaded or provide false results.'
+      summary: Prometheus not ingesting samples.
 
   - alert: PrometheusTargetScrapesDuplicate
     expr: increase(prometheus_target_scrapes_sample_duplicate_timestamp_total[5m]) > 0
