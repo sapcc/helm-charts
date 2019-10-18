@@ -117,4 +117,3 @@
   static_configs:
     - targets:
         - prometheus.virtual.qa-de-1.cloud.sap
-{{- end }}
