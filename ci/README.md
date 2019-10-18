@@ -63,5 +63,5 @@ The tag `$version-promtool` indicates a pre-installed [promtool](https://prometh
 
 Example: 
 ```
-docker run --rm -v $helm-charts.git:/charts sapcc/chart-testing:v2.3.3-8b1a29ac-promtool sh -c "cd charts && ct lint --chart-yaml-schema ci/chart_schema.yaml --lint-conf ci/lintconf.yaml --config ci/config.yaml --charts openstack/nova"
+docker run --rm -v $helm-charts.git:/charts sapcc/chart-testing:v2.3.3-sapcc sh -c "cd charts && ct lint --chart-yaml-schema ci/chart_schema.yaml --lint-conf ci/lintconf.yaml --config ci/config.yaml --charts openstack/nova"
 ```
