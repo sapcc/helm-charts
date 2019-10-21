@@ -16,7 +16,7 @@
       - '{app=~"^netapp-perf-exporter.*"}'
       - '{instance="vasa-exporter:9202"}'
       - '{app="ping-exporter"}'
-      - '{job="baremetal/arista"}'
+      - '{job="asw-eapi"}'
       - '{job="bios/ironic"}'
       - '{job="ipmi/ironic"}'
       - '{job="ipmi/esxi"}'
