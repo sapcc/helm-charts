@@ -22,12 +22,12 @@ Dashboards:
 ```
 metadata:
   labels:
-    kubernikus-grafana-dashboard: "true"
+    grafana-dashboard: "true"
 ```
 
 Datasources:
 ```
 metadata:
   labels:
-    kubernikus-grafana-datasource: "true"
+    grafana-datasource: "true"
 ```
