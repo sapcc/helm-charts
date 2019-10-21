@@ -146,7 +146,7 @@
   metrics_path: /arista
   relabel_configs:
     - source_labels: [job]
-      regex: asw-eapi
+      regex: baremetal/arista
       action: keep
     - source_labels: [__address__]
       target_label: __param_target
