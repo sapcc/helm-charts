@@ -1,9 +1,37 @@
 {{- if .Values.keppel.with_dev_toolbox }}
 
-# In staging/QA, the dev-toolbox is a place to run mitmproxy to observe what the
-# keppel-api is doing. The templates/deployment-api.yaml has some amendments
-# for quickly setting HTTP_PROXY=http://dev-toolbox:8080 and KEPPEL_INSECURE=true
-# to enable mitmproxy usage.
+# When working on the Kubernetes orchestration driver, you will need to run
+# your freshly compiled keppel-api in the actual Kubernetes cluster. (It needs
+# to be able to talk to the cluster-internal service IPs of the keppel-registry
+# instances.)
+#
+# In staging and QA, this pod is the perfect place to do so. All environment
+# variables and secrets are already set up.
+#
+# 1. Scale down the keppel-api deployment and scale up this deployment instead:
+#
+#   $ alias k='kubectl -n keppel'
+#   $ k scale deployment/keppel-api --replicas=0
+#   $ k scale deployment/dev-toolbox --replicas=1
+#
+# 2. Copy your keppel-api binary into the dev-toolbox:
+#
+#   $ TOOLBOX_POD="$(k get pods -l name=dev-toolbox -o jsonpath='{.items[*].metadata.name}')"
+#   $ k cp ./build/keppel-api $TOOLBOX_POD:/keppel-api
+#
+# 3. Run the keppel-api process.
+#
+#   $ k exec -ti $TOOLBOX_POD /keppel-api
+#
+# 4. Season to taste with additional debug flags:
+#
+#    - KEPPEL_DEBUG=true enables additional logs.
+#    - Setting HTTP_PROXY etc. allows you to put keppel-api behind a mitmproxy.
+#
+# 5. Remember to reset the scales once you're done.
+#
+#   $ k scale deployment/keppel-api --replicas=2
+#   $ k scale deployment/dev-toolbox --replicas=0
 
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -12,7 +40,7 @@ metadata:
   labels:
     run: dev-toolbox
 spec:
-  replicas: 1
+  replicas: 0 # not an error, see above
   selector:
     matchLabels:
       name: dev-toolbox
@@ -22,6 +50,7 @@ spec:
     metadata:
       labels:
         name: dev-toolbox
+        serves: keppel-api # shared with keppel-api deployment
     spec:
       containers:
       - name: dev-toolbox
