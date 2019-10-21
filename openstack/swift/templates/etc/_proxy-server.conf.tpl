@@ -106,6 +106,7 @@ auth_version = 3
 www_authenticate_uri = {{$cluster.keystone_auth_uri}}
 auth_url = {{$cluster.keystone_auth_url}}
 insecure = {{$cluster.keystone_insecure | default false}}
+interface = {{$cluster.interface | default "admin"}}
 {{- /* TODO: Workaround - need to be removed */ -}}
 {{- if $cluster.endpoint_override }}
 endpoint_override = {{$cluster.endpoint_override}}
