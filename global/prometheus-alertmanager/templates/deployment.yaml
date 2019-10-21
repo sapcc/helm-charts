@@ -24,6 +24,17 @@ spec:
       nodeSelector:
         zone: farm
       terminationGracePeriodSeconds: 300
+      initContainers:
+        - name: chown-data
+          image: busybox:latest
+          command:
+            - chown
+            - -R
+            - 65534:65534
+            - /data
+          volumeMounts:
+            - name: data
+              mountPath: /data
       containers:
         - name: alertmanager
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
