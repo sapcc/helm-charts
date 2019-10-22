@@ -18,8 +18,7 @@ network.host: 0.0.0.0
 transport.host: 0.0.0.0
 http.max_content_length: 500mb
 
-discovery.zen.ping.unicast.hosts: es-master
-discovery.zen.minimum_master_nodes: 2
+discovery.seed_hosts: es-master
 
 xpack.ml.enabled: false
 xpack.security.enabled: false

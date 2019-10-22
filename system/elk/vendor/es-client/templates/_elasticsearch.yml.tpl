@@ -6,11 +6,7 @@ node:
 cluster.name: elkelasticsearch
 node.name: ${NODE_NAME}
 
-discovery.seed_hosts:
-  {{- $replicas := .Values.global.master_replicas | int }}
-  {{- range $i, $e := untilStep 0 $replicas 1 }}
-    es-master-{{ $i }},
-  {{- end }}
+discovery.seed_hosts: es-master
 
 path:
   data: /data/data
