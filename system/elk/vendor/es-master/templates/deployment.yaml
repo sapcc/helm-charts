@@ -79,6 +79,8 @@ spec:
         volumeMounts:
           - mountPath: /es-etc
             name: es-etc
+          - mountPath: /data
+            name: es
         ports:
           - name: transport
             containerPort: {{.Values.global.cluster_port}}
@@ -87,3 +89,12 @@ spec:
             hostPort: {{.Values.master_dummy_port}}
             hostIP: 127.0.0.1
             containerPort: {{.Values.master_dummy_port}}
+  volumeClaimTemplates:
+  - metadata:
+      name: es
+      namespace: elk
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
