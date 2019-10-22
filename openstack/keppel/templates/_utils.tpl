@@ -43,8 +43,8 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: '/etc/keppel/issuer-key.pem'
 - name:  KEPPEL_KUBERNETES_NAMESPACE
   value: {{ quote $.Release.Namespace }}
-- name:  KEPPEL_KUBERNETES_PREFIX
-  value: {{ quote $.Release.Name }}
+- name:  KEPPEL_KUBERNETES_MARKER
+  value: managed
 - name:  KEPPEL_NAMECLAIM_WHITELIST
   value: "{{ range $.Values.keppel.nameclaim_whitelist }}{{.project}}:{{.account}},{{end}}"
 - name:  KEPPEL_OSLO_POLICY_PATH
