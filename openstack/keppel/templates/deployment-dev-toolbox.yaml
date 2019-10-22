@@ -52,8 +52,14 @@ spec:
         name: dev-toolbox
         serves: keppel-api # shared with keppel-api deployment
     spec:
+      volumes:
+        - name: config
+          configMap:
+            name: keppel
       containers:
       - name: dev-toolbox
+        image: ubuntu:latest
+        imagePullPolicy: Always
         command:
         - /bin/bash
         - -c
@@ -67,8 +73,9 @@ spec:
         env: {{ include "keppel_api_environment" . | indent 10 }}
           - name: LANG
             value: en_US.UTF-8
-        image: ubuntu:latest
-        imagePullPolicy: Always
+        volumeMounts:
+          - mountPath: /etc/keppel
+            name: config
       terminationGracePeriodSeconds: 0
 
 {{- end }}
