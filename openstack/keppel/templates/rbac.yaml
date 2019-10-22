@@ -1,0 +1,44 @@
+################################################################################
+# set up a service account for keppel-api that has the necessary permissions to
+# orchestrate the keppel-registry fleet
+
+kind: ServiceAccount
+apiVersion: v1
+
+metadata:
+  name: keppel-api-service-user
+
+################################################################################
+---
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+
+metadata:
+  name: keppel-api-rbac-role
+
+rules:
+  - apiGroups: [''] # the core API group
+    resources: [configmaps, secrets, services]
+    verbs:     ['*']
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs:     ['*']
+
+################################################################################
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+
+metadata:
+  name: keppel-api-rbac-binding
+
+subjects:
+- kind: ServiceAccount
+  namespace: {{ .Release.Namespace }}
+  name: keppel-api-service-user
+roleRef:
+  kind: ClusterRole
+  name: keppel-api-rbac-role
+  apiGroup: rbac.authorization.k8s.io
