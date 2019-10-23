@@ -24,6 +24,7 @@
       - '{job="infra-monitoring-atlas-sd"}'
       - '{__name__=~"^vcenter_.+"}'
       - '{__name__=~"^network_apic_.+"}'
+      - '{__name__=~"^ipmi_.+"}'
       - '{__name__=~"^up"}'
 
   relabel_configs:
