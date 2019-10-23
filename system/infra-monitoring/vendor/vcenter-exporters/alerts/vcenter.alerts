@@ -1,0 +1,39 @@
+groups:
+- name: vcenter.alerts
+  rules:
+  - alert: VCenterRedundancyLostFailoverHostMissing
+    expr: vcenter_failover_host == 1
+    for: 10m
+    labels:
+      severity: critical
+      tier: vcenter
+      service: compute
+      meta: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.cluster }}.
+      playbook: "Ask InfraOps"
+    annotations:
+      description: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.cluster }}.
+      summary: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.cluster }}.
+  - alert: VCenterRedundancyLostFailoverHostOccupied
+    expr: vcenter_vms_on_failover_hosts > 0 
+    for: 10m
+    labels:
+      severity: critical
+      tier: vcenter
+      service: compute
+      meta: "Failover host {{ $label.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.cluster }}.
+      playbook: "Ask InfraOps"
+    annotations:
+      description: "Failover host {{ $label.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.cluster }}.
+      summary: "Failover host {{ $label.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.cluster }}.
+  - alert: VCenterRedundancyLostHAPolicyFaulty
+    expr: sum(vcenter_prod_cluster) by(hostname) - sum(vcenter_failover_host) by(hostname) > 0 
+    for: 10m
+    labels:
+      severity: critical
+      tier: vcenter
+      service: compute
+      meta: "VC {{ $label.hostname }} has a faulty AdmissionControlPolicy for a cluster, failover will not work in all prod clusters"
+      playbook: "Ask InfraOps"
+    annotations:
+      description: "VC {{ $label.hostname }} has a faulty AdmissionControlPolicy for a cluster, failover will not work in all prod clusters"
+      summary: "VC {{ $label.hostname }} has a faulty AdmissionControlPolicy for a cluster, failover will not work in all prod clusters"
