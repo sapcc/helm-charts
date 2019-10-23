@@ -109,6 +109,8 @@ insecure = {{$cluster.keystone_insecure | default false}}
 {{- /* TODO: Workaround - need to be removed */ -}}
 {{- if $cluster.endpoint_override }}
 endpoint_override = {{$cluster.endpoint_override}}
+{{- else}}
+interface = {{$cluster.interface | default "admin"}}
 {{- end }}
 {{- if $cluster.token_memcached }}
 memcached_servers = {{ $cluster.token_memcached }}.{{ $helm_release.Namespace }}.svc:11211
