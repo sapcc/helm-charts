@@ -14,7 +14,14 @@ spec:
     metadata:
       labels:
         name: wormhole
+{{- if (semverCompare "< 1.13-0" .Capabilities.KubeVersion.GitVersion ) }}
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+{{- end }}
     spec:
+{{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
+      priorityClassName: system-node-critical
+{{- end }}
       hostNetwork: true
       containers:
       - name: wormhole
