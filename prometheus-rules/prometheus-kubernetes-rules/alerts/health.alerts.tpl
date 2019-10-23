@@ -26,7 +26,7 @@ groups:
       severity: warning
       context: node
       meta: "{{`{{ $labels.node }}`}} is NotReady"
-      dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
+      dashboard: nodes?var-server={{`{{$labels.node}}`}}
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
     annotations:
       summary: Node status is NotReady
@@ -41,7 +41,7 @@ groups:
       severity: warning
       context: node
       meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
+      dashboard: "nodes?var-server={{`{{$labels.instance}}`}}"
     annotations:
       summary: Node readiness is flapping
       description: Node {{`{{ $labels.node }}`}} is flapping between Ready and NotReady
@@ -81,7 +81,7 @@ groups:
       severity: warning
       context: system
       meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{$labels.instance}}`}}
+      dashboard: nodes?var-server={{`{{$labels.instance}}`}}
     annotations:
       description: "{{`{{ $labels.job }}`}} on {{`{{ $labels.instance }}`}} is using {{`{{ $value }}`}}% of the available file/socket descriptors"
       summary: Too many open file descriptors

@@ -54,7 +54,7 @@ groups:
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
+      dashboard: nodes?var-server={{`{{$labels.node}}`}}
     annotations:
       description: Kubelet is close to pod limit
       summary: Kubelet {{`{{ $labels.node }}`}} is running {{`{{ $value }}`}} pods, close to the limit of 250
@@ -68,7 +68,7 @@ groups:
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{ $labels.node }}`}}
+      dashboard: nodes?var-server={{`{{ $labels.node }}`}}
     annotations:
       description: Kubelet is full
       summary: Kubelet Kubelet {{`{{$labels.node}}`}} is running {{`{{ $value }}`}} pods. That's too much!
@@ -82,7 +82,7 @@ groups:
       severity: warning
       context: docker
       meta: "{{`{{ $labels.node }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
+      dashboard: nodes?var-server={{`{{$labels.node}}`}}
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
     annotations:
       description: Docker hangs!

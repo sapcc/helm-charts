@@ -13,7 +13,7 @@ groups:
       severity: warning
       context: node
       meta: "High CPU usage on {{`{{ $labels.instance }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{$labels.instance}}`}}
+      dashboard: nodes?var-server={{`{{$labels.instance}}`}}
     annotations:
       summary: High load on node
       description: "Node {{`{{ $labels.instance }}`}} has more than {{`{{ $value }}`}}% CPU load"
@@ -82,7 +82,7 @@ groups:
       severity: warning
       context: availability
       meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: "kubernetes-node?var-server={{`{{ $labels.instance }}`}}"
+      dashboard: "nodes?var-server={{`{{ $labels.instance }}`}}"
     annotations:
       description: High number of open TCP connections
       summary: The node {{`{{ $labels.instance }}`}} has more than 20000 active TCP connections. The maximally possible amount is 32768 connections
@@ -96,7 +96,7 @@ groups:
       severity: warning
       context: availability
       meta: "{{`{{ $labels.instance }}"
-      dashboard: "kubernetes-node?var-server={{$labels.instance}}`}}"
+      dashboard: "nodes?var-server={{$labels.instance}}`}}"
       playbook: "docs/support/playbook/kubernetes/k8s_high_tcp_connections.html"
     annotations:
       description: High number of open TCP connections
