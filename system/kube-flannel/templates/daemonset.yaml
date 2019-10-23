@@ -19,7 +19,14 @@ spec:
       labels:
         tier: node
         k8s-app: flannel
+{{- if (semverCompare "< 1.13-0" .Capabilities.KubeVersion.GitVersion ) }}
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+{{- end }}
     spec:
+{{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
+      priorityClassName: system-node-critical
+{{- end }}
       containers:
       - name: kube-flannel
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
