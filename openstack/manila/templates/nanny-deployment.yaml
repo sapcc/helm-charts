@@ -134,6 +134,27 @@ spec:
 {{ toYaml .Values.pod.resources.nanny | indent 13 }}
           {{- end }}
 {{- end }}
+{{- if .Values.nanny.share_size_sync.enabled }}
+        - name: share-size-sync
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.imageVersionManilaNanny}}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MANILA_SHARE_SIZE_SYNC_ENABLED
+              value: "true"
+            - name: MANILA_SHARE_SIZE_SYNC_DRY_RUN
+              value: {{ .Values.nanny.share_size_sync.dry_run | quote }}
+            - name: PROMETHEUS_HOST
+              value: prometheus-infra.scaleout.{{.Values.global.region}}.cloud.sap
+            - name: MANILA_NANNY_INTERVAL
+              value: {{ .Values.nanny.share_size_sync.interval }}
+          volumeMounts:
+            - mountPath: /manila-etc
+              name: manila-etc
+          {{- if .Values.pod.resources.nanny }}
+          resources:
+            {{ toYaml .Values.pod.resources.nanny | nindent 13 }}
+          {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
