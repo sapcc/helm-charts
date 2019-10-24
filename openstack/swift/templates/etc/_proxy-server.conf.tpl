@@ -110,7 +110,7 @@ insecure = {{$cluster.keystone_insecure | default false}}
 {{- if $cluster.endpoint_override }}
 endpoint_override = {{$cluster.endpoint_override}}
 {{- else}}
-interface = {{$cluster.interface | default "admin"}}
+interface = {{$cluster.keystone_interface | default "admin"}}
 {{- end }}
 {{- if $cluster.token_memcached }}
 memcached_servers = {{ $cluster.token_memcached }}.{{ $helm_release.Namespace }}.svc:11211
@@ -118,7 +118,7 @@ memcached_servers = {{ $cluster.token_memcached }}.{{ $helm_release.Namespace }}
 cache = swift.cache
 {{- end }}
 token_cache_time = {{$cluster.token_cache_time | default 600}}
-region_name = {{$context.global.region}}
+region_name = {{$cluster.region_name | default $context.global.region}}
 user_domain_name = {{$cluster.swift_service_user_domain}}
 username = {{$cluster.swift_service_user}}
 password = {{$cluster.swift_service_password}}
