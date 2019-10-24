@@ -116,21 +116,21 @@ max_connections = {{.Values.max_connections | default 400 }}			# (change require
 
 # - Memory -
 
-shared_buffers = 128MB			# min 128kB
+shared_buffers = {{ .Values.postgresql.shared_buffers | default 128MB }}			# min 128kB
                     # (change requires restart)
 #huge_pages = try			# on, off, or try
                     # (change requires restart)
-#temp_buffers = 8MB			# min 800kB
+temp_buffers = {{ .Values.postgresql.temp_buffers | 8MB }}			# min 800kB
 #max_prepared_transactions = 0		# zero disables the feature
                     # (change requires restart)
 # Note:  Increasing max_prepared_transactions costs ~600 bytes of shared memory
 # per transaction slot, plus lock space (see max_locks_per_transaction).
 # It is not advisable to set max_prepared_transactions nonzero unless you
 # actively intend to use prepared transactions.
-#work_mem = 4MB				# min 64kB
-#maintenance_work_mem = 64MB		# min 1MB
+work_mem = {{ .Values.postgresql.work_mem | 4MB }}				# min 64kB
+maintenance_work_mem = {{ .Values.postgresql.maintenance_work_mem | 64MB }}		# min 1MB
 #autovacuum_work_mem = -1		# min 1MB, or -1 to use maintenance_work_mem
-#max_stack_depth = 2MB			# min 100kB
+max_stack_depth = {{ .Values.postgresql.max_stack_depth | default 2MB }}			# min 100kB
 dynamic_shared_memory_type = posix	# the default is the first option
                     # supported by the operating system:
                     #   posix
@@ -192,7 +192,7 @@ shared_preload_libraries = 'pg_stat_statements'		# (change requires restart)
 #wal_compression = off			# enable compression of full-page writes
 #wal_log_hints = off			# also do full page writes of non-critical updates
                     # (change requires restart)
-#wal_buffers = -1			# min 32kB, -1 sets based on shared_buffers
+wal_buffers = {{ .Values.postgresql.wal_buffers | default -1 }}			# min 32kB, -1 sets based on shared_buffers
                     # (change requires restart)
 #wal_writer_delay = 200ms		# 1-10000 milliseconds
 
@@ -294,7 +294,7 @@ shared_preload_libraries = 'pg_stat_statements'		# (change requires restart)
 #cpu_tuple_cost = 0.01			# same scale as above
 #cpu_index_tuple_cost = 0.005		# same scale as above
 #cpu_operator_cost = 0.0025		# same scale as above
-#effective_cache_size = 4GB
+effective_cache_size = {{  .Values.postgresql.effective_cache_size | default 4GB }}
 
 # - Genetic Query Optimizer -
 
@@ -495,8 +495,8 @@ track_activity_query_size = 2048	# (change requires restart)
                     # vacuum
 #autovacuum_analyze_threshold = 50	# min number of row updates before
                     # analyze
-#autovacuum_vacuum_scale_factor = 0.2	# fraction of table size before vacuum
-#autovacuum_analyze_scale_factor = 0.1	# fraction of table size before analyze
+autovacuum_vacuum_scale_factor = {{ .Values.postgresql.autovacuum_vacuum_scale_factor | default 0.2 }}	# fraction of table size before vacuum
+autovacuum_analyze_scale_factor = {{ .Values.postgresql.autovacuum_analyze_scale_factor | default 0.1 }}	# fraction of table size before analyze
 #autovacuum_freeze_max_age = 200000000	# maximum XID age before forced vacuum
                     # (change requires restart)
 #autovacuum_multixact_freeze_max_age = 400000000	# maximum multixact age
@@ -574,7 +574,7 @@ default_text_search_config = 'pg_catalog.english'
 # LOCK MANAGEMENT
 #------------------------------------------------------------------------------
 
-#deadlock_timeout = 1s
+deadlock_timeout = {{ .Values.postgresql.deadlock_timeout | default 1s }}
 #max_locks_per_transaction = 64		# min 10
                     # (change requires restart)
 # Note:  Each lock table slot uses ~270 bytes of shared memory, and there are
