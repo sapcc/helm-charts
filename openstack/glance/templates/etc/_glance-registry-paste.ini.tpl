@@ -2,17 +2,17 @@
 
 # Use this pipeline for no auth - DEFAULT
 [pipeline:glance-registry]
-pipeline = healthcheck http_proxy_to_wsgi osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} registryapp
+pipeline = healthcheck http_proxy_to_wsgi osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.audit.enabled }}audit {{ end }} registryapp
 
 # Use this pipeline for keystone auth
 [pipeline:glance-registry-keystone]
-pipeline = healthcheck http_proxy_to_wsgi osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} registryapp
+pipeline = healthcheck http_proxy_to_wsgi osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.audit.enabled }}audit {{ end }} registryapp
 
 # Use this pipeline for authZ only. This means that the registry will treat a
 # user as authenticated without making requests to keystone to reauthenticate
 # the user.
 [pipeline:glance-registry-trusted-auth]
-pipeline = healthcheck http_proxy_to_wsgi osprofiler context {{ if .Values.watcher.enabled }}watcher{{ end }} registryapp
+pipeline = healthcheck http_proxy_to_wsgi osprofiler context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.audit.enabled }}audit {{ end }} registryapp
 
 [app:registryapp]
 paste.app_factory = glance.registry.api:API.factory
@@ -44,6 +44,16 @@ paste.filter_factory = oslo_middleware:HTTPProxyToWSGI.factory
 use = egg:watcher-middleware#watcher
 service_type = image
 config_file = /etc/glance/watcher.yaml
+{{- end }}
+
+# Converged Cloud audit middleware
+{{ if .Values.audit.enabled }}
+[filter:audit]
+paste.filter_factory = auditmiddleware:filter_factory
+audit_map_file = /etc/glance/glance_audit_map.yaml
+ignore_req_list = GET
+record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
+metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 {{- end }}
 
 {{- end }}
