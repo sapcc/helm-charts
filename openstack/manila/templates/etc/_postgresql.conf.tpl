@@ -120,14 +120,14 @@ shared_buffers = {{ .Values.postgresql.shared_buffers | default "128MB" }}			# m
                     # (change requires restart)
 #huge_pages = try			# on, off, or try
                     # (change requires restart)
-temp_buffers = {{ .Values.postgresql.temp_buffers | "8MB" }}			# min 800kB
+temp_buffers = {{ .Values.postgresql.temp_buffers | default "8MB" }}			# min 800kB
 #max_prepared_transactions = 0		# zero disables the feature
                     # (change requires restart)
 # Note:  Increasing max_prepared_transactions costs ~600 bytes of shared memory
 # per transaction slot, plus lock space (see max_locks_per_transaction).
 # It is not advisable to set max_prepared_transactions nonzero unless you
 # actively intend to use prepared transactions.
-work_mem = {{ .Values.postgresql.work_mem | "4MB" }}				# min 64kB
+work_mem = {{ .Values.postgresql.work_mem | default "4MB" }}				# min 64kB
 maintenance_work_mem = {{ .Values.postgresql.maintenance_work_mem | default "64MB" }}		# min 1MB
 #autovacuum_work_mem = -1		# min 1MB, or -1 to use maintenance_work_mem
 max_stack_depth = {{ .Values.postgresql.max_stack_depth | default "2MB" }}			# min 100kB
