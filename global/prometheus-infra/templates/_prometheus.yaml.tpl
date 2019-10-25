@@ -36,7 +36,7 @@
       - '{__name__=~"^vcenter_esx.*"}'
       - '{__name__=~"^ping_.+"}'
       - '{__name__=~"^cloudprober_.+"}'
-      - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change"}'
+      - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^ipmi_up"}'
       - '{__name__=~"^netapp_capacity_aggregate"}'
