@@ -204,7 +204,7 @@ wal_level = logical       # required by Debezium
 #wal_compression = off			# enable compression of full-page writes
 #wal_log_hints = off			# also do full page writes of non-critical updates
                     # (change requires restart)
-#wal_buffers = -1			# min 32kB, -1 sets based on shared_buffers
+wal_buffers = {{.Values.wal_buffers | default -1 }}		# min 32kB, -1 sets based on shared_buffers
                     # (change requires restart)
 #wal_writer_delay = 200ms		# 1-10000 milliseconds
 
