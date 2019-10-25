@@ -12,7 +12,20 @@ groups:
       playbook: /docs/devops/alert/network/thousandeyescheck.html
     annotations:
       description: "`{{ $labels.test_name }}` not reachable. *ThousandeyesAlert was fired separately!*"
-      summary: "Alert ACK via Slack is not possible in the moment! "
+      summary: "Alert ACK via Slack is not possible in the moment!"
+
+  - alert: ThousandeyesSuperNovaReachability
+    expr: count(thousandeyes_alert{test_name=~".*SuperNova"}) by (rule_name, test_name, rule_expression, type) > 1
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      context: "{{ $labels.type}} {{ $labels.test_name }}"
+      meta: "Thousandeyes Check: {{ $labels.type}} {{ $labels.rule_expression }} / {{ $labels.test_name }}."
+      playbook: /docs/devops/alert/network/thousandeyescheck.html
+    annotations:
+      description: "`{{ $labels.test_name }}` not reachable."
+      summary: "SuperNova offline from internet!"
 
   - alert: ThousandeyesHTTPReachability
     expr: count(thousandeyes_alert{type="HTTP Server"}) by (rule_name, test_name, rule_expression, type) > 1
