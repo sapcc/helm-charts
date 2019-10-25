@@ -594,7 +594,7 @@ default_text_search_config = 'pg_catalog.english'
 # LOCK MANAGEMENT
 #------------------------------------------------------------------------------
 
-#deadlock_timeout = 1s
+deadlock_timeout = {{.Values.deadlock_timeout | default "1s" }}
 #max_locks_per_transaction = 64		# min 10
                     # (change requires restart)
 # Note:  Each lock table slot uses ~270 bytes of shared memory, and there are
