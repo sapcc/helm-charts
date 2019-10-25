@@ -22,10 +22,12 @@ spec:
   - monsoon3/domain-wbs-seed
 
   roles:
+  # TODO: these roles are no longer used by Maia, but by Grafana (indirectly)
   - name: monitoring_viewer
   - name: monitoring_admin
 
   services:
+  # register Maia in the OpenStack service catalog
   - name: maia
     type: metrics
     description: Expose Prometheus metrics as multi-tenant OpenStack service
@@ -35,6 +37,7 @@ spec:
       url: '{{.Values.maia.endpoint_protocol_public}}://{{.Values.maia.endpoint_host_public}}:{{.Values.maia.endpoint_port_public}}'
 
   domains:
+  # seed technical service user
   - name: {{.Values.maia.service_user.user_domain_name}}
     users:
     - name: {{.Values.maia.service_user.name}}
@@ -44,6 +47,7 @@ spec:
       - project: {{.Values.maia.service_user.project_name}}
         role: service
 
+  # grant -Maia- Grafana specific roles to CC groups
   - name: ccadmin
     projects:
     - name: master
