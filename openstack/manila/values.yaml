@@ -113,25 +113,25 @@ mysql_metrics:
   customMetrics:
     - help: Manila Share servers count
       labels:
-      - "host"
+      - "manila_host"
       - "share_network_id"
       - "status"
       name: openstack_manila_share_servers_count_gauge
       query: |
         SELECT
-          host,
+          host AS manila_host,
           share_network_id,
           status,
           COUNT(*) AS count_gauge
         FROM share_servers
-        GROUP BY host, share_network_id, status;
+        GROUP BY manila_host, share_network_id, status;
       values:
       - "count_gauge"
     - help: Manila Shares count
       labels:
       - "share_type_id"
       - "availability_zone_name"
-      - "host"
+      - "manila_host"
       - "project_id"
       - "id"
       - "status"
@@ -140,7 +140,7 @@ mysql_metrics:
         SELECT
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
           availability_zones.name AS availability_zone_name,
-          share_instances.host,
+          share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
           share_instances.status,
@@ -150,7 +150,7 @@ mysql_metrics:
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         GROUP BY
           share_instances.share_type_id,
-          share_instances.host,
+          manila_host,
           share_instances.status,
           shares.id,
           shares.project_id,
@@ -161,7 +161,7 @@ mysql_metrics:
       labels:
       - "share_type_id"
       - "availability_zone_name"
-      - "host"
+      - "manila_host"
       - "project_id"
       - "id"
       - "status"
@@ -170,7 +170,7 @@ mysql_metrics:
         SELECT
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
           availability_zones.name AS availability_zone_name,
-          share_instances.host,
+          share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
           share_instances.status,
@@ -180,7 +180,7 @@ mysql_metrics:
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         GROUP BY
           share_instances.share_type_id,
-          share_instances.host,
+          manila_host,
           share_instances.status,
           shares.id,
           shares.project_id,
@@ -237,40 +237,40 @@ mysql_metrics:
       labels:
       - "share_id"
       - "status"
-      - "host"
+      - "manila_host"
       name: openstack_manila_shares_stuck_count_gauge
       query: |
         SELECT
           share_id,
           status,
-          host,
+          host AS manila_host,
         COUNT(*) AS count_gauge
         FROM share_instances
         WHERE deleted=False AND status in ('deleting','creating') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_id,
           status,
-          host;
+          manila_host;
       values:
       - "count_gauge"
     - help: Manila Shares Stuck Max Duration
       labels:
       - "share_id"
       - "status"
-      - "host"
+      - "manila_host"
       name: openstack_manila_shares_stuck_max_duration_gauge
       query: |
         SELECT
           share_id,
           status,
-          host,
+          host AS manila_host,
           MAX(NOW() - updated_at) AS max_duration_gauge
         FROM share_instances
         WHERE deleted=False AND status in ('deleting','creating') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_id,
           status,
-          host;
+          manila_host;
       values:
       - "max_duration_gauge"
     - help: Manila Snapshot Stuck Count
