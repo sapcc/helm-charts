@@ -62,9 +62,9 @@ listen_addresses = '*'		# what IP address(es) to listen on;
                     # (change requires restart)
 #port = 5432				# (change requires restart)
 {{- if .Values.global.pgbouncer.enabled  }}
-max_connections = {{.Values.max_connections | default 50 }}			# (change requires restart)
+max_connections = {{.Values.postgresql.max_connections | default 50 }}			# (change requires restart)
 {{- else }}
-max_connections = {{.Values.max_connections | default 400 }}			# (change requires restart)
+max_connections = {{.Values.postgresql.max_connections | default 400 }}			# (change requires restart)
 {{- end }}
 # Note:  Increasing max_connections costs ~400 bytes of shared memory per
 # connection slot, plus lock space (see max_locks_per_transaction).
@@ -149,6 +149,8 @@ dynamic_shared_memory_type = posix	# the default is the first option
 #max_files_per_process = 1000		# min 25
                     # (change requires restart)
 shared_preload_libraries = 'pg_stat_statements'		# (change requires restart)
+pg_stat_statements.max = 1000
+pg_stat_statements.track = all
 
 # - Cost-Based Vacuum Delay -
 
