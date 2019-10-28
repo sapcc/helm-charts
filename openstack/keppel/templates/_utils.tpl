@@ -55,8 +55,6 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: '3'
 - name:  OS_IDENTITY_API_VERSION
   value: '3'
-- name:  OS_INTERFACE
-  value: 'internal'
 - name:  OS_PASSWORD
   value: {{ quote $.Values.keppel.service_password }}
 - name:  OS_PROJECT_DOMAIN_NAME
