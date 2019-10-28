@@ -50,7 +50,7 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
 - name:  KEPPEL_REGISTRY_IMAGE
   value: {{ include "keppel_image" $ }}
 - name:  OS_AUTH_URL
-  value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
+  value: "https://identity-3.{{ $.Values.global.region }}.{{ $.Values.global.tld }}/v3"
 - name:  OS_AUTH_VERSION
   value: '3'
 - name:  OS_IDENTITY_API_VERSION
