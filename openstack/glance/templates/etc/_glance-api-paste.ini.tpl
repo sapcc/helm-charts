@@ -1,26 +1,26 @@
 # Use this pipeline for no auth or image caching - DEFAULT
 [pipeline:glance-api]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} rootapp
+pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.audit.enabled }}audit {{ end }} rootapp
 
 # Use this pipeline for image caching and no auth
 [pipeline:glance-api-caching]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} cache rootapp
+pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.audit.enabled }}audit {{ end }} cache rootapp
 
 # Use this pipeline for caching w/ management interface but no auth
 [pipeline:glance-api-cachemanagement]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} cache cachemanage rootapp
+pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.audit.enabled }}audit {{ end }} cache cachemanage rootapp
 
 # Use this pipeline for keystone auth
 [pipeline:glance-api-keystone]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} rootapp
+pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.audit.enabled }}audit {{ end }} rootapp
 
 # Use this pipeline for keystone auth with image caching
 [pipeline:glance-api-keystone+caching]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} cache rootapp
+pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.audit.enabled }}audit {{ end }} cache rootapp
 
 # Use this pipeline for keystone auth with caching and cache management
 [pipeline:glance-api-keystone+cachemanagement]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} cache cachemanage rootapp
+pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.audit.enabled }}audit {{ end }} cache cachemanage rootapp
 
 # Use this pipeline for authZ only. This means that the registry will treat a
 # user as authenticated without making requests to keystone to reauthenticate
@@ -97,4 +97,14 @@ oslo_config_program = glance-api
 use = egg:watcher-middleware#watcher
 service_type = image
 config_file = /etc/glance/watcher.yaml
+{{- end }}
+
+# Converged Cloud audit middleware
+{{ if .Values.audit.enabled }}
+[filter:audit]
+paste.filter_factory = auditmiddleware:filter_factory
+audit_map_file = /etc/glance/glance_audit_map.yaml
+ignore_req_list = GET
+record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
+metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 {{- end }}

@@ -38,6 +38,15 @@ flavor = keystone
 [oslo_messaging_notifications]
 driver = noop
 
+ {{- if .Values.audit.enabled }}
+# Defines CADF Audit Middleware section
+[audit_middleware_notifications]
+topics = notifications
+driver = messagingv2
+transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@glance-rabbitmq-notifications:5672/
+mem_queue_size = 1000
+{{- end }}
+
 {{- include "ini_sections.cache" . }}
 
 
