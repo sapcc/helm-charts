@@ -1,4 +1,5 @@
 {{- $values := .Values }}
+{{- if not .Values.enabledDatasources }}
 {{- range $path, $bytes := .Files.Glob "datasources/*.yaml" }}
 ---
 apiVersion: v1
@@ -13,4 +14,5 @@ data:
 {{ printf "%s" $path | replace "/" "-" | indent 2 }}: |
 {{ printf "%s" $bytes | indent 4 }}
 
+{{- end }}
 {{- end }}
