@@ -44,7 +44,7 @@ groups:
       summary: "Hardware error for instance: {{ $labels.instance }}"
       
   - alert: MetalIronicMetricsDownCritical
-    expr: count(ipmi_up{job="ipmi/ironic", provision_state="active"} == 0 or up{job="ipmi/ironic", provision_state="active"} == 0) by (server_name, maintenance, provision_state) 
+    expr: count(ipmi_up{job="ipmi/ironic", provision_state="active"} == 0 or up{job="ipmi/ironic", provision_state="active"} == 0) by (server_name, maintenance, provision_state, serial) 
     for: 30m
     labels:
       severity: critical
@@ -58,7 +58,7 @@ groups:
       summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
       
   - alert: MetalIronicMetricsDownWarning
-    expr: count(ipmi_up{job="ipmi/ironic", provision_state!="active"} == 0 or up{job="ipmi/ironic", provision_state!="active"} == 0) by (server_name, maintenance, provision_state) 
+    expr: count(ipmi_up{job="ipmi/ironic", provision_state!="active"} == 0 or up{job="ipmi/ironic", provision_state!="active"} == 0) by (server_name, maintenance, provision_state, serial) 
     for: 10m
     labels:
       severity: warning
