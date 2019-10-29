@@ -3,7 +3,7 @@
 @include files/*
 
 <system>
-  log_level info
+  log_level warn
 </system>
 
 # All the auto-generated files should use the tag "file.<filename>".
@@ -41,7 +41,7 @@
    ssl_verify false
    ssl_version TLSv1_2
    index_name systemd
-   type_name fluentd
+   type_name _doc
    logstash_prefix systemd
    logstash_format true
    template_name systemd

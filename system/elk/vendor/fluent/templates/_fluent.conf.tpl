@@ -417,6 +417,7 @@
    template_file /fluent-bin/logstash.json
    template_overwrite true
    time_as_integer false
+   type_name _doc
    @log_level info
    slow_flush_log_threshold 50.0
    request_timeout 60s
