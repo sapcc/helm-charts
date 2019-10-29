@@ -34,7 +34,7 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
 - name:  KEPPEL_DRIVER_NAMECLAIM
   value: 'openstack-basic'
 - name:  KEPPEL_DRIVER_ORCHESTRATION
-  value: 'local-processes'
+  value: 'kubernetes'
 - name:  KEPPEL_DRIVER_STORAGE
   value: 'swift'
 - name:  KEPPEL_ISSUER_CERT
@@ -43,20 +43,18 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: '/etc/keppel/issuer-key.pem'
 - name:  KEPPEL_KUBERNETES_NAMESPACE
   value: {{ quote $.Release.Namespace }}
-- name:  KEPPEL_KUBERNETES_MARKER
-  value: managed
 - name:  KEPPEL_NAMECLAIM_WHITELIST
   value: "{{ range $.Values.keppel.nameclaim_whitelist }}{{.project}}:{{.account}},{{end}}"
 - name:  KEPPEL_OSLO_POLICY_PATH
   value: '/etc/keppel/policy.json'
+- name:  KEPPEL_REGISTRY_IMAGE
+  value: {{ include "keppel_image" $ }}
 - name:  OS_AUTH_URL
-  value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
+  value: "https://identity-3.{{ $.Values.global.region }}.{{ $.Values.global.tld }}/v3"
 - name:  OS_AUTH_VERSION
   value: '3'
 - name:  OS_IDENTITY_API_VERSION
   value: '3'
-- name:  OS_INTERFACE
-  value: 'internal'
 - name:  OS_PASSWORD
   value: {{ quote $.Values.keppel.service_password }}
 - name:  OS_PROJECT_DOMAIN_NAME

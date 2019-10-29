@@ -307,7 +307,7 @@ groups:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
 
-  - alert: OpenstackNovaIntegrityHypervisorDown
+  - alert: OpenstackNovaComputeAgentDown
     expr: blackbox_integrity_status_gauge{check=~"host_status-.+"} == 1
     for: 20m
     labels:
@@ -315,14 +315,14 @@ groups:
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.context }}'
-      meta: '{{ $labels.check }}: host is enabled but hypervisor is down for 20 minutes. See Sentry for details.'
+      meta: '{{ $labels.check }}: nova-compute node is enabled but is down for 20 minutes. See Sentry for details.'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/nova/#OpenstackNovaIntegrityHypervisorDown'
+      playbook: 'docs/devops/alert/nova/#OpenstackNovaComputeAgentDown'
     annotations:
-      description: '{{ $labels.check }}: host is enabled but hypervisor is down for 20 minutes. See Sentry for details.'
-      summary: '{{ $labels.check }}: host is enabled but hypervisor is down'
+      description: '{{ $labels.check }}: nova-compute node is enabled but is down for 20 minutes. See Sentry for details.'
+      summary: '{{ $labels.check }}: nova-compute node is enabled but is down'
 
-  - alert: OpenstackNovaIntegrityHostDisabled
+  - alert: OpenstackNovaComputeServiceDisabled
     expr: blackbox_integrity_status_gauge{check=~"host_status-.+"} == 2
     for: 20m
     labels:
