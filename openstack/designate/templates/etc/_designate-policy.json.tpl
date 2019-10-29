@@ -53,7 +53,7 @@
     "get_zone_servers": "rule:context_is_viewer",
     "find_zones": "rule:context_is_viewer",
     "find_zone": "rule:context_is_viewer",
-    "update_zone": "rule:context_is_dns_support",
+    "update_zone": "rule:context_is_master",
     "update_sub_zone": "rule:context_is_master",
     "delete_zone": "rule:context_is_master",
 
