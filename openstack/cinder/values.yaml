@@ -15,11 +15,6 @@ global:
 
 osprofiler: {}
 
-# imageVersion: null
-# imageVersionCinderApi: null
-# imageVersionCinderScheduler: null
-# imageVersionCinderVolume: null
-
 pod:
   replicas:
     api: 2
@@ -220,105 +215,8 @@ mysql_metrics:
       values:
       - "size_gauge"
 
-
-pgmetrics:
-  name: cinder
-  customMetrics:
-    openstack_stuck_volumes:
-      query: "SELECT host, project_id, id, display_name, availability_zone, status, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM volumes WHERE status IN ('attaching', 'deleting', 'detaching') GROUP BY host, availability_zone, volume_type_id, id, display_name, status, project_id"
-      metrics:
-        - host:
-            usage: "LABEL"
-            description: "Name of the host"
-        - availability_zone:
-            usage: "LABEL"
-            description: "Availability Zone of the Volume"
-        - project_id:
-            usage: "LABEL"
-            description: "Project ID"
-        - status:
-            usage: "LABEL"
-            description: "Status of the volume"
-        - id:
-            usage: "LABEL"
-            description: "Volume ID"
-        - display_name:
-            usage: "LABEL"
-            description: "Name of the volume"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of volumes"
-        - max_duration_gauge:
-            usage: "GAUGE"
-            description: "Maximum duration of state"
-    openstack_volumes:
-      query: "SELECT host, availability_zone, volume_type_id, project_id, status, attach_status, COUNT(*) AS count_gauge, SUM(size) size_gauge FROM volumes GROUP BY host, availability_zone, volume_type_id, project_id, status, attach_status"
-      metrics:
-        - host:
-            usage: "LABEL"
-            description: "Name of the host"
-        - availability_zone:
-            usage: "LABEL"
-            description: "Availability Zone of the Volume"
-        - volume_type_id:
-            usage: "LABEL"
-            description: "Type of the volume"
-        - project_id:
-            usage: "LABEL"
-            description: "ID of the Project"
-        - status:
-            usage: "LABEL"
-            description: "Status of the volume"
-        - attach_status:
-            usage: "LABEL"
-            description: "Status of the attachment"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of volumes"
-        - size_gauge:
-            usage: "GAUGE"
-            description: "Size of volumes"
-    openstack_snapshots:
-      query: "select snapshots.status, snapshots.project_id, volumes.host, COUNT(*) AS count_gauge, SUM(volume_size) size_gauge from snapshots join volumes on snapshots.volume_id=volumes.id GROUP BY snapshots.status, snapshots.project_id, volumes.host"
-      metrics:
-        - project_id:
-            usage: "LABEL"
-            description: "ID of the Project"
-        - host:
-            usage: "LABEL"
-            description: "Name of the host"
-        - status:
-            usage: "LABEL"
-            description: "Status of the Snapshot"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of Snapshots"
-        - size_gauge:
-            usage: "GAUGE"
-            description: "Size of Snapshots"
-
-
 postgresql:
-  enabled: true
-  imageTag: '9.4.14'
-  postgresDatabase: cinder
-  # postgresPassword:
-  dbInit: cinder-db-init
-  dbMaintain: cinder-db-maintain
-  max_connections: 150
-  pgbouncer:
-    enabled: true
-  persistence:
-    enabled: true
-    existingClaim: db-cinder-pvclaim
-  backup:
-    enabled: true
-    metrics: true
-    # os_password:
-  resources:
-    requests:
-      cpu: "500m" # 1/2 cpu
-      memory: "500Mi" # 350Mi high recorded
+  enabled: false
 
 audit:
   enabled: false
