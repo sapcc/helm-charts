@@ -26,6 +26,11 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
+{{- if eq .Values.postgresql.enabled true }}
+              value: "{{ .Release.Name }}-postgresql"
+{{- else }}
+              value: "{{ .Release.Name }}-mariadb"
+{{- end }}
               value: "{{ .Release.Name }}-postgresql"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
