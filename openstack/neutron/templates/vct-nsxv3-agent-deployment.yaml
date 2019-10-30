@@ -98,7 +98,7 @@ template: |
             subPath: ml2-nsxv3.ini
             readOnly: true
         - name: exporter
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/nsx-t-exporter:latest
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/nsx-t-exporter:{{.Values.imageVersionNSXTExporter | required "Please set neutron.imageVersionNSXTExporter"}}
           env:
             {%- set bb = name | replace( "bb", "") | int %}
             {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
@@ -114,12 +114,14 @@ template: |
               value: "10"
             - name: NSXV3_REQUEST_TIMEOUT_SECONDS
               value: "30"
+            - name: NSXV3_CONNECTION_POOL_SIZE
+              value: "100"
             - name: NSXV3_SUPPRESS_SSL_WORNINGS
               value: "true"
             - name: SCRAP_PORT
               value: "9191"
             - name: SCRAP_SCHEDULE_SECONDS
-              values: "60"
+              values: "120"
         volumes:
         - name: etcneutron
           emptyDir: {}
