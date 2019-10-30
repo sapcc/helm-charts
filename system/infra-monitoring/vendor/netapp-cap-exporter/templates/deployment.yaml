@@ -73,6 +73,12 @@ spec:
             - {{ required "Value .netappsd.query of group" $app.netappsd.query }}
           image: "{{ $values.netappsd.image.repository }}:{{ $values.netappsd.image.tag }}"
           imagePullPolicy: {{ $values.netappsd.image.pullPolicy }}
+          livenessProbe:
+            httpGet:
+              port: 8086
+              path: /live
+            initialDelaySeconds: 5
+            periodSeconds: 5
           resources:
             {{- toYaml $values.netappsd.resources | nindent 12 }}
 
