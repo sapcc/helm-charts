@@ -11,7 +11,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  replicas: {{ .Values.tiller.replicaCount }}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: helm
@@ -28,8 +28,8 @@ spec:
       serviceAccountName: tiller
       containers:
         - name: tiller
-          image: "{{ .Values.tiller.image.repository }}:{{ .Values.tiller.image.tag }}"
-          imagePullPolicy: {{ .Values.tiller.image.pullPolicy }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
           - name: TILLER_NAMESPACE
             {{- if hasKey .Values "namespace" }}
@@ -38,22 +38,22 @@ spec:
             value: {{ .Release.Namespace }}
             {{- end }}
           - name: TILLER_HISTORY_MAX
-            value: {{ quote .Values.tiller.maxHistory }}
-          {{- if .Values.tiller.tls.enabled }}
+            value: {{ quote .Values.maxHistory }}
+          {{- if .Values.tls.enabled }}
           - name: TILLER_TLS_ENABLE
             value: "1"
-          {{- if .Values.tiller.tls.verify }}
+          {{- if .Values.tls.verify }}
           - name: TILLER_TLS_VERIFY
             value: "1"
           {{- end }}
           - name: TILLER_TLS_CERTS
             value: /etc/certs
           {{- end }}
-          {{- if .Values.tiller.onlyListenOnLocalhost }}
+          {{- if .Values.onlyListenOnLocalhost }}
           command:
             - "/tiller"
-          {{- if .Values.tiller.storage }}
-            - --storage={{ .Values.tiller.storage }}
+          {{- if .Values.storage }}
+            - --storage={{ .Values.storage }}
           {{- end }}
           args: ["--listen=127.0.0.1:44134"]
           {{- else }}
@@ -86,29 +86,29 @@ spec:
             successThreshold: 1
             timeoutSeconds: 1
           volumeMounts:
-          {{- if .Values.tiller.tls.enabled }}
+          {{- if .Values.tls.enabled }}
           - mountPath: /etc/certs
             name: tiller-certs
             readOnly: true
           {{- end }}
           resources:
-{{ toYaml .Values.tiller.resources | indent 12 }}
+{{ toYaml .Values.resources | indent 12 }}
       volumes:
-      {{- if .Values.tiller.tls.enabled }}
+      {{- if .Values.tls.enabled }}
       - name: tiller-certs
         secret:
           defaultMode: 0644
-          secretName: {{ .Values.tiller.tls.secretName }}
+          secretName: {{ .Values.tls.secretName }}
       {{- end }}
-    {{- with .Values.tiller.nodeSelector }}
+    {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
     {{- end }}
-    {{- with .Values.tiller.affinity }}
+    {{- with .Values.affinity }}
       affinity:
 {{ toYaml . | indent 8 }}
     {{- end }}
-    {{- with .Values.tiller.tolerations }}
+    {{- with .Values.tolerations }}
       tolerations:
 {{ toYaml . | indent 8 }}
     {{- end }}
