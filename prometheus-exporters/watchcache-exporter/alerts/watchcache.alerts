@@ -1,0 +1,15 @@
+groups:
+- name: watchcache.alerts
+  rules:
+  - alert: EntrypointMismatch
+    expr: 
+    for: 5m
+    labels:
+      tier: k8s
+      service: api
+      severity: info
+      context: cache
+      meta: "Entrypoints of {{ $labels.kluster }} are not in sync."
+    annotations:
+      summary: API server watchcache is out of sync
+      description: "Entrypoints of {{ $labels.kluster }} are out of sync. This is most likely because API server watchcache is not in sync with data in etcd. Restart of API server is advised."
