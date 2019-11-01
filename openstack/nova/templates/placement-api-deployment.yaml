@@ -44,7 +44,7 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "nova-placement-api -p {{.Values.global.placementApiPortInternal}}"
+              value: "uwsgi --ini /etc/nova/placement_uwsgi.ini"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
@@ -90,6 +90,10 @@ spec:
             - mountPath: /etc/nova/logging.ini
               name: nova-etc
               subPath: logging.ini
+              readOnly: true
+            - mountPath: /etc/nova/placement_uwsgi.ini
+              name: nova-etc
+              subPath: placement_uwsgi.ini
               readOnly: true
       volumes:
         - name: etcnova
