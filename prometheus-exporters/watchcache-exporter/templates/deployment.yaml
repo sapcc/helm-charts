@@ -1,0 +1,29 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "name" . }}
+  labels:
+    app: {{ template "name" . }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+    spec:
+      serviceAccountName: {{ template "name" . }}
+      containers:
+      - name: {{ template "name" . }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        ports:
+        - name: metrics
+          containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}

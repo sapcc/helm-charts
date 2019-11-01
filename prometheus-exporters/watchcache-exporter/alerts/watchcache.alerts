@@ -1,0 +1,28 @@
+groups:
+- name: watchcache.alerts
+  rules:
+  - alert: EntrypointDisparity
+    expr: increase(watchcache_endpoint_disparity_total[1h])
+    for: 5m
+    labels:
+      tier: k8s
+      service: api
+      severity: info
+      context: cache
+      meta: "Entrypoints of {{ $labels.cluster }} are not in sync."
+    annotations:
+      summary: API server watchcache is out of sync
+      description: "Entrypoints of {{ $labels.cluster }} are out of sync. This is most likely because API server watchcache is not in sync with data in etcd. Restart of API server is advised."
+
+  - alert: EntrypointMismatch
+    expr: increase(watchcache_endpoint_missing_total[1h])
+    for: 5m
+    labels:
+      tier: k8s
+      service: api
+      severity: info
+      context: cache
+      meta: "Entrypoints are missing in {{ $labels.cluster }}."
+    annotations:
+      summary: API server watchcache is out of sync
+      description: "There are entrypoints missing in either watchcache or etcd in {{ $labels.cluster }}. This is most likely because API server watchcache is not in sync with data in etcd. Restart of API server is advised."
