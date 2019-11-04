@@ -1,3 +1,7 @@
+## 2.0.3
+
+* Make service `type: NodePort` if `.Values.mesh.nodePort` is set. 
+
 ## 2.0.2
 
 * Only 1 replica per default.
