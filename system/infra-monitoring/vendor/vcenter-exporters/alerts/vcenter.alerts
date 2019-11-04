@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: VCenterRedundancyLostFailoverHostMissing
     expr: vcenter_failover_host < 1
-    for: 10m
+    for: 30m
     labels:
       severity: critical
       tier: vmware
@@ -15,7 +15,7 @@ groups:
       summary: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
   - alert: VCenterRedundancyLostFailoverHostOccupied
     expr: vcenter_vms_on_failover_hosts > 0 
-    for: 10m
+    for: 30m
     labels:
       severity: critical
       tier: vmware
@@ -27,7 +27,7 @@ groups:
       summary: "Failover host {{ $labels.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
   - alert: VCenterRedundancyLostHAPolicyFaulty
     expr: sum(vcenter_prod_cluster) by(hostname) - sum(vcenter_failover_host) by(hostname) > 0 
-    for: 10m
+    for: 30m
     labels:
       severity: critical
       tier: vmware
@@ -39,7 +39,7 @@ groups:
       summary: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for a cluster, failover will not work in all prod clusters"
   - alert: VCenterWrongHALevelConfiguration
     expr: vcenter_failover_nodes_set > 1
-    for: 10m
+    for: 30m
     labels:
       severity: warning
       tier: vmware
@@ -51,7 +51,7 @@ groups:
       summary: "VC {{ $labels.hostname }} {{ $labels.cluster }} has more than one failover host configured, it should be 1"
   - alert: VCenterRedundancyLostHALevelNotSet
     expr: vcenter_failover_nodes_set == 0
-    for: 10m
+    for: 30m
     labels:
       severity: critical
       tier: vmware
