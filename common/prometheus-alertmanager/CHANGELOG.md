@@ -1,3 +1,7 @@
+## 2.0.1
+
+* Fix secret name if config provided via values.
+
 ## 2.0.0
 
 * Init operated Prometheus Alertmanager chart.  
