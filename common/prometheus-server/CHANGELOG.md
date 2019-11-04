@@ -1,3 +1,7 @@
+## 3.0.5
+
+* Allow setting additional annotations on the service via `.Values.service.annotations`.
+
 ## 3.0.4
 
 * Fix `PrometheusNotIngestingSamples` alert.
