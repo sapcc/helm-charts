@@ -23,11 +23,11 @@ groups:
       service: kubelet
       severity: warning
       context: kubelet
-      meta: "{{`{{ $labels.instance }}`}}"
+      meta: "{{`{{ $labels.node }}`}}"
       dashboard: kubernetes-health
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
     annotations:
-      description: Kublet on {{`{{ $labels.instance }}`}} is DOWN.
+      description: Kublet on {{`{{ $labels.node }}`}} is DOWN.
       summary: A Kubelet is DOWN
 
   - alert: KubernetesKubeletScrapeMissing
@@ -52,11 +52,11 @@ groups:
       service: kubelet
       severity: warning
       context: kubelet
-      meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{$labels.instance}}`}}
+      meta: "{{`{{ $labels.node }}`}}"
+      dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
     annotations:
       description: Kubelet is close to pod limit
-      summary: Kubelet {{`{{ $labels.instance }}`}} is running {{`{{ $value }}`}} pods, close to the limit of 250
+      summary: Kubelet {{`{{ $labels.node }}`}} is running {{`{{ $value }}`}} pods, close to the limit of 250
 
   - alert: KubernetesKubeletFull
     expr: kubelet_running_pod_count >= 250
@@ -66,11 +66,11 @@ groups:
       service: kubelet
       severity: warning
       context: kubelet
-      meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{ $labels.instance }}`}}
+      meta: "{{`{{ $labels.node }}`}}"
+      dashboard: kubernetes-node?var-server={{`{{ $labels.node }}`}}
     annotations:
       description: Kubelet is full
-      summary: Kubelet Kubelet {{`{{$labels.instance}}`}} is running {{`{{ $value }}`}} pods. That's too much!
+      summary: Kubelet Kubelet {{`{{$labels.node}}`}} is running {{`{{ $value }}`}} pods. That's too much!
 
   - alert: KubernetesKubeletFull
     expr: kubelet_running_pod_count >= 250
@@ -80,11 +80,11 @@ groups:
       service: kubelet
       severity: warning
       context: kubelet
-      meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{ $labels.instance }}`}}
+      meta: "{{`{{ $labels.node }}`}}"
+      dashboard: kubernetes-node?var-server={{`{{ $labels.node }}`}}
     annotations:
       description: Kubelet is full
-      summary: Kubelet {{`{{ $labels.instance }}`}} is running {{`{{ $value }}`}} pods. That's too much!
+      summary: Kubelet {{`{{ $labels.node }}`}} is running {{`{{ $value }}`}} pods. That's too much!
 
   - alert: KubernetesKubeletDockerHangs
     expr: rate(kubelet_docker_operations_timeout[5m])> 0
@@ -94,12 +94,12 @@ groups:
       service: kubelet
       severity: warning
       context: docker
-      meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{$labels.instance}}`}}
+      meta: "{{`{{ $labels.node }}`}}"
+      dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
     annotations:
       description: Docker hangs!
-      summary: Docker on {{`{{$labels.instance}}`}} is hanging
+      summary: Docker on {{`{{$labels.node}}`}} is hanging
 
   - alert: KubernetesHighNumberOfGoRoutines
     expr: go_goroutines{job="kubernetes-kubelet"} > 5000
@@ -109,9 +109,9 @@ groups:
       service: k8s
       severity: warning
       context: kubelet
-      meta: "{{`{{ $labels.instance }}`}}"
+      meta: "{{`{{ $labels.node }}`}}"
     annotations:
-      description: Kublet on {{`{{ $labels.instance }}`}} might be unresponsive due to a high number of go routines
+      description: Kublet on {{`{{ $labels.node }}`}} might be unresponsive due to a high number of go routines
       summary: High number of Go routines
 
   - alert: KubernetesPredictHighNumberOfGoRoutines
@@ -122,7 +122,7 @@ groups:
       service: k8s
       severity: warning
       context: kubelet
-      meta: "{{`{{ $labels.instance }}`}}"
+      meta: "{{`{{ $labels.node }}`}}"
     annotations:
-      description: Kublet on {{`{{$labels.instance}}`}} might become unresponsive due to a high number of go routines within 2 hours
+      description: Kublet on {{`{{$labels.node}}`}} might become unresponsive due to a high number of go routines within 2 hours
       summary: Predicting high number of Go routines
