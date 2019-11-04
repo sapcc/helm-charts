@@ -1,3 +1,7 @@
+## 2.0.2
+
+* Only 1 replica per default.
+
 ## 2.0.1
 
 * Fix secret name if config provided via values.
