@@ -4,7 +4,7 @@ Prometheus Alertmanager Chart
 This chart shall serve as a template to deploy an Prometheus Alertmanager.  
 It will set up:
 - Prometheus Alertmanager instance with configmap reload sidecar
-- Persistent volume claim (if configured; default off)
+- Persistent volume claim (store Silences)
 - Ingress to manage external access for the Alertmanager instance. (default off)
 
 ## Prerequisite
