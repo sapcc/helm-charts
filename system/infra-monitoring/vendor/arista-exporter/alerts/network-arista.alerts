@@ -48,7 +48,23 @@ groups:
     annotations:
       description: "Switch {{ $labels.instance }}: Sum of {{ $labels.table }} TCAM Slice usage of {{ $labels.chip }} above 275% for 30 min"
       summary: "TCAM {{ $labels.table }} Slice usage alert for switch {{ $labels.instance }}"
-      
+
+  - alert: MetalIronicAristaMonEFPWarning
+    # sum of EFP Slices per chip is above 195%
+    expr: sum(arista_tcam{table=~"EFP", feature !~ ""}) by (instance, model, serial, chip, table)  > 195
+    for: 30m
+    labels:
+      severity: warning
+      tier: os
+      service: arista
+      context: "{{ $labels.instance }}"
+      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }}, Chip {{ $labels.chip }} usage"
+      playbook: /docs/devops/alert/network/switch.html#arista_efp
+      dashboard: arista-monitoring-tcam-details?var-instance={{ $labels.instance }}&var-table={{ $labels.table }}
+    annotations:
+      description: "Switch {{ $labels.instance }}: Sum of {{ $labels.table }} TCAM Slice usage of {{ $labels.chip }} above 195% for 30 min"
+      summary: "TCAM {{ $labels.table }} Slice usage alert for switch {{ $labels.instance }}"
+
   - alert: MetalIronicAristaMonSwitchDownCritical
     # No metrics could be retrieved from the switch. Means API is not reachable.
     expr: count(arista_up == 0) by (instance)
