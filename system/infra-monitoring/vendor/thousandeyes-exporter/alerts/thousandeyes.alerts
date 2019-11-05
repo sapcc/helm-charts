@@ -28,7 +28,7 @@ groups:
       summary: "SuperNova offline from internet!"
 
   - alert: ThousandeyesHTTPReachability
-    expr: count(thousandeyes_alert{type="HTTP Server"}) by (rule_name, test_name, rule_expression, type) > 1
+    expr: count(label_replace ( thousandeyes_alert{type="HTTP Server"}, "region", "$1", "test_name", "(^[a-zA-Z0-9-]{7}).*")) by (rule_name, test_name, rule_expression, type) > 1
     for: 5m
     labels:
       severity: warning
@@ -41,7 +41,7 @@ groups:
       summary: "{{ $labels.type }} Alert fires!"
 
   - alert: ThousandeyesBGPReachability
-    expr: count(thousandeyes_alert{type="BGP"}) by (rule_name, test_name, rule_expression, type) > 1
+    expr: count(label_replace ( thousandeyes_alert{type="BGP"}, "region", "$1", "test_name", "(^[a-zA-Z0-9-]*).*" )) by (rule_name, test_name, rule_expression, type) > 1
     for: 5m
     labels:
       severity: warning
