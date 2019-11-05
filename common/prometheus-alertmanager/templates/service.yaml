@@ -19,8 +19,18 @@ spec:
   ports:
     - name: http
       port: 9093
-    - name: mesh
+      targetPort: web
+    - name: mesh-tcp
+      protocol: TCP
       port: {{ required ".Values.mesh.port missing" .Values.mesh.port }}
+      targetPort: mesh-tcp
+      {{ if .Values.mesh.nodePort -}}
+      nodePort: {{ .Values.mesh.nodePort }}
+      {{- end }}
+    - name: mesh-udp
+      protocol: UDP
+      port: {{ required ".Values.mesh.port missing" .Values.mesh.port }}
+      targetPort: mesh-udp
       {{ if .Values.mesh.nodePort -}}
       nodePort: {{ .Values.mesh.nodePort }}
       {{- end }}

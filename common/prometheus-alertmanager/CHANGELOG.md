@@ -1,3 +1,7 @@
+## 2.0.4
+
+* Default Alertmanager mesh ports for TCP, UDP is now `9094`.
+
 ## 2.0.3
 
 * Make service `type: NodePort` if `.Values.mesh.nodePort` is set. 
