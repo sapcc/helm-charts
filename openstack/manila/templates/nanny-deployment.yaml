@@ -138,7 +138,16 @@ spec:
         - name: share-size-sync
           image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.imageVersionManilaNanny}}
           imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "{{ if not .Values.nanny.debug }}/bin/bash /scripts/manila-share-size-sync.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: MANILA_SHARE_SIZE_SYNC_ENABLED
               value: "true"
             - name: MANILA_SHARE_SIZE_SYNC_DRY_RUN
