@@ -3,9 +3,12 @@ kind: ConfigMap
 metadata:
   name: manila-etc
   labels:
-    system: openstack
-    type: configuration
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
     component: manila
+    type: config
 
 data:
   manila.conf: |
@@ -17,6 +20,8 @@ data:
   logging.ini: |
 {{ include "loggerIni" .Values.logging | indent 4 }}
 {{- if .Values.audit.enabled }}
+  wsgi-manila.conf: |
+{{ include (print .Template.BasePath "/etc/_wsgi-manila.conf.tpl") . | indent 4 }}
   manila_audit_map.yaml: |
 {{ include (print .Template.BasePath "/etc/_manila_audit_map.yaml") . | indent 4 }}
 {{- end }}

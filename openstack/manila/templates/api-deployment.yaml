@@ -35,11 +35,11 @@ spec:
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-api:{{required ".Values.global.imageVersionManilaApi is missing" .Values.imageVersionManilaApi}}
           imagePullPolicy: IfNotPresent
           command:
-            - dumb-init
-            - kubernetes-entrypoint
+            - /scripts/manila-api.sh
+            - start
           env:
             - name: COMMAND
-              value: "manila-api --config-file /etc/manila/manila.conf"
+              value: "true"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: STATSD_HOST
@@ -74,6 +74,12 @@ spec:
           ports:
             - name: manila-api
               containerPort: {{.Values.api_port_internal}}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /scripts/manila-api.sh
+                  - stop
           volumeMounts:
             - name: etcmanila
               mountPath: /etc/manila
@@ -81,6 +87,8 @@ spec:
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
               readOnly: true
+            - name: wsgi-manila
+              mountPath: /var/www/cgi-bin/manila
             - name: manila-etc
               mountPath: /etc/manila/api-paste.ini
               subPath: api-paste.ini
@@ -105,6 +113,10 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+            - name: manila-etc
+              mountPath: /etc/apache2/conf-enabled/wsgi-manila.conf
+              subPath: wsgi-manila.conf
+              readOnly: true
           {{- if .Values.pod.resources.api }}
           resources:
 {{ toYaml .Values.pod.resources.api | indent 13 }}
@@ -124,12 +136,16 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
+            - name: wsgi-manila
+              mountPath: /var/www/cgi-bin/manila
           resources:
             requests:
               cpu: 1m
               memory: 32Mi
       volumes:
         - name: etcmanila
+          emptyDir: {}
+        - name: wsgi-manila
           emptyDir: {}
         - name: manila-etc
           configMap:
