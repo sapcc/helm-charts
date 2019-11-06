@@ -1,74 +1,74 @@
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-
-metadata:
-  name: network-interconnect-sre-alerts
-  labels:
-    tier: sre
-    type: alerting-rules
-    prometheus: {{ required ".Values.global.alerts.prometheus missing" .Values.global.alerts.prometheus }}
-
-spec:
-  # https://developers.soundcloud.com/blog/alerting-on-slos
-  groups:
-  - name: network-interconnect-sre.alerts
-    rules:
-    - alert: InterconnectSRE2PctErrorBudgetBurnOver1Hour
-      expr: |2
-          (100 * global:network_interconnect_errors_sli:ratio_rate1h > on (interconnect_type) 14.4 * global:network_interconnect_errors_slo:percent)
-          and
-          (100 * global:network_interconnect_errors_sli:ratio_ratee5m > on (interconnect_type) 14.4 * global:network_interconnect_errors_slo:percent)
-      for: 2m
-      labels:
-        context: availability
-        service: "{{`{{$labels.interconnect_type}}`}}"
-        severity: info
-        tier: sre
-      annotations:
-        summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} burns its availability error budget very fast"
-        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over the last 1h"
-
-    - alert: InterconnectSRE5PctErrorBudgetBurnOver6Hours
-      expr: |2
-          (100 * global:network_interconnect_errors_sli:ratio_rate6h > on (interconnect_type) 6 * global:network_interconnect_errors_slo:percent)
-          and
-          (100 * global:network_interconnect_errors_sli:ratio_ratee30m > on (interconnect_type) 6 * global:network_interconnect_errors_slo:percent)
-      for: 15m
-      labels:
-        context: availability
-        service: "{{`{{$labels.interconnect_type}}`}}"
-        severity: info
-        tier: sre
-      annotations:
-        summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} burns its availability error budget very fast"
-        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over the last 6h."
-
-    - alert: InterconnectSRE10PctErrorBudgetBurnOver1Day
-      expr: |2
-          (100 * global:network_interconnect_errors_sli:ratio_rate1d > on (interconnect_type) 3 * global:network_interconnect_errors_slo:percent)
-          and
-          (100 * global:network_interconnect_errors_sli:ratio_rate2h > on (interconnect_type) 3 * global:network_interconnect_errors_slo:percent)
-      for: 1h
-      labels:
-        context: availability
-        service: "{{`{{$labels.interconnect_type}}`}}"
-        severity: warning
-        tier: sre
-      annotations:
-        summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} has consumed its availability error budget by 10%"
-        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over 1d."
-
-    - alert: InterconnectSRE10PctErrorBudgetBurnOver3Days
-      expr: |2
-          (100 * global:network_interconnect_errors_sli:ratio_rate3d > on (interconnect_type) global:network_interconnect_errors_slo:percent)
-          and
-          (100 * global:network_interconnect_errors_sli:ratio_rate6h > on (interconnect_type) global:network_interconnect_errors_slo:percent)
-      for: 1h
-      labels:
-        context: availability
-        service: "{{`{{$labels.interconnect_type}}`}}"
-        severity: warning
-        tier: sre
-      annotations:
-        summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} has consumed its availability error budget by 10%"
-        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over 3d."
+#apiVersion: monitoring.coreos.com/v1
+#kind: PrometheusRule
+#
+#metadata:
+#  name: network-interconnect-sre-alerts
+#  labels:
+#    tier: sre
+#    type: alerting-rules
+#    prometheus: {{ required ".Values.global.alerts.prometheus missing" .Values.global.alerts.prometheus }}
+#
+#spec:
+#  # https://developers.soundcloud.com/blog/alerting-on-slos
+#  groups:
+#  - name: network-interconnect-sre.alerts
+#    rules:
+#    - alert: InterconnectSRE2PctErrorBudgetBurnOver1Hour
+#      expr: |2
+#          (100 * global:network_interconnect_errors_sli:ratio_rate1h > on (interconnect_type) 14.4 * global:network_interconnect_errors_slo:percent)
+#          and
+#          (100 * global:network_interconnect_errors_sli:ratio_ratee5m > on (interconnect_type) 14.4 * global:network_interconnect_errors_slo:percent)
+#      for: 2m
+#      labels:
+#        context: availability
+#        service: "{{`{{$labels.interconnect_type}}`}}"
+#        severity: info
+#        tier: sre
+#      annotations:
+#        summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} burns its availability error budget very fast"
+#        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over the last 1h"
+#
+#    - alert: InterconnectSRE5PctErrorBudgetBurnOver6Hours
+#      expr: |2
+#          (100 * global:network_interconnect_errors_sli:ratio_rate6h > on (interconnect_type) 6 * global:network_interconnect_errors_slo:percent)
+#          and
+#          (100 * global:network_interconnect_errors_sli:ratio_ratee30m > on (interconnect_type) 6 * global:network_interconnect_errors_slo:percent)
+#      for: 15m
+#      labels:
+#        context: availability
+#        service: "{{`{{$labels.interconnect_type}}`}}"
+#        severity: info
+#        tier: sre
+#      annotations:
+#        summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} burns its availability error budget very fast"
+#        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over the last 6h."
+#
+#    - alert: InterconnectSRE10PctErrorBudgetBurnOver1Day
+#      expr: |2
+#          (100 * global:network_interconnect_errors_sli:ratio_rate1d > on (interconnect_type) 3 * global:network_interconnect_errors_slo:percent)
+#          and
+#          (100 * global:network_interconnect_errors_sli:ratio_rate2h > on (interconnect_type) 3 * global:network_interconnect_errors_slo:percent)
+#      for: 1h
+#      labels:
+#        context: availability
+#        service: "{{`{{$labels.interconnect_type}}`}}"
+#        severity: warning
+#        tier: sre
+#      annotations:
+#        summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} has consumed its availability error budget by 10%"
+#        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over 1d."
+#
+#    - alert: InterconnectSRE10PctErrorBudgetBurnOver3Days
+#      expr: |2
+#          (100 * global:network_interconnect_errors_sli:ratio_rate3d > on (interconnect_type) global:network_interconnect_errors_slo:percent)
+#          and
+#          (100 * global:network_interconnect_errors_sli:ratio_rate6h > on (interconnect_type) global:network_interconnect_errors_slo:percent)
+#      for: 1h
+#      labels:
+#        context: availability
+#        service: "{{`{{$labels.interconnect_type}}`}}"
+#        severity: warning
+#        tier: sre
+#      annotations:
+#        summary: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} has consumed its availability error budget by 10%"
+#        description: "{{`{{$labels.interconnect_type}}`}} interconnect from {{`{{$labels.probed_from}}`}} to {{`{{$labels.probed_to}}`}} fails {{`{{$value}}`}}% over 3d."
