@@ -36,14 +36,19 @@ asa:
   - 1.3.6.1.4.1.9.9.147.1.2.1.1.1.3
   - 1.3.6.1.4.1.9.9.147.1.2.1.1.1.4
   - 1.3.6.1.4.1.9.9.147.1.2.2.1.1.4
-  - 1.3.6.1.4.1.9.9.147.1.2.2.2.1.3
+  - 1.3.6.1.4.1.9.9.147.1.2.2.2.1.5
   - 1.3.6.1.4.1.9.9.48.1.1.1.5
   - 1.3.6.1.4.1.9.9.48.1.1.1.6
   - 1.3.6.1.4.1.9.9.48.1.1.1.7
+  - 1.3.6.1.4.1.9.9.491.1.1.4.1.1.10
+  - 1.3.6.1.4.1.9.9.491.1.1.4.1.1.9
   get:
   - 1.3.6.1.2.1.1.3.0
   - 1.3.6.1.2.1.11.1.0
   - 1.3.6.1.2.1.11.4.0
+  - 1.3.6.1.4.1.9.9.491.1.1.1.10.0
+  - 1.3.6.1.4.1.9.9.491.1.1.1.11.0
+  - 1.3.6.1.4.1.9.9.491.1.1.1.4.0
   metrics:
   - name: snmp_asa_sysUpTime
     oid: 1.3.6.1.2.1.1.3
@@ -1070,14 +1075,6 @@ asa:
     indexes:
     - labelname: cpmCPUTotalIndex
       type: gauge
-  - name: snmp_asa_cfwHardwareInformation
-    oid: 1.3.6.1.4.1.9.9.147.1.2.1.1.1.2
-    type: DisplayString
-    help: A detailed textual description of the resource identified by cfwHardwareType.
-      - 1.3.6.1.4.1.9.9.147.1.2.1.1.1.2
-    indexes:
-    - labelname: cfwHardwareType
-      type: gauge
   - name: snmp_asa_cfwHardwareStatusValue
     oid: 1.3.6.1.4.1.9.9.147.1.2.1.1.1.3
     type: gauge
@@ -1085,6 +1082,17 @@ asa:
     indexes:
     - labelname: cfwHardwareType
       type: gauge
+    lookups:
+    - labels:
+      - cfwHardwareType
+      labelname: cfwHardwareInformation
+      oid: 1.3.6.1.4.1.9.9.147.1.2.1.1.1.2
+      type: DisplayString
+    - labels:
+      - cfwHardwareType
+      labelname: cfwHardwareStatusDetail
+      oid: 1.3.6.1.4.1.9.9.147.1.2.1.1.1.4
+      type: DisplayString
     enum_values:
       1: other
       2: up
@@ -1096,14 +1104,6 @@ asa:
       8: backup
       9: active
       10: standby
-  - name: snmp_asa_cfwHardwareStatusDetail
-    oid: 1.3.6.1.4.1.9.9.147.1.2.1.1.1.4
-    type: DisplayString
-    help: A detailed textual description of the current status of the resource which
-      may provide a more specific description than cfwHardwareStatusValue. - 1.3.6.1.4.1.9.9.147.1.2.1.1.1.4
-    indexes:
-    - labelname: cfwHardwareType
-      type: gauge
   - name: snmp_asa_cfwBufferStatValue
     oid: 1.3.6.1.4.1.9.9.147.1.2.2.1.1.4
     type: gauge
@@ -1113,10 +1113,10 @@ asa:
       type: gauge
     - labelname: cfwBufferStatType
       type: gauge
-  - name: snmp_asa_cfwConnectionStatDescription
-    oid: 1.3.6.1.4.1.9.9.147.1.2.2.2.1.3
-    type: DisplayString
-    help: A detailed textual description of this statistic. - 1.3.6.1.4.1.9.9.147.1.2.2.2.1.3
+  - name: snmp_asa_cfwConnectionStatValue
+    oid: 1.3.6.1.4.1.9.9.147.1.2.2.2.1.5
+    type: gauge
+    help: This is an integer that contains the value of the resource statistic - 1.3.6.1.4.1.9.9.147.1.2.2.2.1.5
     indexes:
     - labelname: cfwConnectionStatService
       type: gauge
@@ -1145,4 +1145,35 @@ asa:
       are currently unused on the managed device. - 1.3.6.1.4.1.9.9.48.1.1.1.7
     indexes:
     - labelname: ciscoMemoryPoolType
+      type: gauge
+  - name: snmp_asa_cufwConnGlobalConnSetupRate1
+    oid: 1.3.6.1.4.1.9.9.491.1.1.1.10
+    type: gauge
+    help: The averaged number of connections which the firewall establishing per second,
+      averaged over the last 60 seconds. - 1.3.6.1.4.1.9.9.491.1.1.1.10
+  - name: snmp_asa_cufwConnGlobalConnSetupRate5
+    oid: 1.3.6.1.4.1.9.9.491.1.1.1.11
+    type: gauge
+    help: The averaged number of connections which the firewall establishing per second,
+      averaged over the last 300 seconds. - 1.3.6.1.4.1.9.9.491.1.1.1.11
+  - name: snmp_asa_cufwConnGlobalNumResDeclined
+    oid: 1.3.6.1.4.1.9.9.491.1.1.1.4
+    type: counter
+    help: The number of connections which were attempted to be setup but which were
+      declined due to non-availability of required resources - 1.3.6.1.4.1.9.9.491.1.1.1.4
+  - name: snmp_asa_cufwConnSetupRate5
+    oid: 1.3.6.1.4.1.9.9.491.1.1.4.1.1.10
+    type: gauge
+    help: The connection setup rate averaged over the last 300 seconds corresponding
+      to the protocol denoted by 'cufwConnProtocol'. - 1.3.6.1.4.1.9.9.491.1.1.4.1.1.10
+    indexes:
+    - labelname: cufwConnProtocol
+      type: gauge
+  - name: snmp_asa_cufwConnSetupRate1
+    oid: 1.3.6.1.4.1.9.9.491.1.1.4.1.1.9
+    type: gauge
+    help: The connection setup rate averaged over the last 60 seconds corresponding
+      to the protocol denoted by 'cufwConnProtocol'. - 1.3.6.1.4.1.9.9.491.1.1.4.1.1.9
+    indexes:
+    - labelname: cufwConnProtocol
       type: gauge
