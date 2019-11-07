@@ -42,3 +42,17 @@ groups:
     annotations:
       description: "cp node {{ $labels.server_name }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
       summary: "Hardware error for instance: {{ $labels.server_name }}"
+
+  - alert: MetalCPMemoryInfo
+    expr: count(ipmi_memory_errors{job="cp/netbox"} > 1000) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
+    for: 30m
+    labels:
+      severity: info
+      tier: metal
+      service: controlplane
+      context: "{{ $labels.server_name }}"
+      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }} / provision_state: {{ $labels.provision_state }}"
+      playbook: docs/support/playbook/baremetal/controlplane_safe_shutdown.html
+    annotations:
+      description: "cp node {{ $labels.server_name }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
+      summary: "Hardware error for instance: {{ $labels.server_name }}"
