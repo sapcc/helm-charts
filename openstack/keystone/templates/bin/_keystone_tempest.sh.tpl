@@ -59,6 +59,7 @@ cleanup_tempest_leftovers() {
     for user in $(openstack user list --domain tempest | grep -E 'tempest-PoliciesTestJSON' | awk '{ print $2 }'); do openstack user delete ${user}; done
     for user in $(openstack user list --domain tempest | grep -E 'tempest-TestDefaultProjectId' | awk '{ print $2 }'); do openstack user delete ${user}; done
     for user in $(openstack user list --domain tempest | grep -E 'tempest-ApplicationCredentialsV3AdminTest' | awk '{ print $2 }'); do openstack user delete ${user}; done
+    for user in $(openstack user list --domain tempest | grep -E 'tempest-IdentityV3UsersTest' | awk '{ print $2 }'); do openstack user delete ${user}; done
 }
 
 main() {
