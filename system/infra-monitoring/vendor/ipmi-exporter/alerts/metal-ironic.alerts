@@ -2,7 +2,7 @@ groups:
 - name: metal-ironic.alerts
   rules:      
   - alert: MetalIronicSensorCritical
-    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt)", maintenance="false", provision_state=~"(deploy|active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    expr: count(ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt)", maintenance="false", provision_state=~"(deploy|active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 10m
     labels:
       severity: critical
@@ -16,7 +16,7 @@ groups:
       summary: "Hardware error for instance: {{ $labels.instance }}"
       
   - alert: MetalIronicSensorWarning
-    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", maintenance="false", provision_state=~"(manageable|available)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot|Version Change|Cable/Interconnect)", maintenance="false"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    expr: count((ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt|Version Change)", maintenance="false", provision_state=~"(manageable|available)"} == 2) or (ipmi_sensor_state{job="ipmi/ironic", type=~"(Drive Slot|Version Change|Cable/Interconnect)", maintenance="false"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 10m
     labels:
       severity: warning
@@ -30,7 +30,7 @@ groups:
       summary: "Hardware error for instance: {{ $labels.instance }}"
       
   - alert: MetalIronicSensorInfo
-    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change|Drive Slot|Power Supply|Cable/Interconnect)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    expr: count(ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt|Version Change|Drive Slot|Power Supply|Cable/Interconnect)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 10m
     labels:
       severity: info
