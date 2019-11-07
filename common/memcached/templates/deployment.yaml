@@ -26,6 +26,11 @@ spec:
         app: {{ template "fullname" . }}
         component: memcached
     spec:
+      affinity:
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
       containers:
       - name: memcached
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
