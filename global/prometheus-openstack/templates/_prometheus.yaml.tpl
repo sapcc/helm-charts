@@ -19,6 +19,7 @@
       - '{__name__=~"^limes_project_.+$", resource=~"instances_z.*"}'
       - '{__name__=~"^nsxv3_cluster_(management|control)_status$"}'
       - '{__name__=~"^elektra_open_inquiry_metrics$"}'
+      - '{__name__=~"^blackbox_integrity_status_gauge", check=~"esxi_hs-.+"}'
 
   relabel_configs:
     - action: replace
