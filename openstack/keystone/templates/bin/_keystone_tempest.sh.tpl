@@ -45,6 +45,7 @@ cleanup_tempest_leftovers() {
     for project in $(openstack project list --domain tempest | grep -E 'tempest-TestDefaultProjectId' | awk '{ print $2 }'); do openstack project delete ${project}; done
     for project in $(openstack project list --domain tempest | grep -E 'tempest-TrustsV3TestJSON' | awk '{ print $2 }'); do openstack project delete ${project}; done
     for project in $(openstack project list --domain tempest | grep -E 'tempest-UsersNegativeTest' | awk '{ print $2 }'); do openstack project delete ${project}; done
+    for project in $(openstack project list --domain tempest | grep -E 'tempest-IdentityV3UsersTest' | awk '{ print $2 }'); do openstack project delete ${project}; done
     for domain in $(openstack domain list | grep -E 'tempest-test_domain' | awk '{ print $2 }'); do openstack domain set --disable ${domain}; openstack domain delete ${domain}; done
     for user in $(openstack user list --domain tempest | grep -E 'tempest-DomainsTestJSON' | awk '{ print $2 }'); do openstack user delete ${user}; done
     for user in $(openstack user list --domain tempest | grep -E 'tempest-UsersV3TestJSON' | awk '{ print $2 }'); do openstack user delete ${user}; done
