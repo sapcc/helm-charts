@@ -12,26 +12,31 @@ spec:
   replicas: 1
   revisionHistoryLimit: 5
   strategy:
-   type: Recreate
+    type: Recreate
   selector:
-   matchLabels:
-    name: {{ template "fullname" . }}
+    matchLabels:
+      name: {{ template "fullname" . }}
   template:
-   metadata:
-    labels:
-     name: {{ template "fullname" . }}
-    annotations:
-      chart-version: {{.Chart.Version}}
-      checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-      prometheus.io/scrape: "true"
-      prometheus.io/port: {{ required ".Values.port_metrics missing" .Values.port_metrics | quote }}
-      prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-   spec:
-    volumes:
+    metadata:
+      labels:
+        name: {{ template "fullname" . }}
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.port_metrics missing" .Values.port_metrics | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      affinity:
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+      volumes:
       - name: config-metrics
         configMap:
           name: {{ template "fullname" . }}-etc
-    containers:
+      containers:
       - name: metrics
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}

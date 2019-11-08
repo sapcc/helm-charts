@@ -28,6 +28,11 @@ spec:
       annotations:
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+      affinity:
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
       hostname: {{ template "fullname" . }}
       containers:
       - name: rabbitmq
