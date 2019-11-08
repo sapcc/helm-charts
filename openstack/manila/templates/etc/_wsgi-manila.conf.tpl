@@ -18,11 +18,7 @@ CustomLog /dev/stdout proxy env=forwarded
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
     <IfVersion >= 2.4>
-        Require all granted
-    </IfVersion>
-    <IfVersion < 2.4>
-        Order allow,deny
-        Allow from all
+        ErrorLogFormat "%{cu}t %M"
     </IfVersion>
     ErrorLog /dev/stdout
 
