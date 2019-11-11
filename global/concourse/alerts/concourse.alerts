@@ -26,3 +26,29 @@ groups:
     annotations:
       description: "The workers container count seems to be stuck indicating that the worker might by stalled."
       summary: Worker has stale container count
+
+  - alert: ConcourseGitProxyWorkersFailing
+    expr: sum(rate(request_duration_seconds_count{code="500", app="git-resource-proxy"}[5m])) by (pod) > 0
+    for: 30m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      meta: "Git-proxy resource check request error rate to high"
+    annotations:
+      description: "The check requests from the git-proxy resource are failing. This might be because github.wdf.sap.corp is down. Otherwise inspect the logs of git-proxy replicas in the concourse installation. Restarting the pods might help."
+      summary: Git-proxy resource checks are failing
+
+  - alert: ConcourseGitProxyWorkerStalled
+    expr: sum(rate(request_duration_seconds_count[5m])) by (pod) == 0
+    for: 30m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      meta: "Git-proxy worker {{ $labels.pod }} is stalled"
+    annotations:
+      description: "The git-proxy worker {{ $labels.pod }} seems stalled. Check its logs in the conourse namespace."
+      summary: Git-proxy worker stalled
