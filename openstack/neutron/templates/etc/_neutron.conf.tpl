@@ -130,6 +130,7 @@ memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .V
 service_token_roles_required = True
 insecure = True
 token_cache_time = 600
+memcache_use_advanced_pool = True
 
 [oslo_messaging_notifications]
 driver = noop
