@@ -44,7 +44,7 @@ connection = {{ include "db_url" . }}
 {{- define "ini_sections.cache" }}
 
 [cache]
-backend = dogpile.cache.memcached
+backend = oslo_cache.memcache_pool
 {{- if .Values.memcached.host }}
 memcache_servers = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 11211 }}
 {{- else }}
