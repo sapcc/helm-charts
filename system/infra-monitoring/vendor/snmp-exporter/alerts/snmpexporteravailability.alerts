@@ -2,7 +2,7 @@ groups:
 - name: snmpexporteravailability.alerts
   rules:
   - alert: SNMPExporterAvailabilityLessMetrics
-    expr: (count(avg_over_time(snmp_scrape_pdus_returned{name!~"la-br-1.*|LA-BR-1.*|.*-bb112|ap-cn-1b-gmp-bb059-220.*",server_name!~"la-br-1.*|LA-BR-1.*|.*-bb112"}[15m])) by (module) - count(avg_over_time(snmp_scrape_pdus_returned{name!~"la-br-1.*|LA-BR-1.*|.*-bb112|ap-cn-1b-gmp-bb059-220.*",server_name!~"la-br-1.*|LA-BR-1.*|.*-bb112"}[15m] offset 1h)) by (module)) < 0
+    expr: (count(avg_over_time(snmp_scrape_pdus_returned[15m])) by (module) - count(avg_over_time(snmp_scrape_pdus_returned[15m] offset 1h)) by (module)) < 0
     for: 15m
     labels:
       severity: info
@@ -15,7 +15,7 @@ groups:
       summary: 'TEST ALERT - PLEASE IGNORE - The number of metrics for devices of type {{ $labels.module }} got less - this should be checked'
 
   - alert: SNMPExporterAvailabilityMissingExporter
-    expr: up{name!~"la-br-1.*|LA-BR-1.*|.*-bb112|ap-cn-1b-gmp-bb059-220.*",server_name!~"la-br-1.*|LA-BR-1.*|.*-bb112",job="snmp",module!~"asr01|asr02|asr03|ipn"} == 0
+    expr: up{job="snmp",module!~"asr01|asr02|asr03|ipn"} == 0
     for: 15m
     labels:
       severity: info
