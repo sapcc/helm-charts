@@ -82,6 +82,20 @@ data:
         priv_password: {{ $switch.priv_password }}
         context_name: {{ $switch.context_name }}
 {{- end }}
+        {{- else if .Values.asa.snmpv3.enabled }}
+    asa:
+{{ $.Files.Get "_snmp-exporter-asa.yaml" | indent 4}}
+      version: {{ .Values.asa.snmpv3.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.asa.snmpv3.security_level }}
+        username: {{ .Values.asa.snmpv3.username }}
+        password: {{ .Values.asa.snmpv3.password }}
+        auth_protocol: {{ .Values.asa.snmpv3.auth_protocol }}
+        priv_protocol: {{ .Values.asa.snmpv3.priv_protocol }}
+        priv_password: {{ .Values.asa.snmpv3.priv_password }}
 {{- end }}
     asr:
 {{ .Files.Get "_snmp-exporter-asr.yaml" | indent 4}}
