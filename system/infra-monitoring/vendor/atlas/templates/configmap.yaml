@@ -193,9 +193,9 @@ data:
                 job: "snmp"
               metrics_label: "asa"
               target: 1
-              manufacturer: "cisco"
-              region: "{{ .Values.global.region }}"
-              q: "asa"
+              role: "firewall"
+              tag: "admin-context"
+              q: "{{ $root.Values.global.region }}"
               status: "1"
 {{- range $switch := .Values.global.asa.context }}
             - custom_labels:
@@ -203,9 +203,9 @@ data:
                 module: "asa{{ $switch.context_name | lower }}"
               metrics_label: "asa{{ $switch.context_name | lower }}"
               target: 1
-              region: "{{ $root.Values.global.region }}"
-              manufacturer: "cisco"
-              q: "asa"
+	      role: "firewall"
+              tag: "{{ $switch.context_name | lower }}"
+              q: "{{ $root.Values.global.region }}"
               status: "1"
 {{- end }}
 {{- else if .Values.asa.snmpv3.enabled }}
