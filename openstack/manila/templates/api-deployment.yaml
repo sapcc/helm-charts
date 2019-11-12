@@ -4,9 +4,13 @@ apiVersion: extensions/v1beta1
 metadata:
   name: manila-api
   labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
     system: openstack
-    type: api
     component: manila
+    type: api
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -30,6 +34,25 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      initContainers:
+      - name: kubernetes-entrypoint
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-api:{{required ".Values.global.imageVersionManilaApi is missing" .Values.imageVersionManilaApi}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /usr/local/bin/kubernetes-entrypoint
+        env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: {{ .Release.Name }}-migration
+            - name: DEPENDENCY_SERVICE
+{{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+{{- end }}
+            - name: COMMAND
+              value: "true"
       containers:
         - name: manila-api
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-api:{{required ".Values.global.imageVersionManilaApi is missing" .Values.imageVersionManilaApi}}
@@ -149,7 +172,7 @@ spec:
               readOnly: true
           resources:
             requests:
-              cpu: 1m
+              cpu: 50m
               memory: 32Mi
       volumes:
         - name: etcmanila
