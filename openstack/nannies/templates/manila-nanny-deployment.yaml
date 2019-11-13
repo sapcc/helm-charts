@@ -31,7 +31,7 @@ spec:
       containers:
 {{- if .Values.manila_nanny.db_purge.enabled }}
         - name: db-consistency-and-purge
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.imageVersionManilaNanny}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.manila_nanny.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -44,11 +44,13 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-{{- if eq .Values.mariadb.enabled true }}
+              {{- if required ".Values.manila_nanny.maridb" .Values.manila_nanny.mariadb }}
+              {{- if eq .Values.manila_nanny.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api"
-{{- else }}
+              {{- else }}
               value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-api"
-{{- end }}
+              {{- end }}
+              {{- end }}
             - name: MANILA_DB_PURGE_ENABLED
               value: {{ .Values.manila_nanny.db_purge.enabled | quote }}
             - name: MANILA_DB_PURGE_OLDER_THAN
@@ -69,14 +71,17 @@ spec:
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
-          {{- if .Values.pod.resources.nanny }}
+          {{- if .Values.manila_nanny.db_purge.resources }}
           resources:
-{{ toYaml .Values.pod.resources.nanny | indent 13 }}
+            {{ toYaml .Values.manila_nanny.db_purge.resources | nindent 13 }}
+          {{- else if .Values.manila_nanny.resources }}
+          resources:
+            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
 {{- if .Values.manila_nanny.quota_sync.enabled }}
         - name: quota-sync
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.imageVersionManilaNanny}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.manila_nanny.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -99,14 +104,17 @@ spec:
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
-          {{- if .Values.pod.resources.nanny_quota }}
+          {{- if .Values.manila_nanny.quota_sync.resources }}
           resources:
-{{ toYaml .Values.pod.resources.nanny_quota | indent 13 }}
+            {{ toYaml .Values.manila_nanny.quota_sync.resources | nindent 13 }}
+          {{- else if .Values.manila_nanny.resources }}
+          resources:
+            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
 {{- if .Values.manila_nanny.db_cleanup.enabled }}
         - name: db-cleanup
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.imageVersionManilaNanny}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.manila_nanny.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -129,14 +137,17 @@ spec:
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
-          {{- if .Values.pod.resources.nanny }}
+          {{- if .Values.manila_nanny.db_cleanup.resources }}
           resources:
-{{ toYaml .Values.pod.resources.nanny | indent 13 }}
+            {{ toYaml .Values.manila_nanny.db_cleanup.resources | nindent 13 }}
+          {{- else if .Values.manila_nanny.resources }}
+          resources:
+            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
 {{- if .Values.manila_nanny.share_size_sync.enabled }}
         - name: share-size-sync
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.imageVersionManilaNanny}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/manila-nanny:{{.Values.manila_nanny.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -159,9 +170,12 @@ spec:
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
-          {{- if .Values.pod.resources.nanny }}
+          {{- if .Values.manila_nanny.share_size_sync.resources }}
           resources:
-{{ toYaml .Values.pod.resources.nanny | indent 13 }}
+            {{ toYaml .Values.manila_nanny.share_size_sync.resources | nindent 13 }}
+          {{- else if .Values.manila_nanny.resources }}
+          resources:
+            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
 {{- end }}

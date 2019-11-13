@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: reexport
-          image: "{{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/netapp-manila-nanny:{{.Values.imageVersionNetappManilaNanny}}"
+          image: "{{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/netapp-manila-nanny:{{.Values.manila_nanny.image_version}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -43,7 +43,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-{{- if eq .Values.mariadb.enabled true }}
+{{- if eq .Values.manila_nanny.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api"
 {{- else }}
               value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-api"
@@ -74,9 +74,12 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
-          {{- if .Values.pod.resources.netapp_nanny }}
+          {{- if .Values.manila_nanny.netapp.resources }}
           resources:
-{{ toYaml .Values.pod.resources.netapp_nanny | indent 13 }}
+            {{ toYaml .Values.manila_nanny.netapp.resources | nindent 13 }}
+          {{- else if .Values.manila_nanny.resources }}
+          resources:
+            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
       volumes:
         - name: etcmanila
