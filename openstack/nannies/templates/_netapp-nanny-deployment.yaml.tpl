@@ -24,9 +24,9 @@ spec:
     metadata:
       labels:
         name: manila-share-netapp-{{$share.name}}-nanny
-      annotations:
-        configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
+{{/*      annotations:*/}}
+{{/*        configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}*/}}
+{{/*        configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}*/}}
     spec:
       containers:
         - name: reexport
