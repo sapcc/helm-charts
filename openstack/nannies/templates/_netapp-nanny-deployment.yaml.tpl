@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: reexport
-          image: "{{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/netapp-manila-nanny:{{.Values.manila_nanny.image_version}}"
+          image: "{{.Values.global.imageRegistry}}/monsoon/netapp-manila-nanny:{{.Values.manila_nanny.image_version}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
