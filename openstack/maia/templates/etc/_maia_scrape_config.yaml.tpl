@@ -26,11 +26,11 @@
       regex: (.+)
     - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
       target_label: __address__
-      regex: ([^:]+)(?::\d+);(\d+)
+      regex: ([^:]+)(?::\d+)?;(\d+)
       replacement: $1:$2
     - source_labels: [__address__, __meta_kubernetes_service_annotation_maia_io_port]
       target_label: __address__
-      regex: ([^:]+)(?::\d+);(\d+)
+      regex: ([^:]+)(?::\d+)?;(\d+)
       replacement: $1:$2
     - action: labelmap
       regex: __meta_kubernetes_service_label_(.+)
