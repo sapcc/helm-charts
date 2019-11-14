@@ -36,8 +36,8 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 quota_volumes = 0
 quota_snapshots = 0
 quota_gigabytes = 0
-quota_backups = 0
-quota_backup_gigabytes = 0
+quota_backups = -1
+quota_backup_gigabytes = -1
 
 # don't use quota class
 use_default_quota_class=false
