@@ -187,7 +187,6 @@ data:
               has_primary_ip: true
         virtualization:
           vm:
-{{- if .Values.global.asa.enabled }}
             - custom_labels:
                 module: "asa"
                 job: "snmp"
@@ -196,28 +195,6 @@ data:
               role: "firewall"
               q: "{{ $root.Values.global.region }}"
               status: "1"
-{{- range $switch := .Values.global.asa.context }}
-            - custom_labels:
-                job: "snmp"
-                module: "asa{{ $switch.context_name | lower }}"
-              metrics_label: "asa-{{ $switch.context_name | lower }}"
-              target: 1
-              role: "firewall"
-              tag: "{{ $switch.context_name | lower }}"
-              q: "{{ $root.Values.global.region }}"
-              status: "1"
-{{- end }}
-{{- else if .Values.asa.snmpv3.enabled }}
-            - custom_labels:
-                module: "asa"
-                job: "snmp"
-              metrics_label: "asa"
-              target: 1
-              manufacturer: "cisco"
-              region: "{{ .Values.global.region }}"
-              q: "asa"
-              status: "1"
-{{- end }}
             - custom_labels:
                 job: "vcenter"
               metrics_label: "vcenter" 
