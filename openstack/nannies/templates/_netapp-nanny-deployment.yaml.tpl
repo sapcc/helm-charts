@@ -44,9 +44,9 @@ spec:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
 {{- if eq .Values.manila_nanny.mariadb.enabled true }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api"
+              value: "manila-mariadb,manila-api"
 {{- else }}
-              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-api"
+              value: "manila-postgresql,manila-api"
 {{- end }}
             - name: MANILA_NETAPP_NANNY_INTERVAL
               value: {{ .Values.manila_nanny.netapp.interval | quote }}
