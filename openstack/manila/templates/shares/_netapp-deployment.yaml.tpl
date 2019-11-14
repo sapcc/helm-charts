@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: manila-share-netapp-{{$share.name}}
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-share:{{.Values.imageVersionManilaApi}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/{{.Values.imageNameShare}}:{{.Values.imageVersionManilaApi}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
