@@ -19,7 +19,7 @@ elasticsearch.hosts: http://{{.Values.global.endpoint_host_internal}}:{{.Values.
 # kibana.index: ".kibana-6"
 
 # The default application to load.
-# kibana.defaultAppId: "discover"
+kibana.defaultAppId: "discover"
 
 # If your Elasticsearch is protected with basic auth, these are the user credentials
 # used by the Kibana server to perform maintenance on the kibana_index at startup. Your Kibana
