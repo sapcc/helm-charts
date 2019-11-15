@@ -1,3 +1,6 @@
+{{- $imageRegistry := required ".Values.global.imageRegistry" .Values.global.imageRegistry -}}
+{{- $imageNamespace := required ".Values.global.imageNamespace" .Values.global.imageNamespace -}}
+{{- $imageVersion := required ".Values.imageVersionManilaApi" .Values.imageVersionManilaApi -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -16,7 +19,11 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: manila-migration
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/{{.Values.imageNameAPI}}:{{required ".Values.global.imageVersionManilaApi is missing" .Values.imageVersionManilaApi}}
+          {{- if .Values.loci.enabled }}
+          image: {{$imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersionLoci}}
+          {{- else }}
+          image: {{$imageRegistry}}/{{$imageNamespace}}/ubuntu-source-manila-api:{{$imageVersion}}
+          {{- end }}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint

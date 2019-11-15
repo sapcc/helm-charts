@@ -1,3 +1,6 @@
+{{- $imageRegistry := required ".Values.global.imageRegistry" .Values.global.imageRegistry -}}
+{{- $imageNamespace := required ".Values.global.imageNamespace" .Values.global.imageNamespace -}}
+{{- $imageVersion := required ".Values.imageVersionManilaApi" .Values.imageVersionManilaApi -}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -27,7 +30,11 @@ spec:
     spec:
       containers:
         - name: manila-scheduler
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/{{.Values.imageNameScheduler}}:{{.Values.imageVersionManilaApi}}
+          {{- if .Values.loci.enabled }}
+          image: {{$imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersionLoci}}
+          {{- else }}
+          image: {{$imageRegistry}}/{{$imageNamespace}}/ubuntu-source-manila-scheduler:{{$imageVersion}}
+          {{- end }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init

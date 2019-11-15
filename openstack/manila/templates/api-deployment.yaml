@@ -1,3 +1,6 @@
+{{- $imageRegistry := required ".Values.global.imageRegistry" .Values.global.imageRegistry -}}
+{{- $imageNamespace := required ".Values.global.imageNamespace" .Values.global.imageNamespace -}}
+{{- $imageVersion := required ".Values.imageVersionManilaApi" .Values.imageVersionManilaApi -}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -36,7 +39,11 @@ spec:
 {{ tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       initContainers:
       - name: kubernetes-entrypoint
-        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/{{.Values.imageNameAPI}}:{{required ".Values.imageVersionManilaApi is missing" .Values.imageVersionManilaApi}}
+        {{- if .Values.loci.enabled }}
+        image: {{$imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersionLoci}}
+        {{- else }}
+        image: {{$imageRegistry}}/{{$imageNamespace}}/ubuntu-source-manila-api:{{$imageVersion}}
+        {{- end }}
         imagePullPolicy: IfNotPresent
         command:
           - /usr/local/bin/kubernetes-entrypoint
@@ -46,16 +53,20 @@ spec:
             - name: DEPENDENCY_JOBS
               value: {{ .Release.Name }}-migration
             - name: DEPENDENCY_SERVICE
-{{- if eq .Values.mariadb.enabled true }}
+              {{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- else }}
+              {{- else }}
               value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- end }}
+              {{- end }}
             - name: COMMAND
               value: "true"
       containers:
         - name: manila-api
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/{{.Values.imageNameAPI}}:{{required ".Values.imageVersionManilaApi is missing" .Values.imageVersionManilaApi}}
+          {{- if .Values.loci.enabled }}
+          image: {{$imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersionLoci}}
+          {{- else }}
+          image: {{$imageRegistry}}/{{$imageNamespace}}/ubuntu-source-manila-api:{{$imageVersion}}
+          {{- end }}
           imagePullPolicy: IfNotPresent
           command:
             - /scripts/manila-api.sh
@@ -78,11 +89,11 @@ spec:
             - name: STATSD_PORT
               value: "9125"
             - name: DEPENDENCY_SERVICE
-{{- if eq .Values.mariadb.enabled true }}
+              {{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- else }}
+              {{- else }}
               value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- end }}
+              {{- end }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -153,7 +164,7 @@ spec:
               readOnly: true
           {{- if .Values.pod.resources.api }}
           resources:
-{{ toYaml .Values.pod.resources.api | indent 13 }}
+            {{ toYaml .Values.pod.resources.api | nindent 13 }}
           {{- end }}
         - name: statsd
           image: prom/statsd-exporter:v0.8.1
