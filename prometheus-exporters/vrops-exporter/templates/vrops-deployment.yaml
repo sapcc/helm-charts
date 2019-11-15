@@ -15,15 +15,15 @@ spec:
         type: exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ .Values.vrops.port_number | quote }}
+        prometheus.io/port: {{ required ".Values.vrops.alerts.port missing" .Values.vrops.port_number | quote }}
         prometheus.io/targets: {{ required ".Values.vrops.alerts.prometheus missing" .Values.vrops.alerts.prometheus | quote }}
     spec:
       containers:
          - name: vrops-exporter
-           image: {{ required ".Values.vrops.image.imageRegistry variable missing" .Values.vrops.image.imageRegistry }}/{{ .Values.vrops.image.namespace }}/{{ .Values.vrops.image.name }}:{{ .Values.vrops.image.tag }}
+           image: {{ required ".Values.vrops.image.imageRegistry variable missing" .Values.vrops.image.imageRegistry }}/{{ required ".Values.vrops.image.namespace variable missing" .Values.vrops.image.namespace }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" .Values.vrops.image.tag }}
            ports:
              - name: metrics
-               containerPort: {{ .Values.vrops.port_number }}
+               containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
            #livenessProbe:
              #httpGet:
                #path: /metrics
@@ -37,4 +37,4 @@ spec:
            - name: PASSWORD
              value: {{ required "vrops.password variable is missing" .Values.vrops.password }}
            - name: EXPORT_PORT
-             value: {{ .Values.vrops.port_number | quote }}
+             value: {{ required ".Values.vrops.port missing" .Values.vrops.port_number | quote }}
