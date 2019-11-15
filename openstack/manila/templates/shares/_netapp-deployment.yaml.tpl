@@ -1,9 +1,9 @@
 {{- define "share_netapp" -}}
+{{$share := index . 1 -}}
+{{with index . 0}}
 {{- $imageRegistry := required ".Values.global.imageRegistry" .Values.global.imageRegistry -}}
 {{- $imageNamespace := required ".Values.global.imageNamespace" .Values.global.imageNamespace -}}
 {{- $imageVersion := required ".Values.imageVersionManilaApi" .Values.imageVersionManilaApi -}}
-{{$share := index . 1 -}}
-{{with index . 0}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
