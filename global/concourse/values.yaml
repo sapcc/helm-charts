@@ -168,5 +168,21 @@ gitResourceProxy:
   enabled: true
   debug: true
   image: sapcc/concourse-git-resource-proxy
-  imageTag: 0.4.0
+  imageTag: 0.4.3
   imagePullPolicy: IfNotPresent
+
+nginx-ingress:
+  controller:
+    ingressClass: 'git-proxy'
+    scope:
+      enabled: true
+    extraArgs:
+      enable-dynamic-configuration: 'false'
+    config:
+      proxy-send-timeout: "300"
+      proxy-read-timeout: "300"
+      proxy-body-size: "0k"
+      disable-ipv6: "true"
+      load-balance: "least_conn"
+  defaultBackend:
+    enabled: false

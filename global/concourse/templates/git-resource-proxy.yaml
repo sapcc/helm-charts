@@ -8,7 +8,7 @@ metadata:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8080"
     prometheus.io/targets: kubernetes
-  name: git-resource-proxy
+  name: git-resource-proxy-svc
 spec:
   ports:
   - port: 8080
@@ -46,4 +46,36 @@ spec:
         {{- end }}
         ports:
         - containerPort: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: git-resource-proxy
+  annotations:
+    kubernetes.io/ingress.class: "git-proxy"
+    nginx.ingress.kubernetes.io/load-balance: "least_conn"
+spec:
+  rules:
+  - host: git-resource-proxy
+    http:
+      paths:
+      - backend:
+          serviceName: git-resource-proxy-svc
+          servicePort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: git-resource-proxy
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx-ingress
+    component: controller
+    release: {{ .Release.Name }}
+  sessionAffinity: None
+  type: ClusterIP
 {{- end }}
