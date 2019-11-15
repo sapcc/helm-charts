@@ -52,7 +52,7 @@ groups:
       context: apiserver
       dashboard: kubernetes-apiserver
     annotations:
-      description: ApiServerLatency for {{ $labels.resource }} is higher then usual for the past 15 minutes. Inspect apiserver logs for the root cause.
+      description: ApiServerLatency for {{`{{ $labels.resource }}`}} is higher then usual for the past 15 minutes. Inspect apiserver logs for the root cause.
       summary: ApiServerLatency is unusally high
 
   - alert: KubernetesApiServerEtcdAccessLatency
