@@ -34,7 +34,7 @@ spec:
       containers:
         - name: manila-share-netapp-{{$share.name}}
           {{- if .Values.loci.enabled }}
-          image: {{$imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersionLoci}}
+          image: {{$imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
           {{- else }}
           image: {{$imageRegistry}}/{{$imageNamespace}}/ubuntu-source-manila-share:{{$imageVersion}}
           {{- end }}
