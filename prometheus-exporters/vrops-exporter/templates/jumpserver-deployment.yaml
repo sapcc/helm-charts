@@ -1,0 +1,40 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: vrops-exporter 
+  namespace: infra-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: vrops-exporter 
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: vrops-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.vrops-exporter.port_number | quote }}
+        prometheus.io/targets: {{ required ".Values.vrops-exporter.alerts.prometheus missing" .Values.vrops-exporter.alerts.prometheus | quote }}
+    spec:
+      containers:
+         - name: vrops-exporter
+           image: {{ required ".Values.vrops-exporter.image.imageRegistry variable missing" .Values.vrops-exporter.image.imageRegistry }}/{{ .Values.vrops-exporter.image.namespace }}/{{ .Values.vrops-exporter.image.name }}:{{ .Values.vrops-exporter.image.tag }}
+           ports:
+             - name: metrics
+               containerPort: {{ .Values.vrops-exporter.port_number }}
+           #livenessProbe:
+             #httpGet:
+               #path: /metrics
+               #port: {{ .Values.vrops-exporter.port_number }}
+             #initialDelaySeconds: 30
+             #timeoutSeconds: 10
+             #periodSeconds: 15
+           env:
+           - name: USER
+             value: {{ required "vrops-exporter.user variable is missing" .Values.vrops-exporter.user }}
+           - name: PASSWORD
+             value: {{ required "vrops-exporter.password variable is missing" .Values.vrops-exporter.password }}
+           - name: EXPORT_PORT
+             value: {{ .Values.vrops-exporter.port_number | quote }}
