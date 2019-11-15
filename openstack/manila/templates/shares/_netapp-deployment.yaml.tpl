@@ -1,7 +1,7 @@
+{{- define "share_netapp" -}}
 {{- $imageRegistry := required ".Values.global.imageRegistry" .Values.global.imageRegistry -}}
 {{- $imageNamespace := required ".Values.global.imageNamespace" .Values.global.imageNamespace -}}
 {{- $imageVersion := required ".Values.imageVersionManilaApi" .Values.imageVersionManilaApi -}}
-{{- define "share_netapp" -}}
 {{$share := index . 1 -}}
 {{with index . 0}}
 kind: Deployment
