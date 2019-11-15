@@ -43,8 +43,8 @@ groups:
       summary: ApiServers failed to be scraped
 
   - alert: KubernetesApiServerLatency
-    expr: max(histogram_quantile(0.99, sum without (instance,node,resource) (apiserver_request_latencies_bucket{verb!~"CONNECT|WATCHLIST|WATCH|LIST",resource!~"persistentvolumes|customresourcedefinitions",subresource!="log|persistentvolumes"})) / 1e6 > 3.0)
-    for: 1h
+    expr: histogram_quantile(0.99, sum(rate(apiserver_request_latencies_bucket{verb!~"CONNECT|WATCHLIST|WATCH|LIST",subresource!="log"}[5m])) by (resource, le)) / 1e6 > 2
+    for: 30m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
@@ -52,7 +52,7 @@ groups:
       context: apiserver
       dashboard: kubernetes-apiserver
     annotations:
-      description: ApiServerLatency is expected to hover around 1-2s. It is currently unusually high for at least 1 resource! 
+      description: ApiServerLatency for {{ $labels.resource }} is higher then usual for the past 15 minutes. Inspect apiserver logs for the root cause.
       summary: ApiServerLatency is unusally high
 
   - alert: KubernetesApiServerEtcdAccessLatency
