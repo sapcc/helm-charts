@@ -23,8 +23,13 @@ template: |
 
       [backend_defaults]
       vmware_host_ip = {= host =}
+      {{- if .Values.vmware_host_username | default "" }}
+      vmware_host_username = {{ .Values.vmware_host_username }}
+      vmware_host_password = {= "{{ .Values.vmware_host_username }}" | derive_password | quote =}
+      {{- else }}
       vmware_host_username = {= username | quote =}
       vmware_host_password = {= password | quote =}
+      {{- end }}
       backend_availability_zone = {= availability_zone | quote =}
       {{- range $key, $value := .Values.backend_defaults}}
       {{ $key }} = {{ $value }}
