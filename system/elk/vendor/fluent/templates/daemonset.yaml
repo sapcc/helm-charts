@@ -6,9 +6,6 @@ metadata:
   namespace: elk
   annotations:
     kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
-    prometheus.io/targets: infra-collector
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "24231"
 spec:
   minReadySeconds: 15
   updateStrategy:
@@ -24,6 +21,9 @@ spec:
         checksum/fluent-start.tpl: {{ include  (print $.Template.BasePath "/_fluent-start.tpl") . | sha256sum }}
         checksum/pattern.tpl: {{ include  (print $.Template.BasePath "/_pattern.tpl") . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
+        prometheus.io/targets: infra-collector
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "24231"
     spec:
       {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
