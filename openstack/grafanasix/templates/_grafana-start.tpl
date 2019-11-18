@@ -23,6 +23,8 @@ function start_application {
   grafana-cli plugins install natel-discrete-panel
   grafana-cli plugins install vonage-status-panel
   grafana-cli plugins install blackmirror1-statusbygroup-panel
+  grafana-cli plugins install digrich-bubblechart-panel
+  grafana-cli plugins install briangann-datatable-panel
   # since grafana version 4.6.2 the histogram feature is part of the normal graph in the axes tab, so this plugin is no longer needed
   # grafana-cli plugins install mtanda-histogram-panel
   grafana-cli plugins install grafana-worldmap-panel
