@@ -75,7 +75,7 @@
     @type forward
     <server>
       name ${hostname}
-      hostname ${hostname}
+      host localhost
       port 24224
       weight 60
     </server>
