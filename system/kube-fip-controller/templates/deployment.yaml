@@ -1,0 +1,58 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: {{ template "name" . }}
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+
+      labels:
+        app: kube-fip-controller
+
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+    spec:
+{{- if and .Values.rbac.create .Values.rbac.serviceAccountName }}
+{{- if not (eq .Values.rbac.serviceAccountName "default") }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+{{- end -}}
+{{- end }}
+
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "name" . }}-config
+
+      containers:
+        - name: controller
+          image: {{ include "image" . }}
+          imagePullPolicy: {{ required ".Values.image.pullPolicy missing" .Values.image.pullPolicy }}
+          env:
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "name" . }}-secret
+                  key: os-password
+          args:
+            - controller
+            - --config=/etc/kube-fip-controller/config/openstack.conf
+            - --default-floating-network={{ required ".Values.openstack.defaultFloatingNetworkName missing" .Values.openstack.defaultFloatingNetworkName }}
+            - --default-floating-subnet={{ required ".Values.openstack.defaultFloatingSubnetName missing" .Values.openstack.defaultFloatingSubnetName }} 
+            - --metric-port={{ required ".Values.metrics.port missing" .Values.metrics.port }}
+            - --recheck-interval={{ required ".Values.recheckInterval missing" .Values.recheckInterval }}
+            - --threadiness={{ required ".Values.threadiness missing" .Values.threadiness }}
+            - --debug={{ default false .Values.debug }}
+
+          volumeMounts:
+            - name: config
+              mountPath: /etc/kube-fip-controller/config/
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
