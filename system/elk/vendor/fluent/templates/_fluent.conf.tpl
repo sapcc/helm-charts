@@ -27,6 +27,27 @@
   keep_time_key true
 </source>
 
+# source
+<source>
+  @type forward
+  bind 0.0.0.0
+  port 24224
+</source>
+
+# count number of incoming records per tag
+<filter company.*>
+  @type prometheus
+  <metric>
+    name fluentd_input_status_num_records_total
+    type counter
+    desc The total number of incoming records
+    <labels>
+      tag ${tag}
+      hostname ${hostname}
+    </labels>
+  </metric>
+</filter>
+
 <filter kubernetes.**>
   @type kubernetes_metadata
   kubernetes_url https://KUBERNETES_SERVICE_HOST
@@ -46,6 +67,33 @@
     grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
   </parse>
 </filter>
+
+# count number of outgoing records per tag
+<match company.*>
+  @type copy
+  <store>
+    @type forward
+    <server>
+      name ${hostname}
+      hostname ${hostname}
+      port 24224
+      weight 60
+    </server>
+  </store>
+  <store>
+    @type prometheus
+    <metric>
+      name fluentd_output_status_num_records_total
+      type counter
+      desc The total number of outgoing records
+      <labels>
+        tag ${tag}
+        hostname ${hostname}
+      </labels>
+    </metric>
+  </store>
+</match>
+
 
 <filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.keystone** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
   @type parser
@@ -402,6 +450,20 @@
 <match kubernetes.var.log.containers.fluent**>
   @type null
 </match>
+
+<source>
+  @type prometheus
+  bind 0.0.0.0
+  port 24231
+  metrics_path /metrics
+</source>
+<source>
+  @type prometheus_output_monitor
+  interval 10
+  <labels>
+    hostname ${hostname}
+  </labels>
+</source>
 
 <match **>
    @type elasticsearch_dynamic
