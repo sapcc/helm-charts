@@ -27,26 +27,11 @@
   keep_time_key true
 </source>
 
-# source
 <source>
   @type forward
   bind 0.0.0.0
   port 24224
 </source>
-
-# count number of incoming records per tag
-<filter company.*>
-  @type prometheus
-  <metric>
-    name fluentd_input_status_num_records_total
-    type counter
-    desc The total number of incoming records
-    <labels>
-      tag ${tag}
-      hostname ${hostname}
-    </labels>
-  </metric>
-</filter>
 
 <filter kubernetes.**>
   @type kubernetes_metadata
@@ -55,6 +40,21 @@
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   use_journal 'false'
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
+</filter>
+
+# count number of incoming records per tag
+<filter kubernetes.**>
+  @type prometheus
+  <metric>
+    name fluentd_input_status_num_records_total
+    type counter
+    desc The total number of incoming records
+    <labels>
+      tag ${tag}
+      hostname ${hostname}
+      nodename ${K8S_NODE_NAME}
+    </labels>
+  </metric>
 </filter>
 
 <filter kubernetes.var.log.containers.es**>
@@ -69,7 +69,7 @@
 </filter>
 
 # count number of outgoing records per tag
-<match company.*>
+<match kubernetes.**>
   @type copy
   <store>
     @type forward
@@ -89,6 +89,7 @@
       <labels>
         tag ${tag}
         hostname ${hostname}
+        nodename ${K8S_NODE_NAME}
       </labels>
     </metric>
   </store>
