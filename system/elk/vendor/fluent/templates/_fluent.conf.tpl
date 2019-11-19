@@ -35,7 +35,7 @@
 
 <source>
   @type prometheus_monitor
-</source
+</source>
 
 <filter kubernetes.**>
   @type kubernetes_metadata
@@ -54,7 +54,7 @@
     type counter
     desc The total number of incoming records
     <labels>
-      container_name $.kubernetes.labels.name
+      container $.kubernetes.labels.name
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
     </labels>
@@ -71,34 +71,6 @@
     grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
   </parse>
 </filter>
-
-# count number of outgoing records per tag
-<match kubernetes.**>
-  @type copy
-  <store>
-    @type forward
-    <server>
-      name ${hostname}
-      host localhost
-      port 24224
-      weight 60
-    </server>
-  </store>
-  <store>
-    @type prometheus
-    <metric>
-      name fluentd_output_status_num_records_total
-      type counter
-      desc The total number of outgoing records
-      <labels>
-        container_name $.kubernetes.labels.name
-        hostname ${hostname}
-        nodename "#{ENV['K8S_NODE_NAME']}"
-      </labels>
-    </metric>
-  </store>
-</match>
-
 
 <filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.keystone** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
   @type parser
@@ -470,7 +442,32 @@
   </labels>
 </source>
 
+# count number of outgoing records per tag
 <match **>
+  @type copy
+  <store>
+    @type forward
+    <server>
+      name ${hostname}
+      host localhost
+      port 24224
+      weight 60
+    </server>
+  </store>
+  <store>
+    @type prometheus
+    <metric>
+      name fluentd_output_status_num_records_total
+      type counter
+      desc The total number of outgoing records
+      <labels>
+        container $.kubernetes.labels.name
+        hostname ${hostname}
+        nodename "#{ENV['K8S_NODE_NAME']}"
+      </labels>
+    </metric>
+  </store>
+  <store>
    @type elasticsearch_dynamic
    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
    port {{.Values.global.elk_elasticsearch_ssl_port}}
@@ -501,4 +498,5 @@
      flush_interval 3s
    </buffer>
 # second is missing, it it is only deployed to one elk cluster
+  </store>
  </match>
