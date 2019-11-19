@@ -52,7 +52,7 @@
     <labels>
       tag ${tag}
       hostname ${hostname}
-      nodename ${K8S_NODE_NAME}
+      nodename "#{ENV['K8S_NODE_NAME']}"
     </labels>
   </metric>
 </filter>
@@ -89,7 +89,7 @@
       <labels>
         tag ${tag}
         hostname ${hostname}
-        nodename ${K8S_NODE_NAME}
+        nodename "#{ENV['K8S_NODE_NAME']}"
       </labels>
     </metric>
   </store>
