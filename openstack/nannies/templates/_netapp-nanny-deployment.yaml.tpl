@@ -43,11 +43,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-{{- if .Values.manila_nanny.mariadb.enabled }}
+              {{- if .Values.manila_nanny.mariadb.enabled }}
               value: "manila-mariadb,manila-api"
-{{- else }}
+              {{- else }}
               value: "manila-postgresql,manila-api"
-{{- end }}
+              {{- end }}
             - name: MANILA_NETAPP_NANNY_INTERVAL
               value: {{ .Values.manila_nanny.netapp.interval | quote }}
             {{- if .Values.sentry.enabled }}

@@ -44,11 +44,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-{{- if .Values.manila_nanny.mariadb.enabled }}
+              {{- if .Values.manila_nanny.mariadb.enabled }}
               value: "manila-mariadb,manila-api"
-{{- else }}
+              {{- else }}
               value: "manila-postgresql,manila-api"
-{{- end }}
+              {{- end }}
             - name: MANILA_DB_PURGE_ENABLED
               value: {{ .Values.manila_nanny.db_purge.enabled | quote }}
             - name: MANILA_DB_PURGE_OLDER_THAN
@@ -92,7 +92,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-              value: "manila-api,manila-mariadb"
+              {{- if .Values.manila_nanny.mariadb.enabled }}
+              value: "manila-mariadb,manila-api"
+              {{- else }}
+              value: "manila-postgresql,manila-api"
+              {{- end }}
             - name: MANILA_QUOTA_SYNC_ENABLED
               value: {{ .Values.manila_nanny.quota_sync.enabled | quote }}
             - name: MANILA_QUOTA_SYNC_DRY_RUN
@@ -125,7 +129,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-              value: "manila-api,manila-mariadb"
+              {{- if .Values.manila_nanny.mariadb.enabled }}
+              value: "manila-mariadb,manila-api"
+              {{- else }}
+              value: "manila-postgresql,manila-api"
+              {{- end }}
             - name: MANILA_DB_CLEANUP_ENABLED
               value: {{ .Values.manila_nanny.db_cleanup.enabled | quote }}
             - name: MANILA_DB_CLEANUP_DRY_RUN
@@ -157,6 +165,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              {{- if .Values.manila_nanny.mariadb.enabled }}
+              value: "manila-mariadb,manila-api"
+              {{- else }}
+              value: "manila-postgresql,manila-api"
+              {{- end }}
             - name: MANILA_SHARE_SIZE_SYNC_ENABLED
               value: "true"
             - name: MANILA_SHARE_SIZE_SYNC_DRY_RUN
