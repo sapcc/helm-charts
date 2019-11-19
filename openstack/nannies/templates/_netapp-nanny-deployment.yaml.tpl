@@ -43,7 +43,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-{{- if eq .Values.manila_nanny.mariadb.enabled true }}
+{{- if .Values.manila_nanny.mariadb.enabled }}
               value: "manila-mariadb,manila-api"
 {{- else }}
               value: "manila-postgresql,manila-api"
