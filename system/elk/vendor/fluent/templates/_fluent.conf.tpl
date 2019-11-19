@@ -57,6 +57,7 @@
       container $.kubernetes.container_name
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
+      index logstash
     </labels>
   </metric>
 </filter>
@@ -464,6 +465,7 @@
         container $.kubernetes.container_name
         hostname ${hostname}
         nodename "#{ENV['K8S_NODE_NAME']}"
+        index logstash
       </labels>
     </metric>
   </store>
