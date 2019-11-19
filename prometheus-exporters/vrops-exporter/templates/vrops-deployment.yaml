@@ -24,17 +24,14 @@ spec:
            ports:
              - name: metrics
                containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
-           #livenessProbe:
-             #httpGet:
-               #path: /metrics
-               #port: {{ .Values.vrops.port_number }}
-             #initialDelaySeconds: 30
-             #timeoutSeconds: 10
-             #periodSeconds: 15
-           env:
-           - name: USER
-             value: {{ required "vrops.user variable is missing" .Values.vrops.user }}
-           - name: PASSWORD
-             value: {{ required "vrops.password variable is missing" .Values.vrops.password }}
-           - name: EXPORT_PORT
-             value: {{ required ".Values.vrops.port missing" .Values.vrops.port_number | quote }}
+           command:
+             - ./vrops-exporter.py
+           args:
+             - -o {{ ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }} -u {{ required "Values.vrops.user variable is missing" .Values.vrops.user }} -p {{ "Values.vrops.password variable is missing" .Values.vrops.password }}
+           livenessProbe:
+             httpGet:
+               path: /metrics
+               port: {{ ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
+             initialDelaySeconds: 30
+             timeoutSeconds: 10
+             periodSeconds: 15
