@@ -54,7 +54,7 @@
     type counter
     desc The total number of incoming records
     <labels>
-      container $.kubernetes.labels.name
+      container $.kubernetes.container_name
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
     </labels>
@@ -461,7 +461,7 @@
       type counter
       desc The total number of outgoing records
       <labels>
-        container $.kubernetes.labels.name
+        container $.kubernetes.container_name
         hostname ${hostname}
         nodename "#{ENV['K8S_NODE_NAME']}"
       </labels>
