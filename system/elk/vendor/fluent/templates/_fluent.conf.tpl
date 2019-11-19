@@ -33,6 +33,10 @@
   port 24224
 </source>
 
+<source>
+  @type prometheus_monitor
+</source
+
 <filter kubernetes.**>
   @type kubernetes_metadata
   kubernetes_url https://KUBERNETES_SERVICE_HOST
@@ -50,7 +54,7 @@
     type counter
     desc The total number of incoming records
     <labels>
-      tag ${tag}
+      container_name $.kubernetes.labels.name
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
     </labels>
@@ -87,7 +91,7 @@
       type counter
       desc The total number of outgoing records
       <labels>
-        tag ${tag}
+        container_name $.kubernetes.labels.name
         hostname ${hostname}
         nodename "#{ENV['K8S_NODE_NAME']}"
       </labels>
