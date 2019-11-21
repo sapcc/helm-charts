@@ -17,4 +17,4 @@ discover_hosts_in_cells_interval = 60
 
 [filter_scheduler]
 bigvm_host_size_filter_uses_flavor_extra_specs = true
-bigvm_host_size_filter_host_fractions = full:1,half:0.5,two_thirds:0.67
+bigvm_host_size_filter_host_fractions = full:1,half:0.5,two_thirds:0.71
