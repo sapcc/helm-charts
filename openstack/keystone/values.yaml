@@ -10,16 +10,12 @@ global:
   dbUser: keystone
   dbPassword: ""
 # imageRegistry: hub.global.cloud.sap
-  database: postgres
 
 debug: false
 insecure_debug: false
 
 # run a db_sync to migrate the db schema ?
 run_db_migration: false
-
-# migrate postgres to mariadb - both database pods need to be up & running - be carefull!
-run_mariabdb_migration: false
 
 # ignore invalid role assignments
 skipRepairRoleAssignments: false
@@ -262,7 +258,6 @@ memcached:
   nodeAffinity: {}
 
 mariadb:
-  enabled: false
   name: keystone
   initdb_configmap: keystone-initdb
 
@@ -367,100 +362,6 @@ mysql_metrics:
       values:
       - "size_in_mb"
 
-postgresql:
-  enabled: true
-  custom_repository: true
-  imageTag: "9.4.14"
-
-  postgresDatabase: keystone
-  postgresUser: postgres
-  postgresPassword: ""
-
-  dbInit: keystone-db-init
-  dbMaintain: keystone-db-maintain
-
-  metrics:
-    enabled: true
-
-  persistence:
-    enabled: false
-
-  backup:
-    enabled: false
-    imageTag: v0.5.15
-
-  resources:
-    requests:
-      cpu: 500m
-      memory: 500Mi
-
-pgmetrics:
-  db_name: keystone
-
-  customMetrics:
-    openstack_roles_total:
-      query: "SELECT COUNT(*) as gauge FROM role"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone role count"
-    openstack_users_total:
-      query: "SELECT COUNT(*) as gauge FROM id_mapping WHERE entity_type = 'user'"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone user count"
-    openstack_groups_total:
-      query: "SELECT COUNT(*) as gauge FROM id_mapping WHERE entity_type = 'group'"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone group count"
-    openstack_domains_total:
-      query: "SELECT COUNT(*) - 1 as gauge FROM project WHERE domain_id = '<<keystone.domain.root>>'"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone domain count"
-    openstack_projects_total:
-      query: "SELECT COUNT(*) as gauge FROM project WHERE domain_id != '<<keystone.domain.root>>'"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone project count"
-    openstack_assignments_total:
-      query: "SELECT COUNT(*) as gauge FROM assignment"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone role-assignment count"
-    openstack_revocations_total:
-      query: "SELECT COUNT(*) as gauge FROM revocation_event"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone token revocation count"
-    openstack_assignments_per_role:
-      query: "SELECT r.name AS name, COUNT(*) AS gauge FROM assignment a JOIN role r ON r.id = a.role_id GROUP BY r.name"
-      metrics:
-        - name:
-            usage: "LABEL"
-            description: "Name of assigned role"
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone role-assignment count per role"
-
-  resources:
-    requests:
-      memory: 24Mi
-      cpu: 50m
-    limits:
-      memory: 64Mi
-      cpu: 200m
-
-  alerts:
-    enabled: false
-    
 rbac:
   enabled: false
 

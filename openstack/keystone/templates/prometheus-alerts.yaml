@@ -29,12 +29,7 @@ spec:
         summary: Keystone cannot be scraped
 
     - alert: OpenstackKeystoneDatabaseScrapeMissing
-  {{- if eq .Values.global.database "postgres" }}
-      expr: absent(up{app="keystone-postgresql", type="database"})
-  {{- end }}
-  {{- if eq .Values.global.database "mariadb" }}
       expr: absent(up{app="keystone-mariadb"})
-  {{- end }}
       for: 1h
       labels:
         context: availability
@@ -61,24 +56,14 @@ spec:
         summary: "A keystone server is DOWN"
 
     - alert: OpenstackKeystoneDatabaseUp
-  {{- if eq .Values.global.database "postgres" }}
-      expr: count(up{component="keystone-postgresql",type="database"} == 0) == count(up{component="keystone-postgresql",type="database"})
-  {{- end }}
-  {{- if eq .Values.global.database "mariadb" }}
       expr: count(up{component="keystone-mariadb"} == 0) == count(up{component="keystone-mariadb"})
-  {{- end }}
       for: 5m
       labels:
         context: availability
         service: keystone
         severity: critical
         tier: os
-  {{- if eq .Values.global.database "postgres" }}
-        dashboard: postgres?var-database=keystone
-  {{- end }}
-  {{- if eq .Values.global.database "mariadb" }}
         dashboard: mariadb-overview?var-host=keystone-mariadb
-  {{- end }}
         playbook: 'docs/devops/alert/keystone/#database_down'
       annotations:
         description: "Keystone database on {{`{{ $labels.instance }}`}} is DOWN."

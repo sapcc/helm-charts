@@ -16,12 +16,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "db_host"}}
-{{- if eq .Values.global.database "mariadb" -}}
 {{- if .Values.global.clusterDomain }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}
-{{- end -}}
-{{- if eq .Values.global.database "postgres" -}}
-{{- if .Values.global.clusterDomain }}{{.Release.Name}}-postgresql.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}
-{{- end -}}
 {{- end}}
 {{define "memcached_host"}}{{ if .Values.global.clusterDomain }}{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}{{end}}
 {{define "rabbitmq_host"}}{{ if .Values.global.clusterDomain }}{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}{{end}}
