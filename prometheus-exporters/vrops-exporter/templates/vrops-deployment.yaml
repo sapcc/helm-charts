@@ -26,8 +26,13 @@ spec:
                containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
            command:
              - ./vrops-exporter.py
-           args:
-             - -o {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number }} -u {{ required ".Values.vrops.user variable is missing" .Values.vrops.user }} -p {{ required ".Values.vrops.password variable is missing" .Values.vrops.password | quote }}
+           env:
+           - name: USER
+             value: {{ required ".Values.vrops.user variable is missing" .Values.vrops.user }}
+           - name: PASSWORD
+             value: {{ required ".Values.vrops.password variable is missing" .Values.vrops.password | quote }}
+           - name: PORT
+             value: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number }}
            livenessProbe:
              httpGet:
                path: /metrics
