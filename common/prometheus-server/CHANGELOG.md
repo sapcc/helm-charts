@@ -1,3 +1,7 @@
+## 3.1.1
+
+* Fix SD config for `prometheus.io/port_1` as well.
+
 ## 3.1.0
 
 * Potential **Breaking change** if the out-of-the-box pod service discovery is being used.
