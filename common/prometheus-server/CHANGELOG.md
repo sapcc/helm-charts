@@ -1,3 +1,12 @@
+## 3.1.0
+
+* Potential **Breaking change** if the out-of-the-box pod service discovery is being used.
+  To avoid double scraping of metrics from pods with multiple containers, the containers have to explicitly declare the port(s) on which they expose metrics on in their spec.
+  They will no get scraped otherwise.
+  Per default Prometheus tries to get metrics from ports with number `9102` or name `metrics`. 
+* Bump Prometheus to `v2.14.0`.
+* Update Thanos components to `v0.8.1`.  
+
 ## 3.0.5
 
 * Allow setting additional annotations on the service via `.Values.service.annotations`.
