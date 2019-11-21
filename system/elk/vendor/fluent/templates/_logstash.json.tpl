@@ -13,6 +13,12 @@
       "number_of_replicas": "1"
     }
   },
-  "mappings": {},
+  "mappings": {  
+    "mappings": {
+      "_size": {
+        "enabled": true
+      }
+    }
+},
   "aliases": {}
 }
