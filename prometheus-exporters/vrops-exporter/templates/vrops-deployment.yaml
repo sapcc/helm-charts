@@ -15,7 +15,7 @@ spec:
         type: exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.vrops.alerts.port missing" .Values.vrops.port_number | quote }}
+        prometheus.io/port: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
         prometheus.io/targets: {{ required ".Values.vrops.alerts.prometheus missing" .Values.vrops.alerts.prometheus | quote }}
     spec:
       containers:
@@ -27,11 +27,11 @@ spec:
            command:
              - ./vrops-exporter.py
            args:
-             - -o {{ ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }} -u {{ required "Values.vrops.user variable is missing" .Values.vrops.user }} -p {{ "Values.vrops.password variable is missing" .Values.vrops.password }}
+             - -o {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }} -u {{ required ".Values.vrops.user variable is missing" .Values.vrops.user }} -p {{ required ".Values.vrops.password variable is missing" .Values.vrops.password }}
            livenessProbe:
              httpGet:
                path: /metrics
-               port: {{ ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
+               port: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
              initialDelaySeconds: 30
              timeoutSeconds: 10
              periodSeconds: 15
