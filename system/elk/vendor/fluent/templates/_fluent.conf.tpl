@@ -35,6 +35,7 @@
 
 <source>
   @type prometheus_monitor
+  interval 10
 </source>
 
 <filter kubernetes.**>
