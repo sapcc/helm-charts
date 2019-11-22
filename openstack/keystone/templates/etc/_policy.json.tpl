@@ -171,6 +171,7 @@
 
     "identity:create_trust": "user_id:%(trust.trustor_user_id)s",
     "identity:list_trusts": "",
+    "identity:list_all_trusts": "rule:cloud_admin",
     "identity:list_roles_for_trust": "",
     "identity:get_role_for_trust": "",
     "identity:delete_trust": "",

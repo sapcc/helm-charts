@@ -134,7 +134,7 @@ lockout_failure_attempts = 5
 lockout_duration = 300
 unique_last_password_count = 5
 
-{{- if ne .Values.release "stein" }}
+{{- if eq .Values.release "rocky" }}
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
 rabbit_password = {{ .Values.rabbitmq.users.default.password }}
@@ -149,7 +149,7 @@ rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 {{- end }}
 
 [oslo_messaging_notifications]
-{{- if eq .Values.release "stein" }}
+{{- if ne .Values.release "rocky" }}
 {{- if .Values.rabbitmq.host }}
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
 {{ else }}
