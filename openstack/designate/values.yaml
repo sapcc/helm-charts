@@ -89,16 +89,15 @@ mariadb:
   initdb_configmap: designate-initdb
   persistence_claim:
     name: db-designate-pvclaim
-
-nodeAffinity:
-  preferredDuringSchedulingIgnoredDuringExecution:
-  - weight: 1
-    preference:
-      matchExpressions:
-        - key: "failure-domain.beta.kubernetes.io/zone"
-          operator: In
-          values:
-          - "{{.Values.global.region}}a"
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+          - key: "failure-domain.beta.kubernetes.io/zone"
+            operator: In
+            values:
+            - "{{.Values.global.region}}a"
 
 rabbitmq:
   ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
