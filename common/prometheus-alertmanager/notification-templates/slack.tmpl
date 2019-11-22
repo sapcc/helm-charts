@@ -15,6 +15,7 @@
   {{ if eq .Labels.severity "critical" }}:fire: {{ end -}}
   {{ if eq .Labels.severity "info" }}:information_source: {{ end -}}
   {{ .Annotations.description }} {{ if .Labels.sentry }}*<https://sentry.{{ .Labels.region }}.cloud.sap/monsoon/{{ .Labels.sentry }}|:sentry:>*{{ end }} {{ if .Labels.cloudops }}*<https://dashboard.{{ .Labels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/{{ .Labels.cloudops }}|:ccloud:>*{{ end }}
+  {{- if .Annotations.mail_body}} <mailto:?to={{ .Annotations.mail_to | urlquery }}&body={{ .Annotations.mail_body | urlquery | reReplaceAll "\\+" "%20" }}&subject={{ .Annotations.mail_subject | urlquery | reReplaceAll "\\+" "%20" }}|:email:>{{ end }}
 {{- $generatorURL = .GeneratorURL }}
 {{ end -}}
 {{ range .Alerts.Resolved -}}
@@ -26,7 +27,9 @@
 {{ if .CommonLabels.playbook }}*<https://operations.global.cloud.sap/{{ .CommonLabels.playbook }}|Playbook>* {{ end -}}
 {{ if .CommonLabels.kibana }}*<https://logs.{{ .CommonLabels.region }}.cloud.sap/{{ .CommonLabels.kibana }}|Kibana>* {{ end -}}
 {{ if .CommonLabels.spc }}*<https://spc.ondemand.com/ticket_create/?{{ .CommonLabels.spc }}|Create-SPC-Ticket>* {{ end -}}
+{{ if .CommonLabels.awx }}*<https://awx.global.cloud.sap/{{ .CommonLabels.awx }}|AWX>* {{ end -}}
 *<{{ $generatorURL }}|Prometheus>*
+*<https://supernova.global.cloud.sap/?category=Productive&label_region={{ .CommonLabels.region }}&label_severity={{ .CommonLabels.severity }}&label_alertname={{ .GroupLabels.alertname }}&display=dashboard&layout=standard|Supernova>*
 {{ end }}
 
 {{ define "slack.sapcc.actionName" }}{{ if eq .Status "firing" }}reaction{{ end }}{{ end }}
@@ -35,8 +38,3 @@
 {{ define "slack.sapcc.acknowledge.actionText" }}{{ if eq .Status "firing" }}Acknowledge{{ end }}{{ end }}
 {{ define "slack.sapcc.acknowledge.actionValue" }}{{ if eq .Status "firing" }}acknowledge{{ end }}{{ end }}
 
-{{ define "slack.sapcc.silence1Day.actionText" }}{{ if eq .Status "firing" }}Silence for 1 day{{ end }}{{ end }}
-{{ define "slack.sapcc.silence1Day.actionValue" }}{{ if eq .Status "firing" }}silence1Day{{ end }}{{ end }}
-
-{{ define "slack.sapcc.silenceUntilMonday.actionText" }}{{ if eq .Status "firing" }}Silence until monday{{ end }}{{ end }}
-{{ define "slack.sapcc.silenceUntilMonday.actionValue" }}{{ if eq .Status "firing" }}silenceUntilMonday{{ end }}{{ end }}

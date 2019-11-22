@@ -1,3 +1,8 @@
+## 2.0.5
+
+* Update slack notification template
+* Allow setting tolerations.
+
 ## 2.0.4
 
 * Default Alertmanager mesh ports for TCP, UDP is now `9094`.
