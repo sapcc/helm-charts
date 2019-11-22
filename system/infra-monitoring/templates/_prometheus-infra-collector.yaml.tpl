@@ -324,7 +324,7 @@
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
-      regex: vcenter
+      regex: vrops
       action: keep
     - source_labels: [server_name]
       target_label: __param_target
