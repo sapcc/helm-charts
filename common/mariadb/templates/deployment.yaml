@@ -30,10 +30,22 @@ spec:
 
     spec:
       affinity:
+{{- if .Values.nodeAffinity }}
       {{- with .Values.nodeAffinity }}
         nodeAffinity:
 {{ toYaml . | indent 10 }}
       {{- end }}
+{{- else }}
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: "failure-domain.beta.kubernetes.io/zone"
+                  operator: In
+                  values:
+                  - {{.Values.global.region}}a
+{{- end }}
       containers:
       - name: mariadb
         image: {{.Values.image}}
