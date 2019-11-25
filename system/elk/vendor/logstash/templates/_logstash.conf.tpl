@@ -11,15 +11,7 @@ input {
     port  => {{.Values.input_bigiplogs_port}}
     type => bigiplogs
   }
-  tcp {
-    port  => {{.Values.input_bigiplogs_port}}
-    type => bigiplogs
-  }
   udp {
-    port  => {{.Values.input_httplogs_port}}
-    type => httplogs
-  }
-  tcp {
     port  => {{.Values.input_httplogs_port}}
     type => httplogs
   }
