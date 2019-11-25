@@ -62,6 +62,7 @@
       - '{__name__=~"^uwsgi_.+"}'
       - '{__name__=~"^vice_president_.+"}'
       - '{__name__=~"^webhook_.+"}'
+      - '{__name__=~"^watchcache_.+"}'
       - '{__name__=~"^admission|daemonset|deployment|disruption|endpoint|job|namespace|petset|replicaset|serviceaccount.+"}'
       - '{__name__=~"^ns_exporter.+"}'
       - '{__name__=~"^total"}'
