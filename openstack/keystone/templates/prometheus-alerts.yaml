@@ -247,7 +247,7 @@ spec:
         summary: "Datapath keystone {{`{{ $labels.check }}`}} is flapping"
 
     - alert: OpenstackKeystoneDatabaseSize
-      expr: predict_linear(pg_database_size_bytes{datname="keystone"}[1h], 24 * 3600) >= 10 * 1024^3
+      expr: sum(predict_linear(mysql_database_size{name="keystone-mysql-metrics"}[1h], 24 * 3600)) >= 10 * 1024^3
       for: 5m
       labels:
         tier: k8s
