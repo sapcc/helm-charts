@@ -15,10 +15,6 @@ input {
     port  => {{.Values.input_httplogs_port}}
     type => httplogs
   }
-  udp {
-    port  => {{.Values.input_ddoslogs_port}}
-    type => ddoslogs
-  }
   tcp {
     port  => {{.Values.input_syslog_port}}
     type => syslog
@@ -49,18 +45,6 @@ filter {
           date {
             match => [ "syslog_timestamp", "MMM d HH:mm:ss", "MMM dd HH:mm:ss" ]
           }
-    }
-    if [type] == "ddoslogs" {
-          grok {
-	       tag_on_failure => ["ddoslogs_grok_parse-failure", "grok"]
-	       tag_on_timeout => ["_groktimeout"]
-	       timeout_millis => [15000]
-		  match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} action=\"%{WORD:action}\",hostname=\"%{DATA:f5_hostname}\",bigip_mgmt_ip=\"%{DATA:mgmt_ip}\",context_name=\"%{DATA:context}\",date_time=\"%{DATA:attack_time}\",dest_ip=\"%{DATA:dest_ip}\",dest_port=\"%{DATA:dest_port}\",device_product=\"Advanced Module\",device_vendor=\"F5\",device_version=\"(.*?)\",dos_attack_event=\"%{DATA:dos_attack_event}\",dos_attack_id=\"%{NUMBER:dos_attack_id}\",dos_attack_name=\"%{DATA:dos_attack_name}\",dos_packets_dropped=\"%{INT:packets_dropped}\",dos_packets_received=\"%{INT:packets_received}\",errdefs_msgno=\"(.*?)\",errdefs_msg_name=\"(.*?)\",flow_id=\"(.*?)\",severity=\"%{INT:severity}\",partition_name=\"%{DATA:partition_name}\",route_domain=\"%{DATA:route_domain}\",source_ip=\"%{DATA:source_ip}\",source_port=\"%{DATA:source_port}\",vlan=\"%{DATA:vlan}\""
-                  }
-          }
-             date {
-               match => [ "syslog_timestamp", "MMM d HH:mm:ss", "MMM dd HH:mm:ss" ]
-             }
     }
 }
 
@@ -106,18 +90,6 @@ elseif [type] == "httplogs" {
     index => "syslog-%{+YYYY.MM.dd}"
     template => "/elk-etc/httplogs.json"
     template_name => "httplogs"
-    template_overwrite => true
-    hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-    user => "{{.Values.global.elk_elasticsearch_data_user}}"
-    password => "{{.Values.global.elk_elasticsearch_data_password}}"
-    ssl => true 
-  }
-}
-elseif [type] == "ddoslogs" {
-  elasticsearch {
-    index => "ddoslogs-%{+YYYY.MM.dd}"
-    template => "/elk-etc/ddoslogs.json"
-    template_name => "ddoslogs"
     template_overwrite => true
     hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
     user => "{{.Values.global.elk_elasticsearch_data_user}}"
