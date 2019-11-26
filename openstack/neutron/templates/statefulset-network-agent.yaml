@@ -1,5 +1,6 @@
 {{- if .Values.agent.multus | default false }}
-{{- range $az := list "a" "b" }}
+{{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
+{{- $az := trimPrefix $.Values.global.region $az_long }}
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
@@ -34,7 +35,7 @@ spec:
 {{ tuple $ "neutron" "agent" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       nodeSelector:
         multus: bond1
-        failure-domain.beta.kubernetes.io/zone: {{ $.Values.global.region}}{{ $az }}
+        failure-domain.beta.kubernetes.io/zone: {{ $az_long }}
       containers:
         - name: neutron-dhcp-agent
           image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
