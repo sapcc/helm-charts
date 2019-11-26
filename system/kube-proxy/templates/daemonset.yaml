@@ -59,6 +59,11 @@ spec:
           - mountPath: /lib/modules
             name: lib-modules
             readOnly: true
+        {{ if .Values.proxy.metricPort -}}
+        ports:
+          - name: proxy-metrics
+            containerPort: {{ required ".Values.proxy.metricPort missing" .Values.proxy.metricPort }}
+        {{- end }}
 {{- if .Values.sidecars.parrot }}
       - name: parrot
         image: "{{ .Values.images.parrot.repository }}:{{ .Values.images.parrot.tag }}"
@@ -86,7 +91,7 @@ spec:
             mountPath: /etc/kubernetes/kube-parrot
         {{ if .Values.parrot.metricPort -}}
         ports:
-          - name: metrics
+          - name: parrot-metrics
             containerPort: {{ .Values.parrot.metricPort }}
             hostPort: {{ .Values.parrot.metricPort }}
         {{- end }}
