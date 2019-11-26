@@ -147,12 +147,10 @@
       regex: ^/system\.slice/(.+)\.service$
       target_label: container_name
       replacement: '${1}'
-{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubelet | indent 4 }}
     - source_labels:
       - container_name
-      - __name__
       # The system container POD is used for networking.
-      regex: POD;({{ .Values.allowedMetrics.kubelet | join "|" }})
+      regex: POD
       action: drop
 
 - job_name: 'kubernetes-cadvisors'
