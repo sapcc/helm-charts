@@ -87,7 +87,7 @@ elseif [type] == "bigiplogs" {
 }
 elseif [type] == "httplogs" {
   elasticsearch {
-    index => "syslog-%{+YYYY.MM.dd}"
+    index => "httplogs-%{+YYYY.MM.dd}"
     template => "/elk-etc/httplogs.json"
     template_name => "httplogs"
     template_overwrite => true
