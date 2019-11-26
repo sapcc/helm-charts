@@ -61,6 +61,7 @@ spec:
           regex: '^/system\.slice/(.+)\.service$'
           targetLabel: container_name
           replacement: '${1}'
+        {{ if .Values.serviceDiscoveries.kubelet.allowedMetrics }}
         - sourceLabels:
             - container_name
             - __name__
@@ -68,4 +69,11 @@ spec:
           regex: POD;({{ .Values.serviceDiscoveries.kubelet.allowedMetrics | join "|" }})
           action: drop
 {{ include "prometheus.keep-metrics.metric-relabel-config" .Values.serviceDiscoveries.kubelet.allowedMetrics | indent 8 }}
+        {{ else }}
+        - sourceLabels:
+            - container_name
+          # The system container POD is used for networking.
+          regex: POD
+          action: drop
+        {{ end }}
 {{- end }}
