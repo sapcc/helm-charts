@@ -54,7 +54,7 @@ rpc_state_report_workers = {{ .Values.rpc_state_workers | default .Values.global
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
-api_workers = {{ .Values.api_workers | default .Values.global.api_workers | default 8 }}
+api_workers = {{ .Values.api_workers | default .Values.global.api_workers | default 12 }}
 periodic_fuzzy_delay = 10
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
