@@ -126,3 +126,20 @@ groups:
     annotations:
       description: Kublet on {{`{{$labels.node}}`}} might become unresponsive due to a high number of go routines within 2 hours
       summary: Predicting high number of Go routines
+
+  - alert: KubeletManyRequestErrors
+    expr: |
+      (sum(rate(rest_client_requests_total{code=~"5.*", component="kubelet"}[5m])) by (node)
+      /
+      sum(rate(rest_client_requests_total{component="kubelet"}[5m])) by (node))
+      * 100 > 1
+    for: 10m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      service: k8s
+      severity: warning
+      context: kubelet
+      meta: "Many 5xx responses for Kubelet on {{`{{ $labels.node }}`}} "
+    annotations:
+      description: "{{`{{ printf \"%0.0f\" $value }}`}}% of requests from kubelet on {{`{{ $labels.node }}`}} error"
+      summary: Many 5xx responses for Kubelet
