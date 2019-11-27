@@ -3,7 +3,8 @@ apiVersion: apps/v1beta2
 kind: StatefulSet
 metadata:
   name: {{ include "prometheus.fullName" . }}-thanos-store
-  prometheus: {{ include "prometheus.name" . }}
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
 
 spec:
   replicas: 1
@@ -47,11 +48,11 @@ spec:
           name: http
         - containerPort: 10900
           name: cluster
+{{- if not .Values.thanos.store.persistence.enabled }}
         volumeMounts:
         - mountPath: /data
           name: data
           readOnly: false
-{{- if not .Values.thanos.store.persistence.enabled }}
       volumes:
         - emptyDir: {}
           name: data
