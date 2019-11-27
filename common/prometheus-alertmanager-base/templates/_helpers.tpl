@@ -26,3 +26,11 @@ alertmanager-{{- (include "alertmanager.name" .) -}}
 {{- define "pvc.name" -}}
 {{- default (include "alertmanager.fullname" .) .Values.persistence.name | quote -}}
 {{- end -}}
+
+{{- define "alerts.tier" -}}
+{{- if and .Values.global .Values.global.tier }}
+{{- .Values.global.tier -}}
+{{- else -}}
+{{- required ".Values.alerts.tier missing" .Values.alerts.tier -}}
+{{- end -}}
+{{- end -}}
