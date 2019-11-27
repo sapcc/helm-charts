@@ -1,4 +1,5 @@
 {{- if .Values.agent.multus | default false }}
+{{- $az_count := len .Values.global.availability_zones -}}
 {{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
 {{- $az := trimPrefix $.Values.global.region $az_long }}
 ---
@@ -22,7 +23,15 @@ spec:
       name: neutron-network-agent-{{ $az }}
   serviceName: neutron-network-agent
   podManagementPolicy: "Parallel"
+{{- if and (ge $az_count 2) (eq $az "a") }}
+  replicas: 5
+{{- else if and (ge $az_count 2) (eq $az "b") }}
+  replicas: 5
+{{- else if eq $az_count 1 }}
+  replicas: 10
+{{- else }}
   replicas: 3
+{{- end }}
   template:
     metadata:
       annotations:
