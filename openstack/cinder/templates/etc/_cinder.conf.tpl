@@ -29,6 +29,8 @@ auth_strategy = keystone
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
+osapi_volume_workers = {{ .Values.osapi_volume_workers | default 16 }}
+
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 {{- include "ini_sections.database_options_mysql" . }}
 
