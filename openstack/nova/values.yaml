@@ -463,6 +463,15 @@ pgmetrics:
       - version:
           usage: "GAUGE"
           description: "Version of the service running"
+    openstack_compute_node_last_action_interval_seconds:
+      query: 'select i.host AS host, EXTRACT(EPOCH FROM (now() - max(ia.created_at)))::int AS "interval" from instance_actions AS ia JOIN instances AS i ON i.uuid = ia.instance_uuid group by i.host;'
+      metrics:
+      - host:
+          usage: "LABEL"
+          description: "name of the nova-compute service"
+      - interval:
+          usage: "GAUGE"
+          description: "Seconds since the latest instance_action was created."
 
 
 postgresql:
