@@ -13,6 +13,7 @@
       - '{__name__=~"^kubernikus_kluster_info"}'
       - '{__name__=~"^kubernikus_servicing_nodes.+"}'
       - '{__name__=~"up"}'
+      - '{__name__=~"^prometheus_build_info"}'
 
   relabel_configs:
     - action: replace
