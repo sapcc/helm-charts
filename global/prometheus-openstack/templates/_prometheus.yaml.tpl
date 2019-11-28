@@ -11,7 +11,7 @@
       - '{__name__=~"^ALERTS$"}'
       - '{__name__=~"^global:.+"}'
       - '{__name__=~"up"}'
-      - '{__name__=~"prometheus_build_info}'
+      - '{__name__=~"prometheus_build_info"}'
       - '{__name__=~"blackbox_regression_status_gauge"}'
       - '{__name__=~"^openstack_ironic_nodes_.+"}'
       - '{__name__=~"^openstack_ironic_leftover_ports$"}'      
