@@ -76,6 +76,17 @@ spec:
             {{- end }}
             {{- end }}
           volumeMounts:
+{{- if eq .Values.api.policy "yaml" }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+{{- else }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.json
+              subPath: policy.json
+              readOnly: true
+{{- end }}
             - mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               name: keystone-etc

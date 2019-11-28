@@ -1,29 +1,43 @@
+#
 #"admin_required": "role:admin or is_admin:1"
+
+#
 #"service_role": "role:service"
+
+#
 #"service_or_admin": "rule:admin_required or rule:service_role"
+
+#
 #"owner": "user_id:%(user_id)s"
+
+#
 #"admin_or_owner": "rule:admin_required or rule:owner"
+
+#
 #"token_subject": "user_id:%(target.token.user_id)s"
+
+#
 #"admin_or_token_subject": "rule:admin_required or rule:token_subject"
+
+#
 #"service_admin_or_token_subject": "rule:service_or_admin or rule:token_subject"
 
-# Show application credential details.
-# GET  /v3/users/{user_id}/application_credentials/{application_credential_id}
-# HEAD  /v3/users/{user_id}/application_credentials/{application_credential_id}
-#"identity:get_application_credential": "rule:admin_or_owner"
+# Show access rule details.
+# GET  /v3/users/{user_id}/access_rules/{access_rule_id}
+# HEAD  /v3/users/{user_id}/access_rules/{access_rule_id}
+# Intended scope(s): system, project
+#"identity:get_access_rule": "(role:reader and system_scope:all) or user_id:%(target.user.id)s"
 
-# List application credentials for a user.
-# GET  /v3/users/{user_id}/application_credentials
-# HEAD  /v3/users/{user_id}/application_credentials
-#"identity:list_application_credentials": "rule:admin_or_owner"
+# List access rules for a user.
+# GET  /v3/users/{user_id}/access_rules
+# HEAD  /v3/users/{user_id}/access_rules
+# Intended scope(s): system, project
+#"identity:list_access_rules": "(role:reader and system_scope:all) or user_id:%(target.user.id)s"
 
-# Create an application credential.
-# POST  /v3/users/{user_id}/application_credentials
-#"identity:create_application_credential": "rule:admin_or_owner"
-
-# Delete an application credential.
-# DELETE  /v3/users/{user_id}/application_credentials/{application_credential_id}
-#"identity:delete_application_credential": "rule:admin_or_owner"
+# Delete an access_rule.
+# DELETE  /v3/users/{user_id}/access_rules/{access_rule_id}
+# Intended scope(s): system, project
+#"identity:delete_access_rule": "(role:admin and system_scope:all) or user_id:%(target.user.id)s"
 
 # Authorize OAUTH1 request token.
 # PUT  /v3/OS-OAUTH1/authorize/{request_token_id}
@@ -55,6 +69,48 @@
 # Intended scope(s): project
 #"identity:delete_access_token": "rule:admin_required"
 
+# Show application credential details.
+# GET  /v3/users/{user_id}/application_credentials/{application_credential_id}
+# HEAD  /v3/users/{user_id}/application_credentials/{application_credential_id}
+# Intended scope(s): system, project
+#"identity:get_application_credential": "(role:reader and system_scope:all) or rule:owner"
+
+# DEPRECATED
+# "identity:get_application_credentials":"rule:admin_or_owner" has
+# been deprecated since T in favor of
+# "identity:get_application_credential":"(role:reader and
+# system_scope:all) or rule:owner". The application credential API is
+# now aware of system scope and default roles.
+"identity:get_application_credentials": "rule:identity:get_application_credential"
+# List application credentials for a user.
+# GET  /v3/users/{user_id}/application_credentials
+# HEAD  /v3/users/{user_id}/application_credentials
+# Intended scope(s): system, project
+#"identity:list_application_credentials": "(role:reader and system_scope:all) or rule:owner"
+
+# DEPRECATED
+# "identity:list_application_credentials":"rule:admin_or_owner" has
+# been deprecated since T in favor of
+# "identity:list_application_credentials":"(role:reader and
+# system_scope:all) or rule:owner". The application credential API is
+# now aware of system scope and default roles.
+# Create an application credential.
+# POST  /v3/users/{user_id}/application_credentials
+# Intended scope(s): project
+#"identity:create_application_credential": "user_id:%(user_id)s"
+
+# Delete an application credential.
+# DELETE  /v3/users/{user_id}/application_credentials/{application_credential_id}
+# Intended scope(s): system, project
+#"identity:delete_application_credential": "(role:admin and system_scope:all) or rule:owner"
+
+# DEPRECATED
+# "identity:delete_application_credentials":"rule:admin_or_owner" has
+# been deprecated since T in favor of
+# "identity:delete_application_credential":"(role:admin and
+# system_scope:all) or rule:owner". The application credential API is
+# now aware of system scope and default roles.
+"identity:delete_application_credentials": "rule:identity:delete_application_credential"
 # Get service catalog.
 # GET  /v3/auth/catalog
 # HEAD  /v3/auth/catalog
@@ -78,28 +134,48 @@
 # Show OAUTH1 consumer details.
 # GET  /v3/OS-OAUTH1/consumers/{consumer_id}
 # Intended scope(s): system
-#"identity:get_consumer": "rule:admin_required"
+#"identity:get_consumer": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:get_consumer":"rule:admin_required" has been
+# deprecated since T in favor of "identity:get_consumer":"role:reader
+# and system_scope:all". The OAUTH1 consumer API is now aware of
+# system scope and default roles.
 # List OAUTH1 consumers.
 # GET  /v3/OS-OAUTH1/consumers
 # Intended scope(s): system
-#"identity:list_consumers": "rule:admin_required"
+#"identity:list_consumers": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:list_consumers":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:list_consumers":"role:reader and system_scope:all". The
+# OAUTH1 consumer API is now aware of system scope and default roles.
 # Create OAUTH1 consumer.
 # POST  /v3/OS-OAUTH1/consumers
 # Intended scope(s): system
-#"identity:create_consumer": "rule:admin_required"
+#"identity:create_consumer": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:create_consumer":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:create_consumer":"role:admin and system_scope:all". The
+# OAUTH1 consumer API is now aware of system scope and default roles.
 # Update OAUTH1 consumer.
 # PATCH  /v3/OS-OAUTH1/consumers/{consumer_id}
 # Intended scope(s): system
-#"identity:update_consumer": "rule:admin_required"
+#"identity:update_consumer": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:update_consumer":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:update_consumer":"role:admin and system_scope:all". The
+# OAUTH1 consumer API is now aware of system scope and default roles.
 # Delete OAUTH1 consumer.
 # DELETE  /v3/OS-OAUTH1/consumers/{consumer_id}
 # Intended scope(s): system
-#"identity:delete_consumer": "rule:admin_required"
+#"identity:delete_consumer": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:delete_consumer":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:delete_consumer":"role:admin and system_scope:all". The
+# OAUTH1 consumer API is now aware of system scope and default roles.
 # Show credentials details.
 # GET  /v3/credentials/{credential_id}
 # Intended scope(s): system, project
@@ -108,13 +184,8 @@
 # DEPRECATED "identity:get_credential":"rule:admin_required" has been
 # deprecated since S in favor of
 # "identity:get_credential":"(role:reader and system_scope:all) or
-# user_id:%(target.credential.user_id)s". As of the Stein release, the
-# credential API now understands how to handle system-scoped tokens in
-# addition to project-scoped tokens, making the API more accessible to
-# users without compromising security or manageability for
-# administrators. The new default policies for this API account for
-# these changes automatically.
-"identity:get_credential": "rule:identity:get_credential"
+# user_id:%(target.credential.user_id)s". The credential API is now
+# aware of system scope and default roles.
 # List credentials.
 # GET  /v3/credentials
 # Intended scope(s): system, project
@@ -123,13 +194,8 @@
 # DEPRECATED "identity:list_credentials":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:list_credentials":"(role:reader and system_scope:all) or
-# user_id:%(target.credential.user_id)s". As of the Stein release, the
-# credential API now understands how to handle system-scoped tokens in
-# addition to project-scoped tokens, making the API more accessible to
-# users without compromising security or manageability for
-# administrators. The new default policies for this API account for
-# these changes automatically.
-"identity:list_credentials": "rule:identity:list_credentials"
+# user_id:%(target.credential.user_id)s". The credential API is now
+# aware of system scope and default roles.
 # Create credential.
 # POST  /v3/credentials
 # Intended scope(s): system, project
@@ -138,13 +204,8 @@
 # DEPRECATED "identity:create_credential":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:create_credential":"(role:admin and system_scope:all) or
-# user_id:%(target.credential.user_id)s". As of the Stein release, the
-# credential API now understands how to handle system-scoped tokens in
-# addition to project-scoped tokens, making the API more accessible to
-# users without compromising security or manageability for
-# administrators. The new default policies for this API account for
-# these changes automatically.
-"identity:create_credential": "rule:identity:create_credential"
+# user_id:%(target.credential.user_id)s". The credential API is now
+# aware of system scope and default roles.
 # Update credential.
 # PATCH  /v3/credentials/{credential_id}
 # Intended scope(s): system, project
@@ -153,13 +214,8 @@
 # DEPRECATED "identity:update_credential":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:update_credential":"(role:admin and system_scope:all) or
-# user_id:%(target.credential.user_id)s". As of the Stein release, the
-# credential API now understands how to handle system-scoped tokens in
-# addition to project-scoped tokens, making the API more accessible to
-# users without compromising security or manageability for
-# administrators. The new default policies for this API account for
-# these changes automatically.
-"identity:update_credential": "rule:identity:update_credential"
+# user_id:%(target.credential.user_id)s". The credential API is now
+# aware of system scope and default roles.
 # Delete credential.
 # DELETE  /v3/credentials/{credential_id}
 # Intended scope(s): system, project
@@ -168,13 +224,8 @@
 # DEPRECATED "identity:delete_credential":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:delete_credential":"(role:admin and system_scope:all) or
-# user_id:%(target.credential.user_id)s". As of the Stein release, the
-# credential API now understands how to handle system-scoped tokens in
-# addition to project-scoped tokens, making the API more accessible to
-# users without compromising security or manageability for
-# administrators. The new default policies for this API account for
-# these changes automatically.
-"identity:delete_credential": "rule:identity:delete_credential"
+# user_id:%(target.credential.user_id)s". The credential API is now
+# aware of system scope and default roles.
 # Show domain details.
 # GET  /v3/domains/{domain_id}
 # Intended scope(s): system, domain, project
@@ -184,14 +235,8 @@
 # token.project.domain.id:%(target.domain.id)s" has been deprecated
 # since S in favor of "identity:get_domain":"(role:reader and
 # system_scope:all) or token.domain.id:%(target.domain.id)s or
-# token.project.domain.id:%(target.domain.id)s".
-#
-# As of the Stein release, the domain API now understands how to
-# handle system-scoped tokens in addition to project-scoped tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically
-"identity:get_domain": "rule:identity:get_domain"
+# token.project.domain.id:%(target.domain.id)s". The domain API is now
+# aware of system scope and default roles.
 # List domains.
 # GET  /v3/domains
 # Intended scope(s): system
@@ -199,14 +244,8 @@
 
 # DEPRECATED "identity:list_domains":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_domains":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the domain API now understands how to
-# handle system-scoped tokens in addition to project-scoped tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically
-"identity:list_domains": "rule:identity:list_domains"
+# and system_scope:all". The domain API is now aware of system scope
+# and default roles.
 # Create domain.
 # POST  /v3/domains
 # Intended scope(s): system
@@ -214,14 +253,8 @@
 
 # DEPRECATED "identity:create_domain":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_domain":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the domain API now understands how to
-# handle system-scoped tokens in addition to project-scoped tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically
-"identity:create_domain": "rule:identity:create_domain"
+# and system_scope:all". The domain API is now aware of system scope
+# and default roles.
 # Update domain.
 # PATCH  /v3/domains/{domain_id}
 # Intended scope(s): system
@@ -229,14 +262,8 @@
 
 # DEPRECATED "identity:update_domain":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_domain":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the domain API now understands how to
-# handle system-scoped tokens in addition to project-scoped tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically
-"identity:update_domain": "rule:identity:update_domain"
+# and system_scope:all". The domain API is now aware of system scope
+# and default roles.
 # Delete domain.
 # DELETE  /v3/domains/{domain_id}
 # Intended scope(s): system
@@ -244,19 +271,18 @@
 
 # DEPRECATED "identity:delete_domain":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_domain":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the domain API now understands how to
-# handle system-scoped tokens in addition to project-scoped tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically
-"identity:delete_domain": "rule:identity:delete_domain"
+# and system_scope:all". The domain API is now aware of system scope
+# and default roles.
 # Create domain configuration.
 # PUT  /v3/domains/{domain_id}/config
 # Intended scope(s): system
-#"identity:create_domain_config": "rule:admin_required"
+#"identity:create_domain_config": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:create_domain_config":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:create_domain_config":"role:admin and system_scope:all".
+# The domain config API is now aware of system scope and default
+# roles.
 # Get the entire domain configuration for a domain, an option group
 # within a domain, or a specific configuration option within a group
 # for a domain.
@@ -267,15 +293,19 @@
 # GET  /v3/domains/{domain_id}/config/{group}/{option}
 # HEAD  /v3/domains/{domain_id}/config/{group}/{option}
 # Intended scope(s): system
-#"identity:get_domain_config": "rule:admin_required"
+#"identity:get_domain_config": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:get_domain_config":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:get_domain_config":"role:reader and system_scope:all". The
+# domain config API is now aware of system scope and default roles.
 # Get security compliance domain configuration for either a domain or
 # a specific option in a domain.
 # GET  /v3/domains/{domain_id}/config/security_compliance
 # HEAD  /v3/domains/{domain_id}/config/security_compliance
 # GET  v3/domains/{domain_id}/config/security_compliance/{option}
 # HEAD  v3/domains/{domain_id}/config/security_compliance/{option}
-# Intended scope(s): system, project
+# Intended scope(s): system, domain, project
 #"identity:get_security_compliance_domain_config": ""
 
 # Update domain configuration for either a domain, specific group or a
@@ -284,16 +314,26 @@
 # PATCH  /v3/domains/{domain_id}/config/{group}
 # PATCH  /v3/domains/{domain_id}/config/{group}/{option}
 # Intended scope(s): system
-#"identity:update_domain_config": "rule:admin_required"
+#"identity:update_domain_config": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:update_domain_config":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:update_domain_config":"role:admin and system_scope:all".
+# The domain config API is now aware of system scope and default
+# roles.
 # Delete domain configuration for either a domain, specific group or a
 # specific option in a group.
 # DELETE  /v3/domains/{domain_id}/config
 # DELETE  /v3/domains/{domain_id}/config/{group}
 # DELETE  /v3/domains/{domain_id}/config/{group}/{option}
 # Intended scope(s): system
-#"identity:delete_domain_config": "rule:admin_required"
+#"identity:delete_domain_config": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:delete_domain_config":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:delete_domain_config":"role:admin and system_scope:all".
+# The domain config API is now aware of system scope and default
+# roles.
 # Get domain configuration default for either a domain, specific group
 # or a specific option in a group.
 # GET  /v3/domains/config/default
@@ -303,161 +343,219 @@
 # GET  /v3/domains/config/{group}/{option}/default
 # HEAD  /v3/domains/config/{group}/{option}/default
 # Intended scope(s): system
-#"identity:get_domain_config_default": "rule:admin_required"
+#"identity:get_domain_config_default": "role:reader and system_scope:all"
 
+# DEPRECATED
+# "identity:get_domain_config_default":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:get_domain_config_default":"role:reader and
+# system_scope:all". The domain config API is now aware of system
+# scope and default roles.
 # Show ec2 credential details.
 # GET  /v3/users/{user_id}/credentials/OS-EC2/{credential_id}
-#"identity:ec2_get_credential": "rule:admin_required or (rule:owner and user_id:%(target.credential.user_id)s)"
+# Intended scope(s): system, project
+#"identity:ec2_get_credential": "(role:reader and system_scope:all) or user_id:%(target.credential.user_id)s"
 
+# DEPRECATED "identity:ec2_get_credential":"rule:admin_required or
+# (rule:owner and user_id:%(target.credential.user_id)s)" has been
+# deprecated since T in favor of
+# "identity:ec2_get_credential":"(role:reader and system_scope:all) or
+# user_id:%(target.credential.user_id)s". The EC2 credential API is
+# now aware of system scope and default roles.
 # List ec2 credentials.
 # GET  /v3/users/{user_id}/credentials/OS-EC2
-#"identity:ec2_list_credentials": "rule:admin_or_owner"
+# Intended scope(s): system, project
+#"identity:ec2_list_credentials": "(role:reader and system_scope:all) or rule:owner"
 
+# DEPRECATED "identity:ec2_list_credentials":"rule:admin_or_owner" has
+# been deprecated since T in favor of
+# "identity:ec2_list_credentials":"(role:reader and system_scope:all)
+# or rule:owner". The EC2 credential API is now aware of system scope
+# and default roles.
 # Create ec2 credential.
 # POST  /v3/users/{user_id}/credentials/OS-EC2
-#"identity:ec2_create_credential": "rule:admin_or_owner"
+# Intended scope(s): system, project
+#"identity:ec2_create_credential": "(role:admin and system_scope:all) or rule:owner"
 
+# DEPRECATED "identity:ec2_create_credentials":"rule:admin_or_owner"
+# has been deprecated since T in favor of
+# "identity:ec2_create_credential":"(role:admin and system_scope:all)
+# or rule:owner". The EC2 credential API is now aware of system scope
+# and default roles.
+"identity:ec2_create_credentials": "rule:identity:ec2_create_credential"
 # Delete ec2 credential.
 # DELETE  /v3/users/{user_id}/credentials/OS-EC2/{credential_id}
-#"identity:ec2_delete_credential": "rule:admin_required or (rule:owner and user_id:%(target.credential.user_id)s)"
+# Intended scope(s): system, project
+#"identity:ec2_delete_credential": "(role:admin and system_scope:all) or user_id:%(target.credential.user_id)s"
 
+# DEPRECATED "identity:ec2_delete_credentials":"rule:admin_required or
+# (rule:owner and user_id:%(target.credential.user_id)s)" has been
+# deprecated since T in favor of
+# "identity:ec2_delete_credential":"(role:admin and system_scope:all)
+# or user_id:%(target.credential.user_id)s". The EC2 credential API is
+# now aware of system scope and default roles.
+"identity:ec2_delete_credentials": "rule:identity:ec2_delete_credential"
 # Show endpoint details.
 # GET  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
-"identity:get_endpoint": "role:reader and system_scope:all"
+#"identity:get_endpoint": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:get_endpoint":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_endpoint":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the endpoint API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the endpoint API.
-#"identity:get_endpoint": "rule:identity:get_endpoint"
+# and system_scope:all". The endpoint API is now aware of system scope
+# and default roles.
 # List endpoints.
 # GET  /v3/endpoints
 # Intended scope(s): system
-"identity:list_endpoints": "role:reader and system_scope:all"
+#"identity:list_endpoints": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:list_endpoints":"rule:admin_required" has been
 # deprecated since S in favor of
-# "identity:list_endpoints":"role:reader and system_scope:all".
-#
-# As of the Stein release, the endpoint API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the endpoint API.
-#"identity:list_endpoints": "rule:identity:list_endpoints"
+# "identity:list_endpoints":"role:reader and system_scope:all". The
+# endpoint API is now aware of system scope and default roles.
 # Create endpoint.
 # POST  /v3/endpoints
 # Intended scope(s): system
-"identity:create_endpoint": "role:admin and system_scope:all"
+#"identity:create_endpoint": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:create_endpoint":"rule:admin_required" has been
 # deprecated since S in favor of
-# "identity:create_endpoint":"role:admin and system_scope:all".
-#
-# As of the Stein release, the endpoint API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the endpoint API.
-#"identity:create_endpoint": "rule:identity:create_endpoint"
+# "identity:create_endpoint":"role:admin and system_scope:all". The
+# endpoint API is now aware of system scope and default roles.
 # Update endpoint.
 # PATCH  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
-"identity:update_endpoint": "role:admin and system_scope:all"
+#"identity:update_endpoint": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:update_endpoint":"rule:admin_required" has been
 # deprecated since S in favor of
-# "identity:update_endpoint":"role:admin and system_scope:all".
-#
-# As of the Stein release, the endpoint API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the endpoint API.
-#"identity:update_endpoint": "rule:identity:update_endpoint"
+# "identity:update_endpoint":"role:admin and system_scope:all". The
+# endpoint API is now aware of system scope and default roles.
 # Delete endpoint.
 # DELETE  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
-"identity:delete_endpoint": "role:admin and system_scope:all"
+#"identity:delete_endpoint": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:delete_endpoint":"rule:admin_required" has been
 # deprecated since S in favor of
-# "identity:delete_endpoint":"role:admin and system_scope:all".
-#
-# As of the Stein release, the endpoint API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the endpoint API.
-#"identity:delete_endpoint": "rule:identity:delete_endpoint"
+# "identity:delete_endpoint":"role:admin and system_scope:all". The
+# endpoint API is now aware of system scope and default roles.
 # Create endpoint group.
 # POST  /v3/OS-EP-FILTER/endpoint_groups
 # Intended scope(s): system
-#"identity:create_endpoint_group": "rule:admin_required"
+#"identity:create_endpoint_group": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:create_endpoint_group":"rule:admin_required"
+# has been deprecated since T in favor of
+# "identity:create_endpoint_group":"role:admin and system_scope:all".
+# The endpoint groups API is now aware of system scope and default
+# roles.
 # List endpoint groups.
 # GET  /v3/OS-EP-FILTER/endpoint_groups
 # Intended scope(s): system
-#"identity:list_endpoint_groups": "rule:admin_required"
+#"identity:list_endpoint_groups": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:list_endpoint_groups":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:list_endpoint_groups":"role:reader and system_scope:all".
+# The endpoint groups API is now aware of system scope and default
+# roles.
 # Get endpoint group.
 # GET  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}
 # HEAD  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}
 # Intended scope(s): system
-#"identity:get_endpoint_group": "rule:admin_required"
+#"identity:get_endpoint_group": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:get_endpoint_group":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:get_endpoint_group":"role:reader and system_scope:all".
+# The endpoint groups API is now aware of system scope and default
+# roles.
 # Update endpoint group.
 # PATCH  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}
 # Intended scope(s): system
-#"identity:update_endpoint_group": "rule:admin_required"
+#"identity:update_endpoint_group": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:update_endpoint_group":"rule:admin_required"
+# has been deprecated since T in favor of
+# "identity:update_endpoint_group":"role:admin and system_scope:all".
+# The endpoint groups API is now aware of system scope and default
+# roles.
 # Delete endpoint group.
 # DELETE  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}
 # Intended scope(s): system
-#"identity:delete_endpoint_group": "rule:admin_required"
+#"identity:delete_endpoint_group": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:delete_endpoint_group":"rule:admin_required"
+# has been deprecated since T in favor of
+# "identity:delete_endpoint_group":"role:admin and system_scope:all".
+# The endpoint groups API is now aware of system scope and default
+# roles.
 # List all projects associated with a specific endpoint group.
 # GET  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/projects
 # Intended scope(s): system
-#"identity:list_projects_associated_with_endpoint_group": "rule:admin_required"
+#"identity:list_projects_associated_with_endpoint_group": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:list_projects_associated_with_endpoint_group":"
+# rule:admin_required" has been deprecated since T in favor of
+# "identity:list_projects_associated_with_endpoint_group":"role:reader
+# and system_scope:all". The endpoint groups API is now aware of
+# system scope and default roles.
 # List all endpoints associated with an endpoint group.
 # GET  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/endpoints
 # Intended scope(s): system
-#"identity:list_endpoints_associated_with_endpoint_group": "rule:admin_required"
+#"identity:list_endpoints_associated_with_endpoint_group": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:list_endpoints_associated_with_endpoint_group":
+# "rule:admin_required" has been deprecated since T in favor of "ident
+# ity:list_endpoints_associated_with_endpoint_group":"role:reader and
+# system_scope:all". The endpoint groups API is now aware of system
+# scope and default roles.
 # Check if an endpoint group is associated with a project.
 # GET  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/projects/{project_id}
 # HEAD  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/projects/{project_id}
 # Intended scope(s): system
-#"identity:get_endpoint_group_in_project": "rule:admin_required"
+#"identity:get_endpoint_group_in_project": "role:reader and system_scope:all"
 
+# DEPRECATED
+# "identity:get_endpoint_group_in_project":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:get_endpoint_group_in_project":"role:reader and
+# system_scope:all". The endpoint groups API is now aware of system
+# scope and default roles.
 # List endpoint groups associated with a specific project.
 # GET  /v3/OS-EP-FILTER/projects/{project_id}/endpoint_groups
 # Intended scope(s): system
-#"identity:list_endpoint_groups_for_project": "rule:admin_required"
+#"identity:list_endpoint_groups_for_project": "role:reader and system_scope:all"
 
+# DEPRECATED
+# "identity:list_endpoint_groups_for_project":"rule:admin_required"
+# has been deprecated since T in favor of
+# "identity:list_endpoint_groups_for_project":"role:reader and
+# system_scope:all". The endpoint groups API is now aware of system
+# scope and default roles.
 # Allow a project to access an endpoint group.
 # PUT  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/projects/{project_id}
 # Intended scope(s): system
-#"identity:add_endpoint_group_to_project": "rule:admin_required"
+#"identity:add_endpoint_group_to_project": "role:admin and system_scope:all"
 
+# DEPRECATED
+# "identity:add_endpoint_group_to_project":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:add_endpoint_group_to_project":"role:admin and
+# system_scope:all". The endpoint groups API is now aware of system
+# scope and default roles.
 # Remove endpoint group from project.
 # DELETE  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/projects/{project_id}
 # Intended scope(s): system
-#"identity:remove_endpoint_group_from_project": "rule:admin_required"
+#"identity:remove_endpoint_group_from_project": "role:admin and system_scope:all"
 
+# DEPRECATED
+# "identity:remove_endpoint_group_from_project":"rule:admin_required"
+# has been deprecated since T in favor of
+# "identity:remove_endpoint_group_from_project":"role:admin and
+# system_scope:all". The endpoint groups API is now aware of system
+# scope and default roles.
 # Check a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a
 # group. These terms also apply to the OS-INHERIT APIs, where grants
@@ -479,20 +577,23 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/users/{user_id}/roles/{role_id}/inherited_to_projects
 # HEAD  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # GET  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
-# Intended scope(s): system
-"identity:check_grant": "role:reader and system_scope:all"
+# Intended scope(s): system, domain
+#"identity:check_grant": "(role:reader and system_scope:all) or ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 
 # DEPRECATED "identity:check_grant":"rule:admin_required" has been
-# deprecated since S in favor of "identity:check_grant":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:check_grant": "rule:identity:check_grant"
+# deprecated since S in favor of "identity:check_grant":"(role:reader
+# and system_scope:all) or ((role:reader and
+# domain_id:%(target.user.domain_id)s and
+# domain_id:%(target.project.domain_id)s) or (role:reader and
+# domain_id:%(target.user.domain_id)s and
+# domain_id:%(target.domain.id)s) or (role:reader and
+# domain_id:%(target.group.domain_id)s and
+# domain_id:%(target.project.domain_id)s) or (role:reader and
+# domain_id:%(target.group.domain_id)s and
+# domain_id:%(target.domain.id)s)) and
+# (domain_id:%(target.role.domain_id)s or
+# None:%(target.role.domain_id)s)". The assignment API is now aware of
+# system scope and default roles.
 # List roles granted to an actor on a target. A target can be either a
 # domain or a project. An actor can be either a user or a group. For
 # the OS-INHERIT APIs, it is possible to list inherited role grants
@@ -508,20 +609,21 @@
 # HEAD  /v3/domains/{domain_id}/groups/{group_id}/roles
 # GET  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/inherited_to_projects
 # GET  /v3/OS-INHERIT/domains/{domain_id}/users/{user_id}/roles/inherited_to_projects
-# Intended scope(s): system
-"identity:list_grants": "role:reader and system_scope:all"
+# Intended scope(s): system, domain
+#"identity:list_grants": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)"
 
 # DEPRECATED "identity:list_grants":"rule:admin_required" has been
-# deprecated since S in favor of "identity:list_grants":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:list_grants": "rule:identity:list_grants"
+# deprecated since S in favor of "identity:list_grants":"(role:reader
+# and system_scope:all) or (role:reader and
+# domain_id:%(target.user.domain_id)s and
+# domain_id:%(target.project.domain_id)s) or (role:reader and
+# domain_id:%(target.user.domain_id)s and
+# domain_id:%(target.domain.id)s) or (role:reader and
+# domain_id:%(target.group.domain_id)s and
+# domain_id:%(target.project.domain_id)s) or (role:reader and
+# domain_id:%(target.group.domain_id)s and
+# domain_id:%(target.domain.id)s)". The assignment API is now aware of
+# system scope and default roles.
 # Create a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a
 # group. These terms also apply to the OS-INHERIT APIs, where grants
@@ -535,20 +637,23 @@
 # PUT  /v3/OS-INHERIT/projects/{project_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # PUT  /v3/OS-INHERIT/domains/{domain_id}/users/{user_id}/roles/{role_id}/inherited_to_projects
 # PUT  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
-# Intended scope(s): system
-"identity:create_grant": "role:admin and system_scope:all"
+# Intended scope(s): system, domain
+#"identity:create_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 
 # DEPRECATED "identity:create_grant":"rule:admin_required" has been
-# deprecated since S in favor of "identity:create_grant":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:create_grant": "rule:identity:create_grant"
+# deprecated since S in favor of "identity:create_grant":"(role:admin
+# and system_scope:all) or ((role:admin and
+# domain_id:%(target.user.domain_id)s and
+# domain_id:%(target.project.domain_id)s) or (role:admin and
+# domain_id:%(target.user.domain_id)s and
+# domain_id:%(target.domain.id)s) or (role:admin and
+# domain_id:%(target.group.domain_id)s and
+# domain_id:%(target.project.domain_id)s) or (role:admin and
+# domain_id:%(target.group.domain_id)s and
+# domain_id:%(target.domain.id)s)) and
+# (domain_id:%(target.role.domain_id)s or
+# None:%(target.role.domain_id)s)". The assignment API is now aware of
+# system scope and default roles.
 # Revoke a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a
 # group. These terms also apply to the OS-INHERIT APIs, where grants
@@ -564,430 +669,291 @@
 # DELETE  /v3/OS-INHERIT/projects/{project_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # DELETE  /v3/OS-INHERIT/domains/{domain_id}/users/{user_id}/roles/{role_id}/inherited_to_projects
 # DELETE  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
-# Intended scope(s): system
-"identity:revoke_grant": "role:admin and system_scope:all"
+# Intended scope(s): system, domain
+#"identity:revoke_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 
 # DEPRECATED "identity:revoke_grant":"rule:admin_required" has been
-# deprecated since S in favor of "identity:revoke_grant":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:revoke_grant": "rule:identity:revoke_grant"
+# deprecated since S in favor of "identity:revoke_grant":"(role:admin
+# and system_scope:all) or ((role:admin and
+# domain_id:%(target.user.domain_id)s and
+# domain_id:%(target.project.domain_id)s) or (role:admin and
+# domain_id:%(target.user.domain_id)s and
+# domain_id:%(target.domain.id)s) or (role:admin and
+# domain_id:%(target.group.domain_id)s and
+# domain_id:%(target.project.domain_id)s) or (role:admin and
+# domain_id:%(target.group.domain_id)s and
+# domain_id:%(target.domain.id)s)) and
+# (domain_id:%(target.role.domain_id)s or
+# None:%(target.role.domain_id)s)". The assignment API is now aware of
+# system scope and default roles.
 # List all grants a specific user has on the system.
 # ['HEAD', 'GET']  /v3/system/users/{user_id}/roles
 # Intended scope(s): system
-"identity:list_system_grants_for_user": "role:reader and system_scope:all"
+#"identity:list_system_grants_for_user": "role:reader and system_scope:all"
 
 # DEPRECATED
 # "identity:list_system_grants_for_user":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:list_system_grants_for_user":"role:reader and
-# system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:list_system_grants_for_user": "rule:identity:list_system_grants_for_user"
+# system_scope:all". The assignment API is now aware of system scope
+# and default roles.
 # Check if a user has a role on the system.
 # ['HEAD', 'GET']  /v3/system/users/{user_id}/roles/{role_id}
 # Intended scope(s): system
-"identity:check_system_grant_for_user": "role:reader and system_scope:all"
+#"identity:check_system_grant_for_user": "role:reader and system_scope:all"
 
 # DEPRECATED
 # "identity:check_system_grant_for_user":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:check_system_grant_for_user":"role:reader and
-# system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:check_system_grant_for_user": "rule:identity:check_system_grant_for_user"
+# system_scope:all". The assignment API is now aware of system scope
+# and default roles.
 # Grant a user a role on the system.
 # ['PUT']  /v3/system/users/{user_id}/roles/{role_id}
 # Intended scope(s): system
-"identity:create_system_grant_for_user": "role:admin and system_scope:all"
+#"identity:create_system_grant_for_user": "role:admin and system_scope:all"
 
 # DEPRECATED
 # "identity:create_system_grant_for_user":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:create_system_grant_for_user":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:create_system_grant_for_user": "rule:identity:create_system_grant_for_user"
+# system_scope:all". The assignment API is now aware of system scope
+# and default roles.
 # Remove a role from a user on the system.
 # ['DELETE']  /v3/system/users/{user_id}/roles/{role_id}
 # Intended scope(s): system
-"identity:revoke_system_grant_for_user": "role:admin and system_scope:all"
+#"identity:revoke_system_grant_for_user": "role:admin and system_scope:all"
 
 # DEPRECATED
 # "identity:revoke_system_grant_for_user":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:revoke_system_grant_for_user":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:revoke_system_grant_for_user": "rule:identity:revoke_system_grant_for_user"
+# system_scope:all". The assignment API is now aware of system scope
+# and default roles.
 # List all grants a specific group has on the system.
 # ['HEAD', 'GET']  /v3/system/groups/{group_id}/roles
 # Intended scope(s): system
-"identity:list_system_grants_for_group": "role:reader and system_scope:all"
+#"identity:list_system_grants_for_group": "role:reader and system_scope:all"
 
 # DEPRECATED
 # "identity:list_system_grants_for_group":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:list_system_grants_for_group":"role:reader and
-# system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:list_system_grants_for_group": "rule:identity:list_system_grants_for_group"
+# system_scope:all". The assignment API is now aware of system scope
+# and default roles.
 # Check if a group has a role on the system.
 # ['HEAD', 'GET']  /v3/system/groups/{group_id}/roles/{role_id}
 # Intended scope(s): system
-"identity:check_system_grant_for_group": "role:reader and system_scope:all"
+#"identity:check_system_grant_for_group": "role:reader and system_scope:all"
 
 # DEPRECATED
 # "identity:check_system_grant_for_group":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:check_system_grant_for_group":"role:reader and
-# system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:check_system_grant_for_group": "rule:identity:check_system_grant_for_group"
+# system_scope:all". The assignment API is now aware of system scope
+# and default roles.
 # Grant a group a role on the system.
 # ['PUT']  /v3/system/groups/{group_id}/roles/{role_id}
 # Intended scope(s): system
-"identity:create_system_grant_for_group": "role:admin and system_scope:all"
+#"identity:create_system_grant_for_group": "role:admin and system_scope:all"
 
 # DEPRECATED
 # "identity:create_system_grant_for_group":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:create_system_grant_for_group":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:create_system_grant_for_group": "rule:identity:create_system_grant_for_group"
+# system_scope:all". The assignment API is now aware of system scope
+# and default roles.
 # Remove a role from a group on the system.
 # ['DELETE']  /v3/system/groups/{group_id}/roles/{role_id}
 # Intended scope(s): system
-"identity:revoke_system_grant_for_group": "role:admin and system_scope:all"
+#"identity:revoke_system_grant_for_group": "role:admin and system_scope:all"
 
 # DEPRECATED
 # "identity:revoke_system_grant_for_group":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:revoke_system_grant_for_group":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the assignment API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the system assignment API.
-#"identity:revoke_system_grant_for_group": "rule:identity:revoke_system_grant_for_group"
+# system_scope:all". The assignment API is now aware of system scope
+# and default roles.
 # Show group details.
 # GET  /v3/groups/{group_id}
 # HEAD  /v3/groups/{group_id}
 # Intended scope(s): system, domain
-"identity:get_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
+#"identity:get_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
 
 # DEPRECATED "identity:get_group":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_group":"(role:reader
 # and system_scope:all) or (role:reader and
-# domain_id:%(target.group.domain_id)s)".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:get_group": "rule:identity:get_group"
+# domain_id:%(target.group.domain_id)s)". The group API is now aware
+# of system scope and default roles.
 # List groups.
 # GET  /v3/groups
 # HEAD  /v3/groups
 # Intended scope(s): system, domain
-"identity:list_groups": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
+#"identity:list_groups": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
 
 # DEPRECATED "identity:list_groups":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_groups":"(role:reader
 # and system_scope:all) or (role:reader and
-# domain_id:%(target.group.domain_id)s)".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:list_groups": "rule:identity:list_groups"
+# domain_id:%(target.group.domain_id)s)". The group API is now aware
+# of system scope and default roles.
 # List groups to which a user belongs.
 # GET  /v3/users/{user_id}/groups
 # HEAD  /v3/users/{user_id}/groups
 # Intended scope(s): system, domain, project
-"identity:list_groups_for_user": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(user_id)s"
+#"identity:list_groups_for_user": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(user_id)s"
 
 # DEPRECATED "identity:list_groups_for_user":"rule:admin_or_owner" has
 # been deprecated since S in favor of
 # "identity:list_groups_for_user":"(role:reader and system_scope:all)
 # or (role:reader and domain_id:%(target.user.domain_id)s) or
-# user_id:%(user_id)s".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:list_groups_for_user": "rule:identity:list_groups_for_user"
+# user_id:%(user_id)s". The group API is now aware of system scope and
+# default roles.
 # Create group.
 # POST  /v3/groups
 # Intended scope(s): system, domain
-"identity:create_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
+#"identity:create_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
 
 # DEPRECATED "identity:create_group":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_group":"(role:admin
 # and system_scope:all) or (role:admin and
-# domain_id:%(target.group.domain_id)s)".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:create_group": "rule:identity:create_group"
+# domain_id:%(target.group.domain_id)s)". The group API is now aware
+# of system scope and default roles.
 # Update group.
 # PATCH  /v3/groups/{group_id}
 # Intended scope(s): system, domain
-"identity:update_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
+#"identity:update_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
 
 # DEPRECATED "identity:update_group":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_group":"(role:admin
 # and system_scope:all) or (role:admin and
-# domain_id:%(target.group.domain_id)s)".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:update_group": "rule:identity:update_group"
+# domain_id:%(target.group.domain_id)s)". The group API is now aware
+# of system scope and default roles.
 # Delete group.
 # DELETE  /v3/groups/{group_id}
 # Intended scope(s): system, domain
-"identity:delete_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
+#"identity:delete_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
 
 # DEPRECATED "identity:delete_group":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_group":"(role:admin
 # and system_scope:all) or (role:admin and
-# domain_id:%(target.group.domain_id)s)".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:delete_group": "rule:identity:delete_group"
+# domain_id:%(target.group.domain_id)s)". The group API is now aware
+# of system scope and default roles.
 # List members of a specific group.
 # GET  /v3/groups/{group_id}/users
 # HEAD  /v3/groups/{group_id}/users
 # Intended scope(s): system, domain
-"identity:list_users_in_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
+#"identity:list_users_in_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
 
 # DEPRECATED "identity:list_users_in_group":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:list_users_in_group":"(role:reader and system_scope:all)
-# or (role:reader and domain_id:%(target.group.domain_id)s)".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:list_users_in_group": "rule:identity:list_users_in_group"
+# or (role:reader and domain_id:%(target.group.domain_id)s)". The
+# group API is now aware of system scope and default roles.
 # Remove user from group.
 # DELETE  /v3/groups/{group_id}/users/{user_id}
 # Intended scope(s): system, domain
-"identity:remove_user_from_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
+#"identity:remove_user_from_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:remove_user_from_group":"rule:admin_required"
 # has been deprecated since S in favor of
 # "identity:remove_user_from_group":"(role:admin and system_scope:all)
 # or (role:admin and domain_id:%(target.group.domain_id)s and
-# domain_id:%(target.user.domain_id)s)".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:remove_user_from_group": "rule:identity:remove_user_from_group"
+# domain_id:%(target.user.domain_id)s)". The group API is now aware of
+# system scope and default roles.
 # Check whether a user is a member of a group.
 # HEAD  /v3/groups/{group_id}/users/{user_id}
 # GET  /v3/groups/{group_id}/users/{user_id}
 # Intended scope(s): system, domain
-"identity:check_user_in_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
+#"identity:check_user_in_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:check_user_in_group":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:check_user_in_group":"(role:reader and system_scope:all)
 # or (role:reader and domain_id:%(target.group.domain_id)s and
-# domain_id:%(target.user.domain_id)s)".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:check_user_in_group": "rule:identity:check_user_in_group"
+# domain_id:%(target.user.domain_id)s)". The group API is now aware of
+# system scope and default roles.
 # Add user to group.
 # PUT  /v3/groups/{group_id}/users/{user_id}
 # Intended scope(s): system, domain
-"identity:add_user_to_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
+#"identity:add_user_to_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:add_user_to_group":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:add_user_to_group":"(role:admin and system_scope:all) or
 # (role:admin and domain_id:%(target.group.domain_id)s and
-# domain_id:%(target.user.domain_id)s)".
-#
-# As of the Stein release, the group API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:add_user_to_group": "rule:identity:add_user_to_group"
+# domain_id:%(target.user.domain_id)s)". The group API is now aware of
+# system scope and default roles.
 # Create identity provider.
 # PUT  /v3/OS-FEDERATION/identity_providers/{idp_id}
 # Intended scope(s): system
-"identity:create_identity_provider": "role:admin and system_scope:all"
+#"identity:create_identity_provider": "role:admin and system_scope:all"
 
 # DEPRECATED
 # "identity:create_identity_providers":"rule:admin_required" has been
 # deprecated since S in favor of
 # "identity:create_identity_provider":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the identity provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the identity provider API.
-#"identity:create_identity_providers": "rule:identity:create_identity_provider"
+# system_scope:all". The identity provider API is now aware of system
+# scope and default roles.
+"identity:create_identity_providers": "rule:identity:create_identity_provider"
 # List identity providers.
 # GET  /v3/OS-FEDERATION/identity_providers
 # HEAD  /v3/OS-FEDERATION/identity_providers
 # Intended scope(s): system
-"identity:list_identity_providers": "role:reader and system_scope:all"
+#"identity:list_identity_providers": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:list_identity_providers":"rule:admin_required"
 # has been deprecated since S in favor of
 # "identity:list_identity_providers":"role:reader and
-# system_scope:all".
-#
-# As of the Stein release, the identity provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the identity provider API.
-#"identity:list_identity_providers": "rule:identity:list_identity_providers"
+# system_scope:all". The identity provider API is now aware of system
+# scope and default roles.
 # Get identity provider.
 # GET  /v3/OS-FEDERATION/identity_providers/{idp_id}
 # HEAD  /v3/OS-FEDERATION/identity_providers/{idp_id}
 # Intended scope(s): system
-"identity:get_identity_provider": "role:reader and system_scope:all"
+#"identity:get_identity_provider": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:get_identity_providers":"rule:admin_required"
 # has been deprecated since S in favor of
 # "identity:get_identity_provider":"role:reader and system_scope:all".
-#
-# As of the Stein release, the identity provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the identity provider API.
-#"identity:get_identity_providers": "rule:identity:get_identity_provider"
+# The identity provider API is now aware of system scope and default
+# roles.
+"identity:get_identity_providers": "rule:identity:get_identity_provider"
 # Update identity provider.
 # PATCH  /v3/OS-FEDERATION/identity_providers/{idp_id}
 # Intended scope(s): system
-"identity:update_identity_provider": "role:admin and system_scope:all"
+#"identity:update_identity_provider": "role:admin and system_scope:all"
 
 # DEPRECATED
 # "identity:update_identity_providers":"rule:admin_required" has been
 # deprecated since S in favor of
 # "identity:update_identity_provider":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the identity provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the identity provider API.
-#"identity:update_identity_providers": "rule:identity:update_identity_provider"
+# system_scope:all". The identity provider API is now aware of system
+# scope and default roles.
+"identity:update_identity_providers": "rule:identity:update_identity_provider"
 # Delete identity provider.
 # DELETE  /v3/OS-FEDERATION/identity_providers/{idp_id}
 # Intended scope(s): system
-"identity:delete_identity_provider": "role:admin and system_scope:all"
+#"identity:delete_identity_provider": "role:admin and system_scope:all"
 
 # DEPRECATED
 # "identity:delete_identity_providers":"rule:admin_required" has been
 # deprecated since S in favor of
 # "identity:delete_identity_provider":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the identity provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the identity provider API.
-#identity:delete_identity_providers": "rule:identity:delete_identity_provider"
+# system_scope:all". The identity provider API is now aware of system
+# scope and default roles.
+"identity:delete_identity_providers": "rule:identity:delete_identity_provider"
 # Get information about an association between two roles. When a
 # relationship exists between a prior role and an implied role and the
 # prior role is assigned to a user, the user also assumes the implied
 # role.
 # GET  /v3/roles/{prior_role_id}/implies/{implied_role_id}
 # Intended scope(s): system
-#"identity:get_implied_role": "rule:admin_required"
+#"identity:get_implied_role": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:get_implied_role":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:get_implied_role":"role:reader and system_scope:all". The
+# implied role API is now aware of system scope and default roles.
 # List associations between two roles. When a relationship exists
 # between a prior role and an implied role and the prior role is
 # assigned to a user, the user also assumes the implied role. This
@@ -996,23 +962,35 @@
 # GET  /v3/roles/{prior_role_id}/implies
 # HEAD  /v3/roles/{prior_role_id}/implies
 # Intended scope(s): system
-#"identity:list_implied_roles": "rule:admin_required"
+#"identity:list_implied_roles": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:list_implied_roles":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:list_implied_roles":"role:reader and system_scope:all".
+# The implied role API is now aware of system scope and default roles.
 # Create an association between two roles. When a relationship exists
 # between a prior role and an implied role and the prior role is
 # assigned to a user, the user also assumes the implied role.
 # PUT  /v3/roles/{prior_role_id}/implies/{implied_role_id}
 # Intended scope(s): system
-#"identity:create_implied_role": "rule:admin_required"
+#"identity:create_implied_role": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:create_implied_role":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:create_implied_role":"role:admin and system_scope:all".
+# The implied role API is now aware of system scope and default roles.
 # Delete the association between two roles. When a relationship exists
 # between a prior role and an implied role and the prior role is
 # assigned to a user, the user also assumes the implied role. Removing
 # the association will cause that effect to be eliminated.
 # DELETE  /v3/roles/{prior_role_id}/implies/{implied_role_id}
 # Intended scope(s): system
-#"identity:delete_implied_role": "rule:admin_required"
+#"identity:delete_implied_role": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:delete_implied_role":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:delete_implied_role":"role:admin and system_scope:all".
+# The implied role API is now aware of system scope and default roles.
 # List all associations between two roles in the system. When a
 # relationship exists between a prior role and an implied role and the
 # prior role is assigned to a user, the user also assumes the implied
@@ -1020,31 +998,41 @@
 # GET  /v3/role_inferences
 # HEAD  /v3/role_inferences
 # Intended scope(s): system
-#"identity:list_role_inference_rules": "rule:admin_required"
+#"identity:list_role_inference_rules": "role:reader and system_scope:all"
 
+# DEPRECATED
+# "identity:list_role_inference_rules":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:list_role_inference_rules":"role:reader and
+# system_scope:all". The implied role API is now aware of system scope
+# and default roles.
 # Check an association between two roles. When a relationship exists
 # between a prior role and an implied role and the prior role is
 # assigned to a user, the user also assumes the implied role.
 # HEAD  /v3/roles/{prior_role_id}/implies/{implied_role_id}
 # Intended scope(s): system
-#"identity:check_implied_role": "rule:admin_required"
+#"identity:check_implied_role": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:check_implied_role":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:check_implied_role":"role:reader and system_scope:all".
+# The implied role API is now aware of system scope and default roles.
 # Get limit enforcement model.
 # GET  /v3/limits/model
 # HEAD  /v3/limits/model
-# Intended scope(s): system, project
+# Intended scope(s): system, domain, project
 #"identity:get_limit_model": ""
 
 # Show limit details.
 # GET  /v3/limits/{limit_id}
 # HEAD  /v3/limits/{limit_id}
-# Intended scope(s): system, project, domain
-#"identity:get_limit": "(role:reader and system_scope:all) or project_id:%(target.limit.project_id)s or domain_id:%(target.limit.domain_id)s"
+# Intended scope(s): system, domain, project
+#"identity:get_limit": "(role:reader and system_scope:all) or (domain_id:%(target.limit.domain.id)s or domain_id:%(target.limit.project.domain_id)s) or (project_id:%(target.limit.project_id)s and not None:%(target.limit.project_id)s)"
 
 # List limits.
 # GET  /v3/limits
 # HEAD  /v3/limits
-# Intended scope(s): system, project
+# Intended scope(s): system, domain, project
 #"identity:list_limits": ""
 
 # Create limits.
@@ -1065,372 +1053,487 @@
 # Create a new federated mapping containing one or more sets of rules.
 # PUT  /v3/OS-FEDERATION/mappings/{mapping_id}
 # Intended scope(s): system
-"identity:create_mapping": "role:admin and system_scope:all"
+#"identity:create_mapping": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:create_mapping":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_mapping":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the federated mapping API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the federated mapping API.
-#"identity:create_mapping": "rule:identity:create_mapping"
+# and system_scope:all". The federated mapping API is now aware of
+# system scope and default roles.
 # Get a federated mapping.
 # GET  /v3/OS-FEDERATION/mappings/{mapping_id}
 # HEAD  /v3/OS-FEDERATION/mappings/{mapping_id}
 # Intended scope(s): system
-"identity:get_mapping": "role:reader and system_scope:all"
+#"identity:get_mapping": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:get_mapping":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_mapping":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the federated mapping API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the federated mapping API.
-#"identity:get_mapping": "rule:identity:get_mapping"
+# and system_scope:all". The federated mapping API is now aware of
+# system scope and default roles.
 # List federated mappings.
 # GET  /v3/OS-FEDERATION/mappings
 # HEAD  /v3/OS-FEDERATION/mappings
 # Intended scope(s): system
-"identity:list_mappings": "role:reader and system_scope:all"
+#"identity:list_mappings": "role:reader and system_scope:all"
 
-# DEPRECATED "identity:get_mapping":"rule:admin_required" has been
+# DEPRECATED "identity:list_mappings":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_mappings":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the federated mapping API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the federated mapping API.
-#"identity:get_mapping": "rule:identity:list_mappings"
+# and system_scope:all". The federated mapping API is now aware of
+# system scope and default roles.
 # Delete a federated mapping.
 # DELETE  /v3/OS-FEDERATION/mappings/{mapping_id}
 # Intended scope(s): system
-"identity:delete_mapping": "role:admin and system_scope:all"
+#"identity:delete_mapping": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:delete_mapping":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_mapping":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the federated mapping API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the federated mapping API.
-#"identity:delete_mapping": "rule:identity:delete_mapping"
+# and system_scope:all". The federated mapping API is now aware of
+# system scope and default roles.
 # Update a federated mapping.
 # PATCH  /v3/OS-FEDERATION/mappings/{mapping_id}
 # Intended scope(s): system
-"identity:update_mapping": "role:admin and system_scope:all"
+#"identity:update_mapping": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:update_mapping":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_mapping":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the federated mapping API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the federated mapping API.
-#"identity:update_mapping": "rule:identity:update_mapping"
+# and system_scope:all". The federated mapping API is now aware of
+# system scope and default roles.
 # Show policy details.
-# GET  /v3/policy/{policy_id}
+# GET  /v3/policies/{policy_id}
 # Intended scope(s): system
-#"identity:get_policy": "rule:admin_required"
+#"identity:get_policy": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:get_policy":"rule:admin_required" has been
+# deprecated since T in favor of "identity:get_policy":"role:reader
+# and system_scope:all". The policy API is now aware of system scope
+# and default roles.
 # List policies.
 # GET  /v3/policies
 # Intended scope(s): system
-#"identity:list_policies": "rule:admin_required"
+#"identity:list_policies": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:list_policies":"rule:admin_required" has been
+# deprecated since T in favor of "identity:list_policies":"role:reader
+# and system_scope:all". The policy API is now aware of system scope
+# and default roles.
 # Create policy.
 # POST  /v3/policies
 # Intended scope(s): system
-#"identity:create_policy": "rule:admin_required"
+#"identity:create_policy": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:create_policy":"rule:admin_required" has been
+# deprecated since T in favor of "identity:create_policy":"role:admin
+# and system_scope:all". The policy API is now aware of system scope
+# and default roles.
 # Update policy.
 # PATCH  /v3/policies/{policy_id}
 # Intended scope(s): system
-#"identity:update_policy": "rule:admin_required"
+#"identity:update_policy": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:update_policy":"rule:admin_required" has been
+# deprecated since T in favor of "identity:update_policy":"role:admin
+# and system_scope:all". The policy API is now aware of system scope
+# and default roles.
 # Delete policy.
 # DELETE  /v3/policies/{policy_id}
 # Intended scope(s): system
-#"identity:delete_policy": "rule:admin_required"
+#"identity:delete_policy": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:delete_policy":"rule:admin_required" has been
+# deprecated since T in favor of "identity:delete_policy":"role:admin
+# and system_scope:all". The policy API is now aware of system scope
+# and default roles.
 # Associate a policy to a specific endpoint.
 # PUT  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/endpoints/{endpoint_id}
 # Intended scope(s): system
-#"identity:create_policy_association_for_endpoint": "rule:admin_required"
+#"identity:create_policy_association_for_endpoint": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:create_policy_association_for_endpoint":"rule:a
+# dmin_required" has been deprecated since T in favor of
+# "identity:create_policy_association_for_endpoint":"role:admin and
+# system_scope:all". The policy association API is now aware of system
+# scope and default roles.
 # Check policy association for endpoint.
 # GET  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/endpoints/{endpoint_id}
 # HEAD  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/endpoints/{endpoint_id}
 # Intended scope(s): system
-#"identity:check_policy_association_for_endpoint": "rule:admin_required"
+#"identity:check_policy_association_for_endpoint": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:check_policy_association_for_endpoint":"rule:ad
+# min_required" has been deprecated since T in favor of
+# "identity:check_policy_association_for_endpoint":"role:reader and
+# system_scope:all". The policy association API is now aware of system
+# scope and default roles.
 # Delete policy association for endpoint.
 # DELETE  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/endpoints/{endpoint_id}
 # Intended scope(s): system
-#"identity:delete_policy_association_for_endpoint": "rule:admin_required"
+#"identity:delete_policy_association_for_endpoint": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:delete_policy_association_for_endpoint":"rule:a
+# dmin_required" has been deprecated since T in favor of
+# "identity:delete_policy_association_for_endpoint":"role:admin and
+# system_scope:all". The policy association API is now aware of system
+# scope and default roles.
 # Associate a policy to a specific service.
 # PUT  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}
 # Intended scope(s): system
-#"identity:create_policy_association_for_service": "rule:admin_required"
+#"identity:create_policy_association_for_service": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:create_policy_association_for_service":"rule:ad
+# min_required" has been deprecated since T in favor of
+# "identity:create_policy_association_for_service":"role:admin and
+# system_scope:all". The policy association API is now aware of system
+# scope and default roles.
 # Check policy association for service.
 # GET  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}
 # HEAD  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}
 # Intended scope(s): system
-#"identity:check_policy_association_for_service": "rule:admin_required"
+#"identity:check_policy_association_for_service": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:check_policy_association_for_service":"rule:adm
+# in_required" has been deprecated since T in favor of
+# "identity:check_policy_association_for_service":"role:reader and
+# system_scope:all". The policy association API is now aware of system
+# scope and default roles.
 # Delete policy association for service.
 # DELETE  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}
 # Intended scope(s): system
-#"identity:delete_policy_association_for_service": "rule:admin_required"
+#"identity:delete_policy_association_for_service": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:delete_policy_association_for_service":"rule:ad
+# min_required" has been deprecated since T in favor of
+# "identity:delete_policy_association_for_service":"role:admin and
+# system_scope:all". The policy association API is now aware of system
+# scope and default roles.
 # Associate a policy to a specific region and service combination.
 # PUT  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}/regions/{region_id}
 # Intended scope(s): system
-#"identity:create_policy_association_for_region_and_service": "rule:admin_required"
+#"identity:create_policy_association_for_region_and_service": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:create_policy_association_for_region_and_servic
+# e":"rule:admin_required" has been deprecated since T in favor of "id
+# entity:create_policy_association_for_region_and_service":"role:admin
+# and system_scope:all". The policy association API is now aware of
+# system scope and default roles.
 # Check policy association for region and service.
 # GET  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}/regions/{region_id}
 # HEAD  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}/regions/{region_id}
 # Intended scope(s): system
-#"identity:check_policy_association_for_region_and_service": "rule:admin_required"
+#"identity:check_policy_association_for_region_and_service": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:check_policy_association_for_region_and_service
+# ":"rule:admin_required" has been deprecated since T in favor of "ide
+# ntity:check_policy_association_for_region_and_service":"role:reader
+# and system_scope:all". The policy association API is now aware of
+# system scope and default roles.
 # Delete policy association for region and service.
 # DELETE  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}/regions/{region_id}
 # Intended scope(s): system
-#"identity:delete_policy_association_for_region_and_service": "rule:admin_required"
+#"identity:delete_policy_association_for_region_and_service": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:delete_policy_association_for_region_and_servic
+# e":"rule:admin_required" has been deprecated since T in favor of "id
+# entity:delete_policy_association_for_region_and_service":"role:admin
+# and system_scope:all". The policy association API is now aware of
+# system scope and default roles.
 # Get policy for endpoint.
 # GET  /v3/endpoints/{endpoint_id}/OS-ENDPOINT-POLICY/policy
 # HEAD  /v3/endpoints/{endpoint_id}/OS-ENDPOINT-POLICY/policy
 # Intended scope(s): system
-#"identity:get_policy_for_endpoint": "rule:admin_required"
+#"identity:get_policy_for_endpoint": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:get_policy_for_endpoint":"rule:admin_required"
+# has been deprecated since T in favor of
+# "identity:get_policy_for_endpoint":"role:reader and
+# system_scope:all". The policy association API is now aware of system
+# scope and default roles.
 # List endpoints for policy.
 # GET  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/endpoints
 # Intended scope(s): system
-#"identity:list_endpoints_for_policy": "rule:admin_required"
+#"identity:list_endpoints_for_policy": "role:reader and system_scope:all"
 
+# DEPRECATED
+# "identity:list_endpoints_for_policy":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:list_endpoints_for_policy":"role:reader and
+# system_scope:all". The policy association API is now aware of system
+# scope and default roles.
 # Show project details.
 # GET  /v3/projects/{project_id}
 # Intended scope(s): system, domain, project
-"identity:get_project": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
+#"identity:get_project": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
 
 # DEPRECATED "identity:get_project":"rule:admin_required or
 # project_id:%(target.project.id)s" has been deprecated since S in
 # favor of "identity:get_project":"(role:reader and system_scope:all)
 # or (role:reader and domain_id:%(target.project.domain_id)s) or
-# project_id:%(target.project.id)s".
-#
-# As of the Stein release, the project API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:get_project": "rule:identity:get_project"
+# project_id:%(target.project.id)s". The project API is now aware of
+# system scope and default roles.
 # List projects.
 # GET  /v3/projects
 # Intended scope(s): system, domain
-"identity:list_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
+#"identity:list_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 
 # DEPRECATED "identity:list_projects":"rule:admin_required" has been
 # deprecated since S in favor of
 # "identity:list_projects":"(role:reader and system_scope:all) or
-# (role:reader and domain_id:%(target.domain_id)s)".
-#
-# As of the Stein release, the project API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:list_projects": "rule:identity:list_projects"
+# (role:reader and domain_id:%(target.domain_id)s)". The project API
+# is now aware of system scope and default roles.
 # List projects for user.
 # GET  /v3/users/{user_id}/projects
 # Intended scope(s): system, domain, project
-"identity:list_user_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(target.user.id)s"
+#"identity:list_user_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(target.user.id)s"
 
 # DEPRECATED "identity:list_user_projects":"rule:admin_or_owner" has
 # been deprecated since S in favor of
 # "identity:list_user_projects":"(role:reader and system_scope:all) or
 # (role:reader and domain_id:%(target.user.domain_id)s) or
-# user_id:%(target.user.id)s".
-#
-# As of the Stein release, the project API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:list_user_projects": "rule:identity:list_user_projects"
+# user_id:%(target.user.id)s". The project API is now aware of system
+# scope and default roles.
 # Create project.
 # POST  /v3/projects
 # Intended scope(s): system, domain
-"identity:create_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
+#"identity:create_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
 
 # DEPRECATED "identity:create_project":"rule:admin_required" has been
 # deprecated since S in favor of
 # "identity:create_project":"(role:admin and system_scope:all) or
-# (role:admin and domain_id:%(target.project.domain_id)s)".
-#
-# As of the Stein release, the project API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:create_project": "rule:identity:create_project"
+# (role:admin and domain_id:%(target.project.domain_id)s)". The
+# project API is now aware of system scope and default roles.
 # Update project.
 # PATCH  /v3/projects/{project_id}
 # Intended scope(s): system, domain
-"identity:update_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
+#"identity:update_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
 
 # DEPRECATED "identity:update_project":"rule:admin_required" has been
 # deprecated since S in favor of
 # "identity:update_project":"(role:admin and system_scope:all) or
-# (role:admin and domain_id:%(target.project.domain_id)s)".
-#
-# As of the Stein release, the project API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:update_project": "rule:identity:update_project"
+# (role:admin and domain_id:%(target.project.domain_id)s)". The
+# project API is now aware of system scope and default roles.
 # Delete project.
 # DELETE  /v3/projects/{project_id}
 # Intended scope(s): system, domain
-"identity:delete_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
+#"identity:delete_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
 
 # DEPRECATED "identity:delete_project":"rule:admin_required" has been
 # deprecated since S in favor of
 # "identity:delete_project":"(role:admin and system_scope:all) or
-# (role:admin and domain_id:%(target.project.domain_id)s)".
-#
-# As of the Stein release, the project API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:delete_project": "rule:identity:delete_project"
+# (role:admin and domain_id:%(target.project.domain_id)s)". The
+# project API is now aware of system scope and default roles.
 # List tags for a project.
 # GET  /v3/projects/{project_id}/tags
 # HEAD  /v3/projects/{project_id}/tags
-#"identity:list_project_tags": "rule:admin_required or project_id:%(target.project.id)s"
+# Intended scope(s): system, domain, project
+#"identity:list_project_tags": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
 
+# DEPRECATED "identity:list_project_tags":"rule:admin_required or
+# project_id:%(target.project.id)s" has been deprecated since T in
+# favor of "identity:list_project_tags":"(role:reader and
+# system_scope:all) or (role:reader and
+# domain_id:%(target.project.domain_id)s) or
+# project_id:%(target.project.id)s".
+#
+# As of the Train release, the project tags API understands how to
+# handle system-scoped tokens in addition to project and domain
+# tokens, making the API more accessible to users without compromising
+# security or manageability for administrators. The new default
+# policies for this API account for these changes automatically.
 # Check if project contains a tag.
 # GET  /v3/projects/{project_id}/tags/{value}
 # HEAD  /v3/projects/{project_id}/tags/{value}
-#"identity:get_project_tag": "rule:admin_required or project_id:%(target.project.id)s"
+# Intended scope(s): system, domain, project
+#"identity:get_project_tag": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
 
+# DEPRECATED "identity:get_project_tag":"rule:admin_required or
+# project_id:%(target.project.id)s" has been deprecated since T in
+# favor of "identity:get_project_tag":"(role:reader and
+# system_scope:all) or (role:reader and
+# domain_id:%(target.project.domain_id)s) or
+# project_id:%(target.project.id)s".
+#
+# As of the Train release, the project tags API understands how to
+# handle system-scoped tokens in addition to project and domain
+# tokens, making the API more accessible to users without compromising
+# security or manageability for administrators. The new default
+# policies for this API account for these changes automatically.
 # Replace all tags on a project with the new set of tags.
 # PUT  /v3/projects/{project_id}/tags
-# Intended scope(s): system
-#"identity:update_project_tags": "rule:admin_required"
+# Intended scope(s): system, domain, project
+#"identity:update_project_tags": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
 
+# DEPRECATED "identity:update_project_tags":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:update_project_tags":"(role:admin and system_scope:all) or
+# (role:admin and domain_id:%(target.project.domain_id)s) or
+# (role:admin and project_id:%(target.project.id)s)".
+#
+# As of the Train release, the project tags API understands how to
+# handle system-scoped tokens in addition to project and domain
+# tokens, making the API more accessible to users without compromising
+# security or manageability for administrators. The new default
+# policies for this API account for these changes automatically.
 # Add a single tag to a project.
 # PUT  /v3/projects/{project_id}/tags/{value}
-# Intended scope(s): system
-#"identity:create_project_tag": "rule:admin_required"
+# Intended scope(s): system, domain, project
+#"identity:create_project_tag": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
 
+# DEPRECATED "identity:create_project_tag":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:create_project_tag":"(role:admin and system_scope:all) or
+# (role:admin and domain_id:%(target.project.domain_id)s) or
+# (role:admin and project_id:%(target.project.id)s)".
+#
+# As of the Train release, the project tags API understands how to
+# handle system-scoped tokens in addition to project and domain
+# tokens, making the API more accessible to users without compromising
+# security or manageability for administrators. The new default
+# policies for this API account for these changes automatically.
 # Remove all tags from a project.
 # DELETE  /v3/projects/{project_id}/tags
-# Intended scope(s): system
-#"identity:delete_project_tags": "rule:admin_required"
+# Intended scope(s): system, domain, project
+#"identity:delete_project_tags": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
 
+# DEPRECATED "identity:delete_project_tags":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:delete_project_tags":"(role:admin and system_scope:all) or
+# (role:admin and domain_id:%(target.project.domain_id)s) or
+# (role:admin and project_id:%(target.project.id)s)".
+#
+# As of the Train release, the project tags API understands how to
+# handle system-scoped tokens in addition to project and domain
+# tokens, making the API more accessible to users without compromising
+# security or manageability for administrators. The new default
+# policies for this API account for these changes automatically.
 # Delete a specified tag from project.
 # DELETE  /v3/projects/{project_id}/tags/{value}
-# Intended scope(s): system
-#"identity:delete_project_tag": "rule:admin_required"
+# Intended scope(s): system, domain, project
+#"identity:delete_project_tag": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
 
+# DEPRECATED "identity:delete_project_tag":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:delete_project_tag":"(role:admin and system_scope:all) or
+# (role:admin and domain_id:%(target.project.domain_id)s) or
+# (role:admin and project_id:%(target.project.id)s)".
+#
+# As of the Train release, the project tags API understands how to
+# handle system-scoped tokens in addition to project and domain
+# tokens, making the API more accessible to users without compromising
+# security or manageability for administrators. The new default
+# policies for this API account for these changes automatically.
 # List projects allowed to access an endpoint.
 # GET  /v3/OS-EP-FILTER/endpoints/{endpoint_id}/projects
 # Intended scope(s): system
-#"identity:list_projects_for_endpoint": "rule:admin_required"
+#"identity:list_projects_for_endpoint": "role:reader and system_scope:all"
 
+# DEPRECATED
+# "identity:list_projects_for_endpoint":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:list_projects_for_endpoint":"role:reader and
+# system_scope:all".
+#
+# As of the Train release, the project endpoint API now understands
+# default roles and system-scoped tokens, making the API more granular
+# by default without compromising security. The new policy defaults
+# account for these changes automatically. Be sure to take these new
+# defaults into consideration if you are relying on overrides in your
+# deployment for the project endpoint API.
 # Allow project to access an endpoint.
 # PUT  /v3/OS-EP-FILTER/projects/{project_id}/endpoints/{endpoint_id}
 # Intended scope(s): system
-#"identity:add_endpoint_to_project": "rule:admin_required"
+#"identity:add_endpoint_to_project": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:add_endpoint_to_project":"rule:admin_required"
+# has been deprecated since T in favor of
+# "identity:add_endpoint_to_project":"role:admin and
+# system_scope:all".
+#
+# As of the Train release, the project endpoint API now understands
+# default roles and system-scoped tokens, making the API more granular
+# by default without compromising security. The new policy defaults
+# account for these changes automatically. Be sure to take these new
+# defaults into consideration if you are relying on overrides in your
+# deployment for the project endpoint API.
 # Check if a project is allowed to access an endpoint.
 # GET  /v3/OS-EP-FILTER/projects/{project_id}/endpoints/{endpoint_id}
 # HEAD  /v3/OS-EP-FILTER/projects/{project_id}/endpoints/{endpoint_id}
 # Intended scope(s): system
-#"identity:check_endpoint_in_project": "rule:admin_required"
+#"identity:check_endpoint_in_project": "role:reader and system_scope:all"
 
+# DEPRECATED
+# "identity:check_endpoint_in_project":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:check_endpoint_in_project":"role:reader and
+# system_scope:all".
+#
+# As of the Train release, the project endpoint API now understands
+# default roles and system-scoped tokens, making the API more granular
+# by default without compromising security. The new policy defaults
+# account for these changes automatically. Be sure to take these new
+# defaults into consideration if you are relying on overrides in your
+# deployment for the project endpoint API.
 # List the endpoints a project is allowed to access.
 # GET  /v3/OS-EP-FILTER/projects/{project_id}/endpoints
 # Intended scope(s): system
-#"identity:list_endpoints_for_project": "rule:admin_required"
+#"identity:list_endpoints_for_project": "role:reader and system_scope:all"
 
+# DEPRECATED
+# "identity:list_endpoints_for_project":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:list_endpoints_for_project":"role:reader and
+# system_scope:all".
+#
+# As of the Train release, the project endpoint API now understands
+# default roles and system-scoped tokens, making the API more granular
+# by default without compromising security. The new policy defaults
+# account for these changes automatically. Be sure to take these new
+# defaults into consideration if you are relying on overrides in your
+# deployment for the project endpoint API.
 # Remove access to an endpoint from a project that has previously been
 # given explicit access.
 # DELETE  /v3/OS-EP-FILTER/projects/{project_id}/endpoints/{endpoint_id}
 # Intended scope(s): system
-#"identity:remove_endpoint_from_project": "rule:admin_required"
+#"identity:remove_endpoint_from_project": "role:admin and system_scope:all"
 
+# DEPRECATED
+# "identity:remove_endpoint_from_project":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:remove_endpoint_from_project":"role:admin and
+# system_scope:all".
+#
+# As of the Train release, the project endpoint API now understands
+# default roles and system-scoped tokens, making the API more granular
+# by default without compromising security. The new policy defaults
+# account for these changes automatically. Be sure to take these new
+# defaults into consideration if you are relying on overrides in your
+# deployment for the project endpoint API.
 # Create federated protocol.
 # PUT  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols/{protocol_id}
 # Intended scope(s): system
-"identity:create_protocol": "role:admin and system_scope:all"
+#"identity:create_protocol": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:create_protocol":"rule:admin_required" has been
 # deprecated since S in favor of
-# "identity:create_protocol":"role:admin and system_scope:all".
-#
-# As of the Stein release, the federated protocol API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the protocol API.
-#"identity:create_protocol": "rule:identity:create_protocol"
+# "identity:create_protocol":"role:admin and system_scope:all". The
+# federated protocol API is now aware of system scope and default
+# roles.
 # Update federated protocol.
 # PATCH  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols/{protocol_id}
 # Intended scope(s): system
-"identity:update_protocol": "role:admin and system_scope:all"
+#"identity:update_protocol": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:update_protocol":"rule:admin_required" has been
 # deprecated since S in favor of
-#"identity:update_protocol":"role:admin and system_scope:all".
-#
-# As of the Stein release, the federated protocol API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the protocol API.
-#"identity:update_protocol": "rule:identity:update_protocol"
+# "identity:update_protocol":"role:admin and system_scope:all". The
+# federated protocol API is now aware of system scope and default
+# roles.
 # Get federated protocol.
 # GET  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols/{protocol_id}
 # Intended scope(s): system
-"identity:get_protocol": "role:reader and system_scope:all"
+#"identity:get_protocol": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:get_protocol":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_protocol":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the federated protocol API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the protocol API.
-#"identity:get_protocol": "rule:identity:get_protocol"
+# and system_scope:all". The federated protocol API is now aware of
+# system scope and default roles.
 # List federated protocols.
 # GET  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols
 # Intended scope(s): system
@@ -1438,31 +1541,19 @@
 
 # DEPRECATED "identity:list_protocols":"rule:admin_required" has been
 # deprecated since S in favor of
-"identity:list_protocols":"role:reader and system_scope:all".
-#
-# As of the Stein release, the federated protocol API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the protocol API.
-#"identity:list_protocols": "rule:identity:list_protocols"
+# "identity:list_protocols":"role:reader and system_scope:all". The
+# federated protocol API is now aware of system scope and default
+# roles.
 # Delete federated protocol.
 # DELETE  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols/{protocol_id}
 # Intended scope(s): system
-"identity:delete_protocol": "role:admin and system_scope:all"
+#"identity:delete_protocol": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:delete_protocol":"rule:admin_required" has been
 # deprecated since S in favor of
-# "identity:delete_protocol":"role:admin and system_scope:all".
-#
-# As of the Stein release, the federated protocol API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the protocol API.
-#"identity:delete_protocol": "rule:identity:delete_protocol"
+# "identity:delete_protocol":"role:admin and system_scope:all". The
+# federated protocol API is now aware of system scope and default
+# roles.
 # Show region details.
 # GET  /v3/regions/{region_id}
 # HEAD  /v3/regions/{region_id}
@@ -1479,45 +1570,30 @@
 # POST  /v3/regions
 # PUT  /v3/regions/{region_id}
 # Intended scope(s): system
-"identity:create_region": "role:admin and system_scope:all"
+#"identity:create_region": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:create_region":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_region":"role:admin
-# and system_scope:all". As of the Stein release, the region API now
-# understands default roles and system-scoped tokens, making the API
-# more granular without compromising security. The new policies for
-# this API account for these changes automatically. Be sure to take
-# these new defaults into consideration if you are relying on
-# overrides in your deployment for the region API.
-#"identity:create_region": "rule:identity:create_region"
+# and system_scope:all". The region API is now aware of system scope
+# and default roles.
 # Update region.
 # PATCH  /v3/regions/{region_id}
 # Intended scope(s): system
-"identity:update_region": "role:admin and system_scope:all"
+#"identity:update_region": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:update_region":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_region":"role:admin
-# and system_scope:all". As of the Stein release, the region API now
-# understands default roles and system-scoped tokens, making the API
-# more granular without compromising security. The new policies for
-# this API account for these changes automatically. Be sure to take
-# these new defaults into consideration if you are relying on
-# overrides in your deployment for the region API.
-#"identity:update_region": "rule:identity:update_region"
+# and system_scope:all". The region API is now aware of system scope
+# and default roles.
 # Delete region.
 # DELETE  /v3/regions/{region_id}
 # Intended scope(s): system
-"identity:delete_region": "role:admin and system_scope:all"
+#"identity:delete_region": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:delete_region":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_region":"role:admin
-# and system_scope:all". As of the Stein release, the region API now
-# understands default roles and system-scoped tokens, making the API
-# more granular without compromising security. The new policies for
-# this API account for these changes automatically. Be sure to take
-# these new defaults into consideration if you are relying on
-# overrides in your deployment for the region API.
-#"identity:delete_region": "rule:identity:delete_region"
+# and system_scope:all". The region API is now aware of system scope
+# and default roles.
 # Show registered limit details.
 # GET  /v3/registered_limits/{registered_limit_id}
 # HEAD  /v3/registered_limits/{registered_limit_id}
@@ -1554,300 +1630,224 @@
 # GET  /v3/roles/{role_id}
 # HEAD  /v3/roles/{role_id}
 # Intended scope(s): system
-"identity:get_role": "role:reader and system_scope:all"
+#"identity:get_role": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:get_role":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_role":"role:reader and
-# system_scope:all".
-#
-# As of the Stein release, the role API now understands default roles
-# and system-scoped tokens, making the API more granular by default
-# without compromising security. The new policy defaults account for
-# these changes automatically. Be sure to take these new defaults into
-# consideration if you are relying on overrides in your deployment for
-# the role API.
-#"identity:get_role": "rule:identity:get_role"
+# system_scope:all". The role API is now aware of system scope and
+# default roles.
 # List roles.
 # GET  /v3/roles
 # HEAD  /v3/roles
 # Intended scope(s): system
-"identity:list_roles": "role:reader and system_scope:all"
+#"identity:list_roles": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:list_roles":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_roles":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the role API now understands default roles
-# and system-scoped tokens, making the API more granular by default
-# without compromising security. The new policy defaults account for
-# these changes automatically. Be sure to take these new defaults into
-# consideration if you are relying on overrides in your deployment for
-# the role API.
-#"identity:list_roles": "rule:identity:list_roles"
+# and system_scope:all". The role API is now aware of system scope and
+# default roles.
 # Create role.
 # POST  /v3/roles
 # Intended scope(s): system
-"identity:create_role": "role:admin and system_scope:all"
+#"identity:create_role": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:create_role":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_role":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the role API now understands default roles
-# and system-scoped tokens, making the API more granular by default
-# without compromising security. The new policy defaults account for
-# these changes automatically. Be sure to take these new defaults into
-# consideration if you are relying on overrides in your deployment for
-# the role API.
-#"identity:create_role": "rule:identity:create_role"
+# and system_scope:all". The role API is now aware of system scope and
+# default roles.
 # Update role.
 # PATCH  /v3/roles/{role_id}
 # Intended scope(s): system
-"identity:update_role": "role:admin and system_scope:all"
+#"identity:update_role": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:update_role":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_role":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the role API now understands default roles
-# and system-scoped tokens, making the API more granular by default
-# without compromising security. The new policy defaults account for
-# these changes automatically. Be sure to take these new defaults into
-# consideration if you are relying on overrides in your deployment for
-# the role API.
-#"identity:update_role": "rule:identity:update_role"
+# and system_scope:all". The role API is now aware of system scope and
+# default roles.
 # Delete role.
 # DELETE  /v3/roles/{role_id}
 # Intended scope(s): system
-"identity:delete_role": "role:admin and system_scope:all"
+#"identity:delete_role": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:delete_role":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_role":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the role API now understands default roles
-# and system-scoped tokens, making the API more granular by default
-# without compromising security. The new policy defaults account for
-# these changes automatically. Be sure to take these new defaults into
-# consideration if you are relying on overrides in your deployment for
-# the role API.
-#"identity:delete_role": "rule:identity:delete_role"
+# and system_scope:all". The role API is now aware of system scope and
+# default roles.
 # Show domain role.
 # GET  /v3/roles/{role_id}
 # HEAD  /v3/roles/{role_id}
 # Intended scope(s): system
-#"identity:get_domain_role": "rule:admin_required"
+#"identity:get_domain_role": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:get_domain_role":"rule:admin_required" has been
+# deprecated since T in favor of
+# "identity:get_domain_role":"role:reader and system_scope:all". The
+# role API is now aware of system scope and default roles.
 # List domain roles.
 # GET  /v3/roles?domain_id={domain_id}
 # HEAD  /v3/roles?domain_id={domain_id}
 # Intended scope(s): system
-#"identity:list_domain_roles": "rule:admin_required"
+#"identity:list_domain_roles": "role:reader and system_scope:all"
 
+# DEPRECATED "identity:list_domain_roles":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:list_domain_roles":"role:reader and system_scope:all". The
+# role API is now aware of system scope and default roles.
 # Create domain role.
 # POST  /v3/roles
 # Intended scope(s): system
-#"identity:create_domain_role": "rule:admin_required"
+#"identity:create_domain_role": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:create_domain_role":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:create_domain_role":"role:admin and system_scope:all". The
+# role API is now aware of system scope and default roles.
 # Update domain role.
 # PATCH  /v3/roles/{role_id}
 # Intended scope(s): system
-#"identity:update_domain_role": "rule:admin_required"
+#"identity:update_domain_role": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:update_domain_role":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:update_domain_role":"role:admin and system_scope:all". The
+# role API is now aware of system scope and default roles.
 # Delete domain role.
 # DELETE  /v3/roles/{role_id}
 # Intended scope(s): system
-#"identity:delete_domain_role": "rule:admin_required"
+#"identity:delete_domain_role": "role:admin and system_scope:all"
 
+# DEPRECATED "identity:delete_domain_role":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:delete_domain_role":"role:admin and system_scope:all". The
+# role API is now aware of system scope and default roles.
 # List role assignments.
 # GET  /v3/role_assignments
 # HEAD  /v3/role_assignments
 # Intended scope(s): system, domain
-"identity:list_role_assignments": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
+#"identity:list_role_assignments": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 
 # DEPRECATED "identity:list_role_assignments":"rule:admin_required"
 # has been deprecated since S in favor of
 # "identity:list_role_assignments":"(role:reader and system_scope:all)
-# or (role:reader and domain_id:%(target.domain_id)s)".
-#
-# As of the Stein release, the role assignment API now understands how
-# to handle system-scoped tokens in addition to project-scoped tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:list_role_assignments": "rule:identity:list_role_assignments"
+# or (role:reader and domain_id:%(target.domain_id)s)". The assignment
+# API is now aware of system scope and default roles.
 # List all role assignments for a given tree of hierarchical projects.
 # GET  /v3/role_assignments?include_subtree
 # HEAD  /v3/role_assignments?include_subtree
-# Intended scope(s): project
-#"identity:list_role_assignments_for_tree": "rule:admin_required"
+# Intended scope(s): system, domain, project
+#"identity:list_role_assignments_for_tree": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
 
+# DEPRECATED
+# "identity:list_role_assignments_for_tree":"rule:admin_required" has
+# been deprecated since T in favor of
+# "identity:list_role_assignments_for_tree":"(role:reader and
+# system_scope:all) or (role:reader and
+# domain_id:%(target.project.domain_id)s) or (role:admin and
+# project_id:%(target.project.id)s)". The assignment API is now aware
+# of system scope and default roles.
 # Show service details.
 # GET  /v3/services/{service_id}
 # Intended scope(s): system
-"identity:get_service": "role:reader and system_scope:all"
+#"identity:get_service": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:get_service":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_service":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the service API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service API.
-#"identity:get_service": "rule:identity:get_service"
+# and system_scope:all". The service API is now aware of system scope
+# and default roles.
 # List services.
 # GET  /v3/services
 # Intended scope(s): system
-"identity:list_services": "role:reader and system_scope:all"
+#"identity:list_services": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:list_services":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_services":"role:reader
-# and system_scope:all".
-#
-# As of the Stein release, the service API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service API.
-#"identity:list_services": "rule:identity:list_services"
+# and system_scope:all". The service API is now aware of system scope
+# and default roles.
 # Create service.
 # POST  /v3/services
 # Intended scope(s): system
-"identity:create_service": "role:admin and system_scope:all"
+#"identity:create_service": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:create_service":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_service":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the service API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service API.
-#"identity:create_service": "rule:identity:create_service"
+# and system_scope:all". The service API is now aware of system scope
+# and default roles.
 # Update service.
 # PATCH  /v3/services/{service_id}
 # Intended scope(s): system
-"identity:update_service": "role:admin and system_scope:all"
+#"identity:update_service": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:update_service":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_service":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the service API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service API.
-#"identity:update_service": "rule:identity:update_service"
+# and system_scope:all". The service API is now aware of system scope
+# and default roles.
 # Delete service.
 # DELETE  /v3/services/{service_id}
 # Intended scope(s): system
-"identity:delete_service": "role:admin and system_scope:all"
+#"identity:delete_service": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:delete_service":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_service":"role:admin
-# and system_scope:all".
-#
-# As of the Stein release, the service API now understands default
-# roles and system-scoped tokens, making the API more granular by
-# default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service API.
-#"identity:delete_service": "rule:identity:delete_service"
+# and system_scope:all". The service API is now aware of system scope
+# and default roles.
 # Create federated service provider.
 # PUT  /v3/OS-FEDERATION/service_providers/{service_provider_id}
 # Intended scope(s): system
-"identity:create_service_provider": "role:admin and system_scope:all"
+#"identity:create_service_provider": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:create_service_provider":"rule:admin_required"
 # has been deprecated since S in favor of
 # "identity:create_service_provider":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the service provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service provider API.
-#"identity:create_service_provider": "rule:identity:create_service_provider"
+# system_scope:all". The service provider API is now aware of system
+# scope and default roles.
 # List federated service providers.
 # GET  /v3/OS-FEDERATION/service_providers
 # HEAD  /v3/OS-FEDERATION/service_providers
 # Intended scope(s): system
-"identity:list_service_providers": "role:reader and system_scope:all"
+#"identity:list_service_providers": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:list_service_providers":"rule:admin_required"
 # has been deprecated since S in favor of
 # "identity:list_service_providers":"role:reader and
-# system_scope:all".
-#
-# As of the Stein release, the service provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service provider API.
-#"identity:list_service_providers": "rule:identity:list_service_providers"
+# system_scope:all". The service provider API is now aware of system
+# scope and default roles.
 # Get federated service provider.
 # GET  /v3/OS-FEDERATION/service_providers/{service_provider_id}
 # HEAD  /v3/OS-FEDERATION/service_providers/{service_provider_id}
 # Intended scope(s): system
-"identity:get_service_provider": "role:reader and system_scope:all"
+#"identity:get_service_provider": "role:reader and system_scope:all"
 
 # DEPRECATED "identity:get_service_provider":"rule:admin_required" has
 # been deprecated since S in favor of
 # "identity:get_service_provider":"role:reader and system_scope:all".
-#
-# As of the Stein release, the service provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service provider API.
-#"identity:get_service_provider": "rule:identity:get_service_provider"
+# The service provider API is now aware of system scope and default
+# roles.
 # Update federated service provider.
 # PATCH  /v3/OS-FEDERATION/service_providers/{service_provider_id}
 # Intended scope(s): system
-"identity:update_service_provider": "role:admin and system_scope:all"
+#"identity:update_service_provider": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:update_service_provider":"rule:admin_required"
 # has been deprecated since S in favor of
 # "identity:update_service_provider":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the service provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service provider API.
-#"identity:update_service_provider": "rule:identity:update_service_provider"
+# system_scope:all". The service provider API is now aware of system
+# scope and default roles.
 # Delete federated service provider.
 # DELETE  /v3/OS-FEDERATION/service_providers/{service_provider_id}
 # Intended scope(s): system
-"identity:delete_service_provider": "role:admin and system_scope:all"
+#"identity:delete_service_provider": "role:admin and system_scope:all"
 
 # DEPRECATED "identity:delete_service_provider":"rule:admin_required"
 # has been deprecated since S in favor of
 # "identity:delete_service_provider":"role:admin and
-# system_scope:all".
-#
-# As of the Stein release, the service provider API now understands
-# default roles and system-scoped tokens, making the API more granular
-# by default without compromising security. The new policy defaults
-# account for these changes automatically. Be sure to take these new
-# defaults into consideration if you are relying on overrides in your
-# deployment for the service provider API.
-#"identity:delete_service_provider": "rule:identity:delete_service_provider"
+# system_scope:all". The service provider API is now aware of system
+# scope and default roles.
+# DEPRECATED
+# "identity:revocation_list" has been deprecated since T.
+# The identity:revocation_list policy isn't used to protect any APIs
+# in keystone now that the revocation list API has been deprecated and
+# only returns a 410 or 403 depending on how keystone is configured.
+# This policy can be safely removed from policy files.
 # List revoked PKI tokens.
 # GET  /v3/auth/tokens/OS-PKI/revoked
 # Intended scope(s): system, project
@@ -1855,16 +1855,35 @@
 
 # Check a token.
 # HEAD  /v3/auth/tokens
-#"identity:check_token": "rule:admin_or_token_subject"
+# Intended scope(s): system, domain, project
+#"identity:check_token": "(role:reader and system_scope:all) or rule:token_subject"
 
+# DEPRECATED "identity:check_token":"rule:admin_or_token_subject" has
+# been deprecated since T in favor of
+# "identity:check_token":"(role:reader and system_scope:all) or
+# rule:token_subject". The token API is now aware of system scope and
+# default roles.
 # Validate a token.
 # GET  /v3/auth/tokens
-#"identity:validate_token": "rule:service_admin_or_token_subject"
+# Intended scope(s): system, domain, project
+#"identity:validate_token": "(role:reader and system_scope:all) or rule:service_role or rule:token_subject"
 
+# DEPRECATED
+# "identity:validate_token":"rule:service_admin_or_token_subject" has
+# been deprecated since T in favor of
+# "identity:validate_token":"(role:reader and system_scope:all) or
+# rule:service_role or rule:token_subject". The token API is now aware
+# of system scope and default roles.
 # Revoke a token.
 # DELETE  /v3/auth/tokens
-#"identity:revoke_token": "rule:admin_or_token_subject"
+# Intended scope(s): system, domain, project
+#"identity:revoke_token": "(role:admin and system_scope:all) or rule:token_subject"
 
+# DEPRECATED "identity:revoke_token":"rule:admin_or_token_subject" has
+# been deprecated since T in favor of
+# "identity:revoke_token":"(role:admin and system_scope:all) or
+# rule:token_subject". The token API is now aware of system scope and
+# default roles.
 # Create trust.
 # POST  /v3/OS-TRUST/trusts
 # Intended scope(s): project
@@ -1873,67 +1892,98 @@
 # List trusts.
 # GET  /v3/OS-TRUST/trusts
 # HEAD  /v3/OS-TRUST/trusts
-# Intended scope(s): project
-#"identity:list_trusts": ""
+# Intended scope(s): system
+#"identity:list_trusts": "role:reader and system_scope:all"
+
+# DEPRECATED "identity:list_trusts":"rule:admin_required" has been
+# deprecated since T in favor of "identity:list_trusts":"role:reader
+# and system_scope:all". The trust API is now aware of system scope
+# and default roles.
+# List trusts for trustor.
+# GET  /v3/OS-TRUST/trusts?trustor_user_id={trustor_user_id}
+# HEAD  /v3/OS-TRUST/trusts?trustor_user_id={trustor_user_id}
+# Intended scope(s): system, project
+#"identity:list_trusts_for_trustor": "role:reader and system_scope:all or user_id:%(target.trust.trustor_user_id)s"
+
+# List trusts for trustee.
+# GET  /v3/OS-TRUST/trusts?trustee_user_id={trustee_user_id}
+# HEAD  /v3/OS-TRUST/trusts?trustee_user_id={trustee_user_id}
+# Intended scope(s): system, project
+#"identity:list_trusts_for_trustee": "role:reader and system_scope:all or user_id:%(target.trust.trustee_user_id)s"
 
 # List roles delegated by a trust.
 # GET  /v3/OS-TRUST/trusts/{trust_id}/roles
 # HEAD  /v3/OS-TRUST/trusts/{trust_id}/roles
-# Intended scope(s): project
-#"identity:list_roles_for_trust": ""
+# Intended scope(s): system, project
+#"identity:list_roles_for_trust": "role:reader and system_scope:all or user_id:%(target.trust.trustor_user_id)s or user_id:%(target.trust.trustee_user_id)s"
 
+# DEPRECATED "identity:list_roles_for_trust":"user_id:%(target.trust.t
+# rustor_user_id)s or user_id:%(target.trust.trustee_user_id)s" has
+# been deprecated since T in favor of
+# "identity:list_roles_for_trust":"role:reader and system_scope:all or
+# user_id:%(target.trust.trustor_user_id)s or
+# user_id:%(target.trust.trustee_user_id)s". The trust API is now
+# aware of system scope and default roles.
 # Check if trust delegates a particular role.
 # GET  /v3/OS-TRUST/trusts/{trust_id}/roles/{role_id}
 # HEAD  /v3/OS-TRUST/trusts/{trust_id}/roles/{role_id}
-# Intended scope(s): project
-#"identity:get_role_for_trust": ""
+# Intended scope(s): system, project
+#"identity:get_role_for_trust": "role:reader and system_scope:all or user_id:%(target.trust.trustor_user_id)s or user_id:%(target.trust.trustee_user_id)s"
 
+# DEPRECATED "identity:get_role_for_trust":"user_id:%(target.trust.tru
+# stor_user_id)s or user_id:%(target.trust.trustee_user_id)s" has been
+# deprecated since T in favor of
+# "identity:get_role_for_trust":"role:reader and system_scope:all or
+# user_id:%(target.trust.trustor_user_id)s or
+# user_id:%(target.trust.trustee_user_id)s". The trust API is now
+# aware of system scope and default roles.
 # Revoke trust.
 # DELETE  /v3/OS-TRUST/trusts/{trust_id}
-# Intended scope(s): project
-#"identity:delete_trust": ""
+# Intended scope(s): system, project
+#"identity:delete_trust": "role:admin and system_scope:all or user_id:%(target.trust.trustor_user_id)s"
 
+# DEPRECATED
+# "identity:delete_trust":"user_id:%(target.trust.trustor_user_id)s"
+# has been deprecated since T in favor of
+# "identity:delete_trust":"role:admin and system_scope:all or
+# user_id:%(target.trust.trustor_user_id)s". The trust API is now
+# aware of system scope and default roles.
 # Get trust.
 # GET  /v3/OS-TRUST/trusts/{trust_id}
 # HEAD  /v3/OS-TRUST/trusts/{trust_id}
-# Intended scope(s): project
-#"identity:get_trust": ""
+# Intended scope(s): system, project
+#"identity:get_trust": "role:reader and system_scope:all or user_id:%(target.trust.trustor_user_id)s or user_id:%(target.trust.trustee_user_id)s"
 
+# DEPRECATED
+# "identity:get_trust":"user_id:%(target.trust.trustor_user_id)s or
+# user_id:%(target.trust.trustee_user_id)s" has been deprecated since
+# T in favor of "identity:get_trust":"role:reader and system_scope:all
+# or user_id:%(target.trust.trustor_user_id)s or
+# user_id:%(target.trust.trustee_user_id)s". The trust API is now
+# aware of system scope and default roles.
 # Show user details.
 # GET  /v3/users/{user_id}
 # HEAD  /v3/users/{user_id}
 # Intended scope(s): system, domain, project
-"identity:get_user": "(role:reader and system_scope:all) or (role:reader and token.domain.id:%(target.user.domain_id)s) or user_id:%(target.user.id)s"
+#"identity:get_user": "(role:reader and system_scope:all) or (role:reader and token.domain.id:%(target.user.domain_id)s) or user_id:%(target.user.id)s"
 
 # DEPRECATED "identity:get_user":"rule:admin_or_owner" has been
 # deprecated since S in favor of "identity:get_user":"(role:reader and
 # system_scope:all) or (role:reader and
 # token.domain.id:%(target.user.domain_id)s) or
-# user_id:%(target.user.id)s".
-#
-# As of the Stein release, the user API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:get_user": "rule:identity:get_user"
+# user_id:%(target.user.id)s". The user API is now aware of system
+# scope and default roles.
 # List users.
 # GET  /v3/users
 # HEAD  /v3/users
 # Intended scope(s): system, domain
-"identity:list_users": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
+#"identity:list_users": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 
 # DEPRECATED "identity:list_users":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_users":"(role:reader
 # and system_scope:all) or (role:reader and
-# domain_id:%(target.domain_id)s)".
-#
-# As of the Stein release, the user API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:list_users": "rule:identity:list_users"
+# domain_id:%(target.domain_id)s)". The user API is now aware of
+# system scope and default roles.
 # List all projects a user has access to via role assignments.
 # GET   /v3/auth/projects
 #"identity:list_projects_for_user": ""
@@ -1945,48 +1995,30 @@
 # Create a user.
 # POST  /v3/users
 # Intended scope(s): system, domain
-"identity:create_user": "(role:admin and system_scope:all) or (role:admin and token.domain.id:%(target.user.domain_id)s)"
+#"identity:create_user": "(role:admin and system_scope:all) or (role:admin and token.domain.id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:create_user":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_user":"(role:admin
 # and system_scope:all) or (role:admin and
-# token.domain.id:%(target.user.domain_id)s)".
-#
-# As of the Stein release, the user API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:create_user": "rule:identity:create_user"
+# token.domain.id:%(target.user.domain_id)s)". The user API is now
+# aware of system scope and default roles.
 # Update a user, including administrative password resets.
 # PATCH  /v3/users/{user_id}
 # Intended scope(s): system, domain
-"identity:update_user": "(role:admin and system_scope:all) or (role:admin and token.domain.id:%(target.user.domain_id)s)"
+#"identity:update_user": "(role:admin and system_scope:all) or (role:admin and token.domain.id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:update_user":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_user":"(role:admin
 # and system_scope:all) or (role:admin and
-# token.domain.id:%(target.user.domain_id)s)".
-#
-# As of the Stein release, the user API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:update_user": "rule:identity:update_user"
+# token.domain.id:%(target.user.domain_id)s)". The user API is now
+# aware of system scope and default roles.
 # Delete a user.
 # DELETE  /v3/users/{user_id}
 # Intended scope(s): system, domain
-"identity:delete_user": "(role:admin and system_scope:all) or (role:admin and token.domain.id:%(target.user.domain_id)s)"
+#"identity:delete_user": "(role:admin and system_scope:all) or (role:admin and token.domain.id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:delete_user":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_user":"(role:admin
 # and system_scope:all) or (role:admin and
-# token.domain.id:%(target.user.domain_id)s)".
-#
-# As of the Stein release, the user API understands how to handle
-# system-scoped tokens in addition to project and domain tokens,
-# making the API more accessible to users without compromising
-# security or manageability for administrators. The new default
-# policies for this API account for these changes automatically.
-#"identity:delete_user": "rule:identity:delete_user"
+# token.domain.id:%(target.user.domain_id)s)". The user API is now
+# aware of system scope and default roles.

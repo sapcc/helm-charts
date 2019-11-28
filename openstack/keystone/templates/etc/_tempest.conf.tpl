@@ -23,7 +23,7 @@ password = {{ required "A valid .Values.tempest.adminPassword required!" .Values
 domain_name = tempest
 default_domain_id = {{ .Values.tempest.domainId }}
 admin_role = admin
-{{- if eq .Values.release "rocky" }}
+{{- if eq .Values.api.policy "json" }}
 admin_domain_scope = true
 {{- end }}
 catalog_type = identity
@@ -41,7 +41,7 @@ domain_specific_drivers = true
 security_compliance = true
 project_tags = true
 application_credentials = true
-immutable_user_source = true
+immutable_user_source = false
 
 [service_available]
 cinder = False
