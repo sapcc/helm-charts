@@ -455,10 +455,7 @@
       </labels>
     </metric>
   </store>
-</match>
-
-# count number of outgoing records per tag
-<match kubernetes.**>
+  <store>
    @type elasticsearch_dynamic
    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
    port {{.Values.global.elk_elasticsearch_ssl_port}}
@@ -489,6 +486,7 @@
      flush_thread_count 2
      flush_interval 1s
    </buffer>
+  </store>
  </match>
 
 <source>
