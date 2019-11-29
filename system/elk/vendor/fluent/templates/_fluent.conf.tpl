@@ -27,6 +27,17 @@
   keep_time_key true
 </source>
 
+<source>
+  @type forward
+  bind 0.0.0.0
+  port 24224
+</source>
+
+<source>
+  @type prometheus_monitor
+  interval 10
+</source>
+
 <filter kubernetes.**>
   @type kubernetes_metadata
   kubernetes_url https://KUBERNETES_SERVICE_HOST
@@ -34,6 +45,22 @@
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   use_journal 'false'
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
+</filter>
+
+# count number of incoming records per tag
+<filter kubernetes.**>
+  @type prometheus
+  <metric>
+    name fluentd_input_status_num_records_total
+    type counter
+    desc The total number of incoming records
+    <labels>
+      container $.kubernetes.container_name
+      hostname ${hostname}
+      nodename "#{ENV['K8S_NODE_NAME']}"
+      index logstash
+    </labels>
+  </metric>
 </filter>
 
 <filter kubernetes.var.log.containers.es**>
@@ -401,6 +428,33 @@
 
 <match kubernetes.var.log.containers.fluent**>
   @type null
+</match>
+
+<match keystone.*>
+  @type copy
+  <store>
+    @type forward
+    <server>
+      name ${hostname}
+      host localhost
+      port 24224
+      weight 60
+    </server>
+  </store>
+  <store>
+    @type prometheus
+    <metric>
+      name fluentd_output_status_num_records_total
+      type counter
+      desc The total number of outgoing records
+      <labels>
+        container $.kubernetes.container_name
+        hostname ${hostname}
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        index logstash
+      </labels>
+    </metric>
+  </store>
 </match>
 
 # count number of outgoing records per tag
