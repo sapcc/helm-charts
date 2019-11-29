@@ -1,6 +1,6 @@
 ## 3.3.2
 
-* Allow configuring Alertmanagers which require authentication. The relevant section now looks like:
+* Allow configuring Alertmanagers which require authentication. The relevant `.Values.alertmanagers` section was exploded to:
   ```yaml
   # Alertmanager configuration.
   alertmanagers:
@@ -18,6 +18,9 @@
     # - alertmanager1.tld
     # - alertmanager2.tld
   ```
+* Fixed double scraping for service/endpoint service discovery when using `prometheus.io/port` annotation. 
+  A service has to declare the port(s) on which they expose metrics on in their spec. The service gets dropped otherwise.
+  Per default Prometheus tries to get metrics from service ports with the name `metrics`. 
 
 ## 3.1.1
 
