@@ -1,3 +1,24 @@
+## 3.3.2
+
+* Allow configuring Alertmanagers which require authentication. The relevant section now looks like:
+  ```yaml
+  # Alertmanager configuration.
+  alertmanagers:
+    # Configuration if the Alertmanager has client certificate authentication enabled.
+    authentication:
+      enabled: false
+      # The certificate used for authentication with the Alertmanager..
+      ssoCert: 
+      # The key used for authentication with the Alertmanager.
+      ssoKey:
+  
+    # List of Alertmanagers (AM) to send alerts to.
+    # If multiple AMs are used in an HA setup, alerts must be send to every AM.
+    hosts: []
+    # - alertmanager1.tld
+    # - alertmanager2.tld
+  ```
+
 ## 3.1.1
 
 * Fix SD config for `prometheus.io/port_1` as well.
