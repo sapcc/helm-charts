@@ -430,7 +430,7 @@
   @type null
 </match>
 
-<match keystone.*>
+<match kubernetes.**>
   @type copy
   <store>
     @type forward
