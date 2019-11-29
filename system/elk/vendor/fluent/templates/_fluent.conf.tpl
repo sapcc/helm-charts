@@ -499,8 +499,6 @@
   @type prometheus_output_monitor
   interval 10
   <labels>
-    container $.kubernetes.container_name
-    nodename "#{ENV['K8S_NODE_NAME']}"
     hostname ${hostname}
   </labels>
 </source>
