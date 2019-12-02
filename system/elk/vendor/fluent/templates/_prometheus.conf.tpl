@@ -32,7 +32,6 @@
     type counter
     desc The total number of incoming records
     <labels>
-      tag ${tag}
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
       container $.kubernetes.container_name
