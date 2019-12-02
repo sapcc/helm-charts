@@ -19,7 +19,11 @@ spec:
         - name: "NAMESPACE"
           value: {{ .Release.Namespace | quote }}
         - name: "DEPENDENCY_SERVICE"
+{{- if eq .Values.postgresql.enabled true }}
           value: "ironic-postgresql"
+{{- else }}
+          value: "ironic-mariadb"
+{{- end }}
         - name: "COMMAND"
           value: "true"
       restartPolicy: OnFailure
