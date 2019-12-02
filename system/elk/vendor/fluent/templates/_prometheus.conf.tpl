@@ -15,11 +15,6 @@
 </source>
 
 <source>
-    @id prometheus
-    @type prometheus
-</source>
-
-<source>
     @id prometheus_monitor
     @type prometheus_monitor
     <labels>
