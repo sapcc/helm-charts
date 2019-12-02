@@ -22,22 +22,32 @@
 #
 #"service_admin_or_token_subject": "rule:service_or_admin or rule:token_subject"
 
+# ccloud: added these to allow a smooth transitioning from old cloud-admin to new system scopes
+"cloud_admin": "(role:admin and system_scope:all) or (role:admin and ((is_admin_project:True or domain_id:default){{- if .Values.tempest.enabled }} or domain_id:{{.Values.tempest.domainId}}{{- end}}))"
+"cloud_reader": "(role:reader and system_scope:all) or role:cloud_identity_viewer or rule:service_role or rule:cloud_admin"
+
+"blacklist_roles": "'resource_service':%(target.role.name)s or 'cloud_registry_admin':%(target.role.name)s or 'cloud_registry_viewer':%(target.role.name)s or 'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'cloud_sharedfilesystem_editor':%(target.role.name)s or 'cloud_sharedfilesystem_viewer':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s or 'cloud_identity_viewer':%(target.role.name)s or 'cloud_support_tools_viewer':%(target.role.name)s"
+"blacklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s"
+
 # Show access rule details.
 # GET  /v3/users/{user_id}/access_rules/{access_rule_id}
 # HEAD  /v3/users/{user_id}/access_rules/{access_rule_id}
 # Intended scope(s): system, project
 #"identity:get_access_rule": "(role:reader and system_scope:all) or user_id:%(target.user.id)s"
+"identity:get_access_rule": "rule:cloud_reader or user_id:%(target.user.id)s"
 
 # List access rules for a user.
 # GET  /v3/users/{user_id}/access_rules
 # HEAD  /v3/users/{user_id}/access_rules
 # Intended scope(s): system, project
 #"identity:list_access_rules": "(role:reader and system_scope:all) or user_id:%(target.user.id)s"
+"identity:list_access_rules": "rule:cloud_reader or user_id:%(target.user.id)s"
 
 # Delete an access_rule.
 # DELETE  /v3/users/{user_id}/access_rules/{access_rule_id}
 # Intended scope(s): system, project
 #"identity:delete_access_rule": "(role:admin and system_scope:all) or user_id:%(target.user.id)s"
+"identity:delete_access_rule": "rule:cloud_admin or user_id:%(target.user.id)s"
 
 # Authorize OAUTH1 request token.
 # PUT  /v3/OS-OAUTH1/authorize/{request_token_id}
@@ -74,6 +84,7 @@
 # HEAD  /v3/users/{user_id}/application_credentials/{application_credential_id}
 # Intended scope(s): system, project
 #"identity:get_application_credential": "(role:reader and system_scope:all) or rule:owner"
+"identity:get_application_credential": "rule:cloud_reader or rule:owner"
 
 # DEPRECATED
 # "identity:get_application_credentials":"rule:admin_or_owner" has
@@ -87,6 +98,7 @@
 # HEAD  /v3/users/{user_id}/application_credentials
 # Intended scope(s): system, project
 #"identity:list_application_credentials": "(role:reader and system_scope:all) or rule:owner"
+"identity:list_application_credentials": "rule:cloud_reader or rule:owner"
 
 # DEPRECATED
 # "identity:list_application_credentials":"rule:admin_or_owner" has
@@ -103,6 +115,7 @@
 # DELETE  /v3/users/{user_id}/application_credentials/{application_credential_id}
 # Intended scope(s): system, project
 #"identity:delete_application_credential": "(role:admin and system_scope:all) or rule:owner"
+"identity:delete_application_credential": "rule:cloud_admin or rule:owner"
 
 # DEPRECATED
 # "identity:delete_application_credentials":"rule:admin_or_owner" has
@@ -135,6 +148,7 @@
 # GET  /v3/OS-OAUTH1/consumers/{consumer_id}
 # Intended scope(s): system
 #"identity:get_consumer": "role:reader and system_scope:all"
+"identity:get_consumer": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_consumer":"rule:admin_required" has been
 # deprecated since T in favor of "identity:get_consumer":"role:reader
@@ -144,6 +158,7 @@
 # GET  /v3/OS-OAUTH1/consumers
 # Intended scope(s): system
 #"identity:list_consumers": "role:reader and system_scope:all"
+"identity:list_consumers": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_consumers":"rule:admin_required" has been
 # deprecated since T in favor of
@@ -153,6 +168,7 @@
 # POST  /v3/OS-OAUTH1/consumers
 # Intended scope(s): system
 #"identity:create_consumer": "role:admin and system_scope:all"
+"identity:create_consumer": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_consumer":"rule:admin_required" has been
 # deprecated since T in favor of
@@ -162,6 +178,7 @@
 # PATCH  /v3/OS-OAUTH1/consumers/{consumer_id}
 # Intended scope(s): system
 #"identity:update_consumer": "role:admin and system_scope:all"
+"identity:update_consumer": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_consumer":"rule:admin_required" has been
 # deprecated since T in favor of
@@ -171,6 +188,7 @@
 # DELETE  /v3/OS-OAUTH1/consumers/{consumer_id}
 # Intended scope(s): system
 #"identity:delete_consumer": "role:admin and system_scope:all"
+"identity:delete_consumer": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_consumer":"rule:admin_required" has been
 # deprecated since T in favor of
@@ -180,6 +198,7 @@
 # GET  /v3/credentials/{credential_id}
 # Intended scope(s): system, project
 #"identity:get_credential": "(role:reader and system_scope:all) or user_id:%(target.credential.user_id)s"
+"identity:get_credential": "rule:cloud_reader or user_id:%(target.credential.user_id)s"
 
 # DEPRECATED "identity:get_credential":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -190,6 +209,7 @@
 # GET  /v3/credentials
 # Intended scope(s): system, project
 #"identity:list_credentials": "(role:reader and system_scope:all) or user_id:%(target.credential.user_id)s"
+"identity:list_credentials": "rule:cloud_reader or user_id:%(target.credential.user_id)s"
 
 # DEPRECATED "identity:list_credentials":"rule:admin_required" has
 # been deprecated since S in favor of
@@ -200,6 +220,7 @@
 # POST  /v3/credentials
 # Intended scope(s): system, project
 #"identity:create_credential": "(role:admin and system_scope:all) or user_id:%(target.credential.user_id)s"
+"identity:create_credential": "rule:cloud_admin or user_id:%(target.credential.user_id)s"
 
 # DEPRECATED "identity:create_credential":"rule:admin_required" has
 # been deprecated since S in favor of
@@ -210,6 +231,7 @@
 # PATCH  /v3/credentials/{credential_id}
 # Intended scope(s): system, project
 #"identity:update_credential": "(role:admin and system_scope:all) or user_id:%(target.credential.user_id)s"
+"identity:update_credential": "rule:cloud_admin or user_id:%(target.credential.user_id)s"
 
 # DEPRECATED "identity:update_credential":"rule:admin_required" has
 # been deprecated since S in favor of
@@ -220,6 +242,7 @@
 # DELETE  /v3/credentials/{credential_id}
 # Intended scope(s): system, project
 #"identity:delete_credential": "(role:admin and system_scope:all) or user_id:%(target.credential.user_id)s"
+"identity:delete_credential": "rule:cloud_admin or user_id:%(target.credential.user_id)s"
 
 # DEPRECATED "identity:delete_credential":"rule:admin_required" has
 # been deprecated since S in favor of
@@ -230,6 +253,7 @@
 # GET  /v3/domains/{domain_id}
 # Intended scope(s): system, domain, project
 #"identity:get_domain": "(role:reader and system_scope:all) or token.domain.id:%(target.domain.id)s or token.project.domain.id:%(target.domain.id)s"
+"identity:get_domain": "rule:cloud_reader or token.domain.id:%(target.domain.id)s or token.project.domain.id:%(target.domain.id)s or role:role_viewer"
 
 # DEPRECATED "identity:get_domain":"rule:admin_required or
 # token.project.domain.id:%(target.domain.id)s" has been deprecated
@@ -241,6 +265,7 @@
 # GET  /v3/domains
 # Intended scope(s): system
 #"identity:list_domains": "role:reader and system_scope:all"
+"identity:list_domains": "rule:cloud_reader or role:role_viewer"
 
 # DEPRECATED "identity:list_domains":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_domains":"role:reader
@@ -250,6 +275,7 @@
 # POST  /v3/domains
 # Intended scope(s): system
 #"identity:create_domain": "role:admin and system_scope:all"
+"identity:create_domain": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_domain":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_domain":"role:admin
@@ -259,6 +285,7 @@
 # PATCH  /v3/domains/{domain_id}
 # Intended scope(s): system
 #"identity:update_domain": "role:admin and system_scope:all"
+"identity:update_domain": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_domain":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_domain":"role:admin
@@ -268,6 +295,7 @@
 # DELETE  /v3/domains/{domain_id}
 # Intended scope(s): system
 #"identity:delete_domain": "role:admin and system_scope:all"
+"identity:delete_domain": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_domain":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_domain":"role:admin
@@ -277,6 +305,7 @@
 # PUT  /v3/domains/{domain_id}/config
 # Intended scope(s): system
 #"identity:create_domain_config": "role:admin and system_scope:all"
+"identity:create_domain_config": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_domain_config":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -294,6 +323,7 @@
 # HEAD  /v3/domains/{domain_id}/config/{group}/{option}
 # Intended scope(s): system
 #"identity:get_domain_config": "role:reader and system_scope:all"
+"identity:get_domain_config": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_domain_config":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -315,6 +345,7 @@
 # PATCH  /v3/domains/{domain_id}/config/{group}/{option}
 # Intended scope(s): system
 #"identity:update_domain_config": "role:admin and system_scope:all"
+"identity:update_domain_config": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_domain_config":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -328,6 +359,7 @@
 # DELETE  /v3/domains/{domain_id}/config/{group}/{option}
 # Intended scope(s): system
 #"identity:delete_domain_config": "role:admin and system_scope:all"
+"identity:delete_domain_config": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_domain_config":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -344,6 +376,7 @@
 # HEAD  /v3/domains/config/{group}/{option}/default
 # Intended scope(s): system
 #"identity:get_domain_config_default": "role:reader and system_scope:all"
+"identity:get_domain_config_default": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:get_domain_config_default":"rule:admin_required" has been
@@ -355,6 +388,7 @@
 # GET  /v3/users/{user_id}/credentials/OS-EC2/{credential_id}
 # Intended scope(s): system, project
 #"identity:ec2_get_credential": "(role:reader and system_scope:all) or user_id:%(target.credential.user_id)s"
+"identity:ec2_get_credential": "rule:cloud_reader or (user_id:%(target.credential.user_id)s and rule:owner)"
 
 # DEPRECATED "identity:ec2_get_credential":"rule:admin_required or
 # (rule:owner and user_id:%(target.credential.user_id)s)" has been
@@ -366,6 +400,7 @@
 # GET  /v3/users/{user_id}/credentials/OS-EC2
 # Intended scope(s): system, project
 #"identity:ec2_list_credentials": "(role:reader and system_scope:all) or rule:owner"
+"identity:ec2_list_credentials": "rule:cloud_reader or rule:owner"
 
 # DEPRECATED "identity:ec2_list_credentials":"rule:admin_or_owner" has
 # been deprecated since T in favor of
@@ -376,6 +411,7 @@
 # POST  /v3/users/{user_id}/credentials/OS-EC2
 # Intended scope(s): system, project
 #"identity:ec2_create_credential": "(role:admin and system_scope:all) or rule:owner"
+"identity:ec2_create_credential": "rule:cloud_admin or rule:owner"
 
 # DEPRECATED "identity:ec2_create_credentials":"rule:admin_or_owner"
 # has been deprecated since T in favor of
@@ -387,6 +423,7 @@
 # DELETE  /v3/users/{user_id}/credentials/OS-EC2/{credential_id}
 # Intended scope(s): system, project
 #"identity:ec2_delete_credential": "(role:admin and system_scope:all) or user_id:%(target.credential.user_id)s"
+"identity:ec2_delete_credential": "rule:cloud_admin or (rule:owner and user_id:%(target.credential.user_id)s)"
 
 # DEPRECATED "identity:ec2_delete_credentials":"rule:admin_required or
 # (rule:owner and user_id:%(target.credential.user_id)s)" has been
@@ -399,6 +436,7 @@
 # GET  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
 #"identity:get_endpoint": "role:reader and system_scope:all"
+"identity:get_endpoint": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_endpoint":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_endpoint":"role:reader
@@ -408,6 +446,7 @@
 # GET  /v3/endpoints
 # Intended scope(s): system
 #"identity:list_endpoints": "role:reader and system_scope:all"
+"identity:list_endpoints": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_endpoints":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -417,6 +456,7 @@
 # POST  /v3/endpoints
 # Intended scope(s): system
 #"identity:create_endpoint": "role:admin and system_scope:all"
+"identity:create_endpoint": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_endpoint":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -426,6 +466,7 @@
 # PATCH  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
 #"identity:update_endpoint": "role:admin and system_scope:all"
+"identity:update_endpoint": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_endpoint":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -435,6 +476,7 @@
 # DELETE  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
 #"identity:delete_endpoint": "role:admin and system_scope:all"
+"identity:delete_endpoint": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_endpoint":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -444,6 +486,7 @@
 # POST  /v3/OS-EP-FILTER/endpoint_groups
 # Intended scope(s): system
 #"identity:create_endpoint_group": "role:admin and system_scope:all"
+"identity:create_endpoint_group": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_endpoint_group":"rule:admin_required"
 # has been deprecated since T in favor of
@@ -454,6 +497,7 @@
 # GET  /v3/OS-EP-FILTER/endpoint_groups
 # Intended scope(s): system
 #"identity:list_endpoint_groups": "role:reader and system_scope:all"
+"identity:list_endpoint_groups": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_endpoint_groups":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -465,6 +509,7 @@
 # HEAD  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}
 # Intended scope(s): system
 #"identity:get_endpoint_group": "role:reader and system_scope:all"
+"identity:get_endpoint_group": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_endpoint_group":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -475,6 +520,7 @@
 # PATCH  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}
 # Intended scope(s): system
 #"identity:update_endpoint_group": "role:admin and system_scope:all"
+"identity:update_endpoint_group": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_endpoint_group":"rule:admin_required"
 # has been deprecated since T in favor of
@@ -485,6 +531,7 @@
 # DELETE  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}
 # Intended scope(s): system
 #"identity:delete_endpoint_group": "role:admin and system_scope:all"
+"identity:delete_endpoint_group": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_endpoint_group":"rule:admin_required"
 # has been deprecated since T in favor of
@@ -495,6 +542,7 @@
 # GET  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/projects
 # Intended scope(s): system
 #"identity:list_projects_associated_with_endpoint_group": "role:reader and system_scope:all"
+"identity:list_projects_associated_with_endpoint_group": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_projects_associated_with_endpoint_group":"
 # rule:admin_required" has been deprecated since T in favor of
@@ -505,6 +553,7 @@
 # GET  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/endpoints
 # Intended scope(s): system
 #"identity:list_endpoints_associated_with_endpoint_group": "role:reader and system_scope:all"
+"identity:list_endpoints_associated_with_endpoint_group": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_endpoints_associated_with_endpoint_group":
 # "rule:admin_required" has been deprecated since T in favor of "ident
@@ -516,6 +565,7 @@
 # HEAD  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/projects/{project_id}
 # Intended scope(s): system
 #"identity:get_endpoint_group_in_project": "role:reader and system_scope:all"
+"identity:get_endpoint_group_in_project": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:get_endpoint_group_in_project":"rule:admin_required" has
@@ -527,6 +577,7 @@
 # GET  /v3/OS-EP-FILTER/projects/{project_id}/endpoint_groups
 # Intended scope(s): system
 #"identity:list_endpoint_groups_for_project": "role:reader and system_scope:all"
+"identity:list_endpoint_groups_for_project": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:list_endpoint_groups_for_project":"rule:admin_required"
@@ -538,6 +589,7 @@
 # PUT  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/projects/{project_id}
 # Intended scope(s): system
 #"identity:add_endpoint_group_to_project": "role:admin and system_scope:all"
+"identity:add_endpoint_group_to_project": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:add_endpoint_group_to_project":"rule:admin_required" has
@@ -549,6 +601,7 @@
 # DELETE  /v3/OS-EP-FILTER/endpoint_groups/{endpoint_group_id}/projects/{project_id}
 # Intended scope(s): system
 #"identity:remove_endpoint_group_from_project": "role:admin and system_scope:all"
+"identity:remove_endpoint_group_from_project": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:remove_endpoint_group_from_project":"rule:admin_required"
@@ -579,6 +632,7 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:check_grant": "(role:reader and system_scope:all) or ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
+"identity:check_grant": "rule:cloud_reader or ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s) or rule:role_viewer"
 
 # DEPRECATED "identity:check_grant":"rule:admin_required" has been
 # deprecated since S in favor of "identity:check_grant":"(role:reader
@@ -611,6 +665,7 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/users/{user_id}/roles/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:list_grants": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)"
+"identity:list_grants": "rule:cloud_reader or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) or rule:role_viewer"
 
 # DEPRECATED "identity:list_grants":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_grants":"(role:reader
@@ -639,6 +694,7 @@
 # PUT  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:create_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
+"identity:create_grant": "rule:cloud_admin or (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blacklist_roles and not rule:blacklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 
 # DEPRECATED "identity:create_grant":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_grant":"(role:admin
@@ -671,6 +727,7 @@
 # DELETE  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:revoke_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
+"identity:revoke_grant": "role:cloud_admin or (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blacklist_roles and not rule:blacklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 
 # DEPRECATED "identity:revoke_grant":"rule:admin_required" has been
 # deprecated since S in favor of "identity:revoke_grant":"(role:admin
@@ -690,6 +747,7 @@
 # ['HEAD', 'GET']  /v3/system/users/{user_id}/roles
 # Intended scope(s): system
 #"identity:list_system_grants_for_user": "role:reader and system_scope:all"
+"identity:list_system_grants_for_user": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:list_system_grants_for_user":"rule:admin_required" has
@@ -701,6 +759,7 @@
 # ['HEAD', 'GET']  /v3/system/users/{user_id}/roles/{role_id}
 # Intended scope(s): system
 #"identity:check_system_grant_for_user": "role:reader and system_scope:all"
+"identity:check_system_grant_for_user": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:check_system_grant_for_user":"rule:admin_required" has
@@ -712,6 +771,7 @@
 # ['PUT']  /v3/system/users/{user_id}/roles/{role_id}
 # Intended scope(s): system
 #"identity:create_system_grant_for_user": "role:admin and system_scope:all"
+"identity:create_system_grant_for_user": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:create_system_grant_for_user":"rule:admin_required" has
@@ -723,6 +783,7 @@
 # ['DELETE']  /v3/system/users/{user_id}/roles/{role_id}
 # Intended scope(s): system
 #"identity:revoke_system_grant_for_user": "role:admin and system_scope:all"
+"identity:revoke_system_grant_for_user": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:revoke_system_grant_for_user":"rule:admin_required" has
@@ -734,6 +795,7 @@
 # ['HEAD', 'GET']  /v3/system/groups/{group_id}/roles
 # Intended scope(s): system
 #"identity:list_system_grants_for_group": "role:reader and system_scope:all"
+"identity:list_system_grants_for_group": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:list_system_grants_for_group":"rule:admin_required" has
@@ -745,6 +807,7 @@
 # ['HEAD', 'GET']  /v3/system/groups/{group_id}/roles/{role_id}
 # Intended scope(s): system
 #"identity:check_system_grant_for_group": "role:reader and system_scope:all"
+"identity:check_system_grant_for_group": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:check_system_grant_for_group":"rule:admin_required" has
@@ -756,6 +819,7 @@
 # ['PUT']  /v3/system/groups/{group_id}/roles/{role_id}
 # Intended scope(s): system
 #"identity:create_system_grant_for_group": "role:admin and system_scope:all"
+"identity:create_system_grant_for_group": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:create_system_grant_for_group":"rule:admin_required" has
@@ -767,6 +831,7 @@
 # ['DELETE']  /v3/system/groups/{group_id}/roles/{role_id}
 # Intended scope(s): system
 #"identity:revoke_system_grant_for_group": "role:admin and system_scope:all"
+"identity:revoke_system_grant_for_group": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:revoke_system_grant_for_group":"rule:admin_required" has
@@ -779,6 +844,7 @@
 # HEAD  /v3/groups/{group_id}
 # Intended scope(s): system, domain
 #"identity:get_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
+"identity:get_group": "rule:cloud_reader or (role:reader and domain_id:%(target.group.domain_id)s) or role:role_viewer"
 
 # DEPRECATED "identity:get_group":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_group":"(role:reader
@@ -790,6 +856,7 @@
 # HEAD  /v3/groups
 # Intended scope(s): system, domain
 #"identity:list_groups": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
+"identity:list_groups": "rule:cloud_reader or (role:reader and domain_id:%(target.group.domain_id)s) or role:role_viewer"
 
 # DEPRECATED "identity:list_groups":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_groups":"(role:reader
@@ -801,6 +868,7 @@
 # HEAD  /v3/users/{user_id}/groups
 # Intended scope(s): system, domain, project
 #"identity:list_groups_for_user": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(user_id)s"
+"identity:list_groups_for_user": "rule:cloud_reader or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(user_id)s or role:role_viewer"
 
 # DEPRECATED "identity:list_groups_for_user":"rule:admin_or_owner" has
 # been deprecated since S in favor of
@@ -812,6 +880,7 @@
 # POST  /v3/groups
 # Intended scope(s): system, domain
 #"identity:create_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
+"identity:create_group": "rule:cloud_admin or (role:admin and domain_id:%(target.group.domain_id)s)"
 
 # DEPRECATED "identity:create_group":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_group":"(role:admin
@@ -822,6 +891,7 @@
 # PATCH  /v3/groups/{group_id}
 # Intended scope(s): system, domain
 #"identity:update_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
+"identity:update_group": "rule:cloud_admin or (role:admin and domain_id:%(target.group.domain_id)s)"
 
 # DEPRECATED "identity:update_group":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_group":"(role:admin
@@ -832,6 +902,7 @@
 # DELETE  /v3/groups/{group_id}
 # Intended scope(s): system, domain
 #"identity:delete_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
+"identity:delete_group": "rule:cloud_admin or (role:admin and domain_id:%(target.group.domain_id)s)"
 
 # DEPRECATED "identity:delete_group":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_group":"(role:admin
@@ -843,6 +914,7 @@
 # HEAD  /v3/groups/{group_id}/users
 # Intended scope(s): system, domain
 #"identity:list_users_in_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
+"identity:list_users_in_group": "rule:cloud_reader or (role:reader and domain_id:%(target.group.domain_id)s) or role:role_viewer"
 
 # DEPRECATED "identity:list_users_in_group":"rule:admin_required" has
 # been deprecated since S in favor of
@@ -853,6 +925,7 @@
 # DELETE  /v3/groups/{group_id}/users/{user_id}
 # Intended scope(s): system, domain
 #"identity:remove_user_from_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
+"identity:remove_user_from_group": "rule:cloud_admin or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:remove_user_from_group":"rule:admin_required"
 # has been deprecated since S in favor of
@@ -865,6 +938,7 @@
 # GET  /v3/groups/{group_id}/users/{user_id}
 # Intended scope(s): system, domain
 #"identity:check_user_in_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
+"identity:check_user_in_group": "rule:cloud_reader or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s) or role:role_viewer"
 
 # DEPRECATED "identity:check_user_in_group":"rule:admin_required" has
 # been deprecated since S in favor of
@@ -876,6 +950,7 @@
 # PUT  /v3/groups/{group_id}/users/{user_id}
 # Intended scope(s): system, domain
 #"identity:add_user_to_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
+"identity:add_user_to_group": "rule:cloud_admin or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:add_user_to_group":"rule:admin_required" has
 # been deprecated since S in favor of
@@ -887,6 +962,7 @@
 # PUT  /v3/OS-FEDERATION/identity_providers/{idp_id}
 # Intended scope(s): system
 #"identity:create_identity_provider": "role:admin and system_scope:all"
+"identity:create_identity_provider": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:create_identity_providers":"rule:admin_required" has been
@@ -900,6 +976,7 @@
 # HEAD  /v3/OS-FEDERATION/identity_providers
 # Intended scope(s): system
 #"identity:list_identity_providers": "role:reader and system_scope:all"
+"identity:list_identity_providers": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_identity_providers":"rule:admin_required"
 # has been deprecated since S in favor of
@@ -911,6 +988,7 @@
 # HEAD  /v3/OS-FEDERATION/identity_providers/{idp_id}
 # Intended scope(s): system
 #"identity:get_identity_provider": "role:reader and system_scope:all"
+"identity:get_identity_provider": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_identity_providers":"rule:admin_required"
 # has been deprecated since S in favor of
@@ -922,6 +1000,7 @@
 # PATCH  /v3/OS-FEDERATION/identity_providers/{idp_id}
 # Intended scope(s): system
 #"identity:update_identity_provider": "role:admin and system_scope:all"
+"identity:update_identity_provider": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:update_identity_providers":"rule:admin_required" has been
@@ -934,6 +1013,7 @@
 # DELETE  /v3/OS-FEDERATION/identity_providers/{idp_id}
 # Intended scope(s): system
 #"identity:delete_identity_provider": "role:admin and system_scope:all"
+"identity:delete_identity_provider": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:delete_identity_providers":"rule:admin_required" has been
@@ -949,6 +1029,7 @@
 # GET  /v3/roles/{prior_role_id}/implies/{implied_role_id}
 # Intended scope(s): system
 #"identity:get_implied_role": "role:reader and system_scope:all"
+"identity:get_implied_role": "rule:cloud_reader or role:role_viewer"
 
 # DEPRECATED "identity:get_implied_role":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -963,6 +1044,7 @@
 # HEAD  /v3/roles/{prior_role_id}/implies
 # Intended scope(s): system
 #"identity:list_implied_roles": "role:reader and system_scope:all"
+"identity:list_implied_roles": "rule:cloud_reader or role:role_viewer"
 
 # DEPRECATED "identity:list_implied_roles":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -974,6 +1056,7 @@
 # PUT  /v3/roles/{prior_role_id}/implies/{implied_role_id}
 # Intended scope(s): system
 #"identity:create_implied_role": "role:admin and system_scope:all"
+"identity:create_implied_role": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_implied_role":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -986,6 +1069,7 @@
 # DELETE  /v3/roles/{prior_role_id}/implies/{implied_role_id}
 # Intended scope(s): system
 #"identity:delete_implied_role": "role:admin and system_scope:all"
+"identity:delete_implied_role": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_implied_role":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -999,6 +1083,7 @@
 # HEAD  /v3/role_inferences
 # Intended scope(s): system
 #"identity:list_role_inference_rules": "role:reader and system_scope:all"
+"identity:list_role_inference_rules": "rule:cloud_reader or role:role_viewer"
 
 # DEPRECATED
 # "identity:list_role_inference_rules":"rule:admin_required" has been
@@ -1012,6 +1097,7 @@
 # HEAD  /v3/roles/{prior_role_id}/implies/{implied_role_id}
 # Intended scope(s): system
 #"identity:check_implied_role": "role:reader and system_scope:all"
+"identity:check_implied_role": "rule:cloud_reader or role:role_viewer"
 
 # DEPRECATED "identity:check_implied_role":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1028,6 +1114,7 @@
 # HEAD  /v3/limits/{limit_id}
 # Intended scope(s): system, domain, project
 #"identity:get_limit": "(role:reader and system_scope:all) or (domain_id:%(target.limit.domain.id)s or domain_id:%(target.limit.project.domain_id)s) or (project_id:%(target.limit.project_id)s and not None:%(target.limit.project_id)s)"
+"identity:get_limit": "rule:cloud_reader or (domain_id:%(target.limit.domain.id)s or domain_id:%(target.limit.project.domain_id)s) or (project_id:%(target.limit.project_id)s and not None:%(target.limit.project_id)s)"
 
 # List limits.
 # GET  /v3/limits
@@ -1039,21 +1126,25 @@
 # POST  /v3/limits
 # Intended scope(s): system
 #"identity:create_limits": "role:admin and system_scope:all"
+"identity:create_limits": "rule:cloud_admin"
 
 # Update limit.
 # PATCH  /v3/limits/{limit_id}
 # Intended scope(s): system
 #"identity:update_limit": "role:admin and system_scope:all"
+"identity:update_limit": "rule:cloud_admin"
 
 # Delete limit.
 # DELETE  /v3/limits/{limit_id}
 # Intended scope(s): system
 #"identity:delete_limit": "role:admin and system_scope:all"
+"identity:delete_limit": "rule:cloud_admin"
 
 # Create a new federated mapping containing one or more sets of rules.
 # PUT  /v3/OS-FEDERATION/mappings/{mapping_id}
 # Intended scope(s): system
 #"identity:create_mapping": "role:admin and system_scope:all"
+"identity:create_mapping": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_mapping":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_mapping":"role:admin
@@ -1064,6 +1155,7 @@
 # HEAD  /v3/OS-FEDERATION/mappings/{mapping_id}
 # Intended scope(s): system
 #"identity:get_mapping": "role:reader and system_scope:all"
+"identity:get_mapping": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_mapping":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_mapping":"role:reader
@@ -1074,6 +1166,7 @@
 # HEAD  /v3/OS-FEDERATION/mappings
 # Intended scope(s): system
 #"identity:list_mappings": "role:reader and system_scope:all"
+"identity:list_mappings": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_mappings":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_mappings":"role:reader
@@ -1083,6 +1176,7 @@
 # DELETE  /v3/OS-FEDERATION/mappings/{mapping_id}
 # Intended scope(s): system
 #"identity:delete_mapping": "role:admin and system_scope:all"
+"identity:delete_mapping": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_mapping":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_mapping":"role:admin
@@ -1092,6 +1186,7 @@
 # PATCH  /v3/OS-FEDERATION/mappings/{mapping_id}
 # Intended scope(s): system
 #"identity:update_mapping": "role:admin and system_scope:all"
+"identity:update_mapping": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_mapping":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_mapping":"role:admin
@@ -1101,6 +1196,7 @@
 # GET  /v3/policies/{policy_id}
 # Intended scope(s): system
 #"identity:get_policy": "role:reader and system_scope:all"
+"identity:get_policy": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_policy":"rule:admin_required" has been
 # deprecated since T in favor of "identity:get_policy":"role:reader
@@ -1110,6 +1206,7 @@
 # GET  /v3/policies
 # Intended scope(s): system
 #"identity:list_policies": "role:reader and system_scope:all"
+"identity:list_policies": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_policies":"rule:admin_required" has been
 # deprecated since T in favor of "identity:list_policies":"role:reader
@@ -1119,6 +1216,7 @@
 # POST  /v3/policies
 # Intended scope(s): system
 #"identity:create_policy": "role:admin and system_scope:all"
+"identity:create_policy": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_policy":"rule:admin_required" has been
 # deprecated since T in favor of "identity:create_policy":"role:admin
@@ -1128,6 +1226,7 @@
 # PATCH  /v3/policies/{policy_id}
 # Intended scope(s): system
 #"identity:update_policy": "role:admin and system_scope:all"
+"identity:update_policy": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_policy":"rule:admin_required" has been
 # deprecated since T in favor of "identity:update_policy":"role:admin
@@ -1137,6 +1236,7 @@
 # DELETE  /v3/policies/{policy_id}
 # Intended scope(s): system
 #"identity:delete_policy": "role:admin and system_scope:all"
+"identity:delete_policy": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_policy":"rule:admin_required" has been
 # deprecated since T in favor of "identity:delete_policy":"role:admin
@@ -1146,6 +1246,7 @@
 # PUT  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/endpoints/{endpoint_id}
 # Intended scope(s): system
 #"identity:create_policy_association_for_endpoint": "role:admin and system_scope:all"
+"identity:create_policy_association_for_endpoint": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_policy_association_for_endpoint":"rule:a
 # dmin_required" has been deprecated since T in favor of
@@ -1157,6 +1258,7 @@
 # HEAD  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/endpoints/{endpoint_id}
 # Intended scope(s): system
 #"identity:check_policy_association_for_endpoint": "role:reader and system_scope:all"
+"identity:check_policy_association_for_endpoint": "rule:cloud_reader"
 
 # DEPRECATED "identity:check_policy_association_for_endpoint":"rule:ad
 # min_required" has been deprecated since T in favor of
@@ -1167,6 +1269,7 @@
 # DELETE  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/endpoints/{endpoint_id}
 # Intended scope(s): system
 #"identity:delete_policy_association_for_endpoint": "role:admin and system_scope:all"
+"identity:delete_policy_association_for_endpoint": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_policy_association_for_endpoint":"rule:a
 # dmin_required" has been deprecated since T in favor of
@@ -1177,6 +1280,7 @@
 # PUT  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}
 # Intended scope(s): system
 #"identity:create_policy_association_for_service": "role:admin and system_scope:all"
+"identity:create_policy_association_for_service": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_policy_association_for_service":"rule:ad
 # min_required" has been deprecated since T in favor of
@@ -1188,6 +1292,7 @@
 # HEAD  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}
 # Intended scope(s): system
 #"identity:check_policy_association_for_service": "role:reader and system_scope:all"
+"identity:check_policy_association_for_service": "rule:cloud_reader"
 
 # DEPRECATED "identity:check_policy_association_for_service":"rule:adm
 # in_required" has been deprecated since T in favor of
@@ -1198,6 +1303,7 @@
 # DELETE  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}
 # Intended scope(s): system
 #"identity:delete_policy_association_for_service": "role:admin and system_scope:all"
+"identity:delete_policy_association_for_service": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_policy_association_for_service":"rule:ad
 # min_required" has been deprecated since T in favor of
@@ -1208,6 +1314,7 @@
 # PUT  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}/regions/{region_id}
 # Intended scope(s): system
 #"identity:create_policy_association_for_region_and_service": "role:admin and system_scope:all"
+"identity:create_policy_association_for_region_and_service": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_policy_association_for_region_and_servic
 # e":"rule:admin_required" has been deprecated since T in favor of "id
@@ -1219,6 +1326,7 @@
 # HEAD  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}/regions/{region_id}
 # Intended scope(s): system
 #"identity:check_policy_association_for_region_and_service": "role:reader and system_scope:all"
+"identity:check_policy_association_for_region_and_service": "rule:cloud_reader"
 
 # DEPRECATED "identity:check_policy_association_for_region_and_service
 # ":"rule:admin_required" has been deprecated since T in favor of "ide
@@ -1229,6 +1337,7 @@
 # DELETE  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}/regions/{region_id}
 # Intended scope(s): system
 #"identity:delete_policy_association_for_region_and_service": "role:admin and system_scope:all"
+"identity:delete_policy_association_for_region_and_service": "rule:cloud:admin"
 
 # DEPRECATED "identity:delete_policy_association_for_region_and_servic
 # e":"rule:admin_required" has been deprecated since T in favor of "id
@@ -1240,6 +1349,7 @@
 # HEAD  /v3/endpoints/{endpoint_id}/OS-ENDPOINT-POLICY/policy
 # Intended scope(s): system
 #"identity:get_policy_for_endpoint": "role:reader and system_scope:all"
+"identity:get_policy_for_endpoint": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_policy_for_endpoint":"rule:admin_required"
 # has been deprecated since T in favor of
@@ -1250,6 +1360,7 @@
 # GET  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/endpoints
 # Intended scope(s): system
 #"identity:list_endpoints_for_policy": "role:reader and system_scope:all"
+"identity:list_endpoints_for_policy": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:list_endpoints_for_policy":"rule:admin_required" has been
@@ -1261,6 +1372,7 @@
 # GET  /v3/projects/{project_id}
 # Intended scope(s): system, domain, project
 #"identity:get_project": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
+"identity:get_project": "rule:cloud_reader or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s or role:role_viewer"
 
 # DEPRECATED "identity:get_project":"rule:admin_required or
 # project_id:%(target.project.id)s" has been deprecated since S in
@@ -1272,6 +1384,7 @@
 # GET  /v3/projects
 # Intended scope(s): system, domain
 #"identity:list_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
+"identity:list_projects": "rule:cloud_reader or (role:reader and domain_id:%(target.domain_id)s) or role:role_viewer"
 
 # DEPRECATED "identity:list_projects":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -1282,6 +1395,7 @@
 # GET  /v3/users/{user_id}/projects
 # Intended scope(s): system, domain, project
 #"identity:list_user_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(target.user.id)s"
+"identity:list_user_projects": "rule:cloud_reader or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(target.user.id)s"
 
 # DEPRECATED "identity:list_user_projects":"rule:admin_or_owner" has
 # been deprecated since S in favor of
@@ -1293,6 +1407,7 @@
 # POST  /v3/projects
 # Intended scope(s): system, domain
 #"identity:create_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
+"identity:create_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s)"
 
 # DEPRECATED "identity:create_project":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -1303,6 +1418,7 @@
 # PATCH  /v3/projects/{project_id}
 # Intended scope(s): system, domain
 #"identity:update_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
+"identity:update_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s)"
 
 # DEPRECATED "identity:update_project":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -1313,6 +1429,7 @@
 # DELETE  /v3/projects/{project_id}
 # Intended scope(s): system, domain
 #"identity:delete_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
+"identity:delete_project": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_project":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -1324,6 +1441,7 @@
 # HEAD  /v3/projects/{project_id}/tags
 # Intended scope(s): system, domain, project
 #"identity:list_project_tags": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
+"identity:list_project_tags": "rule:cloud_reader or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
 
 # DEPRECATED "identity:list_project_tags":"rule:admin_required or
 # project_id:%(target.project.id)s" has been deprecated since T in
@@ -1342,6 +1460,7 @@
 # HEAD  /v3/projects/{project_id}/tags/{value}
 # Intended scope(s): system, domain, project
 #"identity:get_project_tag": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
+"identity:get_project_tag": "rule:cloud_reader or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
 
 # DEPRECATED "identity:get_project_tag":"rule:admin_required or
 # project_id:%(target.project.id)s" has been deprecated since T in
@@ -1359,6 +1478,7 @@
 # PUT  /v3/projects/{project_id}/tags
 # Intended scope(s): system, domain, project
 #"identity:update_project_tags": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:update_project_tags": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
 
 # DEPRECATED "identity:update_project_tags":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1375,6 +1495,7 @@
 # PUT  /v3/projects/{project_id}/tags/{value}
 # Intended scope(s): system, domain, project
 #"identity:create_project_tag": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:create_project_tag": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
 
 # DEPRECATED "identity:create_project_tag":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1391,6 +1512,7 @@
 # DELETE  /v3/projects/{project_id}/tags
 # Intended scope(s): system, domain, project
 #"identity:delete_project_tags": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:delete_project_tags": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
 
 # DEPRECATED "identity:delete_project_tags":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1407,6 +1529,7 @@
 # DELETE  /v3/projects/{project_id}/tags/{value}
 # Intended scope(s): system, domain, project
 #"identity:delete_project_tag": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:delete_project_tag": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
 
 # DEPRECATED "identity:delete_project_tag":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1423,6 +1546,7 @@
 # GET  /v3/OS-EP-FILTER/endpoints/{endpoint_id}/projects
 # Intended scope(s): system
 #"identity:list_projects_for_endpoint": "role:reader and system_scope:all"
+"identity:list_projects_for_endpoint": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:list_projects_for_endpoint":"rule:admin_required" has been
@@ -1440,6 +1564,7 @@
 # PUT  /v3/OS-EP-FILTER/projects/{project_id}/endpoints/{endpoint_id}
 # Intended scope(s): system
 #"identity:add_endpoint_to_project": "role:admin and system_scope:all"
+"identity:add_endpoint_to_project": "rule:cloud_admin"
 
 # DEPRECATED "identity:add_endpoint_to_project":"rule:admin_required"
 # has been deprecated since T in favor of
@@ -1457,6 +1582,7 @@
 # HEAD  /v3/OS-EP-FILTER/projects/{project_id}/endpoints/{endpoint_id}
 # Intended scope(s): system
 #"identity:check_endpoint_in_project": "role:reader and system_scope:all"
+"identity:check_endpoint_in_project": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:check_endpoint_in_project":"rule:admin_required" has been
@@ -1474,12 +1600,14 @@
 # GET  /v3/OS-EP-FILTER/projects/{project_id}/endpoints
 # Intended scope(s): system
 #"identity:list_endpoints_for_project": "role:reader and system_scope:all"
+"identity:list_endpoints_for_project": "rule:cloud_reader"
 
 # DEPRECATED
 # "identity:list_endpoints_for_project":"rule:admin_required" has been
 # deprecated since T in favor of
 # "identity:list_endpoints_for_project":"role:reader and
 # system_scope:all".
+"identity:list_endpoints_for_project":"rule:cloud_reader".
 #
 # As of the Train release, the project endpoint API now understands
 # default roles and system-scoped tokens, making the API more granular
@@ -1492,6 +1620,7 @@
 # DELETE  /v3/OS-EP-FILTER/projects/{project_id}/endpoints/{endpoint_id}
 # Intended scope(s): system
 #"identity:remove_endpoint_from_project": "role:admin and system_scope:all"
+"identity:remove_endpoint_from_project": "rule:cloud_admin"
 
 # DEPRECATED
 # "identity:remove_endpoint_from_project":"rule:admin_required" has
@@ -1509,6 +1638,7 @@
 # PUT  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols/{protocol_id}
 # Intended scope(s): system
 #"identity:create_protocol": "role:admin and system_scope:all"
+"identity:create_protocol": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_protocol":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -1519,6 +1649,7 @@
 # PATCH  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols/{protocol_id}
 # Intended scope(s): system
 #"identity:update_protocol": "role:admin and system_scope:all"
+"identity:update_protocol": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_protocol":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -1529,6 +1660,7 @@
 # GET  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols/{protocol_id}
 # Intended scope(s): system
 #"identity:get_protocol": "role:reader and system_scope:all"
+"identity:get_protocol": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_protocol":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_protocol":"role:reader
@@ -1538,6 +1670,7 @@
 # GET  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols
 # Intended scope(s): system
 #"identity:list_protocols": "role:reader and system_scope:all"
+"identity:list_protocols": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_protocols":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -1548,6 +1681,7 @@
 # DELETE  /v3/OS-FEDERATION/identity_providers/{idp_id}/protocols/{protocol_id}
 # Intended scope(s): system
 #"identity:delete_protocol": "role:admin and system_scope:all"
+"identity:delete_protocol": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_protocol":"rule:admin_required" has been
 # deprecated since S in favor of
@@ -1571,6 +1705,7 @@
 # PUT  /v3/regions/{region_id}
 # Intended scope(s): system
 #"identity:create_region": "role:admin and system_scope:all"
+"identity:create_region": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_region":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_region":"role:admin
@@ -1580,6 +1715,7 @@
 # PATCH  /v3/regions/{region_id}
 # Intended scope(s): system
 #"identity:update_region": "role:admin and system_scope:all"
+"identity:update_region": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_region":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_region":"role:admin
@@ -1589,6 +1725,7 @@
 # DELETE  /v3/regions/{region_id}
 # Intended scope(s): system
 #"identity:delete_region": "role:admin and system_scope:all"
+"identity:delete_region": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_region":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_region":"role:admin
@@ -1610,16 +1747,19 @@
 # POST  /v3/registered_limits
 # Intended scope(s): system
 #"identity:create_registered_limits": "role:admin and system_scope:all"
+"identity:create_registered_limits": "rule:cloud_admin"
 
 # Update registered limit.
 # PATCH  /v3/registered_limits/{registered_limit_id}
 # Intended scope(s): system
 #"identity:update_registered_limit": "role:admin and system_scope:all"
+"identity:update_registered_limit": "rule:cloud_admin"
 
 # Delete registered limit.
 # DELETE  /v3/registered_limits/{registered_limit_id}
 # Intended scope(s): system
 #"identity:delete_registered_limit": "role:admin and system_scope:all"
+"identity:delete_registered_limit": "rule:cloud_admin"
 
 # List revocation events.
 # GET  /v3/OS-REVOKE/events
@@ -1631,6 +1771,7 @@
 # HEAD  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:get_role": "role:reader and system_scope:all"
+"identity:get_role": "rule:cloud_reader or role:admin or role:role_viewer"
 
 # DEPRECATED "identity:get_role":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_role":"role:reader and
@@ -1641,6 +1782,7 @@
 # HEAD  /v3/roles
 # Intended scope(s): system
 #"identity:list_roles": "role:reader and system_scope:all"
+"identity:list_roles": "rule:cloud_reader or role:admin or role:role_viewer"
 
 # DEPRECATED "identity:list_roles":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_roles":"role:reader
@@ -1650,6 +1792,7 @@
 # POST  /v3/roles
 # Intended scope(s): system
 #"identity:create_role": "role:admin and system_scope:all"
+"identity:create_role": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_role":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_role":"role:admin
@@ -1659,6 +1802,7 @@
 # PATCH  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:update_role": "role:admin and system_scope:all"
+"identity:update_role": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_role":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_role":"role:admin
@@ -1668,6 +1812,7 @@
 # DELETE  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:delete_role": "role:admin and system_scope:all"
+"identity:delete_role": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_role":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_role":"role:admin
@@ -1678,6 +1823,7 @@
 # HEAD  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:get_domain_role": "role:reader and system_scope:all"
+"identity:get_domain_role": "rule:cloud_reader or role:role_viewer"
 
 # DEPRECATED "identity:get_domain_role":"rule:admin_required" has been
 # deprecated since T in favor of
@@ -1688,6 +1834,7 @@
 # HEAD  /v3/roles?domain_id={domain_id}
 # Intended scope(s): system
 #"identity:list_domain_roles": "role:reader and system_scope:all"
+"identity:list_domain_roles": "rule:cloud_reader or role:role_viewer"
 
 # DEPRECATED "identity:list_domain_roles":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1697,6 +1844,7 @@
 # POST  /v3/roles
 # Intended scope(s): system
 #"identity:create_domain_role": "role:admin and system_scope:all"
+"identity:create_domain_role": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_domain_role":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1706,6 +1854,7 @@
 # PATCH  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:update_domain_role": "role:admin and system_scope:all"
+"identity:update_domain_role": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_domain_role":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1715,6 +1864,7 @@
 # DELETE  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:delete_domain_role": "role:admin and system_scope:all"
+"identity:delete_domain_role": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_domain_role":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1725,6 +1875,7 @@
 # HEAD  /v3/role_assignments
 # Intended scope(s): system, domain
 #"identity:list_role_assignments": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
+"identity:list_role_assignments": "rule:cloud_reader or (role:reader and domain_id:%(target.domain_id)s) or role:role_viewer"
 
 # DEPRECATED "identity:list_role_assignments":"rule:admin_required"
 # has been deprecated since S in favor of
@@ -1736,6 +1887,7 @@
 # HEAD  /v3/role_assignments?include_subtree
 # Intended scope(s): system, domain, project
 #"identity:list_role_assignments_for_tree": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:list_role_assignments_for_tree": "rule:cloud_reader or (role:reader and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s) or role:role_viewer"
 
 # DEPRECATED
 # "identity:list_role_assignments_for_tree":"rule:admin_required" has
@@ -1749,6 +1901,7 @@
 # GET  /v3/services/{service_id}
 # Intended scope(s): system
 #"identity:get_service": "role:reader and system_scope:all"
+"identity:get_service": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_service":"rule:admin_required" has been
 # deprecated since S in favor of "identity:get_service":"role:reader
@@ -1758,6 +1911,7 @@
 # GET  /v3/services
 # Intended scope(s): system
 #"identity:list_services": "role:reader and system_scope:all"
+"identity:list_services": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_services":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_services":"role:reader
@@ -1767,6 +1921,7 @@
 # POST  /v3/services
 # Intended scope(s): system
 #"identity:create_service": "role:admin and system_scope:all"
+"identity:create_service": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_service":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_service":"role:admin
@@ -1776,6 +1931,7 @@
 # PATCH  /v3/services/{service_id}
 # Intended scope(s): system
 #"identity:update_service": "role:admin and system_scope:all"
+"identity:update_service": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_service":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_service":"role:admin
@@ -1785,6 +1941,7 @@
 # DELETE  /v3/services/{service_id}
 # Intended scope(s): system
 #"identity:delete_service": "role:admin and system_scope:all"
+"identity:delete_service": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_service":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_service":"role:admin
@@ -1794,6 +1951,7 @@
 # PUT  /v3/OS-FEDERATION/service_providers/{service_provider_id}
 # Intended scope(s): system
 #"identity:create_service_provider": "role:admin and system_scope:all"
+"identity:create_service_provider": "rule:cloud_admin"
 
 # DEPRECATED "identity:create_service_provider":"rule:admin_required"
 # has been deprecated since S in favor of
@@ -1805,6 +1963,7 @@
 # HEAD  /v3/OS-FEDERATION/service_providers
 # Intended scope(s): system
 #"identity:list_service_providers": "role:reader and system_scope:all"
+"identity:list_service_providers": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_service_providers":"rule:admin_required"
 # has been deprecated since S in favor of
@@ -1816,6 +1975,7 @@
 # HEAD  /v3/OS-FEDERATION/service_providers/{service_provider_id}
 # Intended scope(s): system
 #"identity:get_service_provider": "role:reader and system_scope:all"
+"identity:get_service_provider": "rule:cloud_reader"
 
 # DEPRECATED "identity:get_service_provider":"rule:admin_required" has
 # been deprecated since S in favor of
@@ -1826,6 +1986,7 @@
 # PATCH  /v3/OS-FEDERATION/service_providers/{service_provider_id}
 # Intended scope(s): system
 #"identity:update_service_provider": "role:admin and system_scope:all"
+"identity:update_service_provider": "rule:cloud_admin"
 
 # DEPRECATED "identity:update_service_provider":"rule:admin_required"
 # has been deprecated since S in favor of
@@ -1836,6 +1997,7 @@
 # DELETE  /v3/OS-FEDERATION/service_providers/{service_provider_id}
 # Intended scope(s): system
 #"identity:delete_service_provider": "role:admin and system_scope:all"
+"identity:delete_service_provider": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_service_provider":"rule:admin_required"
 # has been deprecated since S in favor of
@@ -1857,6 +2019,7 @@
 # HEAD  /v3/auth/tokens
 # Intended scope(s): system, domain, project
 #"identity:check_token": "(role:reader and system_scope:all) or rule:token_subject"
+"identity:check_token": "rule:cloud_reader or rule:token_subject"
 
 # DEPRECATED "identity:check_token":"rule:admin_or_token_subject" has
 # been deprecated since T in favor of
@@ -1867,6 +2030,7 @@
 # GET  /v3/auth/tokens
 # Intended scope(s): system, domain, project
 #"identity:validate_token": "(role:reader and system_scope:all) or rule:service_role or rule:token_subject"
+"identity:validate_token": "rule:cloud_reader or rule:service_role or rule:token_subject"
 
 # DEPRECATED
 # "identity:validate_token":"rule:service_admin_or_token_subject" has
@@ -1878,6 +2042,7 @@
 # DELETE  /v3/auth/tokens
 # Intended scope(s): system, domain, project
 #"identity:revoke_token": "(role:admin and system_scope:all) or rule:token_subject"
+"identity:revoke_token": "rule:cloud_admin or rule:token_subject"
 
 # DEPRECATED "identity:revoke_token":"rule:admin_or_token_subject" has
 # been deprecated since T in favor of
@@ -1894,6 +2059,7 @@
 # HEAD  /v3/OS-TRUST/trusts
 # Intended scope(s): system
 #"identity:list_trusts": "role:reader and system_scope:all"
+"identity:list_trusts": "rule:cloud_reader"
 
 # DEPRECATED "identity:list_trusts":"rule:admin_required" has been
 # deprecated since T in favor of "identity:list_trusts":"role:reader
@@ -1904,18 +2070,21 @@
 # HEAD  /v3/OS-TRUST/trusts?trustor_user_id={trustor_user_id}
 # Intended scope(s): system, project
 #"identity:list_trusts_for_trustor": "role:reader and system_scope:all or user_id:%(target.trust.trustor_user_id)s"
+"identity:list_trusts_for_trustor": "rule:cloud_reader or user_id:%(target.trust.trustor_user_id)s"
 
 # List trusts for trustee.
 # GET  /v3/OS-TRUST/trusts?trustee_user_id={trustee_user_id}
 # HEAD  /v3/OS-TRUST/trusts?trustee_user_id={trustee_user_id}
 # Intended scope(s): system, project
 #"identity:list_trusts_for_trustee": "role:reader and system_scope:all or user_id:%(target.trust.trustee_user_id)s"
+"identity:list_trusts_for_trustee": "rule:cloud_reader or user_id:%(target.trust.trustee_user_id)s"
 
 # List roles delegated by a trust.
 # GET  /v3/OS-TRUST/trusts/{trust_id}/roles
 # HEAD  /v3/OS-TRUST/trusts/{trust_id}/roles
 # Intended scope(s): system, project
 #"identity:list_roles_for_trust": "role:reader and system_scope:all or user_id:%(target.trust.trustor_user_id)s or user_id:%(target.trust.trustee_user_id)s"
+"identity:list_roles_for_trust": "rule:cloud_reader or user_id:%(target.trust.trustor_user_id)s or user_id:%(target.trust.trustee_user_id)s"
 
 # DEPRECATED "identity:list_roles_for_trust":"user_id:%(target.trust.t
 # rustor_user_id)s or user_id:%(target.trust.trustee_user_id)s" has
@@ -1929,6 +2098,7 @@
 # HEAD  /v3/OS-TRUST/trusts/{trust_id}/roles/{role_id}
 # Intended scope(s): system, project
 #"identity:get_role_for_trust": "role:reader and system_scope:all or user_id:%(target.trust.trustor_user_id)s or user_id:%(target.trust.trustee_user_id)s"
+"identity:get_role_for_trust": "rule:cloud_reader or user_id:%(target.trust.trustor_user_id)s or user_id:%(target.trust.trustee_user_id)s"
 
 # DEPRECATED "identity:get_role_for_trust":"user_id:%(target.trust.tru
 # stor_user_id)s or user_id:%(target.trust.trustee_user_id)s" has been
@@ -1941,6 +2111,7 @@
 # DELETE  /v3/OS-TRUST/trusts/{trust_id}
 # Intended scope(s): system, project
 #"identity:delete_trust": "role:admin and system_scope:all or user_id:%(target.trust.trustor_user_id)s"
+"identity:delete_trust": "rule:cloud_admin or user_id:%(target.trust.trustor_user_id)s"
 
 # DEPRECATED
 # "identity:delete_trust":"user_id:%(target.trust.trustor_user_id)s"
@@ -1953,6 +2124,7 @@
 # HEAD  /v3/OS-TRUST/trusts/{trust_id}
 # Intended scope(s): system, project
 #"identity:get_trust": "role:reader and system_scope:all or user_id:%(target.trust.trustor_user_id)s or user_id:%(target.trust.trustee_user_id)s"
+"identity:get_trust": "rule:cloud_reader or user_id:%(target.trust.trustor_user_id)s or user_id:%(target.trust.trustee_user_id)s"
 
 # DEPRECATED
 # "identity:get_trust":"user_id:%(target.trust.trustor_user_id)s or
@@ -1966,6 +2138,7 @@
 # HEAD  /v3/users/{user_id}
 # Intended scope(s): system, domain, project
 #"identity:get_user": "(role:reader and system_scope:all) or (role:reader and token.domain.id:%(target.user.domain_id)s) or user_id:%(target.user.id)s"
+"identity:get_user": "rule:cloud_reader or (role:reader and token.domain.id:%(target.user.domain_id)s) or user_id:%(target.user.id)s or role:role_viewer"
 
 # DEPRECATED "identity:get_user":"rule:admin_or_owner" has been
 # deprecated since S in favor of "identity:get_user":"(role:reader and
@@ -1978,6 +2151,7 @@
 # HEAD  /v3/users
 # Intended scope(s): system, domain
 #"identity:list_users": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
+"identity:list_users": "rule:cloud_reader or (role:reader and domain_id:%(target.domain_id)s) or role:role_viewer"
 
 # DEPRECATED "identity:list_users":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_users":"(role:reader
@@ -1996,6 +2170,7 @@
 # POST  /v3/users
 # Intended scope(s): system, domain
 #"identity:create_user": "(role:admin and system_scope:all) or (role:admin and token.domain.id:%(target.user.domain_id)s)"
+"identity:create_user": "rule:cloud_admin or (role:admin and token.domain.id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:create_user":"rule:admin_required" has been
 # deprecated since S in favor of "identity:create_user":"(role:admin
@@ -2006,6 +2181,7 @@
 # PATCH  /v3/users/{user_id}
 # Intended scope(s): system, domain
 #"identity:update_user": "(role:admin and system_scope:all) or (role:admin and token.domain.id:%(target.user.domain_id)s)"
+"identity:update_user": "rule:cloud_admin or (role:admin and token.domain.id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:update_user":"rule:admin_required" has been
 # deprecated since S in favor of "identity:update_user":"(role:admin
@@ -2016,6 +2192,7 @@
 # DELETE  /v3/users/{user_id}
 # Intended scope(s): system, domain
 #"identity:delete_user": "(role:admin and system_scope:all) or (role:admin and token.domain.id:%(target.user.domain_id)s)"
+"identity:delete_user": "rule:cloud_admin or (role:admin and token.domain.id:%(target.user.domain_id)s)"
 
 # DEPRECATED "identity:delete_user":"rule:admin_required" has been
 # deprecated since S in favor of "identity:delete_user":"(role:admin
