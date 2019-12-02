@@ -1,3 +1,8 @@
+## 1.0.2
+
+* Adds alert for cluster status.
+* Adds Grafana dashboard.
+
 ## 1.0.1
 
 * Adds [Prometheus alerts](./templates/alerts) for common Alertmanager errors.  
