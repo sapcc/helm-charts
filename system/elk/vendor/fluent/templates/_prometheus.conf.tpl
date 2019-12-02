@@ -15,27 +15,19 @@
 </source>
 
 <source>
-    @id prometheus_monitor
     @type prometheus_monitor
     <labels>
         host ${hostname}
     </labels>
+    interval 10
 </source>
 
 <source>
-    @id prometheus_output_monitor
     @type prometheus_output_monitor
     <labels>
         host ${hostname}
     </labels>
-</source>
-
-<source>
-    @id prometheus_tail_monitor
-    @type prometheus_tail_monitor
-    <labels>
-        host ${hostname}
-    </labels>
+    interval 10
 </source>
 
 # metrics
@@ -73,4 +65,3 @@
     </metric>
   </store>
 </match>
-
