@@ -1,11 +1,4 @@
 
-# expose collator
-<source>
-  @type forward
-  bind 0.0.0.0
-  port 24224
-</source>
-
 # expose metrics in prometheus format
 <source>
   @type prometheus
@@ -46,22 +39,3 @@
     </labels>
   </metric>
 </filter>
-
-# count number of outgoing records per tag
-<match kubernetes.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name fluentd_output_status_num_records_total
-      type counter
-      desc The total number of outgoing records
-      <labels>
-        tag ${tag}
-        hostname ${hostname}
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        container $.kubernetes.container_name
-      </labels>
-    </metric>
-  </store>
-</match>

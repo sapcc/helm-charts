@@ -446,4 +446,16 @@
       flush_interval 1s
     </buffer>
   </store>
+  <store>
+    @type prometheus
+    <metric>
+      name fluentd_output_status_num_records_total
+      type counter
+      desc The total number of outgoing records
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        container $.kubernetes.container_name
+      </labels>
+    </metric>
+  </store>
  </match>
