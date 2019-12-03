@@ -16,16 +16,14 @@ data:
     physical_device_mappings = {{ $lb.physical_device_mappings }}
     sync_interval = {{ $.Values.new_f5.periodic_interval }}
     backend = icontrol
-    devices = {{ range $i, $host := $lb.guest_hosts }}
+    devices = {{ range $i, $host := $lb.hosts }}
     {{- tuple $host $lb.username $lb.password | include "f5_url" }}
-    {{- if lt $i (sub (len $lb.guest_hosts) 1) }},{{ end -}}
+    {{- if lt $i (sub (len $lb.hosts) 1) }},{{ end -}}
     {{- end }}
 
     [F5_VCMP]
-    host = {{ range $i, $host := $lb.vcmp_hosts }}
-    {{- tuple $host $lb.username $lb.password | include "f5_url" }}
-    {{- if lt $i (sub (len $lb.vcmp_hosts) 1) }},{{ end -}}
-    {{- end }}
-    guest = {{ $lb.guest_hosts | join "," }}
+    username = {{ required "Missing loadbalancer username!" $lb.username }}
+    password = {{ required "Missing loadbalancer password!" $lb.password }}
+    vcmp_host_guest_mapping = {{ $lb.vcmp_host_guest_mapping | join "," }}
 {{- end }}
 {{- end }}
