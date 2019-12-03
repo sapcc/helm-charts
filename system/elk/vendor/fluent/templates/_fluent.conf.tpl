@@ -411,6 +411,20 @@
   @type null
 </match>
 
+{{- if .Values.forwarding.keystone.enabled }}
+<match kubernetes.var.log.containers.keystone-api.**>
+  @type copy
+  <store>
+    @type http
+    endpoint_url "https://in-https.gym.eude2.ccloud.octobus.tools.sap/c0001/log/keystone"
+    cacert_file "/etc/ca.pem"
+    http_method post
+    serializer json
+    raise_on_error true
+    </store>
+</match>
+{{- end }}
+
 # count number of outgoing records per tag
 <match kubernetes.**>
   @type copy
