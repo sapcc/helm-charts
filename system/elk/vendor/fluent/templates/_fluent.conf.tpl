@@ -412,14 +412,16 @@
 </match>
 
 {{- if .Values.forwarding.keystone.enabled }}
-<match kubernetes.var.log.containers.keystone-api.**>
+<match kubernetes.var.log.containers.keystone-api**>
   @type copy
   <store>
     @type http
     endpoint_url "https://{{.Values.forwarding.keystone.host}}/c0001/log/keystone"
     cacert_file "/etc/ca.crt"
     http_method post
+    ssl_no_verify true
     serializer json
+    raise_on_error false
   </store>
 </match>
 {{- end }}
