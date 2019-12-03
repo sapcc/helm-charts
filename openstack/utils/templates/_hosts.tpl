@@ -115,3 +115,10 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
     {{- $user := index . 1 }}
     {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) | include "utils.password_for_fixed_user_and_host" }}
 {{- end }}
+
+{{ define "f5_url" }}
+    {{- $host := index . 0 }}
+    {{- $user := index . 1 }}
+    {{- $password := index . 2 -}}
+https://{{ $user }}:{{ $password | urlquery }}@{{ $host }}
+{{- end }}

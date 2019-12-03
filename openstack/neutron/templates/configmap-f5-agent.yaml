@@ -13,14 +13,13 @@ metadata:
 data:
   f5-agent.conf.ini: |
     [F5]
-    physical_device_mappings = {{ $lb.external_physical_mappings }}
+    physical_device_mappings = {{ $lb.physical_device_mappings }}
     sync_interval = {{ $.Values.new_f5.periodic_interval }}
     backend = icontrol
-    devices = {{ $lb.guest_host }}
+    devices = {{ range $host := $lb.guest_hosts }}{{ tuple $host $lb.username $lb.password | include "f5_url" }},{{ end }}
 
     [F5_VCMP]
-    host = {{ $lb.vcmp_host }}
-    guest = {{ $lb.guest_host }}
-
+    host = {{ range $host := $lb.vcmp_hosts }}{{ tuple $host $lb.username $lb.password | include "f5_url" }}{{ end }}
+    guest = {{ $lb.guest_hosts | join "," }}
 {{- end }}
 {{- end }}
