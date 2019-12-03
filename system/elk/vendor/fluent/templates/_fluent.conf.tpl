@@ -416,9 +416,10 @@
   @type copy
   <store>
     @type http
-    endpoint "https://in-https.gym.eude2.ccloud.octobus.tools.sap/c0001/log/keystone"
-    tls_ca_cert_path "/etc/ca.crt"
-    content_type json
+    endpoint_url "https://{{.Values.forwarding.keystone.host}}/c0001/log/keystone"
+    cacert_file "/etc/ca.crt"
+    http_method post
+    serializer json
   </store>
 </match>
 {{- end }}
