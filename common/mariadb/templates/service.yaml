@@ -41,3 +41,31 @@ spec:
   selector:
     app: {{ include "fullName" . }}
 {{- end }}
+{{- if .Values.backup_v2.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fullName" . }}-backup
+  labels:
+    app: {{ include "fullName" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8081"
+    prometheus.io/port_1: "9188"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  selector:
+    app: {{ include "fullName" . }}
+  ports:
+    - port: 8081
+      name: http
+      targetPort: http
+      protocol: TCP
+    - name: backup-metrics
+      port: 9188
+      protocol: TCP
+{{- end }} 

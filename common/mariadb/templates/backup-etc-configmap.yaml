@@ -1,0 +1,44 @@
+{{- if .Values.backup_v2.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  mariadb-backup-{{.Values.name}}-etc
+  labels:
+    app: mariadb
+      chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+      release: "{{ .Release.Name }}"
+      heritage: "{{ .Release.Service }}"
+      component: database
+data:
+  config.yaml: |
+    full_backup_interval_in_hours: {{ .Values.backup_v2.full_backup_interval_in_hours }}
+    incremental_backup_interval_in_minutes: {{ .Values.backup_v2.incremental_backup_interval_in_minutes }}
+    service_name: {{ .Values.name }}
+    backup_dir: {{ .Values.backup_v2.backup_dir }}
+    namespace: {{ .Release.Namespace }}
+    enable_init_restore: {{ .Values.backup_v2.enable_init_restore }}
+    maria_db:
+      user: root
+      version: {{ .Values.backup_v2.maria_db.version }}
+      password: {{ required ".Values.root_password missing" .Values.root_password }}
+      host: 127.0.0.1
+      port: 3306
+      data_dir: ./db_prod
+      databases:
+      {{- range $db := .Values.backup_v2.databases }}
+        - {{$db}}"
+      {{- end }}
+      verify_tables:
+      {{- range $tl := .Values.backup_v2.verify_tables }}
+        - {{$tl}}"
+      {{- end }}
+    s3:
+      aws_access_key_id: "AKIA6KSEBLSK2FSGRF67"
+      aws_secret_access_key: "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"
+      region: "eu-central-1"
+      bucket_name: "mariadb-backup-{{ .Values.global.region }}"
+    oauth:
+      enabled: {{ default true .Values.backup_v2.oauth.enabled}}
+      provider_url: "https://auth.mariabackup.{{ .Values.global.region }}.cloud.sap"
+      redirect_url: "https://{{ .Values.name }}.mariabackup.{{ .Values.global.region }}.cloud.sap"
+{{- end }} 
