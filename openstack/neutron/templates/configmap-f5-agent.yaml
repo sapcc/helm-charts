@@ -1,0 +1,26 @@
+{{- if contains ",f5" .Values.ml2_mechanismdrivers }}
+{{- range $lb := .Values.new_f5.loadbalancers -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neutron-f5-{{$lb.name}}
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+
+data:
+  f5-agent.conf.ini: |
+    [F5]
+    physical_device_mappings = {{ $lb.external_physical_mappings }}
+    sync_interval = {{ $.Values.new_f5.periodic_interval }}
+    backend = icontrol
+    devices = {{ $lb.guest_host }}
+
+    [F5_VCMP]
+    host = {{ $lb.vcmp_host }}
+    guest = {{ $lb.guest_host }}
+
+{{- end }}
+{{- end }}

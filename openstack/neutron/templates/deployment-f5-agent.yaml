@@ -1,0 +1,67 @@
+{{- if contains ",f5" .Values.ml2_mechanismdrivers }}
+{{- range $lb := .Values.new_f5.loadbalancers -}}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: neutron-f5-{{ $lb.name }}
+  labels:
+    system: openstack
+    type: backend
+    component: neutron
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 3
+  selector:
+    matchLabels:
+      name: neutron-f5-{{ $lb.name }}
+  template:
+    metadata:
+      labels:
+        name: neutron-f5-{{ $lb.name }}
+      annotations:
+        pod.beta.kubernetes.io/hostname: neutron-f5-{{ $lb.name }}
+    spec:
+      {{- if ge $.Capabilities.KubeVersion.Minor "7" }}
+      hostname: neutron-f5-{{ $lb.name }}
+      {{- end }}
+      containers:
+        - name: neutron-f5-agent
+          image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{ $.Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "neutron-f5-agent", "--config-file /etc/neutron/neutron.conf", "--config-file /etc/neutron/f5-agent.conf.ini"]
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: neutron.DSN.python
+          volumeMounts:
+            - name: neutron-etc
+              mountPath: /etc/neutron/neutron.conf
+              subPath: neutron.conf
+              readOnly: true
+            - name: neutron-etc
+              mountPath: /etc/neutron/logging.conf
+              subPath: logging.conf
+              readOnly: true
+            - name: f5-etc
+              mountPath: /etc/neutron/f5-agent.conf.ini
+              subPath: f5-agent.conf.ini
+              readOnly: true
+      volumes:
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+        - name: f5-etc
+          configMap:
+            name: neutron-f5-{{ $lb.name }}
+{{- end }}
+{{- end -}}
