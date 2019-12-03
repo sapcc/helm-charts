@@ -120,7 +120,7 @@
     "delete_record": "rule:context_is_master",
     "count_records": "rule:context_is_viewer",
 
-    "use_sudo": "rule:admin or rule:context_is_dns_ops",
+    "use_sudo": "rule:context_is_dns_ops",
     "create_blacklist": "rule:context_is_dns_ops",
     "find_blacklist": "rule:context_is_dns_support",
     "find_blacklists": "rule:context_is_dns_support",
