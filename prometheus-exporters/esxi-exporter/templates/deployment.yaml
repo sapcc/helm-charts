@@ -9,11 +9,15 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ include "infraMonitoring.name" . }}
-        release: {{ .Release.Name }}
+        app: esxi-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.listen_port missing" .Values.listen_port | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       containers:
-        - name: {{ include "infraMonitoring.name" . }}
+        - name: esxi-exporter
           imagePullPolicy: IfNotPresent
           image: {{ .Values.docker_repo }}/esxi-exporter:{{ .Values.image_version | replace "string:" "" }}
           command:
