@@ -109,3 +109,25 @@ groups:
     annotations:
       description: Deployment {{`{{ $labels.namespace }}`}}/{{`{{ $labels.deployment }}`}} only {{`{{ $value }}`}} replica available, which is less then desired
       summary: Deployment has less than desired replicas since 10m
+
+  - alert: ManyPodsNotReadyOnNode
+    expr: sum(max(kube_pod_info) by (pod,node) * on (pod) group_left max(kube_pod_status_ready{condition="true"}) by (pod)) by (node) / sum(kube_pod_info) by (node) < 0.5
+    for: 30m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      service: k8s
+      severity: warning
+    annotations:
+      description: "{{`{{ humanizePercentage $value }}`}} of pods are ready on node {{`{{$labels.node}}`}}. This might by due to <https://github.com/kubernetes/kubernetes/issues/84931| kubernetes #84931>. In that a restart of the kubelet is required."
+      summary: "Less then 50% of nodes ready on node"
+
+  - alert: PodNotReady
+    expr: max(kube_pod_status_ready{condition="true"}) by (pod, namespace) < 1
+    for: 2h
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      service: k8s
+      severity: info
+    annotations:
+      description: "The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is not ready for more then 2h."
+      summary: "Pod not ready for a long time"
