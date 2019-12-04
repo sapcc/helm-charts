@@ -423,6 +423,38 @@
     serializer json
     raise_on_error true
   </store>
+  <store>
+    @type elasticsearch_dynamic
+    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+    port {{.Values.global.elk_elasticsearch_ssl_port}}
+    user {{.Values.global.elk_elasticsearch_data_user}}
+    password {{.Values.global.elk_elasticsearch_data_password}}
+    scheme https
+    ssl_verify false
+    ssl_version TLSv1_2
+    logstash_format true
+    template_name logstash
+    template_file /fluent-bin/logstash.json
+    template_overwrite true
+    time_as_integer false
+    type_name _doc
+    @log_level info
+    slow_flush_log_threshold 50.0
+    request_timeout 60s
+    include_tag_key true
+    resurrect_after 120
+    reconnect_on_error true
+    <buffer>
+      total_limit_size 128MB
+      flush_at_shutdown true
+      flush_thread_interval 5
+      overflow_action block
+      retry_forever true
+      retry_wait 2s
+      flush_thread_count 1
+      flush_interval 1s
+    </buffer>
+  </store>
 </match>
 {{- end }}
 
