@@ -21,7 +21,7 @@ tempest:
   enabled: false
 
 osprofiler:
-    enabled: false
+  enabled: false
 
 statsd:
   port: 9102
@@ -92,15 +92,15 @@ pod:
         revisionHistory: 5
         podReplacementStrategy: RollingUpdate
         rollingupdate:
-           maxUnavailable: 0
-           maxSurge: 1
+          maxUnavailable: 0
+          maxSurge: 1
 
 #imageVersion: null
 #imageVersionIronicApi: null
 #imageVersionIronicConductor: null
 #imageVersionIronicInspector: null
 #imageVersionIronicPxe: null
-swift_multi_tenant: True
+swift_multi_tenant: true
 
 debug: "True"
 dbName: ironic
@@ -133,8 +133,8 @@ conductor:
     conductor: {}
     dhcp: {}
     pxe:
-      ipxe_enabled: True
-      ipxe_use_swift: True
+      ipxe_enabled: true
+      ipxe_use_swift: true
       pxe_bootfile_name: "undionly.kpxe"
 
 agent:
@@ -171,7 +171,7 @@ pgmetrics:
       memory: 64Mi
       cpu: 50m
   customMetrics:
-     openstack_ironic_nodes_list:
+    openstack_ironic_nodes_list:
       query: "SELECT uuid, name, instance_uuid, power_state, provision_state, coalesce(last_error,'error unknown') AS last_error, count(*) as gauge from nodes group by uuid, name, instance_uuid, power_state, provision_state, last_error"
       metrics:
         - uuid:
@@ -199,17 +199,17 @@ pgmetrics:
        query: "SELECT uuid, name, provision_state, COUNT(*) AS in_24hrs FROM nodes WHERE (updated_at >= now() - interval '24 hours') GROUP BY uuid, provision_state, name"
        metrics:
          - uuid:
-             usage: "LABEL"
-             description: "Node UUID"
+            usage: "LABEL"
+            description: "Node UUID"
          - name:
-             usage: "LABEL"
-             description: "Node name"
+            usage: "LABEL"
+            description: "Node name"
          - provision_state:
-             usage: "LABEL"
-             description: "Current Node Provision status"
+            usage: "LABEL"
+            description: "Current Node Provision status"
          - in_24hrs_gauge:
-              usage: "GAUGE"
-              description: "Nodes created past 24hrs"
+            usage: "GAUGE"
+            description: "Nodes created past 24hrs"
      openstack_ironic_nodes:
        query: "SELECT count(case when not maintenance then 1 end) as NodeNotInMaint, count(case when maintenance then 1 end) as NodeInMaint, uuid, name, coalesce(maintenance_reason,'reason unknown') AS maintenance_reason from nodes group by maintenance_reason, uuid, name"
        metrics:
