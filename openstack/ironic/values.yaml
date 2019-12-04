@@ -228,6 +228,22 @@ pgmetrics:
          - NodeInMaint:
               usage: "GAUGE"
               description: "Nodes in maintenance"
+     openstack_ironic_nodes_conductor:
+       query: "select name, uuid, conductor_group, count(conductor_group) AS group from nodes where conductor_group not similar to 'bm%' GROUP BY name, uuid, conductor_group"
+       metrics:
+         - uuid:
+             usage: "LABEL"
+             description: "Node UUID"
+         - name:
+             usage: "LABEL"
+             description: "Node name"
+         - conductor_group:
+             usage: "LABEL"
+             description: "Conductor Group name"           
+         - group:
+             usage: "GAUGE"
+             description: "Node count" 
+             
 postgresql:
   enabled: true
   imageTag: '9.4.21'
