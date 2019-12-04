@@ -122,7 +122,7 @@ groups:
       summary: "Less then 50% of nodes ready on node"
 
   - alert: PodNotReady
-    expr: max(kube_pod_status_ready{condition="true"}) by (pod, namespace) < 1
+    expr: max(kube_pod_status_ready{condition="true"}) by (pod, namespace) < 1 and max(kube_pod_status_phase{phase="Running"}) by (pod,namespace) == 1
     for: 2h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
