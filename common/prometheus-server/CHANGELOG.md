@@ -1,3 +1,7 @@
+## 3.3.3
+
+* Unify labels (instance vs node).
+
 ## 3.3.2
 
 * Allow configuring Alertmanagers which require authentication. The relevant `.Values.alertmanagers` section was exploded to:

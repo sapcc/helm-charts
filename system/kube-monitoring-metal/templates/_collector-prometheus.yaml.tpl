@@ -90,7 +90,7 @@
     replacement: dnsmasq
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
+    target_label: node
 
 - job_name: 'kube-dns'
   kubernetes_sd_configs:
@@ -110,7 +110,7 @@
     replacement: dns
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
+    target_label: node
 
 - job_name: 'kubernetes-kubelet'
   scheme: https
@@ -131,10 +131,7 @@
     replacement: kubelet
     action: replace
   - source_labels: [__meta_kubernetes_node_name]
-    separator: ;
-    regex: (.*)
-    target_label: instance
-    replacement: $1
+    target_label: node
     action: replace
   metric_relabel_configs:
     - source_labels: [ id ]
@@ -165,6 +162,9 @@
   relabel_configs:
     - action: labelmap
       regex: __meta_kubernetes_node_label_(.+)
+    - source_labels: [__meta_kubernetes_node_name]
+      target_label: node
+      action: replace
   metric_relabel_configs:
     - source_labels: [ id ]
       action: replace
@@ -208,7 +208,7 @@
     replacement: apiserver
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
+    target_label: node
   metric_relabel_configs:
 {{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubeAPIServer | indent 2 }}
 
@@ -230,7 +230,7 @@
     replacement: etcd
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
+    target_label: node
 
 - job_name: 'kube-system/controller-manager'
   kubernetes_sd_configs:
@@ -251,7 +251,7 @@
     replacement: controller-manager
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
+    target_label: node
 
 - job_name: 'kube-system/scheduler'
   kubernetes_sd_configs:
@@ -271,7 +271,7 @@
     replacement: scheduler
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: instance
+    target_label: node
 {{ else }}
 
 - job_name: 'kubernetes-apiserver'
