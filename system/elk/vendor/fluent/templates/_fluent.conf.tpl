@@ -55,7 +55,7 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.keystone** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
+<filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
   @type parser
   key_name log
   reserve_data true
@@ -419,7 +419,7 @@
     endpoint_url "https://{{.Values.forwarding.keystone.host}}/c0001/log/keystone"
     cacert_file "/etc/ca.pem"
     http_method post
-    ssl_no_verify false
+    ssl_no_verify true
     serializer json
     raise_on_error true
   </store>
