@@ -73,3 +73,15 @@ groups:
     annotations:
       description: "ESXi host {{ $labels.esxi_host }} {{ $labels.hostname }} is currently swapping"
       summary: "ESXi host {{ $labels.esxi_host }} {{ $labels.hostname }} is currently swapping"
+  - alert: ESXiHostOverbooked
+    expr: vcenter_overbooked_node > 0
+    for: 10m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      meta: "ESXi host {{ $labels.node }} {{ $labels.hostname }} physical memory not enough to host all VMs > 256GB which are placed on the host"
+      playbook: MoveSomeBigVM
+    annotations:
+      description: "ESXi host {{ $labels.node }} {{ $labels.hostname }} physical memory not enough to host all VMs > 256GB which are placed on the host"
+      summary: "ESXi host {{ $labels.node }} {{ $labels.hostname }} physical memory not enough to host all VMs > 256GB which are placed on the host"
