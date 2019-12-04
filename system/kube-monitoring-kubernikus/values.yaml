@@ -347,3 +347,37 @@ grafana:
 
 grafana-dashboards-kubernetes:
   enableDatasources: false
+
+fluent-bit:
+  extraVolumeMounts:
+    - mountPath: /fluent-bit/etc/labelmap.json
+      name: config
+      subPath: labelmap.json
+
+promtail:
+  pipelineStages:
+    - docker: {}
+
+loki:
+  enabled: false
+  # user:
+  # password:
+
+  config:
+    port: 2020
+    loglevel: warn
+    lineFormat: json
+    removeKeys:
+      - kubernetes
+      - stream
+    labels: '{job="fluent-bit"}'
+    labelMap:
+      kubernetes:
+        namespace_name: namespace
+        labels:
+          app: app
+          release: release
+        host: node
+        container_name: container
+        pod_name: pod
+      stream: stream

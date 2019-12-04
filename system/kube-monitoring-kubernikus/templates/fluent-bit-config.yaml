@@ -84,4 +84,34 @@ data:
           tls on
           tls.verify on
           tls.debug 1
+
+{{ if .Values.loki.enabled }}
+      [OUTPUT]
+          Name loki
+          Match *
+          {{- if and .Values.loki.user .Values.loki.password }}
+          Url http://{{ .Values.loki.user }}:{{ .Values.loki.password }}@kube-monitoring-kubernikus-loki:3100/api/prom/push
+          {{- else }}
+          Url http://kube-monitoring-kubernikus-loki:3100/api/prom/push
+          {{- end }}
+          Labels {{ .Values.loki.config.labels }}
+          RemoveKeys {{ include "joinListWithComma" .Values.loki.config.removeKeys }}
+          LabelMapPath /fluent-bit/etc/labelmap.json
+          LineFormat {{ .Values.loki.config.lineFormat }}
+          LogLevel {{ .Values.loki.config.loglevel }}
+
+  parsers.conf: |-
+      [PARSER]
+          Name        docker
+          Format      json
+          Time_Key    time
+          Time_Format %Y-%m-%dT%H:%M:%S.%LZ
+
+  labelmap.json: |-
+{{- .Values.loki.config.labelMap | toPrettyJson | nindent 4}}
+
+{{ else }}
   parsers.conf: ""
+  labelmap.json: ""
+
+{{- end }}
