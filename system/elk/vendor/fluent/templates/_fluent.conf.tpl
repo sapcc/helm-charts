@@ -451,7 +451,7 @@
       overflow_action block
       retry_forever true
       retry_wait 2s
-      flush_thread_count 1
+      flush_thread_count 2
       flush_interval 1s
     </buffer>
   </store>
