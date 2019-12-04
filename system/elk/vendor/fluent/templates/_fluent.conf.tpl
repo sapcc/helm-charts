@@ -417,11 +417,11 @@
   <store>
     @type http
     endpoint_url "https://{{.Values.forwarding.keystone.host}}/c0001/log/keystone"
-    cacert_file "/etc/ca.crt"
+    cacert_file "/etc/ca.pem"
     http_method post
-    ssl_no_verify true
+    ssl_no_verify false
     serializer json
-    raise_on_error false
+    raise_on_error true
   </store>
 </match>
 {{- end }}
