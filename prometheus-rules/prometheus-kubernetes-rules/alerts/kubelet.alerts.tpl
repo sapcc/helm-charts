@@ -72,20 +72,6 @@ groups:
       description: Kubelet is full
       summary: Kubelet Kubelet {{`{{$labels.node}}`}} is running {{`{{ $value }}`}} pods. That's too much!
 
-  - alert: KubernetesKubeletFull
-    expr: kubelet_running_pod_count >= 250
-    for: 1h
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      severity: warning
-      context: kubelet
-      meta: "{{`{{ $labels.node }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{ $labels.node }}`}}
-    annotations:
-      description: Kubelet is full
-      summary: Kubelet {{`{{ $labels.node }}`}} is running {{`{{ $value }}`}} pods. That's too much!
-
   - alert: KubernetesKubeletDockerHangs
     expr: rate(kubelet_docker_operations_timeout[5m])> 0
     for: 15m

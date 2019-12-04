@@ -44,19 +44,6 @@ groups:
       description: Insufficient disk space
       summary: Node {{`{{ $labels.node }}`}} under pressure due to insufficient available disk space
 
-  - alert: KubernetesNodeMemoryPressure
-    expr: kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
-    for: 5m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      severity: warning
-      context: node
-      meta: "Memory pressure on {{`{{ $labels.node }}`}}"
-    annotations:
-      description: Insufficient memory
-      summary: Node {{`{{ $labels.node }}`}} under pressure due to insufficient available memory
-
   - alert: KubernetesNodeDiskUsagePercentage
     expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"}) BY (instance,device)) > 85
     for: 5m
