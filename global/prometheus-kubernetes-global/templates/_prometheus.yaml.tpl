@@ -75,7 +75,7 @@
   static_configs:
     - targets:
       - "prometheus.internet.eu-de-2.cloud.sap"
-      - "prometheus.kubernetes-ccloudshell.eu-de-2.cloud.sap"
+      - "prometheus.customer.eu-de-2.cloud.sap "
 {{- range $region := without .Values.regionList "admin" "staging" }}
       - "prometheus-kubernetes.scaleout.{{ $region }}.cloud.sap"
 {{- end }}
