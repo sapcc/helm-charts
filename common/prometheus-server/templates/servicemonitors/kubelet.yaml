@@ -40,9 +40,12 @@ spec:
           targetLabel: component
           replacement: kubelet
           action: replace
-        - action: replace
-          sourceLabels: [__meta_kubernetes_pod_node_name]
-          targetLabel: node
+        - sourceLabels: [__meta_kubernetes_node_name]
+          separator: ;
+          regex: (.*)
+          targetLabel: instance
+          replacement: $1
+          action: replace
         - targetLabel: job
           replacement: kubernetes-kubelet
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}

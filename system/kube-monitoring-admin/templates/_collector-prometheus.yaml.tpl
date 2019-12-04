@@ -90,7 +90,7 @@
     replacement: dnsmasq
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: node
+    target_label: instance
 
 - job_name: 'kube-dns'
   kubernetes_sd_configs:
@@ -110,7 +110,7 @@
     replacement: dns
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: node
+    target_label: instance
 
 - job_name: 'kubernetes-kubelet'
   scheme: https
@@ -133,7 +133,7 @@
   - source_labels: [__meta_kubernetes_node_name]
     separator: ;
     regex: (.*)
-    target_label: node
+    target_label: instance
     replacement: $1
     action: replace
   metric_relabel_configs:
@@ -147,10 +147,12 @@
       regex: ^/system\.slice/(.+)\.service$
       target_label: container_name
       replacement: '${1}'
+{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubelet | indent 4 }}
     - source_labels:
       - container_name
+      - __name__
       # The system container POD is used for networking.
-      regex: POD
+      regex: POD;({{ .Values.allowedMetrics.kubelet | join "|" }})
       action: drop
 
 - job_name: 'kubernetes-cadvisors'
@@ -207,10 +209,11 @@
     replacement: apiserver
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: node
+    target_label: instance
   metric_relabel_configs:
 {{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubeAPIServer | indent 2 }}
 
+{{- if .Values.isStaticPodsScrapeConfig }}
 - job_name: 'kube-system/etcd'
   kubernetes_sd_configs:
   - role: pod
@@ -229,7 +232,7 @@
     replacement: etcd
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: node
+    target_label: instance
 
 - job_name: 'kube-system/controller-manager'
   kubernetes_sd_configs:
@@ -250,7 +253,7 @@
     replacement: controller-manager
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: node
+    target_label: instance
 
 - job_name: 'kube-system/scheduler'
   kubernetes_sd_configs:
@@ -270,95 +273,5 @@
     replacement: scheduler
   - action: replace
     source_labels: [__meta_kubernetes_pod_node_name]
-    target_label: node
-{{ else }}
-
-- job_name: 'kubernetes-apiserver'
-  bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-  metrics_path: /metrics
-  scheme: https
-  kubernetes_sd_configs:
-  - role: endpoints
-  tls_config:
-    ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    server_name: kubernetes
-    insecure_skip_verify: false
-  relabel_configs:
-  - source_labels: [__meta_kubernetes_service_label_component]
-    separator: ;
-    regex: apiserver
-    replacement: $1
-    action: keep
-  - source_labels: [__meta_kubernetes_service_label_provider]
-    separator: ;
-    regex: kubernetes
-    replacement: $1
-    action: keep
-  - source_labels: [__meta_kubernetes_endpoint_port_name]
-    separator: ;
-    regex: https
-    replacement: $1
-    action: keep
-  - source_labels: [__meta_kubernetes_endpoint_address_target_kind, __meta_kubernetes_endpoint_address_target_name]
-    separator: ;
-    regex: Node;(.*)
-    target_label: node
-    replacement: ${1}
-    action: replace
-  - source_labels: [__meta_kubernetes_endpoint_address_target_kind, __meta_kubernetes_endpoint_address_target_name]
-    separator: ;
-    regex: Pod;(.*)
-    target_label: pod
-    replacement: ${1}
-    action: replace
-  - source_labels: [__meta_kubernetes_namespace]
-    separator: ;
-    regex: (.*)
-    target_label: namespace
-    replacement: $1
-    action: replace
-  - source_labels: [__meta_kubernetes_service_name]
-    separator: ;
-    regex: (.*)
-    target_label: service
-    replacement: $1
-    action: replace
-  - source_labels: [__meta_kubernetes_pod_name]
-    separator: ;
-    regex: (.*)
-    target_label: pod
-    replacement: $1
-    action: replace
-  - source_labels: [__meta_kubernetes_service_name]
-    separator: ;
-    regex: (.*)
-    target_label: job
-    replacement: ${1}
-    action: replace
-  - separator: ;
-    regex: (.*)
-    target_label: endpoint
-    replacement: https
-    action: replace
-  - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
-    separator: ;
-    regex: default;kubernetes;https
-    replacement: $1
-    action: keep
-  - separator: ;
-    regex: (.*)
-    target_label: __address__
-    replacement: $(KUBERNETES_SERVICE_HOST)
-    action: replace
-  - separator: ;
-    regex: (.*)
-    target_label: component
-    replacement: apiserver
-    action: replace
-  - separator: ;
-    regex: (.*)
-    target_label: job
-    replacement: kubernetes-apiserver
-    action: replace
-  metric_relabel_configs:
-{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.allowedMetrics.kubeAPIServer | indent 2 }}
+    target_label: instance
+{{ end }}
