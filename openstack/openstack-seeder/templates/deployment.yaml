@@ -42,12 +42,11 @@ spec:
 
           imagePullPolicy: {{ .Values.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+          - /bin/dumb-init
+          args:
+            - /bin/sh
+            - /scripts/start
           env:
-            - name: COMMAND
-              value: "bash /scripts/start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
