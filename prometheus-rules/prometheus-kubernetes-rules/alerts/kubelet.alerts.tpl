@@ -1,7 +1,7 @@
 groups:
 - name: kubelet.alerts
   rules:
-  - alert: KubernetesKubeletManyDown
+  - alert: ManyKubeletDown
     expr: count(up{job="kubernetes-kubelet"}) - sum(up{job="kubernetes-kubelet"}) > 2
     for: 1h
     labels:
@@ -15,7 +15,7 @@ groups:
       description: Many Kubelets are DOWN
       summary: More than 2 Kubelets are DOWN
 
-  - alert: KubernetesKubeletDown
+  - alert: KubeletDown
     expr: up{job="kubernetes-kubelet"} == 0
     for: 1h
     labels:
@@ -30,7 +30,7 @@ groups:
       description: Kublet on {{`{{ $labels.node }}`}} is DOWN.
       summary: A Kubelet is DOWN
 
-  - alert: KubernetesKubeletScrapeMissing
+  - alert: KubeletScrapeMissing
     expr: absent(up{job="kubernetes-kubelet"})
     for: 1h
     labels:
@@ -44,7 +44,7 @@ groups:
       description: Kubelets cannot be scraped. Status unknown.
       summary: Kubelets failed to be scraped.
 
-  - alert: KubernetesKubeletTooManyPods
+  - alert: KubeletTooManyPods
     expr: kubelet_running_pod_count > 225
     for: 1h
     labels:
@@ -58,7 +58,7 @@ groups:
       description: Kubelet is close to pod limit
       summary: Kubelet {{`{{ $labels.node }}`}} is running {{`{{ $value }}`}} pods, close to the limit of 250
 
-  - alert: KubernetesKubeletFull
+  - alert: KubeletFull
     expr: kubelet_running_pod_count >= 250
     for: 1h
     labels:
@@ -72,7 +72,7 @@ groups:
       description: Kubelet is full
       summary: Kubelet Kubelet {{`{{$labels.node}}`}} is running {{`{{ $value }}`}} pods. That's too much!
 
-  - alert: KubernetesKubeletDockerHangs
+  - alert: KubeletDockerHangs
     expr: rate(kubelet_docker_operations_timeout[5m])> 0
     for: 15m
     labels:
@@ -87,7 +87,7 @@ groups:
       description: Docker hangs!
       summary: Docker on {{`{{$labels.node}}`}} is hanging
 
-  - alert: KubernetesHighNumberOfGoRoutines
+  - alert: KubeletHighNumberOfGoRoutines
     expr: go_goroutines{job="kubernetes-kubelet"} > 5000
     for: 5m
     labels:
@@ -100,7 +100,7 @@ groups:
       description: Kublet on {{`{{ $labels.node }}`}} might be unresponsive due to a high number of go routines
       summary: High number of Go routines
 
-  - alert: KubernetesPredictHighNumberOfGoRoutines
+  - alert: KubeletPredictHighNumberOfGoRoutines
     expr: abs(predict_linear(go_goroutines{job="kubernetes-kubelet"}[1h], 2*3600)) > 10000
     for: 5m
     labels:
