@@ -59,7 +59,7 @@ groups:
       summary: Kube state metrics scrape failed
 
   - alert: KubernetesPodRestartingTooMuch
-    expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+    expr: sum(rate(kube_pod_container_status_restarts_total[15m])) by (pod, namespace, container) > 0
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -68,7 +68,7 @@ groups:
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly"
     annotations:
-      description: Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly
+      description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly
       summary: Pod is in a restart loop
 
   - alert: KubernetesTooManyOpenFiles
