@@ -1,10 +1,17 @@
-<source>                                                                                          
-  @type {{default "udp" .Values.vcenter_logs_in_proto}}                                                                                       
-  tag "vcenter"                                                                                   
-  format /^(?<message>.*?)$/                                                                      
+<source>
+  @type {{default "udp" .Values.vcenter_logs_in_proto}}
+  tag "vcenter"
+  format /^(?<message>.*?)$/
   bind {{default "0.0.0.0" .Values.vcenter_logs_in_ip}}
-  port {{.Values.vcenter_logs_in_port}}                                                                                
+  port {{.Values.vcenter_logs_in_port}}
 </source> 
+<source>
+  @type udp
+  tag "nsxt"
+  format /^(?<message>.*?)$/
+  bind {{default "0.0.0.0" .Values.vcenter_logs_in_ip}}
+  port {{.Values.vcenter_logs_in_port}}
+</source>
 <source>
   @type {{default "udp" .Values.esx_logs_in_proto}}
   tag "vcenter"
@@ -25,11 +32,28 @@
     host_name ${record["node_name"] ? record["node_name"] : record["host_name"] ? record["host_name"] : "unknown"}
   </record>
 </filter>
+<filter nsxt.**>
+  @type parser
+  key_name message
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE:host_name} %{GREEDYDATA}
+  </parse>
+</filter>
 <source>
   @type prometheus
   bind "0.0.0.0"
   port 24231
 </source>
+<match nsxt.**>
+  @type rewrite_tag_filter
+  <rule>
+    key message
+    pattern /Trim Exception/
+    tag TRIMEXCEPTION.${tag}
+  </rule>
+</match>
 <match vcenter.**>
   @type rewrite_tag_filter
   <rule>
@@ -67,6 +91,18 @@
     pattern info
     tag "data.${tag}"
   </rule>
+</match>
+<match TRIMEXCEPTION.**>
+  @type prometheus
+  <metric>
+    name nsxt_trim_exception 
+    type counter
+    desc Trim Exception seen on in proton logs
+    <labels>
+      tag ${tag}
+      hostname ${host_name}
+    </labels>
+  </metric>
 </match>
 <match SR17595168510.**>
   @type prometheus
@@ -141,5 +177,8 @@
   </metric>
 </match>
 <match unknown.**>
+  @type stdout
+</match>
+<match nsxt.**>
   @type stdout
 </match>

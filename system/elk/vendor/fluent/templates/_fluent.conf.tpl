@@ -417,9 +417,8 @@
   <store>
     @type http
     endpoint_url "https://{{.Values.forwarding.keystone.host}}/c0001/log/keystone"
-    cacert_file "/etc/ca.pem"
+    cacert_file "/etc/ssl/certs/ca-certificates.crt"
     http_method post
-    ssl_no_verify true
     serializer json
     raise_on_error true
   </store>
