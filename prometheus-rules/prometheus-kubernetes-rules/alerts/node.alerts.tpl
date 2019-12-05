@@ -1,3 +1,4 @@
+# vi:syntax=yaml
 ### General node health ###
 
 groups:

@@ -1,3 +1,4 @@
+# vi:syntax=yaml
 groups:
 - name: dns.alerts
   rules:
