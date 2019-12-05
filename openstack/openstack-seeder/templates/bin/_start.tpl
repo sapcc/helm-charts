@@ -37,4 +37,5 @@ export OS_DOMAIN_ID={{ .Values.keystone.domainId }}
 export OS_REGION={{.Values.global.region}}
 
 echo "Starting openstack-seeder.."
-/usr/local/bin/openstack-seeder --v {{ default 1 .Values.logLevel }}
+/usr/local/bin/openstack-seeder --logtostderr --resync {{ default "24h" .Values.resync | quote }} --v {{ default 1 .Values.logLevel }} {{- if .Values.dryRun }} --dry-run{{- end }}
+
