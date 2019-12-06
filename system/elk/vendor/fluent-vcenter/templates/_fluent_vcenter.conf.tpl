@@ -7,10 +7,11 @@
 </source> 
 <source>
   @type udp
+  @log_level debug
   tag "nsxt"
   format /^(?<message>.*?)$/
   bind {{default "0.0.0.0" .Values.vcenter_logs_in_ip}}
-  port {{.Values.vcenter_logs_in_port}}
+  port 514
 </source>
 <source>
   @type {{default "udp" .Values.esx_logs_in_proto}}
@@ -34,6 +35,7 @@
 </filter>
 <filter nsxt.**>
   @type parser
+  @log_level debug
   key_name message
   reserve_data true
   <parse>
@@ -48,6 +50,7 @@
 </source>
 <match nsxt.**>
   @type rewrite_tag_filter
+  @log_level debug
   <rule>
     key message
     pattern /Trim Exception/
@@ -94,6 +97,7 @@
 </match>
 <match TRIMEXCEPTION.**>
   @type prometheus
+  @log_level debug
   <metric>
     name nsxt_trim_exception 
     type counter
