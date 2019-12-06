@@ -1,0 +1,13 @@
+{{- range $index, $member := .Values.dynomite.member }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-%d" "redis" $index }}
+  labels:
+    app: {{ printf "%s-%d" "redis" $index }}
+    release: "{{ $.Release.Name }}"
+data:
+  redis.conf: |
+{{ tuple $ $member $index | include "dynomite/templates/etc/_redis.conf.tpl" | indent 4 }}
+---
+{{- end }}
