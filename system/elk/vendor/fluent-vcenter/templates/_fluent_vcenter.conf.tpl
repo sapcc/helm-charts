@@ -6,12 +6,11 @@
   port {{.Values.vcenter_logs_in_port}}
 </source> 
 <source>
-  @type udp
+  @type syslog
   @log_level debug
   tag "nsxt"
-  format /^(?<message>.*?)$/
-  bind {{default "0.0.0.0" .Values.vcenter_logs_in_ip}}
   port 514
+  protocol_type udp
 </source>
 <source>
   @type {{default "udp" .Values.esx_logs_in_proto}}
