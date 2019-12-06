@@ -39,7 +39,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE:host_name} %{GREEDYDATA}
+    grok_pattern %{NOTSPACE} %{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE:host_name} %{GREEDYDATA}
   </parse>
 </filter>
 <source>
