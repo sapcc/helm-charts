@@ -361,7 +361,7 @@ notify = {{ .Values.worker_notify }}
 ##############
 [network_api:neutron]
 # Comma separated list of values, formatted "<name>|<neutron_uri>"
-endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.cloud.{{ .Values.global.tld }}
+endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
 endpoint_type = publicURL
 timeout = 20
 insecure = True
