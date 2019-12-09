@@ -22,9 +22,9 @@
 
     "default": "rule:context_is_viewer",
 
-    "all_tenants": "rule:admin",
+    "all_tenants": "rule:admin or rule:context_is_dns_support",
     "edit_managed_records" : "rule:admin",
-    "use_low_ttl": "rule:admin",
+    "use_low_ttl": "rule:admin or rule:context_is_dns_support",
 
     "get_quotas": "rule:context_is_viewer",
     "get_quota": "rule:context_is_viewer",
