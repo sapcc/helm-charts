@@ -168,32 +168,33 @@ neutron_nanny:
 
 # manila nanny
 manila_nanny:
-  image_version: 'rocky-20191114104459'
-  image_netapp_version: 'rocky-20190905113718'
+  image_version: DEFINED-IN-REGION-CHART
+  image_netapp_version: DEFINED-IN-REGION-CHART
   enabled: false
   # debug mode - no script run in the containers, just a sleep loop
   debug: false
-  # run the nanny every n minutes
-  interval: 60
+  # run the nanny every n seconds
+  interval: 3600
   db_purge:
-    enabled: true
+    enabled: false
     # purge deleted db entries older than n days
     older_than: 14
   quota_sync:
-    enabled: true
-    # dry run mode, i.e. just check for quota out of sync without fixing it
-    dry_run: false
+    enabled: false
+    dry_run: true
     resources:
      requests:
         memory: "64Mi"
         cpu: "300m"
+  share_size_sync:
+    enabled: false
+    dry_run: true
+    interval: 120
   consistency:
-    enabled: true
-    # dry run mode, i.e. just check for consistency without fixing it
-    dry_run: false
+    enabled: false
+    dry_run: true
   db_cleanup:
     enabled: false
-    # dry run mode, i.e. just check for objects without valid project without fixing it
     dry_run: true
   netapp:
     interval: 240
@@ -201,10 +202,6 @@ manila_nanny:
       requests:
         memory: "2Gi"
         cpu: "500m"
-  share_size_sync:
-    enabled: true
-    dry_run: false
-    interval: 120
   # default pod resources of nanny containers, can be overridden by individual nanny
   resources:
     requests:
