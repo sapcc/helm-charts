@@ -1,29 +1,32 @@
+{{- range $name, $v := .Values.workers }}
+{{- with $ }}
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: octavia-worker
   labels:
-    app.kubernetes.io/name: octavia-worker
+    app.kubernetes.io/name: octavia-worker-{{ $name }}
     helm.sh/chart: {{ include "octavia.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  replicas: {{ .Values.replicaCountWorker }}
+  replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: octavia-worker
+      app.kubernetes.io/name: octavia-worker-{{ $name }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: octavia-worker
+        app.kubernetes.io/name: octavia-worker-{{ $name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: {{ .Chart.Name }}-worker
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
-          command: ["/var/lib/openstack/bin/octavia-worker"]
+          command: ["dumb-init", "octavia-f5-worker"]
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
@@ -31,7 +34,20 @@ spec:
               mountPath: /etc/octavia/octavia.conf
               subPath: octavia.conf
               readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/esd/esd.json
+              subPath: esd.json
+              readOnly: true
+            - name: octavia-etc-worker
+              mountPath: /etc/octavia/octavia-worker.conf
+              subPath: octavia-worker.conf
+              readOnly: true
       volumes:
         - name: octavia-etc
           configMap:
             name: octavia-etc
+        - name: octavia-etc-worker
+          configMap:
+            name: octavia-etc-{{ $name }}
+{{- end }}
+{{- end }}

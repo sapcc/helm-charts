@@ -13,10 +13,16 @@ bind_port = {{.Values.global.octavia_port_internal | default 9876}}
 auth_strategy = keystone
 
 # Dictionary of enabled provider driver names and descriptions
-enabled_provider_drivers = noop_driver: 'The No-Op driver.'
+enabled_provider_drivers = {{ .Values.providers }}
 
 # Default provider driver
-default_provider_driver = noop_driver
+default_provider_driver = {{ .Values.default_provider | default "noop_driver" }}
+
+[controller_worker]
+worker = {{ .Values.worker | default 1 }}
+amphora_driver = {{ .Values.amphora_driver  | default "amphora_noop_driver" }}
+compute_driver = {{ .Values.compute_driver  | default "compute_noop_driver" }}
+network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 
 [database]
 connection = {{ include "db_url_mysql" . }}
@@ -37,21 +43,5 @@ memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .V
 service_token_roles_required = True
 token_cache_time = 600
 include_service_catalog = false
-
-[controller_worker]
-# Amphora driver options are amphora_noop_driver,
-#                            amphora_haproxy_rest_driver
-#
-amphora_driver = amphora_noop_driver
-
-# Compute driver options are compute_noop_driver
-#                            compute_nova_driver
-#
-compute_driver = compute_noop_driver
-
-# Network driver options are network_noop_driver
-#                            allowed_address_pairs_driver
-#
-network_driver = network_noop_driver
 
 {{- include "ini_sections.cache" . }}
