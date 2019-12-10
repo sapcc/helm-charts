@@ -8,7 +8,7 @@ groups:
     for: 15m
     labels:
       context: errors
-      dashboard: kubernetes-dns
+      dashboard: skydns
       service: dns
       severity: info
       tier: {{ required ".Values.tier missing" .Values.tier }}
