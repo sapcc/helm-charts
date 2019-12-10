@@ -171,6 +171,12 @@ enable_proxy_headers_parsing = true
 # mismatching scope. (boolean value)
 enforce_scope = false
 
+{{- if ne .Values.release "rocky" }}
+policy_file = /etc/keystone/policy.yaml
+{{- else }}
+policy_file = /etc/keystone/policy.json
+{{- end }}
+
 [lifesaver]
 enabled = {{ .Values.lifesaver.enabled }}
 {{- if .Values.memcached.host }}
