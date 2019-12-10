@@ -11,7 +11,7 @@
   tag "nsxt"
   <parse>
     @type regexp
-    expression /^\<(?<pri>[0-9]{1,3})\>[1-9]\d{0,2} (?<timevalue>[0-9-TZ:.+]*) (?<host_name>[0-9a-z-]*)/
+    expression /^\<(?<pri>[0-9]{1,3})\>[1-9]\d{0,2} (?<timevalue>[0-9-TZ:.+]*) (?<host_name>[0-9a-z-]*) NSX - - - (?<log>[A-Z,a-z0-9-].*)/
   </parse>
   bind {{default "0.0.0.0" .Values.esx_logs_in_ip}}
   port 514
@@ -36,27 +36,18 @@
     host_name ${record["node_name"] ? record["node_name"] : record["host_name"] ? record["host_name"] : "unknown"}
   </record>
 </filter>
-<filter nsxt.**>
-  @type parser
-  @log_level debug
-  key_name message
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern %{NOTSPACE} %{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE:host_name} %{GREEDYDATA}
-  </parse>
 </filter>
 <source>
   @type prometheus
   bind "0.0.0.0"
   port 24231
 </source>
-<match nsxt.**>
+<match nsxt>
   @type rewrite_tag_filter
   @log_level debug
   <rule>
-    key message
-    pattern /Trim Exception/
+    key log
+    pattern /^Trim Exception/
     tag TRIMEXCEPTION.${tag}
   </rule>
 </match>
