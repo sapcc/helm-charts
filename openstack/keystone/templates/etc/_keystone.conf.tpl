@@ -162,6 +162,15 @@ driver = messaging
 [oslo_middleware]
 enable_proxy_headers_parsing = true
 
+[oslo_policy]
+# This option controls whether or not to enforce scope when evaluating
+# policies. If ``True``, the scope of the token used in the request is compared
+# to the ``scope_types`` of the policy being enforced. If the scopes do not
+# match, an ``InvalidScope`` exception will be raised. If ``False``, a message
+# will be logged informing operators that policies are being invoked with
+# mismatching scope. (boolean value)
+enforce_scope = false
+
 [lifesaver]
 enabled = {{ .Values.lifesaver.enabled }}
 {{- if .Values.memcached.host }}

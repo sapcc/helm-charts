@@ -1607,7 +1607,7 @@
 # deprecated since T in favor of
 # "identity:list_endpoints_for_project":"role:reader and
 # system_scope:all".
-"identity:list_endpoints_for_project":"rule:cloud_reader".
+#"identity:list_endpoints_for_project":"rule:cloud_reader".
 #
 # As of the Train release, the project endpoint API now understands
 # default roles and system-scoped tokens, making the API more granular
