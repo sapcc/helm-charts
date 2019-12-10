@@ -27,6 +27,10 @@ network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 [database]
 connection = {{ include "db_url_mysql" . }}
 
+[oslo_messaging]
+# Topic (i.e. Queue) Name
+topic = f5_prov
+
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3

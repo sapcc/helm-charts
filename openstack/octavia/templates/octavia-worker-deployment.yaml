@@ -4,7 +4,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: octavia-worker
+  name: octavia-worker-{{ $name }}
   labels:
     app.kubernetes.io/name: octavia-worker-{{ $name }}
     helm.sh/chart: {{ include "octavia.chart" . }}
@@ -26,7 +26,7 @@ spec:
         - name: {{ .Chart.Name }}-worker
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "octavia-f5-worker"]
+          command: ["dumb-init", "octavia-f5-worker", "--config-file", "/etc/octavia/octavia.conf", "--config-file", "/etc/octavia/octavia-worker.conf"]
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
