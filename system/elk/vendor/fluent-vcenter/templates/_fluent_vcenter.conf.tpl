@@ -11,8 +11,7 @@
   tag "nsxt"
   <parse>
     @type regexp
-    expression /^\<(?<pri>[0-9]{1,3})\>[1-9]\d{0,2} (?<time>[^ ]+) (?<host_name>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>(\[(.*)\]|[^ ]))\s{0,2}(?<message>.*)$/
-    time_format %Y-%m-%dT%H:%M:%S.%L%z
+    expression /^\<(?<pri>[0-9]{1,3})\>[1-9]\d{0,2} (?<timevalue>[0-9-T:.+]*) (?<host_name>[0-9a-z-]*)/
   </parse>
   bind {{default "0.0.0.0" .Values.esx_logs_in_ip}}
   port 514
