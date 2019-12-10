@@ -21,6 +21,9 @@ spec:
       labels:
         app.kubernetes.io/name: octavia-worker-{{ $name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
+        configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
     spec:
       containers:
         - name: octavia-f5-worker
