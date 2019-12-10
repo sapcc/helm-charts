@@ -11,7 +11,7 @@
   tag "nsxt"
   <parse>
     @type regexp
-    expression /^\<(?<pri>[0-9]{1,3})\>[1-9]\d{0,2} (?<timevalue>[0-9-TZ:.+]*) (?<host_name>[0-9a-z-]*) NSX - - - (?<log>[A-Z,a-z0-9-].*)/
+    expression /^\<(?<pri>[0-9]{1,3})\>[1-9]\d{0,2} (?<timevalue>[0-9-TZ:.+]*) (?<host_name>[0-9a-z-]*) NSX (?<pid>([0-9]*|-)) (?<module>([A-Z0-9]*|-)) ([\[]?)(?<process>[a-z0-9@]*)( comp="|)(?<comp>([a-z0-9-]*))?(" subcomp=")?(?<subcomp>([a-z0-9]*)|)("])?(?<log>.*)/
   </parse>
   bind {{default "0.0.0.0" .Values.esx_logs_in_ip}}
   port 514
@@ -35,7 +35,6 @@
   <record>
     host_name ${record["node_name"] ? record["node_name"] : record["host_name"] ? record["host_name"] : "unknown"}
   </record>
-</filter>
 </filter>
 <source>
   @type prometheus
