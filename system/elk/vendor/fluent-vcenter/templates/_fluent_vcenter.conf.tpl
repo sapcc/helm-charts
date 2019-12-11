@@ -5,13 +5,17 @@
   bind {{default "0.0.0.0" .Values.vcenter_logs_in_ip}}
   port {{.Values.vcenter_logs_in_port}}
 </source> 
+#<source>
+#  @type udp
+#  @log_level debug
+#  tag "nsxt"
+#  format /^(?<message>.*?)$/
+#  bind {{default "0.0.0.0" .Values.esx_logs_in_ip}}
+#  port 514
+#</source>
 <source>
-  @type udp
-  @log_level debug
-  tag "nsxt"
-  format /^(?<message>.*?)$/
-  bind {{default "0.0.0.0" .Values.esx_logs_in_ip}}
-  port 514
+  @type syslof
+  tag nsxt
 </source>
 <source>
   @type {{default "udp" .Values.esx_logs_in_proto}}
@@ -22,7 +26,6 @@
 </source>
 #<filter nsxt.**>
 #  @type parser
-#  @log_level debug
 #  key_name "message"
 #  format /^\<(?<pri>[0-9]{1,3})\>[1-9]\d{0,2} (?<logtime>[0-9-TZ:.+]*) (?<host_name>[0-9a-z-]*) NSX (?<pid>([0-9]*|-)) (?<module>([A-Z0-9-]*|-)) ([\[])?(?<process>[a-z0-9@]*|-) (comp=|)?(\\)?(")?(?<comp>([a-z0-9-]*))?(\\)?(" subcomp=)?(\\)?(")?(?<subcomp>([a-z0-9]*)|)(\\)?("])?(?<log>.*)/
 #</filter>
