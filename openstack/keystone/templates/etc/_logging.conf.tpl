@@ -2,7 +2,7 @@
 {{- if .Values.debug }}
 keys = root
 {{- else }}
-keys = root, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, ldappool, amqp, amqplib, oslo_messaging, sqlalchemy {{ if .Values.sentry.enabled }}, raven{{ end }}
+keys = root, warnings, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, ldappool, amqp, amqplib, oslo_messaging, oslo_policy, sqlalchemy {{ if .Values.sentry.enabled }}, raven{{ end }}
 {{- end }}
 
 [handlers]
@@ -80,6 +80,16 @@ handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{- end }}
 qualname = oslo.messaging
 
+[logger_oslo_policy]
+{{- if .Values.debug }}
+level = DEBUG
+handlers = null
+{{- else }}
+level = INFO
+handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+{{- end }}
+qualname = oslo_policy
+
 [logger_ldap]
 {{- if .Values.debug }}
 level = DEBUG
@@ -133,14 +143,14 @@ qualname = sqlalchemy
 # "level = DEBUG" logs SQL queries and results.
 # "level = WARNING" logs neither.  (Recommended for production systems.)
 
-[logger_eventletwsgi]
+[logger_warnings]
 level = INFO
 {{- if .Values.debug }}
 handlers = null
 {{- else }}
 handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
 {{- end }}
-qualname = eventlet.wsgi.server
+qualname = py.warnings
 
 [handler_stderr]
 class = StreamHandler
