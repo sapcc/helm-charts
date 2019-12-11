@@ -171,7 +171,7 @@ enable_proxy_headers_parsing = true
 # mismatching scope. (boolean value)
 enforce_scope = false
 
-{{- if ne .Values.release "rocky" }}
+{{- if ne .Values.api.policy "json" }}
 policy_file = /etc/keystone/policy.yaml
 {{- else }}
 policy_file = /etc/keystone/policy.json
