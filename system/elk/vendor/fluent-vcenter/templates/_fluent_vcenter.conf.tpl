@@ -14,7 +14,9 @@
 #  port 514
 #</source>
 <source>
-  @type syslof
+  @type syslog
+  <transport udp>
+  </transport>
   tag nsxt
 </source>
 <source>
