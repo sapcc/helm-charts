@@ -100,7 +100,7 @@
     desc Trim Exception seen on in proton logs
     <labels>
       tag ${tag}
-      hostname ${host_name}
+      hostname ${host}
     </labels>
   </metric>
 </match>
