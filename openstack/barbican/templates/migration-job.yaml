@@ -12,11 +12,13 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: barbican-migration
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/monsoon/loci-barbican:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-barbican:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
           env:
+            - name: COMMAND
+              value: "barbican-status upgrade check"
             - name: COMMAND
               value: "barbican-manage db upgrade"
             - name: NAMESPACE

@@ -8,14 +8,14 @@
     "context_is_editor": "rule:context_is_key_admin",
     "context_is_viewer":  "rule:context_is_editor or rule:viewer",
 
-    "secret_project_match": "project:%(target.secret.project_id)s",
+    "secret_project_match": "project_id:%(target.secret.project_id)s",
     "secret_acl_read": "'read':%(target.secret.read)s",
     "secret_private_read": "'False':%(target.secret.read_project_access)s",
-    "secret_creator_user": "user:%(target.secret.creator_id)s",
-    "container_project_match": "project:%(target.container.project_id)s",
+    "secret_creator_user": "user_id:%(target.secret.creator_id)s",
+    "container_project_match": "project_id:%(target.container.project_id)s",
     "container_acl_read": "'read':%(target.container.read)s",
     "container_private_read": "'False':%(target.container.read_project_access)s",
-    "container_creator_user": "user:%(target.container.creator_id)s",
+    "container_creator_user": "user_id:%(target.container.creator_id)s",
 
     "secret_non_private_read": "rule:context_is_viewer and rule:secret_project_match and not rule:secret_private_read",
     "secret_decrypt_non_private_read": "rule:context_is_viewer and rule:secret_project_match and not rule:secret_private_read",
