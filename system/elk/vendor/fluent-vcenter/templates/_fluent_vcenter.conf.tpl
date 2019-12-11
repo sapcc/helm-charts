@@ -15,8 +15,8 @@
 #</source>
 <source>
   @type syslog
-  <transport udp>
-  </transport>
+  message_format rfc5424
+  port 514
   tag nsxt
 </source>
 <source>
