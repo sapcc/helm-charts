@@ -20,12 +20,12 @@
   bind {{default "0.0.0.0" .Values.esx_logs_in_ip}}
   port {{.Values.esx_logs_in_port}}
 </source>
-<filter nsxt.**>
-  @type parser
-  @log_level debug
-  key_name "message"
-  format /^\<(?<pri>[0-9]{1,3})\>[1-9]\d{0,2} (?<logtime>[0-9-TZ:.+]*) (?<host_name>[0-9a-z-]*) NSX (?<pid>([0-9]*|-)) (?<module>([A-Z0-9-]*|-)) ([\[])?(?<process>[a-z0-9@]*|-) (comp=|)?(\\)?(")?(?<comp>([a-z0-9-]*))?(\\)?(" subcomp=)?(\\)?(")?(?<subcomp>([a-z0-9]*)|)(\\)?("])?(?<log>.*)/
-</filter>
+#<filter nsxt.**>
+#  @type parser
+#  @log_level debug
+#  key_name "message"
+#  format /^\<(?<pri>[0-9]{1,3})\>[1-9]\d{0,2} (?<logtime>[0-9-TZ:.+]*) (?<host_name>[0-9a-z-]*) NSX (?<pid>([0-9]*|-)) (?<module>([A-Z0-9-]*|-)) ([\[])?(?<process>[a-z0-9@]*|-) (comp=|)?(\\)?(")?(?<comp>([a-z0-9-]*))?(\\)?(" subcomp=)?(\\)?(")?(?<subcomp>([a-z0-9]*)|)(\\)?("])?(?<log>.*)/
+#</filter>
 <filter vcenter.**>
   @type parser
   key_name "message"
@@ -44,15 +44,15 @@
   bind "0.0.0.0"
   port 24231
 </source>
-<match nsxt>
-  @type rewrite_tag_filter
-  @log_level debug
-  <rule>
-    key log
-    pattern /^Trim Exception/
-    tag TRIMEXCEPTION.${tag}
-  </rule>
-</match>
+#<match nsxt>
+#  @type rewrite_tag_filter
+#  @log_level debug
+#  <rule>
+#    key log
+#    pattern /^Trim Exception/
+#    tag TRIMEXCEPTION.${tag}
+#  </rule>
+#</match>
 <match vcenter.**>
   @type rewrite_tag_filter
   <rule>
@@ -91,19 +91,19 @@
     tag "data.${tag}"
   </rule>
 </match>
-<match TRIMEXCEPTION.**>
-  @type prometheus
-  @log_level debug
-  <metric>
-    name nsxt_trim_exception 
-    type counter
-    desc Trim Exception seen on in proton logs
-    <labels>
-      tag ${tag}
-      hostname ${host_name}
-    </labels>
-  </metric>
-</match>
+#<match TRIMEXCEPTION.**>
+#  @type prometheus
+#  @log_level debug
+#  <metric>
+#    name nsxt_trim_exception 
+#    type counter
+#    desc Trim Exception seen on in proton logs
+#    <labels>
+#      tag ${tag}
+#      hostname ${host_name}
+#    </labels>
+#  </metric>
+#</match>
 <match SR17595168510.**>
   @type prometheus
   <metric>
