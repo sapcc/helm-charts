@@ -40,8 +40,8 @@ groups:
       service: k8s
       severity: warning
       context: node
-      meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: "nodes?var-server={{`{{$labels.instance}}`}}"
+      meta: "{{`{{ $labels.node }}`}}"
+      dashboard: "nodes?var-server={{`{{$labels.node}}`}}"
     annotations:
       summary: Node readiness is flapping
       description: Node {{`{{ $labels.node }}`}} is flapping between Ready and NotReady
@@ -80,10 +80,10 @@ groups:
       service: k8s
       severity: warning
       context: system
-      meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: nodes?var-server={{`{{$labels.instance}}`}}
+      meta: "{{`{{ $labels.node }}`}}"
+      dashboard: nodes?var-server={{`{{$labels.node}}`}}
     annotations:
-      description: "{{`{{ $labels.job }}`}} on {{`{{ $labels.instance }}`}} is using {{`{{ $value }}`}}% of the available file/socket descriptors"
+      description: "{{`{{ $labels.job }}`}} on {{`{{ $labels.node }}`}} is using {{`{{ $value }}`}}% of the available file/socket descriptors"
       summary: Too many open file descriptors
 
   - alert: KubernetesPVCPendingOrLost
