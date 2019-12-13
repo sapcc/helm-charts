@@ -71,3 +71,43 @@
     target_label: kubernetes_namespace
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
+
+- job_name: 'kube-system/dnsmasq'
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_namespace]
+    regex: kube-system
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_name]
+    regex: (kube-dns[^\.]+).+
+  - source_labels: [__address__]
+    target_label: __address__
+    regex: ([^:]+)(:\d+)?
+    replacement: ${1}:10054
+  - target_label: component
+    replacement: dnsmasq
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: node
+
+- job_name: 'kube-dns'
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - action: keep
+    source_labels: [__meta_kubernetes_namespace]
+    regex: kube-system
+  - action: keep
+    source_labels: [__meta_kubernetes_pod_name]
+    regex: (kube-dns[^\.]+).+
+  - source_labels: [__address__]
+    target_label: __address__
+    regex: ([^:]+)(:\d+)?
+    replacement: ${1}:10055
+  - target_label: component
+    replacement: dns
+  - action: replace
+    source_labels: [__meta_kubernetes_pod_node_name]
+    target_label: node
