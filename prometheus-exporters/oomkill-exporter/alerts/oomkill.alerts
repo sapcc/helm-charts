@@ -2,7 +2,7 @@ groups:
 - name: oomkill.alerts
   rules:
   - alert: PodOOMKilled
-    expr: sum(changes(klog_pod_oomkill[24h]) > 0 or ((klog_pod_oomkill == 1) unless (klog_pod_oomkill offset 24h == 1))) by (namespace, pod_name)
+    expr: sum(changes(klog_pod_oomkill[24h]) > 0 or ((klog_pod_oomkill == 1) unless (klog_pod_oomkill offset 24h == 1))) by (exported_namespace, pod_name)
     for: 5m
     labels:
       tier: k8s
@@ -15,7 +15,7 @@ groups:
       description: The pod {{ $labels.exported_namespace }}/{{ $labels.pod_name }} was hit at least once by the oom killer within 24h
 
   - alert: PodConstantlyOOMKilled
-    expr: sum(changes(klog_pod_oomkill[30m]) ) by (namespace, pod_name) > 2
+    expr: sum(changes(klog_pod_oomkill[30m]) ) by (exported_namespace, pod_name) > 2
     for: 5m
     labels:
       tier: k8s
