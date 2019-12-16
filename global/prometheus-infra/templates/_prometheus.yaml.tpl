@@ -41,6 +41,7 @@
       - '{__name__=~"^vcenter_prod_cluster"}'
       - '{__name__=~"^vcenter_failover_host"}'
       - '{__name__=~"^vcenter_vms_on_failover_hosts"}'
+      - '{__name__=~"^vcenter_overbooked_node_mb"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^ipmi_up"}'
       - '{__name__=~"^netapp_capacity_aggregate"}'
