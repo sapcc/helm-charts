@@ -72,6 +72,11 @@
     pattern Failed\sto\s(power on|add disk)\s\'scsi
     tag "vCenterVolumeStuck.${tag}"
   </rule>
+  <rule>
+    key "message"
+    pattern CannotCreateFile
+    tag "ATTACHMENTERROR.${tag}"
+  </rule>
   <rule>                                                                                         
     key "host_name"                                                                              
     pattern unknown                                                                              
@@ -102,6 +107,18 @@
     name vcenter_SR17595168510
     type counter
     desc Found error pertaining to SR17595168510
+    <labels>
+      tag ${tag}
+      hostname ${host_name}
+    </labels>
+  </metric>
+</match>
+<match ATTACHMENTERROR.**>
+  @type prometheus
+  <metric>
+    name vcenter_volume_attachment_error
+    type counter
+    desc Volume attachment error in specific BB
     <labels>
       tag ${tag}
       hostname ${host_name}
