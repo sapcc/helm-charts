@@ -72,6 +72,20 @@ groups:
       description: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
       summary: 'RabbitMQ unacknowledged messages count'
 
+  - alert: OpenstackHermesRabbitMQReady
+    expr: sum(rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 2000
+    labels:
+      context: rabbitmq
+      severity: warning
+      tier: os
+      service: hermes
+      dashboard: rabbitmq
+      meta: '{{ $labels.service }} {{ $labels.check }} has over 2000 ready messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
+      playbook: 'docs/devops/alert/hermes/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
+      summary: 'RabbitMQ unacknowledged messages count'
+
   - alert: OpenstackElkPredictOutOfDiskSpace
     expr: elasticsearch_data_diskspace_used_percentage{cluster="hermes",mount=~"/data \\(10.*"} > 65
     for: 30m
