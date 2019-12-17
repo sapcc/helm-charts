@@ -1478,7 +1478,7 @@
 # PUT  /v3/projects/{project_id}/tags
 # Intended scope(s): system, domain, project
 #"identity:update_project_tags": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
-"identity:update_project_tags": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:update_project_tags": "rule:cloud_admin or rule:service_role"
 
 # DEPRECATED "identity:update_project_tags":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1495,7 +1495,7 @@
 # PUT  /v3/projects/{project_id}/tags/{value}
 # Intended scope(s): system, domain, project
 #"identity:create_project_tag": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
-"identity:create_project_tag": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:create_project_tag": "rule:cloud_admin or rule:service_role"
 
 # DEPRECATED "identity:create_project_tag":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1512,7 +1512,7 @@
 # DELETE  /v3/projects/{project_id}/tags
 # Intended scope(s): system, domain, project
 #"identity:delete_project_tags": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
-"identity:delete_project_tags": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:delete_project_tags": "rule:cloud_admin or rule:service_role"
 
 # DEPRECATED "identity:delete_project_tags":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1529,7 +1529,7 @@
 # DELETE  /v3/projects/{project_id}/tags/{value}
 # Intended scope(s): system, domain, project
 #"identity:delete_project_tag": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
-"identity:delete_project_tag": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:delete_project_tag": "rule:cloud_admin or rule:service_role"
 
 # DEPRECATED "identity:delete_project_tag":"rule:admin_required" has
 # been deprecated since T in favor of
