@@ -11,10 +11,12 @@
 </source> 
 <source>
   @type syslog
-  log_level debug
+  @log_level debug
   message_format rfc5424
+  <transport>
+    protocol udp
+  </transport>
   port 514
-  protocol_type udp
   tag "nsxt"
 </source>
 <source>
