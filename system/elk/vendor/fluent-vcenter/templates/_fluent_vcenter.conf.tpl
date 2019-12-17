@@ -58,8 +58,8 @@
   <store>
     @type rewrite_tag_filter
     <rule>
-      key message
-      pattern /*/
+      key ident
+      pattern /NSX/
       tag nsxt
     </rule>
   </store>
