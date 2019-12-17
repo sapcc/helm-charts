@@ -54,7 +54,7 @@
       pattern /Trim Exception/
       tag "TRIMEXCEPTION.${tag}"
     </rule>
-  </copy>
+  </store>
 </match>
 
 <match vcenter.**>
