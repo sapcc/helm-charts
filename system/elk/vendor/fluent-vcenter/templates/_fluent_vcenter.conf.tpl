@@ -43,7 +43,7 @@
   @type prometheus
   bind "0.0.0.0"
   port 24231
-/source>
+</source>
 <match nsxt.**>
   @type rewrite_tag_filter
   <rule>
