@@ -112,7 +112,7 @@ groups:
       summary: Deployment has less than desired replicas since 10m
 
   - alert: ManyPodsNotReadyOnNode
-    expr: sum(max(kube_pod_info) by (pod,node) * on (pod) group_left max(kube_pod_status_ready{condition="true"}) by (pod)) by (node) / sum(kube_pod_info) by (node) < 0.75 and sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 1)
+    expr: sum(max(kube_pod_info) by (pod,node) * on (pod) group_left max(kube_pod_status_ready{condition="true"}) by (pod)) by (node) / sum(kube_pod_info * on (pod) group_left() kube_pod_status_phase{phase="Running"}) by (node) < 0.75 and sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 1)
     for: 30m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
