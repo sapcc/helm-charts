@@ -1,3 +1,7 @@
+<system>
+  log_level warn
+</system>
+
 <source>
   @type {{default "udp" .Values.vcenter_logs_in_proto}}
   tag "vcenter"
@@ -7,6 +11,7 @@
 </source> 
 <source>
   @type syslog
+  log_level debug
   message_format rfc5424
   port 514
   protocol_type udp
