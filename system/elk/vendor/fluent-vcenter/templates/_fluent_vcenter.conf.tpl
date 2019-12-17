@@ -1,5 +1,5 @@
 <system>
-  log_level warn
+  log_level debug
 </system>
 
 <source>
@@ -11,13 +11,13 @@
 </source> 
 <source>
   @type syslog
-  @log_level debug
-  message_format rfc5424
-  <transport>
-    protocol udp
+  tag nsxt
+  <parse>
+    message_format rfc5424
+  </parse>
+  <transport udp>
   </transport>
   port 514
-  tag "nsxt"
 </source>
 <source>
   @type {{default "udp" .Values.esx_logs_in_proto}}
@@ -193,7 +193,7 @@
   </metric>
 </match>
 <match unknown.**>
-  @type stdout
+  @type null
 </match>
 <match nsxt.**>
   @type elasticsearch_dynamic
@@ -205,7 +205,6 @@
   ssl_verify false
   index_name syslog
   ssl_version TLSv1_2
-  logstash_format true
   time_as_integer false
   type_name _doc
   @log_level info
