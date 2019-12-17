@@ -11,7 +11,8 @@
 </source> 
 <source>
   @type syslog
-  tag nsxt
+  @log_level debug
+  tag "nsxt"
   <parse>
     message_format rfc5424
   </parse>
@@ -44,14 +45,14 @@
   bind "0.0.0.0"
   port 24231
 </source>
-<match nsxt.**>
-  @type rewrite_tag_filter
-  <rule>
-    key "message"
-    pattern /Trim Exception/
-    tag "TRIMEXCEPTION.${tag}"
-  </rule>
-</match>
+#<match nsxt.**>
+#  @type rewrite_tag_filter
+#  <rule>
+#    key "message"
+#    pattern /Trim Exception/
+#    tag "TRIMEXCEPTION.${tag}"
+#  </rule>
+#</match>
 <match vcenter.**>
   @type rewrite_tag_filter
   <rule>
@@ -95,19 +96,19 @@
     tag "data.${tag}"
   </rule>
 </match>
-<match TRIMEXCEPTION.**>
-  @type prometheus
-  @log_level debug
-  <metric>
-    name nsxt_trim_exception 
-    type counter
-    desc Trim Exception seen on in proton logs
-    <labels>
-      tag ${tag}
-      hostname ${host}
-    </labels>
-  </metric>
-</match>
+#<match TRIMEXCEPTION.**>
+#  @type prometheus
+#  @log_level debug
+#  <metric>
+#    name nsxt_trim_exception 
+#    type counter
+#    desc Trim Exception seen on in proton logs
+#    <labels>
+#      tag ${tag}
+#      hostname ${host}
+#    </labels>
+#  </metric>
+#</match>
 <match SR17595168510.**>
   @type prometheus
   <metric>
@@ -196,31 +197,34 @@
   @type null
 </match>
 <match nsxt.**>
-  @type elasticsearch_dynamic
-  host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
-  port {{.Values.global.elk_elasticsearch_ssl_port}}
-  user {{.Values.global.elk_elasticsearch_data_user}}
-  password {{.Values.global.elk_elasticsearch_data_password}}
-  scheme https
-  ssl_verify false
-  index_name syslog
-  ssl_version TLSv1_2
-  time_as_integer false
-  type_name _doc
-  @log_level info
-  slow_flush_log_threshold 50.0
-  request_timeout 60s
-  include_tag_key true
-  resurrect_after 120
-  reconnect_on_error true
-  <buffer>
-    total_limit_size 256MB
-    flush_at_shutdown true
-    flush_thread_interval 5
-    overflow_action block
-    retry_forever true
-    retry_wait 2s
-    flush_thread_count 2
-    flush_interval 1s
-  </buffer>
+  @type stdout
 </match>
+#<match nsxt.**>
+#  @type elasticsearch_dynamic
+#  host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+#  port {{.Values.global.elk_elasticsearch_ssl_port}}
+#  user {{.Values.global.elk_elasticsearch_data_user}}
+#  password {{.Values.global.elk_elasticsearch_data_password}}
+#  scheme https
+#  ssl_verify false
+#  index_name syslog
+#  ssl_version TLSv1_2
+#  time_as_integer false
+#  type_name _doc
+#  @log_level info
+#  slow_flush_log_threshold 50.0
+#  request_timeout 60s
+#  include_tag_key true
+#  resurrect_after 120
+#  reconnect_on_error true
+#  <buffer>
+#    total_limit_size 256MB
+#    flush_at_shutdown true
+#    flush_thread_interval 5
+#    overflow_action block
+#    retry_forever true
+#    retry_wait 2s
+#    flush_thread_count 2
+#    flush_interval 1s
+#  </buffer>
+#</match>
