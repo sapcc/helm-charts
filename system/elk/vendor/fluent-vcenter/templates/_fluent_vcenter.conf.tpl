@@ -44,14 +44,14 @@
   bind "0.0.0.0"
   port 24231
 </source>
-<match nsxt.**>
-  @type rewrite_tag_filter
-  <rule>
-    key "message"
-    pattern /Trim Exception/
-    tag "TRIMEXCEPTION.${tag}"
-  </rule>
-</match>
+#<match nsxt.**>
+#  @type rewrite_tag_filter
+#  <rule>
+#    key "message"
+#    pattern /Trim Exception/
+#    tag "TRIMEXCEPTION.${tag}"
+#  </rule>
+#</match>
 <match vcenter.**>
   @type rewrite_tag_filter
   <rule>
