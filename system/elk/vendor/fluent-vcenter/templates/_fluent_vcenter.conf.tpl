@@ -46,23 +46,17 @@
 </source>
 
 <match nsxt.**>
-  @type copy
-  <store>
-    @type rewrite_tag_filter
-    <rule>
-      key message
-      pattern /Trim Exception/
-      tag "TRIMEXCEPTION.${tag}"
-    </rule>
-  </store>
-  <store>
-    @type rewrite_tag_filter
-    <rule>
-      key ident
-      pattern /NSX/
-      tag nsxt
-    </rule>
-  </store>
+  @type rewrite_tag_filter
+  <rule>
+    key message
+    pattern /Trim Exception/
+    tag "TRIMEXCEPTION.${tag}"
+  </rule>
+  <rule>
+    key ident
+    pattern /NSX/
+    tag nsxt
+  </rule>
 </match>
 
 <match vcenter.**>
