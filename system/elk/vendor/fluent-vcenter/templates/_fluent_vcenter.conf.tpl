@@ -55,6 +55,14 @@
       tag "TRIMEXCEPTION.${tag}"
     </rule>
   </store>
+  <store>
+    @type rewrite_tag_filter
+    <rule>
+      key message
+      pattern /*/
+      tag nsxt
+    </rule>
+  </store>
 </match>
 
 <match vcenter.**>
