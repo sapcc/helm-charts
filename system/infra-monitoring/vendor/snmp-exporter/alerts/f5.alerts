@@ -1,0 +1,16 @@
+groups:
+  - name: f5
+    rules:
+    - alert: NetworkF5Unbound01IsOffline
+      expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound1.*.cloud.sap"} != 1
+      for: 5m
+      labels:
+        severity: warning
+        tier: net
+        service: f5
+        context: f5
+        meta: "Unbound pool member `{{ $labels.ltmPoolMbrStatusNodeName }}` is NOT AVAILABLE. Verify the actual status on the F5 device and proceed with playbook instructions."
+        playbook: 'docs/devops/alert/network/f5.html#f5_unbound_offline'
+      annotations:
+        description: "Unbound pool member `{{ $labels.ltmPoolMbrStatusNodeName }}` is NOT AVAILABLE. Verify the actual status on the F5 device and proceed with playbook instructions."
+        summary: "Unbound pool member `{{ $labels.ltmPoolMbrStatusNodeName}}` is NOT AVAILABLE. Verify the actual status on the F5 device and proceed with playbook instructions."
