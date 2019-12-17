@@ -11,7 +11,6 @@
 </source> 
 <source>
   @type syslog
-  @log_level debug
   tag "nsxt"
   <parse>
     message_format rfc5424
@@ -44,15 +43,15 @@
   @type prometheus
   bind "0.0.0.0"
   port 24231
-</source>
-#<match nsxt.**>
-#  @type rewrite_tag_filter
-#  <rule>
-#    key "message"
-#    pattern /Trim Exception/
-#    tag "TRIMEXCEPTION.${tag}"
-#  </rule>
-#</match>
+/source>
+<match nsxt.**>
+  @type rewrite_tag_filter
+  <rule>
+    key "message"
+    pattern /Trim Exception/
+    tag "TRIMEXCEPTION.${tag}"
+  </rule>
+</match>
 <match vcenter.**>
   @type rewrite_tag_filter
   <rule>
@@ -96,19 +95,19 @@
     tag "data.${tag}"
   </rule>
 </match>
-#<match TRIMEXCEPTION.**>
-#  @type prometheus
-#  @log_level debug
-#  <metric>
-#    name nsxt_trim_exception 
-#    type counter
-#    desc Trim Exception seen on in proton logs
-#    <labels>
-#      tag ${tag}
-#      hostname ${host}
-#    </labels>
-#  </metric>
-#</match>
+<match TRIMEXCEPTION.**>
+  @type prometheus
+  @log_level debug
+  <metric>
+    name nsxt_trim_exception 
+    type counter
+    desc Trim Exception seen on in proton logs
+    <labels>
+      tag ${tag}
+      hostname ${host}
+    </labels>
+  </metric>
+</match>
 <match SR17595168510.**>
   @type prometheus
   <metric>
