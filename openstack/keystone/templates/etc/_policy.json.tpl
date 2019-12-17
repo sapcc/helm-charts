@@ -58,12 +58,12 @@
     "identity:update_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id",
     "identity:delete_project": "rule:cloud_admin",
 
-    "identity:create_project_tag": "rule:admin_required",
-    "identity:delete_project_tag": "rule:admin_required",
+    "identity:create_project_tag": "rule:cloud_admin or rule:service_role",
+    "identity:delete_project_tag": "rule:cloud_admin or rule:service_role",
     "identity:get_project_tag": "rule:admin_required or rule:cloud_viewer",
     "identity:list_project_tags": "rule:admin_required or rule:cloud_viewer",
-    "identity:delete_project_tags": "rule:admin_required",
-    "identity:update_project_tags": "rule:admin_required",
+    "identity:delete_project_tags": "rule:cloud_admin or rule:service_role",
+    "identity:update_project_tags": "rule:cloud_admin or rule:service_role",
 
     "admin_and_matching_target_user_domain_id": "rule:admin_required and domain_id:%(target.user.domain_id)s",
     "admin_and_matching_user_domain_id": "rule:admin_required and domain_id:%(user.domain_id)s",
