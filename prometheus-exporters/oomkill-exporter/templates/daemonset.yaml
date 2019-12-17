@@ -20,6 +20,10 @@ spec:
         prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
+{{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+{{- end }}
       containers:
       - name: {{ template "name" . }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -30,8 +34,10 @@ spec:
         - -v=0
         securityContext:
           privileged: true
+{{- if .Values.resources }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
+{{- end }}
         env:
         - name: DOCKER_HOST
           value: "unix:///var/run/docker.sock"
