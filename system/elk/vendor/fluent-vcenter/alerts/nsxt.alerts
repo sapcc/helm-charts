@@ -1,0 +1,14 @@
+groups:
+- name: nsxt.alerts
+  rules:
+  - alert: NsxtTrimException
+    expr: delta(nsxt_trim_exception[5m])
+    for: 10m
+    labels:
+      context: vcenter
+      service: vmware
+      severity: warning
+      tier: alert
+    annotations:
+      description: "NSXT Trim Exception on host `{{ $abels.hostname }}`, please check"
+      summary: "{{ $labels.region }} NSXT Trim Exception on host `{{ $abels.hostname }}`, please check"
