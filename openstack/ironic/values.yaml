@@ -166,6 +166,71 @@ neutron_port_setup_delay: 0
 #swift_account: null
 #swift_tempurl: null
 
+mysql_metrics:
+  db_name: ironic
+  db_user: ironic
+  customMetrics:
+    - name: openstack_ironic_nodes_list
+      help: Ironic Node list
+      labels:
+      - "uuid"
+      - "name"
+      - "instance_uuid"
+      - "power_state"
+      - "provision_state"
+      - "last_error"
+      - "gauge"
+      query: |
+        SELECT
+          uuid,
+          name,
+          instance_uuid,
+          power_state,
+          provision_state
+          AS last_error
+          COUNT(*) AS gauge
+        FROM nodes
+        GROUP BY uuid, name, instance_uuid, power_state, provision_state, last_error;
+      values:
+      - "last_error"
+      - "gauge"
+    - name: openstack_ironic_nodes_updated
+      help: Ironic updated nodes
+      labels:
+      - "uuid"
+      - "name"
+      - "provision_state"
+      query: |
+        SELECT 
+          uuid, 
+          name, 
+          provision_state,
+          COUNT(*) AS in_24hrs_gauge
+        FROM nodes 
+        WHERE (updated_at >= now() - interval '24 hours') 
+        GROUP BY uuid, provision_state, name;
+      values:
+      - "in_24hrs_gauge"
+    - name: openstack_ironic_nodes
+      help: Ironic nodes in maintenance
+      labels:
+      - "maintenance_reason"
+      values:
+      - "node_not_in_maint"
+      - "maintenance_reason"
+      query: |
+        SELECT 
+          COUNT(case when not maintenance then 1 end) AS node_not_in_maint, 
+          COUNT(case when maintenance then 1 end) AS node_not_in_maint, 
+          uuid, 
+          name, 
+          COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
+        GROUP BY
+          maintenance_reason,
+          uuid,
+          name
+        FROM nodes
+
 pgmetrics:
   name: ironic
   resources:
@@ -271,6 +336,15 @@ postgresql:
       memory: "500Mi" # 180Mi high recorded
   shared_preload_libraries: pg_stat_statements
   track_activity_query_size: 2048
+
+mariadb:
+  enabled: false
+  buffer_pool_size: "8192M"
+  log_file_size: "2048M"
+  name: ironic
+  initdb_configmap: ironic-db-init
+  persistence_claim:
+    name: db-ironic-pvclaim
 
 sentry:
   enabled: true
