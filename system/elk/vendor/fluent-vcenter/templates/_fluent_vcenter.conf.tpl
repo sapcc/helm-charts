@@ -73,16 +73,6 @@
   </rule>
   <rule>
     key "message"
-    pattern ERROR.+networkSystem.+vim.host.NetworkSystem.invokeHostTransactionCall:\svmodl.fault.
-    tag "DVSTimeout.${tag}"
-  </rule>
-  <rule>
-    key "message"
-    pattern ((Unable to Add Port; Status\(bad0006\)= Limit exceeded)|(Failed to get DVS state from vmkernel Status \(bad0014\)= Out of memory))
-    tag "DVSOOM.${tag}"
-  </rule>
-  <rule>
-    key "message"
     pattern Failed\sto\s(power on|add disk)\s\'scsi
     tag "vCenterVolumeStuck.${tag}"
   </rule>
@@ -145,30 +135,6 @@
     name vcenter_SR17629377811
     type counter
     desc Found error pertaining to SR17629377811
-    <labels>
-      tag ${tag}
-      host ${host_name}
-    </labels>
-  </metric>
-</match>
-<match DVSTimeout.**>
-  @type prometheus
-  <metric>
-    name vcenter_dvswitch_timeout
-    type counter
-    desc Found Error that indicates long timeout on dvs calls
-    <labels>
-      tag ${tag}
-      host ${host_name}
-    </labels>
-  </metric>
-</match>
-<match DVSOOM.**>
-  @type prometheus
-  <metric>
-    name vcenter_dvswitch_out_of_memory
-    type counter
-    desc Found Error that indicates dvs is out of memory
     <labels>
       tag ${tag}
       host ${host_name}
