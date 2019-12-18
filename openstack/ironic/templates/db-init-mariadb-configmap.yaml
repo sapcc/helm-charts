@@ -1,0 +1,24 @@
+{{- if eq .Values.mariadb.enabled true }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ironic-initdb
+  labels:
+    system: openstack
+    type: configuration
+    component: database
+
+data:
+  init.sh: |
+  export TERM=dumb
+
+  mysql -u root --password={{.Values.root_password}} <<- EOSQL
+	  CREATE DATABASE {{.Values.dbName}} CHARACTER SET utf8 COLLATE utf8_general_ci;
+        GRANT ALL PRIVILEGES ON {{.Values.dbName}}.* TO {{.Values.global.dbUser}}@localhost IDENTIFIED BY '{{required ".Values.global.dbPassword is missing" .Values.global.dbPassword}}';
+        GRANT ALL PRIVILEGES ON {{.Values.dbName}}.* TO {{.Values.global.dbUser}}@'%' IDENTIFIED BY '{{required ".Values.global.dbPassword is missing" .Values.global.dbPassword}}';
+
+    CREATE DATABASE {{.Values.inspectordbName}} CHARACTER SET utf8 COLLATE utf8_general_ci;
+        GRANT ALL PRIVILEGES ON {{.Values.inspectordbName}}.* TO {{.Values.inspectordbUser}}@localhost IDENTIFIED BY '{{required ".Values.inspectordbPassword is missing" .Values.inspectordbPassword}}';
+        GRANT ALL PRIVILEGES ON {{.Values.inspectordbName}}.* TO {{.Values.inspectordbUser}}@'%' IDENTIFIED BY '{{required ".Values.inspectordbPassword is missing" .Values.inspectordbPassword}}';
+    EOSQL
+{{- end }}
