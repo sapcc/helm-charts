@@ -64,6 +64,8 @@ insecure = True
 service_token_roles_required = True
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 token_cache_time = 600
+include_service_catalog = true
+service_type = baremetal
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 

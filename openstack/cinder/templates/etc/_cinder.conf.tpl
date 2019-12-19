@@ -65,6 +65,8 @@ memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .V
 service_token_roles_required = True
 insecure = True
 token_cache_time = 600
+include_service_catalog = true
+service_type = volumev3
 
 [oslo_policy]
 policy_file = /etc/cinder/policy.json

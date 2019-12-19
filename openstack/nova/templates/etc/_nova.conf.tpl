@@ -130,6 +130,8 @@ region_name = {{.Values.global.region}}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 insecure = True
 token_cache_time = 600
+include_service_catalog = true
+service_type = compute
 
 #[upgrade_levels]
 #compute = auto

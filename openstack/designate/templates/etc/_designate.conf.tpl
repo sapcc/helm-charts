@@ -202,7 +202,8 @@ region_name = {{.Values.global.region}}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 insecure = True
 token_cache_time = 600
-include_service_catalog = false
+include_service_catalog = true
+service_type = dns
 
 #-----------------------
 
