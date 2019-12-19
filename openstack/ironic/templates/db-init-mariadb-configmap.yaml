@@ -13,9 +13,13 @@ data:
     export TERM=dumb
 
     mysql -u root --password={{.Values.root_password}} <<- EOSQL
+      CREATE USER '{{.Values.global.dbUser}}' IDENTIFIED BY '{{required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword}}';
+      CREATE USER '{{.Values.inspectordbUser}}' IDENTIFIED BY '{{required "A valid .Values.inspectordbPassword required!" .Values.inspectordbPassword}}';
+
       CREATE DATABASE {{.Values.dbName}} CHARACTER SET utf8 COLLATE utf8_general_ci;
       GRANT ALL PRIVILEGES ON {{.Values.dbName}}.* TO {{.Values.global.dbUser}}@localhost IDENTIFIED BY '{{required ".Values.global.dbPassword is missing" .Values.global.dbPassword}}';
       GRANT ALL PRIVILEGES ON {{.Values.dbName}}.* TO {{.Values.global.dbUser}}@'%' IDENTIFIED BY '{{required ".Values.global.dbPassword is missing" .Values.global.dbPassword}}';
+
       CREATE DATABASE {{.Values.inspectordbName}} CHARACTER SET utf8 COLLATE utf8_general_ci;
       GRANT ALL PRIVILEGES ON {{.Values.inspectordbName}}.* TO {{.Values.inspectordbUser}}@localhost IDENTIFIED BY '{{required ".Values.inspectordbPassword is missing" .Values.inspectordbPassword}}';
       GRANT ALL PRIVILEGES ON {{.Values.inspectordbName}}.* TO {{.Values.inspectordbUser}}@'%' IDENTIFIED BY '{{required ".Values.inspectordbPassword is missing" .Values.inspectordbPassword}}';
