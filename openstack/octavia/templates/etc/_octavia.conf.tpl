@@ -18,6 +18,9 @@ enabled_provider_drivers = {{ .Values.providers }}
 # Default provider driver
 default_provider_driver = {{ .Values.default_provider | default "noop_driver" }}
 
+# Plugin options are hot_plug_plugin (Hot-pluggable controller plugin)
+octavia_plugins = f5_plugin
+
 [controller_worker]
 worker = {{ .Values.worker | default 1 }}
 amphora_driver = {{ .Values.amphora_driver  | default "amphora_noop_driver" }}
