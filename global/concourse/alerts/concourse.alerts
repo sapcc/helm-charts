@@ -14,19 +14,6 @@ groups:
       description: "The concourse database size is greater than 40GB and will exceed the PV limits eventually"
       summary: Concourse database is too large
 
-  - alert: ConcoursePostgresSharedMemoryError
-    expr: increase(elasticsearch_database_memory_allocation_failed_doc_count{failed="concourse-postgresql-0"}[6h]) > 0
-    for: 5m
-    labels:
-      tier: ci
-      service: concourse
-      severity: warning
-      context: concourse
-      meta: "Database could not resize shared memory segment error occured"
-    annotations:
-      description: "Memory pressure on node led to postgres database could not resize shared memory segment error in cluster {{ $labels.cluster }} in pod concourse/{{ $labels.failed }}. This could trigger random pipeline execution. Make sure database is running on a node with enough free memory or scale down concourse web component."
-      summary: Concourse database shared memory error
-
   - alert: ConcourseWorkerStalled
     expr: changes(concourse_workers_containers{platform="linux", worker=~"mo-.*"}[5m])==0
     for: 30m
