@@ -227,6 +227,8 @@
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
   metrics_path: /
   relabel_configs:
+    - source_labels: [job]
+      regex: bios/cisco_vpod
     - source_labels: [server_name]
       target_label: __param_target
     - source_labels: [__param_target]
