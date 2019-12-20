@@ -2,6 +2,9 @@
 # Print debugging output (set logging level to DEBUG instead of default WARNING level).
 debug = True
 
+# Plugin options are hot_plug_plugin (Hot-pluggable controller plugin)
+octavia_plugins = f5_plugin
+
 # AMQP Transport URL
 {{ include "ini_sections.default_transport_url" . }}
 
@@ -17,9 +20,6 @@ enabled_provider_drivers = {{ .Values.providers }}
 
 # Default provider driver
 default_provider_driver = {{ .Values.default_provider | default "noop_driver" }}
-
-# Plugin options are hot_plug_plugin (Hot-pluggable controller plugin)
-octavia_plugins = f5_plugin
 
 [controller_worker]
 worker = {{ .Values.worker | default 1 }}
