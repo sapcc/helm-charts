@@ -420,7 +420,7 @@
   @type copy
   <store>
     @type http
-    endpoint_url "https://{{.Values.forwarding.keystone.host}}/c0001/log/keystone"
+    endpoint_url "https://{{.Values.forwarding.keystone.host}}"
     cacert_file "/etc/ssl/certs/ca-certificates.crt"
     http_method post
     serializer json
