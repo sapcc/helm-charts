@@ -227,10 +227,10 @@
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
   metrics_path: /
   relabel_configs:
-    - source_labels: [__address__]
+    - source_labels: [server_name]
       target_label: __param_target
     - source_labels: [__param_target]
-      target_label: server_name
+      target_label: instance
     - target_label: __address__
       replacement: bios-exporter:{{$values.listen_port}}
     - source_labels: [manufacturer]
