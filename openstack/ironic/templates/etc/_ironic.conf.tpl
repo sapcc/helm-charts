@@ -42,7 +42,14 @@ dhcp_provider = neutron
 host_ip = 0.0.0.0
 public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
 
-{{- include "ini_sections.database" . }}
+[database]
+{{- if eq .Values.mariadb.enabled true }}
+connection = mysql+pymysql://root:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
+{{- include "ini_sections.database_options_mysql" . }}
+{{- else }}
+connection = {{ tuple . "ironic" "ironic" .Values.global.dbPassword | include "db_url" }}
+{{- include "ini_sections.database_options" . }}
+{{- end }}
 
 [keystone]
 auth_section = keystone_authtoken
