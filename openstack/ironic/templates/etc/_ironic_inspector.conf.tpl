@@ -37,7 +37,11 @@ enroll_node_driver = agent_ipmitool
 driver = noop
 
 [database]
+{{- if eq .Values.mariadb.enabled true }}
+connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectordbPassword | include "db_url_mysql" }}
+{{- else }}
 connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectordbPassword | include "db_url" }}
+{{- end }}
 {{- include "ini_sections.database_options" . }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
