@@ -139,53 +139,53 @@ spec:
           name: db-socket
 {{- end }}
 {{- if .Values.backup_v2.enabled }}
-        - name: mariabackup
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/maria-back-me-up:{{ .Values.backup_v2.image_version }}
-          readinessProbe:
-            httpGet:
-              path: /health/readiness
-              port: 8082
-              scheme: HTTP
-            initialDelaySeconds: 5
-            periodSeconds: 3
-            failureThreshold: 1
-            successThreshold: 1
-          ports:
-            - containerPort: 8081
-              name: http
-              protocol: TCP
-            - containerPort: 8082
-              name: metrics
-              protocol: TCP
-          env:
+      - name: mariabackup
+        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/maria-back-me-up:{{ .Values.backup_v2.image_version }}
+        readinessProbe:
+          httpGet:
+            path: /health/readiness
+            port: 8082
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 3
+          failureThreshold: 1
+          successThreshold: 1
+        ports:
+          - containerPort: 8081
+            name: http
+            protocol: TCP
+          - containerPort: 8082
+            name: metrics
+            protocol: TCP
+        env:
 {{- if .Values.backup_v2.oauth.enabled }}
-          - name: OAUTH_CLIENT_ID
-            valueFrom:
-              secretKeyRef:
-                name: mariadb-{{.Values.name}}
-                key: OAUTH_CLIENT_ID
-          - name: OAUTH_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: mariadb-{{.Values.name}}
-                key: OAUTH_CLIENT_SECRET
-          - name: OAUTH_COOKIE_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: mariadb-{{.Values.name}}
-                key: OAUTH_COOKIE_SECRET
+        - name: OAUTH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: OAUTH_CLIENT_ID
+        - name: OAUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: OAUTH_CLIENT_SECRET
+        - name: OAUTH_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: OAUTH_COOKIE_SECRET
 {{- end }}
-          - name: CONFIG_FILE
-            value: "/etc/config/config.yaml"
-          volumeMounts:
+        - name: CONFIG_FILE
+          value: "/etc/config/config.yaml"
+        volumeMounts:
 {{- if .Values.persistence_claim.enabled }}
-            - name: mariadb-persistent-storage
-              mountPath: /var/lib/mysql
-              readOnly: false
+        - name: mariadb-persistent-storage
+          mountPath: /var/lib/mysql
+          readOnly: false
 {{- end }}
-            - name: mariadb-backup-etc
-              mountPath: /etc/config
-              readOnly: true
+        - name: mariadb-backup-etc
+          mountPath: /etc/config
+          readOnly: true
 {{- end }}
 {{- if .Values.metrics.enabled }}
       - name: metrics
