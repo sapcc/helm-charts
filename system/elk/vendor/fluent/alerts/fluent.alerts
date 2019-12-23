@@ -1,0 +1,15 @@
+groups:
+- name: fluent.alerts
+  rules:
+  - alert: ElkControlplaneLogstashLogsMissing
+    expr: sum(rate(fluentd_output_status_num_records_total[10m])) by (nodename) == 0
+    for: 10m
+    labels:
+      context: logshipping
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html#fluent-logs-are-missing
+    annotations:
+      description: One or more fluent nodes are  not shipping any logs. Check controlplane fluent pod in elk namespace.'
+      summary: 'ELK in {{ $labels.region }} fluent pod on `{{ $labels.nodename }}` is not shipping any log line. Please check'
