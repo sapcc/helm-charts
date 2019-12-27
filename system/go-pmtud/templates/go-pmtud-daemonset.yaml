@@ -1,0 +1,54 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    k8s-app: pmtud
+  name: pmtud
+spec:
+  selector:
+    matchLabels:
+      name: pmtud
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: pmtud
+        k8s-app: pmtud
+    spec:
+      initContainers:
+        - name: iptables-init
+          image: "{{ .Values.images.iptables.repository }}:{{ .Values.images.iptables.tag }}"
+          command:
+            - /scripts/pmtud/iptables-init.sh
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: pmtud
+              mountPath: /scripts/pmtud
+      containers:
+      - name: pmtud
+        image: "{{ .Values.images.pmtud.repository }}:{{ .Values.images.pmtud.tag }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /go-pmtud
+          - --peers={{ required ".Values.pmtud.peers is required" .Values.pmtud.peers }}
+          - --iface={{ required ".Values.pmtud.interface is required" .Values.pmtud.interface }}
+          - --ttl={{ .Values.pmtud.ttl }}
+          - --nflog-group={{ .Values.iptables.nflogGroup }}
+          - --metrics-port={{ .Values.pmtud.metricsPort }}
+        securityContext:
+           privileged: true
+      hostNetwork: true
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+        kubernetes.cloud.sap/provisioned-by: kubernikus
+        species: swift-storage
+      terminationGracePeriodSeconds: 5
+      tolerations:
+        - operator: "Exists"
+      volumes:
+        - name: pmtud
+          configMap:
+            name: pmtud
+            defaultMode: 0744
