@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-interface=( required ".Values.pmtud.interface is required" .Values.pmtud.interface }} )
+interface=( {{ required ".Values.pmtud.interface is required" .Values.pmtud.interface }} )
 nflog_group=( {{ .Values.iptables.nflogGroup }} )
 ignore_network=( {{ .Values.iptables.ignoreSourceNetwork }} )
 
