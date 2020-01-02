@@ -27,6 +27,9 @@ amphora_driver = {{ .Values.amphora_driver  | default "amphora_noop_driver" }}
 compute_driver = {{ .Values.compute_driver  | default "compute_noop_driver" }}
 network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 
+[networking]
+f5_network_segment_physical_network = cp090
+
 [database]
 connection = {{ include "db_url_mysql" . }}
 
