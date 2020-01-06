@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# make sure to update lifecycle preStop hook to keep commands aligned
+
 interface=( {{ required ".Values.pmtud.interface is required" .Values.pmtud.interface }} )
 nflog_group=( {{ .Values.iptables.nflogGroup }} )
 ignore_network=( {{ .Values.iptables.ignoreSourceNetwork }} )
