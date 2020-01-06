@@ -30,13 +30,25 @@ spec:
       - name: pmtud
         image: "{{ .Values.images.pmtud.repository }}:{{ .Values.images.pmtud.tag }}"
         imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              # make sure to update _iptables_init.tpl template script to keep commands aligned
+              command: ["/bin/sh", "-c", "iptables -t raw -D PREROUTING -i {{ .Values.pmtud.interface }} ! -s {{ .Values.iptables.ignoreSourceNetwork }} -p icmp -m icmp --icmp-type 3/4 --j NFLOG --nflog-group {{ .Values.iptables.nflogGroup }}"]
         command:
           - /go-pmtud
           - --peers={{ required ".Values.pmtud.peers is required" .Values.pmtud.peers }}
           - --iface={{ required ".Values.pmtud.interface is required" .Values.pmtud.interface }}
+          - --nodename=$(NODE_NAME)
           - --ttl={{ .Values.pmtud.ttl }}
           - --nflog-group={{ .Values.iptables.nflogGroup }}
           - --metrics-port={{ .Values.pmtud.metricsPort }}
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
         securityContext:
            privileged: true
       hostNetwork: true
