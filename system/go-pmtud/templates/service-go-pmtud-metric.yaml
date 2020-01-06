@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pmtud-metrics
+  labels:
+    app: pmtud
+
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: "kubernetes"
+
+spec:
+  ports:
+  - name: metrics
+    port: {{ required ".Values.pmtud.metricsPort missing" .Values.pmtud.metricsPort }}
+
+  selector:
+    name: pmtud
+    k8s-app: pmtud
