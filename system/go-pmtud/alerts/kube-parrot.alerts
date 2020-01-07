@@ -16,3 +16,16 @@ groups:
       annotations:
         description: Path MTU Daemon on node {{ $labels.node }} is not able to send ICMP packet to Peer. Path MTU issues possible!
         summary: Path MTU Daemon on node {{ $labels.node }} is not able to send ICMP packet to Peer.
+
+    - alert: PmtudCallbackDurationHigh
+      expr: sum by (node) (histogram_quantile(0.9, rate(go_pmtud_callback_duration_seconds_bucket[5m])) > 0.1 and rate(go_pmtud_callback_duration_seconds_count[5m]) * 60 > 1)
+      for: 5m
+      labels:
+        tier: k8s
+        service: go-pmtud
+        severity: info
+        context: availability
+        playbook: "docs/support/playbook/kubernetes/k8s_path_mtu.html#PmtudCallbackDurationHigh"
+      annotations:
+        description: Path MTU Daemon processing latency on node {{ $labels.node }} is too high. Path MTU issues possible!
+        summary: Path MTU Daemon processing latency on node {{ $labels.node }} is too high.
