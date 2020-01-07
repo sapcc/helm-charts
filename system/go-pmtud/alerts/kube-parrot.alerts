@@ -1,0 +1,18 @@
+groups:
+- name: go-pmtud.alerts
+  rules:
+
+    ### go-pmtud ###
+
+    - alert: PmtudPeerSentErrorCountHigh
+      expr: sum by (node) (go_pmtud_sent_error_peer_total/go_pmtud_sent_packets_peer)*100 > 5
+      for: 5m
+      labels:
+        tier: k8s
+        service: go-pmtud
+        severity: info
+        context: availability
+        playbook: "docs/support/playbook/kubernetes/k8s_path_mtu.html#PmtudPeerSentErrorCountHigh"
+      annotations:
+        description: Path MTU Daemon on node {{ $labels.node }} is not able to send ICMP packet to Peer. Path MTU issues possible!
+        summary: Path MTU Daemon on node {{ $labels.node }} is not able to send ICMP packet to Peer.
