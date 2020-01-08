@@ -41,6 +41,9 @@ quota_gigabytes = 0
 quota_backups = -1
 quota_backup_gigabytes = -1
 
+# limit the volume size because it's limited by flexvols. in GB
+per_volume_size_limit = {{ .Values.volume_size_limit_gb | default 2048 }}
+
 # don't use quota class
 use_default_quota_class=false
 
