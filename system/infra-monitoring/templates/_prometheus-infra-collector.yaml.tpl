@@ -138,8 +138,8 @@
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'arista'
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
