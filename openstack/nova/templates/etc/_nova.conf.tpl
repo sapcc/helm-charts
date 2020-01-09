@@ -32,6 +32,8 @@ sync_power_state_pool_size = {{ .Values.sync_power_state_pool_size | default 500
 sync_power_state_interval = {{ .Values.sync_power_state_interval | default 1200 }}
 sync_power_state_unexpected_call_stop = false
 
+prepare_empty_host_for_spawning_interval = 600
+
 dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
 
 {{ include "ini_sections.default_transport_url" . }}
