@@ -133,6 +133,13 @@ data:
         match_re:
           tier: sre
 
+      # owner: Chuan Miao
+      - receiver: slack_storage
+        continue: false
+        match_re:
+          tier: storage
+
+      # owner: Arno Uhlig
       - receiver: dev-null
         continue: false
         match_re:
@@ -667,7 +674,20 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           color: {{`'{{template "slack.sapcc.color" . }}'`}}
-          send_resolved: true         
+          send_resolved: true
+
+    - name: slack_storage
+      slack_configs:
+        - channel: '#cc-storage'
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
+          send_resolved: true   
 
     # ----  PagerDuty Setup ---- Hint: service_key causes using api v1, check internet ----
     - name: pagerduty_api
