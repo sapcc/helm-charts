@@ -131,6 +131,8 @@ service_token_roles_required = True
 insecure = True
 token_cache_time = 600
 memcache_use_advanced_pool = True
+include_service_catalog = true
+service_type = network
 
 [oslo_messaging_notifications]
 driver = noop

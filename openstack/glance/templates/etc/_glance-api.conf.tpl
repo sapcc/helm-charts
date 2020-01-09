@@ -33,6 +33,8 @@ memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .V
 insecure = True
 token_cache_time = 600
 service_token_roles_required = True
+include_service_catalog = true
+service_type = image
 
 [paste_deploy]
 flavor = keystone
