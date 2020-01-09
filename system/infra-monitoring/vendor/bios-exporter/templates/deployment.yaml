@@ -55,22 +55,4 @@ spec:
              initialDelaySeconds: 5
              timeoutSeconds: 5
              periodSeconds: 10
-           volumeMounts:
-           - mountPath: /atlas
-             name: atlas-config
-             readOnly: true
 
-         - name: atlas-config-reloader
-           args:
-           - -volume-dir=/atlas
-           - -webhook-url=http://localhost:8080/-/reload
-           image: jimmidyson/configmap-reload:v0.3.0
-           imagePullPolicy: IfNotPresent
-           volumeMounts:
-           - mountPath: /atlas
-             name: atlas-config
-             readOnly: true
-         volumes:
-           - name: atlas-config
-             configMap:
-               name: {{ include "atlas.fullname" . }}
