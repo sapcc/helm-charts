@@ -159,8 +159,8 @@
 {{- $values := .Values.snmp_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'snmp'
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -200,8 +200,8 @@
 - job_name: 'bios/ironic'
   params:
     job: [bios/ironic]
-  scrape_interval: 140s
-  scrape_timeout: 135s
+  scrape_interval: {{$values.ironic_scrapeInterval}}
+  scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/ironic.json
@@ -220,6 +220,8 @@
 - job_name: 'bios/cisco_vpod'
   params:
     job: [bios/cisco_vpod]
+  scrape_interval: {{$values.cisco_vpod_scrapeInterval}}
+  scrape_timeout: {{$values.cisco_vpod_scrapeTimeout}}
   scrape_interval: 600s
   scrape_timeout: 550s
   file_sd_configs:
@@ -247,8 +249,8 @@
 - job_name: 'ipmi/ironic'
   params:
     job: [baremetal/ironic]
-  scrape_interval: 120s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.ironic_scrapeInterval}}
+  scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/ironic.json
@@ -264,8 +266,8 @@
 - job_name: 'cp/netbox'
   params:
     job: [cp/netbox]
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.cp_scrapeInterval}}
+  scrape_timeout: {{$values.cp_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -286,8 +288,8 @@
 - job_name: 'ipmi/esxi'
   params:
     job: [esxi]
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.esxi_scrapeInterval}}
+  scrape_timeout: {{$values.esxi_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -307,8 +309,8 @@
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vasa'
-  scrape_interval: 200s
-  scrape_timeout: 195s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -325,8 +327,8 @@
 
 {{- if .Values.alertmanager_exporter.enabled }}
 - job_name: 'prometheus/alertmanager'
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{ .Values.alertmanager_exporter.scrapeInterval }}
+  scrape_timeout: {{ .Values.alertmanager_exporter.scrapeTimeout }}
   static_configs:
     - targets:
       {{- range $.Values.alertmanager_exporter.targets }}
@@ -339,8 +341,8 @@
 {{- $values := .Values.vrops_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vrops'
-  scrape_interval: 300s
-  scrape_timeout: 295s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
