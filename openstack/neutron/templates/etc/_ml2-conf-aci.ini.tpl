@@ -36,6 +36,14 @@ segment_type  = {{ $global.Values.aci.aci_hostgroups.segment_type }}
 segment_range = {{ default $global.Values.aci.aci_hostgroups.segment_range $aci_hostgroup.segment_range }}
 {{ end }}
 
+{{- range $i, $fixed_binding := .Values.aci.fixed_bindings }}
+[fixed-binding:{{ $fixed_binding.name }}]
+description = {{ $fixed_binding.description }}
+bindings = {{ $fixed_binding.bindings | join "," }}
+physical_domain = {{ $global.Values.aci.aci_hostgroups.physical_domain }}
+segment_type  = {{ $global.Values.aci.aci_hostgroups.segment_type }}
+segment_id = {{ $fixed_binding.segment_id }}
+{{ end }}
 
 #AddressScope
 {{- range $i, $address_scope := .Values.aci.address_scopes }}
@@ -45,15 +53,6 @@ l3_outs = {{ $address_scope.l3_outs }}
 contracts = {{ $address_scope.contracts }}
 scope = {{ default "public" $address_scope.scope }}
 vrf={{ $address_scope.vrf }}
-{{ end }}
-
-{{- range $i, $fixed_binding := .Values.aci.fixed_bindings }}
-[fixed-binding:{{ $fixed_binding.name }}]
-description = {{ $fixed_binding.description }}
-bindings = {{ $fixed_binding.bindings | join "," }}
-physical_domain = {{ $global.Values.aci.aci_hostgroups.physical_domain }}
-segment_type  = {{ $global.Values.aci.aci_hostgroups.segment_type }}
-segment_id={{ $fixed_binding.segment_id }}
 {{ end }}
 
 {{ else }}
