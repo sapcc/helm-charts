@@ -59,7 +59,12 @@ spec:
           requests:
             memory: {{ $values.exporter.memory }}
             cpu: {{ $values.exporter.cpu }}
-      - name: sd                            # container: netappsd
+      {{- if eq $name "manila" }}
+      {{- /*
+        manila filers are predefined in secret files rather than fetched from netbox
+      */ -}}
+      {{- else }}
+      - name: sd
         image: {{ $values.netappsd.image }}
         args:
           - -configmap
@@ -80,7 +85,8 @@ spec:
           requests:
             memory: {{ $values.netappsd.memory }}
             cpu: {{ $values.netappsd.cpu }}
- 
+      {{- end }}
+
       volumes:
         - name: {{ $app.fullname }}
           configMap:
