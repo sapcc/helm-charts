@@ -180,7 +180,7 @@
   password {{.Values.global.elk_elasticsearch_data_password}}
   scheme https
   ssl_verify false
-  index_name syslog
+  index_name syslog-%Y.%m.%d
   ssl_version TLSv1_2
   time_as_integer false
   type_name _doc
