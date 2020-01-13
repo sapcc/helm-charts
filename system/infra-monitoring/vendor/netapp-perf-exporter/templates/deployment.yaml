@@ -30,8 +30,8 @@ spec:
         image: {{ $values.harvest.image }}
         resources:
           requests:
-            memory: {{ $values.harvest.memory }}
-            cpu: {{ $values.harvest.cpu }}
+            memory: {{ $values.harvest.requests.memory }}
+            cpu: {{ $values.harvest.requests.cpu }}
         env:
         - name: NETAPP_USERNAME
           valueFrom:
@@ -46,6 +46,13 @@ spec:
         volumeMounts:
         - name: {{ $app.fullname }}
           mountPath: /opt/netapp-harvest/config
+      - name: replicator
+        image: {{$values.replicator.image}}:{{$values.replicator.imageVersion }}
+        args: [ "--listen", ":2003", "-1", ":9109" ]
+        resources:
+          requests:
+            memory: {{ $values.replicator.requests.memory }}
+            cpu: {{ $values.replicator.requests.cpu }}
       - name: exporter                      # container: exporter
         image: {{ $values.exporter.image }}
         args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
@@ -57,8 +64,8 @@ spec:
           mountPath: /graphite-mapping.conf
         resources:
           requests:
-            memory: {{ $values.exporter.memory }}
-            cpu: {{ $values.exporter.cpu }}
+            memory: {{ $values.exporter.requests.memory }}
+            cpu: {{ $values.exporter.requests.cpu }}
       {{- if eq $name "manila" }}
       {{- /*
         manila filers are predefined in secret files rather than fetched from netbox
@@ -74,17 +81,17 @@ spec:
           - -namespace
           - {{ $release.Namespace }}
           - -netbox-host
-          - {{ required "netbox_host needs to be defined in global values" $values.global.netbox_host }}
+          - {{ required ".Values.global.netbox_host" $values.global.netbox_host }}
           - -netbox-api-token
-          - {{ required "netbox_api_token needs to be defined in global values" $values.global.netbox_api_token }}
+          - {{ required ".Values.global.netbox_api_token" $values.global.netbox_api_token }}
           - -region
-          - {{ $values.global.region }}
+          - {{ required ".Values.global.region" $values.global.region }}
           - -query
           - {{ required "$app.netappsd.query" $app.netappsd.query }}
         resources:
           requests:
-            memory: {{ $values.netappsd.memory }}
-            cpu: {{ $values.netappsd.cpu }}
+            memory: {{ $values.netappsd.requests.memory }}
+            cpu: {{ $values.netappsd.requests.cpu }}
       {{- end }}
 
       volumes:
