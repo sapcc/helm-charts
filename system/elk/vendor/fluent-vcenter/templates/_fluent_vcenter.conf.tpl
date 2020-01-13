@@ -14,6 +14,8 @@
   tag "nsxt"
   <parse>
     message_format rfc5424
+    emit_unmatched_lines true
+    @log_level trace
   </parse>
   <transport udp>
   </transport>
@@ -55,7 +57,7 @@
   <rule>
     key ident
     pattern /NSX/
-    tag nsxt
+    tag nsxtlogs
   </rule>
 </match>
 
@@ -168,7 +170,7 @@
 <match unknown.**>
   @type null
 </match>
-<match nsxt.**>
+<match nsxtlogs>
   @type stdout
 </match>
 #<match nsxt.**>
