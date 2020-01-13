@@ -187,7 +187,9 @@
   ssl_verify false
   index_name syslog
   ssl_version TLSv1_2
-  time_as_integer false
+  logstash_format true
+  logstash_prefix nsxt
+  include_timestamp true
   type_name _doc
   @log_level info
   slow_flush_log_threshold 50.0
