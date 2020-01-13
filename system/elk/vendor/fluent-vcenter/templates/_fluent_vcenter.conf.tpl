@@ -13,8 +13,10 @@
   @type syslog
   tag "nsxt"
   <parse>
+    @type syslog
     message_format rfc5424
     with_priority true
+    @log_level trace
   </parse>
   <transport udp>
   </transport>
