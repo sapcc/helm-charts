@@ -17,7 +17,7 @@ apic_password = {{required "A valid .Values.aci required!" .Values.aci.apic_pass
 apic_use_ssl = True
 apic_application_profile = {{required "A valid .Values.aci required!" .Values.aci.apic_application_profile}}
 
-{{- if .Values.aci.aci_hostgroups }}
+{{ if .Values.aci.aci_hostgroups }}
 tenant_default_vrf = {{.Values.aci.tenant_default_vrf}}
 flat_vlan_range={{.Values.aci.flat_vlan_range}}
 
@@ -54,6 +54,6 @@ scope = {{ default "public" $address_scope.scope }}
 vrf={{ $address_scope.vrf }}
 {{ end }}
 
-{{ else }}
+{{- else -}}
 {{required "A valid .Values.aci required!" .Values.aci.bindings}}
-{{ end }}
+{{- end -}}
