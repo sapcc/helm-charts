@@ -13,8 +13,8 @@
   @type syslog
   tag "nsxt"
   <parse>
-    message_format auto
-    with_priority false
+    message_format rfc5424
+    with_priority true
   </parse>
   <transport udp>
   </transport>
