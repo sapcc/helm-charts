@@ -222,8 +222,6 @@
     job: [bios/cisco_vpod]
   scrape_interval: {{$values.cisco_vpod_scrapeInterval}}
   scrape_timeout: {{$values.cisco_vpod_scrapeTimeout}}
-  scrape_interval: 600s
-  scrape_timeout: 550s
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
