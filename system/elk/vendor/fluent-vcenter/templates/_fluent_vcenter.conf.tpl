@@ -15,7 +15,6 @@
   <parse>
     message_format rfc5424
     emit_unmatched_lines true
-    @log_level trace
   </parse>
   <transport udp>
   </transport>
