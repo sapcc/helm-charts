@@ -14,6 +14,8 @@
   tag "nsxt"
   <parse>
     message_format rfc5424
+    rfc5424_time_format %Y-%m-%dT%H:%M:%S.%L%z
+    with_priority true
     emit_unmatched_lines true
   </parse>
   <transport udp>
@@ -180,7 +182,7 @@
   password {{.Values.global.elk_elasticsearch_data_password}}
   scheme https
   ssl_verify false
-  index_name syslog-%Y.%m.%d
+  index_name syslog
   ssl_version TLSv1_2
   time_as_integer false
   type_name _doc
