@@ -1,4 +1,3 @@
-{{ $global := . }}
 [ml2_aci]
 sync_allocations =  {{.Values.aci.sync_allocations | default "True"}}
 tenant_manager = hash_ring
@@ -30,18 +29,18 @@ flat_vlan_range={{.Values.aci.flat_vlan_range}}
 [aci-hostgroup:{{ $aci_hostgroup.name }}]
 hosts = {{ $aci_hostgroup.hosts | join "," }}
 bindings = {{ $aci_hostgroup.bindings | join "," }}
-physical_domain = {{ $global.Values.aci.aci_hostgroups.physical_domain }}
+physical_domain = {{ $.Values.aci.aci_hostgroups.physical_domain }}
 physical_network = {{ $aci_hostgroup.name }}
-segment_type  = {{ $global.Values.aci.aci_hostgroups.segment_type }}
-segment_range = {{ default $global.Values.aci.aci_hostgroups.segment_range $aci_hostgroup.segment_range }}
+segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
+segment_range = {{ default $.Values.aci.aci_hostgroups.segment_range $aci_hostgroup.segment_range }}
 {{ end }}
 
 {{- range $i, $fixed_binding := .Values.aci.fixed_bindings }}
 [fixed-binding:{{ $fixed_binding.name }}]
 description = {{ $fixed_binding.description }}
 bindings = {{ $fixed_binding.bindings | join "," }}
-physical_domain = {{ $global.Values.aci.aci_hostgroups.physical_domain }}
-segment_type  = {{ $global.Values.aci.aci_hostgroups.segment_type }}
+physical_domain = {{ $.Values.aci.aci_hostgroups.physical_domain }}
+segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
 segment_id = {{ $fixed_binding.segment_id }}
 {{ end }}
 
