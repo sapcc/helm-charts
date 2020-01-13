@@ -13,10 +13,8 @@
   @type syslog
   tag "nsxt"
   <parse>
-    message_format rfc5424
-    rfc5424_time_format %Y-%m-%dT%H:%M:%S.%L%z
+    message_format auto
     with_priority true
-    emit_unmatched_lines true
   </parse>
   <transport udp>
   </transport>
