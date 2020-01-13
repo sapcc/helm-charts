@@ -102,7 +102,8 @@ service_token_roles_required = True
 service_token_roles = service
 insecure = True
 token_cache_time = 600
-include_service_catalog = false
+include_service_catalog = true
+service_type = sharev2
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 {{- if .Values.memcached.enabled }}

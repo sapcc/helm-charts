@@ -115,7 +115,7 @@ storage_protocol = vmdk
 disk_format = vmdk
 
 [volume-feature-enabled]
-backup = false
+backup = true
 
 [service_available]
 manila = True

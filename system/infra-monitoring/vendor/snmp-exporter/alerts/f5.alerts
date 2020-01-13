@@ -1,0 +1,32 @@
+groups:
+  - name: f5
+    rules:
+      - alert: NetworkF5Unbound01IsOffline
+        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound1.*.cloud.sap"} != 1
+        for: 5m
+        labels:
+          severity: warning
+          tier: net
+          service: f5
+          context: f5
+          meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          playbook: 'docs/devops/alert/network/f5.html#f5_unbound_offline'
+          dashboard: f5-dns-resolver-cache-for-unbounds
+        annotations:
+          description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          summary: "F5 health check monitor for Unbound pool member unbound1 failed."
+
+      - alert: NetworkF5Unbound02IsOffline
+        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound2.*.cloud.sap"} != 1
+        for: 5m
+        labels:
+          severity: warning
+          tier: net
+          service: f5
+          context: f5
+          meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          playbook: 'docs/devops/alert/network/f5.html#f5_unbound_offline'
+          dashboard: f5-dns-resolver-cache-for-unbounds
+        annotations:
+          description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          summary: "F5 health check monitor of Unbound pool member unbound2 failed."

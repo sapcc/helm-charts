@@ -632,7 +632,7 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:check_grant": "(role:reader and system_scope:all) or ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:check_grant": "rule:cloud_reader or ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s) or rule:role_viewer"
+"identity:check_grant": "rule:cloud_reader or ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s) or role:role_viewer"
 
 # DEPRECATED "identity:check_grant":"rule:admin_required" has been
 # deprecated since S in favor of "identity:check_grant":"(role:reader
@@ -665,7 +665,7 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/users/{user_id}/roles/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:list_grants": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)"
-"identity:list_grants": "rule:cloud_reader or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) or rule:role_viewer"
+"identity:list_grants": "rule:cloud_reader or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) or role:role_viewer"
 
 # DEPRECATED "identity:list_grants":"rule:admin_required" has been
 # deprecated since S in favor of "identity:list_grants":"(role:reader
@@ -727,7 +727,7 @@
 # DELETE  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:revoke_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:revoke_grant": "role:cloud_admin or (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blacklist_roles and not rule:blacklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
+"identity:revoke_grant": "rule:cloud_admin or (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blacklist_roles and not rule:blacklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 
 # DEPRECATED "identity:revoke_grant":"rule:admin_required" has been
 # deprecated since S in favor of "identity:revoke_grant":"(role:admin
@@ -1337,7 +1337,7 @@
 # DELETE  /v3/policies/{policy_id}/OS-ENDPOINT-POLICY/services/{service_id}/regions/{region_id}
 # Intended scope(s): system
 #"identity:delete_policy_association_for_region_and_service": "role:admin and system_scope:all"
-"identity:delete_policy_association_for_region_and_service": "rule:cloud:admin"
+"identity:delete_policy_association_for_region_and_service": "rule:cloud_admin"
 
 # DEPRECATED "identity:delete_policy_association_for_region_and_servic
 # e":"rule:admin_required" has been deprecated since T in favor of "id
@@ -1478,7 +1478,7 @@
 # PUT  /v3/projects/{project_id}/tags
 # Intended scope(s): system, domain, project
 #"identity:update_project_tags": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
-"identity:update_project_tags": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:update_project_tags": "rule:cloud_admin or rule:service_role"
 
 # DEPRECATED "identity:update_project_tags":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1495,7 +1495,7 @@
 # PUT  /v3/projects/{project_id}/tags/{value}
 # Intended scope(s): system, domain, project
 #"identity:create_project_tag": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
-"identity:create_project_tag": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:create_project_tag": "rule:cloud_admin or rule:service_role"
 
 # DEPRECATED "identity:create_project_tag":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1512,7 +1512,7 @@
 # DELETE  /v3/projects/{project_id}/tags
 # Intended scope(s): system, domain, project
 #"identity:delete_project_tags": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
-"identity:delete_project_tags": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:delete_project_tags": "rule:cloud_admin or rule:service_role"
 
 # DEPRECATED "identity:delete_project_tags":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1529,7 +1529,7 @@
 # DELETE  /v3/projects/{project_id}/tags/{value}
 # Intended scope(s): system, domain, project
 #"identity:delete_project_tag": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
-"identity:delete_project_tag": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
+"identity:delete_project_tag": "rule:cloud_admin or rule:service_role"
 
 # DEPRECATED "identity:delete_project_tag":"rule:admin_required" has
 # been deprecated since T in favor of
@@ -1607,7 +1607,7 @@
 # deprecated since T in favor of
 # "identity:list_endpoints_for_project":"role:reader and
 # system_scope:all".
-"identity:list_endpoints_for_project":"rule:cloud_reader".
+#"identity:list_endpoints_for_project":"rule:cloud_reader".
 #
 # As of the Train release, the project endpoint API now understands
 # default roles and system-scoped tokens, making the API more granular

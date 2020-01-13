@@ -1,0 +1,14 @@
+groups:
+- name: vcenter.alerts
+  rules:
+  - alert: VcenterVolumeAttachmentError
+    expr: delta(vcenter_volume_attachment_error[1h]) >= 7
+    for: 30m
+    labels:
+      tier: vmware
+      severity: warning
+      service: storage
+      context: vc-logs
+    annotations:
+      description: "New volumes cannot be created on the host which means volume-attachments might not be happening."
+      summary: "{{ $labels.region }} New volumes cannot be created on `{{ $labels.host_name }}` which means volume-attachments might not be happening."

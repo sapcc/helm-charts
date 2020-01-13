@@ -1,0 +1,45 @@
+{{- if .Values.manila_nanny.enabled }}
+{{- if .Values.manila_nanny.quota_sync.enabled}}
+kind: Service
+apiVersion: v1
+metadata:
+  name: manila-nanny-quota-sync
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: manila-nanny
+    nanny: quota-sync
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9456"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  selector:
+    component: manila-nanny
+  ports:
+    - name: metrics
+      port: 9456
+{{- end }}
+---
+{{- if .Values.manila_nanny.share_size_sync.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: manila-nanny-share-size-sync
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: manila-nanny
+    nanny: share-size-sync
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9457"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  selector:
+    component: manila-nanny
+  ports:
+    - name: metrics
+      port: 9457
+{{- end }}
+{{- end }}

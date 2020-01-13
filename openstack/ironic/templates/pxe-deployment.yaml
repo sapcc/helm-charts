@@ -30,9 +30,17 @@ spec:
     spec:
       containers:
       - name: ironic-tftp
+        {{- if .Values.loci.enabled }}
+        image: {{ .Values.global.imageRegistry }}/{{ .Values.loci.imageNamespace }}/loci-ironic:{{ .Values.loci.imageVersion }}
+        {{- else }}
         image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-pxe:{{.Values.imageVersionIronicPxe | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        {{- end }}
         imagePullPolicy: IfNotPresent
+        {{- if .Values.loci.enabled }}
+        command: ["ptftpd", "-v", "-d", "ironic.pxe.tftpmap.handle", "eth0", "/tftpboot"]
+        {{- else }}
         command: ["ptftpd", "-v", "-d", "/tftpmap.py:handle", "eth0", "/tftpboot"]
+        {{- end }}
         ports:
         - name: ironic-tftp
           protocol: UDP

@@ -26,6 +26,70 @@ input {
 }
 
 filter {
+    # Manually parse the log, as we want to support both RCF3164 and RFC5424
+    grok {
+      break_on_match => true
+      match => [ 
+        "message", "%{SYSLOG5424LINE}",
+        "message", "%{SYSLOGLINE}"
+      ]
+    }
+
+    if [syslog5424_ts] {
+      # Handle RFC5424 formatted Syslog messages
+      mutate {
+        remove_field => [ "message", "host" ]
+        add_tag => [ "syslog5424" ]
+      }
+      mutate {
+        # Use a friendlier naming scheme
+        rename => { 
+          "syslog5424_app"  => "program"
+          "syslog5424_msg"  => "message"
+          "syslog5424_host" => "host"
+        }
+        remove_field => [ "syslog5424_ver", "syslog5424_proc" ]
+      }
+      if [syslog5424_pri] {
+        # Calculate facility and severity from the syslog PRI value
+        ruby {
+          code => "event['severity'] = event['syslog5424_pri'].modulo(8)"
+        }
+        ruby {
+          code => "event['facility'] = (event['syslog5424_pri'] / 8).floor"
+        }
+        mutate {
+          remove_field => [ "syslog5424_pri" ]
+        }
+      }
+      if [syslog5424_sd] {
+        # All structured data needs to be in format [key=value,key=value,...]
+        mutate {
+          # Remove wrapping brackets
+          gsub => [ "syslog5424_sd", "[\[\]]", "" ]
+        }
+        kv {
+          # Convert the structured data into Logstash fields
+          source => "syslog5424_sd"
+          field_split => ","
+          value_split => "="
+          remove_field => [ "syslog5424_sd" ]
+        }
+      }
+      date {
+        match => [ "syslog5424_ts", "ISO8601" ]
+        remove_field => [ "syslog5424_ts", "timestamp" ]
+      }
+    }
+    else {
+      # Handle RFC3164 formatted Syslog messages
+      mutate {
+        add_tag => [ "syslog3164" ]
+      }
+    }
+}
+
+filter {
     if  [type] == "bigiplogs" {
            grok {
 	       tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]

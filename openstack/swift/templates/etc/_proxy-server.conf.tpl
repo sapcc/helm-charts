@@ -2,7 +2,6 @@
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
 {{- $helm_release := index . 2 -}}
-{{- $swift_release := include "swift_release" $context -}}
 [DEFAULT]
 bind_port = 8080
 # NOTE: value for prod, was 4 in staging before
@@ -28,13 +27,8 @@ log_custom_handlers = swift_sentry.sentry_logger
 {{- end }}
 
 [pipeline:main]
-{{- if le $swift_release "queens" }}
-# Queens pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not $context.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
-{{- else }}
 # Rocky or higher pipeline
 pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not $context.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
-{{- end }}
 
 [app:proxy-server]
 use = egg:swift#proxy
@@ -106,12 +100,7 @@ auth_version = 3
 www_authenticate_uri = {{$cluster.keystone_auth_uri}}
 auth_url = {{$cluster.keystone_auth_url}}
 insecure = {{$cluster.keystone_insecure | default false}}
-{{- /* TODO: Workaround - need to be removed */ -}}
-{{- if $cluster.endpoint_override }}
-endpoint_override = {{$cluster.endpoint_override}}
-{{- else}}
 interface = {{$cluster.keystone_interface | default "admin"}}
-{{- end }}
 {{- if $cluster.token_memcached }}
 memcached_servers = {{ $cluster.token_memcached }}.{{ $helm_release.Namespace }}.svc:11211
 {{- else }}
@@ -190,20 +179,6 @@ use = egg:swift#symlink
 [filter:listing_formats]
 use = egg:swift#listing_formats
 
-{{- if le $swift_release "queens" }}
-
-[filter:swift3]
-use = egg:swift3#swift3
-location = {{ $context.global.region }}
-# The standard swift proxy logging is needed
-force_swift_request_proxy_log = true
-
-[filter:s3token]
-use = egg:swift3#s3token
-auth_uri = {{$cluster.keystone_auth_uri}}
-auth_version = 3
-{{- else}}
-
 [filter:s3api]
 use = egg:swift#s3api
 location = {{ $context.global.region }}
@@ -213,7 +188,6 @@ force_swift_request_proxy_log = true
 [filter:s3token]
 use = egg:swift#s3token
 auth_uri = {{ $cluster.keystone_auth_url }}
-{{- end}}
 
 {{ if $context.watcher_enabled -}}
 [filter:watcher]

@@ -12,6 +12,8 @@ data:
   mariadb.cnf: |
     [mysqld]
     max_connections           = 1024
+    connect_timeout           = 30
+    wait_timeout              = 3800
     innodb_buffer_pool_size   = {{ .Values.buffer_pool_size }}
     innodb_log_file_size      = {{ .Values.log_file_size }}
     innodb_open_files         = 4000
@@ -25,3 +27,7 @@ data:
     join_buffer_size          = 4M
     innodb_checksum_algorithm = crc32
     sql_mode                  = "TRADITIONAL"
+{{- if .Values.backup_v2.enabled }}
+    binlog_format             = {{ .Values.binlog_format }}
+    expire_logs_days          = {{ .Values.expire_logs_days }}
+{{- end }}

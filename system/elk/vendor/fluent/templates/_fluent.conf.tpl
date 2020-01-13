@@ -411,12 +411,16 @@
   @type null
 </match>
 
+<match kubernetes.var.log.containers.es-query-exporter**>
+  @type null
+</match>
+
 {{- if .Values.forwarding.keystone.enabled }}
 <match kubernetes.var.log.containers.keystone-api**>
   @type copy
   <store>
     @type http
-    endpoint_url "https://{{.Values.forwarding.keystone.host}}/c0001/log/keystone"
+    endpoint_url "https://{{.Values.forwarding.keystone.host}}"
     cacert_file "/etc/ssl/certs/ca-certificates.crt"
     http_method post
     serializer json

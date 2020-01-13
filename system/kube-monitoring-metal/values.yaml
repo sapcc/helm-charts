@@ -3,46 +3,19 @@ global:
   domain:
   clusterType: metal
 
-# Enables scraping configuration for static apiserver, etcd, scheduler, controller-manager pods.
-isStaticPodsScrapeConfig: true
-
-# Metric whitelist.
-allowedMetrics:
-  # Full list of cAdvisor metrics: https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md .
-  cAdvisor:
-    - container_cpu_cfs_periods_total
-    - container_cpu_cfs_throttled_seconds_total
-    - container_cpu_cfs_throttled_periods_total
-    - container_cpu_usage_seconds_total
-    - container_cpu_user_seconds_total
-    - container_cpu_system_seconds_total
-    - container_fs_inodes_total
-    - container_fs_limit_bytes
-    - container_fs_usage_bytes
-    - container_last_seen
-    - container_memory_usage_bytes
-    - container_memory_working_set_bytes
-    - container_network_receive_bytes_total
-    - container_network_transmit_bytes_total
-    - container_start_time_seconds
-
-  # Full list of APIserver metrics: https://github.com/kubernetes/apiserver/blob/master/pkg/endpoints/metrics/metrics.go .
-  kubeAPIServer:
-    - apiserver_request_count
-    - apiserver_request_latencies_bucket
-    - etcd_object_counts
-    - process_max_fds
-    - process_open_fds
+  rbac:
+    create: true
 
 prometheus-operator:
   prometheusOperator:
+    createCustomResource: false
     service:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/targets: "kubernetes"
         prometheus.io/port: "8080"
     serviceAccount:
-      create: false
+      create: true
 
 # Values for operated Prometheus collector.
 prometheus-collector:
@@ -75,22 +48,19 @@ prometheus-collector:
     pods:
       enabled: false
     kubeAPIServer:
-      enabled: false
+      enabled: true
     cAdvisor:
-      enabled: false
+      enabled: true
     kubelet:
-      enabled: false
+      enabled: true
     nodeExporter:
       enabled: true
     kubeDNS:
-      enabled: false
+      enabled: true
 
 # Values for Prometheus frontend.
 prometheus-frontend:
   name: kubernetes
-
-  rbac:
-    create: false
 
   retentionTime: 21d
 
@@ -152,11 +122,7 @@ prometheus-node-exporter:
     repository: prom/node-exporter
 
   serviceAccount:
-    create: false
-    name: default
-
-  rbac:
-    create: false
+    create: true
 
   extraArgs:
     - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)

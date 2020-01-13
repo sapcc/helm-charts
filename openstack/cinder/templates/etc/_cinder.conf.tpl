@@ -41,6 +41,9 @@ quota_gigabytes = 0
 quota_backups = -1
 quota_backup_gigabytes = -1
 
+# limit the volume size because it's limited by flexvols. in GB
+per_volume_size_limit = {{ .Values.volume_size_limit_gb | default 2048 }}
+
 # don't use quota class
 use_default_quota_class=false
 
@@ -65,6 +68,8 @@ memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .V
 service_token_roles_required = True
 insecure = True
 token_cache_time = 600
+include_service_catalog = true
+service_type = volumev3
 
 [oslo_policy]
 policy_file = /etc/cinder/policy.json

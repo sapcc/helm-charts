@@ -26,7 +26,7 @@ groups:
       severity: warning
       context: node
       meta: "{{`{{ $labels.node }}`}} is NotReady"
-      dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
+      dashboard: nodes?var-server={{`{{$labels.node}}`}}
       playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
     annotations:
       summary: Node status is NotReady
@@ -40,8 +40,8 @@ groups:
       service: k8s
       severity: warning
       context: node
-      meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: "kubernetes-node?var-server={{`{{$labels.instance}}`}}"
+      meta: "{{`{{ $labels.node }}`}}"
+      dashboard: "nodes?var-server={{`{{$labels.node}}`}}"
     annotations:
       summary: Node readiness is flapping
       description: Node {{`{{ $labels.node }}`}} is flapping between Ready and NotReady
@@ -80,10 +80,10 @@ groups:
       service: k8s
       severity: warning
       context: system
-      meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{$labels.instance}}`}}
+      meta: "{{`{{ $labels.node }}`}}"
+      dashboard: nodes?var-server={{`{{$labels.node}}`}}
     annotations:
-      description: "{{`{{ $labels.job }}`}} on {{`{{ $labels.instance }}`}} is using {{`{{ $value }}`}}% of the available file/socket descriptors"
+      description: "{{`{{ $labels.job }}`}} on {{`{{ $labels.node }}`}} is using {{`{{ $value }}`}}% of the available file/socket descriptors"
       summary: Too many open file descriptors
 
   - alert: KubernetesPVCPendingOrLost
@@ -112,15 +112,16 @@ groups:
       summary: Deployment has less than desired replicas since 10m
 
   - alert: ManyPodsNotReadyOnNode
-    expr: sum(max(kube_pod_info) by (pod,node) * on (pod) group_left max(kube_pod_status_ready{condition="true"}) by (pod)) by (node) / sum(kube_pod_info) by (node) < 0.5 and sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 1)
+    expr: sum(max(kube_pod_info) by (pod,node) * on (pod) group_left max(kube_pod_status_ready{condition="true"}) by (pod)) by (node) / sum(kube_pod_info * on (pod) group_left() kube_pod_status_phase{phase="Running"}) by (node) < 0.75 and sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 1)
     for: 30m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: k8s
-      severity: warning
+      severity: critical
+      playbook: docs/support/playbook/kubernetes/k8s-pods-not-ready-on-ready-node.html
     annotations:
       description: "{{`{{ humanizePercentage $value }}`}} of pods are ready on node {{`{{$labels.node}}`}}. This might by due to <https://github.com/kubernetes/kubernetes/issues/84931| kubernetes #84931>. In that case a restart of the kubelet is required."
-      summary: "Less then 50% of pods ready on node"
+      summary: "Less then 75% of pods ready on node"
 
   - alert: PodNotReady
     # alert on pods that are not ready but in the Running phase on a Ready node

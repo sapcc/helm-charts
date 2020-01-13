@@ -1,0 +1,19 @@
+{{- range $name, $val := .Values.workers -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: octavia-etc-{{ $name }}
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+
+data:
+  octavia-worker.conf: |
+    [f5_agent]
+    bigip_url = {{ $val.bigip_url }}
+    bigip_verify = false
+    bigip_token = true
+    esd_dir = /etc/octavia/esd
+{{ end }}

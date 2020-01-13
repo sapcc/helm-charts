@@ -62,6 +62,12 @@ spec:
           volumeMounts:
             - name: etc
               mountPath: /etc/netapp
+
+        {{- if eq $name "manila" }}
+        {{- /*
+          manila filers are predefined in secret files rather than fetched from netbox
+        */ -}}
+        {{- else }}
         - name: netappsd
           args:
             - -configmap
@@ -89,6 +95,7 @@ spec:
             failureThreshold: 6
           resources:
             {{- toYaml $values.netappsd.resources | nindent 12 }}
+        {{- end }}
 
 {{- end }}
 {{- end }}

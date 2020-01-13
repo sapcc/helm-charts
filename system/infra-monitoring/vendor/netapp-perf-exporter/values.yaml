@@ -1,11 +1,8 @@
+name: netapp-perf-exporter
+
 apps:
-  manila:
-    enabled: false
-    fullname: "netapp-perf-exporter-manila"
-    netappsd:
-      query: md
   cinder:
-    enabled: true
+    enabled: false
     fullname: "netapp-perf-exporter-cinder"
     netappsd:
       query: bb
@@ -19,35 +16,31 @@ apps:
     fullname: "netapp-perf-exporter-control-plane"
     netappsd:
       query: cp
-
-name: netapp-perf-exporter
+  manila:
+    enabled: false
+    fullname: "netapp-perf-exporter-manila"
 
 rbac:
   create: true
 
 harvest:
   name: netapp-harvest
-  image: hub.global.cloud.sap/monsoon/netapp-harvester:v201911111242-perf-545d071
+  graphitePort: 9109
+  image: hub.global.cloud.sap/monsoon/netapp-harvester
+  imageTag: v202001130212-perf-d8d1f67
   memory: 300Mi
   cpu: 200m
 
 exporter:
   image: prom/graphite-exporter:v0.4.2
-  graphitePort: 9109
   memory: 400Mi
   cpu: 100m
 
 netappsd:
-  image: hub.global.cloud.sap/monsoon/netappsd:v20191111191025-master-b93e2ad
+  image: hub.global.cloud.sap/monsoon/netappsd
+  imageTag: v20191111191025-master-b93e2ad
   memory: 50Mi
   cpu: 50m
-
-netbox:
-  query: bb
-
-netapp:
-  username: DEFINED_IN_GLOBAL_SECRETES
-  password: DEFINED_IN_GLOBAL_SECRETES
 
 metrics:
   scrape: true

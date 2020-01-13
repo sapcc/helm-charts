@@ -40,6 +40,14 @@ spec:
                value: {{ .Values.user }}
              - name: REMOTEPW
                value: {{ .Values.userpw }}
+             - name: CISCOUSER
+               value: {{ .Values.cisco_user }}
+             - name: CISCOPW
+               value: {{ .Values.cisco_pw }}
+             - name: CISCOALTPWS
+               value: {{ .Values.cisco_alternative_pws }}
+             - name: REGION
+               value: {{ .Values.region }}
            livenessProbe:
              httpGet:
                path: /
@@ -47,4 +55,11 @@ spec:
              initialDelaySeconds: 5
              timeoutSeconds: 5
              periodSeconds: 10
-
+           volumeMounts:
+             - mountPath: /atlas
+               name: atlas-output
+               readOnly: true
+      volumes:
+        - configMap:
+            name: {{ .Values.atlas_configmap }}
+          name: atlas-output

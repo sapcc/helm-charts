@@ -67,7 +67,7 @@ data:
 
       # owner: Thomas Grainchen / Abhishek Kumar
       - receiver: slack_nannies
-        continue: true
+        continue: false
         match_re:
           context: nanny
           severity: critical|warning|info
@@ -124,7 +124,7 @@ data:
         match_re:
           tier: os
           severity: info|warning|critical
-          service: arc|backup|barbican|castellum|cinder|cfm|designate|elektra|elk|glance|hermes|ironic|keystone|limes|lyra|maia|manila|neutron|nova|sentry|swift
+          service: arc|backup|barbican|castellum|cinder|cfm|designate|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|neutron|nova|sentry|swift
           region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
       # owner: Martin Vossen / Tilo Geissler
@@ -137,6 +137,13 @@ data:
       - receiver: elastic
         continue: true
 
+      # owner: Chuan Miao
+      - receiver: slack_storage
+        continue: false
+        match_re:
+          tier: storage
+
+      # owner: Arno Uhlig
       - receiver: dev-null
         continue: false
         match_re:
@@ -677,7 +684,20 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           color: {{`'{{template "slack.sapcc.color" . }}'`}}
-          send_resolved: true         
+          send_resolved: true
+
+    - name: slack_storage
+      slack_configs:
+        - channel: '#cc-storage'
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
+          send_resolved: true   
 
     # ----  PagerDuty Setup ---- Hint: service_key causes using api v1, check internet ----
     - name: pagerduty_api

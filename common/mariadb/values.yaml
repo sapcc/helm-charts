@@ -9,6 +9,8 @@ imagePullPolicy: IfNotPresent
 port_public: 3306
 buffer_pool_size: "1024M"
 log_file_size: "256M"
+binlog_format: "MIXED"
+expire_logs_days: 10
 
 #root_password:
 #initdb_configmap:
@@ -28,19 +30,15 @@ livenessProbe:
   ##
   ## Initializing the database could take some time
   initialDelaySeconds: 120
-  ##
-  ## Default Kubernetes values
-  periodSeconds: 10
-  timeoutSeconds: 1
+  periodSeconds: 15
+  timeoutSeconds: 3
   successThreshold: 1
   failureThreshold: 3
 readinessProbe:
   enabled: true
   initialDelaySeconds: 30
-  ##
-  ## Default Kubernetes values
-  periodSeconds: 10
-  timeoutSeconds: 1
+  periodSeconds: 15
+  timeoutSeconds: 3
   successThreshold: 1
   failureThreshold: 3
 
@@ -68,6 +66,19 @@ backup:
   os_user_domain: Default
   os_project_name: master
   os_project_domain: ccadmin
+
+backup_v2:
+  enabled: false
+  image: monsoon/maria-back-me-up
+  image_version: fb0359c6
+  full_backup_interval_in_hours: 6
+  incremental_backup_interval_in_minutes: 1
+  enable_init_restore: false
+  maria_db:
+    version: "10.4.0"
+  oauth:
+    enbaled: true
+
 
 metrics:
   enabled: true

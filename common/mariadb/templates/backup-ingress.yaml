@@ -1,0 +1,24 @@
+
+{{- if .Values.backup_v2.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+    annotations:
+      vice-president: "true"
+    name:  {{ include "fullName" . }}-backup
+
+spec:
+  rules:
+    - host:  {{ .Values.name }}.mariabackup.{{ .Values.global.region }}.cloud.sap
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName:   {{ include "fullName" . }}-backup
+              servicePort: 8081
+  tls:
+    - hosts:
+      -  {{ .Values.name }}.mariabackup.{{ .Values.global.region }}.cloud.sap
+      secretName: tls- {{ .Values.name }}-mariabackup-{{ .Values.global.region }}-cloud-sap
+{{- end }}

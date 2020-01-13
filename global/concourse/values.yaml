@@ -108,6 +108,15 @@ concourse:
         maxSurge: 1
         maxUnavailable: 25%
 
+    nodeSelector:
+      ccloud.sap.com/nodepool: "ci-system"
+
+    tolerations:
+      - key: "ci"
+        operator: Equal
+        value: "system"
+        effect: "NoSchedule"
+
   worker:
     enabled: false
 
@@ -126,6 +135,21 @@ concourse:
       accessModes:
         - ReadWriteOnce
       size: 50Gi
+
+    master:
+      nodeSelector:
+        ccloud.sap.com/nodepool: "ci-system"
+
+      tolerations:
+        - key: "ci"
+          operator: Equal
+          value: "system"
+          effect: "NoSchedule"
+
+    resources:
+      requests:
+        memory: 12Gi
+        cpu: 1
 
   rbac:
     create: true

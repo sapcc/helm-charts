@@ -37,8 +37,13 @@ enroll_node_driver = agent_ipmitool
 driver = noop
 
 [database]
+{{- if eq .Values.mariadb.enabled true }}
+connection = mysql+pymysql://root:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic_inspector?charset=utf8
+{{- include "ini_sections.database_options_mysql" . }}
+{{- else }}
 connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectordbPassword | include "db_url" }}
 {{- include "ini_sections.database_options" . }}
+{{- end }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
@@ -57,6 +62,8 @@ region_name = {{.Values.global.region}}
 service_token_roles_required = True
 insecure = True
 token_cache_time = 600
+include_service_catalog = true
+service_type = baremetal
 
 [oslo_middleware]
 enable_proxy_headers_parsing = True

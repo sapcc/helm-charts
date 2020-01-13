@@ -1,0 +1,17 @@
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    app: go-pmtud
+    tier: k8s
+    type: alerting-rules
+    prometheus: kubernetes
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
