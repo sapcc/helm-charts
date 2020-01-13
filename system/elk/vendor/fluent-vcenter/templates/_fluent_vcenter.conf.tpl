@@ -178,8 +178,8 @@
   @type elasticsearch_dynamic
   host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
   port {{.Values.global.elk_elasticsearch_ssl_port}}
-  user {{.Values.global.elk_elasticsearch_data_user}}
-  password {{.Values.global.elk_elasticsearch_data_password}}
+  user {{.Values.global.elk_elasticsearch_admin_user}}
+  password {{.Values.global.elk_elasticsearch_admin_password}}
   scheme https
   ssl_verify false
   index_name syslog
