@@ -14,7 +14,7 @@
   tag "nsxt"
   <parse>
     message_format auto
-    with_priority true
+    with_priority false
   </parse>
   <transport udp>
   </transport>
