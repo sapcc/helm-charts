@@ -11,12 +11,15 @@
 </source> 
 <source>
   @type syslog
+  @log_level trace
   tag "nsxt"
   <parse>
     @type syslog
     message_format rfc5424
     with_priority true
-    @log_level trace
+    emit_unmatched_lines true
+    facility_key facility
+    severity_key severity
   </parse>
   <transport udp>
   </transport>
