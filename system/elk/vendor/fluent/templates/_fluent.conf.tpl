@@ -141,9 +141,10 @@
 <filter kubernetes.var.log.containers.snmp-exporter**>
   @type parser
   key_name log
+  reserve_data true
   <parse>
-    @type kv
-    time_key time
+    @type grok
+    grok_pattern level=%{NOTSPACE:loglevel} ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} module=%{NOTSPACE:snmp_module} target=%{IP:ip} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA:snmp_msg}\"
   </parse>
 </filter>
 
