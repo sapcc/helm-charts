@@ -50,6 +50,7 @@ spec:
           ports:
             - name: prometheus
               containerPort: {{ $port }}
+          {{- if ne $name "manila" }}
           livenessProbe:
             httpGet:
               port: 8086
@@ -57,6 +58,7 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 3
+          {{- end }}
           resources:
             {{- toYaml $values.exporter.resources | nindent 12 }}
           volumeMounts:
