@@ -142,8 +142,8 @@
   @type parser
   key_name log
   <parse>
-    @type keyvalue
-    pair_delimiter " "
+    @type kv
+    time_key time
   </parse>
 </filter>
 
