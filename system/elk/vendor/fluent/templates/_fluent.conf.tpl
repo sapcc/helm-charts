@@ -142,8 +142,7 @@
   @type parser
   format keyvalue
   pair_delimiter " "
-  key_value_seperator "="
-  key_name keyToParse
+  key_name log
 </filter>
 
 <filter kubernetes.var.log.containers.ingress-controller**>
