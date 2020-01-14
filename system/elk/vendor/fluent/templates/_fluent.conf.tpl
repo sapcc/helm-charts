@@ -140,9 +140,11 @@
 
 <filter kubernetes.var.log.containers.snmp-exporter**>
   @type parser
-  format keyvalue
-  pair_delimiter " "
   key_name log
+  <parse>
+    @type keyvalue
+    pair_delimiter " "
+  </parse>
 </filter>
 
 <filter kubernetes.var.log.containers.ingress-controller**>
