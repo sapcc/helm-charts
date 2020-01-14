@@ -144,7 +144,6 @@
   pair_delimiter " "
   key_value_seperator "="
   key_name keyToParse
-  </parse>
 </filter>
 
 <filter kubernetes.var.log.containers.ingress-controller**>
