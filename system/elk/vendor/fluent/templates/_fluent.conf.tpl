@@ -140,12 +140,10 @@
 
 <filter kubernetes.var.log.containers.snmp-exporter**>
   @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel} msg="Error scraping target %{IPV4:ip}: error (walking|getting) target %{IPV4}: %{SNMP_ERROR:snmp_error}
-    custom_pattern_path /fluent-bin/pattern
+  format keyvalue
+  pair_delimiter " "
+  key_value_seperator "="
+  key_name keyToParse
   </parse>
 </filter>
 
