@@ -29,7 +29,7 @@ flat_vlan_range={{.Values.aci.flat_vlan_range}}
 [aci-hostgroup:{{ $aci_hostgroup.name }}]
 hosts = {{ $aci_hostgroup.hosts | join "," }}
 bindings = {{ $aci_hostgroup.bindings | join "," }}
-physical_domain = {{ $.Values.aci.aci_hostgroups.physical_domain }}
+physical_domain = {{ default $.Values.aci.aci_hostgroups.physical_domains $aci_hostgroup.physical_domains | join "," }}
 physical_network = {{ $aci_hostgroup.name }}
 segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
 segment_range = {{ default $.Values.aci.aci_hostgroups.segment_range $aci_hostgroup.segment_range }}
@@ -39,7 +39,7 @@ segment_range = {{ default $.Values.aci.aci_hostgroups.segment_range $aci_hostgr
 [fixed-binding:{{ $fixed_binding.name }}]
 description = {{ $fixed_binding.description }}
 bindings = {{ $fixed_binding.bindings | join "," }}
-physical_domain = {{ $.Values.aci.aci_hostgroups.physical_domain }}
+physical_domain = {{ default $.Values.aci.aci_hostgroups.physical_domains $fixed_binding.physical_domains | join "," }}
 segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
 segment_id = {{ $fixed_binding.segment_id }}
 {{ end }}
