@@ -124,5 +124,4 @@
       - '{__name__=~"^vcenter_net_.+"}'
       - '{__name__=~"^vcenter_virtualDisk_.+"}'
       - '{__name__=~"^netapp_capacity_.+"}'
-      - '{__name__=~"^netapp_perf_.+"}'
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
