@@ -106,6 +106,9 @@
     - action: drop
       source_labels: [vmware_name]
       regex: c_blackbox.*|c_regression.*
+    - action: drop
+      source_labels: [__name__]
+      regex: netapp_volume_saved_.*
     - source_labels: [ltmVirtualServStatName]
       target_label: project_id
       regex: /Project_(.*)/Project_.*
@@ -115,7 +118,7 @@
     - source_labels: [__name__]
       target_label: __name__
       regex: netapp_volume_(.*)
-      replacement: manila_share_${1}
+      replacement: openstack_manila_share_${1}
 
   metrics_path: '/federate'
   params:
