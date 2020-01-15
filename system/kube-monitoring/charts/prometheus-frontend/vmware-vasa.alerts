@@ -1,0 +1,149 @@
+groups:
+- name: vasa.alerts
+  rules:
+
+  - alert: VASAProviderDown
+    expr: vasa_vp_enabled == 0
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: ''{{ $labels.host }} is down'
+      service: vasa-provider
+      severity: warning
+      tier: vmware
+    annotations:
+      description: 'VASA Provider {{ $labels.host }} is DOWN.'
+      summary: 'VASA Provider {{ $labels.host }} is DOWN'
+
+  - alert: VASAServerDown
+    expr: vasa_vp_server_status == 0
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: ''{{ $labels.host }} is down'
+      service: vasa-provider
+      severity: warning
+      tier: vmware
+    annotations:
+      description: 'VASA Server {{ $labels.host }} is DOWN.'
+      summary: 'VASA Server {{ $labels.host }} is DOWN'
+
+  - alert: VASASRADown
+    expr: vasa_sra_enabled == 0
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: ''{{ $labels.host }} is down'
+      service: vasa-provider
+      severity: warning
+      tier: vmware
+    annotations:
+      description: 'VASA SRA {{ $labels.host }} is DOWN.'
+      summary: 'VASA SRA {{ $labels.host }} is DOWN'
+
+  - alert: VASAVSCDown
+    expr: vasa_vsc_server_status == 0
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: ''{{ $labels.host }} is down'
+      service: vasa-provider
+      severity: warning
+      tier: vmware
+    annotations:
+      description: 'VASA VSC {{ $labels.host }} is DOWN.'
+      summary: 'VASA VSC {{ $labels.host }} is DOWN'
+
+  - alert: VASAProviderCertificateExpired
+    expr: vasa_certificate_status== 0
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: 'Certificate for {{ $labels.host }} is expired'
+      service: vasa-provider
+      severity: warning
+      tier: vmware
+      playbook: docs/devops/alert/vcenter
+    annotations:
+      description: 'Certificate of VASA Provider {{ $labels.host }} is expired. Renew as soon as possible.'
+      summary: 'Certificate for VASA Provider {{ $labels.host }} expired'
+
+  - alert: VASAProviderCertificateExpiresSoon
+    expr: vasa_certificate_expiry_seconds < 1209600
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: 'Certificate for {{ $labels.host }} will expire.'
+      service: vasa-provider
+      severity: info
+      tier: vmware
+      playbook: docs/devops/alert/vcenter
+    annotations:
+      description: 'Certificate of VASA Provider {{ $labels.host }} will expire at {{ $labels.expiry_date }}. Renew as soon as possible.'
+      summary: 'Certificate for VASA Provider {{ $labels.host }} will expire'
+
+  - alert: VASAProviderMaxIqnReached
+    expr: vasa_cdot_iqn_count > 240
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: '{{ $labels.host }} max iqn count reached'
+      service: vasa-provider
+      severity: warning
+      tier: vmware
+      playbook: docs/devops/alert/vcenter
+    annotations:
+      description: 'VASA Provider {{ $labels.host }} has reached its maximum amount of IQNs.'
+      summary: 'VASA Provider {{ $labels.host }} IQNs at maximum'
+
+  - alert: VASAProviderIqnCountHigh
+    expr: vasa_cdot_iqn_count > 200
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: '{{ $labels.host }} iqn count high'
+      service: vasa-provider
+      severity: info
+      tier: vmware
+      playbook: docs/devops/alert/vcenter
+    annotations:
+      description: 'VASA Provider {{ $labels.host }} has {{ $value }} IQNs. The maximum is 256.'
+      summary: 'VASA Provider {{ $labels.host }} IQN count high'
+
+  - alert: VASAProviderMaxLunReached
+    expr: vasa_cdot_lun_flexvol_count > 240
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: '{{ $labels.host }} max lun count reached'
+      service: vasa-provider
+      severity: warning
+      tier: vmware
+      playbook: docs/devops/alert/vcenter
+    annotations:
+      description: 'VASA Provider {{ $labels.host }} has reached its maximum amount of luns in flexvolume {{ $labels.flexvolume }}.'
+      summary: 'VASA Provider {{ $labels.host }} lun count at maximum in {{ $labels.flexvolume }}'
+
+  - alert: VASAProviderLunCountHigh
+    expr: vasa_cdot_lun_flexvol_count > 200
+    for: 30s
+    labels:
+      context: vasa-provider
+      dashboard: vasa-provider?var-az={{`{{$labels.host}}`}}
+      meta: '{{ $labels.host }} lun count high'
+      service: vasa-provider
+      severity: info
+      tier: vmware
+      playbook: docs/devops/alert/vcenter
+    annotations:
+      description: 'VASA Provider {{ $labels.host }} has {{ $value }} luns in {{ $labels.flexvolume }}. The maximum is 256.'
+      summary: 'VASA Provider {{ $labels.host }} lun count high in {{ $labels.flexvolume }}'
