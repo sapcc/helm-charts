@@ -112,6 +112,10 @@
     - source_labels: [ltmVirtualServStatName]
       target_label: lb_id
       regex: /Project_.*/Project_(.*)
+    - source_labels: [__name__]
+      target_label: __name__
+      regex: netapp_volume_(.*)
+      replacement: manila_share_${1}
 
   metrics_path: '/federate'
   params:
