@@ -20,6 +20,12 @@ apic_application_profile = {{required "A valid .Values.aci required!" .Values.ac
 {{ if .Values.aci.aci_hostgroups }}
 tenant_default_vrf = {{.Values.aci.tenant_default_vrf}}
 flat_vlan_range={{.Values.aci.flat_vlan_range}}
+{{- if .Values.aci.ep_retention_policy_net_internal }}
+ep_retention_policy_net_internal = {{ .Values.aci.ep_retention_policy_net_internal }}
+{{- end }}
+{{- if .Values.aci.ep_retention_policy_net_external }}
+ep_retention_policy_net_external = {{ .Values.aci.ep_retention_policy_net_external }}
+{{- end }}
 
 # Set up host specific configuration needs to be one for each host that physically connects
 # VMs or devices to the ACI fabric i.e. each hypervisor or L3 node.
