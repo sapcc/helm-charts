@@ -4,7 +4,7 @@ groups:
   rules:
   - alert: ManyKubeletDown
     expr: count(up{job="kubernetes-kubelet"}) - sum(up{job="kubernetes-kubelet"}) > 2
-    for: 1h
+    for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
@@ -18,7 +18,7 @@ groups:
 
   - alert: KubeletDown
     expr: up{job="kubernetes-kubelet"} == 0
-    for: 1h
+    for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
@@ -33,7 +33,7 @@ groups:
 
   - alert: KubeletScrapeMissing
     expr: absent(up{job="kubernetes-kubelet"})
-    for: 1h
+    for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: kubelet
