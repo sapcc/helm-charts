@@ -211,6 +211,17 @@
   </parse>
 </filter>
 
+<filter kubernetes.var.log.containers.keystone-api**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{GREEDYDATA:action} %{METHOD:method} %{URIPATH:pri_path} %{LOWER:action} %{WORD:user} %{WORD:domain} %{GREEDYDATA:action}
+    custom_pattern_path /fluent-bin/pattern
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.elektra**>
   @type record_transformer
   <record>
