@@ -15,7 +15,7 @@ input {
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
-  tcp {
+  http {
     port  => {{.Values.input_alertmanager_port}}
     type => alert
   }
