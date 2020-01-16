@@ -133,6 +133,10 @@ data:
         match_re:
           tier: sre
 
+      # owner: Tilo Geissler
+      - receiver: elastic
+        continue: true
+
       # owner: Chuan Miao
       - receiver: slack_storage
         continue: false
@@ -320,6 +324,12 @@ data:
     - name: wham_metal
       webhook_configs:
         - url: "https://wham.scaleout.eu-de-1.cloud.sap/alerts/metal"
+
+    - name: elastic
+      webhook_configs:
+      - send_resolved: true
+        http_config: {}
+        url: {{ required "elastic.logstash_url undefined" .Values.elastic.logstash_url | quote }}
 
     # ---- Slack Duty (Alert)Channels ----
     # slack duty metal
@@ -779,7 +789,6 @@ data:
             Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
             Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
             firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
 
   {{- $files := .Files }}
   {{ range tuple "slack.tmpl" "pagerduty.tmpl" }}
