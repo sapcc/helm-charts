@@ -1,3 +1,8 @@
+## 3.3.4
+
+* Fix node label for kubelet job.
+* Upgrade Prometheus to `v2.15.2`.
+
 ## 3.3.3
 
 * Unify labels (instance vs node).
