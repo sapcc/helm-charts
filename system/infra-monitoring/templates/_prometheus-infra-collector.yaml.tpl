@@ -197,7 +197,7 @@
       replacement: '$2'
       target_label: snmp_n7k_ciscoImageString
     - source_labels: [__name__, snmp_ipn_ciscoImageString]
-      regex: 'snmp_ipn_ciscoImageString;(\w*_\w*\$)(\d*\.\d*\(\d*\))(\$)'
+      regex: 'snmp_ipn_ciscoImageString;(\w*_\w*\$)(\d*\.\d*\(\d*\)\d*\(\d*\))(\$)'
       replacement: '$2'
       target_label: snmp_ipn_ciscoImageString
     - source_labels: [__name__, snmp_asr_ciscoImageString]
