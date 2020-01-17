@@ -188,6 +188,10 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
+    - source_labels: [snmp_n7k_ciscoImageString]
+      regex: '(\w*_\w*\$)(\d*\.\d*\(\d*\))(\$)'
+      replacement: '$2'
+      target_label: snmp_n7k_ciscoImageString
 # hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
     - source_labels: [__name__, devicename]
       regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
