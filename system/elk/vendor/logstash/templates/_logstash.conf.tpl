@@ -34,19 +34,19 @@ filter {
              match => [ "syslog_timestamp", "MMM d HH:mm:ss", "MMM dd HH:mm:ss" ]
            }
     }
-    if [type] == "alert" {
-       json {
-         source => "message"
-       }
-       if "_jsonparsefailure" not in [tags] {
-         split {
-           field => "alerts"
-         }
-         mutate {
-             remove_field => ["message"]
-         }
-       }
-    }
+#    if [type] == "alert" {
+#       json {
+#         source => "message"
+#       }
+#       if "_jsonparsefailure" not in [tags] {
+#         split {
+#           field => "alerts"
+#         }
+#         mutate {
+#             remove_field => ["message"]
+#         }
+#       }
+#    }
 }
 
 output {
