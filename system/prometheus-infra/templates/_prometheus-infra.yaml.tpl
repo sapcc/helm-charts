@@ -18,6 +18,7 @@
       - '{job="vcenter"}'
       - '{job="asw-eapi"}'
       - '{job="bios/ironic"}'
+      - '{job="bios/cisco_vpod"}'
       - '{job="ipmi/ironic"}'
       - '{job="vmware-esxi"}'
       - '{job="snmp"}'
