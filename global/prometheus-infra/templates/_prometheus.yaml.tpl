@@ -49,6 +49,7 @@
       - '{__name__=~"^netapp_filer_.*"}'
       - '{__name__=~"^vasa_.*"}'
       - '{__name__=~"^vcenter_esxi_mem_swapout_.*"}'
+      - '{__name__=~"^bios_exporter,model=~".*vPod.*",setting_name="memory_ras_configuration"}'
 
   relabel_configs:
     - action: replace
