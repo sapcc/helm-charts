@@ -50,6 +50,8 @@
   "share:reset_task_state": "rule:context_is_sharedfilesystem_admin",
   "share:manage": "rule:context_is_admin",
   "share:unmanage": "rule:context_is_admin",
+  "share:create_public_share": "rule:context_is_admin",
+  "share:set_public_share": "rule:context_is_admin",
   "share:force_delete": "rule:context_is_sharedfilesystem_admin",
   "share:reset_status": "rule:context_is_sharedfilesystem_admin",
   "share:revert_to_snapshot": "rule:context_is_editor",
