@@ -27,7 +27,7 @@ filter {
 	       tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
 	       tag_on_timeout => ["_groktimeout"]
 	       timeout_millis => [15000]
-                   match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_severity} %{DATA:syslog_program}: %{GREEDYDATA:syslog_message}"
+                   match => { "message" => "<%{INT}>%{INT} %{TIMESTAMP_ISO8601:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_severity} %{DATA:syslog_program}: %{GREEDYDATA:syslog_message}" }
                    }
            }
            date {
