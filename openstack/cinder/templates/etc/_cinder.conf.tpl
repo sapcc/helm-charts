@@ -87,3 +87,16 @@ auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | defau
 
 [key_manager]
 backend = barbican
+
+[service_user]
+send_service_user_token = true
+auth_type = v3password
+auth_version = v3
+auth_interface = internal
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+username = {{ .Values.global.cinder_service_user | default "cinder" }}{{ .Values.global.user_suffix }}
+password = {{ .Values.global.cinder_service_password | default (tuple . .Values.global.cinder_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
+project_name = "{{.Values.global.keystone_service_project | default "service" }}"
+project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
+region_name = {{.Values.global.region}}
