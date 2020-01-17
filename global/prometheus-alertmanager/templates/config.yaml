@@ -132,6 +132,13 @@ data:
         continue: false
         match_re:
           tier: sre
+     
+      # owner: Martin Vossen / Tilo Geissler - Slack CCloud Monitoring
+      - receiver: slack_monitoring
+        continue: false
+        match_re:
+          tier: monitor
+          severity: critical|warning|info
 
       # owner: Tilo Geissler
       #- receiver: elastic
@@ -544,6 +551,20 @@ data:
               type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
               text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
               value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+    # Slack CCloud Monitoring
+    - name: slack_monitoring
+      slack_configs:
+        - channel: '#alert-moni-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
+          send_resolved: true
 
     # Slack QA && Dev systems
     - name: slack_qa
