@@ -27,11 +27,8 @@ filter {
 	       tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
 	       tag_on_timeout => ["_groktimeout"]
 	       timeout_millis => [15000]
-                   match => { "message" => "<%{INT}>%{INT} %{TIMESTAMP_ISO8601:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_severity} %{DATA:syslog_program}: %{GREEDYDATA:syslog_message}" }
+                   match => { "message" => "%{SYSLOG5424PRI:syslog_priority}%{NONNEGINT:syslog_version} +(?:%{TIMESTAMP_ISO8601:timestamp}|-) +(?:%{HOSTNAME:syslog5424_host}|-) +(?:%{WORD:syslog_level}|-) +(?:%{WORD:syslog_proc}|-) +(?:%{WORD:syslog_msgid}|-) +(?:%{SYSLOG5424SD:syslog_sd}|-|) +%{GREEDYDATA:syslog_msg}" }
                    }
-           }
-           date {
-             match => [ "syslog_timestamp", "MMM d HH:mm:ss", "MMM dd HH:mm:ss" ]
            }
     if [type] == "alert" {
        json {
