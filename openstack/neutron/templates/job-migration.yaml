@@ -22,7 +22,11 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "neutron-postgresql"
+{{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql"
+{{- end }}
             - name: PGAPPNAME
               valueFrom:
                 fieldRef:

@@ -105,14 +105,18 @@ root_helper = neutron-rootwrap /etc/neutron/rootwrap.conf
 {{ end }}
 
 [database]
-connection = postgresql+psycopg2://{{ default .Release.Name .Values.global.dbUser }}:{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}@{{include "neutron_db_host" .}}:{{.Values.global.postgres_port_public | default 5432}}/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
+{{- if eq .Values.mariadb.enabled true }}
+connection = {{ include "db_url_mysql" . }}
+{{- include "ini_sections.database_options_mysql" . }}
+{{- else }}
+connection = postgresql+psycopg2://{{ default .Release.Name .Values.global.dbUser }}:{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}@neutron-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.postgres_port_public | default 5432}}/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 5 }}
 {{- if or .Values.postgresql.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default -1 }}
 {{- else }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 10 }}
 {{- end }}
-
+{{- end }}
 
 [keystone_authtoken]
 auth_plugin = v3password
