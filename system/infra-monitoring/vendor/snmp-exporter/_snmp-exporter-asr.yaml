@@ -36,10 +36,112 @@
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.22
   - 1.3.6.1.4.1.9.9.221.1.1.1.1.24
   - 1.3.6.1.4.1.9.9.25.1.1.1.2.5
+  - 1.3.6.1.2.1.90.1.2.1.1
   get:
   - 1.3.6.1.2.1.123.1.5.0
   - 1.3.6.1.2.1.123.1.7.0
   metrics:
+  - name: snmp_asr_disman_expExpressionOwner
+    oid: 1.3.6.1.2.1.90.1.2.1.1.1
+    type: DisplayString
+    help: The owner of this entry - 1.3.6.1.2.1.90.1.2.1.1.1
+
+    indexes:
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+  - name: snmp_asr_disman_expExpressionName
+    oid: 1.3.6.1.2.1.90.1.2.1.1.2
+    type: DisplayString
+    help: The name of the expression - 1.3.6.1.2.1.90.1.2.1.1.2
+
+    indexes:
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+  - name: snmp_asr_disman_expExpression
+    oid: 1.3.6.1.2.1.90.1.2.1.1.3
+    type: DisplayString
+    help: The expression to be evaluated - 1.3.6.1.2.1.90.1.2.1.1.3
+
+    indexes:
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+    regex_extracts:
+      "":
+      - value: '$1'
+        regex: ^(?:(.*))$
+  - name: snmp_asr_disman_expExpressionValueType
+    oid: 1.3.6.1.2.1.90.1.2.1.1.4
+    type: EnumAsInfo
+    help: The type of the expression value - 1.3.6.1.2.1.90.1.2.1.1.4
+
+    indexes:
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+    enum_values:
+      1: counter32
+      2: unsigned32
+      3: timeTicks
+      4: integer32
+      5: ipAddress
+      6: octetString
+      7: objectId
+      8: counter64
+  - name: snmp_asr_disman_expExpressionComment
+    oid: 1.3.6.1.2.1.90.1.2.1.1.5
+    type: DisplayString
+    help: A comment to explain the use or meaning of the expression. - 1.3.6.1.2.1.90.1.2.1.1.5
+
+    indexes:
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+  - name: snmp_asr_disman_expExpressionDeltaInterval
+    oid: 1.3.6.1.2.1.90.1.2.1.1.6
+    type: gauge
+    help: Sampling interval for objects in this expression with expObjectSampleType
+      'deltaValue' - 1.3.6.1.2.1.90.1.2.1.1.6
+
+    indexes:
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+  - name: snmp_asr_disman_expExpressionErrors
+    oid: 1.3.6.1.2.1.90.1.2.1.1.8
+    type: counter
+    help: The number of errors encountered while evaluating this expression - 1.3.6.1.2.1.90.1.2.1.1.8
+
+    indexes:
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+  - name: snmp_asr_disman_expExpressionEntryStatus
+    oid: 1.3.6.1.2.1.90.1.2.1.1.9
+    type: EnumAsStateSet
+    help: The control that allows creation and deletion of entries. - 1.3.6.1.2.1.90.1.2.1.1.9
+
+    indexes:
+    - labelname: expExpressionOwner
+      type: DisplayString
+    - labelname: expExpressionName
+      type: DisplayString
+    enum_values:
+      1: active
+      2: notInService
+      3: notReady
+      4: createAndGo
+      5: createAndWait
+      6: destroy
   - name: snmp_asr_natAddrBindNumberOfEntries
     oid: 1.3.6.1.2.1.123.1.5
     type: gauge
