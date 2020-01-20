@@ -47,6 +47,8 @@ per_volume_size_limit = {{ .Values.volume_size_limit_gb | default 2048 }}
 # don't use quota class
 use_default_quota_class=false
 
+scheduler_default_filters = {{ .Values.scheduler_default_filters }}
+
 {{- include "ini_sections.database" . }}
 
 {{- include "osprofiler" . }}
