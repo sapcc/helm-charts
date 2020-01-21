@@ -28,6 +28,7 @@ filter {
 	       tag_on_timeout => ["_groktimeout"]
 	       timeout_millis => [15000]
                    match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog_version} +(?:%{TIMESTAMP_ISO8601:timestamp}|-) +(?:%{HOSTNAME:host}|-) +(?:%{WORD:syslog_level}|-) +(?:%{WORD:syslog_proc}|-) +(?:%{WORD:syslog_msgid}|-) +(?:%{SYSLOG5424SD:syslog_sd}|-|) +%{GREEDYDATA:syslog_msg}" }
+                   overwrite => [ "message" ]
                    }
            }
     if [type] == "alert" {
