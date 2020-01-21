@@ -31,6 +31,11 @@ spec:
         {{- include "swift_conf_annotations" $ | indent 8 }}
         checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" $ | sha256sum }}
         {{- include "swift_ring_annotations" $ | indent 8 }}
+        # Prometheus annotations for the swift-health-exporter, the annotations
+        # for the statsd-exporter are on the proxy-service level instead
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9520"
+        prometheus.io/targets: {{ $.Values.alerts.prometheus | quote }}
     spec:
       volumes:
         - name: tls-secret
