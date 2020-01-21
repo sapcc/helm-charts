@@ -189,20 +189,20 @@
       replacement: '$2'
       target_label: device
     - source_labels: [__name__, snmp_n7k_ciscoImageString]
-      regex: 'snmp_n7k_ciscoImageString;(.*\$)(.*)(\$)'
-      replacement: '$2'
+      regex: 'snmp_n7k_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
       target_label: snmp_n7k_ciscoImageString
     - source_labels: [__name__, snmp_ipn_ciscoImageString]
-      regex: 'snmp_ipn_ciscoImageString;(.*\$)(.*)(\$)'
-      replacement: '$2'
+      regex: 'snmp_ipn_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
       target_label: snmp_ipn_ciscoImageString
     - source_labels: [__name__, snmp_asr_ciscoImageString]
-      regex: 'snmp_asr_ciscoImageString;(.*\$)(.*)(\$)'
-      replacement: '$2'
+      regex: 'snmp_asr_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
       target_label: snmp_asr_ciscoImageString
     - source_labels: [__name__, snmp_asr04_ciscoImageString]
-      regex: 'snmp_asr04_ciscoImageString;(.*\$)(.*)(\$)'
-      replacement: '$2'
+      regex: 'snmp_asr04_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
       target_label: snmp_asr04_ciscoImageString
 # hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
     - source_labels: [__name__, devicename]
