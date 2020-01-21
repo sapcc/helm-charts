@@ -47,13 +47,11 @@ spec:
               value: {{ $.Values.dynomite.dns_txt }}
           {{- end }}
           command:
-            - /bin/sh
-            - /dynomite-bin/dynomite_start.sh
+            - /usr/bin/dumb-init
           args:
-            - --conf-file=/config/dynomite.yaml
-            {{- if $.Values.debug }}
-            - -v11
-            {{- end }}
+            - /bin/sh
+            - -c
+            - /usr/bin/powder-monkey backend warmup --replica-announce-ip $(DYNO_INSTANCE) $(WARMUP_PEER) && exec /usr/bin/dynomite --conf-file=/config/dynomite.yaml {{if $.Values.debug }}-v11{{ end }}
           volumeMounts:
             - name: dynomite
               mountPath: '/config/'
