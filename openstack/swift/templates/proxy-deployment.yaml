@@ -131,7 +131,7 @@ spec:
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 10
-        {{- if $.Values.health_statsd }}
+        {{- if $.Values.health_exporter }}
         - name: collector
           image: {{ include "swift_image" $ }}
           command:
@@ -139,16 +139,7 @@ spec:
           args:
             - /bin/bash
             - /usr/bin/swift-start
-            - health-statsd
-          env:
-            - name: DEBUG_CONTAINER
-              value: "false"
-            - name: STATSD_PORT
-              value: "9125"
-            - name: LOG_LEVEL
-              value: "info"
-            - name: ADD_HOSTNAME_SUFFIX
-              value: "true"
+            - health-exporter
           {{- if $.Values.resources.enabled }}
           resources:
             # observed usage: CPU = 100m-300m, RAM = 20-85 MiB
@@ -159,6 +150,9 @@ spec:
               cpu: "400m"
               memory: "150Mi"
           {{- end }}
+          ports:
+            - name: metrics
+              containerPort: 9520
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc

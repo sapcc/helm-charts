@@ -32,7 +32,7 @@ groups:
       summary: swift-service-unavailable
 
   - alert: OpenstackSwiftHealthCheck
-    expr: avg(swift_health_statsd_exit_code) BY (region) > 0.2
+    expr: (avg(swift_recon_exit_code) BY (region) OR avg(swift_dispersion_exit_code) BY (region)) > 0.2
     for: 5m
     labels:
       context: health
@@ -46,7 +46,7 @@ groups:
       summary: swift-health-check
 
   - alert: OpenstackSwiftMismatchedRings
-    expr: (swift_cluster_md5_ring_not_matched - swift_cluster_md5_ring_errors) > 0
+    expr: (swift_cluster_md5_not_matched{kind="ring"} - swift_cluster_md5_errors{kind="ring"}) > 0
     for: 15m
     labels:
       context: mismatchedrings
@@ -60,7 +60,7 @@ groups:
       summary: swift-mismatched-rings
 
   - alert: OpenstackSwiftMismatchedConfig
-    expr: (swift_cluster_md5_swiftconf_not_matched - swift_cluster_md5_swiftconf_errors) > 0
+    expr: (swift_cluster_md5_not_matched{kind="swiftconf"} - swift_cluster_md5_errors{kind="swiftconf"}) > 0
     for: 15m
     labels:
       context: mismatchedconf
@@ -74,7 +74,7 @@ groups:
       summary: swift-mismatched-config
 
   - alert: OpenstackSwiftNodeError
-    expr: max(swift_cluster_md5_ring_errors) by (region) > 0
+    expr: max(swift_cluster_md5_errors{kind="ring"}) by (region) > 0
     for: 15m
     labels:
       context: nodeerror
