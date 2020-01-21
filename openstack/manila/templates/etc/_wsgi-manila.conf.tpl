@@ -3,10 +3,6 @@ Listen 0.0.0.0:{{.Values.api_port_internal}}
 
 ErrorLog /dev/stdout
 
-{{- if eq .Values.loci.enabled false }}
-WSGISocketPrefix /tmp/apache2/wsgi
-{{- end }}
-
 LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %h %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"" combined
 LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %{X-Forwarded-For}i %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"" proxy
 

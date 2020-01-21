@@ -24,12 +24,10 @@ function start () {
     cp -a $(type -p ${MANILA_WSGI_SCRIPT}) /var/www/cgi-bin/manila/
   done
 
-{{- if .Values.loci.enabled }}
   if [ -f /etc/apache2/envvars ]; then
      # Loading Apache2 ENV variables
      source /etc/apache2/envvars
   fi
-{{- end }}
 
   if [ ! -d "$APACHE_RUN_DIR" ]; then
     # create a apache2 runtime directory
