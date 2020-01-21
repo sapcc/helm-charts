@@ -2,27 +2,27 @@ groups:
 - name: oomkill.alerts
   rules:
   - alert: PodOOMKilled
-    expr: sum(changes(klog_pod_oomkill[24h]) > 0 or ((klog_pod_oomkill == 1) unless (klog_pod_oomkill offset 24h == 1))) by (exported_namespace, pod_name)
+    expr: sum(changes(klog_pod_oomkill[24h]) > 0 or ((klog_pod_oomkill == 1) unless (klog_pod_oomkill offset 24h == 1))) by (namespace, pod_name)
     for: 5m
     labels:
       tier: k8s
       service: resources
       severity: info
       context: memory
-      meta: "{{ $labels.exported_namespace }}/{{ $labels.pod_name }}"
+      meta: "Pod {{ $labels.namespace }}/{{ $labels.pod_name }} OOMKilled"
     annotations:
       summary: Pod was oomkilled recently
-      description: The pod {{ $labels.exported_namespace }}/{{ $labels.pod_name }} was hit at least once by the oom killer within 24h
+      description: The pod {{ $labels.namespace }}/{{ $labels.pod_name }} was hit at least once by the oom killer within 24h
 
   - alert: PodConstantlyOOMKilled
-    expr: sum(changes(klog_pod_oomkill[30m]) ) by (exported_namespace, pod_name) > 2
+    expr: sum(changes(klog_pod_oomkill[30m]) ) by (namespace, pod_name) > 2
     for: 5m
     labels:
       tier: k8s
       service: resources
       severity: warning
       context: memory
-      meta: "{{ $labels.exported_namespace }}/{{ $labels.pod_name }}"
+      meta: "Pod {{ $labels.namespace }}/{{ $labels.pod_name }} constantly OOMKilled"
     annotations:
       summary: Pod was oomkilled more than 2 times in 30 minutes
-      description: The pod {{ $labels.exported_namespace }}/{{ $labels.pod_name }} killed several times in short succession. This could be due to wrong resource limits.
+      description: The pod {{ $labels.namespace }}/{{ $labels.pod_name }} killed several times in short succession. This could be due to wrong resource limits.
