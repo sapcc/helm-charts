@@ -54,9 +54,18 @@ spec:
           image: {{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
           imagePullPolicy: IfNotPresent
           command:
+          {{- if .Values.api_backdoor }}
+            - dumb-init
+            - kubernetes-entrypoint
+          {{- else }}
             - /scripts/manila-api.sh
             - start
+          {{- end }}
           env:
+          {{- if .Values.api_backdoor }}
+            - name: COMMAND
+              value: "manila-api --config-file /etc/manila/manila.conf"
+          {{- end }}
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: STATSD_HOST
@@ -87,12 +96,14 @@ spec:
           ports:
             - name: manila-api
               containerPort: {{.Values.api_port_internal}}
+          {{- if not .Values.api_backdoor }}
           lifecycle:
             preStop:
               exec:
                 command:
                   - /scripts/manila-api.sh
                   - stop
+          {{- end }}
           volumeMounts:
             - name: etcmanila
               mountPath: /etc/manila
@@ -100,8 +111,10 @@ spec:
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
               readOnly: true
+            {{- if not .Values.api_backdoor }}
             - name: wsgi-manila
               mountPath: /var/www/cgi-bin/manila
+            {{- end }}
             - name: manila-etc
               mountPath: /etc/manila/api-paste.ini
               subPath: api-paste.ini
@@ -126,10 +139,12 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+            {{- if not .Values.api_backdoor }}
             - name: manila-etc
               mountPath: /etc/apache2/conf-enabled/wsgi-manila.conf
               subPath: wsgi-manila.conf
               readOnly: true
+            {{- end }}
             - name: manila-bin
               mountPath: /scripts
               readOnly: true
@@ -159,8 +174,10 @@ spec:
       volumes:
         - name: etcmanila
           emptyDir: {}
+        {{- if not .Values.api_backdoor }}
         - name: wsgi-manila
           emptyDir: {}
+        {{- end }}
         - name: manila-etc
           configMap:
             name: manila-etc
