@@ -31,8 +31,8 @@ groups:
         token validation
       summary: swift-service-unavailable
 
-  - alert: OpenstackSwiftHealthCheck
-    expr: (avg(swift_recon_exit_code) BY (region) OR avg(swift_dispersion_exit_code) BY (region)) > 0.2
+  - alert: OpenstackSwiftReconCollectorFailure
+    expr: avg(swift_recon_exit_code) BY (region,query) > 0.2
     for: 5m
     labels:
       context: health
@@ -40,10 +40,24 @@ groups:
       service: swift
       severity: warning
       tier: os
-      meta: some health checks for Swift are failing
+      meta: some recon collector task for Swift is failing
     annotations:
-      description: Swift health check failures. Run kubectl log swift-proxy-... collector to get details
-      summary: swift-health-check
+      description: Swift recon collector task with query "{{ $labels.query }}" is failing. Run kubectl log swift-proxy-... collector to get details
+      summary: swift-recon-collector-fail
+
+  - alert: OpenstackSwiftDispersionCollectorFailure
+    expr: avg(swift_dispersion_exit_code) BY (region,query) > 0.2
+    for: 5m
+    labels:
+      context: health
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      tier: os
+      meta: some dispersion collector task for Swift is failing
+    annotations:
+      description: Swift dispersion collector task with query "{{ $labels.query }}" is failing. Run kubectl log swift-proxy-... collector to get details
+      summary: swift-dispersion-collector-fail
 
   - alert: OpenstackSwiftMismatchedRings
     expr: (swift_cluster_md5_not_matched{kind="ring"} - swift_cluster_md5_errors{kind="ring"}) > 0
