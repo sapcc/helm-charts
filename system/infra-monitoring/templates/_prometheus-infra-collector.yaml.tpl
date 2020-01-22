@@ -87,7 +87,18 @@
       regex: '^ping_.+;([a-zA-Z]*)\d\.cc\.{{ .Values.global.region }}\.cloud\.sap'
       replacement: 'dc'
       target_label: interconnect_type
-
+    - source_labels: [__name__, app]
+      regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
+      replacement: 'S1'
+      target_label: pxdomain
+    - source_labels: [__name__, app]
+      regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
+      replacement: 'S2'
+      target_label: pxservice
+    - source_labels: [__name__, app]
+      regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
+      replacement: 'S3'
+      target_label: pxinstance
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
