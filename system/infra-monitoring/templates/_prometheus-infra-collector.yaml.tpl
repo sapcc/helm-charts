@@ -89,15 +89,15 @@
       target_label: interconnect_type
     - source_labels: [__name__, app]
       regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
-      replacement: 'S1'
+      replacement: '$1'
       target_label: pxdomain
     - source_labels: [__name__, app]
       regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
-      replacement: 'S2'
+      replacement: '$2'
       target_label: pxservice
     - source_labels: [__name__, app]
       regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
-      replacement: 'S3'
+      replacement: '$3'
       target_label: pxinstance
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
