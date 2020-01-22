@@ -28,7 +28,7 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
 - name:  KEPPEL_AUTH_LOCAL_ROLE
   value: 'swiftoperator'
 - name:  KEPPEL_DB_URI
-  value: 'postgres://postgres:{{$.Values.postgresql.postgresPassword}}@keppel-postgresql/keppel?sslmode=disable'
+  value: 'postgres://postgres:{{$.Values.postgresql.postgresPassword}}@{{.Release.Name}}-postgresql/keppel?sslmode=disable'
 - name:  KEPPEL_DRIVER_AUTH
   value: 'keystone'
 - name:  KEPPEL_DRIVER_NAMECLAIM
