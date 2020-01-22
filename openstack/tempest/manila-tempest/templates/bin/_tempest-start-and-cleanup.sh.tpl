@@ -13,6 +13,7 @@ function cleanup_tempest_leftovers() {
   export OS_PROJECT_NAME='tempest2'
   for snap in $(manila snapshot-list | grep -E 'tempest' | awk '{ print $2 }'); do manila snapshot-force-delete ${snap}; done
   for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila force-delete ${share}; done
+  for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila reset-task-state ${share} && manila force-delete ${share}; done
   for net in $(manila share-network-list | grep -E 'tempest|None' | awk '{ print $2 }'); do manila share-network-delete ${net}; done
   for ss in $(manila security-service-list --detailed 1 --columns "id,name,user"| grep -E 'tempest' | awk '{ print $2 }'); do manila security-service-delete ${ss}; done
   export OS_USERNAME='admin'
@@ -20,6 +21,7 @@ function cleanup_tempest_leftovers() {
   export OS_PROJECT_NAME='admin'
   for snap in $(manila snapshot-list | grep -E 'tempest' | awk '{ print $2 }'); do manila snapshot-force-delete ${snap}; done
   for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila force-delete ${share}; done
+  for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila reset-task-state ${share} && manila force-delete ${share}; done
   for ss in $(manila security-service-list --detailed 1 --columns "id,name,user"| grep -E 'tempest' | awk '{ print $2 }'); do manila security-service-delete ${ss}; done
   for type in $(manila type-list | grep -E 'tempest' | awk '{ print $2 }'); do manila type-delete ${type}; done
 }
