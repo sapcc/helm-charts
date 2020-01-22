@@ -25,7 +25,9 @@
       - '{job="infra-monitoring-atlas-sd"}'
       - '{__name__=~"^vcenter_.+"}'
       - '{__name__=~"^network_apic_.+"}'
-      - '{__name__=~"^ipmi_.+"}'
+      - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
+      - '{__name__=~"^ipmi_memory_errors$"}'
+      - '{__name__=~"^ipmi_up"}'
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^up"}'
 
