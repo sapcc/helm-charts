@@ -99,6 +99,14 @@
       regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
       replacement: '$3'
       target_label: pxinstance
+    - source_labels: [__name__, proto, import_filter]
+      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+      replacement: '$1'
+      target_label: peer_type
+    - source_labels: [__name__, proto, import_filter]
+      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+      replacement: '$2'
+      target_label: peer_id
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
