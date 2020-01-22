@@ -1,0 +1,115 @@
+{{- range $index, $member := .Values.dynomite.member }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: {{ printf "%s-%d" "dynomite" $index }}
+  labels:
+    release: "{{ $.Release.Name }}"
+spec:
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ printf "%s-%d" "dynomite" $index }}
+      annotations:
+        checksum/dynomite-config: {{ tuple $ $member $index | include "dynomite/templates/etc/_dynomite.yaml.tpl" | sha256sum }}
+        checksum/redis-config: {{ tuple $ $member $index | include "dynomite/templates/etc/_redis.conf.tpl" | sha256sum }}
+        checksum/bin-config: {{ include "dynomite/templates/configmap-bin.yaml" $ | sha256sum }}
+    spec:
+      volumes:
+        - name: dynomite
+          configMap:
+            name: {{ printf "%s-%d" "dynomite" $index }}
+        - name: redis
+          configMap:
+            name: {{ printf "%s-%d" "redis" $index }}
+        - name: bin
+          configMap:
+            name: bin
+            defaultMode: 0755
+        - name: redis-storage
+          emptyDir: {}
+      containers:
+        - name: dynomite
+          imagePullPolicy: {{ $.Values.dynomite.image.pullPolicy }}
+          image: {{ template "dynomite.image" $ }}
+          env:
+            - name: DYNO_INSTANCE
+              value: {{ $member | include "dynomite.ip" }}
+            - name: WARMUP_PEER
+              value: {{ tuple $member $.Values.dynomite.foreign_member | include "dynomite.token_peers" }}
+            - name: WARMUP_ALLOWED_DIFF
+              value: "10"
+          {{- if $.Values.dynomite.dns_txt }}
+            - name: DYNOMITE_DNS_TXT_NAME
+              value: {{ $.Values.dynomite.dns_txt }}
+          {{- end }}
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - /bin/sh
+            - -c
+            - /usr/bin/powder-monkey backend warmup --replica-announce-ip $(DYNO_INSTANCE) $(WARMUP_PEER) && exec /usr/bin/dynomite --conf-file=/config/dynomite.yaml {{if $.Values.debug }}-v11{{ end }}
+          volumeMounts:
+            - name: dynomite
+              mountPath: '/config/'
+            - name: bin
+              mountPath: '/dynomite-bin/'
+          ports:
+            # Client Port
+            - name: listen
+              containerPort: 8102
+            # Peer Port
+            - name: dyn-listen
+              containerPort: 8101
+            # Admin/Stats Port
+            - name: admin
+              containerPort: 22222
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 22222
+              scheme: HTTP
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "/dynomite-bin/dynomite_readiness.sh"
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+        - name: redis
+          imagePullPolicy: {{ $.Values.redis.image.pullPolicy }}
+          image: {{ template "redis.image" $ }}
+          args:
+            - /config/redis.conf
+          volumeMounts:
+            - name: redis
+              mountPath: '/config/'
+            - name: redis-storage
+              mountPath: /data
+          ports:
+          - name: redis
+            containerPort: 22122
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "redis-cli -p 22122 ping"
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "redis-cli -p 22122 ping"
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+---
+{{- end }}
