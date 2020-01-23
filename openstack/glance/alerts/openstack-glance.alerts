@@ -59,3 +59,18 @@ groups:
     annotations:
       description: 'Image {{ $labels.exported_name }} with id {{ $labels.id }} in project_id {{ $labels.owner }} is Killed'
       summary: 'Image is in Killed State'
+
+  - alert: OpenstackGlanceUnresolvedSentryIssues
+    expr: sentry_unresolved_issues_count{project="glance"} > 0
+    for: 10m
+    labels:
+      context: sentry-metrics
+      service: glance
+      severity: warning
+      tier: os
+      sentry: 'glance/'
+    annotations:
+      description: glance has encountered unexpected errors and reported
+        them to Sentry. Please have a look at the list of unresolved issues
+        at <https://sentry.{{ $labels.region }}.cloud.sap/monsoon/glance/>.
+      summary: glance has reported issues to Sentry

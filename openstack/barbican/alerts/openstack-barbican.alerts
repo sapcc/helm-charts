@@ -44,3 +44,18 @@ groups:
 #    annotations:
 #      description: 'Certificate {{ $labels.name }} part of Project_ID {{ $labels.project_id }} will expire in {{ $value | humanizeDuration }}'
 #      summary: 'Certificate will expire soon'
+
+  - alert: OpenstackBarbicanUnresolvedSentryIssues
+    expr: sentry_unresolved_issues_count{project="barbican"} > 0
+    for: 10m
+    labels:
+      context: sentry-metrics
+      service: barbican
+      severity: warning
+      tier: os
+      sentry: 'barbican/'
+    annotations:
+      description: barbican has encountered unexpected errors and reported
+        them to Sentry. Please have a look at the list of unresolved issues
+        at <https://sentry.{{ $labels.region }}.cloud.sap/monsoon/barbican/>.
+      summary: barbican has reported issues to Sentry
