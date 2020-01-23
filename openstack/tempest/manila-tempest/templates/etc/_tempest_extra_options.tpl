@@ -7,7 +7,7 @@ rally_debug = True
 [auth]
 use_dynamic_credentials = False
 create_isolated_networks = False
-test_accounts_file = /manila-etc/tempest_accounts.yaml
+test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
 admin_username = admin
 admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
 admin_project_name = admin
