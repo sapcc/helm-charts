@@ -219,6 +219,10 @@
       regex: 'snmp_asr_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
       target_label: snmp_asr_ciscoImageString
+    - source_labels: [__name__, snmp_asr03_ciscoImageString]
+      regex: 'snmp_asr03_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
+      target_label: snmp_asr03_ciscoImageString
     - source_labels: [__name__, snmp_asr04_ciscoImageString]
       regex: 'snmp_asr04_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
