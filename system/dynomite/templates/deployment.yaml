@@ -111,5 +111,32 @@ spec:
                 - "redis-cli -p 22122 ping"
             initialDelaySeconds: 5
             timeoutSeconds: 1
+        - name: backup
+          imagePullPolicy: {{ $.Values.backup.image.pullPolicy }}
+          image: {{ template "backup.image" $ }}
+          env:
+            - name: OS_AUTH_URL
+              value: {{ required ".Values.backup.auth.os_auth_url" $.Values.backup.auth.os_auth_url }}
+            - name: OS_AUTH_VERSION
+              value: "3"
+            - name: OS_USERNAME
+              value: {{ required ".Values.backup.auth.os_username" $.Values.backup.auth.os_username }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ required ".Values.backup.auth.os_user_domain" $.Values.backup.auth.os_user_domain }}
+            - name: OS_PROJECT_NAME
+              value: {{ required ".Values.backup.auth.os_project_name" $.Values.backup.auth.os_project_name }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ required ".Values.backup.auth.os_project_domain" $.Values.backup.auth.os_project_domain }}
+            - name: OS_PASSWORD
+              value: {{ required ".Values.backup.auth.os_password" $.Values.backup.auth.os_password | quote}}
+          args:
+            - backend
+            - backup
+            - --every=60m
+            # [datacenter]/dynomite/[rack]/[ip]-[token]
+            - {{ $member | include "dynomite.dc" }}/dynomite/{{ $member | include "dynomite.rack" }}/{{ $member | include "dynomite.ip" }}-{{ $member | include "dynomite.token" }}
+          volumeMounts:
+            - name: redis-storage
+              mountPath: /data
 ---
 {{- end }}
