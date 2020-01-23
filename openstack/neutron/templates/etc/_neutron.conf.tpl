@@ -118,6 +118,7 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 {{- end }}
 {{- end }}
 
+
 [keystone_authtoken]
 auth_plugin = v3password
 auth_version = v3
