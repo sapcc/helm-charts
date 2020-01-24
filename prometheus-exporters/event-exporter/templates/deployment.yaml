@@ -16,8 +16,8 @@ spec:
         app: {{ template "name" . }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
-        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        prometheus.io/port: {{ required ".Values.port missing" .Values.port | quote }}
+        prometheus.io/targets: {{ required ".Values.prometheus missing" .Values.prometheus | quote }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
@@ -27,14 +27,14 @@ spec:
         args:
         - -discard=60s
         - -logtostderr
-        - -listen-address=:{{ default 9102 .Values.metrics.port }}
+        - -listen-address=:{{ default 9102 .Values.port }}
         - -v=0
         volumeMounts:
         - name: config-volume
           mountPath: /etc/eventexporter
         ports:
         - name: metrics
-          containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+          containerPort: {{ required ".Values.port missing" .Values.port }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
 {{- if .Values.rbac.create }}
