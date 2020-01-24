@@ -28,4 +28,5 @@ function cleanup_tempest_leftovers() {
 
 {{- include "tempest-base.function_main" . }}
 
+cleanup_tempest_leftovers
 main
