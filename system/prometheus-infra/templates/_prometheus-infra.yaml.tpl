@@ -40,10 +40,6 @@
     - action: replace
       target_label: cluster_type
       replacement: controlplane
-    # Only federate not-customer vcenter metrics
-    - action: drop
-      source_labels: [__name__, job]
-      regex: '^vcenter_.+;[a-z0-9-]*-vccustomervmmetrics$'
 
   metric_relabel_configs:
     - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash|instance"
