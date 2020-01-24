@@ -190,56 +190,53 @@ event-exporter:
   rbac:
     create: true
 
-  metrics:
-    config:
-      config.yaml: |-
-        metrics:
-        - name: volume_mount_error_total
-          event_matcher:
-          - key: InvolvedObject.Kind
-            expr: Pod
-          - key: Reason
-            expr: (FailedAttachVolume|FailedMount)
-          - key: Type
-            expr: Warning
-          - key: Source.Component
-            expr: attachdetach.*
-          labels:
-            node: Object.Spec.NodeName
-        - name: volume_mount_success_total
-          event_matcher:
-          - key: InvolvedObject.Kind
-            expr: Pod
-          - key: Message
-            expr: MountVolume.SetUp succeeded for volume .pvc-.*
-          - key: Reason
-            expr: SuccessfulMountVolume
-          labels:
-            node: Source.Host
-        - name: volume_multi_attach_error_total
-          event_matcher:
-          - key: InvolvedObject.Kind
-            expr: Pod
-          - key: Message
-            expr: Multi-Attach error for volume.*
-          - key: Reason
-            expr: FailedAttachVolume
-          labels:
-            node: InvolvedObject.Name
-        - name: volume_mount_bad_request_total
-          event_matcher:
-          - key: InvolvedObject.Kind
-            expr: Pod
-          - key: Reason
-            expr: (FailedAttachVolume|FailedMount)
-          - key: Type
-            expr: Warning
-          - key: Source.Component
-            expr: attachdetach.*
-          - key: Message
-            expr: ".*failed to attach ([-0-9a-f]+) volume to.*compute: Invalid request due to incorrect syntax or missing required parameters."
-          labels:
-            volume: Message[1]
+  additional_metrics:
+    - name: volume_mount_error_total
+      event_matcher:
+      - key: InvolvedObject.Kind
+        expr: Pod
+      - key: Reason
+        expr: (FailedAttachVolume|FailedMount)
+      - key: Type
+        expr: Warning
+      - key: Source.Component
+        expr: attachdetach.*
+      labels:
+        node: Object.Spec.NodeName
+    - name: volume_mount_success_total
+      event_matcher:
+      - key: InvolvedObject.Kind
+        expr: Pod
+      - key: Message
+        expr: MountVolume.SetUp succeeded for volume .pvc-.*
+      - key: Reason
+        expr: SuccessfulMountVolume
+      labels:
+        node: Source.Host
+    - name: volume_multi_attach_error_total
+      event_matcher:
+      - key: InvolvedObject.Kind
+        expr: Pod
+      - key: Message
+        expr: Multi-Attach error for volume.*
+      - key: Reason
+        expr: FailedAttachVolume
+      labels:
+        node: InvolvedObject.Name
+    - name: volume_mount_bad_request_total
+      event_matcher:
+      - key: InvolvedObject.Kind
+        expr: Pod
+      - key: Reason
+        expr: (FailedAttachVolume|FailedMount)
+      - key: Type
+        expr: Warning
+      - key: Source.Component
+        expr: attachdetach.*
+      - key: Message
+        expr: ".*failed to attach ([-0-9a-f]+) volume to.*compute: Invalid request due to incorrect syntax or missing required parameters."
+      labels:
+        volume: Message[1]
 
 grafana:
   enabled: false
