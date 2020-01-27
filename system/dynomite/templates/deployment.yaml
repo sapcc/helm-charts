@@ -19,6 +19,9 @@ spec:
         checksum/bin-config: {{ include "dynomite/templates/configmap-bin.yaml" $ | sha256sum }}
     spec:
       volumes:
+        - name: secret
+          secret:
+            secretName: dynomite-secret
         - name: dynomite
           configMap:
             name: {{ printf "%s-%d" "dynomite" $index }}
@@ -38,20 +41,25 @@ spec:
           env:
             - name: DYNO_INSTANCE
               value: {{ $member | include "dynomite.ip" }}
+            {{- if $.Values.dynomite.warmup }}
             - name: WARMUP_PEER
               value: {{ tuple $member $.Values.dynomite.foreign_member | include "dynomite.token_peers" }}
             - name: WARMUP_ALLOWED_DIFF
               value: "10"
-          {{- if $.Values.dynomite.dns_txt }}
+            {{- end }}
+            {{- if $.Values.dynomite.dns_txt }}
             - name: DYNOMITE_DNS_TXT_NAME
               value: {{ $.Values.dynomite.dns_txt }}
-          {{- end }}
+            {{- end }}
+            - name: REQUIREPASS
+              valueFrom:
+                secretKeyRef:
+                  name: dynomite-secret
+                  key: redis_password
           command:
             - /usr/bin/dumb-init
           args:
-            - /bin/sh
-            - -c
-            - /usr/bin/powder-monkey backend warmup --replica-announce-ip $(DYNO_INSTANCE) $(WARMUP_PEER) && exec /usr/bin/dynomite --conf-file=/config/dynomite.yaml {{if $.Values.debug }}-v11{{ end }}
+            - /dynomite-bin/dynomite_startup.sh
           volumeMounts:
             - name: dynomite
               mountPath: '/config/'
@@ -85,8 +93,18 @@ spec:
         - name: redis
           imagePullPolicy: {{ $.Values.redis.image.pullPolicy }}
           image: {{ template "redis.image" $ }}
+          env:
+            - name: REQUIREPASS
+              valueFrom:
+                secretKeyRef:
+                  name: dynomite-secret
+                  key: redis_password
           args:
             - /config/redis.conf
+            {{- if $.Values.redis.password }}
+            - --requirepass $(REQUIREPASS)
+            - --masterauth $(REQUIREPASS)
+            {{- end }}
           volumeMounts:
             - name: redis
               mountPath: '/config/'
@@ -128,9 +146,18 @@ spec:
             - name: OS_PROJECT_DOMAIN_NAME
               value: {{ required ".Values.backup.auth.os_project_domain" $.Values.backup.auth.os_project_domain }}
             - name: OS_PASSWORD
-              value: {{ required ".Values.backup.auth.os_password" $.Values.backup.auth.os_password | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: dynomite-secret
+                  key: db_backup_password
+            - name: REQUIREPASS
+              valueFrom:
+                secretKeyRef:
+                  name: dynomite-secret
+                  key: redis_password
           args:
             - backend
+            - --backend-password=$(REQUIREPASS)
             - backup
             - --every=60m
             # [datacenter]/dynomite/[rack]/[ip]-[token]
