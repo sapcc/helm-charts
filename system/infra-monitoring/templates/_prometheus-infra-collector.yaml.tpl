@@ -210,23 +210,23 @@
     - source_labels: [__name__, snmp_n7k_ciscoImageString]
       regex: 'snmp_n7k_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
-      target_label: ciscoImageString
+      target_label: image_version
     - source_labels: [__name__, snmp_ipn_ciscoImageString]
       regex: 'snmp_ipn_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
-      target_label: ciscoImageString
+      target_label: image_version
     - source_labels: [__name__, snmp_asr_ciscoImageString]
       regex: 'snmp_asr_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
-      target_label: ciscoImageString
+      target_label: image_version
     - source_labels: [__name__, snmp_asr03_ciscoImageString]
       regex: 'snmp_asr03_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
-      target_label: ciscoImageString
+      target_label: image_version
     - source_labels: [__name__, snmp_asr04_ciscoImageString]
       regex: 'snmp_asr04_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
-      target_label: ciscoImageString
+      target_label: image_version
 # hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
     - source_labels: [__name__, devicename]
       regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
