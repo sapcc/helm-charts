@@ -231,6 +231,9 @@
       regex: 'snmp_asa_sysDescr;([a-zA-Z ]*)([0-9().]*)'
       replacement: '$2'
       target_label: image_version
+    - source_labels: [__name__, snmp_acispine_sysDescr]
+      regex: 'snmp_acispine_sysDescr;(.*)Version ([0-9().a-z]*),(.*)'
+      replacement: '$2'
 # hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
     - source_labels: [__name__, devicename]
       regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
