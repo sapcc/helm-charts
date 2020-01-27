@@ -53,9 +53,14 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "designate-migration"
             - name: DEPENDENCY_SERVICE
-              value: "designate-mariadb,{{ .Release.Name }}-rabbitmq"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
