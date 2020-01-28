@@ -8,7 +8,7 @@ dynomite-{{ $member | include "dynomite.dc" }}:
   listen: 0.0.0.0:8102
   dyn_listen: 0.0.0.0:8101
   {{- if $context.Values.dynomite.dns_txt }}
-  dyn_seed_provider: simple_provider
+  dyn_seed_provider: dns_provider
   {{- else }}
   dyn_seed_provider: simple_provider
   dyn_seeds:
@@ -34,3 +34,6 @@ dynomite-{{ $member | include "dynomite.dc" }}:
   auto_eject_hosts: true
   server_retry_timeout: 30000
   server_failure_limit: 3
+  {{- if $context.Values.redis.password }}
+  requirepass: {{ $context.Values.redis.password }}
+  {{- end }}
