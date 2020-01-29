@@ -20,6 +20,7 @@
       - '{__name__=~"^snmp_n7k_ciscoImageString"}'
       - '{__name__=~"^snmp_ipn_ciscoImageString"}'
       - '{__name__=~"^snmp_acispine_sysDescr"}'
+      - '{__name__=~"^snmp_arista_entPhysicalSoftwareRev"}'
       - '{__name__=~"^snmp_acistretch_ceImageVersion"}'
       - '{__name__=~"^snmp_f5_sysProductVersion"}'
       - '{__name__=~"^snmp_asa_sysDescr"}'
