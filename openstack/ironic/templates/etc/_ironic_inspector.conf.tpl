@@ -38,7 +38,7 @@ driver = noop
 
 [database]
 {{- if eq .Values.mariadb.enabled true }}
-connection = mysql+pymysql://ironic_inspector:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic_inspector?charset=utf8
+connection = mysql+pymysql://ironic_inspector:{{.Values.inspectordbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic_inspector?charset=utf8
 {{- include "ini_sections.database_options_mysql" . }}
 {{- else }}
 connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectordbPassword | include "db_url" }}
