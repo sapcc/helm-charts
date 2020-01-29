@@ -12,7 +12,7 @@ groups:
     expr: sum(container_cpu_user_seconds_total{container_name!="POD"}) by (id,namespace,pod_name,container_name)
 
   - record: {{ include "prefix" . }}container_cpu_saturation_ratio
-      expr: sum(irate(container_cpu_cfs_throttled_seconds_total[5m])) by (namespace, pod_name, container_name) / (sum(irate(aggregated:container_cpu_usage_seconds_total[5m])) by (namespace, pod_name, container_name) + sum(irate(container_cpu_cfs_throttled_seconds_total[5m])) by (namespace, pod_name, container_name))
+    expr: sum(irate(container_cpu_cfs_throttled_seconds_total[5m])) by (namespace, pod_name, container_name) / (sum(irate(aggregated:container_cpu_usage_seconds_total[5m])) by (namespace, pod_name, container_name) + sum(irate(container_cpu_cfs_throttled_seconds_total[5m])) by (namespace, pod_name, container_name))
 
   - record: {{ include "prefix" . }}container_cpu_utilization_ratio
     expr: ( sum(irate(container_cpu_cfs_throttled_seconds_total[5m])) by (namespace, pod_name, container_name) + sum(irate(aggregated:container_cpu_usage_seconds_total[5m])) by (namespace, pod_name, container_name) ) / sum(label_join(label_join(kube_pod_container_resource_requests_cpu_cores, "container_name", "", "container"), "pod_name", "", "pod")) by (namespace, pod_name, container_name)
