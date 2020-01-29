@@ -227,6 +227,10 @@
       regex: 'snmp_asr04_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
       target_label: image_version
+    - source_labels: [__name__, snmp_arista_entPhysicalSoftwareRev]
+      regex: 'snmp_arista_entPhysicalSoftwareRev;(.*)'
+      replacement: '$1'
+      target_label: image_version
     - source_labels: [__name__, snmp_asa_sysDescr]
       regex: 'snmp_asa_sysDescr;([a-zA-Z ]*)([0-9().]*)'
       replacement: '$2'
