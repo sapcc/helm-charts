@@ -1,3 +1,13 @@
+## 3.3.6
+
+* Standardize labels: Introduce labels `container`, `pod` in cAdvisor metrics.
+  These shall be used instead of `container_name`, `pod_name` to be consistent with kube-state-metrics, kubelet and avoid further `label_replace` in PromQL queries.
+  **Note**: The label `container_name`, `pod_name` might be dropped from cAdvisor metrics in the next major release.
+
+## 3.3.5
+
+* Standardize labels: Ensure the `node` label (node name) is present on cAdvisor, kubelet metrics. 
+
 ## 3.3.4
 
 * Fix node label for kubelet job.
