@@ -2,7 +2,7 @@ groups:
 - name: px.alerts
   rules:
   - alert: PXBirdExporterAvailabilityMissingExporter
-    expr: up{app=~".+-pxrs-.+"} == 0
+    expr: sum(up{app=~".+-pxrs-.+"} == 1) !=14  or absent(up{app=~".+-pxrs-.+"})
     for: 1h
     labels:
       severity: info
@@ -10,5 +10,66 @@ groups:
       service: px
       context: px
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - The bird exporter for the `{{ $labels.app }}` does not send any metrics - this should be checkedr"
-      summary: "TEST ALERT - PLEASE IGNORE - The bird exporter for the `{{ $labels.app }}` does not send any metrics - this should be checked"
+      description: TEST ALERT - PLEASE IGNORE -The bird exporter for PX does not send any metrics - this should be checkedr"
+      summary: TEST ALERT - PLEASE IGNORE - The bird exporter for the PX does not send any metrics - this should be checked"
+
+  - alert: PXDomainAllPeersDown
+    expr: sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (pxdomain,region, pxservice) == 0
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
+      summary: TEST ALERT - PLEASE IGNORE -  "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
+
+  - alert: PXConsumerDown
+    expr: sum(bird_protocol_up{name!~"kernel.", peer_type="PLATF"} ==bool 1)  by (region, pxservice, peer_id) == 0
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   "PX consumer {{ $labels.peer_id }} is not BGP peering with any of the PX route servers for service {{ $labels.pxservice }}. Thus the consumer is unable to use the given PX service."
+      summary: TEST ALERT - PLEASE IGNORE -  "PX consumer {{ $labels.peer_id }} is not BGP peering with any of the PX route servers for service {{ $labels.pxservice }}. Thus the consumer is unable to use the given PX service."
+      
+  - alert: PXConsumerWithoutRedundancy
+    expr: sum(bird_protocol_up{name!~"kernel.", peer_type="PLATF"} ==bool 1)  by (region, pxservice, peer_id, pxdomain) == 0
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   "PX consumer {{ $labels.peer_id }} is not peering with PX domain {{ $labels.pxdomain }} for service {{ $labels.pxservice }}. Thus from PX side, there is no redundancy given."
+      summary: TEST ALERT - PLEASE IGNORE -  "PX consumer {{ $labels.peer_id }} is not peering with PX domain {{ $labels.pxdomain }} for service {{ $labels.pxservice }}. Thus from PX side, there is no redundancy given."
+  
+  - alert: PXConsumerBgpConnectionDown
+    expr: bird_protocol_up{name!~"kernel.", peer_type="PLATF"} == 1
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
+      summary: TEST ALERT - PLEASE IGNORE -  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
+
+  - alert: PXTransportRouterBgpDown
+    expr: bird_protocol_up{name!~"kernel.", peer_type="TRANS"} == 1
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
+      summary: TEST ALERT - PLEASE IGNORE -  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
+      
