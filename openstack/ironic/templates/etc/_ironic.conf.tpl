@@ -44,7 +44,7 @@ public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
 
 [database]
 {{- if eq .Values.mariadb.enabled true }}
-connection = mysql+pymysql://root:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
+connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
 {{- include "ini_sections.database_options_mysql" . }}
 {{- else }}
 connection = {{ tuple . "ironic" "ironic" .Values.global.dbPassword | include "db_url" }}
