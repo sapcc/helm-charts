@@ -245,6 +245,10 @@
       regex: 'snmp_acispine_sysDescr;(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
+    - source_labels: [__name__, snmp_acistretch_sysDescr]
+      regex: 'snmp_acistretch_sysDescr;.*Version\s([0-9.]*)\[(\S*)\].*'
+      replacement: '$2'
+      target_label: image_version
     - source_labels: [__name__, snmp_f5_sysProductVersion]
       regex: 'snmp_f5_sysProductVersion;(.*)'
       replacement: '$1'
