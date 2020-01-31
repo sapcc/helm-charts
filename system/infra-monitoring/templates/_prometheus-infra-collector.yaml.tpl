@@ -235,10 +235,9 @@
       regex: 'snmp_asa_sysDescr;([a-zA-Z ]*)([0-9().]*)'
       replacement: '$2'
       target_label: image_version
-    - source_labels: [__name__, snmp_acistretch_sysDescr]
-      regex: 'snmp_acistretch_sysDescr;.*Version\s([0-9.]*).*'
-      replacement: '$1'
-      target_label: image_version
+    - source_labels: [__name__, name]
+      regex: "snmp_acistretch_sysDescr;(.+)"
+      target_label: image_name
     - source_labels: [__name__, device]
       regex: 'snmp_asa_sysDescr;(ASA0102-CC-CORP|AsSA0102-CC-DMZ|ASA0102-CC-HEC|ASA0102-CC-INTERNET|ASA0102-CC-SAAS|ASA0102a-CC-HEC|ASA0102a-CC-DMZ|ASA0102a-CC-CORP|ASA0102a-CC-INTERNET|ASA0102a-CC-SAAS)'
       action: drop
