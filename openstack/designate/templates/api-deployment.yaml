@@ -32,22 +32,36 @@ spec:
 {{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
 {{- end }}
+      initContainers:
+      - name: kubernetes-entrypoint
+        image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/loci-designate:{{required ".Values.image_version_designate_api is missing" .Values.image_version_designate_api}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /usr/local/bin/kubernetes-entrypoint
+        env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: {{ .Release.Name }}-migration
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+            - name: COMMAND
+              value: "true"
       containers:
         - name: designate-api
           image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/loci-designate:{{required ".Values.image_version_designate_api is missing" .Values.image_version_designate_api}}
           imagePullPolicy: IfNotPresent
           command:
-            - kubernetes-entrypoint
+            - /container.init/designate-api.sh
+            - start
           resources:
              requests:
                memory: "256Mi"
                cpu: "100m"
              limits:
-               memory: "1024Mi"
-               cpu: "1000m"
+               memory: "2048Mi"
+               cpu: "2000m"
           env:
-            - name: COMMAND
-              value: "/container.init/designate-api-start"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
@@ -79,11 +93,23 @@ spec:
           ports:
             - name: designate-api
               containerPort: {{.Values.global.designate_api_port_internal}}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /container.init/designate-api.sh
+                  - stop
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc
             - mountPath: /container.init
               name: container-init
+            - name: wsgi-designate
+              mountPath: /var/www/cgi-bin/designate
+              readOnly: true
+            - name: designate-apache
+              mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
+              subPath: wsgi-designate.conf
         - name: statsd
           image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -103,6 +129,9 @@ spec:
         - name: designate-etc
           configMap:
             name: designate-etc
+        - name: designate-apache
+          configMap:
+            name: designate-apache
         - name: container-init
           configMap:
             name: designate-bin
