@@ -82,4 +82,32 @@ groups:
     annotations:
       description: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
       summary: TEST ALERT - PLEASE IGNORE -  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
-      
+
+
+  - alert: PXTransportRouterPrefixImportCountZero
+    expr: bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TRANS"} <= 0 
+    for: 10m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: '/docs/devops/alert/network/px.html#PXTransportRouterPrefixImportCountZero'
+      dashboard: px-control-plane
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
+      summary: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
+
+  - alert: PXTransportRouterPrefixExportCountZero
+    expr: bird_protocol_prefix_export_count{name!~"kernel.", peer_type="TRANS"} <= 0 
+    for: 10m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: '/docs/devops/alert/network/px.html#PXTransportRouterPrefixImportCountZero'
+      dashboard: px-control-plane
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
+      summary: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
