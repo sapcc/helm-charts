@@ -63,8 +63,8 @@ Hostname
 Keystone Host
 */}}
 {{- define "ccauth.keystone.host" -}}
-{{- if .Values.ccauth.keystone.host }}
-{{- printf "%s" .Values.ccauth.keystone.host -}}
+{{- if .Values.keystone.host }}
+{{- printf "%s" .Values.keystone.host -}}
 {{- else }}
 {{- printf "https://identity-3.%s.cloud.sap/v3" .Values.global.region -}}
 {{- end }}
@@ -75,8 +75,8 @@ Keystone Host
 LDAP Host
 */}}
 {{- define "ccauth.ldap.host" -}}
-{{- if .Values.ccauth.ldap.host }}
-{{- printf "%s" .Values.ccauth.ldap.host -}}
+{{- if .Values.ldap.host }}
+{{- printf "%s" .Values.ldap.host -}}
 {{- else if (contains .Values.global.region "qa") }}
 {{- printf "ldap-qa.global.cloud.sap:636" -}}
 {{- else }}
