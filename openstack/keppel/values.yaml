@@ -25,3 +25,48 @@ keppel:
     uri: ""
     queue_name: ""
 
+pgmetrics:
+  db_name: keppel
+
+  customMetrics:
+    keppel_blobs:
+      query: 'SELECT COUNT(*) AS count FROM blobs'
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of blobs stored in Keppel"
+    keppel_repos:
+      query: 'SELECT COUNT(*) AS count FROM repos'
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of repositories stored in Keppel"
+    keppel_manifests:
+      query: 'SELECT COUNT(*) AS count FROM manifests'
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of manifests stored in Keppel"
+    keppel_tags:
+      query: 'SELECT COUNT(*) AS count FROM tags'
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of tags stored in Keppel"
+    keppel_peers:
+      query: >
+        SELECT hostname, COALESCE(EXTRACT(epoch FROM last_peered_at), 0) AS last_peered_at FROM peers
+      metrics:
+        - hostname:
+            usage: "LABEL"
+            description: "Peer hostname"
+        - last_peered_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of when we last issued a password for this peer (should happen every 10 minutes)"
+    keppel_blob_replication:
+      query: >
+        SELECT COALESCE(EXTRACT(epoch FROM MAX(since)), 0) FROM pending_blobs
+      metrics:
+        - min_started_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp when oldest still-running blob replication was started (or 0 when no replication is in progress)"
