@@ -52,3 +52,17 @@ groups:
     annotations:
       description: TEST ALERT - PLEASE IGNORE -   {{ $labels.ifDescr }} on {{ $labels.devicename }} is flapping. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!
       summary: TEST ALERT - PLEASE IGNORE -   {{ $labels.ifDescr }} on {{ $labels.devicename }} is flapping. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!
+
+
+  - alert: PXTransportDlWanLinkInterfaceInErrors
+    expr: rate(snmp_pxdlrouternxos_ifInErrors{ifAdminStatus="1", ifType="6", ifDescr=~"Ethernet1/11|Ethernet1/12", ifOperStatus="1"}[10m]) > 200
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      dashboard: px-data-plane
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   {{ $labels.ifDescr }} on {{ $labels.devicename }} is receiving more than 200 error packets within the last 20m. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!
+      summary: TEST ALERT - PLEASE IGNORE -   {{ $labels.ifDescr }} on {{ $labels.devicename }} is receiving more than 200 error packets within the last 20m. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!
