@@ -235,10 +235,6 @@
       regex: 'snmp_asa_sysDescr;([a-zA-Z ]*)([0-9().]*)'
       replacement: '$2'
       target_label: image_version
-    - source_labels: [__name__, snmp_acistretch_sysDescr]
-      regex: "snmp_acistretch_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(\[.*)"
-      replacement: '$4'
-      target_label: image_name
     - source_labels: [__name__, device]
       regex: 'snmp_asa_sysDescr;(ASA0102-CC-CORP|AsSA0102-CC-DMZ|ASA0102-CC-HEC|ASA0102-CC-INTERNET|ASA0102-CC-SAAS|ASA0102a-CC-HEC|ASA0102a-CC-DMZ|ASA0102a-CC-CORP|ASA0102a-CC-INTERNET|ASA0102a-CC-SAAS)'
       action: drop
@@ -250,6 +246,14 @@
       regex: 'snmp_f5_sysProductVersion;(.*)'
       replacement: '$1'
       target_label: image_version
+    - source_labels: [__name__, snmp_acistretch_sysDescr]
+      regex: "snmp_acistretch_sysDescr;(?s)Cisco IOS XR(.*)"
+      replacement: '$2'
+      target_label: version_name
+    - source_labels: [__name__, snmp_acistretch_sysDescr]
+      regex: "snmp_acistretch_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(\[.*)"
+      replacement: '$4'
+      target_label: image_name
 # hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
     - source_labels: [__name__, devicename]
       regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
