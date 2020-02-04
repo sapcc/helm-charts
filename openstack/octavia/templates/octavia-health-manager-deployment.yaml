@@ -24,6 +24,9 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
         configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       containers:
         - name: octavia-f5-status-manager
@@ -41,22 +44,6 @@ spec:
               mountPath: /etc/octavia/octavia-worker.conf
               subPath: octavia-worker.conf
               readOnly: true
-        - name: octavia-health-manager
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
-          imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "octavia-health-manager", "--config-file", "/etc/octavia/octavia.conf"]
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
-          volumeMounts:
-            - name: octavia-etc
-              mountPath: /etc/octavia/octavia.conf
-              subPath: octavia.conf
-              readOnly: true
-          env:
-          - name: PYTHONWARNINGS
-            value: "ignore:Unverified HTTPS request"
-          - name: REQUESTS_CA_BUNDLE
-            value: ""
       volumes:
         - name: octavia-etc
           configMap:

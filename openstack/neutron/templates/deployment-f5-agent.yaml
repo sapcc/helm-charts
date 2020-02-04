@@ -26,6 +26,9 @@ spec:
         name: neutron-f5-{{ $lb.name }}
       annotations:
         pod.beta.kubernetes.io/hostname: neutron-f5-{{ $lb.name }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       {{- if ge $.Capabilities.KubeVersion.Minor "7" }}
       hostname: neutron-f5-{{ $lb.name }}
