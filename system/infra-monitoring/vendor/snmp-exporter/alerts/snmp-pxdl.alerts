@@ -1,0 +1,54 @@
+groups:
+- name: alerts for PX control plane
+  rules:
+  - alert: PXTransportDlWanLinkProbesFailing
+    expr: sum(changes(snmp_pxdlrouternxos_rttMonLatestRttOperTime[10m]) ==bool 0) by  (server_id, server_name, rttMonCtrlAdminIndex, rttMonCtrlAdminTag, rttMonCtrlAdminOwner) + on  (server_id, server_name, rttMonCtrlAdminIndex, rttMonCtrlAdminTag, rttMonCtrlAdminOwner) group_right() ((snmp_pxdlrouternxos_rttMonLatestRttOperSense{rttMonCtrlAdminIndex=~"4.."} !=bool 1) * 10) != 0
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      dashboard: px-data-plane
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is failing. This indicates problems with the underlying WAN link. Find the device in Netbox to determine the WAN circuit related to this SLA and alert the WAN team immediatly!
+      summary: TEST ALERT - PLEASE IGNORE -   SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is failing. This indicates problems with the underlying WAN link. Find the device in Netbox to determine the WAN circuit related to this SLA and alert the WAN team immediatly!
+  
+  - alert: PXTransportDlWanLinkProbesHighLatency
+    expr: snmp_pxdlrouternxos_rttMonLatestRttOperCompletionTime{rttMonCtrlAdminIndex=~"4.."} > 20000
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      dashboard: px-data-plane
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is measuring more then 20ms RTT on the link. This indicates problems with the underlying WAN link. Find the device in Netbox to determine the WAN circuit related to this SLA and alert the WAN team immediatly!
+      summary: TEST ALERT - PLEASE IGNORE -   SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is measuring more then 20ms RTT on the link. This indicates problems with the underlying WAN link. Find the device in Netbox to determine the WAN circuit related to this SLA and alert the WAN team immediatly!
+  
+  - alert: PXTransportDlWanLinkInterfaceDown
+    expr: snmp_pxdlrouternxos_ifLastChange{ifAdminStatus="1", ifType="6", ifDescr=~"Ethernet1/11|Ethernet1/12", ifOperStatus!="1"}
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      dashboard: px-data-plane
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   {{ $labels.ifDescr }} on {{ $labels.devicename }} went down. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!
+      summary: TEST ALERT - PLEASE IGNORE -   {{ $labels.ifDescr }} on {{ $labels.devicename }} went down. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!
+  
+  - alert: PXTransportDlWanLinkInterfaceFlapping
+    expr: resets((snmp_pxdlrouternxos_sysUpTime - on (server_id) group_right(server_name, interface) (snmp_pxdlrouternxos_ifLastChange{ifDescr=~"Ethernet1/11|Ethernet1/12"}))[10m:]) > 2
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      dashboard: px-data-plane
+    annotations:
+      description: TEST ALERT - PLEASE IGNORE -   {{ $labels.ifDescr }} on {{ $labels.devicename }} is flapping. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!
+      summary: TEST ALERT - PLEASE IGNORE -   {{ $labels.ifDescr }} on {{ $labels.devicename }} is flapping. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!
