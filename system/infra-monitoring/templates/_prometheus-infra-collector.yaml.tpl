@@ -216,8 +216,8 @@
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_asr_ciscoImageString]
-      regex: 'snmp_asr_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
+      regex: 'snmp_asr_ciscoImageString;(?s)(.*)(Version )([0-9a-z.]*)(, CUST-SPECIAL:)([0-9A-Za-z._-]*)(.*)'
+      replacement: '$3-$5'
       target_label: image_version
     - source_labels: [__name__, snmp_asr03_ciscoImageString]
       regex: 'snmp_asr03_ciscoImageString;(.*)(\$)(.*)(\$)'
