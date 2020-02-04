@@ -11,45 +11,43 @@ resources:
     cpu: 200m
     memory: 100Mi
 
+port: 9102
+# Name of the Prometheus supposed to scrape the metrics.
+prometheus: kubernetes
 metrics:
-  port: 9102
-  # Name of the Prometheus supposed to scrape the metrics.
-  prometheus: kubernetes
-  config:
-    config.yaml: |-
-      metrics:
-      - name: kube_pod_image_pull_backoff_total
-        event_matcher:
-        - key: InvolvedObject.Kind
-          expr: Pod
-        - key: Message
-          expr: Back-off pulling image "(.*)"
-        labels:
-          image: Message[1]
-          namespace: InvolvedObject.Namespace
-          pod_name: InvolvedObject.Name
-      - name: kube_pod_failed_scheduling_cpu_total
-        event_matcher:
-        - key: Reason
-          expr: FailedScheduling
-        - key: InvolvedObject.Kind
-          expr: Pod
-        - key: Message
-          expr: ".*Insufficient cpu.*"
-        labels:
-          namespace: InvolvedObject.Namespace
-          pod_name: InvolvedObject.Name
-      - name: kube_pod_failed_scheduling_memory_total
-        event_matcher:
-        - key: Reason
-          expr: FailedScheduling
-        - key: InvolvedObject.Kind
-          expr: Pod
-        - key: Message
-          expr: ".*Insufficient memory.*"
-        labels:
-          namespace: InvolvedObject.Namespace
-          pod_name: InvolvedObject.Name
+  - name: kube_pod_image_pull_backoff_total
+    event_matcher:
+    - key: InvolvedObject.Kind
+      expr: Pod
+    - key: Message
+      expr: Back-off pulling image "(.*)"
+    labels:
+      image: Message[1]
+      namespace: InvolvedObject.Namespace
+      pod_name: InvolvedObject.Name
+  - name: kube_pod_failed_scheduling_cpu_total
+    event_matcher:
+    - key: Reason
+      expr: FailedScheduling
+    - key: InvolvedObject.Kind
+      expr: Pod
+    - key: Message
+      expr: ".*Insufficient cpu.*"
+    labels:
+      namespace: InvolvedObject.Namespace
+      pod_name: InvolvedObject.Name
+  - name: kube_pod_failed_scheduling_memory_total
+    event_matcher:
+    - key: Reason
+      expr: FailedScheduling
+    - key: InvolvedObject.Kind
+      expr: Pod
+    - key: Message
+      expr: ".*Insufficient memory.*"
+    labels:
+      namespace: InvolvedObject.Namespace
+      pod_name: InvolvedObject.Name
+additional_metrics: []
 
 rbac:
   create: false

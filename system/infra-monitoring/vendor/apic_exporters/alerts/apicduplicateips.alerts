@@ -3,11 +3,13 @@ groups:
   rules:
   - alert: ApicDuplicateIps
     expr: count(network_apic_duplicate_ip) > 0
+    for: 5m
     labels:
-      severity: info
+      severity: warning
       tier: net
       service: apic
-      dashboard: apic-duplicate-ips
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci.html#Duplicate_IP_Alert
     annotations:
-      description: "{{ $value }} duplicate ips"
-      summary: "{{ $value }} duplicate ips"
+      description: "{{ $value }} duplicate ips for more than 5 minutes"
+      summary: "{{ $value }} duplicate ips for more than 5 minutes"

@@ -6,6 +6,10 @@
 {{- required ".Values.redis.image.repository missing" .Values.redis.image.repository -}}:{{- required ".Values.redis.image.tag missing" .Values.redis.image.tag -}}
 {{- end -}}
 
+{{- define "backup.image" -}}
+{{- required ".Values.backup.image.repository missing" .Values.backup.image.repository -}}:{{- required ".Values.backup.image.tag missing" .Values.backup.image.tag -}}
+{{- end -}}
+
 {{- define "dynomite.ip" -}}
 {{ (split ":" .)._0 }}
 {{- end -}}

@@ -141,8 +141,8 @@ data:
           severity: critical|warning|info
 
       # owner: Tilo Geissler
-      #- receiver: elastic
-      #  continue: true
+      - receiver: elastic
+        continue: true
 
       # owner: Chuan Miao
       - receiver: slack_storage
@@ -309,7 +309,7 @@ data:
     receivers:
     - name: dev-null
       slack_configs:
-        - api_url: {{ required "slack.devnull_webhook_url undefined" .Values.slack.webhook_url | quote }}
+        - api_url: {{ required "slack.devnull_webhook_url undefined" .Values.slack.devnull_webhook_url | quote }}
           username: "Control Plane"
           channel: "#dev-null"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
@@ -332,11 +332,11 @@ data:
       webhook_configs:
         - url: "https://wham.scaleout.eu-de-1.cloud.sap/alerts/metal"
 
-    #- name: elastic
-    #  webhook_configs:
-    #  - send_resolved: true
-    #    http_config: {}
-    #    url: {{ required "elastic.logstash_url undefined" .Values.elastic.logstash_url | quote }}
+    - name: elastic
+      webhook_configs:
+      - send_resolved: true
+        http_config: {}
+        url: {{ required "elastic.logstash_url undefined" .Values.elastic.logstash_url | quote }}
 
     # ---- Slack Duty (Alert)Channels ----
     # slack duty metal

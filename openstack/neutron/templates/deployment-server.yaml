@@ -68,7 +68,11 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "neutron-migration"
             - name: DEPENDENCY_SERVICE
-              value: "neutron-postgresql,{{ .Release.Name }}-rabbitmq"
+{{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
+{{- end }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT

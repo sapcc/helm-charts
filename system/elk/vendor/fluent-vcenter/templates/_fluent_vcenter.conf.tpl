@@ -3,11 +3,10 @@
 </system>
 
 <source>
-  @type {{default "udp" .Values.vcenter_logs_in_proto}}
+  @type tcp
   tag "vcenter"
   format /^(?<message>.*?)$/
-  bind {{default "0.0.0.0" .Values.vcenter_logs_in_ip}}
-  port {{.Values.vcenter_logs_in_port}}
+  port 5140
 </source> 
 <source>
   @type syslog

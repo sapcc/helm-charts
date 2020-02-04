@@ -18,6 +18,7 @@ input {
   http {
     port  => {{.Values.input_alertmanager_port}}
     type => alert
+    codec => plain
   }
 }
 
