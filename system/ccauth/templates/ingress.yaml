@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ include "ccauth.fullname" . }}
+  labels:
+    {{- include "ccauth.labels" . | nindent 4 }}
+  annotations:
+    disco: "true"
+    vice-president: "true"
+spec:
+  rules:
+  - host: {{ include "ccauth.hostname" . }}
+    http:
+        paths:
+        - backend:
+            serviceName: {{ include "ccauth.fullname" . }}
+            servicePort: 80
+          path: /
+  tls:
+  - hosts:
+    - {{ include "ccauth.hostname" . }}
+    secretName: {{ include "ccauth.fullname" . }}-tls
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "ccauth.fullname" . }}-tls
+  labels:
+    {{- include "ccauth.labels" . | nindent 4 }}
+type: Opaque
