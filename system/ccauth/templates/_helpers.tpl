@@ -77,7 +77,7 @@ LDAP Host
 {{- define "ccauth.ldap.host" -}}
 {{- if .Values.ldap.host }}
 {{- printf "%s" .Values.ldap.host -}}
-{{- else if (contains .Values.global.region "qa") }}
+{{- else if (contains "qa" .Values.global.region) }}
 {{- printf "ldap-qa.global.cloud.sap:636" -}}
 {{- else }}
 {{- printf "ldap.global.cloud.sap:636" -}}
