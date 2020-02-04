@@ -26,6 +26,8 @@ spec:
                containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
            command:
              - ./exporter.py
+           args:
+             - -a /atlas/netbox.json
            env:
            - name: USER
              value: {{ required ".Values.vrops.user variable is missing" .Values.vrops.user }}
@@ -42,3 +44,7 @@ spec:
              initialDelaySeconds: 30
              timeoutSeconds: 10
              periodSeconds: 15
+      volumes:
+        - configMap:
+            name: {{ .Values.atlas_configmap }}
+          name: atlas-output
