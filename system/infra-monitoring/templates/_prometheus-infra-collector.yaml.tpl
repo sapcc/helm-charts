@@ -236,7 +236,7 @@
       replacement: '$2'
       target_label: image_version
     - source_labels: [__name__, snmp_acistretch_sysDescr]
-      regex: "snmp_acistretch_sysDescr;(?s)(.)(Version )([0-9().a-z]*)(\[.*)"
+      regex: "snmp_acistretch_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(\[.*)"
       replacement: '$4'
       target_label: image_name
     - source_labels: [__name__, device]
