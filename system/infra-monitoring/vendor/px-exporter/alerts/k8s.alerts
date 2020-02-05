@@ -1,15 +1,31 @@
 groups:
 - name: alerts for PX kubernetes resources
   rules:
+  - alert: PXRoutingServiceOnRisk
+    expr: sum
+      by (px_service) (label_replace((sum by (pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"})
+      * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
+      == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9].+"))
+      <= 1
+    for: 10 min
+    labels:
+      severity: warning
+      tier: k8s
+      service: k8s
+      context: px
+    annotations:
+      description: "TEST ALERT - PLEASE IGNORE - Pod px /{{ $labels.pod }} is not ready for more than 2h"
+      summary: "TEST ALERT - PLEASE IGNORE - Pod not ready for a long time"
+
   - alert: PXPodNotReady
     expr: sum
-      by(pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"})
+      by(pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"})
       * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
       == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))
       == 0
     for: 2h
     labels:
-      severity: info
+      severity: warning
       tier: k8s
       service: k8s
       context: px
@@ -35,7 +51,7 @@ groups:
     expr: sum by (node)(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}) == 0
     for: 1h
     labels:
-      severity: info
+      severity: critical
       tier: k8s
       service: k8s
       context: node
