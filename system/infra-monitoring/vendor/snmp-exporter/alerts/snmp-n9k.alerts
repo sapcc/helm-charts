@@ -2,7 +2,7 @@ groups:
 - name: n9k.alerts
   rules:
   - alert: NetworkN9kSpineInterfaceInErrorRateReachesCriticalThreshold
-    expr: rate(snmp_n9k_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+", role="aci-spine"}[1h]) > 0.28
+    expr: rate(snmp_acispine_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
     labels:
       severity: critical
       tier: net
@@ -15,7 +15,7 @@ groups:
       summary: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
 
   - alert: NetworkN9kSpineInterfaceOutErrorRateReachesCriticalThreshold
-    expr: rate(snmp_n9k_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+", role="aci-spine"}[1h]) > 0.28
+    expr: rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
     labels:
       severity: critical
       tier: net
@@ -28,9 +28,9 @@ groups:
       summary: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
 
   - alert: NetworkN9kLeafInterfaceInErrorRateReachesCriticalThreshold
-    expr: rate(snmp_n9k_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+", role="aci-leaf"}[1h]) > 0.28
+    expr: rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
     labels:
-      severity: critical
+      severity: warning
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
@@ -41,9 +41,9 @@ groups:
       summary: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
 
   - alert: NetworkN9kLeafInterfaceOutErrorRateReachesCriticalThreshold
-    expr: rate(snmp_n9k_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+", role="aci-leaf"}[1h]) > 0.28
+    expr: rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
     labels:
-      severity: critical
+      severity: warning
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
@@ -54,7 +54,7 @@ groups:
       summary: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
 
   - alert: NetworkN9kInterfaceInErrorRateReachesWarningThreshold
-    expr: rate(snmp_n9k_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
+    expr: rate(snmp_acispine_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
     labels:
       severity: warning
       tier: net
@@ -67,7 +67,33 @@ groups:
       summary: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
 
   - alert: NetworkN9kInterfaceOutErrorRateReachesWarningThreshold
-    expr: rate(snmp_n9k_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
+    expr: rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
+    labels:
+      severity: warning
+      tier: net
+      service: n9k
+      context: network_n9k_interface_error_rate
+      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
+    annotations:
+      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      summary: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+
+  - alert: NetworkN9kInterfaceInErrorRateReachesWarningThreshold
+    expr: rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
+    labels:
+      severity: warning
+      tier: net
+      service: n9k
+      context: network_n9k_interface_error_rate
+      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
+    annotations:
+      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      summary: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+
+  - alert: NetworkN9kInterfaceOutErrorRateReachesWarningThreshold
+    expr: rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
     labels:
       severity: warning
       tier: net
