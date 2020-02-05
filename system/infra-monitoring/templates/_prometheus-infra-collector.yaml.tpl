@@ -215,6 +215,10 @@
       regex: 'snmp_n7kpx_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
       target_label: image_version
+    - source_labels: [__name__, snmp_n9kpx_ciscoImageString]
+      regex: 'snmp_n9kpx_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
+      target_label: image_version
     - source_labels: [__name__, snmp_ipn_ciscoImageString]
       regex: 'snmp_ipn_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
