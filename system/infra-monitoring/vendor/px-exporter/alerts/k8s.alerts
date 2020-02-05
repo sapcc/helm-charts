@@ -14,5 +14,19 @@ groups:
       service: px
       context: px
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - The pod px /{{ $lables.pod }} is not ready for more than 2h"
+      description: "TEST ALERT - PLEASE IGNORE - Pod px /{{ $labels.pod }} is not ready for more than 2h"
       summary: "TEST ALERT - PLEASE IGNORE - Pod not ready for a long time"
+
+  - alert: PXPodRestartingTooMuch
+    expr: sum
+      by(pod, container) (rate(kube_pod_container_status_restarts_total{namespace="px"}[15m]))
+      > 0
+    for: 1h
+    labels:
+      severity: info
+      tier: net
+      service: px
+      context: px
+    annotations:
+      description: "TEST ALERT - PLEASE IGNORE - Container {{ $labels.container }} of pod px /{{ $labels.pod }} is restarting constantly"
+      summary: "TEST ALERT - PLEASE IGNORE - Pod is in a restart loop"
