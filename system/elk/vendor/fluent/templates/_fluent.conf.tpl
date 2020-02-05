@@ -19,23 +19,21 @@
 <source>
   @type tail
   path /var/log/containers/*.log
+  exclude_path /var/log/containers/fluentd*
   pos_file /var/log/es-containers.log.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
   format json
-  read_from_head true
   keep_time_key true
 </source>
 
-<source>
-  @type forward
-  bind 0.0.0.0
-  port 24224
-</source>
+<match fluent.**>
+  @type null
+</match>
 
-<source>
-  @type prometheus_monitor
-</source>
+# prometheus monitoring config
+
+@include /fluent-bin/prometheus.conf
 
 <filter kubernetes.**>
   @type kubernetes_metadata
@@ -44,22 +42,6 @@
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   use_journal 'false'
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
-</filter>
-
-# count number of incoming records per tag
-<filter kubernetes.**>
-  @type prometheus
-  <metric>
-    name fluentd_input_status_num_records_total
-    type counter
-    desc The total number of incoming records
-    <labels>
-      container $.kubernetes.container_name
-      hostname ${hostname}
-      nodename "#{ENV['K8S_NODE_NAME']}"
-      index logstash
-    </labels>
-  </metric>
 </filter>
 
 <filter kubernetes.var.log.containers.es**>
@@ -73,7 +55,7 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.keystone** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
+<filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
   @type parser
   key_name log
   reserve_data true
@@ -162,8 +144,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel} msg="Error scraping target %{IPV4:ip}: error (walking|getting) target %{IPV4}: %{SNMP_ERROR:snmp_error}
-    custom_pattern_path /fluent-bin/pattern
+    grok_pattern level=%{NOTSPACE:loglevel} ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} module=%{NOTSPACE:snmp_module} target=%{IP:ip} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA:snmp_msg}\"
   </parse>
 </filter>
 
@@ -227,6 +208,18 @@
   <parse>
     @type grok
     grok_pattern %{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}: %{HOSTNAME:remote_addr} - - \[%{NOTSPACE:datetime} %{NOTSPACE:tz}\] \"%{WORD:request_method} (?<request_path>[^\"\s]{,255}).*?\" %{NUMBER:response} %{NOTSPACE:content_length} \"(?<referer>[^\"]{,255}).*?\" \"%{NOTSPACE:transaction_id}\" \"%{DATA:user_agent}\" %{NOTSPACE:request_time} \"%{NOTSPACE:additional_info}\" %{NOTSPACE:server_pid} %{NOTSPACE:policy_index}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.keystone-api**>
+  @type parser
+  key_name log
+  reserve_data true
+  grok_failure_key grok_failure
+  <parse>
+    @type grok
+    grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{GREEDYDATA:action} %{METHOD:method} %{URIPATH:pri_path} %{LOWER:action} %{NOTSPACE:user} %{WORD:domain} %{GREEDYDATA:action}
+    custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
 
@@ -429,31 +422,90 @@
   @type null
 </match>
 
-<source>
-  @type prometheus
-  bind 0.0.0.0
-  port 24231
-  metrics_path /metrics
-</source>
-<source>
-  @type prometheus_output_monitor
-  interval 10
-  <labels>
-    hostname ${hostname}
-  </labels>
-</source>
+<match kubernetes.var.log.containers.es-query-exporter**>
+  @type null
+</match>
 
-# count number of outgoing records per tag
-<match **>
+{{- if .Values.forwarding.keystone.enabled }}
+<match kubernetes.var.log.containers.keystone-api**>
   @type copy
   <store>
-    @type forward
-    <server>
-      name ${hostname}
-      host localhost
-      port 24224
-      weight 60
-    </server>
+    @type http
+    endpoint_url "https://{{.Values.forwarding.keystone.host}}"
+    cacert_file "/etc/ssl/certs/ca-certificates.crt"
+    http_method post
+    serializer json
+    raise_on_error true
+  </store>
+  <store>
+    @type elasticsearch_dynamic
+    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+    port {{.Values.global.elk_elasticsearch_ssl_port}}
+    user {{.Values.global.elk_elasticsearch_data_user}}
+    password {{.Values.global.elk_elasticsearch_data_password}}
+    scheme https
+    ssl_verify false
+    ssl_version TLSv1_2
+    logstash_format true
+    template_name logstash
+    template_file /fluent-bin/logstash.json
+    template_overwrite true
+    time_as_integer false
+    type_name _doc
+    @log_level info
+    slow_flush_log_threshold 50.0
+    request_timeout 60s
+    include_tag_key true
+    resurrect_after 120
+    reconnect_on_error true
+    <buffer>
+      total_limit_size 128MB
+      flush_at_shutdown true
+      flush_thread_interval 5
+      overflow_action block
+      retry_forever true
+      retry_wait 2s
+      flush_thread_count 2
+      flush_interval 1s
+    </buffer>
+  </store>
+</match>
+{{- end }}
+
+# count number of outgoing records per tag
+<match kubernetes.**>
+  @type copy
+  <store>
+    @type elasticsearch_dynamic
+    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+    port {{.Values.global.elk_elasticsearch_ssl_port}}
+    user {{.Values.global.elk_elasticsearch_data_user}}
+    password {{.Values.global.elk_elasticsearch_data_password}}
+    scheme https
+    ssl_verify false
+    ssl_version TLSv1_2
+    logstash_format true
+    template_name logstash
+    template_file /fluent-bin/logstash.json
+    template_overwrite true
+    time_as_integer false
+    type_name _doc
+    @log_level info
+    slow_flush_log_threshold 50.0
+    request_timeout 60s
+    include_tag_key true
+    resurrect_after 120
+    reconnect_on_error true
+    <buffer>
+      total_limit_size 256MB
+      flush_at_shutdown true
+      flush_thread_interval 5
+      overflow_action block
+      retry_forever true
+      retry_wait 2s
+      flush_thread_count 2
+      flush_interval 1s
+    </buffer>
   </store>
   <store>
     @type prometheus
@@ -462,43 +514,9 @@
       type counter
       desc The total number of outgoing records
       <labels>
-        container $.kubernetes.container_name
-        hostname ${hostname}
         nodename "#{ENV['K8S_NODE_NAME']}"
-        index logstash
+        container $.kubernetes.container_name
       </labels>
     </metric>
-  </store>
-  <store>
-   @type elasticsearch_dynamic
-   host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
-   port {{.Values.global.elk_elasticsearch_ssl_port}}
-   user {{.Values.global.elk_elasticsearch_data_user}}
-   password {{.Values.global.elk_elasticsearch_data_password}}
-   scheme https
-   ssl_verify false
-   ssl_version TLSv1_2
-   logstash_format true
-   template_name logstash
-   template_file /fluent-bin/logstash.json
-   template_overwrite true
-   time_as_integer false
-   type_name _doc
-   @log_level info
-   slow_flush_log_threshold 50.0
-   request_timeout 60s
-   include_tag_key true
-   resurrect_after 120
-   reconnect_on_error true
-   <buffer>
-     flush_at_shutdown true
-     flush_thread_interval 5
-     overflow_action block
-     retry_forever true
-     retry_wait 2s
-     flush_thread_count 4
-     flush_interval 3s
-   </buffer>
-# second is missing, it it is only deployed to one elk cluster
   </store>
  </match>

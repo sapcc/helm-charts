@@ -1,9 +1,6 @@
 {{- define "share_netapp" -}}
 {{$share := index . 1 -}}
 {{with index . 0}}
-{{- $imageRegistry := required ".Values.global.imageRegistry" .Values.global.imageRegistry -}}
-{{- $imageNamespace := required ".Values.global.imageNamespace" .Values.global.imageNamespace -}}
-{{- $imageVersion := required ".Values.imageVersionManilaApi" .Values.imageVersionManilaApi -}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -33,11 +30,7 @@ spec:
     spec:
       containers:
         - name: manila-share-netapp-{{$share.name}}
-          {{- if .Values.loci.enabled }}
-          image: {{$imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
-          {{- else }}
-          image: {{$imageRegistry}}/{{$imageNamespace}}/ubuntu-source-manila-share:{{$imageVersion}}
-          {{- end }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -48,11 +41,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              {{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
-              {{- else }}
-              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
-              {{- end }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:

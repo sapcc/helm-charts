@@ -22,9 +22,9 @@
 
     "default": "rule:context_is_viewer",
 
-    "all_tenants": "rule:admin",
+    "all_tenants": "rule:admin or rule:context_is_dns_support",
     "edit_managed_records" : "rule:admin",
-    "use_low_ttl": "rule:admin",
+    "use_low_ttl": "rule:admin or rule:context_is_dns_support",
 
     "get_quotas": "rule:context_is_viewer",
     "get_quota": "rule:context_is_viewer",
@@ -120,7 +120,7 @@
     "delete_record": "rule:context_is_master",
     "count_records": "rule:context_is_viewer",
 
-    "use_sudo": "rule:admin or rule:context_is_dns_ops",
+    "use_sudo": "rule:context_is_dns_ops",
     "create_blacklist": "rule:context_is_dns_ops",
     "find_blacklist": "rule:context_is_dns_support",
     "find_blacklists": "rule:context_is_dns_support",

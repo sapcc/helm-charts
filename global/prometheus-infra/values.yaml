@@ -14,7 +14,8 @@ prometheus-infra-global:
 
   ingress:
     enabled: true
-    hostNameOverride: prometheus-infra.global.cloud.sap
+    hostsFQDN:
+      - prometheus-infra.global.cloud.sap
     annotations:
       disco/zone-name: "global.cloud.sap."
 
@@ -30,9 +31,19 @@ prometheus-infra-global:
   secrets:
     - prometheus-infra-sso-cert
 
-  # Send alerts to these alertmanagers.
   alertmanagers:
-    - alertmanager.eu-de-1.cloud.sap
+    # Enabled via secrets
+    authentication:
+      enabled: false
+
+    hosts:
+      - alertmanager.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-nl-1.cloud.sap
+
+  # send alerts to dedicated tier
+  alerts:
+    tier: monitor
 
 # Basic alerts for global Prometheus.
 alerts:

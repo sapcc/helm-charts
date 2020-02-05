@@ -118,6 +118,8 @@ spec:
             - name: STATSD_PREFIX
               value: {{ .Values.api.metrics.prefix | default "openstack" | quote }}
             {{- end }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           ports:
             - name: public
               containerPort: 5000
@@ -148,7 +150,7 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
-{{- if eq .Values.release "train" }}
+{{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
               subPath: policy.yaml
@@ -181,7 +183,7 @@ spec:
               mountPath: /etc/apache2/mods-available/mpm_event.conf
               subPath: mpm_event.conf
               readOnly: true
-            {{- if eq .Values.release "stein" }}
+            {{- if ne .Values.release "rocky" }}
             - name: keystone-etc
               mountPath: /etc/keystone/access_rules.json
               subPath: access_rules.json

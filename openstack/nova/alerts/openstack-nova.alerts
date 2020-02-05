@@ -260,6 +260,21 @@ groups:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is down'
 
+  - alert: OpenstackNovaCanaryCreateServerDown
+    expr: blackbox_canary_status_gauge{service=~"nova", check=~"create_server-.+"} == 1
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
+
   - alert: OpenstackNovaCanaryDown
     expr: blackbox_canary_status_gauge{service=~"nova"} == 1
     for: 1h

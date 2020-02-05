@@ -4,8 +4,6 @@
 # name: value
 #
 global:
-  #image_namespace: REQUIRED
-  #imageRegistry: REQUIRED
   ironicApiPortInternal: '6385'
   #ironic_tftp_ip: null
   ironictftpPortPublic: '69'
@@ -17,11 +15,16 @@ global:
   fernetRouter:
     image: "monsoon/fernet-router:latest"
 
+loci:
+  enabled: false
+  imageNamespace: monsoon
+  imageVersion: rocky-20191216104623
+
 tempest:
   enabled: false
 
 osprofiler:
-    enabled: false
+  enabled: false
 
 statsd:
   port: 9102
@@ -92,15 +95,15 @@ pod:
         revisionHistory: 5
         podReplacementStrategy: RollingUpdate
         rollingupdate:
-           maxUnavailable: 0
-           maxSurge: 1
+          maxUnavailable: 0
+          maxSurge: 1
 
 #imageVersion: null
 #imageVersionIronicApi: null
 #imageVersionIronicConductor: null
 #imageVersionIronicInspector: null
 #imageVersionIronicPxe: null
-swift_multi_tenant: True
+swift_multi_tenant: true
 
 debug: "True"
 dbName: ironic
@@ -133,8 +136,8 @@ conductor:
     conductor: {}
     dhcp: {}
     pxe:
-      ipxe_enabled: True
-      ipxe_use_swift: True
+      ipxe_enabled: true
+      ipxe_use_swift: true
       pxe_bootfile_name: "undionly.kpxe"
 
 agent:
@@ -161,6 +164,72 @@ neutron_port_setup_delay: 0
 #swift_account: null
 #swift_tempurl: null
 
+mysql_metrics:
+  enabled: false
+  db_name: ironic
+  db_user: ironic
+  customMetrics:
+    - name: openstack_ironic_nodes_list
+      help: Ironic Node list
+      labels:
+      - "uuid"
+      - "name"
+      - "instance_uuid"
+      - "power_state"
+      - "provision_state"
+      - "last_error"
+      - "gauge"
+      query: |
+        SELECT
+          uuid,
+          name,
+          instance_uuid,
+          power_state,
+          provision_state
+          AS last_error
+          COUNT(*) AS gauge
+        FROM nodes
+        GROUP BY uuid, name, instance_uuid, power_state, provision_state, last_error;
+      values:
+      - "last_error"
+      - "gauge"
+    - name: openstack_ironic_nodes_updated
+      help: Ironic updated nodes
+      labels:
+      - "uuid"
+      - "name"
+      - "provision_state"
+      query: |
+        SELECT 
+          uuid, 
+          name, 
+          provision_state,
+          COUNT(*) AS in_24hrs_gauge
+        FROM nodes 
+        WHERE (updated_at >= now() - interval '24 hours') 
+        GROUP BY uuid, provision_state, name;
+      values:
+      - "in_24hrs_gauge"
+    - name: openstack_ironic_nodes
+      help: Ironic nodes in maintenance
+      labels:
+      - "maintenance_reason"
+      values:
+      - "node_not_in_maint"
+      - "maintenance_reason"
+      query: |
+        SELECT 
+          COUNT(case when not maintenance then 1 end) AS node_not_in_maint, 
+          COUNT(case when maintenance then 1 end) AS node_not_in_maint, 
+          uuid, 
+          name, 
+          COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
+        GROUP BY
+          maintenance_reason,
+          uuid,
+          name
+        FROM nodes
+
 pgmetrics:
   name: ironic
   resources:
@@ -171,7 +240,7 @@ pgmetrics:
       memory: 64Mi
       cpu: 50m
   customMetrics:
-     openstack_ironic_nodes_list:
+    openstack_ironic_nodes_list:
       query: "SELECT uuid, name, instance_uuid, power_state, provision_state, coalesce(last_error,'error unknown') AS last_error, count(*) as gauge from nodes group by uuid, name, instance_uuid, power_state, provision_state, last_error"
       metrics:
         - uuid:
@@ -195,39 +264,55 @@ pgmetrics:
         - gauge:
             usage: "GAUGE"
             description: "Current Node count"
-     openstack_ironic_nodes_updated:
-       query: "SELECT uuid, name, provision_state, COUNT(*) AS in_24hrs FROM nodes WHERE (updated_at >= now() - interval '24 hours') GROUP BY uuid, provision_state, name"
-       metrics:
-         - uuid:
-             usage: "LABEL"
-             description: "Node UUID"
-         - name:
-             usage: "LABEL"
-             description: "Node name"
-         - provision_state:
-             usage: "LABEL"
-             description: "Current Node Provision status"
-         - in_24hrs_gauge:
-              usage: "GAUGE"
-              description: "Nodes created past 24hrs"
-     openstack_ironic_nodes:
-       query: "SELECT count(case when not maintenance then 1 end) as NodeNotInMaint, count(case when maintenance then 1 end) as NodeInMaint, uuid, name, coalesce(maintenance_reason,'reason unknown') AS maintenance_reason from nodes group by maintenance_reason, uuid, name"
-       metrics:
-         - uuid:
-             usage: "LABEL"
-             description: "Node UUID"
-         - name:
-             usage: "LABEL"
-             description: "Node name"
-         - maintenance_reason:
-             usage: "LABEL"
-             description: "Maintenance Reason of Node "
-         - NodeNotInMaint:
-             usage: "GAUGE"
-             description: "Node not in maintenance"
-         - NodeInMaint:
-              usage: "GAUGE"
-              description: "Nodes in maintenance"
+    openstack_ironic_nodes_updated:
+      query: "SELECT uuid, name, provision_state, COUNT(*) AS in_24hrs FROM nodes WHERE (updated_at >= now() - interval '24 hours') GROUP BY uuid, provision_state, name"
+      metrics:
+        - uuid:
+            usage: "LABEL"
+            description: "Node UUID"
+        - name:
+            usage: "LABEL"
+            description: "Node name"
+        - provision_state:
+            usage: "LABEL"
+            description: "Current Node Provision status"
+        - in_24hrs_gauge:
+            usage: "GAUGE"
+            description: "Nodes created past 24hrs"
+    openstack_ironic_nodes:
+      query: "SELECT count(case when not maintenance then 1 end) as NodeNotInMaint, count(case when maintenance then 1 end) as NodeInMaint, uuid, name, coalesce(maintenance_reason,'reason unknown') AS maintenance_reason from nodes group by maintenance_reason, uuid, name"
+      metrics:
+        - uuid:
+            usage: "LABEL"
+            description: "Node UUID"
+        - name:
+            usage: "LABEL"
+            description: "Node name"
+        - maintenance_reason:
+            usage: "LABEL"
+            description: "Maintenance Reason of Node "
+        - NodeNotInMaint:
+            usage: "GAUGE"
+            description: "Node not in maintenance"
+        - NodeInMaint:
+            usage: "GAUGE"
+            description: "Nodes in maintenance"
+    openstack_ironic_nodes_conductor:
+      query: "select name, uuid, conductor_group, count(conductor_group) AS group from nodes where conductor_group not similar to 'bm%' GROUP BY name, uuid, conductor_group"
+      metrics:
+        - uuid:
+            usage: "LABEL"
+            description: "Node UUID"
+        - name:
+            usage: "LABEL"
+            description: "Node name"
+        - conductor_group:
+            usage: "LABEL"
+            description: "Conductor Group name"           
+        - group:
+            usage: "GAUGE"
+            description: "Node count" 
+             
 postgresql:
   enabled: true
   imageTag: '9.4.21'
@@ -250,6 +335,30 @@ postgresql:
       memory: "500Mi" # 180Mi high recorded
   shared_preload_libraries: pg_stat_statements
   track_activity_query_size: 2048
+
+mariadb:
+  enabled: false
+  backup_v2:
+    enabled: false
+    backup_dir: ./backup
+    databases:
+      - ironic
+      - ironic_inspector
+    verify_tables:
+      - ironic.nodes
+      - ironic_inspector.nodes
+  backup:
+    enabled: false
+    metrics: false
+    image_version: v0.5.15
+    os_password: "AHardPa55w0rd!"
+  root_password: "AHardPa55w0rd!"
+  buffer_pool_size: "8192M"
+  log_file_size: "2048M"
+  name: ironic
+  initdb_configmap: ironic-mariadb-init
+  persistence_claim:
+    name: db-ironic-pvclaim
 
 sentry:
   enabled: true

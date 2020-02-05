@@ -1,3 +1,50 @@
+## 3.3.6
+
+* Standardize labels: Introduce labels `container`, `pod` in cAdvisor metrics.
+  These shall be used instead of `container_name`, `pod_name` to be consistent with kube-state-metrics, kubelet and avoid further `label_replace` in PromQL queries.
+  **Note**: The label `container_name`, `pod_name` might be dropped from cAdvisor metrics in the next major release.
+
+## 3.3.5
+
+* Standardize labels: Ensure the `node` label (node name) is present on cAdvisor, kubelet metrics. 
+
+## 3.3.4
+
+* Fix node label for kubelet job.
+* Upgrade Prometheus to `v2.15.2`.
+
+## 3.3.3
+
+* Unify labels (instance vs node).
+
+## 3.3.2
+
+* Allow configuring Alertmanagers which require authentication. The relevant `.Values.alertmanagers` section was exploded to:
+  ```yaml
+  # Alertmanager configuration.
+  alertmanagers:
+    # Configuration if the Alertmanager has client certificate authentication enabled.
+    authentication:
+      enabled: false
+      # The certificate used for authentication with the Alertmanager..
+      ssoCert: 
+      # The key used for authentication with the Alertmanager.
+      ssoKey:
+  
+    # List of Alertmanagers (AM) to send alerts to.
+    # If multiple AMs are used in an HA setup, alerts must be send to every AM.
+    hosts: []
+    # - alertmanager1.tld
+    # - alertmanager2.tld
+  ```
+* Fixed double scraping for service/endpoint service discovery when using `prometheus.io/port` annotation. 
+  A service has to declare the port(s) on which they expose metrics on in their spec. The service gets dropped otherwise.
+  Per default Prometheus tries to get metrics from service ports with the name `metrics`. 
+
+## 3.1.1
+
+* Fix SD config for `prometheus.io/port_1` as well.
+
 ## 3.1.0
 
 * Potential **Breaking change** if the out-of-the-box pod service discovery is being used.

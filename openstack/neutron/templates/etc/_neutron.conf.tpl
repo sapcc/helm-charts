@@ -54,7 +54,7 @@ rpc_state_report_workers = {{ .Values.rpc_state_workers | default .Values.global
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
-api_workers = {{ .Values.api_workers | default .Values.global.api_workers | default 8 }}
+api_workers = {{ .Values.api_workers | default .Values.global.api_workers | default 12 }}
 periodic_fuzzy_delay = 10
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
@@ -105,12 +105,17 @@ root_helper = neutron-rootwrap /etc/neutron/rootwrap.conf
 {{ end }}
 
 [database]
-connection = postgresql+psycopg2://{{ default .Release.Name .Values.global.dbUser }}:{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}@{{include "neutron_db_host" .}}:{{.Values.global.postgres_port_public | default 5432}}/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
+{{- if eq .Values.postgresql.enabled true }}
+connection = postgresql+psycopg2://{{ default .Release.Name .Values.global.dbUser }}:{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}@neutron-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.postgres_port_public | default 5432}}/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 5 }}
 {{- if or .Values.postgresql.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default -1 }}
 {{- else }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 10 }}
+{{- end }}
+{{- else }}
+connection = {{ include "db_url_mysql" . }}
+{{- include "ini_sections.database_options_mysql" . }}
 {{- end }}
 
 
@@ -131,6 +136,8 @@ service_token_roles_required = True
 insecure = True
 token_cache_time = 600
 memcache_use_advanced_pool = True
+include_service_catalog = true
+service_type = network
 
 [oslo_messaging_notifications]
 driver = noop

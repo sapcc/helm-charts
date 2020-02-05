@@ -7,7 +7,7 @@ metadata:
 data:
   policy.json: |
     {
-      "cloud_scope": "project_name:admin and project_domain_name:cloud_admin",
+      "cloud_scope": "project_name:cloud_admin and project_domain_name:ccadmin",
       "cloud_admin": "role:admin and rule:cloud_scope",
       "cloud_rw":    "role:cloud_registry_admin",
       "cloud_ro":    "role:cloud_registry_viewer or rule:cloud_rw",
@@ -20,13 +20,17 @@ data:
       "any_rw":    "rule:cloud_rw or rule:project_rw",
       "any_ro":    "rule:cloud_ro or rule:project_ro",
 
-      "account_matches_scope": "rule:cloud_scope or project_id:%(account_project_id)s",
+      "matches_scope": "rule:cloud_scope or project_id:%(target.project.id)s",
 
-      "account:list": "rule:any_ro",
-      "account:show": "rule:any_ro    and rule:account_matches_scope",
-      "account:pull": "rule:any_ro    and rule:account_matches_scope",
-      "account:push": "rule:any_rw    and rule:account_matches_scope",
-      "account:edit": "rule:any_admin and rule:account_matches_scope"
+      "account:list":   "rule:any_ro    or  role:resource_service",
+      "account:show":   "rule:any_ro    and rule:matches_scope",
+      "account:pull":   "rule:any_ro    and rule:matches_scope",
+      "account:push":   "rule:any_rw    and rule:matches_scope",
+      "account:delete": "rule:any_rw    and rule:matches_scope",
+      "account:edit":   "rule:any_admin and rule:matches_scope",
+
+      "quota:show":     "role:resource_service or (rule:any_ro and rule:matches_scope)",
+      "quota:edit":     "role:resource_service"
     }
 
   issuer-key.pem:  {{ index .Values.keppel.issuer "key.pem"  | quote }}

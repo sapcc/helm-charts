@@ -18,7 +18,7 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
 - name:  KEPPEL_API_LISTEN_ADDRESS
   value: ':80'
 - name:  KEPPEL_API_PUBLIC_URL
-  value: 'https://keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
+  value: 'https://{{$.Values.keppel.hostname}}.{{$.Values.global.region}}.{{$.Values.global.tld}}'
 - name:  KEPPEL_AUDIT_SILENT
   value: "{{ ne $.Values.keppel.rabbitmq.uri "" }}"
 - name:  KEPPEL_AUDIT_RABBITMQ_URI
@@ -28,7 +28,7 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
 - name:  KEPPEL_AUTH_LOCAL_ROLE
   value: 'swiftoperator'
 - name:  KEPPEL_DB_URI
-  value: 'postgres://postgres:{{$.Values.postgresql.postgresPassword}}@keppel-postgresql/keppel?sslmode=disable'
+  value: 'postgres://postgres:{{$.Values.postgresql.postgresPassword}}@{{.Release.Name}}-postgresql/keppel?sslmode=disable'
 - name:  KEPPEL_DRIVER_AUTH
   value: 'keystone'
 - name:  KEPPEL_DRIVER_NAMECLAIM
@@ -47,6 +47,8 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: "{{ range $.Values.keppel.nameclaim_whitelist }}{{.project}}:{{.account}},{{end}}"
 - name:  KEPPEL_OSLO_POLICY_PATH
   value: '/etc/keppel/policy.json'
+- name:  KEPPEL_PEERS
+  value: {{ $.Values.keppel.peer_hostnames | join "," | quote }}
 - name:  KEPPEL_REGISTRY_IMAGE
   value: {{ include "keppel_image" $ }}
 - name:  OS_AUTH_URL

@@ -1,5 +1,7 @@
 {{- if .Values.agent.multus | default false }}
-{{- range $az := list "a" "b" }}
+{{- $az_count := len .Values.global.availability_zones -}}
+{{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
+{{- $az := trimPrefix $.Values.global.region $az_long }}
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
@@ -21,11 +23,19 @@ spec:
       name: neutron-network-agent-{{ $az }}
   serviceName: neutron-network-agent
   podManagementPolicy: "Parallel"
+{{- if and (ge $az_count 2) (eq $az "a") }}
+  replicas: 5
+{{- else if and (ge $az_count 2) (eq $az "b") }}
+  replicas: 5
+{{- else if eq $az_count 1 }}
+  replicas: 10
+{{- else }}
   replicas: 3
+{{- end }}
   template:
     metadata:
       annotations:
-        k8s.v1.cni.cncf.io/networks: cbr1-bridge@{{$.Values.cp_network_interface}}
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
       labels:
         name: neutron-network-agent-{{ $az }}
@@ -34,7 +44,7 @@ spec:
 {{ tuple $ "neutron" "agent" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       nodeSelector:
         multus: bond1
-        failure-domain.beta.kubernetes.io/zone: {{ $.Values.global.region}}{{ $az }}
+        failure-domain.beta.kubernetes.io/zone: {{ $az_long }}
       containers:
         - name: neutron-dhcp-agent
           image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}

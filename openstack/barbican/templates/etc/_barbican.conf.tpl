@@ -63,7 +63,8 @@ region_name = {{.Values.global.region}}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 service_token_roles_required = True
 token_cache_time = 600
-include_service_catalog = false
+include_service_catalog = true
+service_type = key-manager
 
 {{- if .Values.audit.enabled }}
 # Defines CADF Audit Middleware section

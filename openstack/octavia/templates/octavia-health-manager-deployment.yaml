@@ -1,0 +1,55 @@
+{{- range $name, $v := .Values.workers }}
+{{- with $ }}
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: octavia-health-manager
+  labels:
+    app.kubernetes.io/name: octavia-health-manager
+    helm.sh/chart: {{ include "octavia.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: octavia-health-manager
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: octavia-health-manager
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
+        configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      containers:
+        - name: octavia-f5-status-manager
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "octavia-f5-status-manager", "--config-file", "/etc/octavia/octavia.conf", "--config-file", "/etc/octavia/octavia-worker.conf"]
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia.conf
+              subPath: octavia.conf
+              readOnly: true
+            - name: octavia-etc-worker
+              mountPath: /etc/octavia/octavia-worker.conf
+              subPath: octavia-worker.conf
+              readOnly: true
+      volumes:
+        - name: octavia-etc
+          configMap:
+            name: octavia-etc
+        - name: octavia-etc-worker
+          configMap:
+            name: octavia-etc-{{ $name }}
+{{- end }}
+{{- end }}

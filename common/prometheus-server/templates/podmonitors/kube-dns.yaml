@@ -20,8 +20,7 @@ spec:
     any: true
 
   podMetricsEndpoints:
-    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
       scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       targetPort: 10055
@@ -33,8 +32,7 @@ spec:
           targetLabel: instance
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
 
-    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
       scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       targetPort: 10054
@@ -43,7 +41,7 @@ spec:
           replacement: dnsmasq
         - action: replace
           sourceLabels: [__meta_kubernetes_pod_node_name]
-          targetLabel: instance
+          targetLabel: node
         - targetLabel: job
           replacement: kube-dns
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}

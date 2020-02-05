@@ -1,6 +1,3 @@
-{{- $imageRegistry := required ".Values.global.imageRegistry" .Values.global.imageRegistry -}}
-{{- $imageNamespace := required ".Values.global.imageNamespace" .Values.global.imageNamespace -}}
-{{- $imageVersion := required ".Values.imageVersionManilaApi" .Values.imageVersionManilaApi -}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -39,11 +36,7 @@ spec:
 {{ tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       initContainers:
       - name: kubernetes-entrypoint
-        {{- if .Values.loci.enabled }}
-        image: {{$imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
-        {{- else }}
-        image: {{$imageRegistry}}/{{$imageNamespace}}/ubuntu-source-manila-api:{{$imageVersion}}
-        {{- end }}
+        image: {{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
         imagePullPolicy: IfNotPresent
         command:
           - /usr/local/bin/kubernetes-entrypoint
@@ -53,37 +46,26 @@ spec:
             - name: DEPENDENCY_JOBS
               value: {{ .Release.Name }}-migration
             - name: DEPENDENCY_SERVICE
-              {{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-              {{- else }}
-              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-              {{- end }}
             - name: COMMAND
               value: "true"
       containers:
         - name: manila-api
-          {{- if .Values.loci.enabled }}
-          image: {{$imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
-          {{- else }}
-          image: {{$imageRegistry}}/{{$imageNamespace}}/ubuntu-source-manila-api:{{$imageVersion}}
-          {{- end }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
           imagePullPolicy: IfNotPresent
           command:
+          {{- if .Values.api_backdoor }}
+            - dumb-init
+            - kubernetes-entrypoint
+          {{- else }}
             - /scripts/manila-api.sh
             - start
+          {{- end }}
           env:
-{{- if eq .Values.loci.enabled false }}
-            - name: APACHE_RUN_DIR
-              value: /tmp/apache2/
-            - name: APACHE_LOG_DIR
-              value: /tmp/apache2/
-            - name: APACHE_RUN_USER
-              value: manila
-            - name: APACHE_RUN_GROUP
-              value: manila
-            - name: APACHE_PID_FILE
-              value: /tmp/apache2/run.pid
-{{- end }}
+          {{- if .Values.api_backdoor }}
+            - name: COMMAND
+              value: "manila-api --config-file /etc/manila/manila.conf"
+          {{- end }}
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: STATSD_HOST
@@ -91,11 +73,7 @@ spec:
             - name: STATSD_PORT
               value: "9125"
             - name: DEPENDENCY_SERVICE
-              {{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-              {{- else }}
-              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-              {{- end }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -118,12 +96,14 @@ spec:
           ports:
             - name: manila-api
               containerPort: {{.Values.api_port_internal}}
+          {{- if not .Values.api_backdoor }}
           lifecycle:
             preStop:
               exec:
                 command:
                   - /scripts/manila-api.sh
                   - stop
+          {{- end }}
           volumeMounts:
             - name: etcmanila
               mountPath: /etc/manila
@@ -131,8 +111,10 @@ spec:
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
               readOnly: true
+            {{- if not .Values.api_backdoor }}
             - name: wsgi-manila
               mountPath: /var/www/cgi-bin/manila
+            {{- end }}
             - name: manila-etc
               mountPath: /etc/manila/api-paste.ini
               subPath: api-paste.ini
@@ -157,10 +139,12 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+            {{- if not .Values.api_backdoor }}
             - name: manila-etc
               mountPath: /etc/apache2/conf-enabled/wsgi-manila.conf
               subPath: wsgi-manila.conf
               readOnly: true
+            {{- end }}
             - name: manila-bin
               mountPath: /scripts
               readOnly: true
@@ -190,8 +174,10 @@ spec:
       volumes:
         - name: etcmanila
           emptyDir: {}
+        {{- if not .Values.api_backdoor }}
         - name: wsgi-manila
           emptyDir: {}
+        {{- end }}
         - name: manila-etc
           configMap:
             name: manila-etc

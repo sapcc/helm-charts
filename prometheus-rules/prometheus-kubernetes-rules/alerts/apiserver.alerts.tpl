@@ -1,3 +1,4 @@
+# vi:syntax=yaml
 groups:
 - name: apiserver.alerts
   rules:
@@ -24,7 +25,7 @@ groups:
       severity: warning
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
-      dashboard: kubernetes-node?var-server={{`{{$labels.instance}}`}}
+      dashboard: nodes?var-server={{`{{$labels.instance}}`}}
     annotations:
       description: ApiServer on {{`{{ $labels.instance }}`}} is DOWN.
       summary: An ApiServer is DOWN

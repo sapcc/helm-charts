@@ -50,6 +50,7 @@ spec:
           ports:
             - name: prometheus
               containerPort: {{ $port }}
+          {{- if ne $name "manila" }}
           livenessProbe:
             httpGet:
               port: 8086
@@ -57,11 +58,14 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 5
             failureThreshold: 3
+          {{- end }}
           resources:
             {{- toYaml $values.exporter.resources | nindent 12 }}
           volumeMounts:
             - name: etc
               mountPath: /etc/netapp
+{{/* manila filers are predefined in secrets */}}
+        {{- if ne $name "manila" }}
         - name: netappsd
           args:
             - -configmap
@@ -89,6 +93,7 @@ spec:
             failureThreshold: 6
           resources:
             {{- toYaml $values.netappsd.resources | nindent 12 }}
+        {{- end }}
 
 {{- end }}
 {{- end }}

@@ -170,8 +170,6 @@ api_metadata:
 consoles:
   novnc:
     portInternal: '6080'
-  spicehtml5:
-    portInternal: '6082'
   serial:
     portInternal: '6083'
   shellinabox:
@@ -185,7 +183,7 @@ scheduler:
   driver: "filter_scheduler"
   scheduler_tracks_instance_changes: false
   scheduler_instance_sync_interval: 120
-  default_filters: "AvailabilityZoneFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmClusterUtilizationFilter, BigVmFlavorHostSizeFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter, BaremetalExactRamFilter, BaremetalExactCoreFilter, BaremetalExactDiskFilter"
+  default_filters: "AvailabilityZoneFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter, BaremetalExactRamFilter, BaremetalExactCoreFilter, BaremetalExactDiskFilter"
   ram_weight_multiplier: 1.0
   disk_weight_multiplier: 1.0
   io_ops_weight_multiplier: 0.0
@@ -205,6 +203,7 @@ compute:
       pbm_enabled: false
       pbm_default_policy: "nova-ephemeral"
       smbios_asset_tag: "SAP CCloud VM"
+      bigvm_deployment_free_host_hostgroup_name: "bigvm_free_host_antiaffinity_hostroup"
 
 conductor: {}
 
@@ -463,6 +462,15 @@ pgmetrics:
       - version:
           usage: "GAUGE"
           description: "Version of the service running"
+    openstack_compute_node_last_action_interval_seconds:
+      query: 'select i.host AS host, EXTRACT(EPOCH FROM (now() - max(ia.created_at)))::int AS "interval" from instance_actions AS ia JOIN instances AS i ON i.uuid = ia.instance_uuid group by i.host;'
+      metrics:
+      - host:
+          usage: "LABEL"
+          description: "name of the nova-compute service"
+      - interval:
+          usage: "GAUGE"
+          description: "Seconds since the latest instance_action was created."
 
 
 postgresql:

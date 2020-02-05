@@ -25,7 +25,10 @@ spec:
              - name: metrics
                containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
            command:
-             - ./vrops-exporter.py
+             - ./exporter.py
+           args:
+             - -a
+             - /atlas/netbox.json
            env:
            - name: USER
              value: {{ required ".Values.vrops.user variable is missing" .Values.vrops.user }}
@@ -33,6 +36,8 @@ spec:
              value: {{ required ".Values.vrops.password variable is missing" .Values.vrops.password | quote }}
            - name: PORT
              value: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
+           - name: DEBUG
+             value: {{ .Values.vrops.debug | quote }}
            livenessProbe:
              httpGet:
                path: /metrics
@@ -40,3 +45,11 @@ spec:
              initialDelaySeconds: 30
              timeoutSeconds: 10
              periodSeconds: 15
+           volumeMounts:
+             - mountPath: /atlas
+               name: atlas-output
+               readOnly: true
+      volumes:
+        - configMap:
+            name: {{ .Values.vrops.atlas_configmap }}
+          name: atlas-output

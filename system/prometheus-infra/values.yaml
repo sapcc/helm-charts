@@ -1,62 +1,60 @@
 global:
   imageRegistry: hub.global.cloud.sap
   domain: cloud.sap
-
   # Defined via secrets.
   # region:
   # cluster:
   # clusterType:
-
 # Name of the Prometheus to publish to
   alerts:
     prometheus: infra-frontend
-
   aggregations:
     prometheus: infra-frontend
-
 # Values for Infrastructure Prometheus Frontend.
 prometheus-infra-frontend:
   name: infra-frontend
   enabled: true
-
   retentionTime: 14d
-
   additionalScrapeConfigs:
     name: prometheus-infra-frontend-additional-scrape-config
     key: scrape-config.yaml
-
   ingress:
     enabled: true
     hosts:
       - prometheus-infra.scaleout
-
   persistence:
     enabled: true
     # prom-operator does not support other accessModes than RWO
     # accessMode: ReadWriteOnce
     size: 300Gi
-
   # Comment the `prometheus-sso-cert` if SSO is not used (aka authentication.enabled=false)
   secrets:
     - prometheus-infra-frontend-sso-cert
-
   alertmanagers:
-    - alertmanager.eu-de-1.cloud.sap
-  #  - alertmanager.eu-nl-1.cloud.sap
-
+    # Enabled via secrets
+    authentication:
+      enabled: false
+    hosts:
+      - alertmanager.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-nl-1.cloud.sap
+  # send alerts to dedicated tier
+  alerts:
+    tier: monitor
   # Kubernetes resource requests and limits for this Prometheus.
   resources:
     requests:
       cpu: 200m
       memory: 16Gi
-
 # Collector Prometheus are only accessible after presenting a valid SSO certificate.
 authentication:
   enabled: true
   # Defined via secrets.
   # ssoCert:
   # ssoKey:
-
+# Collector job properties
+collector:
+  scrapeInterval: 1m
+  scrapeTimeout: 55s
 interconnect_sre:
   enabled: false
-

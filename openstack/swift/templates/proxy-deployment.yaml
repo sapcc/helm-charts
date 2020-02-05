@@ -31,6 +31,15 @@ spec:
         {{- include "swift_conf_annotations" $ | indent 8 }}
         checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" $ | sha256sum }}
         {{- include "swift_ring_annotations" $ | indent 8 }}
+        {{- if $.Values.health_exporter }}
+        {{- if not $.Values.health_statsd }}
+        # Prometheus annotations for the swift-health-exporter, the annotations
+        # for the statsd-exporter are on the proxy-service level instead
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9520"
+        prometheus.io/targets: {{ $.Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       volumes:
         - name: tls-secret
@@ -131,7 +140,7 @@ spec:
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 10
-        {{- if $.Values.health_statsd }}
+        {{- if or $.Values.health_statsd $.Values.health_exporter }}
         - name: collector
           image: {{ include "swift_image" $ }}
           command:
@@ -139,6 +148,7 @@ spec:
           args:
             - /bin/bash
             - /usr/bin/swift-start
+          {{- if $.Values.health_statsd }}
             - health-statsd
           env:
             - name: DEBUG_CONTAINER
@@ -149,15 +159,18 @@ spec:
               value: "info"
             - name: ADD_HOSTNAME_SUFFIX
               value: "true"
+          {{- else }}
+            - health-exporter
+          ports:
+            - name: metrics
+              containerPort: 9520
+          {{- end }}
           {{- if $.Values.resources.enabled }}
           resources:
             # observed usage: CPU = 100m-300m, RAM = 20-85 MiB
             requests:
               cpu: "400m"
-              memory: "150Mi"
-            limits:
-              cpu: "400m"
-              memory: "150Mi"
+              memory: "200Mi"
           {{- end }}
           volumeMounts:
             - mountPath: /swift-etc

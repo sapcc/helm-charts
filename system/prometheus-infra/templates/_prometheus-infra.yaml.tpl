@@ -1,7 +1,7 @@
-- job_name: 'prometheus-infra-collection'
+- job_name: 'prometheus-infra-collector'
   scheme: https
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{ .Values.collector.scrapeInterval }}
+  scrape_timeout: {{ .Values.collector.scrapeTimeout }}
 
   honor_labels: true
   metrics_path: '/federate'
@@ -18,13 +18,17 @@
       - '{job="vcenter"}'
       - '{job="asw-eapi"}'
       - '{job="bios/ironic"}'
+      - '{job="bios/cisco_vpod"}'
       - '{job="ipmi/ironic"}'
       - '{job="vmware-esxi"}'
       - '{job="snmp"}'
       - '{job="infra-monitoring-atlas-sd"}'
-      - '{__name__=~"^vcenter_.+"}'
+      - '{__name__=~"^vcenter_.+",job!~"[a-z0-9-]*-vccustomervmmetrics$"}'
       - '{__name__=~"^network_apic_.+"}'
-      - '{__name__=~"^ipmi_.+"}'
+      - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
+      - '{__name__=~"^ipmi_memory_errors$"}'
+      - '{__name__=~"^ipmi_up"}'
+      - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^up"}'
 
   relabel_configs:
@@ -36,6 +40,7 @@
     - action: replace
       target_label: cluster_type
       replacement: controlplane
+
   metric_relabel_configs:
     - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash|instance"
       action: labeldrop

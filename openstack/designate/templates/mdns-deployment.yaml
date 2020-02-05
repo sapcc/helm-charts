@@ -34,7 +34,7 @@ spec:
 {{- end }}
       containers:
         - name: designate-mdns
-          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/ubuntu-source-designate-mdns:{{required ".Values.image_version_designate_mdns is missing" .Values.image_version_designate_mdns}}
+          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/loci-designate:{{required ".Values.image_version_designate_mdns is missing" .Values.image_version_designate_mdns}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/kubernetes-entrypoint
@@ -53,9 +53,14 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "designate-migration"
             - name: DEPENDENCY_SERVICE
-              value: "designate-mariadb,{{ .Release.Name }}-rabbitmq"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:

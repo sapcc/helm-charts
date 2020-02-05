@@ -7,6 +7,10 @@ global:
 kubeStateMetrics:
   enabled: false
 
+# Disable the prometheus-operator prometheus-node-exporter sub-chart. We deploy independently.
+nodeExporter:
+  enabled: false
+
 # Additional scrape configuration deployed via secrets.
 extraScrapeConfig: ""
 
@@ -20,6 +24,11 @@ prometheus-operator:
 
   prometheusOperator:
     createCustomResource: false
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "kubernetes"
+        prometheus.io/port: "8080"
     serviceAccount:
       create: false
     admissionWebhooks:
@@ -64,16 +73,13 @@ kube-state-metrics:
   customLabels:
     app: kube-state-metrics
 
-  service:
-    annotations:
-      prometheus.io/port: "8080"
-      prometheus.io/port_1: "8081"
-      prometheus.io/targets: "kubernikus"
-
   resources:
     requests:
       memory: 150Mi
       cpu: 100m
+
+kube-state-metrics-exporter:
+  prometheusName: kubernikus
 
 prometheus-server:
   name: kubernikus
@@ -127,7 +133,14 @@ prometheus-server:
 
   # Send alerts to these alertmanagers.
   alertmanagers:
-    - alertmanager.eu-de-1.cloud.sap
+    # Enabled via secrets.
+    authentication:
+      enabled: false
+
+    hosts:
+      - alertmanager.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-nl-1.cloud.sap
 
 prometheus-kubernetes-rules:
   prometheusName: kubernikus
@@ -174,56 +187,53 @@ event-exporter:
   rbac:
     create: true
 
-  metrics:
-    config:
-      config.yaml: |-
-        metrics:
-        - name: volume_mount_error_total
-          event_matcher:
-          - key: InvolvedObject.Kind
-            expr: Pod
-          - key: Reason
-            expr: (FailedAttachVolume|FailedMount)
-          - key: Type
-            expr: Warning
-          - key: Source.Component
-            expr: attachdetach.*
-          labels:
-            node: Object.Spec.NodeName
-        - name: volume_mount_success_total
-          event_matcher:
-          - key: InvolvedObject.Kind
-            expr: Pod
-          - key: Message
-            expr: MountVolume.SetUp succeeded for volume .pvc-.*
-          - key: Reason
-            expr: SuccessfulMountVolume
-          labels:
-            node: Source.Host
-        - name: volume_multi_attach_error_total
-          event_matcher:
-          - key: InvolvedObject.Kind
-            expr: Pod
-          - key: Message
-            expr: Multi-Attach error for volume.*
-          - key: Reason
-            expr: FailedAttachVolume
-          labels:
-            node: InvolvedObject.Name
-        - name: volume_mount_bad_request_total
-          event_matcher:
-          - key: InvolvedObject.Kind
-            expr: Pod
-          - key: Reason
-            expr: (FailedAttachVolume|FailedMount)
-          - key: Type
-            expr: Warning
-          - key: Source.Component
-            expr: attachdetach.*
-          - key: Message
-            expr: ".*failed to attach ([-0-9a-f]+) volume to.*compute: Invalid request due to incorrect syntax or missing required parameters."
-          labels:
-            volume: Message[1]
+  additional_metrics:
+    - name: volume_mount_error_total
+      event_matcher:
+      - key: InvolvedObject.Kind
+        expr: Pod
+      - key: Reason
+        expr: (FailedAttachVolume|FailedMount)
+      - key: Type
+        expr: Warning
+      - key: Source.Component
+        expr: attachdetach.*
+      labels:
+        node: Object.Spec.NodeName
+    - name: volume_mount_success_total
+      event_matcher:
+      - key: InvolvedObject.Kind
+        expr: Pod
+      - key: Message
+        expr: MountVolume.SetUp succeeded for volume .pvc-.*
+      - key: Reason
+        expr: SuccessfulMountVolume
+      labels:
+        node: Source.Host
+    - name: volume_multi_attach_error_total
+      event_matcher:
+      - key: InvolvedObject.Kind
+        expr: Pod
+      - key: Message
+        expr: Multi-Attach error for volume.*
+      - key: Reason
+        expr: FailedAttachVolume
+      labels:
+        node: InvolvedObject.Name
+    - name: volume_mount_bad_request_total
+      event_matcher:
+      - key: InvolvedObject.Kind
+        expr: Pod
+      - key: Reason
+        expr: (FailedAttachVolume|FailedMount)
+      - key: Type
+        expr: Warning
+      - key: Source.Component
+        expr: attachdetach.*
+      - key: Message
+        expr: ".*failed to attach ([-0-9a-f]+) volume to.*compute: Invalid request due to incorrect syntax or missing required parameters."
+      labels:
+        volume: Message[1]
 
 grafana:
   enabled: false
@@ -336,3 +346,36 @@ grafana:
 
 grafana-dashboards-kubernetes:
   enableDatasources: false
+
+fluent-bit:
+  extraVolumeMounts:
+    - mountPath: /fluent-bit/etc/labelmap.json
+      name: config
+      subPath: labelmap.json
+
+promtail:
+  pipelineStages:
+    - docker: {}
+
+loki:
+  # user:
+  # password:
+
+  config:
+    port: 2020
+    loglevel: warn
+    lineFormat: json
+    removeKeys:
+      - kubernetes
+      - stream
+    labels: '{job="fluent-bit"}'
+    labelMap:
+      kubernetes:
+        namespace_name: namespace
+        labels:
+          app: app
+          release: release
+        host: node
+        container_name: container
+        pod_name: pod
+      stream: stream

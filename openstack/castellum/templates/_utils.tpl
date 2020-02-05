@@ -21,6 +21,8 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: "postgres://postgres:{{ .Values.postgresql.postgresPassword }}@castellum-postgresql.{{ .Release.Namespace }}.svc/castellum?sslmode=disable"
 - name: CASTELLUM_HTTP_LISTEN_ADDRESS
   value: ":8080"
+- name: CASTELLUM_LOG_SCRAPES
+  value: "true"
 - name: CASTELLUM_NFS_PROMETHEUS_URL
   value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
 - name: CASTELLUM_OSLO_POLICY_PATH

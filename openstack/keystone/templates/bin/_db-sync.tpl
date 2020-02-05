@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-{{- if eq .Values.release "stein" }}
+{{- if ne .Values.release "rocky" }}
 echo "Status before migration:"
 keystone-status --config-file=/etc/keystone/keystone.conf upgrade check
 {{- end }}

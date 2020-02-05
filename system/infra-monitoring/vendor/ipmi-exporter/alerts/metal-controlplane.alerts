@@ -2,49 +2,49 @@ groups:
 - name: metal-controlplane.alerts
   rules:
   - alert: MetalCPSensorCritical
-    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Planned|Staged|Active)"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox"} == 2) by (server_name, type, name, manufacturer, model, server_id, serial)
     for: 15m
     labels:
       severity: critical
       tier: metal
       service: controlplane
       context: "{{ $labels.server_name }}"
-      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }} / provision_state: {{ $labels.provision_state }}"
+      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
       playbook: docs/support/playbook/baremetal/controlplane_safe_shutdown.html
     annotations:
       description: "cp node {{ $labels.server_name }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
       summary: "Hardware error for instance: {{ $labels.server_name }}"
 
   - alert: MetalCPSensorWarning
-    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox", provision_state=~"(Staged)"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot)", job="cp/netbox"} == 2)) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
+    expr: count((ipmi_sensor_state{type=~"(Memory|Processor|Critical Interrupt|Version Change)", job="cp/netbox"} == 2) or (ipmi_sensor_state{type=~"(Drive Slot)", job="cp/netbox"} == 2)) by (server_name, type, name, manufacturer, model, server_id, serial)
     for: 15m
     labels:
       severity: warning
       tier: metal
       service: controlplane
       context: "{{ $labels.server_name }}"
-      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }} / provision_state: {{ $labels.provision_state }}"
+      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
       playbook: docs/support/playbook/baremetal/controlplane_safe_shutdown.html
     annotations:
       description: "cp node {{ $labels.server_name }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
       summary: "Hardware error for instance: {{ $labels.server_name }}"
 
   - alert: MetalCPSensorInfo
-    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply|Critical Interrupt)", job="cp/netbox"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id, serial)
+    expr: count(ipmi_sensor_state{type=~"(Memory|Drive Slot|Processor|Power Supply|Critical Interrupt)", job="cp/netbox"} == 2) by (server_name, type, name, manufacturer, model, server_id, serial)
     for: 15m
     labels:
       severity: info
       tier: metal
       service: controlplane
       context: "{{ $labels.server_name }}"
-      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }} / provision_state: {{ $labels.provision_state }}"
+      meta: "control plane node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
       playbook: docs/support/playbook/baremetal/controlplane_safe_shutdown.html
     annotations:
       description: "cp node {{ $labels.server_name }} hardware error for 5 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Serial: {{ $labels.serial }}"
       summary: "Hardware error for instance: {{ $labels.server_name }}"
 
   - alert: MetalCPMemoryInfo
-    expr: sum(ipmi_memory_errors{job="cp/netbox"} > 1000) by (server_name, exported_name, manufacturer, model, provision_state, server_id, serial)
+    expr: sum(ipmi_memory_errors{job="cp/netbox"} > 1000) by (server_name, exported_name, manufacturer, model, server_id, serial)
     for: 30m
     labels:
       severity: info

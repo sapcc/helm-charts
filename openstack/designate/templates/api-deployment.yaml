@@ -34,7 +34,7 @@ spec:
 {{- end }}
       containers:
         - name: designate-api
-          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/ubuntu-source-designate-api:{{required ".Values.image_version_designate_api is missing" .Values.image_version_designate_api}}
+          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/loci-designate:{{required ".Values.image_version_designate_api is missing" .Values.image_version_designate_api}}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
@@ -58,6 +58,11 @@ spec:
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:

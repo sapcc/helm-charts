@@ -29,6 +29,8 @@ auth_strategy = keystone
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
+osapi_volume_workers = {{ .Values.osapi_volume_workers | default 16 }}
+
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 {{- include "ini_sections.database_options_mysql" . }}
 
@@ -39,8 +41,13 @@ quota_gigabytes = 0
 quota_backups = -1
 quota_backup_gigabytes = -1
 
+# limit the volume size because it's limited by flexvols. in GB
+per_volume_size_limit = {{ .Values.volume_size_limit_gb | default 2048 }}
+
 # don't use quota class
 use_default_quota_class=false
+
+scheduler_default_filters = {{ .Values.scheduler_default_filters }}
 
 {{- include "ini_sections.database" . }}
 
@@ -63,6 +70,8 @@ memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .V
 service_token_roles_required = True
 insecure = True
 token_cache_time = 600
+include_service_catalog = true
+service_type = volumev3
 
 [oslo_policy]
 policy_file = /etc/cinder/policy.json
@@ -80,3 +89,16 @@ auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | defau
 
 [key_manager]
 backend = barbican
+
+[service_user]
+send_service_user_token = true
+auth_type = v3password
+auth_version = v3
+auth_interface = internal
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+username = {{ .Values.global.cinder_service_user | default "cinder" }}{{ .Values.global.user_suffix }}
+password = {{ .Values.global.cinder_service_password | default (tuple . .Values.global.cinder_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
+project_name = "{{.Values.global.keystone_service_project | default "service" }}"
+project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
+region_name = {{.Values.global.region}}

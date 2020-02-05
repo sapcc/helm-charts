@@ -1,0 +1,52 @@
+# Default values for dynomite
+
+#TODO readiness probe dynomite after warmup
+#TODO backup
+#TODO prom exporter for dynomite + redis
+#TODO alerts
+#TODO deploy standby
+#TODO resource request/limits
+
+debug: false
+
+dynomite:
+  member:
+#    - ip1:8101:rack1:dc1:2147483647
+#    - ip2:8101:rack1:dc1:4294967294
+  foreign_member:
+#    - ip3:8101:rack2:dc1:2147483647
+#    - ip4:8101:rack2:dc1:4294967294
+#    - ip4:8101:rack1:dc2:2147483647
+#    - ip5:8101:rack1:dc2:4294967294
+  image:
+    repository: hub.global.cloud.sap/monsoon/dynomite
+    tag: "v0.6.21.auth.1"
+    pullPolicy: IfNotPresent
+  service:
+    port:
+      listen: 8102
+      dyn_listen: 8101
+      admin: 22222
+  warmup: true
+
+redis:
+  image:
+    repository: redis
+    tag: "5.0.5-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    port: 22122
+  password:
+
+backup:
+  image:
+    repository: hub.global.cloud.sap/monsoon/powder-monkey
+    tag: "v202001301209"
+    pullPolicy: IfNotPresent
+  auth:
+    os_auth_url:
+    os_username: db_backup
+    os_user_domain: Default
+    os_project_name: master
+    os_project_domain: ccadmin
+    os_password:

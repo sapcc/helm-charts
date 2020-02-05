@@ -94,13 +94,13 @@ expiration_buffer = 3600
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 
-{{- if eq .Values.release "stein" }}
+{{- if ne .Values.release "rocky" }}
 [fernet_receipts]
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 {{- end }}
 
-{{- if eq .Values.release "stein" }}
+{{- if ne .Values.release "rocky" }}
 [access_rules_config]
 rules_file = /etc/keystone/access_rules.json
 permissive = true
@@ -134,7 +134,7 @@ lockout_failure_attempts = 5
 lockout_duration = 300
 unique_last_password_count = 5
 
-{{- if ne .Values.release "stein" }}
+{{- if eq .Values.release "rocky" }}
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
 rabbit_password = {{ .Values.rabbitmq.users.default.password }}
@@ -149,7 +149,7 @@ rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 {{- end }}
 
 [oslo_messaging_notifications]
-{{- if eq .Values.release "stein" }}
+{{- if ne .Values.release "rocky" }}
 {{- if .Values.rabbitmq.host }}
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
 {{ else }}
@@ -161,6 +161,21 @@ driver = messaging
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true
+
+[oslo_policy]
+# This option controls whether or not to enforce scope when evaluating
+# policies. If ``True``, the scope of the token used in the request is compared
+# to the ``scope_types`` of the policy being enforced. If the scopes do not
+# match, an ``InvalidScope`` exception will be raised. If ``False``, a message
+# will be logged informing operators that policies are being invoked with
+# mismatching scope. (boolean value)
+enforce_scope = false
+
+{{- if ne .Values.api.policy "json" }}
+policy_file = /etc/keystone/policy.yaml
+{{- else }}
+policy_file = /etc/keystone/policy.json
+{{- end }}
 
 [lifesaver]
 enabled = {{ .Values.lifesaver.enabled }}

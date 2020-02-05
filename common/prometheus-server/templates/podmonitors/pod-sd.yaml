@@ -21,8 +21,7 @@ spec:
     any: true
 
   podMetricsEndpoints:
-    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
       scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       relabelings:
@@ -62,8 +61,7 @@ spec:
           targetLabel: kubernetes_pod_name
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
 
-    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
       scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       relabelings:
@@ -84,7 +82,7 @@ spec:
             - __meta_kubernetes_pod_container_port_number
             - __meta_kubernetes_pod_container_port_name
             - __meta_kubernetes_pod_annotation_prometheus_io_port_1
-          regex: '(9102;.*;.*)|(.*;metrics;.*)|(.*;.*;\d+)'
+          regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.+;\d+)'
         - sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_path
           targetLabel: __metrics_path__

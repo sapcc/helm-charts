@@ -2,15 +2,15 @@ groups:
   - name: asa
     rules:
     - alert: NetworkASAClusterIsDegraded
-      expr: sum(snmp_asa_cfwHardwareStatusValue{cfwHardwareType="7"}) + sum(snmp_asa_cfwHardwareStatusValue{cfwHardwareType="6"}) < 19
-      for: 15m
+      expr: sum(snmp_asa_cfwHardwareStatusValue{cfwHardwareType="7",device=~"ASA0102|ASA0102a|ASA0102fp"}) by (server_name) + sum(snmp_asa_cfwHardwareStatusValue{cfwHardwareType="6",device=~"ASA0102|ASA0102a|ASA0102fp"}) by (server_name) != 19
+      for: 5m
       labels:
-        severity: info
+        severity: critical
         tier: net
         service: asa
         context: asa
-        meta: "asa device {{`{{ $labels.server_name=}}`}} CLUSTER-STATE is DEGRADED. Immediate device check required."
+        meta: "asa device `{{ $labels.server_name }}` CLUSTER-STATE is DEGRADED. Immediate device check required."
         playbook: 'docs/devops/alert/network/asa.html#asa_cluster_degraded'
       annotations:
-        description: "asa device {{`{{ $labels.server_name}}`}} CLUSTER-STATE is DEGRADED. Immediate device check required."
-        summary: "asa device {{`{{ $labels.server_name}}`}} CLUSTER-STATE is DEGRADED. Immediate device check required."
+        description: "asa device `{{ $labels.server_name }}` CLUSTER-STATE is DEGRADED. Immediate device check required."
+        summary: "asa device `{{ $labels.server_name }}` CLUSTER-STATE is DEGRADED. Immediate device check required."

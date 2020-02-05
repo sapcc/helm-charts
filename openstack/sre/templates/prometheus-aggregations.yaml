@@ -26,6 +26,6 @@ spec:
 {{- range $period := $values.periods }}
     - record: global:api_errors_per_request_sli:ratio_rate{{$period}}
       expr: |2
-          sum(rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}])) by (region, ingress) /  sum(rate(nginx_ingress_controller_requests[{{$period}}])) by (region, ingress)
+          (sum by(region,ingress) (rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}])) OR (0 * count by (region, ingress) (nginx_ingress_controller_requests) )) /  sum by(region, ingress) (rate(nginx_ingress_controller_requests[{{$period}}]))
 
 {{- end }}

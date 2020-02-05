@@ -32,7 +32,11 @@ spec:
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
       - name: ironic-inspector
+        {{- if .Values.loci.enabled }}
+        image: {{ .Values.global.imageRegistry }}/{{ .Values.loci.imageNamespace }}/loci-ironic:{{ .Values.loci.imageVersion }}
+        {{- else }}
         image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-inspector:{{.Values.imageVersionIronicInspector | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        {{- end }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init

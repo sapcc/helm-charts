@@ -20,9 +20,6 @@ spec:
         component: fluent-vcenter
       annotations:
         checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "{{.Values.prometheus_port}}"
-        prometheus.io/targets: {{ .Values.prometheus | quote }}
     spec:
       nodeSelector:
         zone: farm
@@ -44,6 +41,9 @@ spec:
             - name: metrics
               containerPort: {{.Values.prometheus_port}}
               protocol: TCP
+            - name: syslog
+              containerPort: 514
+              protocol: UDP
           env:
             - name: NAMESPACE
               valueFrom:

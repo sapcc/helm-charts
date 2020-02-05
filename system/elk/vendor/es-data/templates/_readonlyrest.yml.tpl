@@ -8,7 +8,7 @@ readonlyrest:
       # access for logstash to write to the logstash indexes
       - name: data
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
-        indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", ".kibana*", "kubernikus-*", "scaleout-*", "virtual-*"]
+        indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", ".kibana*", "kubernikus-*", "scaleout-*", "virtual-*", "bigiplogs-*", "alerts-*"]
         auth_key: {{.Values.global.data_user}}:{{.Values.global.data_password}}
 
       # access to write to the jump server log indexes
@@ -48,7 +48,7 @@ readonlyrest:
         ldap_authorization:
           name: "ldap1"
           groups: [{{.Values.global.ldap.es_user_groups}}]
-  
+
     # get the user from the x-remote-user header
     proxy_auth_configs:
     - name: ingress

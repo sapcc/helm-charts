@@ -30,7 +30,7 @@ api_paste_config = /etc/designate/api-paste.ini
 #root_helper = sudo designate-rootwrap /etc/designate/rootwrap.conf
 
 # Which networking API to use, Defaults to neutron
-#network_api = neutron
+network_api = neutron
 
 # Supported record types
 #supported_record_type = A, AAAA, CNAME, MX, SRV, TXT, SPF, NS, PTR, SSHFP, SOA
@@ -202,7 +202,8 @@ region_name = {{.Values.global.region}}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 insecure = True
 token_cache_time = 600
-include_service_catalog = false
+include_service_catalog = true
+service_type = dns
 
 #-----------------------
 
@@ -361,14 +362,14 @@ notify = {{ .Values.worker_notify }}
 ##############
 [network_api:neutron]
 # Comma separated list of values, formatted "<name>|<neutron_uri>"
-#endpoints = RegionOne|http://localhost:9696
-#endpoint_type = publicURL
-#timeout = 30
+endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
+endpoint_type = publicURL
+timeout = 20
+insecure = True
 #admin_username = designate
 #admin_password = designate
 #admin_tenant_name = designate
 #auth_url = http://localhost:35357/v2.0
-#insecure = False
 #auth_strategy = keystone
 #ca_certificates_file =
 

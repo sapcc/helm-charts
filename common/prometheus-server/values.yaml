@@ -19,7 +19,7 @@ global:
 # The repository and tag of the Prometheus image.
 image:
   repository: prom/prometheus
-  tag: v2.14.0
+  tag: v2.15.2
 
 # Mandatory name for this Prometheus.
 # The name is used to find relevant aggregation and alerting rules.
@@ -54,9 +54,19 @@ configMaps: []
 secrets: []
 # - < name of secret >
 
-# List of Alertmanagers (AM) to send alerts to.
-# If multiple AMs are used in HA, alerts must be send to every AM.
-alertmanagers: []
+# Alertmanager configuration.
+alertmanagers:
+  # Configuration if the Alertmanager has client certificate authentication enabled.
+  authentication:
+    enabled: false
+    # The certificate used for authentication with the Alertmanager..
+    ssoCert:
+    # The key used for authentication with the Alertmanager.
+    ssoKey:
+
+  # List of Alertmanagers (AM) to send alerts to.
+  # If multiple AMs are used in an HA setup, alerts must be send to every AM.
+  hosts: []
   # - alertmanager1.tld
   # - alertmanager2.tld
 
@@ -329,11 +339,8 @@ serviceDiscoveries:
   kubelet:
     enabled: false
     # Full list of kubelet metrics: https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/metrics/metrics.go#L33 .
-    allowedMetrics:
-      - kubelet_pod_start_latency_microseconds
-      - kubelet_running_pod_count
-      - process_max_fds
-      - process_open_fds
+    # Scrape all kubelet metrics by default.
+    allowedMetrics: []
 
   # Scrape kube-dns pods.
   kubeDNS:

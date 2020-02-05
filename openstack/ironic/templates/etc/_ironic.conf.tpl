@@ -1,6 +1,11 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
+#TODO: needs to be changed for python3
+{{- if .Values.loci.enabled }}
+pybasedir = /var/lib/openstack/lib/python2.7/site-packages/ironic
+{{- else }}
 pybasedir = /ironic/ironic
+{{- end }}
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
@@ -37,7 +42,14 @@ dhcp_provider = neutron
 host_ip = 0.0.0.0
 public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
 
-{{- include "ini_sections.database" . }}
+[database]
+{{- if eq .Values.mariadb.enabled true }}
+connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
+{{- include "ini_sections.database_options_mysql" . }}
+{{- else }}
+connection = {{ tuple . "ironic" "ironic" .Values.global.dbPassword | include "db_url" }}
+{{- include "ini_sections.database_options" . }}
+{{- end }}
 
 [keystone]
 auth_section = keystone_authtoken
@@ -59,6 +71,8 @@ insecure = True
 service_token_roles_required = True
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 token_cache_time = 600
+include_service_catalog = true
+service_type = baremetal
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 

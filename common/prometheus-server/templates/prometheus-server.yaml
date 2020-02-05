@@ -64,13 +64,16 @@ spec:
 {{ toYaml .Values.configMaps | indent 4 }}
   {{- end }}
 
+  # Mount additional secrets from the same namespace.
+  secrets: {{ if not (or .Values.secrets .Values.alertmanagers.authentication.enabled) }}[]{{ end }}
   {{ if .Values.secrets }}
-  # Mount additional configmaps from the same namespace.
-  secrets:
 {{ toYaml .Values.secrets | indent 4 }}
   {{ end }}
+  {{- if .Values.alertmanagers.authentication.enabled }}
+    - {{ include "prometheus.fullName" . }}-alertmanager-sso-cert
+  {{ end }}
 
-  {{ if .Values.alertmanagers -}}
+  {{ if .Values.alertmanagers.hosts -}}
   # Alertmanager configuration.
   additionalAlertManagerConfigs:
     name: {{ include "prometheus.fullName" . }}-alertmanager-config

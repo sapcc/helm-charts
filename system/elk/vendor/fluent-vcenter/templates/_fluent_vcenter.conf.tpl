@@ -1,10 +1,29 @@
-<source>                                                                                          
-  @type {{default "udp" .Values.vcenter_logs_in_proto}}                                                                                       
-  tag "vcenter"                                                                                   
-  format /^(?<message>.*?)$/                                                                      
-  bind {{default "0.0.0.0" .Values.vcenter_logs_in_ip}}
-  port {{.Values.vcenter_logs_in_port}}                                                                                
+<system>
+  log_level debug
+</system>
+
+<source>
+  @type tcp
+  tag "vcenter"
+  format /^(?<message>.*?)$/
+  port 5140
 </source> 
+<source>
+  @type syslog
+  @log_level trace
+  tag "nsxt"
+  emit_unmatched_lines true
+  facility_key facility
+  severity_key severity
+  <parse>
+    @type syslog
+    message_format rfc5424
+    with_priority true
+  </parse>
+  <transport udp>
+  </transport>
+  port 514
+</source>
 <source>
   @type {{default "udp" .Values.esx_logs_in_proto}}
   tag "vcenter"
@@ -30,6 +49,21 @@
   bind "0.0.0.0"
   port 24231
 </source>
+
+<match nsxt.**>
+  @type rewrite_tag_filter
+  <rule>
+    key message
+    pattern /Trim Exception/
+    tag "TRIMEXCEPTION.${tag}"
+  </rule>
+  <rule>
+    key ident
+    pattern /NSX/
+    tag nsxtlogs
+  </rule>
+</match>
+
 <match vcenter.**>
   @type rewrite_tag_filter
   <rule>
@@ -44,18 +78,13 @@
   </rule>
   <rule>
     key "message"
-    pattern ERROR.+networkSystem.+vim.host.NetworkSystem.invokeHostTransactionCall:\svmodl.fault.
-    tag "DVSTimeout.${tag}"
-  </rule>
-  <rule>
-    key "message"
-    pattern ((Unable to Add Port; Status\(bad0006\)= Limit exceeded)|(Failed to get DVS state from vmkernel Status \(bad0014\)= Out of memory))
-    tag "DVSOOM.${tag}"
-  </rule>
-  <rule>
-    key "message"
     pattern Failed\sto\s(power on|add disk)\s\'scsi
     tag "vCenterVolumeStuck.${tag}"
+  </rule>
+  <rule>
+    key "message"
+    pattern CannotCreateFile
+    tag "ATTACHMENTERROR.${tag}"
   </rule>
   <rule>                                                                                         
     key "host_name"                                                                              
@@ -67,6 +96,19 @@
     pattern info
     tag "data.${tag}"
   </rule>
+</match>
+<match TRIMEXCEPTION.**>
+  @type prometheus
+  @log_level debug
+  <metric>
+    name nsxt_trim_exception 
+    type counter
+    desc Trim Exception seen on in proton logs
+    <labels>
+      tag ${tag}
+      hostname ${host}
+    </labels>
+  </metric>
 </match>
 <match SR17595168510.**>
   @type prometheus
@@ -80,36 +122,24 @@
     </labels>
   </metric>
 </match>
+<match ATTACHMENTERROR.**>
+  @type prometheus
+  <metric>
+    name vcenter_volume_attachment_error
+    type counter
+    desc Volume attachment error in specific BB
+    <labels>
+      tag ${tag}
+      hostname ${host_name}
+    </labels>
+  </metric>
+</match>
 <match SR17629377811.**>
   @type prometheus
   <metric>
     name vcenter_SR17629377811
     type counter
     desc Found error pertaining to SR17629377811
-    <labels>
-      tag ${tag}
-      host ${host_name}
-    </labels>
-  </metric>
-</match>
-<match DVSTimeout.**>
-  @type prometheus
-  <metric>
-    name vcenter_dvswitch_timeout
-    type counter
-    desc Found Error that indicates long timeout on dvs calls
-    <labels>
-      tag ${tag}
-      host ${host_name}
-    </labels>
-  </metric>
-</match>
-<match DVSOOM.**>
-  @type prometheus
-  <metric>
-    name vcenter_dvswitch_out_of_memory
-    type counter
-    desc Found Error that indicates dvs is out of memory
     <labels>
       tag ${tag}
       host ${host_name}
@@ -141,5 +171,39 @@
   </metric>
 </match>
 <match unknown.**>
-  @type stdout
+  @type null
+</match>
+#<match nsxtlogs>
+#  @type stdout
+#</match>
+<match nsxtlogs>
+  @type elasticsearch_dynamic
+  host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+  port {{.Values.global.elk_elasticsearch_ssl_port}}
+  user {{.Values.global.elk_elasticsearch_admin_user}}
+  password {{.Values.global.elk_elasticsearch_admin_password}}
+  scheme https
+  ssl_verify false
+  index_name syslog
+  ssl_version TLSv1_2
+  logstash_format true
+  logstash_prefix nsxt
+  include_timestamp true
+  type_name _doc
+  @log_level info
+  slow_flush_log_threshold 50.0
+  request_timeout 60s
+  include_tag_key true
+  resurrect_after 120
+  reconnect_on_error true
+  <buffer>
+    total_limit_size 256MB
+    flush_at_shutdown true
+    flush_thread_interval 5
+    overflow_action block
+    retry_forever true
+    retry_wait 2s
+    flush_thread_count 2
+    flush_interval 1s
+  </buffer>
 </match>

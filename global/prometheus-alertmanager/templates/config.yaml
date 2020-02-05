@@ -18,11 +18,13 @@ data:
       target_match:
         severity: 'warning'
       equal: ['region', 'alertname', 'cluster']
+
     - source_match_re:
         severity: 'critical|warning'
       target_match:
         severity: 'info'
       equal: ['region', 'alertname', 'cluster']
+
     - source_match_re:
         severity: 'critical'
         context: '.+'
@@ -30,6 +32,7 @@ data:
         severity: 'warning'
         context: '.+'
       equal: ['region', 'context', 'cluster']
+
     - source_match_re:
         severity: 'critical|warning'
         context: '.+'
@@ -38,8 +41,14 @@ data:
         context: '.+'
       equal: ['region', 'context', 'cluster']
 
+    - source_match_re:
+        alertname: '.*KubeletDown'
+      target_match_re:
+        alertname: 'PodNotReady|ManyPodsNotReadyOnNode'
+      equal: ['node']
+
     route:
-      group_by: ['region', 'alertname', 'cluster']
+      group_by: ['region', 'service', 'alertname', 'cluster']
       group_wait: 1m
       group_interval: 7m
       repeat_interval: 12h
@@ -58,7 +67,7 @@ data:
 
       # owner: Thomas Grainchen / Abhishek Kumar
       - receiver: slack_nannies
-        continue: true
+        continue: false
         match_re:
           context: nanny
           severity: critical|warning|info
@@ -76,7 +85,7 @@ data:
         match_re:
           tier: k8s
           severity: critical|warning|info
-          cluster_type: controlplane|kubernikus|metal|scaleout|virtual
+          cluster_type: abapcloud|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
           region: admin|qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
       
       # owner: Michael Schmidt / Fabian Ruff
@@ -115,7 +124,7 @@ data:
         match_re:
           tier: os
           severity: info|warning|critical
-          service: arc|backup|barbican|castellum|cinder|cfm|designate|elektra|elk|glance|hermes|ironic|keystone|limes|lyra|maia|manila|neutron|nova|sentry|swift
+          service: arc|backup|barbican|castellum|cinder|cfm|designate|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|neutron|nova|sentry|swift
           region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
       # owner: Martin Vossen / Tilo Geissler
@@ -123,7 +132,25 @@ data:
         continue: false
         match_re:
           tier: sre
+     
+      # owner: Martin Vossen / Tilo Geissler - Slack CCloud Monitoring
+      - receiver: slack_monitoring
+        continue: false
+        match_re:
+          tier: monitor
+          severity: critical|warning|info
 
+      # owner: Tilo Geissler
+      - receiver: elastic
+        continue: true
+
+      # owner: Chuan Miao
+      - receiver: slack_storage
+        continue: false
+        match_re:
+          tier: storage
+
+      # owner: Arno Uhlig
       - receiver: dev-null
         continue: false
         match_re:
@@ -137,32 +164,32 @@ data:
         match_re:
           tier: os|k8s|kks
           severity: critical
-          cluster_type: controlplane|kubernikus|metal|scaleout|virtual
-          region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+          cluster_type: abapcloud|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+          region: admin|global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
       - receiver: slack_api_critical
         continue: false
         match_re:
           tier: os|k8s|kks
           severity: critical
-          cluster_type: controlplane|kubernikus|metal|scaleout|virtual
-          region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+          cluster_type: abapcloud|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+          region: admin|global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
       - receiver: slack_api_warning
         continue: false
         match_re:
           tier: os|k8s|kks
           severity: warning
-          cluster_type: controlplane|kubernikus|metal|scaleout|virtual
-          region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+          cluster_type: abapcloud|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+          region: admin|global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
       - receiver: slack_api_info
         continue: false
         match_re:
           tier: os|k8s|kks
           severity: info
-          cluster_type: metal
-          region: global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+          cluster_type: abapcloud|controlplane|customer|internet|kubernikus|metal|scaleout|virtual
+          region: admin|global|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
       # ---- DUTY Metal ----
       - receiver: pagerduty_metal
@@ -282,7 +309,7 @@ data:
     receivers:
     - name: dev-null
       slack_configs:
-        - api_url: {{ required "slack.devnull_webhook_url undefined" .Values.slack.webhook_url | quote }}
+        - api_url: {{ required "slack.devnull_webhook_url undefined" .Values.slack.devnull_webhook_url | quote }}
           username: "Control Plane"
           channel: "#dev-null"
           title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
@@ -304,6 +331,12 @@ data:
     - name: wham_metal
       webhook_configs:
         - url: "https://wham.scaleout.eu-de-1.cloud.sap/alerts/metal"
+
+    - name: elastic
+      webhook_configs:
+      - send_resolved: true
+        http_config: {}
+        url: {{ required "elastic.logstash_url undefined" .Values.elastic.logstash_url | quote }}
 
     # ---- Slack Duty (Alert)Channels ----
     # slack duty metal
@@ -519,6 +552,20 @@ data:
               text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
               value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
+    # Slack CCloud Monitoring
+    - name: slack_monitoring
+      slack_configs:
+        - channel: '#alert-moni-{{"{{ .CommonLabels.severity }}"}}'
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
+          send_resolved: true
+
     # Slack QA && Dev systems
     - name: slack_qa
       slack_configs:
@@ -658,7 +705,20 @@ data:
           pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
           icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
           color: {{`'{{template "slack.sapcc.color" . }}'`}}
-          send_resolved: true         
+          send_resolved: true
+
+    - name: slack_storage
+      slack_configs:
+        - channel: '#cc-storage'
+          api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+          username: "Control Plane"
+          title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+          title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+          text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+          pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+          icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+          color: {{`'{{template "slack.sapcc.color" . }}'`}}
+          send_resolved: true   
 
     # ----  PagerDuty Setup ---- Hint: service_key causes using api v1, check internet ----
     - name: pagerduty_api
@@ -750,7 +810,6 @@ data:
             Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
             Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
             firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-
 
   {{- $files := .Files }}
   {{ range tuple "slack.tmpl" "pagerduty.tmpl" }}

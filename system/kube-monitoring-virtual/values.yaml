@@ -7,12 +7,22 @@ global:
 kubeStateMetrics:
   enabled: false
 
+# Disable the prometheus-operator prometheus-node-exporter sub-chart. We deploy independently.
+nodeExporter:
+  enabled: false
+
 prometheus-operator:
   # Just `prometheus`. The operator appends `-operator`.
   nameOverride: prometheus
   fullnameOverride: prometheus
 
   prometheusOperator:
+    createCustomResource: false
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "kubernetes"
+        prometheus.io/port: "8080"
     serviceAccount:
       create: false
     admissionWebhooks:
@@ -163,16 +173,13 @@ kube-state-metrics:
   customLabels:
     app: kube-state-metrics
 
-  service:
-    annotations:
-      prometheus.io/port: "8080"
-      prometheus.io/port_1: "8081"
-      prometheus.io/targets: "kubernetes"
-
   resources:
     requests:
       memory: 150Mi
       cpu: 100m
+
+kube-state-metrics-exporter:
+  prometheusName: kubernetes
 
 ping-exporter:
   targets: 
@@ -211,7 +218,7 @@ prometheus-node-exporter:
 prometheus-server:
   name: kubernetes
 
-  retentionTime: 7d
+  retentionTime: 21d
 
   ingress:
     enabled: true
@@ -246,8 +253,14 @@ prometheus-server:
 
   # Send alerts to these alertmanagers.
   alertmanagers:
-    - alertmanager.eu-de-1.cloud.sap
-    - alertmanager.internet.eu-de-2.cloud.sap
+    # Enabled via secrets.
+    authentication:
+      enabled: false
+
+    hosts:
+      - alertmanager.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-nl-1.cloud.sap
 
 prometheus-kubernetes-rules:
   prometheusName: kubernetes

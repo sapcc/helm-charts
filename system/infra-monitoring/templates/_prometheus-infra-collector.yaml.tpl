@@ -87,7 +87,26 @@
       regex: '^ping_.+;([a-zA-Z]*)\d\.cc\.{{ .Values.global.region }}\.cloud\.sap'
       replacement: 'dc'
       target_label: interconnect_type
-
+    - source_labels: [__name__, app]
+      regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
+      replacement: '$1'
+      target_label: pxdomain
+    - source_labels: [__name__, app]
+      regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
+      replacement: '$2'
+      target_label: pxservice
+    - source_labels: [__name__, app]
+      regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
+      replacement: '$3'
+      target_label: pxinstance
+    - source_labels: [__name__, proto, import_filter]
+      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+      replacement: '$1'
+      target_label: peer_type
+    - source_labels: [__name__, proto, import_filter]
+      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+      replacement: '$2'
+      target_label: peer_id
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -138,8 +157,8 @@
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'arista'
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -159,8 +178,8 @@
 {{- $values := .Values.snmp_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'snmp'
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -188,6 +207,49 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
+    - source_labels: [__name__, snmp_n7k_ciscoImageString]
+      regex: 'snmp_n7k_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_ipn_ciscoImageString]
+      regex: 'snmp_ipn_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr_ciscoImageString]
+      regex: 'snmp_asr_ciscoImageString;(?s)(.*)(Version )([0-9a-z.]*)(, CUST-SPECIAL:)([0-9A-Za-z._-]*)(.*)'
+      replacement: '$3-$5'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr03_ciscoImageString]
+      regex: 'snmp_asr03_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr04_ciscoImageString]
+      regex: 'snmp_asr04_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_arista_entPhysicalSoftwareRev]
+      regex: 'snmp_arista_entPhysicalSoftwareRev;(.*)'
+      replacement: '$1'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asa_sysDescr]
+      regex: 'snmp_asa_sysDescr;([a-zA-Z ]*)([0-9().]*)'
+      replacement: '$2'
+      target_label: image_version
+    - source_labels: [__name__, device]
+      regex: 'snmp_asa_sysDescr;(ASA0102-CC-CORP|AsSA0102-CC-DMZ|ASA0102-CC-HEC|ASA0102-CC-INTERNET|ASA0102-CC-SAAS|ASA0102a-CC-HEC|ASA0102a-CC-DMZ|ASA0102a-CC-CORP|ASA0102a-CC-INTERNET|ASA0102a-CC-SAAS)'
+      action: drop
+    - source_labels: [__name__, snmp_acispine_sysDescr]
+      regex: 'snmp_acispine_sysDescr;(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_f5_sysProductVersion]
+      regex: 'snmp_f5_sysProductVersion;(.*)'
+      replacement: '$1'
+      target_label: image_version
+    - source_labels: [__name__, snmp_acistretch_sysDescr]
+      regex: "snmp_acistretch_sysDescr;(?s)(.*)Version ([0-9.]*)(.*)"
+      replacement: '$2'
+      target_label: image_version
 # hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
     - source_labels: [__name__, devicename]
       regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
@@ -200,14 +262,37 @@
 - job_name: 'bios/ironic'
   params:
     job: [bios/ironic]
-  scrape_interval: 140s
-  scrape_timeout: 135s
+  scrape_interval: {{$values.ironic_scrapeInterval}}
+  scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/ironic.json
   metrics_path: /
   relabel_configs:
     - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: bios-exporter:{{$values.listen_port}}
+    - source_labels: [manufacturer]
+      target_label:  __param_manufacturer
+    - source_labels: [model]
+      target_label:  __param_model
+- job_name: 'bios/cisco_vpod'
+  params:
+    job: [bios/cisco_vpod]
+  scrape_interval: {{$values.cisco_vpod_scrapeInterval}}
+  scrape_timeout: {{$values.cisco_vpod_scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: bios/cisco_vpod
+      action: keep
+    - source_labels: [server_name]
       target_label: __param_target
     - source_labels: [__param_target]
       target_label: instance
@@ -224,8 +309,8 @@
 - job_name: 'ipmi/ironic'
   params:
     job: [baremetal/ironic]
-  scrape_interval: 120s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.ironic_scrapeInterval}}
+  scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/ironic.json
@@ -241,8 +326,8 @@
 - job_name: 'cp/netbox'
   params:
     job: [cp/netbox]
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.cp_scrapeInterval}}
+  scrape_timeout: {{$values.cp_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -263,8 +348,8 @@
 - job_name: 'ipmi/esxi'
   params:
     job: [esxi]
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{$values.esxi_scrapeInterval}}
+  scrape_timeout: {{$values.esxi_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -284,8 +369,8 @@
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vasa'
-  scrape_interval: 200s
-  scrape_timeout: 195s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -302,8 +387,8 @@
 
 {{- if .Values.alertmanager_exporter.enabled }}
 - job_name: 'prometheus/alertmanager'
-  scrape_interval: 60s
-  scrape_timeout: 55s
+  scrape_interval: {{ .Values.alertmanager_exporter.scrapeInterval }}
+  scrape_timeout: {{ .Values.alertmanager_exporter.scrapeTimeout }}
   static_configs:
     - targets:
       {{- range $.Values.alertmanager_exporter.targets }}
@@ -316,15 +401,15 @@
 {{- $values := .Values.vrops_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vrops'
-  scrape_interval: 300s
-  scrape_timeout: 295s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
-      regex: vcenter
+      regex: vrops
       action: keep
     - source_labels: [server_name]
       target_label: __param_target

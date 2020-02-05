@@ -37,7 +37,7 @@ spec:
       - name: permissions
         securityContext:
           runAsUser: 0
-        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{ .Values.global.imageNamespace}}/ubuntu-source-glance-api:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{ .Values.global.imageNamespace}}/loci-glance:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - mountPath: /glance_store
@@ -52,7 +52,7 @@ spec:
       {{- end }}
       containers:
       - name: api
-        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{.Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar"}}
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-glance:{{.Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -71,7 +71,7 @@ spec:
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "glance-api"
+          value: "/var/lib/openstack/bin/glance-api"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_JOBS

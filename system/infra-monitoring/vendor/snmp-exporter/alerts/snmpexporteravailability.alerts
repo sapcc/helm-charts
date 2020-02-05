@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: SNMPExporterAvailabilityLessMetrics
     expr: (count(avg_over_time(snmp_scrape_pdus_returned[15m])) by (module) - count(avg_over_time(snmp_scrape_pdus_returned[15m] offset 1h)) by (module)) < 0
-    for: 15m
+    for: 1h
     labels:
       severity: info
       tier: os
@@ -11,12 +11,11 @@ groups:
       context: snmp
       playbook: /docs/devops/alert/network/not-yet-existing.html
     annotations:
-      description: 'TEST ALERT - PLEASE IGNORE - The number of metrics for devices of type {{ $labels.module }} got less - this should be checked'
-      summary: 'TEST ALERT - PLEASE IGNORE - The number of metrics for devices of type {{ $labels.module }} got less - this should be checked'
-
+      description: "TEST ALERT - PLEASE IGNORE - The number of metrics for devices of type `{{ $labels.module }}` got less - this should be checked"
+      summary: "TEST ALERT - PLEASE IGNORE - The number of metrics for devices of type `{{ $labels.module }}` got less - this should be checked"
   - alert: SNMPExporterAvailabilityMissingExporter
     expr: up{job="snmp",module!~"asr01|asr02|asr03|ipn"} == 0
-    for: 15m
+    for: 1h
     labels:
       severity: info
       tier: os
@@ -24,5 +23,17 @@ groups:
       context: snmp
       playbook: /docs/devops/alert/network/not-yet-existing.html
     annotations:
-      description: 'TEST ALERT - PLEASE IGNORE - The snmp exporter for the {{ $labels.module }} device {{ $labels.name }} does not send any metrics - this should be checked'
-      summary: 'TEST ALERT - PLEASE IGNORE - The snmp exporter for the {{ $labels.module }} device {{ $labels.name }} does not send any metrics - this should be checked'
+      description: "TEST ALERT - PLEASE IGNORE - The snmp exporter for the `{{ $labels.module }}` device `{{ $labels.name }}` does not send any metrics - this should be checkedr"
+      summary: "TEST ALERT - PLEASE IGNORE - The snmp exporter for the `{{ $labels.module }}` device `{{ $labels.name }}` does not send any metrics - this should be checked"
+  - alert: SNMPExporterAvailabilityMissingMetrics
+    expr: (sum(atlas_targets{module="n9k"}) - count(snmp_scrape_pdus_returned{module="n9k"} != 0)) != 0
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: snmp
+      context: snmp
+      playbook: /docs/devops/alert/network/not-yet-existing.html
+    annotations:
+      description: "The n9k snmp exporter does not send any valid metrics - this should be checked"
+      summary: "The n9k snmp exporter does not send any valid metrics - this should be checked"

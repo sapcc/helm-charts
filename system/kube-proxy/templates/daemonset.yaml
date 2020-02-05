@@ -19,8 +19,12 @@ spec:
       labels:
         name: kube-proxy
         k8s-app: kube-proxy
-{{- if (semverCompare "< 1.13-0" .Capabilities.KubeVersion.GitVersion ) }}
       annotations:
+        configmap-kube-proxy-hash: {{ include (print $.Template.BasePath "/configmap-kube-proxy.yaml") $ | sha256sum }}
+{{- if .Values.sidecars.ipmasq }}
+        configmap-ipmasq-hash: {{ include (print $.Template.BasePath "/configmap-ipmasq.yaml") $ | sha256sum }}  
+{{- end }}
+{{- if (semverCompare "< 1.13-0" .Capabilities.KubeVersion.GitVersion ) }}
         scheduler.alpha.kubernetes.io/critical-pod: ''
 {{- end }}
     spec:
@@ -59,6 +63,11 @@ spec:
           - mountPath: /lib/modules
             name: lib-modules
             readOnly: true
+        {{ if .Values.proxy.metricPort -}}
+        ports:
+          - name: proxy-metrics
+            containerPort: {{ required ".Values.proxy.metricPort missing" .Values.proxy.metricPort }}
+        {{- end }}
 {{- if .Values.sidecars.parrot }}
       - name: parrot
         image: "{{ .Values.images.parrot.repository }}:{{ .Values.images.parrot.tag }}"
@@ -86,7 +95,7 @@ spec:
             mountPath: /etc/kubernetes/kube-parrot
         {{ if .Values.parrot.metricPort -}}
         ports:
-          - name: metrics
+          - name: parrot-metrics
             containerPort: {{ .Values.parrot.metricPort }}
             hostPort: {{ .Values.parrot.metricPort }}
         {{- end }}
@@ -157,9 +166,6 @@ spec:
         - name: kube-proxy
           configMap:
             name: kube-proxy
-        - name: ipmasq
-          configMap:
-            name: ipmasq
         - name: xtables-lock
           hostPath:
             path: /run/xtables.lock
@@ -167,6 +173,13 @@ spec:
         - name: lib-modules
           hostPath:
             path: /lib/modules
+{{- if .Values.sidecars.ipmasq }}
+        - name: ipmasq
+          configMap:
+            name: ipmasq
+{{- end }}
+{{- if .Values.sidecars.parrot }}
         - name: etc-kubernetes-kube-parrot
           hostPath:
             path: /etc/kubernetes/kube-parrot
+{{- end }}

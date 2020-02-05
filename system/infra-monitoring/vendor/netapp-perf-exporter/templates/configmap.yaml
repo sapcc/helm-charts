@@ -2,6 +2,7 @@
 {{- $template := .Template }}
 {{- $harvestConf := include (print .Template.BasePath "/_netapp-harvest.conf.tpl") . }}
 {{- $graphiteConf := include (print .Template.BasePath "/_graphite-mapping.conf.tpl") . }}
+{{- $netappFilerYaml := include (print .Template.BasePath "/_netapp_filers.yaml.tpl") . }}
 {{- range $name, $app := .Values.apps }}
 {{- if $app.enabled }}
 ---
@@ -10,11 +11,16 @@ apiVersion: v1
 metadata:
   name: {{ $app.fullname }}
 data:
+  {{- if eq $name "manila" }}
+  netapp-filers.yaml: |
+    {{- $netappFilerYaml | nindent 4 }}
+  {{- else }}
   netapp-filers.yaml: "TO BE POPULATED BY SIDECAR"
+  {{- end }}
   netapp-harvest.conf: |
-    {{ $harvestConf | nindent 4 }}
+    {{- $harvestConf | nindent 4 }}
   graphite-mapping.conf: |
-    {{ $graphiteConf | nindent 4 }}
+    {{- $graphiteConf | nindent 4 }}
 {{- end }}
 {{- end }}
 {{- end }}

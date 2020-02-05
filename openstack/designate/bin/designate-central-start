@@ -2,6 +2,15 @@
 
 set -ex
 
+#
+# to make agents named after the node
+#
+echo "[DEFAULT]" > /etc/designate/hostname.conf
+echo "host = $NODE_NAME" >> /etc/designate/hostname.conf
+
+#
+# other configs
+#
 function process_config {
     cp /designate-etc/designate.conf /etc/designate/designate.conf
     cp /designate-etc/policy.json  /etc/designate/policy.json
@@ -11,4 +20,4 @@ function process_config {
 
 process_config
 
-exec /var/lib/kolla/venv/bin/designate-central
+exec designate-central --config-file /etc/designate/designate.conf --config-file /etc/designate/hostname.conf --log-config-append /etc/designate/logging.conf

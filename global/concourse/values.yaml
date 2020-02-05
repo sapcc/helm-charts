@@ -8,6 +8,13 @@
 worker:
   nameOverride: ""
   name: concourse-worker
+  env:
+  # default is 250
+  - name: CONCOURSE_GARDEN_MAX_CONTAINERS
+    value: "500"
+  # default is 10.254.0.0/22
+  - name: CONCOURSE_GARDEN_NETWORK_POOL
+    value: "10.254.0.0/16"
 
 concourse:
   image: concourse/concourse
@@ -101,6 +108,15 @@ concourse:
         maxSurge: 1
         maxUnavailable: 25%
 
+    nodeSelector:
+      ccloud.sap.com/nodepool: "ci-system"
+
+    tolerations:
+      - key: "ci"
+        operator: Equal
+        value: "system"
+        effect: "NoSchedule"
+
   worker:
     enabled: false
 
@@ -119,6 +135,21 @@ concourse:
       accessModes:
         - ReadWriteOnce
       size: 50Gi
+
+    master:
+      nodeSelector:
+        ccloud.sap.com/nodepool: "ci-system"
+
+      tolerations:
+        - key: "ci"
+          operator: Equal
+          value: "system"
+          effect: "NoSchedule"
+
+    resources:
+      requests:
+        memory: 12Gi
+        cpu: 1
 
   rbac:
     create: true
