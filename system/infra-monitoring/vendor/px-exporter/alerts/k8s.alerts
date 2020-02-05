@@ -10,8 +10,8 @@ groups:
     for: 2h
     labels:
       severity: info
-      tier: net
-      service: px
+      tier: k8s
+      service: k8s
       context: px
     annotations:
       description: "TEST ALERT - PLEASE IGNORE - Pod px /{{ $labels.pod }} is not ready for more than 2h"
@@ -24,9 +24,37 @@ groups:
     for: 1h
     labels:
       severity: info
-      tier: net
-      service: px
+      tier: k8s
+      service: k8s
       context: px
     annotations:
       description: "TEST ALERT - PLEASE IGNORE - Container {{ $labels.container }} of pod px /{{ $labels.pod }} is restarting constantly"
       summary: "TEST ALERT - PLEASE IGNORE - Pod is in a restart loop"
+
+  - alert: PXNodeNotReady
+    expr: sum by (node)(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}) == 0
+    for: 1h
+    labels:
+      severity: info
+      tier: k8s
+      service: k8s
+      context: node
+      dashboard: nodes?var-server={{$labels.node}}
+      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
+    annotations:
+      description: "TEST ALERT - PLEASE IGNORE - Node {{ $labels.node }} is NotReady for more than an hour"
+      summary: "TEST ALERT - PLEASE IGNORE - Node status is NotReady"
+
+  - alert: PXNodeNotReadyFlapping
+    expr: changes(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}[15m]) > 2
+    for: 1h
+    labels:
+      severity: info
+      tier: k8s
+      service: k8s
+      context: node
+      meta: '{{ $labels.node }}'
+      dashboard: nodes?var-server={{$labels.node}}
+    annotations:
+      description: "TEST ALERT - PLEASE IGNORE - Node {{ $labels.node }} is flapping between Ready and NotReady"
+      summary: "TEST ALERT - PLEASE IGNORE -  Node readiness is flapping"
