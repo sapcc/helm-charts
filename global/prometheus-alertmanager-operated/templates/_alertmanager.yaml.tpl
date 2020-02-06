@@ -46,6 +46,7 @@ route:
   repeat_interval: 12h
   receiver: dev-null
 
+  routes:
   - receiver: slack_nannies
     continue: false
     match_re:
@@ -616,7 +617,7 @@ receivers:
   - name: slack_nannies
     slack_configs:
       - channel: '#cc-nannies'
-         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
