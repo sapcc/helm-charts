@@ -28,6 +28,7 @@
       - '{__name__=~"^ipmi_memory_errors$"}'
       - '{__name__=~"^ipmi_up"}'
       - '{__name__=~"^bird_.+"}'
+      - '{__name__=~"^smokeping_.+"}'
       - '{__name__=~"^up"}'
 
   relabel_configs:
