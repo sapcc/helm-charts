@@ -266,7 +266,7 @@ route:
 receivers:
   - name: dev-null
     slack_configs:
-      - api_url: {{ required "slack.devnull_webhook_url undefined" .Values.slack.devnull_webhook_url | quote }}
+      - api_url: {{ required "slack.devnullWebhookURL undefined" .Values.slack.devnullWebhookURL | quote }}
         username: "Control Plane"
         channel: "#dev-null"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
@@ -290,12 +290,12 @@ receivers:
   - name: elastic
     webhook_configs:
     - send_resolved: true
-      url: {{ required "elastic.logstash_url undefined" .Values.elastic.logstash_url | quote }}
+      url: {{ required ".Values.elastic.logstashURL undefined" .Values.elastic.logstashURL | quote }}
 
   - name: slack_metal_info
     slack_configs:
       - channel: '#alert-metal-info'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -309,7 +309,7 @@ receivers:
   - name: slack_metal_warning
     slack_configs:
       - channel: '#alert-metal-warning'
-        api_url: {{ required "slack.metal_warning_webhook_url undefined" .Values.slack.metal_warning_webhook_url | quote }}
+        api_url: {{ required ".Values.slack.metal.warningWebhookURL undefined" .Values.slack.metal.warningWebhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -328,7 +328,7 @@ receivers:
   - name: slack_metal_critical
     slack_configs:
       - channel: '#alert-metal-critical'
-        api_url: {{ required "slack.metal_critical_webhook_url undefined" .Values.slack.metal_critical_webhook_url | quote }}
+        api_url: {{ required ".Values.slack.metal.criticalWebhookURL undefined" .Values.slack.metal.criticalWebhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -347,7 +347,7 @@ receivers:
   - name: slack_net_info
     slack_configs:
       - channel: '#alert-net-info'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -361,7 +361,7 @@ receivers:
   - name: slack_net_warning
     slack_configs:
       - channel: '#alert-net-warning'
-        api_url: {{ required "slack.network_warning_webhook_url undefined" .Values.slack.network_warning_webhook_url | quote }}
+        api_url: {{ required "slack.network.warningWebhookURL undefined" .Values.slack.network.warningWebhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -380,7 +380,7 @@ receivers:
   - name: slack_net_critical
     slack_configs:
       - channel: '#alert-net-critical'
-        api_url: {{ required "slack.network_critical_webhook_url undefined" .Values.slack.network_critical_webhook_url | quote }}
+        api_url: {{ required ".Values.slack.network.criticalWebhookURL undefined" .Values.slack.network.criticalWebhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -399,7 +399,7 @@ receivers:
   - name: slack_vmware_info
     slack_configs:
       - channel: '#alert-vmware-info'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -413,7 +413,7 @@ receivers:
   - name: slack_vmware_warning
     slack_configs:
       - channel: '#alert-vmware-warning'
-        api_url: {{ required "slack.vmware_warning_webhook_url undefined" .Values.slack.vmware_warning_webhook_url | quote }}
+        api_url: {{ required ".Values.slack.vmware.warningWebhookURL undefined" .Values.slack.vmware.warningWebhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -432,7 +432,7 @@ receivers:
   - name: slack_vmware_critical
     slack_configs:
       - channel: '#alert-vmware-critical'
-        api_url: {{ required "slack.vmware_critical_webhook_url undefined" .Values.slack.vmware_critical_webhook_url | quote }}
+        api_url: {{ required ".Values.slack.vmware.criticalWebhookURL undefined" .Values.slack.vmware.criticalWebhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -451,7 +451,7 @@ receivers:
   - name: slack_api_info
     slack_configs:
       - channel: '#alert-api-info'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -465,7 +465,7 @@ receivers:
   - name: slack_api_warning
     slack_configs:
       - channel: '#alert-api-warning'
-        api_url: {{ required "slack.api_warning_webhook_url undefined" .Values.slack.api_warning_webhook_url | quote }}
+        api_url: {{ required ".Values.slack.api.warningWebhookURL undefined" .Values.slack.api.warningWebhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -484,7 +484,7 @@ receivers:
   - name: slack_api_critical
     slack_configs:
       - channel: '#alert-api-critical'
-        api_url: {{ required "slack.api_critical_webhook_url undefined" .Values.slack.api_critical_webhook_url | quote }}
+        api_url: {{ required ".Values.slack.api.criticalWebhookURL undefined" .Values.slack.api.criticalWebhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -503,7 +503,7 @@ receivers:
   - name: slack_monitoring
     slack_configs:
       - channel: '#alert-moni-{{"{{ .CommonLabels.severity }}"}}'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -516,7 +516,7 @@ receivers:
   - name: slack_qa
     slack_configs:
       - channel: '#alert-qa-{{"{{ .CommonLabels.severity }}"}}'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -530,7 +530,7 @@ receivers:
   - name: slack_dev
     slack_configs:
       - channel: '#alert-dev-{{"{{ .CommonLabels.severity }}"}}'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -544,7 +544,7 @@ receivers:
   - name: slack_by_os_service
     slack_configs:
       - channel: '#cc-os-{{"{{ .CommonLabels.service }}"}}'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -557,7 +557,7 @@ receivers:
   - name: slack_k8s
     slack_configs:
       - channel: '#cc-k8s-{{"{{ .CommonLabels.severity }}"}}'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -570,7 +570,7 @@ receivers:
   - name: slack_kks_default
     slack_configs:
       - channel: '#cc-kks-{{"{{ .CommonLabels.severity }}"}}'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -584,7 +584,7 @@ receivers:
   - name: slack_kks_critical
     slack_configs:
       - channel: '#cc-kks-critical'
-        api_url: {{ required "slack.kubernikus_critical_webhook_url undefined" .Values.slack.kubernikus_critical_webhook_url | quote }}
+        api_url: {{ required ".Values.slack.kubernikus.criticalWebhookURL undefined" .Values.slack.kubernikus.criticalWebhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -603,7 +603,7 @@ receivers:
   - name: slack_concourse
     slack_configs:
       - channel: '#cc-concourse'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -616,7 +616,7 @@ receivers:
   - name: slack_nannies
     slack_configs:
       - channel: '#cc-nannies'
-         api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -629,7 +629,7 @@ receivers:
   - name: slack_snmp
     slack_configs:
       - channel: '#cc-snmp'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -642,7 +642,7 @@ receivers:
   - name: slack_sre
     slack_configs:
       - channel: '#cc-sre'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -655,7 +655,7 @@ receivers:
   - name: slack_storage
     slack_configs:
       - channel: '#cc-storage'
-        api_url: {{ required "slack.webhook_url undefined" .Values.slack.webhook_url | quote }}
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Control Plane"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -667,7 +667,7 @@ receivers:
 
   - name: pagerduty_api
     pagerduty_configs:
-      - service_key: {{ required "pagerduty.api.service_key undefined" .Values.pagerduty.api.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.api.serviceKey undefined" .Values.pagerduty.api.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -685,7 +685,7 @@ receivers:
 
   - name: pagerduty_metal
     pagerduty_configs:
-      - service_key: {{ required "pagerduty.metal.service_key undefined" .Values.pagerduty.metal.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.metal.serviceKey undefined" .Values.pagerduty.metal.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -703,7 +703,7 @@ receivers:
 
   - name: pagerduty_network
     pagerduty_configs:
-      - service_key: {{ required "pagerduty.network.service_key undefined" .Values.pagerduty.network.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.network.serviceKey undefined" .Values.pagerduty.network.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -721,7 +721,7 @@ receivers:
 
   - name: pagerduty_vmware
     pagerduty_configs:
-      - service_key: {{ required "pagerduty.vmware.service_key undefined" .Values.pagerduty.vmware.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.vmware.serviceKey undefined" .Values.pagerduty.vmware.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -739,7 +739,7 @@ receivers:
 
   - name: pagerduty_alertchain_test
     pagerduty_configs:
-      - service_key: {{ required "pagerduty.alerttest.service_key undefined" .Values.pagerduty.alerttest.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.alertTest.serviceKey undefined" .Values.pagerduty.alertTest.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
