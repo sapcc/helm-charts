@@ -30,12 +30,14 @@ spec:
       description: 'Multi-tenant container image registry'
       enabled:     true
       endpoints:
-        {{- range (list "public" "internal") }}
         - region:    '{{ $.Values.global.region }}'
           interface: {{.}}
           enabled:   true
           url:       'https://keppel.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
-        {{- end }}
+        - region:    '{{ $.Values.global.region }}'
+          interface: internal
+          enabled:   true
+          url:       'http://keppel.{{ $.Release.Namespace }}.svc'
 
   domains:
     - name: Default
