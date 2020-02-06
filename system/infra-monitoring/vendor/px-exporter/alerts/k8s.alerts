@@ -1,21 +1,39 @@
 groups:
 - name: alerts for PX kubernetes resources
   rules:
-  - alert: PXRoutingServiceOnRisk
+  - alert: PXServiceDown
     expr: sum
       by (px_service) (label_replace((sum by (pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"})
       * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
       == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9].+"))
-      <= 1
+      < 1
+    for: 5m
+    labels:
+      severity: warning
+      tier: k8s
+      service: k8s
+      context: pxpod
+      playbook: docs/devops/alert/network/px.html#PXServiceDown
+    annotations:
+      description: "TEST ALERT - PLEASE IGNORE - All pods for PX service {{ $labels.px_service }} are not ready for 5m"
+      summary: "TEST ALERT - PLEASE IGNORE - PX Service is down"
+
+  - alert: PXServiceOnRisk
+    expr: sum
+      by (px_service) (label_replace((sum by (pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"})
+      * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
+      == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9].+"))
+      < 2
     for: 10m
     labels:
       severity: warning
       tier: k8s
       service: k8s
-      context: px
+      context: pxpod
+      playbook: docs/devops/alert/network/px.html#PXServiceOnRisk
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - Pod px /{{ $labels.pod }} is not ready for more than 2h"
-      summary: "TEST ALERT - PLEASE IGNORE - Pod not ready for a long time"
+      description: "TEST ALERT - PLEASE IGNORE - Only one pod for PX service {{ $labels.px_service }} is running for 10m"
+      summary: "TEST ALERT - PLEASE IGNORE - PX Service is on risk"
 
   - alert: PXPodNotReady
     expr: sum
@@ -23,54 +41,57 @@ groups:
       * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
       == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))
       == 0
-    for: 2h
+    for: 30m
     labels:
       severity: warning
       tier: k8s
       service: k8s
-      context: px
+      context: pxpod
+      playbook: docs/devops/alert/network/px.html#PXPodNotReady
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - Pod px /{{ $labels.pod }} is not ready for more than 2h"
-      summary: "TEST ALERT - PLEASE IGNORE - Pod not ready for a long time"
+      description: "TEST ALERT - PLEASE IGNORE - Pod px /{{ $labels.pod }} is not ready for more than 30m"
+      summary: "TEST ALERT - PLEASE IGNORE - PX Pod not ready for 30m"
 
   - alert: PXPodRestartingTooMuch
     expr: sum
       by(pod, container) (rate(kube_pod_container_status_restarts_total{namespace="px"}[15m]))
       > 0
-    for: 1h
+    for: 30m
     labels:
       severity: info
       tier: k8s
       service: k8s
-      context: px
+      context: pxpod
+      playbook: docs/devops/alert/network/px.html#PXPodRestartingTooMuch
     annotations:
       description: "TEST ALERT - PLEASE IGNORE - Container {{ $labels.container }} of pod px /{{ $labels.pod }} is restarting constantly"
       summary: "TEST ALERT - PLEASE IGNORE - Pod is in a restart loop"
 
   - alert: PXNodeNotReady
     expr: sum by (node)(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}) == 0
-    for: 1h
+    for: 15m
     labels:
-      severity: critical
+      severity: warning
       tier: k8s
       service: k8s
-      context: node
+      context: pxnode
       dashboard: nodes?var-server={{$labels.node}}
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
+      playbook: docs/devops/alert/network/px.html#PXNodeNotReady
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - Node {{ $labels.node }} is NotReady for more than an hour"
-      summary: "TEST ALERT - PLEASE IGNORE - Node status is NotReady"
+      description: "TEST ALERT - PLEASE IGNORE - PX Node {{ $labels.node }} is NotReady for 15m"
+      summary: "TEST ALERT - PLEASE IGNORE - PX Node status is NotReady"
 
   - alert: PXNodeNotReadyFlapping
     expr: changes(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}[15m]) > 2
-    for: 1h
+    for: 30m
     labels:
       severity: info
       tier: k8s
       service: k8s
-      context: node
+      context: pxnode
       meta: '{{ $labels.node }}'
       dashboard: nodes?var-server={{$labels.node}}
+      playbook: docs/devops/alert/network/px.html#PXNodeNotReadyFlapping
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - Node {{ $labels.node }} is flapping between Ready and NotReady"
-      summary: "TEST ALERT - PLEASE IGNORE -  Node readiness is flapping"
+      description: "TEST ALERT - PLEASE IGNORE - PX Node {{ $labels.node }} is flapping between Ready and NotReady for 30m"
+      summary: "TEST ALERT - PLEASE IGNORE -  PX Node readiness is flapping"
