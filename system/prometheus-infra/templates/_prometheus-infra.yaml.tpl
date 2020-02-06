@@ -22,6 +22,7 @@
       - '{job="vmware-esxi"}'
       - '{job="snmp"}'
       - '{job="infra-monitoring-atlas-sd"}'
+      - '{job="vrops"}'
       - '{__name__=~"^vcenter_.+",job!~"[a-z0-9-]*-vccustomervmmetrics$"}'
       - '{__name__=~"^network_apic_.+"}'
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
