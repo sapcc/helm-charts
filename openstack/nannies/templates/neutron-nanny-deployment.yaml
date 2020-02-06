@@ -42,7 +42,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
+              {{- if .Values.neutron_nanny.mariadb.enabled }}
+              value: "neutron-mariadb,neutron-server"
+              {{- else }}
               value: "neutron-postgresql,neutron-server"
+              {{- end }}
             - name: NEUTRON_CLEANUP_PENDING_LB_ENABLED
               value: {{ .Values.neutron_nanny.cleanup_pending_lb.enabled | quote }}
             - name: NEUTRON_CLEANUP_PENDING_LB_DRY_RUN
