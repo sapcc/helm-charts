@@ -2,7 +2,7 @@ global:
   resolve_timeout: 16m
 
 templates:
-  - ./*.tmpl
+  - /notification-templates/*.tmpl
 
 inhibit_rules:
   - source_match:
