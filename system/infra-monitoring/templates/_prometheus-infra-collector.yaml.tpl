@@ -207,6 +207,10 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
+    - source_labels: [__name__, snmp_n3k_ciscoImageString]
+      regex: 'snmp_n3k_ciscoImageString;(.*)(\$)(.*)(\$)'
+      replacement: '$3'
+      target_label: image_version
     - source_labels: [__name__, snmp_n7k_ciscoImageString]
       regex: 'snmp_n7k_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
