@@ -10,6 +10,7 @@ groups:
       service: px
       context: px
       dashboard: px-data-plane
+      playbook: '/docs/devops/alert/network/px.html#PXTransportDlWanLinkProbesFailing'
     annotations:
       description: SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is failing. This indicates problems with the underlying WAN link. Find the device in Netbox to determine the WAN circuit related to this SLA and alert the WAN team immediatly!
       summary: SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is failing. This indicates problems with the underlying WAN link. Find the device in Netbox to determine the WAN circuit related to this SLA and alert the WAN team immediatly!
@@ -23,6 +24,7 @@ groups:
       service: px
       context: px
       dashboard: px-data-plane
+      playbook: '/docs/devops/alert/network/px.html#PXTransportDlWanLinkProbesHighLatency'
     annotations:
       description: SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is measuring more then 20ms RTT on the link. This indicates problems with the underlying WAN link. Find the device in Netbox to determine the WAN circuit related to this SLA and alert the WAN team immediatly!
       summary: SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is measuring more then 20ms RTT on the link. This indicates problems with the underlying WAN link. Find the device in Netbox to determine the WAN circuit related to this SLA and alert the WAN team immediatly!
@@ -36,12 +38,13 @@ groups:
       service: px
       context: px
       dashboard: px-data-plane
+      playbook: '/docs/devops/alert/network/px.html#PXTransportDlWanLinkInterfaceDown'
     annotations:
       description: "{{ $labels.ifDescr }} on {{ $labels.devicename }} went down. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!"
       summary: "{{ $labels.ifDescr }} on {{ $labels.devicename }} went down. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!"
   
   - alert: PXTransportDlWanLinkInterfaceFlapping
-    expr: resets((snmp_pxdlrouternxos_sysUpTime - on (server_id) group_right(server_name, interface) (snmp_pxdlrouternxos_ifLastChange{ifDescr=~"Ethernet1/11|Ethernet1/12"}))[10m:]) > 2
+    expr: resets((snmp_pxdlrouternxos_sysUpTime - on (server_id) group_right(server_name, interface) (snmp_pxdlrouternxos_ifLastChange{ifDescr=~"Ethernet1/11|Ethernet1/12"}))[10m:]) > 1
     for: 5m
     labels:
       severity: info
@@ -49,12 +52,13 @@ groups:
       service: px
       context: px
       dashboard: px-data-plane
+      playbook: '/docs/devops/alert/network/px.html#PXTransportDlWanLinkInterfaceFlapping'
     annotations:
       description: "{{ $labels.ifDescr }} on {{ $labels.devicename }} is flapping. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!"
       summary: "{{ $labels.ifDescr }} on {{ $labels.devicename }} is flapping. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!"
 
 
-  - alert: PXTransportDlWanLinkInterfaceInErrors
+  - alert: PXTransportDlWanLinkProbesHighLatency
     expr: rate(snmp_pxdlrouternxos_ifInErrors{ifAdminStatus="1", ifType="6", ifDescr=~"Ethernet1/11|Ethernet1/12", ifOperStatus="1"}[10m]) > 200
     for: 5m
     labels:
@@ -63,6 +67,7 @@ groups:
       service: px
       context: px
       dashboard: px-data-plane
+      playbook: '/docs/devops/alert/network/px.html#PXTransportDlWanLinkProbesHighLatency'
     annotations:
       description: "{{ $labels.ifDescr }} on {{ $labels.devicename }} is receiving more than 200 error packets within the last 20m. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!"
       summary: "{{ $labels.ifDescr }} on {{ $labels.devicename }} is receiving more than 200 error packets within the last 20m. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!"
