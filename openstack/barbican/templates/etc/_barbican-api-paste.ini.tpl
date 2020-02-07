@@ -52,10 +52,6 @@ paste.filter_factory = oslo_middleware:Healthcheck.factory
 backends = disable_by_file
 disable_by_file_path = /etc/barbican/healthcheck_disable
 
-[filter:audit]
-paste.filter_factory = keystonemiddleware.audit:filter_factory
-audit_map_file = /etc/barbican/api_audit_map.conf
-
 [filter:keystone_authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 
