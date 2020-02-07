@@ -10,104 +10,104 @@ groups:
       service: px
       context: px
     annotations:
-      description: TEST ALERT - PLEASE IGNORE -The bird exporter for PX does not send any metrics - this should be checkedr"
-      summary: TEST ALERT - PLEASE IGNORE - The bird exporter for the PX does not send any metrics - this should be checked"
+      description: The bird exporter for PX does not send any metrics - this should be checkedr"
+      summary:  The bird exporter for the PX does not send any metrics - this should be checked"
 
   - alert: PXDomainAllPeersDown
     expr: sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (pxdomain,region, pxservice) == 0
     for: 5m
     labels:
-      severity: warning
+      severity: info
       tier: net
       service: px
       context: px
       playbook: '/docs/devops/alert/network/px.html#PXDomainAllPeersDown'
       dashboard: px-control-plane
     annotations:
-      description: TEST ALERT - PLEASE IGNORE -   "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
-      summary: TEST ALERT - PLEASE IGNORE -  "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
+      description:  "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
+      summary:  "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
 
   - alert: PXConsumerDown
     expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id) ==bool 0) * 10) == 10
     for: 5m
     labels:
-      severity: warning
+      severity: info
       tier: net
       service: px
       context: px
       playbook: '/docs/devops/alert/network/px.html#PXConsumerDown'
       dashboard: px-control-plane
     annotations:
-      description: TEST ALERT - PLEASE IGNORE -   "PX consumer {{ $labels.peer_id }} is not BGP peering with any of the PX route servers for service {{ $labels.pxservice }}. Thus the consumer is unable to use the given PX service."
-      summary: TEST ALERT - PLEASE IGNORE -  "PX consumer {{ $labels.peer_id }} is not BGP peering with any of the PX route servers for service {{ $labels.pxservice }}. Thus the consumer is unable to use the given PX service."
+      description:  "PX consumer {{ $labels.peer_id }} is not BGP peering with any of the PX route servers for service {{ $labels.pxservice }}. Thus the consumer is unable to use the given PX service."
+      summary:  "PX consumer {{ $labels.peer_id }} is not BGP peering with any of the PX route servers for service {{ $labels.pxservice }}. Thus the consumer is unable to use the given PX service."
       
   - alert: PXConsumerWithoutRedundancy
     expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id) ==bool 0) * 10) + on(region, pxservice, peer_id) group_right() ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id, pxdomain) ==bool 0) * 100) + on (region, pxservice, pxdomain) group_left() (sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) == 100
     for: 5m
     labels:
-      severity: warning
+      severity: info
       tier: net
       service: px
       context: px
       playbook: '/docs/devops/alert/network/px.html#PXConsumerWithoutRedundancy'
       dashboard: px-control-plane
     annotations:
-      description: TEST ALERT - PLEASE IGNORE -   "PX consumer {{ $labels.peer_id }} is not peering with PX domain {{ $labels.pxdomain }} for service {{ $labels.pxservice }}. Thus from PX side, there is no redundancy given."
-      summary: TEST ALERT - PLEASE IGNORE -  "PX consumer {{ $labels.peer_id }} is not peering with PX domain {{ $labels.pxdomain }} for service {{ $labels.pxservice }}. Thus from PX side, there is no redundancy given."
+      description:  "PX consumer {{ $labels.peer_id }} is not peering with PX domain {{ $labels.pxdomain }} for service {{ $labels.pxservice }}. Thus from PX side, there is no redundancy given."
+      summary:  "PX consumer {{ $labels.peer_id }} is not peering with PX domain {{ $labels.pxdomain }} for service {{ $labels.pxservice }}. Thus from PX side, there is no redundancy given."
   
   - alert: PXConsumerBgpConnectionDown
     expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id) ==bool 0) * 10) + on(region, pxservice, peer_id) group_right() ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id, pxdomain) ==bool 0) * 100) + on (region, pxservice, pxdomain) group_left() (sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) + on(region, pxservice, peer_id, pxdomain) group_right() ((bird_protocol_up{name!~"kernel.", peer_type="PLATF"} ==bool 0 ) * 1000) == 1000
     for: 5m
     labels:
-      severity: warning
+      severity: info
       tier: net
       service: px
       context: px
       playbook: '/docs/devops/alert/network/px.html#PXConsumerBgpConnectionDown'
       dashboard: px-control-plane
     annotations:
-      description: TEST ALERT - PLEASE IGNORE -   A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
-      summary: TEST ALERT - PLEASE IGNORE -  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
+      description:  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
+      summary:  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
 
   - alert: PXTransportRouterBgpDown
     expr: bird_protocol_up{name!~"kernel.", peer_type="TRANS"} == 0
     for: 5m
     labels:
-      severity: warning
+      severity: info
       tier: net
       service: px
       context: px
       playbook: '/docs/devops/alert/network/px.html#PXTransportRouterBgpDown'
       dashboard: px-control-plane
     annotations:
-      description: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
-      summary: TEST ALERT - PLEASE IGNORE -  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
+      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
+      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
 
 
   - alert: PXTransportRouterPrefixImportCountZero
     expr: bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TRANS"} <= 0 
     for: 10m
     labels:
-      severity: warning
-      tier: api
+      severity: info
+      tier: net
       service: px
       context: px
       playbook: '/docs/devops/alert/network/px.html#PXTransportRouterPrefixImportCountZero'
       dashboard: px-control-plane
     annotations:
-      description: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
-      summary: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
+      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
+      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
 
   - alert: PXTransportRouterPrefixExportCountZero
     expr: bird_protocol_prefix_export_count{name!~"kernel.", peer_type="TRANS"} <= 0 
     for: 10m
     labels:
-      severity: warning
+      severity: info
       tier: api
       service: px
       context: px
       playbook: '/docs/devops/alert/network/px.html#PXTransportRouterPrefixImportCountZero'
       dashboard: px-control-plane
     annotations:
-      description: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
-      summary: TEST ALERT - PLEASE IGNORE -   The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
+      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
+      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.

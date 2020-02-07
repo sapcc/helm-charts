@@ -5,7 +5,7 @@ groups:
     expr: sum(changes(snmp_pxdlrouternxos_rttMonLatestRttOperTime[10m]) ==bool 0) by  (server_id, server_name, rttMonCtrlAdminIndex, rttMonCtrlAdminTag, rttMonCtrlAdminOwner) + on  (server_id, server_name, rttMonCtrlAdminIndex, rttMonCtrlAdminTag, rttMonCtrlAdminOwner) group_right() ((snmp_pxdlrouternxos_rttMonLatestRttOperSense{rttMonCtrlAdminIndex=~"4.."} !=bool 1) * 10) != 0
     for: 5m
     labels:
-      severity: critical
+      severity: info
       tier: net
       service: px
       context: px
@@ -18,7 +18,7 @@ groups:
     expr: snmp_pxdlrouternxos_rttMonLatestRttOperCompletionTime{rttMonCtrlAdminIndex=~"4.."} > 20000
     for: 5m
     labels:
-      severity: critical
+      severity: info
       tier: net
       service: px
       context: px
@@ -31,7 +31,7 @@ groups:
     expr: snmp_pxdlrouternxos_ifLastChange{ifAdminStatus="1", ifType="6", ifDescr=~"Ethernet1/11|Ethernet1/12", ifOperStatus!="1"}
     for: 5m
     labels:
-      severity: critical
+      severity: info
       tier: net
       service: px
       context: px
@@ -44,7 +44,7 @@ groups:
     expr: resets((snmp_pxdlrouternxos_sysUpTime - on (server_id) group_right(server_name, interface) (snmp_pxdlrouternxos_ifLastChange{ifDescr=~"Ethernet1/11|Ethernet1/12"}))[10m:]) > 2
     for: 5m
     labels:
-      severity: critical
+      severity: info
       tier: net
       service: px
       context: px
@@ -58,7 +58,7 @@ groups:
     expr: rate(snmp_pxdlrouternxos_ifInErrors{ifAdminStatus="1", ifType="6", ifDescr=~"Ethernet1/11|Ethernet1/12", ifOperStatus="1"}[10m]) > 200
     for: 5m
     labels:
-      severity: critical
+      severity: info
       tier: net
       service: px
       context: px
