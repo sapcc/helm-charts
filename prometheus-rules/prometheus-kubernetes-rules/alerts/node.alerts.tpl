@@ -14,6 +14,7 @@ groups:
       context: node
       meta: "High CPU usage on {{`{{ $labels.node }}`}}"
       dashboard: nodes?var-server={{`{{$labels.node}}`}}
+      playbook: docs/support/playbook/k8s_node_host_high_cpu_usage.html
     annotations:
       summary: High load on node
       description: "Node {{`{{ $labels.node }}`}} has more than {{`{{ $value }}`}}% CPU load"
