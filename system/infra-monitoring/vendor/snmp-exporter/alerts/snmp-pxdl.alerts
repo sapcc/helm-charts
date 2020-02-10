@@ -16,7 +16,7 @@ groups:
       summary: SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is failing. This indicates problems with the underlying WAN link.
   
   - alert: PXTransportDlWanLinkProbesHighLatency
-    expr: snmp_pxdlrouternxos_rttMonLatestRttOperCompletionTime{rttMonCtrlAdminIndex=~"4.."} > 20000
+    expr: snmp_pxdlrouternxos_rttMonLatestRttOperCompletionTime{rttMonCtrlAdminIndex=~"4..", rttMonCtrlAdminTag=~"^RTT10.*"} < 1000 OR snmp_pxdlrouternxos_rttMonLatestRttOperCompletionTime{rttMonCtrlAdminIndex=~"4..", rttMonCtrlAdminTag=~"^RTT5.*"} < 500 OR snmp_pxdlrouternxos_rttMonLatestRttOperCompletionTime{rttMonCtrlAdminIndex=~"4..", rttMonCtrlAdminTag=~"^RTT15*"} < 1500 
     for: 5m
     labels:
       severity: info
