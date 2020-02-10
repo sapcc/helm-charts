@@ -16,6 +16,10 @@ notification_format = {{ .Values.api.notifications.format | default "cadf" | quo
 notification_opt_out = {{ $message_type }}
 {{ end }}
 
+{{- range $tag := .Values.api.default_tags }}
+default_tag = {{ $tag }}
+{{ end -}}
+
 {{- if .Values.api.auth }}
 [auth]
 methods = {{ .Values.api.auth.methods | default "password,token,application_credential" }}
