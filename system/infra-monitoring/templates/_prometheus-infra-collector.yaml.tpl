@@ -432,3 +432,23 @@
     - target_label: __address__
       replacement: vrops-exporter:9160
 {{- end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.esxi_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'esxi-config'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: vcenter
+      action: keep
+    - source_labels: [server_name]
+      target_label: __param_target
+    - target_label: __address__
+      replacement: esxi-exporter:9203
+{{- end }}
