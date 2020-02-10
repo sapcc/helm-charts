@@ -1,0 +1,31 @@
+# Because Keppel is instrumental for the continued availability of many other
+# Docker images, we want to be able to start it reliably and fast. To ensure this,
+# this daemonset (through its existence) keeps the Keppel image permanently
+# pulled on all nodes.
+
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: keep-image-pulled
+
+spec:
+  selector:
+    matchLabels:
+      app: keep-image-pulled
+  template:
+    metadata:
+      labels:
+        app: keep-image-pulled
+    spec:
+      containers:
+        - name: keppel
+          image: {{ include "keppel_image" . }}
+          command: [ '/bin/sleep', 'inf' ]
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "16Mi"
+            limits:
+              cpu: "1m"
+              memory: "16Mi"
