@@ -12,7 +12,7 @@ groups:
         expr: max by(region, cluster, cluster_type, namespace, pod, condition) (kube_pod_status_ready) * on(pod) group_left(node) max by (pod, node) (kube_pod_info)
 
       - record: kube_pod_status_phase_normalized
-        expr: max by(region, cluster, cluster_type, namespace, pod, node) (kube_pod_info) * on(pod) group_left(condition) max by (pod, condition) (kube_pod_status_phase)
+        expr: max by(region, cluster, cluster_type, namespace, pod, node, phase) (kube_pod_status_phase) * on(pod) group_left(node) max by (node, pod) (kube_pod_info)
 
       - record: kube_pod_container_resource_requests_memory_bytes_average
         expr: |
