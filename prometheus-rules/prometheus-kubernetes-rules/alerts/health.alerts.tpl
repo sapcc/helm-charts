@@ -112,7 +112,7 @@ groups:
       summary: Deployment has less than desired replicas since 10m
 
   - alert: ManyPodsNotReadyOnNode
-    expr: sum(max(kube_pod_info) by (pod,node) * on (pod) group_left max(kube_pod_status_ready{condition="true"}) by (pod)) by (node) / sum(kube_pod_info * on (pod) group_left() max(kube_pod_status_phase{phase="Running"}) by (pod)) by (node) < 0.75 and sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 1)
+    expr: sum by (node) (kube_pod_status_ready_normalized{condition="true"}) / sum by (node) (kube_pod_status_phase_normalized{phase="Running"}) < 0.75 and sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 1)
     for: 30m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -125,7 +125,7 @@ groups:
 
   - alert: PodNotReady
     # alert on pods that are not ready but in the Running phase on a Ready node
-    expr: sum((kube_pod_info * on(node) group_left sum(kube_node_status_condition{condition="Ready", status="true"}) by (node)* on (pod) group_left sum(kube_pod_status_phase{phase="Running"}) by (pod) == 1)  *on (pod) group_left sum(kube_pod_status_ready{condition="true"}) by (pod)) by (pod,namespace) == 0
+    expr: kube_pod_status_phase_normalized{phase="Running"} * on (pod,node)kube_pod_status_ready_normalized{condition="false"} * on (node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1
     for: 2h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
