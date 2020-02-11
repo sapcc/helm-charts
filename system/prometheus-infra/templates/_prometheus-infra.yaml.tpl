@@ -29,6 +29,8 @@
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
       - '{__name__=~"^ipmi_memory_errors$"}'
       - '{__name__=~"^ipmi_up"}'
+      - '{__name__=~"^snmp_(ipn|acispine|acileaf)_ifLastChange"}'
+      - '{__name__=~"^snmp_(ipn|acispine|acileaf)_sysUpTime"}'
       - '{__name__=~"^fluentd_input_status_num_records_total"}'
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^smokeping_.+"}'
