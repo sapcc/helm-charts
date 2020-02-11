@@ -26,7 +26,7 @@ groups:
       summary: {{ include "fullName" . }} reports slow queries.
 
   - alert: {{ include "alerts.service" . | title }}MariaDBWaitingForLock
-    expr: (mysql_info_schema_threads_seconds{app=~"{{ include "fullName" . }},state="waiting for lock"} / 1000  > 15)
+    expr: (mysql_info_schema_threads_seconds{app=~"{{ include "fullName" . }},state=~"waiting for lock"} / 1000  > 15)
     for: 10m
     labels:
       context: database
