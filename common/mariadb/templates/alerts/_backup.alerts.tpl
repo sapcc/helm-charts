@@ -1,4 +1,3 @@
-groups:
 - name: backup.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseBackupMissing

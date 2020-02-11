@@ -1,4 +1,3 @@
-groups:
 - name: mysql.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDBTooManyConnections
