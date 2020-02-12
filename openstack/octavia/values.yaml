@@ -41,3 +41,41 @@ alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+
+sentry:
+  enabled: true
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: "raven.handlers.logging.SentryHandler"
+      level: ERROR
+      transport: ThreadedRequestsHTTPTransport
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    octavia:
+      handlers: stdout, sentry
+      level: DEBUG
+    octavia.common.keystone:
+      handlers: stdout, sentry
+      level: WARNING
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
+

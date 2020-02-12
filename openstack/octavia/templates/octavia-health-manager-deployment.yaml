@@ -44,11 +44,22 @@ spec:
               mountPath: /etc/octavia/octavia-worker.conf
               subPath: octavia-worker.conf
               readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
           env:
           - name: PYTHONWARNINGS
             value: "ignore:Unverified HTTPS request"
           - name: REQUESTS_CA_BUNDLE
             value: ""
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: octavia.DSN.python
+          {{- end }}
       volumes:
         - name: octavia-etc
           configMap:

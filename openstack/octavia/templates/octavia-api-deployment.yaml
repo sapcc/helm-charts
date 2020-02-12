@@ -26,6 +26,18 @@ spec:
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
           command: ["/var/lib/openstack/bin/octavia-api"]
+          env:
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
           ports:
             - name: http
               containerPort: {{.Values.api_port_internal}}
@@ -48,6 +60,10 @@ spec:
             - name: octavia-etc
               mountPath: /etc/octavia/policy.json
               subPath: policy.json
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
               readOnly: true
       volumes:
         - name: octavia-etc

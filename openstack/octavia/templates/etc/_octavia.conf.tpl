@@ -1,6 +1,7 @@
 [DEFAULT]
 # Print debugging output (set logging level to DEBUG instead of default WARNING level).
-debug = True
+debug = {{.Values.debug | default "false" }}
+log_config_append = /etc/manila/logging.ini
 
 # Plugin options are hot_plug_plugin (Hot-pluggable controller plugin)
 octavia_plugins = f5_plugin
@@ -30,7 +31,7 @@ network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 [health_manager]
 controller_ip_port_list = 127.0.0.1:5555
 heartbeat_key = unused
-health_check_interval = 15
+health_check_interval = 30
 
 [networking]
 f5_network_segment_physical_network = cp090

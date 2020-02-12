@@ -44,6 +44,10 @@ spec:
               mountPath: /etc/octavia/esd/esd.json
               subPath: esd.json
               readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
             - name: octavia-etc-worker
               mountPath: /etc/octavia/octavia-worker.conf
               subPath: octavia-worker.conf
@@ -55,6 +59,13 @@ spec:
             value: "ignore:Unverified HTTPS request"
           - name: REQUESTS_CA_BUNDLE
             value: ""
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: octavia.DSN.python
+          {{- end }}
         - name: octavia-driver-agent
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
@@ -66,8 +77,20 @@ spec:
               mountPath: /etc/octavia/octavia.conf
               subPath: octavia.conf
               readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
             - mountPath: /var/run/octavia
               name: octavia-var
+          env:
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
       volumes:
         - name: octavia-etc
           configMap:
