@@ -343,6 +343,8 @@
       target_label:  __param_model
     - source_labels: [server_name]
       target_label: __param_name
+    - source_labels: [job]
+      target_label: __param_job
 {{- end }}
 
 {{- $values := .Values.ipmi_exporter -}}
