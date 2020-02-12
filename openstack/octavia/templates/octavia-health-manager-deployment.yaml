@@ -32,7 +32,7 @@ spec:
         - name: octavia-f5-status-manager
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "octavia-f5-status-manager", "--config-file", "/etc/octavia/octavia.conf", "--config-file", "/etc/octavia/octavia-worker.conf"]
+          command: ['dumb-init', 'kubernetes-entrypoint']
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
@@ -49,17 +49,23 @@ spec:
               subPath: logging.ini
               readOnly: true
           env:
-          - name: PYTHONWARNINGS
-            value: "ignore:Unverified HTTPS request"
-          - name: REQUESTS_CA_BUNDLE
-            value: ""
-          {{- if .Values.sentry.enabled }}
-          - name: SENTRY_DSN
-            valueFrom:
-              secretKeyRef:
-                name: sentry
-                key: octavia.DSN.python
-          {{- end }}
+            - name: COMMAND
+              value: "octavia-f5-status-manager --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia-worker.conf"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
       volumes:
         - name: octavia-etc
           configMap:

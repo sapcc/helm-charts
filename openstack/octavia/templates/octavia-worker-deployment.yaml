@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  replicas: {{ .Values.replicaCountWorker }}
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: octavia-worker-{{ $name }}
@@ -32,7 +32,7 @@ spec:
         - name: octavia-worker
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "octavia-worker", "--config-file", "/etc/octavia/octavia.conf", "--config-file", "/etc/octavia/octavia-worker.conf"]
+          command: ['dumb-init', 'kubernetes-entrypoint']
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
@@ -55,17 +55,23 @@ spec:
             - mountPath: /var/run/octavia
               name: octavia-var
           env:
-          - name: PYTHONWARNINGS
-            value: "ignore:Unverified HTTPS request"
-          - name: REQUESTS_CA_BUNDLE
-            value: ""
-          {{- if .Values.sentry.enabled }}
-          - name: SENTRY_DSN
-            valueFrom:
-              secretKeyRef:
-                name: sentry
-                key: octavia.DSN.python
-          {{- end }}
+            - name: COMMAND
+              value: "octavia-worker --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia-worker.conf"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
         - name: octavia-driver-agent
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent

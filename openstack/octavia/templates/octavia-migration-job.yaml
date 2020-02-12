@@ -14,15 +14,21 @@ spec:
         - name: octavia-migration
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
-          command: ["/var/lib/openstack/bin/octavia-db-manage", "upgrade", "head"]
+          command: ['dumb-init', 'kubernetes-entrypoint']
           env:
-          {{- if .Values.sentry.enabled }}
-          - name: SENTRY_DSN
-            valueFrom:
-              secretKeyRef:
-                name: sentry
-                key: octavia.DSN.python
-          {{- end }}
+            - name: COMMAND
+              value: "octavia-db-manage upgrade head"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
           volumeMounts:
             - name: octavia-etc
               mountPath: /etc/octavia/octavia.conf
