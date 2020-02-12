@@ -321,7 +321,7 @@
     - source_labels: [model]
       target_label:  __param_model
     - source_labels: [job]
-      target_label: __param_job
+      target_label: [bios/cisco_vpod]
 - job_name: 'bios/cisco_cp'
   params:
     job: [bios/cisco_cp]
