@@ -25,8 +25,18 @@ spec:
         - name: {{ .Chart.Name }}-api
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
+          {{- if .Values.api_backdoor }}
           command: ["/var/lib/openstack/bin/octavia-api"]
+          {{- else }}
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          {{- end }}
           env:
+            - name: COMMAND
+              value: "/usr/sbin/apachectl -D FOREGROUND"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
             - name: REQUESTS_CA_BUNDLE
@@ -46,10 +56,14 @@ spec:
             httpGet:
               path: /
               port: http
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
           readinessProbe:
             httpGet:
               path: /
               port: http
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
@@ -65,6 +79,12 @@ spec:
               mountPath: /etc/octavia/logging.ini
               subPath: logging.ini
               readOnly: true
+            {{- if not .Values.api_backdoor }}
+            - name: octavia-etc
+              mountPath: /etc/apache2/conf-enabled/octavia-api.conf
+              subPath: octavia-api.conf
+              readOnly: true
+            {{- end }}
       volumes:
         - name: octavia-etc
           configMap:
