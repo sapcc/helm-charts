@@ -16,8 +16,15 @@ notification_format = {{ .Values.api.notifications.format | default "cadf" | quo
 notification_opt_out = {{ $message_type }}
 {{ end }}
 
+{{- if hasKey .Values.api "default_tags"}}
 {{- range $tag := .Values.api.default_tags }}
 default_tag = {{ $tag }}
+{{ end -}}
+{{- else}}
+{{- range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
+{{- $az := trimPrefix $.Values.global.region $az_long }}
+default_tag = vc-{{ $az }}-0
+{{ end -}}
 {{ end -}}
 
 {{- if .Values.api.auth }}
