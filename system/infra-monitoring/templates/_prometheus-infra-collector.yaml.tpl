@@ -318,6 +318,31 @@
       target_label:  __param_manufacturer
     - source_labels: [model]
       target_label:  __param_model
+- job_name: 'bios/cisco_cp'
+  params:
+    job: [bios/cisco_cp]
+  scrape_interval: {{$values.cisco_cp_scrapeInterval}}
+  scrape_timeout: {{$values.cisco_cp_scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: bios/cisco_cp
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: bios-exporter:{{$values.listen_port}}
+    - source_labels: [manufacturer]
+      target_label:  __param_manufacturer
+    - source_labels: [model]
+      target_label:  __param_model
+    - source_labels: [server_name]
+      target_label: __param_name
 {{- end }}
 
 {{- $values := .Values.ipmi_exporter -}}
