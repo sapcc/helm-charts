@@ -21,6 +21,9 @@ spec:
         - name: editors
           configMap:
             name: editors
+        - name: alertmanager-certs
+          secret:
+            name: alertmanager-sso-cert
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
       containers:
@@ -34,7 +37,10 @@ spec:
           volumeMounts:
             - name: editors
               mountPath: '/home/app/webapp/config/users'
-              readOnly: true     
+              readOnly: true
+            - name: alertmanager-certs
+              mountPath: '/home/app/webapp/config/certs'
+              readOnly: true   
           env:
             - name: REGION
               value: {{ .Values.region }}
