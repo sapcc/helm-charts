@@ -329,7 +329,7 @@
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
-      regex: bios/cisco_cp
+      regex: cp/netbox
       action: keep
     - source_labels: [__address__]
       target_label: __param_target
