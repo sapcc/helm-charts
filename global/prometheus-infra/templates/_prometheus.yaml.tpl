@@ -62,7 +62,7 @@
       - '{__name__=~"^netapp_filer_.*"}'
       - '{__name__=~"^vasa_.*"}'
       - '{__name__=~"^vcenter_esxi_mem_swapout_.*"}'
-      - '{__name__=~"^bios_exporter",setting_name="memory_memorymode|biosvfselectmemoryrasconfiguration|memory_ras_configuration|bios_memsettings_adddcsetting|bios_memsettings_memopmode"}'
+      - '{__name__=~"^bios_exporter",setting_name=~"memory_memorymode|biosvfselectmemoryrasconfiguration|memory_ras_configuration|bios_memsettings_adddcsetting|bios_memsettings_memopmode"}'
       - '{__name__=~"^pxcloudprober_.+"}'
 
   relabel_configs:
