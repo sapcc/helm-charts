@@ -24,6 +24,7 @@ data:
       host: 127.0.0.1
       port: 3306
       data_dir: ./db_prod
+      log_bin: mysqld-bin
       databases:
       {{- range $db := .Values.backup_v2.databases }}
         - "{{$db}}"
@@ -33,10 +34,17 @@ data:
         - "{{$tl}}"
       {{- end }}
     s3:
-      aws_access_key_id: {{ .Values.global.mariadb.backup_v2.aws_access_key_id }}
-      aws_secret_access_key: {{ .Values.global.mariadb.backup_v2.aws_secret_access_key }}
-      region: {{ .Values.global.mariadb.backup_v2.region }}
-      bucket_name: "mariadb-backup-{{ .Values.global.region }}"
+      - name: aws_{{ .Values.global.mariadb.backup_v2.region }} 
+        aws_access_key_id: {{ .Values.global.mariadb.backup_v2.aws_access_key_id }}
+        aws_secret_access_key: {{ .Values.global.mariadb.backup_v2.aws_secret_access_key }}
+        region: {{ .Values.global.mariadb.backup_v2.region }}
+        bucket_name: "mariadb-backup-{{ .Values.global.region }}"
+      - name: swift_{{ .Values.global.region }}
+        aws_access_key_id: {{ .Values.global.mariadb.backup_v2.swift_access_key_id }}
+        aws_secret_access_key: {{ .Values.global.mariadb.backup_v2.swift_secret_access_key }}
+        aws_endpoint: {{ .Values.global.mariadb.backup_v2.swift_endpoint }}
+        region: {{ .Values.global.region }}
+        bucket_name: "mariadb-backup-{{ .Values.global.region }}"
     oauth:
       enabled: {{ default true .Values.backup_v2.oauth.enabled}}
       provider_url: "https://auth.mariabackup.{{ .Values.global.region }}.cloud.sap"
