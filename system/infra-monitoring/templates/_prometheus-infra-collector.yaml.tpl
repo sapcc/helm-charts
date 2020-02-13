@@ -320,8 +320,8 @@
       target_label:  __param_manufacturer
     - source_labels: [model]
       target_label:  __param_model
-    - source_labels: [job]
-      replacement: bios/cisco_vpod
+    - souce_labels: [job]
+      target_label: __param_job
 - job_name: 'bios/cisco_cp'
   params:
     job: [bios/cisco_cp]
