@@ -295,8 +295,6 @@
       target_label:  __param_manufacturer
     - source_labels: [model]
       target_label:  __param_model
-    - source_labels: [job]
-      target_label: __param_job
 - job_name: 'bios/cisco_vpod'
   params:
     job: [bios/cisco_vpod]
@@ -320,7 +318,7 @@
       target_label:  __param_manufacturer
     - source_labels: [model]
       target_label:  __param_model
-    - souce_labels: [job]
+    - source_labels: [job]
       target_label: __param_job
 - job_name: 'bios/cisco_cp'
   params:
