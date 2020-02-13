@@ -18,6 +18,7 @@
       - '{job="asw-eapi"}'
       - '{job="bios/ironic"}'
       - '{job="bios/cisco_vpod"}'
+      - '{job="bios/cisco_cp"}'
       - '{job="ipmi/ironic"}'
       - '{job="vmware-esxi"}'
       - '{job="snmp"}'
