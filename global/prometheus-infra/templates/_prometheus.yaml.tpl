@@ -63,6 +63,7 @@
       - '{__name__=~"^vasa_.*"}'
       - '{__name__=~"^vcenter_esxi_mem_swapout_.*"}'
       - '{__name__=~"^bios_exporter",setting_name="memory_.+|bios_memsettings.+"}'
+      - '{__name__=~"^pxcloudprober_.+"}'
 
   relabel_configs:
     - action: replace
