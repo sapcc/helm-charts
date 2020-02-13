@@ -13,8 +13,8 @@
       summary: {{ include "fullName" . }} backup missing
 
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseBackupAge2Hours
-    expr: floor((time() - backup_last_success{app=~"{{ include "fullName" . }}"}) / 60 / 60) >= 2
-    for: 10m
+    expr: floor((time() - backup_last_success{app=~"{{ include "fullName" . }}"}) / 60 / 60) >= 1
+    for: 1h
     labels:
       context: backupage
       meta: "{{`{{ $labels.app }}`}}"
@@ -27,8 +27,8 @@
       summary: Database Backup too old
 
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseBackupAge4Hours
-    expr: floor((time() - backup_last_success{app=~"{{ include "fullName" . }}"}) / 60 / 60) >= 4
-    for: 10m
+    expr: floor((time() - backup_last_success{app=~"{{ include "fullName" . }}"}) / 60 / 60) >= 3
+    for: 1h
     labels:
       context: backupage
       meta: "{{`{{ $labels.app }}`}}"
