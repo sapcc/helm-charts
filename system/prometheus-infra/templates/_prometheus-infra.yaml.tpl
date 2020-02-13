@@ -34,7 +34,7 @@
       - '{__name__=~"^snmp_(ipn|acispine|acileaf)_sysUpTime"}'
       - '{__name__=~"^fluentd_input_status_num_records_total"}'
       - '{__name__=~"^bird_.+"}'
-      - '{__name__=~"^smokeping_.+"}'
+      - '{__name__=~"^pxcloudprober_.+"}'
       - '{__name__=~"^vasa_.+"}'
       - '{__name__=~"^up"}'
 
