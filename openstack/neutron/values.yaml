@@ -449,7 +449,7 @@ mysql_metrics:
           agent_type,
           (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(heartbeat_timestamp)) AS heartbeat_seconds
         FROM agents
-        WHERE admin_state_up AND heartbeat_timestamp < (DATE_SUB(now(), INTERVAL 90 SECOND));
+        WHERE admin_state_up AND heartbeat_timestamp > (DATE_SUB(now(), INTERVAL 90 SECOND));
       values:
       - "heartbeat_seconds"
     - help: Neutron agents load
@@ -461,9 +461,9 @@ mysql_metrics:
         SELECT
           host AS neutron_host,
           agent_type,
-          load
+          `load`
         FROM agents
-        WHERE admin_state_up AND heartbeat_timestamp < (DATE_SUB(now(), INTERVAL 90 SECOND));
+        WHERE admin_state_up AND heartbeat_timestamp > (DATE_SUB(now(), INTERVAL 90 SECOND));
       values:
       - "load"
 
