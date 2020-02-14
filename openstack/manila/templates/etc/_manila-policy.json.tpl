@@ -48,7 +48,7 @@
   "share:migration_cancel": "rule:context_is_admin",
   "share:migration_get_progress": "rule:context_is_cloud_viewer",
   "share:reset_task_state": "rule:context_is_sharedfilesystem_admin",
-  "share:manage": "rule:context_is_admin",
+  "share:manage": "rule:context_is_sharedfilesystem_admin",
   "share:unmanage": "rule:context_is_admin",
   "share:create_public_share": "rule:context_is_admin",
   "share:set_public_share": "rule:context_is_admin",
@@ -119,6 +119,9 @@
   "share_server:show": "rule:context_is_cloud_viewer",
   "share_server:details": "rule:context_is_cloud_viewer",
   "share_server:delete": "rule:context_is_admin",
+  "share_server:reset_status": "rule:context_is_admin",
+  "share_server:manage_share_server": "rule:context_is_admin",
+  "share_server:unmanage_share_server": "rule:context_is_admin",
 
   "share_network:create": "rule:context_is_sharedfilesystem_admin",
   "share_network:delete": "rule:context_is_sharedfilesystem_admin",
@@ -158,6 +161,9 @@
   "share_replica:reset_status": "rule:context_is_admin",
   "share_replica:force_delete": "rule:context_is_admin",
   "share_replica:reset_replica_state": "rule:context_is_admin",
+
+  "share_replica_export_location:index": "rule:context_is_cloud_viewer",
+  "share_replica_export_location:show": "rule:context_is_cloud_viewer",
 
   "share_group_type:index": "rule:context_is_sharedfilesystem_admin",
   "share_group_type:show": "rule:context_is_sharedfilesystem_admin",
