@@ -12,7 +12,7 @@ groups:
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
       description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
-      summary: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      summary: 'N9K acispine network interface In error rate check'
 
   - alert: NetworkN9kSpineInterfaceOutErrorRateReachesCriticalThreshold
     expr: rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
@@ -25,7 +25,7 @@ groups:
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
       description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
-      summary: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      summary: 'N9K acispine network interface Out error rate check'
 
   - alert: NetworkN9kLeafInterfaceInErrorRateReachesCriticalThreshold
     expr: rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
@@ -38,7 +38,7 @@ groups:
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
       description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
-      summary: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      summary: 'N9K acileaf network interface In error check'
 
   - alert: NetworkN9kLeafInterfaceOutErrorRateReachesCriticalThreshold
     expr: rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
@@ -51,7 +51,7 @@ groups:
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
       description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
-      summary: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      summary: 'N9K acileaf network interface Out error check'
 
   - alert: NetworkN9kInterfaceInErrorRateReachesWarningThreshold
     expr: rate(snmp_acispine_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
@@ -64,7 +64,7 @@ groups:
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
       description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
-      summary: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      summary: 'N9K acispine network interface In error check'
 
   - alert: NetworkN9kInterfaceOutErrorRateReachesWarningThreshold
     expr: rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
@@ -77,7 +77,7 @@ groups:
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
       description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
-      summary: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      summary: 'N9K acispine network interface Out error rate check'
 
   - alert: NetworkN9kInterfaceInErrorRateReachesWarningThreshold
     expr: rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
@@ -90,7 +90,7 @@ groups:
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
       description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
-      summary: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      summary: 'N9K acileaf interface In error rate check'
 
   - alert: NetworkN9kInterfaceOutErrorRateReachesWarningThreshold
     expr: rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
@@ -103,7 +103,7 @@ groups:
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
       description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
-      summary: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      summary: 'N9K acileaf interface Out error rate check'
 
   - alert: ApicPhysicalInterfaceResets
     expr: sum(resets(({__name__=~"snmp_(ipn|acispine|acileaf)_sysUpTime"} - on (server_id) group_right(server_name, interface) ({__name__=~"snmp_(ipn|acispine|acileaf)_ifLastChange"}))[5m:]))by (module,devicename,ifDescr) > 2
@@ -116,4 +116,4 @@ groups:
       meta: "`{{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
     annotations:
       description: "`{{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
-      summary: "`{{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
+      summary: 'Network interfce reset check'
