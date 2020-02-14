@@ -15,3 +15,17 @@ groups:
       description: "baremetal {{ $labels.manufacturer }} node {{ $labels.hostname }} BIOS setting is not correct: {{ $labels.setting_name }} for 30m"
       summary: "Hardware error configuration error for instance: {{ $labels.instance }}"
 
+  - alert: BiosNotResponding
+    expr: bios_exporter_up == 1
+    for: 30m
+    labels:
+      severity: info
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.hostname }}"
+      meta: "{{ $labels.server_name }} is not producing any BIOS metrics. A remoteboard reboot is probably needed."
+      playbook: docs/devops/alert/baremetal/#fix-biossettingnotcorrect
+    annotations:
+      description: "{{ $labels.server_name }} is not producing any BIOS metrics. A remoteboard reboot is probably needed."
+      summary: "{{ $labels.server_name }} is not producing any BIOS metrics. A remoteboard reboot is probably needed."
+
