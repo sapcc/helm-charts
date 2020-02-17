@@ -20,7 +20,7 @@ groups:
       description: "Node {{`{{ $labels.node }}`}} has more than {{`{{ $value }}`}}% CPU load"
 
   - alert: NodeKernelDeadlock
-    expr: kube_node_status_condition{condition="KernelDeadlock", status="true"} == 1
+    expr: kube_node_status_condition_normalized{condition="KernelDeadlock", status="true"} == 1
     for: 96h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -34,7 +34,7 @@ groups:
       summary: Permanent kernel deadlock on {{`{{ $labels.node }}`}}. Please drain and reboot node
 
   - alert: NodeDiskPressure
-    expr: kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+    expr: kube_node_status_condition_normalized{condition="DiskPressure",status="true"} == 1
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -47,7 +47,7 @@ groups:
       summary: Node {{`{{ $labels.node }}`}} under pressure due to insufficient available disk space
 
   - alert: NodeMemoryPressure
-    expr: kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
+    expr: kube_node_status_condition_normalized{condition="MemoryPressure",status="true"} == 1
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -171,3 +171,17 @@ groups:
     annotations:
       description: Bond {{`{{ $labels.master }}`}} on {{`{{ $labels.node }}`}} is degraded. Imminent network outage for this node.
       summary: Bond {{`{{ $labels.master }}`}} is degraded. Network connectivity is not HA. Switch failover and ACI upgrades will cause an outage!
+
+    - alert: NodeReadonlyFilesystem
+      expr: kube_node_status_condition_normalized{condition="ReadonlyFilesystem", status="true"} == 1
+      for: 15m
+      labels:
+        tier: {{ required ".Values.tier missing" .Values.tier }}
+        service: node
+        severity: info
+        context: availability
+        meta: "Node {{`{{ $labels.node }}`}} has a read-only filesystem."
+        playbook: docs/support/playbook/k8s_node_read_only_filesystem.html
+      annotations:
+        description: Node {{`{{ $labels.node }}`}} has a read-only filesystem.
+        summary: Read-only file system on node
