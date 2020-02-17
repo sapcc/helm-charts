@@ -150,6 +150,8 @@ storage_domain = {{tuple $cluster $context | include "swift_endpoint_host"}}
 [filter:versioned_writes]
 use = egg:swift#versioned_writes
 allow_versioned_writes = true
+# Enables Swift object-versioning API available since 2.24.0
+allow_object_versioning = true
 
 [filter:container_sync]
 use = egg:swift#container_sync
