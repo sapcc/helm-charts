@@ -78,9 +78,14 @@ spec:
           - --nodename=$(NODE_NAME)
           - --hostip=$(HOST_IP)
           - --logtostderr
-          {{ if .Values.parrot.metricPort -}}
+{{- if .Values.parrot.metricPort }}
           - --metric-port={{ .Values.parrot.metricPort }}
-          {{- end }}
+{{- end }}
+{{- if .Values.parrot.neighbors }}
+{{- range $neighbor := .Values.parrot.neighbors }}
+          - --neighbor={{ $neighbor }}
+{{- end }}
+{{- end }}
         env:
           - name: NODE_NAME
             valueFrom:
