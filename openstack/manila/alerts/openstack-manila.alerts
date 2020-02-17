@@ -89,6 +89,131 @@ groups:
       description: Manila Netapp Back End API is down.
       summary: Find the details at https://prober.{{ $labels.region }}.cloud.sap/probe?target={{ $labels.instance }}&module=http_ca_sapnetcag2&debug=true
 
+  - alert: OpenstackManilaApiDown
+    expr: blackbox_api_status_gauge{check=~"manila"} == 1
+    for: 20m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is down. See Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
+      summary: '{{ $labels.check }} API down'
+
+  - alert: OpenstackManilaApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"manila"}[30m]) > 8
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is flapping'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.check }} API is flapping for 30 minutes.'
+      summary: '{{ $labels.check }} API flapping'
+
+  - alert: OpenstackManilaDatapathDown
+    expr: blackbox_datapath_status_gauge{service=~"manila"} == 1
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is down'
+
+  - alert: OpenstackManilaDatapathHalfDown
+    expr: blackbox_datapath_status_gauge{service=~"manila"} == 0.5
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
+
+  - alert: OpenstackManilaDatapathFlapping
+    expr: changes(blackbox_datapath_status_gauge{service=~"manila"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: OpenstackManilaCanaryDown
+    expr: blackbox_canary_status_gauge{service=~"manila"} == 1
+    for: 1h
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
+
+  - alert: OpenstackManilaCanaryTimeout
+    expr: blackbox_canary_status_gauge{service=~"manila"} == 0.5
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
+
+  - alert: OpenstackManilaCanaryFlapping
+    expr: changes(blackbox_canary_status_gauge{service=~"manila"}[2h]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
+
   - alert: OpenstackManilaNetappHighUsage
     expr: netapp_capacity_aggregate{metric="percentage_used"} > 75
     labels:
