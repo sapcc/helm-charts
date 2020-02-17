@@ -42,13 +42,13 @@ groups:
 
     - alert: OpenstackSwiftPodOOMExceedingLimits
       expr: swift_container_memory_usage_percent > 70 and predict_linear(swift_container_memory_usage_percent[1h], 7*3600) > 100
-      for: 5m
+      for: 10m
       labels:
         tier: os
         service: swift
         severity: info
         context: memory
-        meta: "{{ $labels.pod_name }}"
+        meta: "{{ $labels.pod }}/{{ $labels.container }}"
       annotations:
         summary: Exceeding memory limits in 8h
-        description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
+        description: The container {{ $labels.pod }}/{{ $labels.container }} will exceed its memory limit in 8h.
