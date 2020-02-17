@@ -295,18 +295,18 @@
       target_label:  __param_manufacturer
     - source_labels: [model]
       target_label:  __param_model
-- job_name: 'bios/cisco_vpod'
+- job_name: 'bios/vpod'
   params:
-    job: [bios/cisco_vpod]
-  scrape_interval: {{$values.cisco_vpod_scrapeInterval}}
-  scrape_timeout: {{$values.cisco_vpod_scrapeTimeout}}
+    job: [bios/vpod]
+  scrape_interval: {{$values.vpod_scrapeInterval}}
+  scrape_timeout: {{$values.vpod_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
-      regex: bios/cisco_vpod
+      regex: bios/vpod
       action: keep
     - source_labels: [server_name]
       target_label: __param_target
