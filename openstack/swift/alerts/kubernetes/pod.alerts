@@ -41,14 +41,14 @@ groups:
         description: The pod {{ $labels.pod_name }} was oomkilled recently
 
     - alert: OpenstackSwiftPodOOMExceedingLimits
-      expr: predict_linear(container_memory_usage_bytes{pod_name=~"swift-.+"}[1h], 8* 3600) > ON (pod_name, namespace, container) label_replace(kube_pod_container_resource_limits_memory_bytes{pod=~"swift-.+"}, "pod_name", "$1", "pod", "(.*)")
+      expr: swift_container_memory_usage_percent > 70 and predict_linear(swift_container_memory_usage_percent[1h], 7*3600) > 100
       for: 5m
       labels:
         tier: os
         service: swift
         severity: info
         context: memory
-        meta: "{{ $labels.pod_name }}/{{ $labels.container }}"
+        meta: "{{ $labels.pod_name }}"
       annotations:
         summary: Exceeding memory limits in 8h
-        description: The container {{ $labels.pod_name }}/{{ $labels.container }} will exceed its memory limit in 8h.
+        description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
