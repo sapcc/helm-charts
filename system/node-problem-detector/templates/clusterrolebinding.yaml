@@ -1,0 +1,17 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: "{{ .Release.Namespace }}:node-problem-detector"
+  labels:
+    app: node-problem-detector
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "{{ .Release.Namespace }}:node-problem-detector"
+subjects:
+  - kind: ServiceAccount
+    name: {{ required ".Values.rbac.serviceAccountName missing" .Values.rbac.serviceAccountName }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
