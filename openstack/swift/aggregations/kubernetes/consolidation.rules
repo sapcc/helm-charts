@@ -2,4 +2,4 @@ groups:
 - name: swift
   rules:
     - record: swift_container_memory_usage_percent
-      expr: '100 * max by (namespace, pod_name) (container_memory_working_set_bytes{pod_name=~"swift-.+", container_name!="POD"}) / max by (namespace, pod_name) (label_replace(kube_pod_container_resource_limits_memory_bytes{pod=~"swift-.+"}, "pod_name", "$1", "pod", "(.*)"))'
+      expr: '100 * max by (namespace, pod) (container_memory_working_set_bytes{pod=~"swift-.+", container!="POD"}) / max by (namespace, pod) (kube_pod_container_resource_limits_memory_bytes{pod=~"swift-.+"})'
