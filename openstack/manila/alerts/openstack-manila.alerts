@@ -75,20 +75,6 @@ groups:
       description: 'Panel: Share Server netapp host distribution'
       summary: Share servers on {{ $labels.short_hostname }} exhausted
 
-  - alert: OpenstackManilaProbeSuccessValueIs0
-    expr: probe_success{instance=~".*stnp.*|.*ma.*"} == 0
-    for: 5m
-    labels:
-      tier: os
-      meta: '{{ $labels.instance }} is not reachable via http'
-      playbook: docs/support/playbook/manila/netapp_unreachable.html
-      service: manila
-      severity: warning
-      context: availability
-    annotations:
-      description: Manila Netapp Back End API is down.
-      summary: Find the details at https://prober.{{ $labels.region }}.cloud.sap/probe?target={{ $labels.instance }}&module=http_ca_sapnetcag2&debug=true
-
   - alert: OpenstackManilaApiDown
     expr: blackbox_api_status_gauge{check=~"manila"} == 1
     for: 20m
