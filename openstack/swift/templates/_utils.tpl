@@ -33,7 +33,7 @@ tolerations:
 {{- define "swift_prometheus_annotations" }}
 prometheus.io/scrape: "true"
 prometheus.io/port: "9102"
-prometheus.io/targets: {{ .Values.alerts.prometheus | quote }}
+prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack }}
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
