@@ -2,19 +2,19 @@ groups:
 - name: federation.alerts
   rules:
   - alert: KubernetesAdminPrometheusDown
-      expr: count by(region) (up{job="admin-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type="admin"})
-      for: 15m
-      labels:
-        context: availability
-        dashboard: kubernetes-prometheus?var-instance=frontend
-        meta: Prometheus frontend is down
-        service: prometheus
-        severity: critical
-        tier: k8s
-        playbook: docs/support/playbook/prometheus/federation.html
-      annotations:
-        description: Prometheus Frontend in region {{ $labels.region }} is DOWN. Alerting and dashboards are unavailable.
-        summary: Prometheus Frontend is DOWN
+    expr: count by(region) (up{job="admin-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type="admin"})
+    for: 15m
+    labels:
+      context: availability
+      dashboard: kubernetes-prometheus?var-instance=frontend
+      meta: Prometheus frontend is down
+      service: prometheus
+      severity: critical
+      tier: k8s
+      playbook: docs/support/playbook/prometheus/federation.html
+    annotations:
+      description: Prometheus Frontend in region {{ $labels.region }} is DOWN. Alerting and dashboards are unavailable.
+      summary: Prometheus Frontend is DOWN
 
   - alert: KubernetesControlPlanePrometheusDown
     expr: count by(region) (up{job="metal-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type="metal"})
