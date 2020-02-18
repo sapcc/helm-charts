@@ -11,3 +11,4 @@ ovs_use_veth = False
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 50 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 5 }}
+rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
