@@ -4,3 +4,25 @@ kube-dns:
 
 kube-fip-controller:
   enabled: false
+
+disco:
+  enabled: false
+
+node-problem-detector:
+  systemLogMonitors:
+    - kernel-monitor.json
+
+  customPluginMonitors:
+    - bridge-monitor.json
+
+  additionalHostVolumeMounts:
+    # Required by the bridge monitor.
+    - name: hostproc
+      hostPath: /proc
+      mountPath: /host/proc
+      readOnly: true
+
+kubernetes-dashboard:
+  image:
+    repository: sapcc/kubernetes-dashboard-amd64
+    tag: 'v1.6.0'
