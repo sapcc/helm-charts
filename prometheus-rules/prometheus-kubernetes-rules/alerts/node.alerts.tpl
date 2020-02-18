@@ -172,16 +172,16 @@ groups:
       description: Bond {{`{{ $labels.master }}`}} on {{`{{ $labels.node }}`}} is degraded. Imminent network outage for this node.
       summary: Bond {{`{{ $labels.master }}`}} is degraded. Network connectivity is not HA. Switch failover and ACI upgrades will cause an outage!
 
-    - alert: NodeReadonlyFilesystem
-      expr: kube_node_status_condition_normalized{condition="ReadonlyFilesystem", status="true"} == 1
-      for: 15m
-      labels:
-        tier: {{ required ".Values.tier missing" .Values.tier }}
-        service: node
-        severity: info
-        context: availability
-        meta: "Node {{`{{ $labels.node }}`}} has a read-only filesystem."
-        playbook: docs/support/playbook/k8s_node_read_only_filesystem.html
-      annotations:
-        description: Node {{`{{ $labels.node }}`}} has a read-only filesystem.
-        summary: Read-only file system on node
+  - alert: NodeReadonlyFilesystem
+    expr: kube_node_status_condition_normalized{condition="ReadonlyFilesystem", status="true"} == 1
+    for: 15m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      service: node
+      severity: info
+      context: availability
+      meta: "Node {{`{{ $labels.node }}`}} has a read-only filesystem."
+      playbook: docs/support/playbook/k8s_node_read_only_filesystem.html
+    annotations:
+      description: Node {{`{{ $labels.node }}`}} has a read-only filesystem.
+      summary: Read-only file system on node
