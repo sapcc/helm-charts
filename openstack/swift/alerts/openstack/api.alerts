@@ -32,7 +32,7 @@ groups:
       summary: swift-service-unavailable
 
   - alert: OpenstackSwiftReconCollectorFailure
-    expr: avg(swift_recon_exit_code) BY (region,query) > 0.2
+    expr: avg(swift_recon_task_exit_code) BY (region,query) > 0.2
     for: 5m
     labels:
       context: health
@@ -46,7 +46,7 @@ groups:
       summary: swift-recon-collector-fail
 
   - alert: OpenstackSwiftDispersionCollectorFailure
-    expr: avg(swift_dispersion_exit_code) BY (region,query) > 0.2
+    expr: avg(swift_dispersion_task_exit_code) BY (region,query) > 0.2
     for: 5m
     labels:
       context: health
@@ -174,7 +174,7 @@ groups:
       summary: swift rate limit hit in {{ $labels.os_cluster }}
 
   - alert: OpenstackSwiftUsedSpace
-    expr: max(predict_linear(swift_cluster_storage_used_percent_gauge_average[1w], 60 * 60 * 24 * 30)) > 0.8
+    expr: max(predict_linear(global:swift_cluster_storage_used_percent_average[1w], 60 * 60 * 24 * 30)) > 0.8
     for: 1d
     labels:
       context: usedcapacity
