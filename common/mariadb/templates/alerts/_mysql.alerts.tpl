@@ -35,3 +35,15 @@
     annotations:
       description: {{ include "fullName" . }} has queries waiting for lock more than 15 sec. Deadlock possible.
       summary: {{ include "fullName" . }} has queries waiting for lock.
+
+  - alert: {{ include "alerts.service" . | title }}MariaDBHighRunningThreads
+    expr: (mysql_global_status_threads_running{app=~"{{ include "fullName" . }}"} > 20)
+    for: 10m
+    labels:
+      context: database
+      service: {{ include "alerts.service" . }}
+      severity: warning
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+    annotations:
+      description: {{ include "fullName" . }} has more than 20 running threads.
+      summary: {{ include "fullName" . }} running threads high.
