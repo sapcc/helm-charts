@@ -115,3 +115,15 @@ groups:
     annotations:
       description: "NSX-T Agent {{ $labels.pod }} is restarting constantly"
       summary: "Pod is in a restart loop"
+
+  - alert: NSXTMemoryUsageOver95
+    expr: avg by (nsxv3_manager_hostname, nsxv3_node_ip) (nsxv3_management_node_memory_use/nsxv3_management_node_memory_total * 100 > 95)
+    for: 30m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Node {{ $labels.nsxv3_node_ip }} of cluster {{ $labels.nsxv3_manager_hostname }} has memory usage of over 95%'
+    annotations:
+      description: "NSX-T Node {{ $labels.nsxv3_node_ip }} of cluster {{ $labels.nsxv3_manager_hostname }} has memory usage of over 95%"
+      summary: "NSX-T Node memory critical"
+
