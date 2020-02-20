@@ -2,10 +2,10 @@ groups:
 - name: alerts for PX control plane
   rules:
   - alert: PXBirdExporterAvailabilityMissingExporter
-    expr: sum(up{app=~".+-pxrs-.+"} == 1) !=14  or absent(up{app=~".+-pxrs-.+"})
+    expr: sum(up{app=~".+-pxrs-.+", app!~".*pxmon.*"} ==bool  1) == 12
     for: 1h
     labels:
-      severity: info
+      severity: critical
       tier: net
       service: px
       context: px
@@ -17,7 +17,7 @@ groups:
     expr: sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (pxdomain,region, pxservice) == 0
     for: 5m
     labels:
-      severity: info
+      severity: critical
       tier: net
       service: px
       context: px
@@ -31,7 +31,7 @@ groups:
     expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id) ==bool 0) * 10) == 10
     for: 5m
     labels:
-      severity: info
+      severity: critical
       tier: net
       service: px
       context: px
@@ -45,7 +45,7 @@ groups:
     expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id) ==bool 0) * 10) + on(region, pxservice, peer_id) group_right() ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id, pxdomain) ==bool 0) * 100) + on (region, pxservice, pxdomain) group_left() (sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) == 100
     for: 5m
     labels:
-      severity: info
+      severity: warning
       tier: net
       service: px
       context: px
@@ -59,7 +59,7 @@ groups:
     expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id) ==bool 0) * 10) + on(region, pxservice, peer_id) group_right() ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id, pxdomain) ==bool 0) * 100) + on (region, pxservice, pxdomain) group_left() (sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) + on(region, pxservice, peer_id, pxdomain) group_right() ((bird_protocol_up{name!~"kernel.", peer_type="PLATF"} ==bool 0 ) * 1000) == 1000
     for: 5m
     labels:
-      severity: info
+      severity: warning
       tier: net
       service: px
       context: px
@@ -73,7 +73,7 @@ groups:
     expr: bird_protocol_up{name!~"kernel.", peer_type="TRANS"} == 0
     for: 5m
     labels:
-      severity: info
+      severity: critical
       tier: net
       service: px
       context: px
@@ -88,7 +88,7 @@ groups:
     expr: (sum(bird_protocol_up{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) > 0 ) + on (app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TRANS"} <= 0 
     for: 10m
     labels:
-      severity: info
+      severity: critical
       tier: net
       service: px
       context: px
@@ -102,7 +102,7 @@ groups:
     expr: (sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) <= 0)  + on  (app, ip_version, proto, pxdomain, pxinstance, pxservice)  group_right() (bird_protocol_prefix_export_count{name!~"kernel.", peer_type="TRANS"} <= 0)
     for: 10m
     labels:
-      severity: info
+      severity: critical
       tier: api
       service: px
       context: px
