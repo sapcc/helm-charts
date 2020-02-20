@@ -8,14 +8,14 @@ groups:
       == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"))
       < 1
     labels:
-      severity: warning
+      severity: critical
       tier: k8s
       service: k8s
       context: pxpod
       playbook: docs/devops/alert/network/px.html#PXServiceDown
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - All pods for PX service {{ $labels.px_service }} are not ready for 5m"
-      summary: "TEST ALERT - PLEASE IGNORE - PX Service is down"
+      description: "TAll pods for PX service {{ $labels.px_service }} are not ready"
+      summary: "PX Service is down"
 
   - alert: PXServiceOnRisk
     expr: sum
@@ -31,8 +31,8 @@ groups:
       context: pxpod
       playbook: docs/devops/alert/network/px.html#PXServiceOnRisk
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - Only one pod for PX service {{ $labels.px_service }} is running for 10m"
-      summary: "TEST ALERT - PLEASE IGNORE - PX Service is on risk"
+      description: "Only one pod for PX service {{ $labels.px_service }} is running for 10m"
+      summary: "PX Service is on risk"
 
   - alert: PXPodNotReady
     expr: sum
@@ -48,8 +48,8 @@ groups:
       context: pxpod
       playbook: docs/devops/alert/network/px.html#PXPodNotReady
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - Pod px /{{ $labels.pod }} is not ready for more than 30m"
-      summary: "TEST ALERT - PLEASE IGNORE - PX Pod not ready for 30m"
+      description: "Pod px /{{ $labels.pod }} is not ready for more than 30m"
+      summary: "PX Pod not ready for 30m"
 
   - alert: PXPodRestartingTooMuch
     expr: sum
@@ -63,22 +63,22 @@ groups:
       context: pxpod
       playbook: docs/devops/alert/network/px.html#PXPodRestartingTooMuch
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - Container {{ $labels.container }} of pod px /{{ $labels.pod }} is restarting constantly"
-      summary: "TEST ALERT - PLEASE IGNORE - Pod is in a restart loop"
+      description: "Container {{ $labels.container }} of pod px /{{ $labels.pod }} is restarting constantly"
+      summary: "Pod is in a restart loop"
 
   - alert: PXNodeNotReady
     expr: sum by (node)(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}) == 0
     for: 5m
     labels:
-      severity: warning
+      severity: critical
       tier: k8s
       service: k8s
       context: pxnode
       dashboard: nodes?var-server={{$labels.node}}
       playbook: docs/devops/alert/network/px.html#PXNodeNotReady
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - PX Node {{ $labels.node }} is NotReady for 15m"
-      summary: "TEST ALERT - PLEASE IGNORE - PX Node status is NotReady"
+      description: "PX Node {{ $labels.node }} is NotReady for 15m"
+      summary: "PX Node status is NotReady"
 
   - alert: PXNodeNotReadyFlapping
     expr: changes(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}[15m]) > 2
@@ -92,5 +92,5 @@ groups:
       dashboard: nodes?var-server={{$labels.node}}
       playbook: docs/devops/alert/network/px.html#PXNodeNotReadyFlapping
     annotations:
-      description: "TEST ALERT - PLEASE IGNORE - PX Node {{ $labels.node }} is flapping between Ready and NotReady for 30m"
-      summary: "TEST ALERT - PLEASE IGNORE -  PX Node readiness is flapping"
+      description: "PX Node {{ $labels.node }} is flapping between Ready and NotReady for 30m"
+      summary: "PX Node readiness is flapping"
