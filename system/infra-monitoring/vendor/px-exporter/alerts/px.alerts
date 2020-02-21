@@ -111,3 +111,31 @@ groups:
     annotations:
       description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
       summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
+  
+  - alert: PXConsumerExceedingRouteLimit
+    expr: bird_protocol_prefix_import_count{pxservice=~"1|2", peer_type="PLATF"} >=10000 or bird_protocol_prefix_import_count{pxservice="3", peer_type="PLATF"} >= 100000
+    for: 3m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXConsumerExceedingRouteLimit
+      dashboard: px-control-plane
+    annotations:
+      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes. Routes exceeding the limit will be dropped to limit the effect on the PX service.
+      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes. Routes exceeding the limit will be dropped to limit the effect on the PX service.
+  
+  - alert: PXRouteTableSignificantChanges
+    expr: floor((floor(delta(sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app)[30m:])) / sum(bird_protocol_prefix_import_count{peer_type="PLATF"} offset 30m) by (app)) * 100) > 25
+    for: 0m
+    labels:
+      severity: warn
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXRouteTableSignificantChanges
+      dashboard: px-control-plane
+    annotations:
+      description: The route table for PX route server {{$labels.app}} has changed significantly within the last 30 mins. This does not necesarrily inidicate an outage, but the origin of the deviation should be investigated.
+      summary: The route table for PX route server {{$labels.app}} has changed significantly within the last 30 mins. This does not necesarrily inidicate an outage, but the origin of the deviation should be investigated.
