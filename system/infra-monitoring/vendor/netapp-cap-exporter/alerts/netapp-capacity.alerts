@@ -12,8 +12,10 @@ groups:
           description: 'Netapp filer {{ $labels.filer }} '
           summary: Netapp ONTAP API inaccessible
 
+{{- range $idx, $share := .Values.global.netapp.filers }}
+{{- $filerShortHostName := regexFind "^\\w\\." $share.host }}
       - alert: ManilaStorageAggregateHighUsage
-        expr: netapp_aggregate_used_percentage{app=~".*manila"} > 75
+        expr: netapp_aggregate_used_percentage{app=~".*manila", filer="$filerShortHostName"} > 75
         labels:
           severity: warning
           tier: os
@@ -25,6 +27,7 @@ groups:
         annotations:
           description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
           summary: 'High Capacity Usage on {{$labels.filer}}'
+{{- end }}
 
       - alert: ManilaStorageAggregateFull
         expr: netapp_aggregate_used_percentage{app=~".*manila"} > 90
