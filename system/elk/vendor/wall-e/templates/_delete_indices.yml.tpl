@@ -34,6 +34,10 @@ actions:
       exclude:
     - filtertype: kibana
       exclude: True
+    - filtertype: pattern
+      kind: prefix
+      value: alerts
+      exclude: True
   2:
     action: delete_indices
     description: >-
@@ -62,4 +66,8 @@ actions:
       unit_count: {{.Values.data_retention_time}}
       exclude:
     - filtertype: kibana
+      exclude: True
+    - filtertype: pattern
+      kind: prefix
+      value: alerts
       exclude: True
