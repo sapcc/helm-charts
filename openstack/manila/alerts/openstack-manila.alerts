@@ -199,31 +199,3 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
-
-  - alert: OpenstackManilaNetappHighUsage
-    expr: netapp_capacity_aggregate{metric="percentage_used"} > 75
-    labels:
-      severity: warning
-      tier: os
-      service: manila
-      context: netapp-usage
-      dashboard: netapp-capacity-manila?&var-filer={{$labels.filer}}
-      meta: '{{ $value }}% used'
-      playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
-    annotations:
-      description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
-      summary: 'High Capacity Usage on {{$labels.filer}}'
-
-  - alert: OpenstackManilaNetappFull
-    expr: netapp_capacity_aggregate{metric="percentage_used"} > 90
-    labels:
-      severity: critical
-      tier: os
-      service: manila
-      context: netapp-usage
-      dashboard: netapp-capacity-manila?&var-filer={{$labels.filer}}
-      meta: '{{ $value }}% used'
-      playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
-    annotations:
-      description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
-      summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
