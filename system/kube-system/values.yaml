@@ -10,33 +10,46 @@ ingress:
     enabled: false
     #ip:
 
-# values for stable/nginx-ingress chart
 nginx-ingress:
   revisionHistoryLimit: 5
   rbac:
-    create: false
+    create: true
+
   serviceAccount:
-    create: false
-    name: default
+    create: true
 
   controller:
     image:
       repository: sapcc/nginx-ingress-controller
-      tag: "0.19.0"
-
-    livenessProbe:
-      initialDelaySeconds: 30
-
-    defaultBackendService: "kube-system/kube-system-nginx-ingress-default-backend"
-    kind: Deployment
-    replicaCount: 3
+      tag: "0.29.0"
 
     minReadySeconds: 60
+
+    extraArgs:
+      annotations-prefix: ingress.kubernetes.io
+
     updateStrategy:
       type: RollingUpdate
       rollingUpdate:
         maxSurge: 0
         maxUnavailable: 1
+
+    livenessProbe:
+      initialDelaySeconds: 30
+
+    replicaCount: 3
+
+    service:
+      omitClusterIP: true
+
+    metrics:
+      enabled: true
+      service:
+        omitClusterIP: true
+      serviceMonitor:
+        enabled: true
+        additionalLabels:
+          prometheus: "kubernetes"
 
     config:
       http-snippet: |
@@ -46,48 +59,17 @@ nginx-ingress:
         }
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
-      proxy-send-timeout: '300'
-      proxy-read-timeout: '300'
-      proxy-body-size: '0k'
-      server-name-hash-bucket-size: '128'
-      map-hash-bucket-size: '128'
-      worker-processes: '8'
-      disable-ipv6: 'true'
-      ssl-redirect: 'false'
+      proxy-send-timeout: "300"
+      proxy-read-timeout: "300"
+      proxy-body-size: "0k"
+      server-name-hash-bucket-size: "128"
+      map-hash-bucket-size: "128"
+      disable-ipv6: "true"
+      ssl-redirect: "true"
       enable-underscores-in-headers: "true"
-      # worker shutdown timeout to 5h
       worker-shutdown-timeout: "18000s"
+      worker-processes: "8"
 
-    extraArgs:
-      enable-dynamic-configuration:
-      # disabled until https://github.com/kubernetes/ingress-nginx/issues/3034 is fixed
-      enable-dynamic-certificates: "false"
-      annotations-prefix: ingress.kubernetes.io
-
-    stats:
-      enabled: true
-
-    metrics:
-      enabled: true
-      service:
-        annotations:
-          prometheus.io/scrape: "true"
-          prometheus.io/probe: "10254"
-          prometheus.io/targets: "kubernetes,openstack"
-
-    service:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "10254"
-        prometheus.io/targets: "kubernetes,openstack"
-
-      targetPorts:
-        http: http
-        https: https
-
-      # set in regional values
-      #externalIPs:
-      #  - DEFINED-AS-VALUE
 
     affinity:
       # don't co-locate replicas of the ingress controller on the same node
@@ -96,46 +78,32 @@ nginx-ingress:
           - topologyKey: kubernetes.io/hostname
             labelSelector:
               matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - nginx-ingress
-              - key: component
-                operator: In
-                values:
-                - controller
-
-#    resources:
-#      limits:
-#        cpu: 100m
-#        memory: 64Mi
-#      requests:
-#        cpu: 100m
-#        memory: 64Mi
-
-#  statsExporter:
-#    resources:
-#      limits:
-#        cpu: 10m
-#        memory: 20Mi
-#      requests:
-#        cpu: 10m
-#        memory: 20Mi
+                - key: app
+                  operator: In
+                  values:
+                    - nginx-ingress
+                - key: component
+                  operator: In
+                  values:
+                    - controller
 
   defaultBackend:
     enabled: true
-    replicaCount: 2
-    minAvailable: 1
 
     image:
       repository: sapcc/defaultbackend
-      tag: '1.4'
-      pullPolicy: IfNotPresent
+      tag: "1.5"
 
-    podAnnotations:
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "8080"
-      prometheus.io/targets: "kubernetes,openstack"
+    service:
+      omitClusterIP: true
+
+    resources:
+      limits:
+        cpu: 10m
+        memory: 20Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
 
     affinity:
       # don't co-locate replicas of the ingress backend on the same node
@@ -144,19 +112,11 @@ nginx-ingress:
           - topologyKey: kubernetes.io/hostname
             labelSelector:
               matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - nginx-ingress
-              - key: component
-                operator: In
-                values:
-                - default-backend
-
-#    resources:
-#      limits:
-#        cpu: 10m
-#        memory: 20Mi
-#      requests:
-#        cpu: 10m
-#        memory: 20Mi
+                - key: app
+                  operator: In
+                  values:
+                    - nginx-ingress
+                - key: component
+                  operator: In
+                  values:
+                    - default-backend
