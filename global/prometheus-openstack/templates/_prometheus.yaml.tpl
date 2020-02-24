@@ -18,6 +18,7 @@
       - '{__name__=~"^limes_domain_quota$", resource=~"instances_z.*"}'
       - '{__name__=~"^limes_project_.+$", resource=~"instances_z.*"}'
       - '{__name__=~"^nsxv3_cluster_(management|control)_status$"}'
+      - '{__name__=~"^nsxv3_management_node_version$"}'
       - '{__name__=~"^elektra_open_inquiry_metrics$"}'
       - '{__name__=~"^blackbox_integrity_status_gauge", check=~"esxi_hs-.+"}'
 
