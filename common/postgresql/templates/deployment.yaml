@@ -102,7 +102,11 @@ spec:
 {{- end }}
 
 {{- if .Values.backup.enabled }}
+{{- if .Values.backup.custom_repository }}
+      - image: {{ .Values.backup.image }}:{{ .Values.backup.imageTag }}
+{{- else }}
       - image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{ .Values.backup.image }}:{{ .Values.backup.imageTag }}
+{{- end }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.backup.imagePullPolicy | quote }}
         name: backup
         env:
