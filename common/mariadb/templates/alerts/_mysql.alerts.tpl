@@ -20,7 +20,7 @@
       service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/manila/ManilaMariaDBSlowQueries.html'
+      playbook: 'docs/support/playbook/database/MariaDBSlowQueries.html'
     annotations:
       description: {{ include "fullName" . }} has reported slow queries. Please check the DB.
       summary: {{ include "fullName" . }} reports slow queries.
