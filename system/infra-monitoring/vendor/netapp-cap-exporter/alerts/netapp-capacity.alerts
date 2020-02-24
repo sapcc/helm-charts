@@ -13,7 +13,21 @@ groups:
           summary: Netapp ONTAP API inaccessible
 
       - alert: ManilaStorageAggregateHighUsage
-        expr: netapp_aggregate_used_percentage{app=~".*manila"} > 75
+        expr: netapp_aggregate_used_percentage{app=~".*manila", filer!~"ma01-md007"} > 75
+        labels:
+          severity: warning
+          tier: os
+          service: manila
+          context: netapp-usage
+          dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          meta: '{{ $value }}% used'
+          playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          summary: 'High Capacity Usage on {{$labels.filer}}'
+
+      - alert: ManilaStorageAggregateHighUsage
+        expr: netapp_aggregate_used_percentage{app=~".*manila", filer=~"ma01-md007"} > 85
         labels:
           severity: warning
           tier: os
