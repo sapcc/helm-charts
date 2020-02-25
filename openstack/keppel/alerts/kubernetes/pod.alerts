@@ -1,0 +1,44 @@
+groups:
+- name: openstack-keppel-pod.alerts
+  rules:
+      - alert: OpenstackKeppelPodSchedulingInsufficientMemory
+        expr: sum(rate(kube_pod_failed_scheduling_memory_total{namespace="keppel"}[30m])) by (pod_name) > 0
+        for: 15m
+        labels:
+          severity: warning
+          tier: os
+          service: keppel
+          context: memory
+          dashboard: keppel-overview
+          meta: "{{ $labels.pod_name }}"
+        annotations:
+          summary: Scheduling failed due to insufficient memory
+          description: The pod {{ $labels.pod_name }} failed to be scheduled. Insufficient memory!
+
+      - alert: OpenstackKeppelPodOOMKilled
+        expr: sum(rate(klog_pod_oomkill{namespace="keppel"}[30m])) by (pod_name) > 0
+        for: 5m
+        labels:
+          tier: os
+          service: keppel
+          severity: info
+          context: memory
+          dashboard: keppel-overview
+          meta: "{{ $labels.pod_name }}"
+        annotations:
+          summary: Pod was oomkilled
+          description: The pod {{ $labels.pod_name }} was oomkilled recently
+
+      - alert: OpenstackKeppelPodOOMExceedingLimits
+        expr: keppel_container_memory_usage_percent > 70 and predict_linear(keppel_container_memory_usage_percent[1h], 7*3600) > 100
+        for: 30m
+        labels:
+          tier: os
+          service: keppel
+          severity: info
+          context: memory
+          dashboard: keppel-overview
+          meta: "{{ $labels.pod_name }}"
+        annotations:
+          summary: Exceeding memory limits in 8h
+          description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
