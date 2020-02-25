@@ -24,7 +24,8 @@ spec:
     spec:
       # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
       # - no measurable CPU usage once started
-      # - RAM max. 1.5 MiB
+      # - RAM max. 1.5 MiB (but it turns out that k8s itself runs into OOM when
+      #   starting a container with less than 16 MiB RAM limit)
       containers:
         - name: keppel
           image: {{ include "keppel_image" . }}
@@ -32,27 +33,27 @@ spec:
           resources:
             requests:
               cpu: "1m"
-              memory: "4Mi"
+              memory: "16Mi"
             limits:
               cpu: "1m"
-              memory: "4Mi"
+              memory: "16Mi"
         - name: postgres
           image: "{{.Values.postgresql.image}}:{{.Values.postgresql.imageTag}}"
           command: [ '/bin/sleep', 'inf' ]
           resources:
             requests:
               cpu: "1m"
-              memory: "4Mi"
+              memory: "16Mi"
             limits:
               cpu: "1m"
-              memory: "4Mi"
+              memory: "16Mi"
         - name: pgbackup # runs inside the postgres pod, so we also need this image to start the postgres pod at all
           image: "{{.Values.postgresql.backup.image}}:{{.Values.postgresql.backup.imageTag}}"
           command: [ '/bin/sleep', 'inf' ]
           resources:
             requests:
               cpu: "1m"
-              memory: "4Mi"
+              memory: "16Mi"
             limits:
               cpu: "1m"
-              memory: "4Mi"
+              memory: "16Mi"
