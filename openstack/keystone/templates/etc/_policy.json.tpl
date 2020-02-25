@@ -68,7 +68,7 @@
     "admin_and_matching_target_user_domain_id": "rule:admin_required and domain_id:%(target.user.domain_id)s",
     "admin_and_matching_user_domain_id": "rule:admin_required and domain_id:%(user.domain_id)s",
     "identity:get_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id or rule:owner or rule:cloud_viewer or role:role_viewer",
-    "identity:list_users": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:cloud_viewer",
+    "identity:list_users": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:cloud_viewer or role:role_viewer",
     "identity:create_user": "rule:cloud_admin or rule:admin_and_matching_user_domain_id",
     "identity:update_user": "rule:cloud_admin or rule:admin_and_matching_target_user_domain_id",
     "identity:delete_user": "rule:cloud_admin",
