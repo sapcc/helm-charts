@@ -23,7 +23,7 @@ spec:
       labels:
         component: swift-health-exporter
       annotations:
-        checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
+        {{- include "swift_ring_annotations" $ | indent 8 }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9520"
@@ -33,7 +33,16 @@ spec:
         - name: swift-etc
           configMap:
             name: swift-etc
-      containers:
+        - name: swift-account-ring
+          configMap:
+            name: swift-account-ring
+        - name: swift-container-ring
+          configMap:
+            name: swift-container-ring
+        - name: swift-object-ring
+          configMap:
+            name: swift-object-ring
+    containers:
         - name: collector
           image: {{ include "swift_image" $ }}
           command:
@@ -64,5 +73,11 @@ spec:
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc
+            - mountPath: /swift-rings/account
+              name: swift-account-ring
+            - mountPath: /swift-rings/container
+              name: swift-container-ring
+            - mountPath: /swift-rings/object
+              name: swift-object-ring
 {{- end }}
 {{- end }}
