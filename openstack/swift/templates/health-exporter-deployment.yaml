@@ -1,0 +1,73 @@
+{{- if $.Values.health_exporter }}
+{{- if not $.Values.health_statsd }}
+{{- range $cluster_id, $cluster := .Values.clusters }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: swift-health-exporter-{{$cluster_id}}
+  labels:
+    release: "{{$.Release.Name}}"
+    os-cluster: {{$cluster_id}}
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      component: swift-health-exporter-{{$cluster_id}}
+  template:
+    metadata:
+      labels:
+        component: swift-health-exporter-{{$cluster_id}}
+      annotations:
+        checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
+        {{- include "swift_conf_annotations" $ | indent 8 }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9520"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+    spec:
+      volumes:
+        - name: swift-etc
+          configMap:
+            name: swift-etc
+      containers:
+        - name: collector
+          image: {{ include "swift_image" $ }}
+          command:
+            - /usr/bin/dumb-init
+          # enable all collectors except recon.md5 (it is enabled within the proxy pods)
+          args:
+            - /bin/bash
+            - /usr/bin/swift-start
+            - health-exporter
+            - --no-collector.recon.md5
+            - --collector.dispersion
+            - --collector.recon.diskusage
+            - --collector.recon.driveaudit
+            - --collector.recon.quarantined
+            - --collector.recon.replication
+            - --collector.recon.unmounted
+            - --collector.recon.updater_sweep_time
+          ports:
+            - name: metrics
+              containerPort: 9520
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 100m-300m, RAM = 20-85 MiB
+            requests:
+              cpu: "400m"
+              memory: "200Mi"
+          {{- end }}
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc
+
+---
+{{- end }}
+{{- end }}
+{{- end }}
