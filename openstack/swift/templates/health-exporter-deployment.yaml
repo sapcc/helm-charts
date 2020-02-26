@@ -1,14 +1,12 @@
 {{- if $.Values.health_exporter }}
 {{- if not $.Values.health_statsd }}
-{{- range $cluster_id, $cluster := .Values.clusters }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: swift-health-exporter-{{$cluster_id}}
+  name: swift-health-exporter
   labels:
     release: "{{$.Release.Name}}"
-    os-cluster: {{$cluster_id}}
 spec:
   revisionHistoryLimit: 5
   replicas: 1
@@ -19,11 +17,11 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      component: swift-health-exporter-{{$cluster_id}}
+      component: swift-health-exporter
   template:
     metadata:
       labels:
-        component: swift-health-exporter-{{$cluster_id}}
+        component: swift-health-exporter
       annotations:
         checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
@@ -66,8 +64,5 @@ spec:
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc
-
----
-{{- end }}
 {{- end }}
 {{- end }}
