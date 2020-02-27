@@ -12,7 +12,7 @@ metadata:
     type: api
     component: barbican
 spec:
-  replicas: {{ .Values.pod.replicas.api }}
+  replicas: {{ .Values.api.replicas }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
@@ -57,6 +57,15 @@ spec:
                   name: sentry
                   key: barbican.DSN.python
             {{- end }}
+            {{- if .Values.api.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.api.resources.limits.cpu | quote }}
+              memory: {{ .Values.api.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.api.resources.requests.cpu | quote }}
+              memory: {{ .Values.api.resources.requests.memory | quote }}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /
