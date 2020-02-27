@@ -53,10 +53,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          {{- if .Values.pod.resources.hv_ironic }}
           resources:
-            requests:
-              cpu: "150m"
-              memory: "200Mi"
+{{ toYaml .Values.pod.resources.hv_ironic | indent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: /etc/nova
               name: etcnova
