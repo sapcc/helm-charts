@@ -12,7 +12,7 @@ metadata:
     type: api
     component: barbican
 spec:
-  replicas: {{ .Values.api.replicas }}
+  replicas: {{ required ".Values.api.replicas is missing" .Values.api.replicas }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
@@ -57,7 +57,7 @@ spec:
                   name: sentry
                   key: barbican.DSN.python
             {{- end }}
-            {{- if .Values.api.resources.enabled }}
+          {{- if .Values.api.resources.enabled }}
           resources:
             limits:
               cpu: {{ .Values.api.resources.limits.cpu | quote }}
