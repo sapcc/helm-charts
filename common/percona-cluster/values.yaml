@@ -10,69 +10,28 @@ image:
 # Desired number of members of xtradb cluster
 replicas: 1
 
-## Specify password for root user
-##
 # mysqlRootPassword: not-a-secure-password
-
-## Specify password for xtradb backup user
-##
 # xtraBackupPassword: replicate-my-data
 
-## Uncomment to create a database user
-##
-# mysqlUser: test
-# mysqlPassword: test
+mysqlUser: test
+mysqlPassword: test
+mysqlAllowEmptyPassword: false
 
-## Allow unauthenticated access, uncomment to enable
-##
-# mysqlAllowEmptyPassword: true
-
-## Uncomment to Create a database
-##
-# mysqlDatabase: test
-
-## Configure pxc_strict_mode
-## ref: https://www.percona.com/doc/percona-xtradb-cluster/LATEST/features/pxc-strict-mode.html
+mysqlDatabase: test
 pxc_strict_mode: ENFORCING
-
-## hosts to allow root user access from
-# set to "127.0.0.1" to deny remote root.
 allowRootFrom: "%"
 
-## Persist data to a persistent volume
 persistence:
   enabled: true
-  ## percona data Persistent Volume Storage Class
-  ## If defined, storageClassName: <storageClass>
-  ## If set to "-", storageClassName: "", which disables dynamic provisioning
-  ## If undefined (the default) or set to null, no storageClassName spec is
-  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
-  ##   GKE, AWS & OpenStack)
-  ##
-  # storageClass: "-"
   accessMode: ReadWriteMany
-  autoprovision: false
+  claimName: PerconaClaim  
   size: 10Gi
+  # storageClass: "-"
 
-## Node labels for pod assignment
-## Ref: https://kubernetes.io/docs/user-guide/node-selection/
-##
-nodeSelector: {}
-
-## Pod annotations
-## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-##
 podAnnotations: {}
 
-## Tolerations labels for pod assignment
-## Allow the scheduling on tainted nodes (requires Kubernetes >= 1.6)
-## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-##
 tolerations: []
 
-## Configure resource requests and limits
-## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-##
 resources:
  requests:
    memory: 2048Mi
@@ -95,8 +54,6 @@ configFiles:
     wsrep_cluster_name              = galera
     wsrep_sst_method                = xtrabackup-v2
 
-## When set to true will create sidecar for `prom/mysqld-exporter`
-## metrics exporting
 metricsExporter:
   enabled: true
   commandOverrides: []
@@ -167,4 +124,5 @@ podDisruptionBudget:
 ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#headless-services
 service:
   percona:
+    primary: false
     headless: false

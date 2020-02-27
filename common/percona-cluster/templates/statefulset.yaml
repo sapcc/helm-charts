@@ -1,22 +1,22 @@
 apiVersion: apps/v1beta2
 kind: StatefulSet
 metadata:
-  name: {{ template "percona-xtradb-cluster.fullname" . }}
+  name: {{ template "percona-cluster.fullname" . }}
   labels:
-    app: {{ template "percona-xtradb-cluster.fullname" . }}
+    app: {{ template "percona-cluster.fullname" . }}
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
-  replicas: {{ .Values.replicas }}
+  replicas: {{ .Values.replicas | default 1 }}
   selector:
     matchLabels:
-      app: {{ template "percona-xtradb-cluster.fullname" . }}
+      app: {{ template "percona-cluster.fullname" . }}
       release: "{{ .Release.Name }}"
-  serviceName: {{ template "percona-xtradb-cluster.fullname" . }}
+  serviceName: {{ template "percona-cluster.fullname" . }}
   template:
     metadata:
       labels:
-        app: {{ template "percona-xtradb-cluster.fullname" . }}
+        app: {{ template "percona-cluster.fullname" . }}
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
@@ -25,6 +25,23 @@ spec:
 {{ toYaml .Values.podAnnotations | indent 8 }}
     {{- end }}
     spec:
+      affinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- else }}
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: "failure-domain.beta.kubernetes.io/zone"
+                  operator: In
+                  values:
+                  - {{.Values.global.region}}a
+{{- end }}
       initContainers:
       - name: "remove-lost-found"
         image: "busybox:1.25.0"
@@ -53,18 +70,18 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "percona-xtradb-cluster.fullname" . }}
+              name: {{ template "percona-cluster.fullname" . }}
               key: mysql-root-password
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "percona-xtradb-cluster.fullname" . }}
+              name: {{ template "percona-cluster.fullname" . }}
               key: mysql-password
         {{- end }}
         - name: XTRABACKUP_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "percona-xtradb-cluster.fullname" . }}
+              name: {{ template "percona-cluster.fullname" . }}
               key: xtrabackup-password
         - name: MYSQL_USER
           value: {{ default "" .Values.mysqlUser | quote }}
@@ -73,11 +90,11 @@ spec:
         - name: ALLOW_ROOT_FROM
           value: {{ .Values.allowRootFrom | quote }}
         - name: CLUSTER_NAME
-          value: {{ template "percona-xtradb-cluster.fullname" . }}
+          value: {{ template "percona-cluster.fullname" . }}
         - name: SHORT_CLUSTER_NAME
-          value: {{ template "percona-xtradb-cluster.shortname" . }}
+          value: {{ template "percona-cluster.shortname" . }}
         - name: K8S_SERVICE_NAME
-          value: {{ template "percona-xtradb-cluster.fullname" . }}-repl
+          value: {{ template "percona-cluster.fullname" . }}-repl
         - name: PXC_STRICT_MODE
           value: {{ default "ENFORCING" .Values.pxc_strict_mode | quote }}
         - name: DEBUG
@@ -98,14 +115,14 @@ spec:
               - "-c"
               - "mysqladmin ping || test -e /var/lib/mysql/sst_in_progress"
           initialDelaySeconds: 30
-          timeoutSeconds: 2
+          timeoutSeconds: 3
         readinessProbe:
           exec:
             command: ["mysql", "-h", "127.0.0.1", "-e", "SELECT 1"]
-          initialDelaySeconds: 30
-          timeoutSeconds: 2
+          initialDelaySeconds: 60
+          timeoutSeconds: 3
         volumeMounts:
-        - name: mysql-data
+        - name: "{{ .Values.persistence.claimName }}"
           mountPath: /var/lib/mysql
         - name: mysql-startup-scripts
           mountPath: /startup-scripts
@@ -171,12 +188,12 @@ spec:
         emptyDir: {}
       - name: mysql-config-files
         configMap:
-          name: {{ template "percona-xtradb-cluster.fullname" . }}-config-files
+          name: {{ template "percona-cluster.fullname" . }}-config-files
       - name: mysql-startup-scripts
         configMap:
-          name: {{ template "percona-xtradb-cluster.fullname" . }}-startup-scripts
+          name: {{ template "percona-cluster.fullname" . }}-startup-scripts
       {{- if not .Values.persistence.enabled }}
-      - name: mysql-data
+      - name: "{{ .Values.persistence.claimName }}"
         emptyDir: {}
       {{- end -}}
       {{- if .Values.ssl.enabled }}
@@ -188,14 +205,10 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end -}}
-      {{- if .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-      {{- end -}}
   {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
-      name: mysql-data
+      name: "{{ .Values.persistence.claimName }}"
     spec:
       accessModes: [{{ .Values.persistence.accessMode | quote }}]
       {{- if .Values.persistence.storageClass }}

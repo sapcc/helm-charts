@@ -2,12 +2,12 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ template "percona-xtradb-cluster.fullname" . }}
+  name: {{ template "percona-cluster.fullname" . }}
 {{- if .Values.prometheus.operator.prometheusRule.namespace }}
   namespace: {{ .Values.prometheus.operator.prometheusRule.namespace }}
 {{- end }}
   labels:
-    app: {{ template "percona-xtradb-cluster.fullname" . }}
+    app: {{ template "percona-cluster.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
@@ -16,12 +16,12 @@ metadata:
 {{- end }}
 spec:
   groups:
-  - name: {{ template "percona-xtradb-cluster.fullname" . }}-alerts
+  - name: {{ template "percona-cluster.fullname" . }}-alerts
     rules:
     - alert: MySQLGaleraNotReady
       annotations:
         message: Galera cluster node not ready
-      expr: mysql_global_status_wsrep_ready{service="{{ template "percona-xtradb-cluster.fullname" . }}-metrics"} != 1
+      expr: mysql_global_status_wsrep_ready{service="{{ template "percona-cluster.fullname" . }}-metrics"} != 1
       for: 5m
       labels:
         severity: critical
@@ -31,7 +31,7 @@ spec:
     - alert: MySQLGaleraOutOfSync
       annotations:
         message: Galera cluster node out of sync
-      expr: (mysql_global_status_wsrep_local_state{service="{{ template "percona-xtradb-cluster.fullname" . }}-metrics"} != 4 and mysql_global_variables_wsrep_desync{service="{{ template "percona-xtradb-cluster.fullname" . }}-metrics"} == 0)
+      expr: (mysql_global_status_wsrep_local_state{service="{{ template "percona-cluster.fullname" . }}-metrics"} != 4 and mysql_global_variables_wsrep_desync{service="{{ template "percona-cluster.fullname" . }}-metrics"} == 0)
       for: 5m
       labels:
         severity: critical
@@ -41,7 +41,7 @@ spec:
     - alert: MySQLGaleraDonorFallingBehind
       annotations:
         message: xtradb cluster donor node falling behind
-      expr: (mysql_global_status_wsrep_local_state{service="{{ template "percona-xtradb-cluster.fullname" . }}-metrics"} == 2 and mysql_global_status_wsrep_local_recv_queue{service="{{ template "percona-xtradb-cluster.fullname" . }}-metrics"} > 100)
+      expr: (mysql_global_status_wsrep_local_state{service="{{ template "percona-cluster.fullname" . }}-metrics"} == 2 and mysql_global_status_wsrep_local_recv_queue{service="{{ template "percona-cluster.fullname" . }}-metrics"} > 100)
       for: 5m
       labels:
         severity: warning
@@ -51,7 +51,7 @@ spec:
     - alert: MySQLInnoDBLogWaits
       annotations:
         message: MySQL innodb log writes stalling
-      expr: rate(mysql_global_status_innodb_log_waits{service="{{ template "percona-xtradb-cluster.fullname" . }}-metrics"}[15m]) > 10
+      expr: rate(mysql_global_status_innodb_log_waits{service="{{ template "percona-cluster.fullname" . }}-metrics"}[15m]) > 10
       for: 5m
       labels:
         severity: warning
