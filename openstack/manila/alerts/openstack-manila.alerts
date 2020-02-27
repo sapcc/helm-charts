@@ -46,8 +46,8 @@ groups:
       summary: Manila Shares taking more than 2 minutes to delete
 
   - alert: OpenstackManilaShareServerHigh
-    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (host),
-      "short_hostname", "$1", "host", "(.*)@.*") >= 240
+    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
+      "short_hostname", "$1", "manila_host", "(.*)@.*") >= 240
     labels:
       dashboard: manila
       meta: '{{ $value }} share server'
@@ -61,8 +61,8 @@ groups:
       summary: High number of share servers on {{ $labels.short_hostname }}
 
   - alert: OpenstackManilaShareServerFull
-    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (host),
-      "short_hostname", "$1", "host", "(.*)@.*") >= 250
+    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
+      "short_hostname", "$1", "manila_host", "(.*)@.*") >= 250
     labels:
       dashboard: manila
       meta: '{{ $value }} share server'
