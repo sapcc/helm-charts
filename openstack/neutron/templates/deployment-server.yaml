@@ -89,11 +89,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
           resources:
-{{- if not (hasPrefix "qa-de" .Values.global.region) }}
-            requests:
-              cpu: "4000m"
-              memory: "8Gi"
-{{- end }}
+{{ toYaml .Values.pod.resources.server | indent 12 }}
           ports:
             - name: neutron-api
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}

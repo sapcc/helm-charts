@@ -29,12 +29,7 @@ spec:
             - name: PASSWORD
               value: {{ derivePassword 1 "long" .Values.global.master_password .Values.sftp.user (include "sftp_api_endpoint_host" .) | quote }}
           resources:
-            requests:
-              cpu: "256m"
-              memory: "32Mi"
-            limits:
-              cpu: "500m"
-              memory: "64Mi"
+{{ toYaml .Values.pod.resources.sftp_backup | indent 12 }}
           volumeMounts:
             - mountPath: /etc/swift-sftp.conf
               name: neutron-sftp-backup
