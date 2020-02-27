@@ -2,11 +2,11 @@ kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: keppel-api
+  name: keppel-janitor
 
 spec:
   revisionHistoryLimit: 5
-  replicas: {{ if .Values.keppel.slim }} 1 {{ else }} 4 {{ end }}
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -14,23 +14,26 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      name: keppel-api
+      name: keppel-janitor
   template:
     metadata:
       labels:
-        name: keppel-api
+        name: keppel-janitor
       annotations:
         checksum: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/targets: "openstack"
     spec:
       volumes:
         - name: config
           configMap:
             name: keppel
       containers:
-        - name: api
+        - name: janitor
           image: {{include "keppel_image" .}}
           imagePullPolicy: {{.Values.keppel.image_pull_policy}}
-          args: [ server, api ]
+          args: [ server, janitor ]
           env: {{ include "keppel_environment" $ | indent 12 }}
           volumeMounts:
             - mountPath: /etc/keppel
@@ -48,13 +51,4 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
-          # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
-          # - CPU: currently below 10m, but we'll give it lots of headroom for initial growth
-          # - RAM: levels off around 20 Mi
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "50m"
-              memory: "64Mi"
+          # TODO resource requests
