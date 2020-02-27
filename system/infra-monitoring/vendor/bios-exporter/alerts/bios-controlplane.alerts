@@ -2,7 +2,7 @@ groups:
 - name: bios.alerts
   rules:
   - alert: BiosSettingNotCorrect
-    expr: bios_exporter != 0 and bios_exporter{provision_state !~ "active"} and bios_exporter{setting_name !~ "memory_memorymode|biosvfselectmemoryrasconfiguration|memory_ras_configuration|bios_memsettings_adddcsetting|bios_memsettings_memopmode"}
+    expr: bios_exporter{job="bios/cisco_cp"} != 0 and bios_exporter{provision_state !~ "active"} and bios_exporter{job="bios/cisco_cp",setting_name !~ "memory_memorymode|biosvfselectmemoryrasconfiguration|memory_ras_configuration|bios_memsettings_adddcsetting|bios_memsettings_memopmode"}
     for: 30m
     labels:
       severity: info
@@ -16,7 +16,7 @@ groups:
       summary: "Hardware error configuration error for instance: {{ $labels.instance }}"
 
   - alert: BiosNotResponding
-    expr: bios_exporter_up == 1
+    expr: bios_exporter_up{job="bios/cisco_cp"} == 1
     for: 30m
     labels:
       severity: info
@@ -30,7 +30,7 @@ groups:
       summary: "{{ $labels.server_name }} is not producing any BIOS metrics. A remoteboard reboot is probably needed."
 
   - alert: MultipleBiosNotReporting
-    expr: count(bios_exporter_up == 1) > 10
+    expr: count(bios_exporter_up{job="bios/cisco_cp"} == 1) > 10
     for: 30m
     labels:
       severity: warning
