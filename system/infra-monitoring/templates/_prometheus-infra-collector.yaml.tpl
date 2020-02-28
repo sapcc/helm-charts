@@ -443,6 +443,17 @@
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.vrops_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'vrops'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  static_configs:
+    - targets: ['vrops-exporter:9160']
+  metrics_path: /
+{{- end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
 {{- $values := .Values.esxi_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'esxi-config'
