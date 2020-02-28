@@ -21,6 +21,7 @@ spec:
         name: vcenter-operator
 {{ tuple . "vcenter-operator" "operator" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
+      serviceAccountName: {{ .Chart.Name }}
       containers:
       - name: operator
         image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{required ".Values.global.image_namespace is missing" .Values.global.image_namespace}}/ubuntu-source-vcenter-operator:{{ .Values.imageVersionVcenterOperator | default .Values.imageVersion | required "Please set imageVersion or similar"}}
