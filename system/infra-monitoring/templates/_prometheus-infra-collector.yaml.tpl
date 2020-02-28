@@ -451,6 +451,10 @@
   static_configs:
     - targets: ['vrops-exporter:9160']
   metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: vrops
+      action: keep
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
