@@ -20,7 +20,7 @@ data:
     maria_db:
       user: root
       version: {{ .Values.backup_v2.maria_db.version }}
-      password: {{ required ".Values.root_password missing" .Values.root_password }}
+      password: {{ include "root_password" . }}
       host: 127.0.0.1
       port: 3306
       data_dir: ./db_prod
@@ -34,7 +34,7 @@ data:
         - "{{$tl}}"
       {{- end }}
     s3:
-      - name: aws_{{ .Values.global.mariadb.backup_v2.region }} 
+      - name: aws_{{ .Values.global.mariadb.backup_v2.region }}
         aws_access_key_id: {{ .Values.global.mariadb.backup_v2.aws_access_key_id }}
         aws_secret_access_key: {{ .Values.global.mariadb.backup_v2.aws_secret_access_key }}
         region: {{ .Values.global.mariadb.backup_v2.region }}
@@ -51,4 +51,4 @@ data:
       enabled: {{ default true .Values.backup_v2.oauth.enabled}}
       provider_url: "https://auth.mariabackup.{{ .Values.global.region }}.cloud.sap"
       redirect_url: "https://{{ .Values.name }}.mariabackup.{{ .Values.global.region }}.cloud.sap"
-{{- end }} 
+{{- end }}
