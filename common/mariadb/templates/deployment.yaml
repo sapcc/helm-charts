@@ -54,7 +54,12 @@ spec:
         image: {{.Values.image}}
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         env:
-        - name:  MYSQL_ROOT_PASSWORD
+        - name:  MYSQL_ROOT_PASSWORD # for setup
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: root-password
+        - name:  MYSQL_PWD # for cli
           valueFrom:
             secretKeyRef:
               name: mariadb-{{.Values.name}}
@@ -105,7 +110,10 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
           - name: MYSQL_ROOT_PASSWORD
-            value: {{ required ".Values.root_password missing" .Values.root_password }}
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-{{.Values.name}}
+                key: root-password
           - name: MY_POD_NAME
             value: mysql-backup-{{ .Values.name }}
           - name: MY_POD_NAMESPACE
@@ -213,8 +221,8 @@ spec:
           periodSeconds: 20
           timeoutSeconds: 10
         env:
-          - name: DATA_SOURCE_NAME
-            value: root:{{ required ".Values.root_password missing" .Values.root_password }}@tcp({{ include (print .Release.Name "_db_host") . }}:3306)/
+          - name: DATA_SOURCE_NAME # FIXME: get password from secret
+            value: root:{{ include "root_password" . }}@tcp({{ include (print .Release.Name "_db_host") . }}:3306)/
           - name: LOGLEVEL
             value: {{ default "info" .Values.metrics.loglevel }}
         ports:
