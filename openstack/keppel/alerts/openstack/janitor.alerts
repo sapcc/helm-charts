@@ -1,0 +1,18 @@
+groups:
+- name: openstack-keppel-janitor.alerts
+  rules:
+
+  - alert: OpenstackKeppelNotCleaningAbandonedUploads
+    expr: keppel_upload_min_updated_at > 0 and time() - keppel_upload_min_updated_at > 90000
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Abandoned uploads are not getting cleaned up'
+      description: |
+        There are some uploads that are way older than 24 hours, which keppel-janitor should have cleaned up by now.
+        Check the logs of keppel-janitor for details.
