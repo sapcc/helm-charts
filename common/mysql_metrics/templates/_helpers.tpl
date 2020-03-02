@@ -36,8 +36,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "mysql_metrics.password_for_fixed_user" }}
 {{- end }}
 
-{{- define "db_password" -}}
-{{( default .Values.global.dbPassword .Values.dbPassword ) | default (tuple . .Values.global.dbUser | include "mysql_metrics.password_for_user")}}
+{{- define "mysql_metrics.db_password" -}}
+{{ .Values.db_password | default .Values.global.dbPassword | default (tuple . .Values.global.dbUser | include "mysql_metrics.password_for_user")}}
 {{- end -}}
 
 {{/* Needed for testing purposes only. */}}
