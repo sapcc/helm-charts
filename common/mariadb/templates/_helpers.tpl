@@ -20,7 +20,7 @@
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $host := index . 2 }}
-    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host }}
+    {{- derivePassword 1 "basic" $envAll.Values.global.master_password $user $host }}
 {{- end }}
 
 {{- define "mariadb.password_for_fixed_user"}}
@@ -35,7 +35,7 @@
     {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "mariadb.password_for_fixed_user" }}
 {{- end }}
 
-{{- define "root_password" -}}
+{{- define "mariadb.root_password" -}}
 {{- if hasKey .Values "root_password" -}}
 {{- .Values.root_password }}
 {{- else -}}

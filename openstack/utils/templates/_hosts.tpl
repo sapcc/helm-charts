@@ -17,7 +17,7 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 ?connect_timeout=10&keepalives_idle=5&keepalives_interval=5&keepalives_count=10
 {{- end}}
 
-{{define "db_url_mysql" }}mysql+pymysql://root:{{.Values.mariadb.root_password}}@{{.Values.db_name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/{{.Values.db_name}}?charset=utf8{{end}}
+{{define "db_url_mysql" }}mysql+pymysql://root:{{.Values.mariadb.root_password | default (include "mariadb.root_password" .)}}@{{.Values.db_name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/{{.Values.db_name}}?charset=utf8{{end}}
 
 {{define "nova_db_host"}}postgres-nova.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "nova_api_endpoint_host_admin"}}nova-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
