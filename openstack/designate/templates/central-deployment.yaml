@@ -29,9 +29,7 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "designate" "central" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
       containers:
         - name: designate-central
           image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{.Values.global.image_namespace}}/loci-designate:{{required ".Values.global.image_version_designate_central is missing" .Values.image_version_designate_central}}
