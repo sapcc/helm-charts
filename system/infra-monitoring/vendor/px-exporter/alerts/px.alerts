@@ -3,7 +3,6 @@ groups:
   rules:
   - alert: PXBirdExporterAvailabilityMissingExporter
     expr: sum(up{app=~".+-pxrs-.+", app!~".*pxmon.*"} ==bool  1) != 12
-    for: 1h
     labels:
       severity: critical
       tier: api
@@ -15,7 +14,7 @@ groups:
 
   - alert: PXDomainAllPeersDown
     expr: sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (pxdomain,region, pxservice) == 0
-    for: 5m
+    for: 2m
     labels:
       severity: critical
       tier: net
@@ -71,7 +70,6 @@ groups:
 
   - alert: PXTransportRouterBgpDown
     expr: bird_protocol_up{name!~"kernel.", peer_type="TRANS"} == 0
-    for: 5m
     labels:
       severity: critical
       tier: net
@@ -86,7 +84,6 @@ groups:
 
   - alert: PXTransportRouterPrefixImportCountZero
     expr: (sum(bird_protocol_up{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) > 0 ) + on (app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TRANS"} <= 0 
-    for: 10m
     labels:
       severity: critical
       tier: net
@@ -100,7 +97,6 @@ groups:
 
   - alert: PXTransportRouterPrefixExportCountZero
     expr: (sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) <= 0)  + on  (app, ip_version, proto, pxdomain, pxinstance, pxservice)  group_right() (bird_protocol_prefix_export_count{name!~"kernel.", peer_type="TRANS"} <= 0)
-    for: 10m
     labels:
       severity: critical
       tier: api
@@ -114,7 +110,7 @@ groups:
   
   - alert: PXConsumerExceedingRouteLimit
     expr: bird_protocol_prefix_import_count{pxservice=~"1|2", peer_type="PLATF"} >=10000 or bird_protocol_prefix_import_count{pxservice="3", peer_type="PLATF"} >= 100000
-    for: 3m
+    for: 2m
     labels:
       severity: critical
       tier: net
@@ -128,7 +124,6 @@ groups:
   
   - alert: PXRouteTableSignificantChanges
     expr: floor((floor(delta(sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app)[30m:])) / sum(bird_protocol_prefix_import_count{peer_type="PLATF"} offset 30m) by (app)) * 100) > 25
-    for: 0m
     labels:
       severity: warn
       tier: net
