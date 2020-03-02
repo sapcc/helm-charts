@@ -21,7 +21,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $host := index . 2 }}
-    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host }}
+    {{- derivePassword 1 "basic" $envAll.Values.global.master_password $user $host }}
 {{- end }}
 
 {{- define "mysql_metrics.password_for_fixed_user"}}
