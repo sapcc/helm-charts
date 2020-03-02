@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: PXTransportDlWanLinkProbesFailing
     expr: sum(changes(snmp_pxdlrouternxos_rttMonLatestRttOperTime[10m]) ==bool 0) by  (server_id, server_name, rttMonCtrlAdminIndex, rttMonCtrlAdminTag, rttMonCtrlAdminOwner) + on  (server_id, server_name, rttMonCtrlAdminIndex, rttMonCtrlAdminTag, rttMonCtrlAdminOwner) group_right() ((snmp_pxdlrouternxos_rttMonLatestRttOperSense{rttMonCtrlAdminIndex=~"4.."} !=bool 1) * 10) != 0
-    for: 5m
+    for: 2m
     labels:
       severity: critical
       tier: net
@@ -17,7 +17,7 @@ groups:
   
   - alert: PXTransportDlWanLinkProbesHighLatency
     expr: snmp_pxdlrouternxos_rttMonLatestRttOperCompletionTime{rttMonCtrlAdminIndex=~"4..", rttMonCtrlAdminTag=~"^RTT10.*"} < 1000 OR snmp_pxdlrouternxos_rttMonLatestRttOperCompletionTime{rttMonCtrlAdminIndex=~"4..", rttMonCtrlAdminTag=~"^RTT5.*"} < 500 OR snmp_pxdlrouternxos_rttMonLatestRttOperCompletionTime{rttMonCtrlAdminIndex=~"4..", rttMonCtrlAdminTag=~"^RTT15*"} < 1500 
-    for: 5m
+    for: 2m
     labels:
       severity: critical
       tier: net
@@ -31,7 +31,7 @@ groups:
   
   - alert: PXTransportDlWanLinkInterfaceDown
     expr: snmp_pxdlrouternxos_ifLastChange{ifAdminStatus="1", ifType="6", ifDescr=~"Ethernet1/11|Ethernet1/12", ifOperStatus!="1"}
-    for: 5m
+    for: 2m
     labels:
       severity: critical
       tier: net
@@ -45,7 +45,7 @@ groups:
   
   - alert: PXTransportDlWanLinkInterfaceFlapping
     expr: resets((snmp_pxdlrouternxos_sysUpTime - on (server_id) group_right(server_name, interface) (snmp_pxdlrouternxos_ifLastChange{ifDescr=~"Ethernet1/11|Ethernet1/12"}))[10m:]) > 1
-    for: 5m
+    for: 2m
     labels:
       severity: critical
       tier: net
@@ -60,7 +60,7 @@ groups:
 
   - alert: PXTransportDlWanLinkProbesPacketLosses
     expr: changes(snmp_pxdlrouternxos_rttMonJitterStatsPacketLossDS{rttMonCtrlAdminIndex=~"4.."}[5m])/280 > 0.03 or changes(snmp_pxdlrouternxos_rttMonJitterStatsPacketLossSD{rttMonCtrlAdminIndex=~"4.."}[5m])/280 > 0.03
-    for: 5m
+    for: 2m
     labels:
       severity: critical
       tier: net
