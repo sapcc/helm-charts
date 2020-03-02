@@ -27,19 +27,13 @@ spec:
 {{ tuple . "nova" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
 {{- if .Values.pod.debug.api }}
       securityContext:
         runAsUser: 0
 {{- end }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
       containers:
         - name: nova-api
           image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
@@ -85,10 +79,10 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 5
 {{- end }}
+          {{- if .Values.pod.resources.api }}
           resources:
-            requests:
-              cpu: "12000m"
-              memory: "13Gi"
+{{ toYaml .Values.pod.resources.api | indent 12 }}
+          {{- end }}
           ports:
             - name: nova-api
               containerPort: {{.Values.global.novaApiPortInternal}}

@@ -1,0 +1,54 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: keppel-janitor
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: keppel-janitor
+  template:
+    metadata:
+      labels:
+        name: keppel-janitor
+      annotations:
+        checksum: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/targets: "openstack"
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: keppel
+      containers:
+        - name: janitor
+          image: {{include "keppel_image" .}}
+          imagePullPolicy: {{.Values.keppel.image_pull_policy}}
+          args: [ server, janitor ]
+          env: {{ include "keppel_environment" $ | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/keppel
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          # TODO resource requests

@@ -27,14 +27,8 @@ spec:
 {{ tuple . "cinder" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "cinder" "scheduler" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "cinder" "scheduler" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
       hostname: cinder-scheduler
       containers:
         - name: cinder-scheduler
@@ -66,10 +60,10 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
+          {{- if .Values.pod.resources.scheduler }}
           resources:
-            requests:
-              cpu: "100m"
-              memory: "300Mi"
+{{ toYaml .Values.pod.resources.scheduler | indent 12 }}
+          {{- end }}
           volumeMounts:
             - name: etccinder
               mountPath: /etc/cinder

@@ -14,7 +14,7 @@ linuxnet_interface_driver = nova.network.linux_net.LinuxOVSInterfaceDriver
 # https://github.com/sapcc/nova/commit/fd9508038351d027dcbf94282ba83caed5864a97
 allow_resize_to_same_host = true
 # but now we also need a new patch with this for queens
-always_resize_on_same_host = true
+always_resize_on_same_host = {{ .Values.always_resize_on_same_host | default false }}
 
 enable_new_services = {{ .Values.enable_new_services | default .Release.IsInstall }}
 

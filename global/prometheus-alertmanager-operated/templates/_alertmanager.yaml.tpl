@@ -185,6 +185,35 @@ route:
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  - receiver: pagerduty_vpod
+    continue: true
+    match_re:
+      tier: vpod
+      severity: critical
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
+  - receiver: slack_vpod_critical
+    continue: false
+    match_re:
+      tier: vpod
+      severity: critical
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
+  - receiver: slack_vpod_warning
+    continue: false
+    match_re:
+      tier: vpod
+      severity: warning
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
+  - receiver: slack_vpod_info
+    continue: false
+    match_re:
+      tier: vpod
+      severity: info
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
+
   - receiver: pagerduty_vmware
     continue: true
     match_re:
@@ -268,7 +297,7 @@ receivers:
   - name: dev-null
     slack_configs:
       - api_url: {{ required "slack.devnullWebhookURL undefined" .Values.slack.devnullWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         channel: "#dev-null"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -297,7 +326,7 @@ receivers:
     slack_configs:
       - channel: '#alert-metal-info'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -311,7 +340,7 @@ receivers:
     slack_configs:
       - channel: '#alert-metal-warning'
         api_url: {{ required ".Values.slack.metal.warningWebhookURL undefined" .Values.slack.metal.warningWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -330,7 +359,59 @@ receivers:
     slack_configs:
       - channel: '#alert-metal-critical'
         api_url: {{ required ".Values.slack.metal.criticalWebhookURL undefined" .Values.slack.metal.criticalWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: slack_vpod_info
+    slack_configs:
+      - channel: '#alert-vpod-info'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
+  - name: slack_vpod_warning
+    slack_configs:
+      - channel: '#alert-vpod-warning'
+        api_url: {{ required ".Values.slack.metal.warningWebhookURL undefined" .Values.slack.vpod.warningWebhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        callback_id: "alertmanager"
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+        actions:
+          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
+            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
+            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
+            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
+
+  - name: slack_vpod_critical
+    slack_configs:
+      - channel: '#alert-vpod-critical'
+        api_url: {{ required ".Values.slack.metal.criticalWebhookURL undefined" .Values.slack.vpod.criticalWebhookURL | quote }}
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -349,7 +430,7 @@ receivers:
     slack_configs:
       - channel: '#alert-net-info'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -363,7 +444,7 @@ receivers:
     slack_configs:
       - channel: '#alert-net-warning'
         api_url: {{ required "slack.network.warningWebhookURL undefined" .Values.slack.network.warningWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -382,7 +463,7 @@ receivers:
     slack_configs:
       - channel: '#alert-net-critical'
         api_url: {{ required ".Values.slack.network.criticalWebhookURL undefined" .Values.slack.network.criticalWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -401,7 +482,7 @@ receivers:
     slack_configs:
       - channel: '#alert-vmware-info'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -415,7 +496,7 @@ receivers:
     slack_configs:
       - channel: '#alert-vmware-warning'
         api_url: {{ required ".Values.slack.vmware.warningWebhookURL undefined" .Values.slack.vmware.warningWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -434,7 +515,7 @@ receivers:
     slack_configs:
       - channel: '#alert-vmware-critical'
         api_url: {{ required ".Values.slack.vmware.criticalWebhookURL undefined" .Values.slack.vmware.criticalWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -453,7 +534,7 @@ receivers:
     slack_configs:
       - channel: '#alert-api-info'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -467,7 +548,7 @@ receivers:
     slack_configs:
       - channel: '#alert-api-warning'
         api_url: {{ required ".Values.slack.api.warningWebhookURL undefined" .Values.slack.api.warningWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -486,7 +567,7 @@ receivers:
     slack_configs:
       - channel: '#alert-api-critical'
         api_url: {{ required ".Values.slack.api.criticalWebhookURL undefined" .Values.slack.api.criticalWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -505,7 +586,7 @@ receivers:
     slack_configs:
       - channel: '#alert-moni-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -518,7 +599,7 @@ receivers:
     slack_configs:
       - channel: '#alert-qa-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -532,7 +613,7 @@ receivers:
     slack_configs:
       - channel: '#alert-dev-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -546,7 +627,7 @@ receivers:
     slack_configs:
       - channel: '#cc-os-{{"{{ .CommonLabels.service }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -559,7 +640,7 @@ receivers:
     slack_configs:
       - channel: '#cc-k8s-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -572,7 +653,7 @@ receivers:
     slack_configs:
       - channel: '#cc-kks-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -586,7 +667,7 @@ receivers:
     slack_configs:
       - channel: '#cc-kks-critical'
         api_url: {{ required ".Values.slack.kubernikus.criticalWebhookURL undefined" .Values.slack.kubernikus.criticalWebhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -605,7 +686,7 @@ receivers:
     slack_configs:
       - channel: '#cc-concourse'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -618,7 +699,7 @@ receivers:
     slack_configs:
       - channel: '#cc-nannies'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -631,7 +712,7 @@ receivers:
     slack_configs:
       - channel: '#cc-snmp'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -644,7 +725,7 @@ receivers:
     slack_configs:
       - channel: '#cc-sre'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -657,7 +738,7 @@ receivers:
     slack_configs:
       - channel: '#cc-storage'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
-        username: "Control Plane"
+        username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
         text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
@@ -687,6 +768,24 @@ receivers:
   - name: pagerduty_metal
     pagerduty_configs:
       - service_key: {{ required ".Values.pagerduty.metal.serviceKey undefined" .Values.pagerduty.metal.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+        details:
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+  
+  - name: pagerduty_vpod
+    pagerduty_configs:
+      - service_key: {{ required ".Values.pagerduty.vpod.serviceKey undefined" .Values.pagerduty.vpod.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}

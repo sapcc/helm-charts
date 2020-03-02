@@ -54,7 +54,12 @@ spec:
         image: {{.Values.image}}
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         env:
-        - name:  MYSQL_ROOT_PASSWORD
+        - name:  MYSQL_ROOT_PASSWORD # for setup
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: root-password
+        - name:  MYSQL_PWD # for cli
           valueFrom:
             secretKeyRef:
               name: mariadb-{{.Values.name}}
@@ -90,9 +95,8 @@ spec:
             mountPath: /var/lib/mysql
             readOnly: false
 {{- end }}
-          - mountPath: /etc/mysql/conf.d/mariadb.cnf
+          - mountPath: /etc/mysql/mariadb.conf.d/
             name: mariadb-etc
-            subPath: mariadb.cnf
 {{- if .Values.initdb_configmap }}
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
@@ -105,7 +109,10 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
           - name: MYSQL_ROOT_PASSWORD
-            value: {{ required ".Values.root_password missing" .Values.root_password }}
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-{{.Values.name}}
+                key: root-password
           - name: MY_POD_NAME
             value: mysql-backup-{{ .Values.name }}
           - name: MY_POD_NAMESPACE
@@ -127,7 +134,7 @@ spec:
           - name: OS_REGION_NAME
             value: {{ .Values.global.region }}
           - name: OS_PASSWORD
-            value: {{ .Values.backup.os_password | quote }}
+            value: {{ .Values.backup.os_password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote }}
           - name: BACKUP_MYSQL_FULL
             value: {{ .Values.backup.interval_full | quote }}
           - name: BACKUP_MYSQL_INCR
@@ -213,8 +220,8 @@ spec:
           periodSeconds: 20
           timeoutSeconds: 10
         env:
-          - name: DATA_SOURCE_NAME
-            value: root:{{ required ".Values.root_password missing" .Values.root_password }}@tcp({{ include (print .Release.Name "_db_host") . }}:3306)/
+          - name: DATA_SOURCE_NAME # FIXME: get password from secret
+            value: root:{{ include "root_password" . }}@tcp({{ include (print .Release.Name "_db_host") . }}:3306)/
           - name: LOGLEVEL
             value: {{ default "info" .Values.metrics.loglevel }}
         ports:

@@ -448,18 +448,13 @@
 - job_name: 'vrops'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  static_configs:
+    - targets: ['vrops-exporter:9160']
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
       regex: vrops
       action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
-    - target_label: __address__
-      replacement: vrops-exporter:9160
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.

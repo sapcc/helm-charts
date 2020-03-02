@@ -3,8 +3,9 @@ keppel:
   image_tag: latest
   image_pull_policy: Always
 
-  hostname: keppel # or keppel-secondary for secondary QA deployment, region and TLD are appended automatically
-  peer_hostnames: [] # must contain full domain names, no automatic appending
+  slim: false # set to true for deployments to the small QA regions
+
+  peer_hostnames: []
 
   service_password: DEFINED_IN_VALUES_FILE
 
@@ -71,3 +72,10 @@ pgmetrics:
         - min_started_at:
             usage: "GAUGE"
             description: "UNIX timestamp when oldest still-running blob replication was started (or 0 when no replication is in progress)"
+    keppel_upload:
+      query: >
+        SELECT COALESCE(EXTRACT(epoch FROM MAX(updated_at)), 0) AS min_updated_at FROM uploads
+      metrics:
+        - min_updated_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp when oldest still-active upload was started (or 0 when no upload is in progress)"

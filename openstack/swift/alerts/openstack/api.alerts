@@ -32,7 +32,7 @@ groups:
       summary: swift-service-unavailable
 
   - alert: OpenstackSwiftHealthCheck
-    expr: avg(swift_health_statsd_exit_code) BY (region) > 0.2 or avg(swift_recon_task_exit_code or swift_dispersion_task_exit_code) BY (region) > 0.2
+    expr: avg(swift_health_statsd_exit_code) BY (region) > 0.2 or avg(swift_recon_task_exit_code) BY (region) > 0.2 or avg(swift_dispersion_task_exit_code) BY (region) > 0.2 or absent(swift_dispersion_task_exit_code)
     for: 5m
     labels:
       context: health
@@ -42,7 +42,7 @@ groups:
       tier: os
       meta: some health checks for Swift are failing
     annotations:
-      description: Swift health check failures. Run kubectl log swift-proxy-... collector to get details
+      description: Swift health check failures. Run kubectl log (swift-proxy-... / swift-health-exporter-...) collector to get details
       summary: swift-health-check
 
   # TODO: remove this when the new exporter gets rolled out
@@ -139,12 +139,12 @@ groups:
       context: drivesunmounted
       dashboard: swift-overview
       service: swift
-      severity: warning
+      severity: info
       tier: os
       meta: '{{ $value }} Swift drives not mounted'
-      playbook: 'docs/support/playbook/swift/swift_broken_disks.html'
     annotations:
-      description: Swift drives not mounted. Run swift-recon --unmounted to get details
+      description: Swift drives not mounted. Run swift-recon --unmounted to get details.
+        Also check #alert-metal-warning for disk failures. They should get acknowledged there.
       summary: swift disks unmounted on the server IP {{ $labels.storage_ip }}
 
   - alert: OpenstackSwiftDiskFailures
@@ -155,9 +155,9 @@ groups:
       dashboard: swift-overview
       service: swift
       severity: warning
-      tier: os
+      tier: metal
       meta: '{{ $value }} Swift drive failures'
-      playbook: 'docs/support/playbook/swift/swift_broken_disks.html'
+      playbook: 'docs/support/playbook/swift/disk_failures.html'
     annotations:
       description: Swift drive failures. Run swift-recon --driveaudit to get details
       summary: swift disk failures on the server IP {{ $labels.storage_ip }}

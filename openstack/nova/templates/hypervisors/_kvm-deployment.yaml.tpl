@@ -24,9 +24,6 @@ spec:
         name: nova-compute-{{$hypervisor.name}}
         hypervisor: "kvm"
       annotations:
-        {{- if le .Capabilities.KubeVersion.Minor "6" }}
-        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
-        {{- end }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "kvm_configmap" | sha256sum }}
     spec:
@@ -36,13 +33,11 @@ spec:
       hostIPC: true
       nodeSelector:
         kubernetes.io/hostname: {{$hypervisor.node_name}}
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
       - key: "species"
         operator: "Equal"
         value: "hypervisor"
         effect: "NoSchedule"
-      {{- end }}
       initContainers:
         - name: fix-permssion-instance-volume
           image: busybox

@@ -5,12 +5,9 @@
 
 global:
   dbUser: manila
-  dbPassword: DEFINED-IN-REGION-CHART
-  dbBackupServicePassword: ""
+  dbBackupServicePassword: null
   imageRegistry: DEFINED-IN-REGION-CHART
-  master_password: ""
-  pgbouncer:
-    enabled: true
+  master_password: null
   metrics_port: 9102
 
 loci:
@@ -315,18 +312,6 @@ pod:
       requests:
         memory: "256Mi"
         cpu: "1000m"
-    netapp_nanny:
-      requests:
-        memory: "2Gi"
-        cpu: "500m"
-    nanny_quota:
-      requests:
-        memory: "64Mi"
-        cpu: "300m"
-    nanny:
-      requests:
-        memory: "64Mi"
-        cpu: "50m"
     share: # is not scalable -> qosClass: guaranteed
       requests:
         memory: "256Mi"
@@ -339,7 +324,7 @@ db_name: manila
 
 mariadb:
   enabled: true
-  root_password: DEFINED-IN-REGION-CHART
+  root_password: null # define in region or use master_password mechanism
   buffer_pool_size: "8192M"
   log_file_size: "2048M"
   name: manila
@@ -347,8 +332,15 @@ mariadb:
   persistence_claim:
     name: db-manila-pvclaim
   backup:
-    image_version: v0.6.4
+    enabled: true
+    os_password: null # use dbBackupServicePassword from globals
+  extraConfigFiles:
+    manila.cnf: |+
+      [mysqld]
+      net_read_timeout=300
+      net_write_timeout=300
 
+# needed for utils ini_sections
 postgresql:
   enabled: false
 

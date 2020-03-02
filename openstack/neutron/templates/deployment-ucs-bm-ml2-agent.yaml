@@ -25,7 +25,6 @@ spec:
         name: neutron-cisco-ml2-ucsm-bm
       annotations:
         pod.beta.kubernetes.io/hostname: cisco-ml2-ucsm-bm
-
     spec:
       {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       hostname:  cisco-ml2-ucsm-bm
@@ -59,12 +58,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
           resources:
-            requests:
-              cpu: "256m"
-              memory: "512Mi"
-            limits:
-              cpu: "500m"
-              memory: "1024Mi"
+{{ toYaml .Values.pod.resources.cisco_ml2_ucsm_bm | indent 12 }}
           volumeMounts:
             - name: etcneutron
               mountPath: /etc/neutron

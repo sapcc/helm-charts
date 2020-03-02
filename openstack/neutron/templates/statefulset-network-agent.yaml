@@ -23,7 +23,9 @@ spec:
       name: neutron-network-agent-{{ $az }}
   serviceName: neutron-network-agent
   podManagementPolicy: "Parallel"
-{{- if and (ge $az_count 2) (eq $az "a") }}
+{{- if $.Values.pod.replicas.network_agent }}
+  replicas: {{ $.Values.pod.replicas.network_agent }}
+{{- else if and (ge $az_count 2) (eq $az "a") }}
   replicas: 5
 {{- else if and (ge $az_count 2) (eq $az "b") }}
   replicas: 5
@@ -67,12 +69,7 @@ spec:
           securityContext:
             privileged: true
           resources:
-            requests:
-              cpu: "256m"
-              memory: "1Gi"
-            limits:
-              cpu: "2"
-              memory: "2.5Gi"
+{{ toYaml $.Values.pod.resources.dhcp_agent | indent 12 }}
           volumeMounts:
             - name: metadata-proxy
               mountPath: /run/metadata_proxy
@@ -197,12 +194,7 @@ spec:
               add:
                 - NET_ADMIN
           resources:
-            requests:
-              cpu: "64m"
-              memory: "256Mi"
-            limits:
-              cpu: "256m"
-              memory: "512Mi"
+{{ toYaml $.Values.pod.resources.linuxbridge_agent | indent 12 }}
           volumeMounts:
             - mountPath: /lib/modules
               name: modules

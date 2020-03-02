@@ -45,6 +45,7 @@
       service: {{ include "alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: 'docs/support/playbook/manila/mariadb_high_running_threads.html'
     annotations:
       description: {{ include "fullName" . }} has more than 20 running threads.
       summary: {{ include "fullName" . }} running threads high.
