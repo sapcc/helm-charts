@@ -23,7 +23,6 @@ groups:
       * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
       == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"))
       < 3
-    for: 10m
     labels:
       severity: warning
       tier: k8s
@@ -40,7 +39,6 @@ groups:
       * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
       == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))
       == 0
-    for: 30m
     labels:
       severity: warning
       tier: k8s
@@ -55,7 +53,6 @@ groups:
     expr: sum
       by(pod, container) (rate(kube_pod_container_status_restarts_total{namespace="px"}[15m]))
       > 0
-    for: 30m
     labels:
       severity: info
       tier: k8s
@@ -68,7 +65,6 @@ groups:
 
   - alert: PXNodeNotReady
     expr: sum by (node)(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}) == 0
-    for: 5m
     labels:
       severity: critical
       tier: k8s
@@ -82,7 +78,6 @@ groups:
 
   - alert: PXNodeNotReadyFlapping
     expr: changes(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}[15m]) > 2
-    for: 30m
     labels:
       severity: warning
       tier: k8s
