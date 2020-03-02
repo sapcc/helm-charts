@@ -7,7 +7,21 @@ fi
 
 . /startup-scripts/functions.sh
 
-ipaddr=$(hostname -i | awk ' { print $1 } ')
+
+{{- $cluster_ips := "" }}
+
+{{ range $region, $ip := .Values.service.percona.regions -}}
+
+{{ if eq .Values.global.region $region }}
+# the node IP is a service IP
+ipaddr={{ $ip }}
+{{- end }}
+
+# the IP list of all nodes
+{{- $cluster_ips := (printf "%v,%v" $cluster_ips $ip) }}
+{{- end }}
+
+cluster_ips={{ $cluster_ips }}
 hostname=$(hostname)
 echo "I AM $hostname - $ipaddr"
 
@@ -15,8 +29,6 @@ echo "I AM $hostname - $ipaddr"
 if [ "${1:0:1}" = '-' ]; then
     CMDARG="$@"
 fi
-
-#cluster_join=$(resolveip -s "${K8S_SERVICE_NAME}" || echo "")
 
 {{- if eq .Values.service.percona.primary true }}
 
@@ -36,7 +48,7 @@ touch /var/log/mysqld.log
 chown mysql:mysql /var/log/mysqld.log
 write_password_file
 exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_name=$hostname \
---wsrep_cluster_address="gcomm://$cluster_join" --wsrep_sst_method=xtrabackup-v2 \
+--wsrep_cluster_address="gcomm://$cluster_ips" --wsrep_sst_method=xtrabackup-v2 \
 --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
 --wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" $CMDARG
 
