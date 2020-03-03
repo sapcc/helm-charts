@@ -3,6 +3,7 @@ groups:
   rules:
   - alert: PXBirdExporterAvailabilityMissingExporter
     expr: sum(up{app=~".+-pxrs-.+", app!~".*pxmon.*"} ==bool  1) != 12
+    for: 0s
     labels:
       severity: critical
       tier: k8s
@@ -71,6 +72,7 @@ groups:
 
   - alert: PXTransportRouterBgpDown
     expr: bird_protocol_up{name!~"kernel.", peer_type="TRANS"} == 0
+    for: 0s
     labels:
       severity: critical
       tier: net
@@ -85,6 +87,7 @@ groups:
 
   - alert: PXTransportRouterPrefixImportCountZero
     expr: (sum(bird_protocol_up{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) > 0 ) + on (app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TRANS"} <= 0 
+    for: 0s
     labels:
       severity: critical
       tier: net
@@ -98,6 +101,7 @@ groups:
 
   - alert: PXTransportRouterPrefixExportCountZero
     expr: (sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) <= 0)  + on  (app, ip_version, proto, pxdomain, pxinstance, pxservice)  group_right() (bird_protocol_prefix_export_count{name!~"kernel.", peer_type="TRANS"} <= 0)
+    for: 0s
     labels:
       severity: critical
       tier: k8s
@@ -125,6 +129,7 @@ groups:
   
   - alert: PXRouteTableSignificantChanges
     expr: floor((floor(delta(sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app)[30m:])) / sum(bird_protocol_prefix_import_count{peer_type="PLATF"} offset 30m) by (app)) * 100) > 25
+    for: 2m
     labels:
       severity: warn
       tier: net
