@@ -38,7 +38,7 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $service := index . 2 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) | include "utils.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) ("long") | include "utils.password_for_fixed_user_and_host" }}
 {{- end }}
 
 {{define "nova_console_endpoint_host_public"}}compute-console-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
@@ -109,19 +109,20 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $host := index . 2 }}
-    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host }}
+    {{- $template:= index . 3 }}
+    {{- derivePassword 1 $template $envAll.Values.global.master_password $user $host }}
 {{- end }}
 
 {{- define "identity.password_for_user" }}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) | include "utils.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) ("long")| include "utils.password_for_fixed_user_and_host" }}
 {{- end }}
 
 {{- define "utils.password_for_fixed_user_mysql"}}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
-    {{- tuple $envAll $user ( include "db_host_mysql" $envAll ) | include "utils.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll $user ( include "db_host_mysql" $envAll ) ("basic") | include "utils.password_for_fixed_user_and_host" }}
 {{- end }}
 
 {{- define "utils.password_for_user_mysql"}}
