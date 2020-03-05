@@ -1,0 +1,51 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "quay.fullname" . }}
+  labels:
+    chart: {{ template "quay.chart" . }}
+    release: {{ .Release.Name }}
+    quay-enterprise-component: app
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        release: {{ .Release.Name }}
+        quay-enterprise-component: app
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9092'
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      volumes:
+        - name: configvolume
+          secret:
+            secretName: quay-enterprise-config-secret
+        - name: ca-certs
+          hostPath:
+            path: /etc/ssl/certs/ca-certificates.crt
+        - name: sap-ca
+          hostPath:
+            path: /etc/ssl/certs/SAPGlobalRootCA.pem
+      containers:
+      - name: quay-enterprise-app
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        env:
+          - name: QE_K8S_NAMESPACE
+            value: {{ .Release.Namespace }}
+        ports:
+        - containerPort: 80
+        - containerPort: 9092
+        volumeMounts:
+        - name: configvolume
+          readOnly: false
+          mountPath: /conf/stack
+        - name: ca-certs
+          readOnly: true
+          mountPath: /venv/lib/python2.7/site-packages/requests/cacert.pem
+        - name: sap-ca
+          readOnly: true
+          mountPath: /usr/local/share/ca-certificates/sap_global_root_ca.crt
+      imagePullSecrets:
+        - name: {{ template "quay.fullname" . }}-pull-secret

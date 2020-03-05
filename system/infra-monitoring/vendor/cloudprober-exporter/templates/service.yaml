@@ -1,0 +1,41 @@
+{{- if .Values.enabled }}
+{{- $values := .Values -}}
+{{- $targets := .Values.metrics.targets -}}
+
+{{- range $i, $prober := .Values.probers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: cloudprober-exporter-{{$prober.name}}
+  labels:
+    app: cloudprober-exporter
+    release: "{{$.Release.Name}}"
+
+spec:
+  selector:
+    name: cloudprober-exporter-{{$prober.name}}
+  externalIPs:
+    - {{$prober.ip}}
+  ports:
+    - name: http
+      protocol: TCP
+      port: 1080
+      targetPort: 80
+    - name: metrics
+      protocol: TCP
+      port: 9313
+      targetPort: 9313
+    - name: iperf-server-tcp
+      protocol: TCP
+      port: 5201
+      targetPort: 5201
+    - name: iperf-server-udp
+      protocol: UDP
+      port: 5201
+      targetPort: 5201
+
+{{ end -}}
+{{ end -}}

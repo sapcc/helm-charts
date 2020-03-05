@@ -1,0 +1,156 @@
+{{- range $name, $v := .Values.workers }}
+{{- with $ }}
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: octavia-worker-{{ $name }}
+  labels:
+    app.kubernetes.io/name: octavia-worker-{{ $name }}
+    helm.sh/chart: {{ include "octavia.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: octavia-worker-{{ $name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: octavia-worker-{{ $name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
+        configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/port_1: "8001"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      containers:
+        - name: octavia-worker
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          resources:
+{{ toYaml .Values.pod.resources.worker | indent 12 }}
+          volumeMounts:
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia.conf
+              subPath: octavia.conf
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/esd/esd.json
+              subPath: esd.json
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            - name: octavia-etc-worker
+              mountPath: /etc/octavia/octavia-worker.conf
+              subPath: octavia-worker.conf
+              readOnly: true
+            - mountPath: /var/run/octavia
+              name: octavia-var
+          env:
+            - name: COMMAND
+              value: "octavia-worker --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia-worker.conf"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
+        - name: octavia-driver-agent
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          resources:
+{{ toYaml .Values.pod.resources.driver_agent | indent 12 }}
+          volumeMounts:
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia.conf
+              subPath: octavia.conf
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            - mountPath: /var/run/octavia
+              name: octavia-var
+          env:
+            - name: COMMAND
+              value: "octavia-driver-agent --config-file /etc/octavia/octavia.conf"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
+        - name: octavia-f5-status-manager
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          resources:
+{{ toYaml .Values.pod.resources.status_manager | indent 12 }}
+          volumeMounts:
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia.conf
+              subPath: octavia.conf
+              readOnly: true
+            - name: octavia-etc-worker
+              mountPath: /etc/octavia/octavia-worker.conf
+              subPath: octavia-worker.conf
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
+          env:
+            - name: COMMAND
+              value: "octavia-f5-status-manager --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia-worker.conf"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
+            - name: OS_F5_AGENT__PROMETHEUS_PORT
+              value: "8001"
+      volumes:
+        - name: octavia-etc
+          configMap:
+            name: octavia-etc
+        - name: octavia-etc-worker
+          configMap:
+            name: octavia-etc-{{ $name }}
+        - name: octavia-var
+          emptyDir: {}
+{{- end }}
+{{- end }}

@@ -1,0 +1,31 @@
+groups:
+- name: limes
+  rules:
+    ############################################################################
+    # for prometheus-global (used in Grafana dashboards "Capacity Overview" and
+    # "Capacity Details")
+
+    - record: global:limes_consolidated_cluster_capacity
+      expr: max(label_join(limes_cluster_capacity, "full_resource", "/", "service", "resource")) by (full_resource,os_cluster)
+
+    - record: global:limes_consolidated_domain_quota
+      expr: max(label_join(limes_domain_quota, "full_resource", "/", "service", "resource"))
+          by (full_resource,os_cluster,domain)
+
+    - record: global:limes_consolidated_domain_usage
+      expr: sum(max(label_join(limes_project_usage, "full_resource", "/", "service", "resource"))
+          by (full_resource,os_cluster,domain,project)) by (full_resource,os_cluster,domain)
+
+    - record: global:limes_consolidated_domain_physical_usage
+      expr: sum(max(label_join(limes_project_physical_usage, "full_resource", "/", "service", "resource"))
+          by (full_resource,os_cluster,domain,project)) by (full_resource,os_cluster,domain)
+
+    - record: global:limes_consolidated_unit_multiplier
+      expr: max(label_join(limes_unit_multiplier, "full_resource", "/", "service", "resource"))
+          by (full_resource)
+
+    ############################################################################
+    # for Maia
+
+    - record: limes_domain_usage
+      expr: sum without (project_id) (max by (os_cluster,domain,domain_id,project_id,service,resource) (limes_project_usage))

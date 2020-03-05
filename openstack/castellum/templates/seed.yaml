@@ -1,0 +1,41 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: castellum-seed
+
+spec:
+  requires:
+  - {{ .Values.global.keystoneNamespace }}/keystone-seed
+  - monsoon3/manila-seed
+
+  services:
+    - name:        castellum
+      type:        castellum
+      description: 'Vertical autoscaler'
+      enabled:     true
+      endpoints:
+        - region:    {{ quote .Values.global.region }}
+          interface: public
+          enabled:   true
+          url:       "https://castellum.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+
+  domains:
+    - name: Default
+      users:
+        - name: castellum
+          description: castellum Service
+          password: {{ quote .Values.castellum.service_user.password }}
+          role_assignments:
+            - project: service
+              role:    service
+
+    - name: ccadmin
+      projects:
+      - name: cloud_admin
+        role_assignments:
+          - user: castellum@Default
+            role: admin # to inspect Keystone projects and domains
+          - user: castellum@Default
+            role: cloud_resource_admin # to query and resize Limes quotas
+          - user: castellum@Default
+            role: cloud_sharedfilesystem_admin # to query and resize NFS shares

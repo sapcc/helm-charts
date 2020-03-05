@@ -1,0 +1,15 @@
+groups:
+- name: prometheus.alerts
+  rules:
+  - alert: InfrastructurePrometheusFederationFailed
+    expr: absent(up{job="prometheus-infra-collector"}) or up{job="prometheus-infra-collector"} == 0
+    for: 15m
+    labels:
+      meta: Infrastructure Prometheus (Scaleout) can't federate data from Infrastructure Prometheus Collector in {{ $labels.region }}
+      service: prometheus
+      severity: critical
+      tier: monitor
+      playbook: docs/devops/alert/prometheus/#infra_prom_federation_failed
+    annotations:
+      description: Infrastructure Prometheus (Scaleout) can't federate data from {{ $labels.region }}. This could mean the region is partly down!
+      summary: Infrastructure Prometheus (Scaleout) in {{ $labels.region }} is having trouble

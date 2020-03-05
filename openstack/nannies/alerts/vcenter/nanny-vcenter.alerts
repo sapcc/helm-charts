@@ -1,0 +1,237 @@
+groups:
+- name: openstack-nanny.alerts
+  rules:
+#   - alert: OpenstackVcenterNannyGhostVolume
+#     expr: sum(vcenter_nanny_ghost_volumes) by (kubernetes_name) > 0
+#     for: 5m
+#     labels:
+#       context: nanny
+#       service: nanny
+#       severity: ignore_info
+#       tier: os
+#     annotations:
+#       description: "The {{ $labels.kubernetes_name }} discovered a ghost volume. a good opportunity to search for the underlying bug now ..."
+#       summary: Vcenter nanny detected a ghost volume
+# 
+#   - alert: OpenstackVcenterNannyVolumeAttachmentInconsistency
+#     expr: sum(vcenter_nanny_volume_attachment_inconsistencies{region=~"staging|qa-de-1|ap-au-1|ap-ae-1|ap-jp-1|ap-jp-2|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3"}) > 1000
+#     for: 60m
+#     labels:
+#       context: nanny
+#       service: nanny
+#       severity: ignore_info
+#       tier: os
+#     annotations:
+#       description: "The {{ $labels.kubernetes_name }} discovered a volume with an inconsistent state across nova, cinder and the vcenter - please ignore for now, inconsistencies are now primarily handled by the vcenter-nanny-consistency"
+#       summary:  "The {{ $labels.kubernetes_name }} discovered a volume with an inconsistent state across nova, cinder and the vcenter - please ignore for now"
+
+  - alert: OpenstackVcenterNannyConsistencyVolumeAttachingForTooLong
+    expr: vcenter_nanny_consistency_cinder_volume_attaching_for_too_long > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+      playbook: 'docs/support/playbook/cinder/error_deleting.html'
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'attaching' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'attaching' - should fix itself"
+
+  - alert: OpenstackVcenterNannyConsistencyVolumeDetachingForTooLong
+    expr: vcenter_nanny_consistency_cinder_volume_detaching_for_too_long > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+      playbook: 'docs/support/playbook/cinder/error_deleting.html'
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'detaching' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'detaching' - should fix itself"
+
+  - alert: OpenstackVcenterNannyConsistencyVolumeCreatingForTooLong
+    expr: vcenter_nanny_consistency_cinder_volume_creating_for_too_long > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+      playbook: 'docs/support/playbook/cinder/error_deleting.html'
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'creating' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'creating' - should fix itself"
+
+  - alert: OpenstackVcenterNannyConsistencyVolumeDeletingForTooLong
+    expr: vcenter_nanny_consistency_cinder_volume_deleting_for_too_long > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+      playbook: 'docs/support/playbook/cinder/error_deleting.html'
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'deleting' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'deleting' - should fix itself"
+
+  - alert: OpenstackVcenterNannyConsistencyVolumeIsInStateReserved
+    expr: vcenter_nanny_consistency_cinder_volume_is_in_state_reserved > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+      playbook: 'docs/support/playbook/cinder/error_deleting.html'
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'reserved' - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'reserved' - should fix itself"
+
+  - alert: OpenstackVcenterNannyConsistencyVolumeAvailableWithAttachments
+    expr: vcenter_nanny_consistency_cinder_volume_available_with_attachments > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+      playbook: 'docs/support/playbook/cinder/error_deleting.html'
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'available' with attachments - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'available' with attachments - should fix itself"
+
+  - alert: OpenstackVcenterNannyConsistencyVolumeInUseWithoutSomeAttachments
+    expr: vcenter_nanny_consistency_cinder_volume_in_use_without_some_attachments > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with some attachments missing - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with some attachments missing - should be investigated ..."
+
+  - alert: OpenstackVcenterNannyConsistencyVolumeInUseWithoutAttachments
+    expr: vcenter_nanny_consistency_cinder_volume_in_use_without_attachments > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+      playbook: 'docs/support/playbook/cinder/error_deleting.html'
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with all attachments missing - this problem should be gone automatically in the next nanny run"
+      summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with some attachments missing - should fix itself"
+
+  - alert: OpenstackVcenterNannyConsistencyTooMuchToFix
+    expr: vcenter_nanny_consistency_cinder_volume_attachment_fix_count > vcenter_nanny_consistency_cinder_volume_attachment_max_fix_count
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} denied to fix some problems as there are too many of them - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} denied to fix some problems - should be investigated ..."
+
+  - alert: OpenstackVcenterNannyConsistencyTooMuchToFixByHand
+    expr: sum(vcenter_nanny_consistency_cinder_volume_in_use_without_some_attachments) > vcenter_nanny_consistency_cinder_volume_attachment_max_fix_count
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} found a lot of problems which will have to be fixed by hand - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} found lots of problems to manually fix - should be investigated ..."
+
+  - alert: OpenstackVcenterNannyConsistencyNoAutoFix
+    expr: vcenter_nanny_consistency_no_autofix > 0
+    for: 5m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} found some problems which will have to be fixed by hand - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} found some problems to manually fix - should be investigated ..."
+
+#  - alert: OpenstackVcenterNannyConsistencyInstanceVolumeZeroSize
+#    expr: vcenter_nanny_consistency_vcenter_volume_zero_size > 0
+#    for: 5m
+#    labels:
+#      context: nanny
+#      service: nanny
+#      severity: info
+#      tier: os
+#    annotations:
+#      description: "The {{ $labels.kubernetes_name }} discovered an instance with a zero size disk - should be investigated ..."
+#      summary: "The {{ $labels.kubernetes_name }} discovered an instance with a zero size disk - should be investigated ..."
+
+  - alert: OpenstackVcenterNannyConsistencyInstanceStateGray
+    expr: vcenter_nanny_consistency_vcenter_instance_state_gray > 0
+    for: 5m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered an instance in gray state - should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} discovered an instance in gray state - should be investigated ..."
+
+#  - alert: OpenstackVcenterNannyConsistencyVolumeBackingUuidMissing
+#    expr: vcenter_nanny_consistency_vcenter_volume_uuid_missing > 0
+#    for: 5m
+#    labels:
+#      context: nanny
+#      service: nanny
+#      severity: info
+#      tier: os
+#    annotations:
+#      description: "The {{ $labels.kubernetes_name }} discovered a volume with a missing backing uuid - should be investigated ..."
+#      summary: "The {{ $labels.kubernetes_name }} discovered a volume with a missing backing uuid - should be investigated ..."
+#
+#  - alert: OpenstackVcenterNannyConsistencyVolumeBackingUuidMismatch
+#    expr: vcenter_nanny_consistency_vcenter_volume_backing_uuid_mismatch > 0
+#    for: 5m
+#    labels:
+#      context: nanny
+#      service: nanny
+#      severity: info
+#      tier: os
+#    annotations:
+#      description: "The {{ $labels.kubernetes_name }} discovered a volume with a mismatch of the backing uuid - should be investigated ..."
+#      summary: "The {{ $labels.kubernetes_name }} discovered a volume with a mismatch of the backing uuid - should be investigated ..."
+
+#  - alert: OpenstackVcenterNannyConsistencyVolumeUuidMismatch
+#    expr: vcenter_nanny_consistency_vcenter_volume_uuid_mismatch > 0
+#    for: 5m
+#    labels:
+#      context: nanny
+#      service: nanny
+#      severity: info
+#      tier: os
+#    annotations:
+#      description: "The {{ $labels.kubernetes_name }} discovered an instance with a instanceUuid to name mismatch - should be investigated ..."
+#      summary: "The {{ $labels.kubernetes_name }} discovered an instance with a instanceUuid to name mismatch - should be investigated ..."
+
+  - alert: OpenstackVcenterNannyConsistencyInstanceNameMismatch
+    expr: vcenter_nanny_consistency_vcenter_instance_name_mismatch > 0
+    for: 5m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered an instance with a instance name to config.name mismatch - should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} discovered an instance with a instance name to config.name mismatch - should be investigated ..."

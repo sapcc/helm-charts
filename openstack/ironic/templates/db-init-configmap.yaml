@@ -1,4 +1,4 @@
-{{- if .Values.postgresql.postgresPassword }}
+{{- if eq .Values.postgresql.enabled true }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,10 +11,10 @@ metadata:
 data:
   db-init.sql: |
     CREATE DATABASE {{.Values.dbName}};
-    CREATE ROLE {{.Values.dbUser}}{{.Values.global.user_suffix}} WITH ENCRYPTED PASSWORD '{{.Values.global.dbPassword}}' LOGIN;
-    GRANT ALL PRIVILEGES ON DATABASE {{.Values.postgresql.postgresDatabase}} TO {{.Values.dbUser}};
+    CREATE ROLE {{.Values.global.dbUser}}{{.Values.global.user_suffix}} WITH ENCRYPTED PASSWORD '{{required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword}}' LOGIN;
+    GRANT ALL PRIVILEGES ON DATABASE {{.Values.postgresql.postgresDatabase}} TO {{.Values.global.dbUser}};
 
     CREATE DATABASE {{.Values.inspectordbName}};
-    CREATE ROLE {{.Values.inspectordbUser}} WITH ENCRYPTED PASSWORD '{{.Values.inspectordbPassword}}' LOGIN;
+    CREATE ROLE {{.Values.inspectordbUser}} WITH ENCRYPTED PASSWORD '{{required "A valid .Values.inspectordbPassword required!" .Values.inspectordbPassword}}' LOGIN;
     GRANT ALL PRIVILEGES ON DATABASE {{.Values.inspectordbName}} TO {{.Values.inspectordbUser}};
 {{- end }}

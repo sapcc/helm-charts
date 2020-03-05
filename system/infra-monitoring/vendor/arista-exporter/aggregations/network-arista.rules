@@ -1,0 +1,23 @@
+groups:
+- name: sentry
+  rules:      
+  - record: MetalIronicAristaMonTotalInfo
+    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 70)  by (instance, model, serial, table)
+      
+  - record: MetalIronicAristaMonTotalWarn
+    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 90)  by (instance, model, serial, table)
+      
+  - record: MetalIronicAristaMonEFPInfo
+    expr: sum(arista_tcam{table=~"EFP", feature !~ ""}) by (instance, model, serial, chip, table)  > 275
+
+  - record: MetalIronicAristaMonSwitchDownCritical
+    expr: count(arista_up == 0) by (instance)
+
+  - record: MetalIronicAristaMonDiscoveryWar
+    expr: count(up{job="baremetal/arista"} == 0) by (instance)
+
+  - record: MetalIronicAristaMonResponseWarn
+    expr: count(arista_response > 2) by (instance)
+
+  - record: MetalIronicAristaMonResponseCritical
+    expr: count(arista_response > 5 and arista_response < 20) by (instance)

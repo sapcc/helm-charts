@@ -1,0 +1,100 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: es-master
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+    component: elasticsearch
+    role: master
+  annotations:
+    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
+
+spec:
+  replicas: {{.Values.global.master_replicas}}
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: master
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: master
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: payload
+      volumes:
+        - name: es-etc
+          configMap:
+            name: es-master-etc
+      initContainers:
+      - name: sysctl
+        image: {{.Values.global.docker_repo}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
+        imagePullPolicy: IfNotPresent
+        command: ['sysctl', '-w', 'vm.max_map_count=262144']
+        securityContext:
+          runAsUser: 0
+          privileged: true
+      containers:
+      - name: es-master
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: {{.Values.global.docker_repo}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
+        imagePullPolicy: IfNotPresent
+#        command: ["/usr/local/bin/dumb-init", "/bin/bash", "-c", "while true; do sleep 1000; done"]
+        command: ["/usr/local/bin/dumb-init", "/bin/bash", "/es-etc/elasticsearch-start"]
+        resources:
+          requests:
+            memory: "5Gi"
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: node.name
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: KUBERNETES_CA_CERTIFICATE_FILE
+            value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          - name: NUMBER_OF_MASTERS
+            value: "2"
+          - name: NODE_MASTER
+            value: "true"
+          - name: NODE_DATA
+            value: "false"
+          - name: NODE_INGEST
+            value: "false"
+          - name: ES_JAVA_OPTS
+            value: "-XX:MaxRAM=5g -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+          - name: READONLYREST_ENABLE
+            value: "false"
+        volumeMounts:
+          - mountPath: /es-etc
+            name: es-etc
+          - mountPath: /data
+            name: es
+        ports:
+          - name: transport
+            containerPort: {{.Values.global.cluster_port}}
+            protocol: TCP
+          - name: dummymasterport
+            hostPort: {{.Values.master_dummy_port}}
+            hostIP: 127.0.0.1
+            containerPort: {{.Values.master_dummy_port}}
+  volumeClaimTemplates:
+  - metadata:
+      name: es
+      namespace: elk
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

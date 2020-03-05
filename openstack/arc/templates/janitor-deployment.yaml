@@ -8,7 +8,7 @@ metadata:
 
 spec:
   revisionHistoryLimit: 3
-  replicas: 1 
+  replicas: 1
   template:
     metadata:
       labels:
@@ -20,18 +20,18 @@ spec:
           imagePullPolicy: {{ .Values.api.image.pullPolicy }}
           args: [janitor]
           ports:
-            - name: janitor 
-              containerPort: 3000 
+            - name: janitor
+              containerPort: 3000
           readinessProbe:
             httpGet:
               path: /
-              port: 3000 
+              port: 3000
             initialDelaySeconds: 5
             timeoutSeconds: 1
           livenessProbe:
             httpGet:
               path: /
-              port: 3000 
+              port: 3000
             initialDelaySeconds: 20
             timeoutSeconds: 5
           env:
@@ -43,5 +43,3 @@ spec:
               value: {{ template "postgresql.fullname" . }}
             - name: DBPASSWORD
               valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
-
-

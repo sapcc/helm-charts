@@ -1,0 +1,72 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: logstash-external
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+  annotations:
+    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: logstash-external
+      annotations:
+        checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: elk-etc
+          configMap:
+            name: logstash-etc
+      containers:
+        - name: logstash-external
+          image: hub.global.cloud.sap/monsoon/elk-logstash:{{.Values.image_version}}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: netflow
+              containerPort: {{.Values.input_netflow_port}}
+              protocol: UDP
+            - name: syslogudp
+              containerPort: {{.Values.input_syslog_port}}
+              protocol: UDP
+            - name: syslogtcp
+              containerPort: {{.Values.input_syslog_port}}
+              protocol: TCP
+            - name: bigiplogsudp
+              containerPort: {{.Values.input_bigiplogs_port}}
+              protocol: UDP
+            - name: alertmanagertcp
+              containerPort: {{.Values.input_alertmanager_port}}
+              protocol: TCP
+          command:
+            - logstash
+          args:
+            - -f
+            - /elk-etc/logstash.conf
+            - --config.reload.automatic
+            - --path.settings
+            - /elk-etc/
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: elk-etc
+              mountPath: /elk-etc
+#          livenessProbe:
+#            exec:
+#              command:
+#                - /bin/false
+#            initialDelaySeconds: 60
+#            periodSeconds: 3600 # Restart once per hour in case of rabbitmq shutdown

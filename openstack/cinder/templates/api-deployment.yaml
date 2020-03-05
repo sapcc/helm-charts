@@ -27,17 +27,11 @@ spec:
 {{ tuple . "cinder" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "cinder" "api" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "cinder" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
       containers:
         - name: cinder-api
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-api:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
@@ -47,15 +41,24 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: "cinder-migration"
+              value: "{{ .Release.Name }}-migration"
             - name: DEPENDENCY_SERVICE
-              value: "cinder-postgresql,rabbitmq"
+{{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
+{{- end }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
             - name: PGAPPNAME
               valueFrom:
                 fieldRef:
@@ -72,6 +75,10 @@ spec:
               port: cinder-api
             initialDelaySeconds: 15
             timeoutSeconds: 5
+          {{- if .Values.pod.resources.api }}
+          resources:
+{{ toYaml .Values.pod.resources.api | indent 12 }}
+          {{- end }}
           ports:
             - name: cinder-api
               containerPort: {{.Values.cinderApiPortInternal }}
@@ -98,6 +105,10 @@ spec:
               mountPath: /etc/cinder/cinder_audit_map.yaml
               subPath: cinder_audit_map.yaml
               readOnly: true
+            - name: cinder-etc
+              mountPath: /etc/cinder/resource_filters.json
+              subPath: resource_filters.json
+              readOnly: true
             {{- if .Values.watcher.enabled }}
             - name: cinder-etc
               mountPath: /etc/cinder/watcher.yaml
@@ -105,14 +116,20 @@ spec:
               readOnly: true
             {{- end }}
         - name: statsd
-          image: prom/statsd-exporter:v0.5.0
+          image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.port_metrics }}
+          volumeMounts:
+            - name: cinder-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
       volumes:
         - name: etccinder
           emptyDir: {}

@@ -42,7 +42,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: {{ .Release.Name }}-postgresql
+              value: {{ .Release.Name }}-mariadb
             - name: DEPENDENCY_JOBS
               value: keystone-job-migration
             {{- if .Values.sentry.enabled }}
@@ -63,20 +63,26 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
+{{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
-              mountPath: /etc/keystone/keystone-paste.ini
-              subPath: keystone-paste.ini
+              mountPath: /etc/keystone/policy.yaml
+              subPath: policy.yaml
               readOnly: true
+{{- else }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.json
               subPath: policy.json
               readOnly: true
+{{- end }}
             - name: keystone-etc
               mountPath: /etc/keystone/logging.conf
               subPath: logging.conf
               readOnly: true
             - name: fernet
               mountPath: /fernet-keys
+              readOnly: true
+            - name: credential-keys
+              mountPath: /credential-keys
               readOnly: true
             - name: keystone-bin
               mountPath: /scripts
@@ -95,6 +101,10 @@ spec:
         - name: fernet
           secret:
             secretName: keystone-fernet
+            defaultMode: 0555
+        - name: credential-keys
+          secret:
+            secretName: keystone-credential-keys
             defaultMode: 0555
 
 {{ end -}}

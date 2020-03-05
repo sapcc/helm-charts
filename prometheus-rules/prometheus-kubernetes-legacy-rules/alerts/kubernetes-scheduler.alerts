@@ -1,0 +1,28 @@
+groups:
+- name: kubernetes-scheduler.alerts
+  rules:
+  - alert: KubernetesSchedulerDown
+    expr: count(up{job="kube-system/scheduler"} == 1) == 0
+    for: 5m
+    labels:
+      tier: k8s
+      service: k8s
+      severity: warning
+      context: scheduler
+      dashboard: kubernetes-health
+    annotations:
+      summary: Scheduler is down
+      description: No scheduler is running. New pods are not being assigned to nodes!
+
+  - alert: KubernetesSchedulerScrapeMissing
+    expr: absent(up{job="kube-system/scheduler"})
+    for: 1h
+    labels:
+      tier: k8s
+      service: k8s
+      severity: info
+      context: scheduler
+      dashboard: kubernetes-health
+    annotations:
+      description: Scheduler in failed to be scraped
+      summary: Scheduler cannot be scraped

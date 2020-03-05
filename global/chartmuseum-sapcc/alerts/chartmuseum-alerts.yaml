@@ -1,0 +1,28 @@
+groups:
+  - name: chartmuseum.alerts
+    rules:
+      - alert: ChartmuseumDown
+        expr: sum(up{app="chartmuseum"}) == 0
+        for: 15m
+        labels:
+          severity: warning
+          tier: k8s
+          service: chartmuseum
+          context: availability
+          meta: 'Chartmuseum is down'
+        annotations:
+          description: Chartmuseum is down. Deployments relying on Helm charts will fail to retrieve them.
+          summary: Chartmuseum down.
+
+      - alert: ChartmuseumAPI5xxErrors
+        expr: sum by (code) (rate(chartmuseum_requests_total{code=~"5.."}[5m])) > 0
+        for: 15m
+        labels:
+          severity: warning
+          tier: k8s
+          service: chartmuseum
+          context: availability
+          meta: 'Many 5xx responses from Chartmuseum API'
+        annotations:
+          description: Chartmuseum API returns many 5xx responses.
+          summary: Chartmuseum not healthy.

@@ -1,0 +1,38 @@
+groups:
+- name: vice-president.alerts
+  rules:
+  - alert: KubernetesVicePresidentRunningOutOfSymantecTokens
+    expr: vice_president_token_count_remaining < 50
+    for: 1h
+    labels:
+      context: availability
+      service: vice-president
+      severity: critical
+      tier: k8s
+    annotations:
+      description: Almost of Symantec tokens. Only {{ $value }} more certificates can be requested.
+      summary: Running out of Symantec tokens
+
+  - alert: KubernetesVicePresidentRunningOutOfSymantecTokens
+    expr: vice_president_token_count_remaining < 70
+    for: 1h
+    labels:
+      context: availability
+      service: vice-president
+      severity: warning
+      tier: k8s
+    annotations:
+      description: Running out of Symantec tokens. Only {{ $value }} more certificates can be requested.
+      summary: Running out of Symantec tokens
+
+  - alert: KubernetesVicePresidentSymantecSSOCertExpires
+    expr: (vice_president_sso_certificate_expires - time()) / 60 / 60 / 24 < 30
+    for: 1h
+    labels:
+      context: availability
+      service: vice-president
+      severity: warning
+      tier: k8s
+    annotations:
+      description: The Symantec VICE certificate expires in 30 days. Certificate management will not be possible if the SSO certificate is not renewed in time.
+      summary: Symantec VICE SSO certificate expires in 30d

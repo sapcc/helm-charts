@@ -1,0 +1,57 @@
+groups:
+- name: elk.alerts
+  rules:
+  - alert: ElkPredictOutOfDiskSpace
+    expr: elasticsearch_filesystem_data_free_bytes{name=~"es-data.*"} * 100 / elasticsearch_filesystem_data_size_bytes{name=~"es-data.*"} < 10
+    for: 60m
+    labels:
+      context: diskspace
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html#elkpredictoutofdiskspace-alert
+    annotations:
+      description: '{{ $labels.region }} The disk usage for node {{ $labels.name }} is above 90% now.
+                   Please consider cleaning up elasticsearch or lower the retention period for the logs.'
+      summary: 'ELK in {{ $labels.region }} might run out of disk space'
+
+  - alert: ElkLogsClusterRed
+    expr: elasticsearch_cluster_health_status{color="red"} == 1
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html
+    annotations:
+      description: 'ELK cluster {{ $labels.cluster }} in {{ $labels.region }} is RED. Please check all nodes.'
+      summary: 'ELK {{ $labels.cluster }} cluster in {{ $labels.region }} is RED'
+
+  - alert: ElkClusterYellow
+    expr: elasticsearch_cluster_health_status{cluster="elkelasticsearch",color="yellow"}
+      == 1
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html
+    annotations:
+      description: 'ELK cluster {{ $labels.cluster }} in {{ $labels.region }} is YELLOW. Please check all nodes.
+        nodes one or more are missing.'
+      summary: 'ELK {{ $labels.cluster }} cluster in {{ $labels.region }} is YELLOW'
+
+  - alert: ElkEsExporterMissing
+    expr: up{job=~"es-exporter-logs"} == 0
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html
+    annotations:
+      description: 'es-exporter in {{ $labels.region }} is missing.'
+      summary: 'es-exporter in {{ $labels.region }} is missing.'

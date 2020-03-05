@@ -1,0 +1,162 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: domain-cp-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+    - {{.Values.global.keystoneNamespace}}/keystone-seed
+
+  domains:
+  - name: cp
+    description: Cloud Platform
+
+    projects:
+    - name: admin
+      description: 'cp Administrators Project'
+    - name: cp-net-infra
+      description: 'Home of address-scopes, subnetpools, external networks, subnets for the cp domain'
+    - name: cp-shared-infra
+      description: 'Home of private networks, backup networks and routers for the cp domain'
+    - name: support
+      description: 'Support Teams'
+    - name: api_support
+      description: 'Core API Support'
+      parent: support
+    - name: compute_support
+      description: 'Compute Support'
+      parent: support
+    - name: storage_support
+      description: 'Storage Support'
+      parent: support
+    - name: network_support
+      description: 'Network Support'
+      parent: support
+    - name: service_desk
+      description: 'Service Desk'
+      parent: support
+
+    groups:
+    - name: CP_API_SUPPORT
+      role_assignments:
+      - domain: cp
+        role: admin
+      - domain: cp
+        role: cloud_identity_viewer
+        inherited: true
+      - project: api_support
+        role: admin
+      - project: api_support
+        role: member
+
+    - name: CP_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: cp
+        role: cloud_identity_viewer
+        inherited: true
+      - project: compute_support
+        role: admin
+      - project: compute_support
+        role: member
+
+    - name: CP_STORAGE_SUPPORT
+      role_assignments:
+      - domain: cp
+        role: cloud_identity_viewer
+        inherited: true
+      - project: storage_support
+        role: admin
+      - project: storage_support
+        role: member
+
+    - name: CP_NETWORK_SUPPORT
+      role_assignments:
+      - domain: cp
+        role: cloud_identity_viewer
+        inherited: true
+      - project: network_support
+        role: admin
+      - project: network_support
+        role: member
+
+    - name: CP_SERVICE_DESK
+      role_assignments:
+      - domain: cp
+        role: cloud_identity_viewer
+        inherited: true
+      - project: service_desk
+        role: admin
+      - project: service_desk
+        role: member
+
+    - name: CP_DOMAIN_MEMBERS
+      role_assignments:
+      - domain: cp
+        role: member
+
+    - name: CP_DOMAIN_ADMINS
+      role_assignments:
+      - domain: cp
+        role: admin
+      - domain: cp
+        role: member
+      - project: admin
+        role: admin
+      - project: admin
+        role: member
+      - project: support
+        role: member
+      - project: support
+        role: admin
+
+    - name: CP_DOMAIN_NETWORK_ADMINS
+      role_assignments:
+      - project: cp-net-infra
+        role: admin
+      - project: cp-shared-infra
+        role: admin
+    - name: CP_DOMAIN_RESOURCE_ADMINS
+      role_assignments:
+      - domain: cp
+        role: admin
+
+    config:
+      identity:
+        driver: {{ .Values.ldapDriver | default "cc_ldap" }}
+      ldap:
+        page_size: 1000
+        use_tls: false
+        tls_req_cert: allow
+        url: {{ .Values.ldapUrl | quote }}
+        user: {{ .Values.ldapUser | quote }}
+        password: {{ required "A valid .Values.ldapPassword required!" .Values.ldapPassword | quote }}
+        suffix: {{ .Values.ldapSuffix | quote }}
+        query_scope: one
+        user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
+        user_objectclass: user
+        user_id_attribute: cn
+        user_name_attribute: name
+        user_mail_attribute: mail
+        user_pass_attribute: userPassword
+        user_description_attribute: displayName
+        user_enabled_attribute: userAccountControl
+        user_enabled_mask: 2
+        user_enabled_default: "512"
+        user_attribute_ignore: default_project_id
+        user_filter: (memberOf=CN=CP_DOMAIN_USERS,OU=CP,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }})
+        group_objectclass: group
+        group_id_attribute: cn
+        group_name_attribute: name
+        group_desc_attribute: description
+        group_member_attribute: member
+        group_tree_dn: OU=CP,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
+        use_pool: {{ .Values.ldapUsePool  }}
+        pool_size: 100
+        use_auth_pool: {{ .Values.ldapUseAuthPool }}
+        auth_pool_size: 100
+        auth_pool_connection_lifetime: 60
+        debug_level: {{ .Values.ldapDebugLevel }}

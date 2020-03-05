@@ -1,0 +1,25 @@
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+metadata:
+  name: sysctl
+  namespace: kube-system
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: sysctl
+    spec:
+      hostNetwork: true
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "network"
+        effect: "NoSchedule"
+      containers:
+        - image: sapcc/sysctl:latest
+          name: sysctl
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true

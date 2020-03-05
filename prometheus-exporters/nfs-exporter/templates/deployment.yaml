@@ -1,0 +1,56 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nfs-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: nfs-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+    spec:
+      containers:
+      - name: nfs-exporter
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag}}"
+        env:
+          - name: ACI_USER
+            valueFrom:
+              secretKeyRef:
+                name: nfs-exporter
+                key: aciUser
+          - name: ACI_PASS
+            valueFrom:
+              secretKeyRef:
+                name: nfs-exporter
+                key: aciPass
+        args:
+          - --aci={{ .Values.aci.apic_hosts }}
+          {{- range $i, $ip := .Values.ips }}
+          - --ip={{ $ip }}
+          {{- end }}
+        ports:
+          - name: health
+            containerPort: 8087
+          - name: metrics
+            containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8087
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8087
+          initialDelaySeconds: 5
+          timeoutSeconds: 3

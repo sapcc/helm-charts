@@ -1,0 +1,192 @@
+# Default values for prometheus-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## Provide a name in place of prometheus-operator for `app:` labels
+##
+nameOverride: ""
+
+## Provide a name to substitute for the full names of resources
+##
+fullnameOverride: ""
+
+## Labels to apply to all resources
+##
+commonLabels: {}
+# scmhash: abc123
+# myLabel: aakkmd
+
+##
+global:
+  rbac:
+    create: false
+    pspEnabled: false
+
+  ## Reference to one or more secrets to be used when pulling images
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  imagePullSecrets: []
+  # - name: "image-pull-secret"
+
+## Manages Prometheus and Alertmanager components
+##
+prometheusOperator:
+  enabled: true
+
+  ## Service account for Alertmanager to use.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+  ##
+  serviceAccount:
+    create: true
+    name: ""
+
+  ## Configuration for Prometheus operator service
+  ##
+  service:
+    annotations: {}
+    labels: {}
+    clusterIP: ""
+
+  ## Port to expose on each node
+  ## Only used if service.type is 'NodePort'
+  ##
+    nodePort: 38080
+
+  ## Additional ports to open for Prometheus service
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#multi-port-services
+  ##
+    additionalPorts: []
+    #  - name: thanos-cluster
+    #    port: 10900
+    #    nodePort: 30111
+
+  ## Loadbalancer IP
+  ## Only use if service.type is "loadbalancer"
+  ##
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+
+  ## Service type
+  ## NodepPort, ClusterIP, loadbalancer
+  ##
+    type: ClusterIP
+
+    ## List of IP addresses at which the Prometheus server service is available
+    ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
+    ##
+    externalIPs: []
+
+  ## Deploy CRDs used by Prometheus Operator.
+  ##
+  createCustomResource: false
+
+  ## Customize CRDs API Group
+  crdApiGroup: monitoring.coreos.com
+
+  ## Attempt to clean up CRDs created by Prometheus Operator.
+  ##
+  cleanupCustomResource: false
+
+  ## Labels to add to the operator pod
+  ##
+  podLabels: {}
+
+  ## Assign a PriorityClassName to pods if set
+  # priorityClassName: ""
+
+  ## Define Log Format
+  # Use logfmt (default) or json-formatted logging
+  # logFormat: logfmt
+
+  ## Decrease log verbosity to errors only
+  # logLevel: error
+
+  ## If true, the operator will create and maintain a service for scraping kubelets
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/helm/prometheus-operator/README.md
+  ##
+  kubeletService:
+    enabled: true
+    namespace: kube-system
+
+  ## Create a servicemonitor for the operator
+  ##
+  serviceMonitor:
+    ## Scrape interval. If not set, the Prometheus default scrape interval is used.
+    ##
+    interval: ""
+    selfMonitor: true
+
+  ## Resource limits & requests
+  ##
+  resources: {}
+  # limits:
+  #   cpu: 200m
+  #   memory: 200Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 100Mi
+
+  ## Define which Nodes the Pods are scheduled on.
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+
+  ## Tolerations for use with node taints
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  # - key: "key"
+  #   operator: "Equal"
+  #   value: "value"
+  #   effect: "NoSchedule"
+
+  ## Assign the prometheus operator to run on specific nodes
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  ##
+  affinity: {}
+  # requiredDuringSchedulingIgnoredDuringExecution:
+  #   nodeSelectorTerms:
+  #   - matchExpressions:
+  #     - key: kubernetes.io/e2e-az-name
+  #       operator: In
+  #       values:
+  #       - e2e-az1
+  #       - e2e-az2
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+
+  ## Prometheus-operator image
+  ##
+  image:
+    repository: quay.io/coreos/prometheus-operator
+    tag: v0.29.0
+    pullPolicy: IfNotPresent
+
+  ## Configmap-reload image to use for reloading configmaps
+  ##
+  configmapReloadImage:
+    repository: quay.io/coreos/configmap-reload
+    tag: v0.0.1
+
+  ## Prometheus-config-reloader image to use for config and rule reloading
+  ##
+  prometheusConfigReloaderImage:
+    repository: quay.io/coreos/prometheus-config-reloader
+    tag: v0.29.0
+
+  ## Set the prometheus config reloader side-car CPU limit. If unset, uses the prometheus-operator project default
+  ##
+  # configReloaderCpu: 100m
+
+  ## Set the prometheus config reloader side-car memory limit. If unset, uses the prometheus-operator project default
+  ##
+  # configReloaderMemory: 25Mi
+
+  ## Hyperkube image to use when cleaning up
+  ##
+  hyperkubeImage:
+    repository: k8s.gcr.io/hyperkube
+    tag: v1.12.1
+    pullPolicy: IfNotPresent

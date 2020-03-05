@@ -1,0 +1,65 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: octavia-housekeeping
+  labels:
+    app.kubernetes.io/name: octavia-housekeeping
+    helm.sh/chart: {{ include "octavia.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: octavia-housekeeping
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: octavia-housekeeping
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
+        configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      containers:
+        - name: octavia-f5-housekeeping
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          resources:
+{{ toYaml .Values.pod.resources.housekeeping | indent 12 }}
+          volumeMounts:
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia.conf
+              subPath: octavia.conf
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
+          env:
+            - name: COMMAND
+              value: "octavia-f5-housekeeping --config-file /etc/octavia/octavia.conf"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
+      volumes:
+        - name: octavia-etc
+          configMap:
+            name: octavia-etc

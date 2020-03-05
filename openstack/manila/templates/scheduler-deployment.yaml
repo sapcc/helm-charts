@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: manila-scheduler
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-scheduler:{{.Values.imageVersionManilaApi}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -37,10 +37,8 @@ spec:
               value: "manila-scheduler --config-file /etc/manila/manila.conf"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: "manila-migration"
             - name: DEPENDENCY_SERVICE
-              value: "manila-postgresql,manila-rabbitmq"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -80,6 +78,10 @@ spec:
               mountPath: /etc/manila/logging.ini
               subPath: logging.ini
               readOnly: true
+          {{- if .Values.pod.resources.scheduler }}
+          resources:
+{{ toYaml .Values.pod.resources.scheduler | indent 13 }}
+          {{- end }}
       hostname: manila-scheduler
       volumes:
         - name: etcmanila

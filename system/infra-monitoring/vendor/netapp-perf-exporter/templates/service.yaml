@@ -1,0 +1,21 @@
+{{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  {{ $app.fullname }}
+spec:
+  selector:
+    app:  {{ $app.fullname }}
+  ports:
+  - name:  prometheus
+    port:  {{ $port }}
+    targetPort: {{ $port }}
+{{- end }}
+{{- end }}
+{{- end }}

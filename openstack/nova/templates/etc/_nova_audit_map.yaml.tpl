@@ -78,6 +78,9 @@ resources:
         api_name: os-quota-class-sets
         el_type_uri: compute/quota-class
     servers:
+        payloads:
+            exclude:
+              - adminPass
         custom_actions:
             # server actions
             addFloatingIp: update/add/floatingip

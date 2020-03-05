@@ -1,0 +1,48 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Chart.Name }}-seed
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-tempest-seed
+  - manila-seed
+  domains:
+  - name: tempest
+    projects:
+    - name: admin
+      role_assignments:
+        - user: admin
+          role: cloud_sharedfilesystem_admin
+        - user: admin
+          role: member
+        - user: admin@Default
+          role: cloud_sharedfilesystem_admin
+    - name: tempest1
+      role_assignments:
+        - user: admin@Default
+          role: cloud_sharedfilesystem_admin
+    - name: tempest2
+      role_assignments:
+        - user: admin@Default
+          role: cloud_sharedfilesystem_admin
+    users:
+    - name: tempestuser1
+      role_assignments:
+      - project: tempest1
+        role: sharedfilesystem_admin
+      - project: tempest1
+        role: member
+      - domain: tempest
+        role: sharedfilesystem_admin
+    - name: tempestuser2
+      role_assignments:
+      - project: tempest2
+        role: sharedfilesystem_admin
+      - project: tempest2
+        role: member
+      - domain: tempest
+        role: sharedfilesystem_admin

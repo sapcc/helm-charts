@@ -1,0 +1,27 @@
+{{- if .Values.cell2.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nova-cell2-db-maintain
+  labels:
+    system: openstack
+    type: configuration
+    component: nova
+
+data:
+  db-maintain.sql: |
+    \set ON_ERROR_STOP off {{/* We even expect the CREATE to fail, except for the first run */}}
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+    CREATE ROLE {{.Values.cell2dbUser}} WITH ENCRYPTED PASSWORD '{{ .Values.cell2dbPassword | default (tuple . .Values.cell2dbUser | include "postgres.password_for_user" ) }}' LOGIN;
+
+    CREATE DATABASE {{.Values.cell2dbName}} WITH OWNER {{.Values.cell2dbUser}};
+    \set ON_ERROR_STOP on
+    ALTER ROLE {{ .Values.postgresql.user }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.postgresPassword  | default (tuple . .Values.postgresql.user | include "postgres.password_for_user") }}';
+
+    ALTER ROLE {{ .Values.cell2dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.cell2dbPassword | default (tuple . .Values.cell2dbUser | include "postgres.password_for_user" ) }}';
+
+    ALTER DATABASE {{ .Values.cell2dbName }} OWNER TO {{ .Values.cell2dbUser }};
+
+    GRANT ALL PRIVILEGES ON DATABASE {{.Values.cell2dbName}} TO {{.Values.cell2dbUser}};
+{{- end }}

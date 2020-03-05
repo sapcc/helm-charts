@@ -1,0 +1,39 @@
+{{- if .Release.IsUpgrade }}
+{{- if not .Values.skipRegionCheck }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keystone-job-pre-upgrade
+  labels:
+    app: {{ template "fullname" . }}
+    component: keystone
+    type: config
+  annotations:
+    "helm.sh/hook": "pre-upgrade"
+    "helm.sh/hook-weight": "-42"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: keystone
+{{- end }}
+      restartPolicy: Never
+      containers:
+        - name: check
+          image: hub.global.cloud.sap/monsoon/kube-python:1.0.0
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-c"]
+          args: ["/scripts/region-check.py --namespace {{ .Release.Namespace }} --region {{ .Values.global.region }} --suffix {{ .Values.global.tld }}"]
+          volumeMounts:
+            - mountPath: /scripts
+              name: scripts
+              readOnly: true
+      volumes:
+        - name: scripts
+          configMap:
+            name: keystone-bin
+            defaultMode: 0755
+{{- end }}
+{{- end }}

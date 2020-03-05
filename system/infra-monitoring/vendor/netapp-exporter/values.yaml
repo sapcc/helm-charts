@@ -1,0 +1,36 @@
+harvest:
+  name: netapp-harvest
+  enabled: false
+  harvest:
+    image: mx3d/netapp-harvest:latest
+    memory: 300Mi
+    cpu: 200m
+  duplicator:
+    image: hub.global.cloud.sap/d067954/gotee:v201911113011-9a29981
+    memory: 100Mi
+    cpu: 20m
+  graphiteExporter:
+    image: prom/graphite-exporter:v0.4.2
+    memory: 400Mi
+    cpu: 100m
+
+graphite:
+  replicas: 0
+  name: netapp-graphite
+  image: hopsoft/graphite-statsd:v0.9.15-phusion0.9.18
+  memory: 10000Mi
+  cpu: 0.2
+  cpulimit: 0.4
+
+api_exporter:
+  name: netapp-api-exporter
+  enabled: true
+  image: hub.global.cloud.sap/monsoon/netapp-api-exporter
+  imageVersion: a76914a
+  memory: 200Mi
+  cpu: 100m
+
+metrics:
+  scrape: true
+  port: 9108
+  targets: infra-collector

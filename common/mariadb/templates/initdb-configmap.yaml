@@ -1,0 +1,18 @@
+{{- if .Values.initdb_configmap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-initdb
+  labels:
+    app: {{ template "fullName" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: configuration
+    component: database
+
+data:
+  init.sh: |
+{{ include (print .Template.BasePath "/initdb/_init.sh.tpl") . | indent 4 }}
+{{- end }}

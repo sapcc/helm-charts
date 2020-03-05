@@ -19,6 +19,9 @@ ports:
   public: 5672
   management: 15672
 
+# when not empty, exposes the RabbitMQ service to the outside of the cluster on these IPs
+externalIPs: []
+
 users:
   default:
     user: rabbitmq
@@ -35,13 +38,16 @@ persistence:
   # existingClaim: claimName
 
 resources:
-  enabled: false
-  limits:
-    memory: 128Mi
-    cpu: 500m
   requests:
-    memory: 128Mi
-    cpu: 500m
+    memory: 512Mi
+    cpu: 800m
+  limits:
+    cpu: 1000m
+
+## Affinity for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
+nodeAffinity: {}
 
 metrics:
   enabled: true
@@ -51,13 +57,25 @@ metrics:
   password: null
   port: 9150
   resources:
-    enabled: false
     limits:
       memory: 128Mi
-      cpu: 500m
+      cpu: 150m
     requests:
-      memory: 128Mi
-      cpu: 500m
+      memory: 64Mi
+      cpu: 100m
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: true
+
+  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  prometheus: openstack
+
+  # The tier of the alert.
+  tier: os
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:
 
 replicas: 1
 

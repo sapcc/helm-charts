@@ -42,12 +42,34 @@ spec:
 
           imagePullPolicy: {{ .Values.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "10") }}
+          - /usr/local/bin/kubernetes-entrypoint
+{{- else }}
+          - /bin/dumb-init
+          args:
+            - /bin/sh
+            - /scripts/start
+{{- end }}
           env:
+{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "10") }}
             - name: COMMAND
               value: "bash /scripts/start"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+{{- end }}
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+            {{- if .Values.sentry.dsn }}
+              value: {{ .Values.sentry.dsn | quote}}
+            {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: seeder.DSN
+            {{- end }}
+            {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
             - mountPath: /scripts
               name: scripts

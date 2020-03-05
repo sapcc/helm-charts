@@ -1,0 +1,251 @@
+{{ range .Values.teams }}
+{{ if eq .type "standalone" }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ $.Values.worker.name }}-{{ .name }}
+  labels:
+    app: {{ $.Values.worker.name }}-{{ .name }}
+    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ $.Release.Name }}"
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ $.Values.worker.name }}-{{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $.Values.worker.name }}-{{ .name }}
+        release: "{{ $.Release.Name }}"
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: {{ .nodePool | quote }}
+      tolerations:
+      - key: "team"
+        operator: Equal
+        value: {{ .name | quote }}
+        effect: "NoSchedule"
+      serviceAccountName: concourse-worker
+      initContainers:
+      # create volume
+      - name: {{ $.Values.worker.name }}-{{ .name }}-create-work-dir
+        image: "hub.global.cloud.sap/d074427/openstack-btrfs:latest"
+        imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
+        command:
+        - /bin/sh
+        args:
+        - -ce
+        - |-
+          VOLUME_NAME=${NODE_NAME}-{{ $.Values.worker.name }}-{{ .name }}-work-dir
+          if [ ! $(openstack volume list --name  ${VOLUME_NAME} -f value) ]; then
+            openstack volume create \
+              --availability-zone ${WORK_DIR_AZ} \
+              --size ${WORK_DIR_SIZE_GB} \
+              --property "concourse-team={{ .name }}" \
+              --property "concourse-worker=${NODE_NAME}" \
+              ${VOLUME_NAME}
+          fi
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: OS_AUTH_URL
+          value: {{ $.Values.openstack.auth_url }}
+        - name: OS_AUTH_TYPE
+          value: {{ $.Values.openstack.auth_type }}
+        - name: OS_APPLICATION_CREDENTIAL_ID
+          value: {{ $.Values.openstack.application_credential_id }}
+        - name: OS_APPLICATION_CREDENTIAL_SECRET
+          value: {{ $.Values.openstack.application_credential_secret }}
+        - name: WORK_DIR_AZ
+          value: {{ .az }}
+        - name: WORK_DIR_SIZE_GB
+          value: {{ $.Values.worker.workDirVolumeSizeGb | quote }}
+      # attach volume to node
+      - name: {{ $.Values.worker.name }}-{{ .name }}-attach-work-dir
+        image: "hub.global.cloud.sap/d074427/openstack-btrfs:latest"
+        imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
+        command:
+        - /bin/sh
+        args:
+        - -ce
+        - |-
+          VOLUME_NAME=${NODE_NAME}-{{ $.Values.worker.name }}-{{ .name }}-work-dir
+          if [ ! $(openstack volume list --name  ${VOLUME_NAME} -f value | grep in-use) ]; then
+            openstack server add volume ${NODE_NAME} ${VOLUME_NAME}
+          fi
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: OS_AUTH_URL
+          value: {{ $.Values.openstack.auth_url }}
+        - name: OS_AUTH_TYPE
+          value: {{ $.Values.openstack.auth_type }}
+        - name: OS_APPLICATION_CREDENTIAL_ID
+          value: {{ $.Values.openstack.application_credential_id }}
+        - name: OS_APPLICATION_CREDENTIAL_SECRET
+          value: {{ $.Values.openstack.application_credential_secret }}
+      # format volume and mount
+      - name: {{ $.Values.worker.name }}-{{ .name }}-format-work-dir
+        image: "hub.global.cloud.sap/d074427/openstack-btrfs:latest"
+        imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
+        securityContext:
+          privileged: true
+        command:
+        - /bin/sh
+        args:
+        - -ce
+        - |-
+          VOLUME_NAME=${NODE_NAME}-{{ $.Values.worker.name }}-{{ .name }}-work-dir
+          VOLUME_ID=`openstack volume show ${VOLUME_NAME} -f value -c id`
+          VOLUME_PATH=/root/dev/disk/by-id/wwn-0x${VOLUME_ID//-/}
+          MOUNT_PATH=/root{{ $.Values.concourse.concourse.worker.workDir }}
+          if ! blkid $VOLUME_PATH | grep -q btrfs ; then
+            mkfs.btrfs -f $VOLUME_PATH
+          fi
+          if ! df -h | grep $MOUNT_PATH ; then
+            mkdir -p $MOUNT_PATH
+            mount -t btrfs $VOLUME_PATH $MOUNT_PATH
+          fi
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: OS_AUTH_URL
+          value: {{ $.Values.openstack.auth_url }}
+        - name: OS_AUTH_TYPE
+          value: {{ $.Values.openstack.auth_type }}
+        - name: OS_APPLICATION_CREDENTIAL_ID
+          value: {{ $.Values.openstack.application_credential_id }}
+        - name: OS_APPLICATION_CREDENTIAL_SECRET
+          value: {{ $.Values.openstack.application_credential_secret }}
+        volumeMounts:
+        - name: root-dir
+          mountPath: /root
+          mountPropagation: Bidirectional
+      containers:
+      - name: {{ $.Values.worker.name }}-{{ .name }}
+        image: "{{ $.Values.concourse.image }}:{{ $.Values.concourse.imageTag }}"
+        imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
+        command:
+        - dumb-init
+        args:
+        - /bin/sh
+        - -ec
+        - |-
+          update-ca-certificates
+          exec /usr/local/concourse/bin/concourse worker --name=${NODE_NAME}
+        livenessProbe:
+          failureThreshold: 5
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 3
+          httpGet:
+            path: /
+            port: 8888
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - "/land-worker/pre-stop.sh"
+        env:
+        {{- if ne .name "main" }}
+        - name: CONCOURSE_TEAM
+          value: {{ .name | quote }}
+        {{- end }}
+        - name: CONCOURSE_BIND_DEBUG_PORT
+          value: "9099"
+        - name: CONCOURSE_WORK_DIR
+          value: {{ $.Values.concourse.concourse.worker.workDir }}
+        - name: CONCOURSE_BIND_IP
+          value: "127.0.0.1"
+        - name: CONCOURSE_BIND_PORT
+          value: "7777"
+        - name: CONCOURSE_LOG_LEVEL
+          value: "info"
+        - name: CONCOURSE_TSA_HOST
+          value: "concourse-web:2222"
+        - name: CONCOURSE_TSA_PUBLIC_KEY
+          value: "/worker-keys/host_key.pub"
+        - name: CONCOURSE_TSA_WORKER_PRIVATE_KEY
+        {{- if eq .name "main" }}
+          value: "/worker-keys/worker_key"
+        {{- else }}
+          value: "/worker-keys/team_worker_key"
+        {{- end }}
+        - name: CONCOURSE_GARDEN_BIND_PORT
+          value: "7777"
+        - name: CONCOURSE_BAGGAGECLAIM_DRIVER
+          value: "btrfs"
+        - name: LIVENESS_PROBE_FATAL_ERRORS
+          value: |-
+            guardian.api.garden-server.create.failed
+            baggageclaim.api.volume-server.create-volume-async.failed-to-create
+        - name: CONCOURSE_CERTS_DIR
+          value: /etc/ssl/certs
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: CONCOURSE_GARDEN_DNS_PROXY_ENABLE
+          value: "false"
+{{- if $.Values.worker.env }}
+{{ toYaml $.Values.worker.env | indent 8 }}
+{{- end -}}
+{{ if $.Values.worker.resources }}
+        resources:
+{{ toYaml $.Values.worker.resources | indent 10 }}
+{{- end -}}
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: worker-keys
+          mountPath: /worker-keys
+          readOnly: true
+        - name: concourse-work-dir
+          mountPath: {{ $.Values.concourse.concourse.worker.workDir }}
+        - name: sap-root-certs 
+          mountPath: /usr/local/share/ca-certificates
+        - name: pre-stop
+          mountPath: /land-worker
+      terminationGracePeriodSeconds: 1800
+      volumes:
+      - name: sap-root-certs
+        secret:
+          secretName: concourse-web
+          defaultMode: 256
+          items:
+          - key: github-ca-cert
+            path: sap-root-certs.crt
+      - name: worker-keys
+        secret:
+          secretName: concourse-worker
+          defaultMode: 0400
+          items:
+          - key: {{ .name }}-team-authorized-key
+            path: team_worker_key.pub
+          - key: {{ .name }}-team-authorized-privkey
+            path: team_worker_key
+          - key: host-key-pub
+            path: host_key.pub
+          - key: worker-key
+            path: worker_key
+      - name: concourse-work-dir
+        hostPath:
+          path: {{ $.Values.concourse.concourse.worker.workDir }}
+      - name: root-dir
+        hostPath:
+          path: /
+      - name: pre-stop
+        configMap:
+          name: land-worker
+          defaultMode: 0755
+---
+{{ end }}
+{{ end }}

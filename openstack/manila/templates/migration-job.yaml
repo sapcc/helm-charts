@@ -6,13 +6,17 @@ metadata:
     system: openstack
     type: configuration
     component: manila
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
     spec:
       restartPolicy: OnFailure
       containers:
         - name: manila-migration
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-api:{{.Values.imageVersionManilaApi}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
@@ -22,7 +26,14 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "manila-postgresql"
+              value: "{{ .Release.Name }}-mariadb"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: manila.DSN.python
+            {{- end }}
           volumeMounts:
             - name: etcmanila
               mountPath: /etc/manila

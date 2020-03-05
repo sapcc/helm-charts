@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "fullName" . }}-alerts
+  labels:
+    app: {{ include "fullName" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+
+spec:
+  groups:
+{{- if and .Values.alerts.enabled .Values.backup.enabled }}
+{{ include (print .Template.BasePath "/alerts/_backup.alerts.tpl") . | indent 2 }}
+{{- end }}
+{{ include (print .Template.BasePath "/alerts/_mysql.alerts.tpl") . | indent 2 }}

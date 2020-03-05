@@ -5,8 +5,9 @@ metadata:
   name: designate-central
   labels:
     system: openstack
+    application: designate
     type: backend
-    component: designate
+    component: central
 spec:
   replicas: {{ .Values.pod.replicas.central }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -28,12 +29,20 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+{{ tuple . "designate" "central" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: designate-central
-          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-designate-central:{{.Values.image_version_designate_central}}
+          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{.Values.global.image_namespace}}/loci-designate:{{required ".Values.global.image_version_designate_central is missing" .Values.image_version_designate_central}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/kubernetes-entrypoint
+          resources:
+             requests:
+               memory: "256Mi"
+               cpu: "250m"
+             limits:
+               memory: "1024Mi"
+               cpu: "1000m"
           env:
             - name: COMMAND
               value: "/container.init/designate-central-start"
@@ -42,9 +51,14 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "designate-migration"
             - name: DEPENDENCY_SERVICE
-              value: "designate-mariadb,{{ .Release.Name }}-rabbitmq"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:

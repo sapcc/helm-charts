@@ -1,0 +1,21 @@
+kind: Ingress
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: castellum-api
+  annotations:
+    vice-president: "true"
+    disco: "true"
+
+spec:
+  tls:
+    - secretName: castellum-api
+      hosts: [ castellum.{{ .Values.global.region }}.{{ .Values.global.tld }} ]
+  rules:
+    - host: castellum.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: castellum-api
+              servicePort: 8080

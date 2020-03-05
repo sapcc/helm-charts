@@ -1,0 +1,368 @@
+global:
+  # The OpenStack region.
+  region:
+
+  # The TLD as used in the URL.
+  domain:
+
+  # Type of the cluster to which the Prometheus is deployed.
+  # Choose between: controlplane, kubernikus-controlplane, kubernikus-scaleout.
+  clusterType: controlplane
+
+  # Optional name of the cluster to which the Prometheus is deployed.
+  # Defaults to region if not set.
+  # cluster:
+
+  # Optional tier for Prometheus alerts.
+  # tier: k8s
+
+# The repository and tag of the Prometheus image.
+image:
+  repository: prom/prometheus
+  tag: v2.15.2
+
+# Mandatory name for this Prometheus.
+# The name is used to find relevant aggregation and alerting rules.
+# Examples: kubernetes, openstack, infrastructure, maia, etc.
+name:
+
+# Defines how long data is stored. Format: `[0-9]+(ms|s|m|h|d|w|y)`
+retentionTime: 7d
+
+# Reference a secret containing additional Prometheus scrape configurations.
+# Injecting an invalid configuration might break the Prometheus server instance.
+additionalScrapeConfigs: {}
+  # Name of the secret.
+  # name:
+
+  # Key in the secret.
+  # key:
+
+  # Specify whether the Secret is optional.
+  # Setting `optional: false` causes an error when the secret does not exist.
+  # optional: true
+
+# Interval between consecutive scrapes.
+scrapeInterval: "60s"
+
+# List of configmaps in the same namespace as the Prometheus that should be mounted to /etc/prometheus/configmaps/<configmap-name>.
+# Can be used to add targets found by a custom service discovery.
+configMaps: []
+  # - < name of configmap >
+
+# List of secrets in the same namespace as the Prometheus that should be mounted to /etc/prometheus/secrets/<secret-name>.
+secrets: []
+# - < name of secret >
+
+# Alertmanager configuration.
+alertmanagers:
+  # Configuration if the Alertmanager has client certificate authentication enabled.
+  authentication:
+    enabled: false
+    # The certificate used for authentication with the Alertmanager..
+    ssoCert:
+    # The key used for authentication with the Alertmanager.
+    ssoKey:
+
+  # List of Alertmanagers (AM) to send alerts to.
+  # If multiple AMs are used in an HA setup, alerts must be send to every AM.
+  hosts: []
+  # - alertmanager1.tld
+  # - alertmanager2.tld
+
+# Configuration for the Service created for this Prometheus.
+service:
+  annotations: {}
+
+# Optional ingress for this Prometheus.
+ingress:
+  enabled: false
+
+  # List of hostnames for this Prometheus server. FQDN will be generated using the pattern  <host>.<region>.<domain> .
+  # The first host is used to generate the external URL for the Prometheus. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hosts: []
+
+  # List of fully qualified host names to be used for this Prometheus server. Mutually exclusive with hosts.
+  # The first host is used to generate the external URL for the Prometheus. Remaining hosts will be used as SANs.
+  # If the ingress is enabled, it's also used for the ingress host.
+  hostsFQDN: []
+
+  # Automate certificate management via vice-president.
+  vicePresident: true
+
+  # Automate DNS management via disco.
+  disco: true
+
+  # Client certificate authentication on ingress level.
+  authentication:
+    enabled: true
+
+    # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+    authTLSSecret: kube-system/ingress-cacrt
+
+    # The validation depth between the provided client certificate and the certification authority chain.
+    authTLSVerifyDepth: 3
+
+    # Enables verification of client certificates.
+    authTLSVerifyClient: on
+
+  # Additional annotations for the ingress.
+  annotations: {}
+
+# Enable persistent storage.
+# If disabled, data will be stored in memory.
+persistence:
+  enabled: false
+
+  # Optional name of the PVC. Default: < .Values.name >
+  # name:
+
+  # Access mode of the PVC.
+  accessMode: ReadWriteOnce
+
+  # Size of the PVC.
+  size: 100Gi
+
+  # Label selector to be be applied to the PVC.
+  selector: {}
+
+# Create RBAC resources.
+rbac:
+  create: true
+
+# ServiceAccount to use for the Prometheus server.
+# Note that a ServiceAccount with name `default` cannot be created.
+# Instead the generated name will be used.
+serviceAccount:
+  create: true
+
+  # Optional name of the service account.
+  # If not provided one will be generated in the format: prometheus-<name>.
+  name: ""
+
+# Thanos configuration.
+thanos:
+  # Enable Thanos components and Prometheus sidecar.
+  enabled: false
+
+  # Deploy an OpenstackSeed custom resource triggering creation of an Openstack user and Swift container used to persist Prometheus metrics.
+  # See: https://github.com/sapcc/kubernetes-operators/tree/master/openstack-seeder
+  seed:
+    # If disabled the user and container need to exist.
+    enabled: true
+
+    # List of required OpenstackSeeds that need to be resolved before.
+    # Warning: This list is rather specific to SAP Converged Cloud.
+    requires:
+      - swift/swift-seed
+      - monsoon3/domain-ccadmin-seed
+      - monsoon3/domain-default-seed
+
+  # Configuration for OpenStack Swift Thanos storage backend.
+  swiftStorageConfig: {}
+    # authURL:
+    # userName:
+    # userDomainName:
+    # password:
+    # domainName:
+    # projectName:
+    # projectDomainName:
+    # regionName:
+    # containerName:
+
+    # Currently not supported are:
+    # tenantID:
+    # domainID:
+    # userID:
+
+  objectStorageConfig:
+    # Note:
+    # The name of the secret specified below will be prefixed with `prometheus-<name>`
+    # to avoid multiple configurations with the same name.
+    name: thanos-storage-config
+    key: thanos.yaml
+    optional: true
+
+  # Specification for Thanos sidecar to Prometheus server.
+  # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
+  spec:
+    baseImage: sapcc/thanos
+    # Contains fix for cross-domain authentication (user in different domain than Swift container).
+    # See https://github.com/thanos-io/thanos/pull/1118, which is part of >=v0.5.0 .
+    # Cannot upgrade to anything newer as the below given value as the Prometheus operator has hardcoded the deprecated `--cluster` flags for the sidecar.
+    # So the operator needs to be upgraded first, but requires newer k8s versions supporting apps/v1.StatefulSet -.-
+    version: v0.4.0-2-ga680c93
+
+  # Image for Thanos components.
+  components:
+    baseImage: thanosio/thanos
+    version: v0.8.1
+
+  # Specification for Thanos components.
+  compactor:
+    # How long to retain raw samples in bucket. 0d - disables this retention.
+    retentionResolutionRaw: 30d
+
+    # How long to retain samples of resolution 1 (5 minutes) in bucket. 0d - disables this retention.
+    retentionResolution5m: 30d
+
+    # How long to retain samples of resolution 2 (1 hour) in bucket. 0d - disables this retention.
+    retentionResolution1h: 1y
+
+    # Minimum age of fresh (non-compacted) blocks before they are being processed. Malformed blocks older than the maximum of consistency-delay and 30m0s will be removed.
+    consistencyDelay: 30m
+
+    service:
+      httpPort: 9090
+
+  store:
+    # Maximum size of items held in the index cache.
+    indexCacheSize: 1GB
+
+    # Maximum size of concurrently allocatable bytes for chunks.
+    chunkPoolSize: 4GB
+
+    # Limit the amount of samples that might be retrieved on a single Series() call.
+    # 0 = unlimited.
+    seriesSampleLimit: 0
+
+    # Limit number of concurrent Series() calls in Thanos store.
+    seriesMaxConcurrency: 20
+
+    # Persistent volume for Thanos store.
+    persistence:
+      enabled: true
+      size: 2Gi
+
+    service:
+      httpPort: 9090
+      grpcPort: 10901
+
+  querier:
+    # Prefix is used to expose the Thanos querier component via ingress using the following sub path.
+    webRouteprefix: /thanos
+    service:
+      httpPort: 9090
+      grpcPort: 10901
+
+# The labels to add to any time series or alerts when communicating with
+# external systems (federation, remote storage, Alertmanager).
+externalLabels: {}
+  # labelName: labelValue
+
+# The log level of the Prometheus.
+logLevel: info
+
+# Kubernetes resource requests and limits for this Prometheus.
+# See: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container .
+resources:
+  requests:
+    cpu: 4
+    memory: 8Gi
+
+# A security context defines privilege and access control settings for a Pod or Container.
+# See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context .
+securityContext:
+  fsGroup: 0
+  runAsUser: 0
+
+# Enabled default Prometheus Service Discoveries (SD).
+# The relabeling allows the actual service scrape endpoint to be configured
+# via the following annotations:
+#
+# * `prometheus.io/scrape`:   Only scrape services that have a value of `true`
+# * `prometheus.io/targets`:  List of target Prometheis by which the metrics should be scraped.
+# * `prometheus.io/scheme`:   If the metrics endpoint is secured then you will need to set this to `https` & most likely set the `tls_config` of the scrape config.
+# * `prometheus.io/path`:     If the metrics path is not `/metrics` override this.
+# * `prometheus.io/port`:     If the metrics are exposed on a different port to the service then set this appropriately.
+serviceDiscoveries:
+  # Targets found via SD are only kept if the `prometheus.io/targets` annotation matches the name of this Prometheus.
+  # However this can be overridden using the following parameter.
+  # The result is a regex like `.*$prometheusName.*|.*$additionalTargets[i].*`
+  # additionalTargets:
+  #   - ...
+
+  # Scrape interval for all jobs.
+  scrapeInterval: 60s
+
+  # Scrape timeout for all jobs.
+  scrapeTimeout: 55s
+
+  # SD for Kubernetes services and endpoints.
+  endpoints:
+    enabled: true
+    # Only scrape services and endpoints with annotation prometheus.io/targets: $prometheusName.
+    # If set to false, all targets are scraped.
+    limitToPrometheusTargets: true
+
+  # SD for Kubernetes Pods. See https://github.com/coreos/prometheus-operator/issues/38.
+  pods:
+    enabled: false
+    # Only scrape pods with annotation prometheus.io/targets: $prometheusName.
+    # If set to false, all targets are scraped.
+    limitToPrometheusTargets: true
+
+  # SD for kubernetes API server.
+  kubeAPIServer:
+    enabled: false
+    # Full list of APIserver metrics: https://github.com/kubernetes/apiserver/blob/master/pkg/endpoints/metrics/metrics.go .
+    allowedMetrics:
+      - apiserver_request_count
+      - apiserver_request_latencies_bucket
+      - etcd_object_counts
+      - process_max_fds
+      - process_open_fds
+
+  # Scrape cAdvisor metrics.
+  cAdvisor:
+    enabled: false
+    # Full list of cAdvisor metrics: https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md .
+    allowedMetrics:
+      - container_cpu_cfs_periods_total
+      - container_cpu_cfs_throttled_seconds_total
+      - container_cpu_cfs_throttled_periods_total
+      - container_cpu_usage_seconds_total
+      - container_cpu_user_seconds_total
+      - container_cpu_system_seconds_total
+      - container_fs_inodes_total
+      - container_fs_limit_bytes
+      - container_fs_usage_bytes
+      - container_last_seen
+      - container_memory_usage_bytes
+      - container_memory_working_set_bytes
+      - container_network_receive_bytes_total
+      - container_network_transmit_bytes_total
+      - container_start_time_seconds
+
+  # Scrape kubelet metrics.
+  kubelet:
+    enabled: false
+    # Full list of kubelet metrics: https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/metrics/metrics.go#L33 .
+    # Scrape all kubelet metrics by default.
+    allowedMetrics: []
+
+  # Scrape kube-dns pods.
+  kubeDNS:
+    enabled: false
+
+  # Scrape all node exporters.
+  nodeExporter:
+    enabled: false
+
+# The pod's tolerations.
+# See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration
+tolerations: []
+
+# Assign custom affinity rules to the prometheus instance.
+# See https://kubernetes.io/docs/concepts/configuration/assign-pod-node
+affinity: {}
+
+# Define which Nodes the Pods are scheduled on.
+# See https://kubernetes.io/docs/user-guide/node-selection
+nodeSelector: {}
+
+# The tier of the alerts.
+# If set .Values.global.tier takes precedence.
+alerts:
+  tier: k8s

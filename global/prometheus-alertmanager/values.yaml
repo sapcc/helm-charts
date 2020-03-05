@@ -1,69 +1,49 @@
-image:
-  repository: prom/alertmanager
-  tag: v0.15.2
-
 global:
   region: DEFINED-IN-SECRETS
   domain: DEFINED-IN-SECRETS
 
-cluster:
-  listen_address: DEFINED-IN-SECRETS
-  peer_timeout: 30s
-  probe_timeout: 5s
-  tcp_timeout: 30s
-  # peers:
-  #   - DEFINED-IN-SECRETS
-
-persistence:
-  name: data-prometheus-alertmanager
-  access_mode: ReadWriteMany
-  size: 1Gi
+image:
+  repository: sapcc/alertmanager
+  tag: b63b5600
 
 configmap_reload:
   image:
     repository: jimmidyson/configmap-reload
     tag: v0.2.2
 
+persistence:
+  name: data-prometheus-alertmanager
+  access_mode: ReadWriteMany
+  size: 1Gi
+
+cluster:
+  listen_address: DEFINED-IN-SECRETS
+  peer_timeout: 60s
+  probe_timeout: 60s
+  tcp_timeout: 60s
+  # peers:
+  #   - DEFINED-IN-SECRETS
+
 slack:
   webhook_url: DEFINED-IN-SECRETS
+  # incoming webhooks in slack apps are bound to one channel
+  # critucal
+  api_critical_webhook_url: DEFINED-IN-SECRETS
+  metal_critical_webhook_url: DEFINED-IN-SECRETS
+  network_critical_webhook_url: DEFINED-IN-SECRETS
+  vmware_critical_webhook_url: DEFINED-IN-SECRETS
+  # warning
+  api_warning_webhook_url: DEFINED-IN-SECRETS
+  metal_warning_webhook_url: DEFINED-IN-SECRETS
+  network_warning_webhook_url: DEFINED-IN-SECRETS
+  vmware_warning_webhook_url: DEFINED-IN-SECRETS
+  # 
+  openstack_critical_webhook_url: DEFINED-IN-SECRETS
+  kubernetes_critical_webhook_url: DEFINED-IN-SECRETS
+  kubernikus_critical_webhook_url: DEFINED-IN-SECRETS
 
-# creates <tier>-{info, warning, critical} routing and receivers
-tiers:
-  - kubernetes
-  - kubernikus
-  - openstack
-  - baremetal
+# pagerduty service keys defined in secrets
+pagerduty: {}
 
-# creates openstack-<service> routing and receivers
-openstack_services:
-  - arc
-  - backup
-  - barbican
-  - cinder
-  - designate
-  - elektra
-  - elk
-  - ironic
-  - keystone
-  - limes
-  - lyra
-  - maia
-  - manila
-  - neutron
-  - nova
-  - swift
-
-# creates routing and channel for pagerduty
-# the order matters, as an alert is only send to the first matching pagerduty instance (matches by service, tier label)
-pagerduty_services:
-  # name of the pagerduty receiver
-  - name: pagerduty
-    # pagerduty service key
-    service_key: DEFINED-IN-SECRETS
-    # limit alerts to this receiver to the following labels
-    # `severity: critical` is always set
-    match:
-      # limit to alerts with this service label (optional)
-      service: SERVICE-TYPE
-      # limit to alerts with this tier label (optional)
-      tier: SERVICE-TIER
+elastic:
+  logstash_url: DEFINED-IN-SECRETS

@@ -1,0 +1,58 @@
+groups:
+- name: openstack-content-repo.alerts
+  rules:
+  - alert: OpenstackRepo
+    expr: floor((time()-repo_sync_last_run{kind="success_timestamp",repo!~"cbr|bame-monitoring|ironic-tftp|hw-firmware|quay-mirror"})/60/60) > 48
+    for: 10m
+    labels:
+      tier: os
+      service: swift
+      severity: info
+      context: repo
+      meta: "repo {{ $labels.repo }} is outdated"
+      dashboard: repo-sync?var-repo={{ $labels.repo }}
+    annotations:
+      description: Content repo {{ $labels.repo }} was not successful updated for at least 48h. Check the logs
+      summary: Content repo {{ $labels.repo }} outdated
+
+  - alert: OpenstackRepoEntitlementForbidden
+    expr: repo_sync_check_success != 1 and repo_sync_check_httpcode == 403
+    for: 1h
+    labels:
+      tier: os
+      service: swift
+      severity: info
+      context: repo-{{ $labels.repo }}-entitlement
+      meta: "invalid entitlement for {{ $labels.repo }}"
+      dashboard: repo-sync?var-repo={{ $labels.repo }}
+      playbook: 'docs/support/playbook/repo_{{ $labels.repo }}_entitlement.html'
+    annotations:
+      description: Repo {{ $labels.repo }} the entitlement became invalid
+      summary: Repo {{ $labels.repo }} entitlement lost
+
+  - alert: OpenstackRepoEntitlement
+    expr: repo_sync_check_success != 1 and repo_sync_check_httpcode != 403
+    for: 1h
+    labels:
+      tier: os
+      service: swift
+      severity: info
+      context: repo-{{ $labels.repo }}-entitlement
+      meta: "entitlement check failed for {{ $labels.repo }}"
+      dashboard: repo-sync?var-repo={{ $labels.repo }}
+    annotations:
+      description: Repo {{ $labels.repo }} entitlement check failed. Check the logs
+      summary: Repo {{ $labels.repo }} entitlement check failed
+
+  - alert: OpenstackRepoObjectstoreQuota
+    expr: floor(limes_project_usage{service="object-store",resource="capacity",domain="ccadmin",project="master"}/limes_project_quota{service="object-store",domain="ccadmin",project="master"}*100) >= 95
+    for: 1h
+    labels:
+      tier: os
+      service: swift
+      severity: warning
+      context: repo-swift-quota
+      meta: "Swift usage for project ccadmin/master reached 95%"
+    annotations:
+      description: Swift usage for project ccadmin/master reached 95%. Increase quota or clean up immediately.
+      summary: Swift usage reached 95% in ccadmin/master

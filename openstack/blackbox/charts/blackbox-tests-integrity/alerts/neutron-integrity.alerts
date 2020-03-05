@@ -1,0 +1,34 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: OpenstackNeutronIntegrityOutOfFIPs
+    expr: blackbox_integrity_status_gauge{service="neutron",type="integrity",check=~"fips_avail-.+"}== 1
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Floating IPs network: {{ $labels.check }} exhausted soon'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/support/playbook/neutron/fip_exhausted.html
+    annotations:
+      description: 'The Floating IPs on {{ $labels.check }} might
+        get exhausted soon as utilized more than 90% of fips. This is heads up
+        to check the current FIPs network situation and add new subnet to network soon'
+      summary: Floating IPs possibly soon exhausted
+
+  - alert: OpenstackNeutronDhcpAgentLostNetworks
+    expr: blackbox_integrity_status_gauge{check=~"dhcp_agent-.+"} == 1
+    for: 15m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'DHCP agent has less subnets than subnets with dhcp enabled: {{ $labels.check }}'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/support/playbook/neutron/dhcp_down.html
+    annotations:
+      description: 'DHCP agent has less subnets than subnets with dhcp enabled for 15 min: {{ $labels.check }}'
+      summary: Openstack Neutron DHCP Agent lost private networks

@@ -2,6 +2,8 @@ global:
   tld: DEFINED_IN_REGION_CHART
   region: DEFINED_IN_REGION_CHART
   imageRegistry: DEFINED_IN_REGION_CHART
+  serviceType: object-store
+  serviceName: "service/storage/object"
 
 debug: false
 
@@ -19,9 +21,9 @@ image_version: DEFINED_BY_PIPELINE
 image_version_nginx: '1.14.0-alpine'
 
 # image versions of auxiliary images from other sources
-image_version_auxiliary_memcached: '1.4.33-alpine'
-image_version_auxiliary_memcached_exporter: 'v0.3.0'
-image_version_auxiliary_statsd_exporter: 'v0.5.0'
+image_version_auxiliary_memcached: '1.5.10-alpine'
+image_version_auxiliary_memcached_exporter: 'v0.5.0'
+image_version_auxiliary_statsd_exporter: 'v0.8.1'
 
 # shared secrets and credentials
 hash_path_prefix: DEFINED_IN_REGION_CHART
@@ -37,17 +39,22 @@ watcher_enabled: true
 dispersion_auth_url: DEFINED_IN_REGION_CHART
 dispersion_password: DEFINED_IN_REGION_CHART
 
-# Enable cluster health checks: https://github.com/sapcc/swift-health-statsd
+# Enable cluster health checks: https://github.com/sapcc/swift-health-exporter
+#                               https://github.com/sapcc/swift-health-statsd
+# At least one of the following should be set to true.
+# If both are true, then statsd has priority over the exporter.
 health_statsd: true
+health_exporter: false
 
 # Enable prometheus probing
 probing: true
 
 # Object Server Configurations
+object_expirer_concurrency: 5
 object_replicator_concurrency: 2
-object_replicator_workers: 0           # Availably since Rocky
+object_replicator_workers: 3           # Availably since Rocky
 object_updater_concurrency: 2
-object_updater_workers: 1              # Availably since Rocky
+object_updater_workers: 2              # Availably since Rocky
 
 # Prevent disks getting 100% full
 fallocate_reserve: 1%                  # Availably since Rocky for all servers
@@ -56,24 +63,49 @@ fallocate_reserve: 1%                  # Availably since Rocky for all servers
 # Allows to avoid 408 client timeout occurred by VMware snapshot creation process
 client_timeout: 420 # 7 minutes, default is 60 seconds
 
+# Add additional memcached deployments here
+memcached_servers:
+  - memcached
+#  - memcached-tokens
+
+sentry:
+  enabled: false
+
+resources:
+  enabled: true
+
+# Deploy Swift Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes
+
 # If the swift cluster is shared across multiple openstack clusters, one can
 # start multiple proxy deployments connecting to the different keystone backends
-clusters:
-  - name: DEFINED_IN_REGION_CHART
-    # Only one cluster should seed its endpoints to keystone
-    seed: DEFINED_IN_REGION_CHART
-    endpoint_host: DEFINED_IN_REGION_CHART
-    proxy_public_ip: DEFINED_IN_REGION_CHART
-    proxy_public_port: DEFINED_IN_REGION_CHART
-    keystone_auth_uri: DEFINED_IN_REGION_CHART
-    keystone_auth_url: DEFINED_IN_REGION_CHART
-    swift_service_user: swift
-    swift_service_user_domain: Default
-    swift_service_project: service
-    swift_service_project_domain: Default
-    swift_service_password: DEFINED_IN_REGION_CHART
-    sentry_dsn: DEFINED_IN_REGION_CHART
-    replicas: 2
+# clusters:
+#   DEFINED_IN_REGION_CHART: # cluster id
+#     # Only one cluster should seed its endpoints to keystone
+#     seed: DEFINED_IN_REGION_CHART
+#     endpoint_host: DEFINED_IN_REGION_CHART
+#     proxy_public_ip: DEFINED_IN_REGION_CHART
+#     proxy_public_port: DEFINED_IN_REGION_CHART
+#     keystone_auth_uri: DEFINED_IN_REGION_CHART
+#     keystone_auth_url: DEFINED_IN_REGION_CHART
+#     swift_service_user: swift
+#     swift_service_user_domain: Default
+#     swift_service_project: service
+#     swift_service_project_domain: Default
+#     swift_service_password: DEFINED_IN_REGION_CHART
+#     replicas: 2
+
+    # The default is using the cache.swift for token caching
+    # Specifing a memcached server name here will overrule that, see .Values.memcached_servers
+    # token_memcached: memcached-tokens
+    # token_cache_time: 600
+
     # If there is a need to rate limit the nginx per cluster, that can be reached here
     # The limits apply to every replica within the deployment
     #rate_limit_connections: 1000
@@ -91,8 +123,49 @@ clusters:
     # proxy_public_http_port: 8080
     # sans_http: [repo]
 
+    # If using other hostnames for objectstore and you can't provide a CName for it, enter them here
+    # additional_cname_storage_domains: [example.com,example2.com]
+
 # rings (TODO: having the rings in here is insane, but --values is currently
 # the only way to supply region-specific data; figure out a better way)
 account_ring_base64: DEFINED_IN_REGION_CHART
 container_ring_base64: DEFINED_IN_REGION_CHART
 object_ring_base64: DEFINED_IN_REGION_CHART
+
+# Use https://github.com/sapcc/openstack-rate-limit-middleware for watcher based rate limiting.
+sapcc_ratelimit:
+  enabled: false
+
+  # Rate limit by tuple of target type URI, action and scope.
+  # The scope can be one of:
+  # - initiator_project_id
+  # - target_project_id
+  # - initiator_host_address
+  rateLimitBy: initiator_project_id
+
+  # The maximal time a request can be suspended.
+  maxSleepTimeSeconds: 20
+
+  # Log requests that are going to be suspended for logSleepTimeSeconds <= t <= maxSleepTimeSeconds.
+  logSleepTimeSeconds: 18
+
+  # The backend used to store rate limits.
+  backend:
+    # Backend port. Defaults to redis port.
+    port: 6379
+
+    # Backend host. Defaults to redis headless service using `{{ .Release.Name }}-sapcc-ratelimit-redis-headless`.
+    # Can be overwritten using the following parameter.
+    # host:
+
+# Redis datastore for sapcc ratelimit middleware.
+# Only deployed if sapcc_ratelimit.enabled=true.
+sapcc-ratelimit-redis:
+
+  # Memory is sufficient.
+  persistence:
+    enabled: false
+
+  # Prometheus metrics via oliver006/redis_exporter sidecar.
+  metrics:
+    enabled: true

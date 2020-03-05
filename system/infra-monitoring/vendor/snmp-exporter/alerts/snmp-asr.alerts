@@ -1,0 +1,74 @@
+groups:
+  - name: asr
+    rules:
+    
+    - alert: NetworkAsrNatSpike
+      expr: increase(snmp_asr_disman_expExpression{expExpressionOwner="btob_delete_fail_counter"}[5m]) > 0 and on (server_id) snmp_asr_disman_expExpression{expExpressionOwner="btob_queue"} == 1
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        playbook: 'docs/devops/alert/network/router.html#asr_nat_spike'
+        dashboard: network-asr-nat-table 
+      annotations:
+        description: "ASR devicename `{{ $labels.devicename }}` is experiencing a stuck queue-full bit. Risk of outage is present, peer-sync is not working. Immediate action required"
+        summary: "ASR devicename `{{ $labels.devicename }}` risk of NAT spikes and table overflow."
+        
+    - alert: NetworkAsrDeviceIsDown
+      expr: sum(snmp_asr_natAddrBindNumberOfEntries + snmp_asr_natAddrPortBindNumberOfEntries) by (devicename) > 3500000
+      for: 15m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
+        playbook: 'docs/devops/alert/network/router.html#asr_nat_table_overflow'
+      annotations:
+        description: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
+        summary: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
+
+    - alert: NetworkAsrNatTableIsNearlyFull
+      expr: sum(snmp_asr_natAddrBindNumberOfEntries + snmp_asr_natAddrPortBindNumberOfEntries) by (devicename) > 2000000
+      for: 15m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+        playbook: 'docs/devops/alert/network/router.html#asr_nat_table_overflow'
+        spc: "ServiceAreaCode=04&TicketType=01&Priority=1&ServiceName=NW_CLOUD_CC&ServiceUnit=10&Subject=NetworkAsrNatTableIsNearlyFull+-+devicename%3A+{{ $labels.devicename }}&Description=NAT+table+on+ASR+devicename+{{ $labels.devicename }}+is+nearly+full+for+15+min+with+more+than+2M+NAT+translations.+This+will+stop+creating+new+NAT+sessions+soon."
+      annotations:
+        description: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+        summary: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+
+    - alert: NetworkAsrRedundancyGroupBothDevicesDown
+      expr: sum(snmp_asr_RedundancyGroup) by (device) == 0
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "All ASR routers `{{ $labels.device }}` in the redundancy group are down."
+        playbook: 'docs/devops/alert/network/router.html#asr_both_devices_down'
+      annotations:
+        description: "All ASR routers `{{ $labels.device }}` in the redundancy group are down."
+        summary: "All ASR routers `{{ $labels.device }}` in the redundancy group are down."
+
+    - alert: NetworkAsrRedundancyGroupBothDevicesUp
+      expr: sum(snmp_asr_RedundancyGroup) by (device) == 2
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "All ASR routers `{{ $labels.device }}` in the redundancy group are up."
+        playbook: 'docs/devops/alert/network/router.html#asr_both_devices_up'
+      annotations:
+        description: "All ASR routers `{{ $labels.device }}` in the redundancy group are up."
+        summary: "All ASR routers `{{ $labels.device }}` in the redundancy group are up."

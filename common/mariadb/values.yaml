@@ -4,20 +4,118 @@
 # name: value
 
 name: DEFINED-IN-COMPONENT-CHART
-image: mariadb:10.1
+image: mariadb:10.4.12
+imagePullPolicy: IfNotPresent
 port_public: 3306
-#
+buffer_pool_size: "1024M"
+log_file_size: "256M"
+binlog_format: "MIXED"
+expire_logs_days: 10
+
 #root_password:
 #initdb_configmap:
-#persistence_claim:
+persistence_claim:
+  enabled: true
+  #name:
+  size: "10Gi"
+  access_modes:
+  - ReadWriteOnce
+  - ReadWriteMany
+  - ReadOnlyMany
+  autoprovision: false
+  #storage_class: default
+
+livenessProbe:
+  enabled: true
+  ##
+  ## Initializing the database could take some time
+  initialDelaySeconds: 120
+  periodSeconds: 15
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 3
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 15
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 3
+
+extraConfigFiles: {}
+#  extra.cnf: |+
+#    [mysqld]
+#    # Service-specific Config Options
+
+resources:
+  requests:
+    memory: 2048Mi
+    cpu: 2000m
+
+## Affinity for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
+nodeAffinity: {}
 
 backup:
   enabled: false
+  image: monsoon/backup-tools
+  image_version: v0.6.4
   interval_full: 1 days
   interval_incr: 1 hours
-  image_version: v0.5.15
   os_password: DEFINED-IN-REGION-SECRETS
   os_username: db_backup
   os_user_domain: Default
   os_project_name: master
   os_project_domain: ccadmin
+
+backup_v2:
+  enabled: false
+  image: monsoon/maria-back-me-up
+  image_version: cc2c00cd
+  full_backup_interval_in_hours: 6
+  incremental_backup_interval_in_minutes: 5
+  verification_interval: 15
+  enable_init_restore: false
+  swift:
+    user_name: db_backup
+    user_domain_name: Default
+    project_name: master
+    project_domain_name: ccadmin
+    auth_version: v3
+  maria_db:
+    version: "10.4.0"
+  oauth:
+    enabled: true
+
+
+metrics:
+  enabled: true
+  image: prom/mysqld-exporter
+  image_version: v0.12.1
+  port: '9104'
+  flags:
+    - collect.binlog_size
+    - collect.info_schema.processlist
+    - collect.info_schema.query_response_time
+  resources:
+    enabled: true
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 5m
+      memory: 32Mi
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: true
+
+  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  prometheus: openstack
+
+  # The tier of the alert.
+  tier: os
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:

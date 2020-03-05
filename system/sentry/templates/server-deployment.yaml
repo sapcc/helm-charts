@@ -10,34 +10,16 @@ spec:
     metadata:
       labels:
         app: {{ template "fullname" . }}
-      annotations:
-        pod.beta.kubernetes.io/init-containers: '[
-            {
-                "name": "upgrade",
-                "image": "{{ .Values.image.repository }}:{{ .Values.image.tag }}",
-                "args": ["upgrade", "--noinput", "--lock"],
-                "env": [
-                  { "name" : "SENTRY_DB_NAME",
-                    "value" : "{{ .Values.postgresql.postgresDatabase }}" },
-                  { "name" : "SENTRY_POSTGRES_HOST",
-                    "value" : "{{ template "postgresql.fullname" . }}" },
-                  { "name": "SENTRY_DB_PASSWORD",
-                    "valueFrom" : { "secretKeyRef": {  "name": "{{ template "postgresql.fullname" . }}", "key":"postgres-password" } } },
-                  { "name" :"SENTRY_REDIS_HOST",
-                    "value" : "{{ template "redis.fullname" . }}" },
-                  { "name" : "SENTRY_REDIS_PASSWORD",
-                    "valueFrom": { "secretKeyRef": {  "name": "{{ template "redis.fullname" . }}", "key":"redis-password" } } },
-                  { "name" : "SENTRY_REDIS_PORT",
-                    "value" : "6379" },
-                  { "name" : "SENTRY_SECRET_KEY",
-                    "valueFrom": { "secretKeyRef": {  "name": "{{ template "fullname" . }}", "key":"sentry-secret-key" } } }
-                ]
-            }
-        ]'
     spec:
+      initContainers:
+      - name: "upgrade"
+        image: "{{required ".Values.image.repository is missing" .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        args: ["upgrade", "--noinput", "--lock"]
+        env:
+{{ include "env-vars" . | indent  10 }}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{required ".Values.image.repository is missing" .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         args: [ run, web ]
         #command: [tail, -f, /dev/null]
         imagePullPolicy: {{ .Values.image.pullPolicy }}

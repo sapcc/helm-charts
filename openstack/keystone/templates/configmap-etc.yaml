@@ -12,25 +12,58 @@ metadata:
 data:
   keystone.conf: |
 {{ include (print .Template.BasePath "/etc/_keystone.conf.tpl") . | indent 4 }}
-  keystone-paste.ini: |
-{{ include (print .Template.BasePath "/etc/_keystone-paste.ini.tpl") . | indent 4 }}
   logging.conf: |
 {{ include (print .Template.BasePath "/etc/_logging.conf.tpl") . | indent 4 }}
   mpm_event.conf: |
 {{ include (print .Template.BasePath "/etc/_mpm_event.conf.tpl") . | indent 4 }}
+{{- if ne .Values.api.policy "json" }}
+  policy.yaml: |
+{{ include (print .Template.BasePath "/etc/_policy.yaml.tpl") . | indent 4 }}
+{{- else }}
   policy.json: |
 {{ include (print .Template.BasePath "/etc/_policy.json.tpl") . | indent 4 }}
+{{- end }}
   sso_callback_template.html: |
 {{ include (print .Template.BasePath "/etc/_sso_callback_template.html.tpl") . | indent 4 }}
   wsgi-keystone.conf: |
 {{ include (print .Template.BasePath "/etc/_wsgi-keystone.conf.tpl") . | indent 4 }}
+{{- if .Values.tempest.enabled }}
   tempest.conf: |
 {{ include (print .Template.BasePath "/etc/_tempest.conf.tpl") . | indent 4 }}
+  tempest-skip-list.yaml: |
+    tempest.api.identity.v3.test_domains.DefaultDomainTestJSON.test_default_domain_exists[id-17a5de24-e6a0-4e4a-a9ee-d85b6e5612b5,smoke]: 'non-cloud-admins are not allowed to get domains'
+{{- if eq .Values.release "train" }}
+    tempest.api.identity.admin.v3.test_trusts.TrustsV3TestJSON.test_get_trusts_all: 'requires cloud-admin permissions'
+    tempest.api.identity.admin.v3.test_groups.GroupsV3TestJSON.test_list_groups: 'tempest admin-domain-scope disables/overrides domain filter'
+    tempest.api.identity.admin.v3.test_groups.GroupsV3TestJSON.test_list_user_groups: 'tempest admin-domain-scope disables/overrides domain filter'
+    tempest.api.identity.admin.v3.test_list_users.UsersV3TestJSON.test_list_users_with_name[id-c285bb37-7325-4c02-bff3-3da5d946d683]: 'domain filter http://localhost:5000/v3/users?name=tempest-test_user-1911711021&domain_id=35e499cc4db94103b77ead7a23b50888'
+    tempest.api.identity.admin.v3.test_list_users.UsersV3TestJSON.test_list_users[id-b30d4651-a2ea-4666-8551-0c0e49692635]: 'domain filter http://localhost:5000/v3/users?domain_id=35e499cc4db94103b77ead7a23b50888'
+    tempest.api.identity.admin.v3.test_list_users.UsersV3TestJSON.test_list_user_domains[id-08f9aabb-dcfe-41d0-8172-82b5fa0bd73d]: 'domain filter http://localhost:5000/v3/users?domain_id=35e499cc4db94103b77ead7a23b50888'
+    tempest.api.identity.admin.v3.test_projects.ProjectsTestJSON.test_create_is_domain_project: 'tempest admin-domain-scope disables/overrides domain filter'
+    tempest.api.identity.admin.v3.test_projects.ProjectsTestJSON.test_project_get_equals_list: 'default_tags not known to tempest'
+    tempest.api.identity.admin.v3.test_roles.RolesV3TestJSON.test_assignments_for_implied_roles_create_delete: 'tempest admin-domain-scope disables/overrides domain filter'
+    tempest.api.identity.admin.v3.test_inherits.InheritsV3TestJSON.test_inherit_assign_list_revoke_user_roles_on_project_tree: 'tempest admin-domain-scope disables/overrides domain filter'
+    tempest.api.identity.admin.v3.test_inherits.InheritsV3TestJSON.test_inherit_assign_list_revoke_user_roles_on_domain: 'tempest admin-domain-scope disables/overrides domain filter'
+    tempest.api.identity.admin.v3.test_projects_negative.ProjectsNegativeStaticTestJSON.test_list_projects_by_unauthorized_user: 'tempest admin-domain-scope disables/overrides domain filter'
+    tempest.api.identity.admin.v3.test_projects_negative.ProjectsNegativeStaticTestJSON.test_create_project_by_unauthorized_user: 'tempest admin-domain-scope disables/overrides domain filter'
+{{- end }}
   accounts.yaml: |
 {{ include (print .Template.BasePath "/etc/_tempest_accounts.yaml.tpl") . | indent 4 }}
   rally_deployment_config.json: |
 {{ include (print .Template.BasePath "/etc/_rally_deployment_config.json.tpl") . | indent 4 }}
+{{- end }}
 {{- if .Values.watcher.enabled }}
   watcher.yaml: |
 {{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
+  statsd-exporter.yaml: |
+    defaults:
+      timer_type: histogram
+      buckets: [.025, .1, .25, 1, 2.5]
+      match_type: glob
+      glob_disable_ordering: false
+      ttl: 0 # metrics do not expire
+{{- end }}
+{{- if ne .Values.release "rocky" }}
+  access_rules.json: |
+{{ include (print .Template.BasePath "/etc/_access_rules.json.tpl") . | indent 4 }}
 {{- end }}

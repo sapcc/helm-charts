@@ -14,7 +14,7 @@ spec:
   domains:
   - name: cc3test
     description: 'Converged Cloud Testing'
-    roles:
+    role_assignments:
     - user: {{ .Values.cc3testAdminUser }}
       role: admin
     - user: {{ .Values.cc3testAdminUser }}
@@ -25,21 +25,21 @@ spec:
     projects:
     - name: admin
       description: 'CC-Test Administrators Project'
-      roles:
+      role_assignments:
       - user: {{ .Values.cc3testAdminUser }}
         role: admin
       - user: {{ .Values.cc3testAdminUser }}
         role: member
     - name: test
       description: 'Test Project'
-      roles:
+      role_assignments:
       - user: {{ .Values.cc3testAdminUser }}
         role: admin
       - user: {{ .Values.cc3testAdminUser }}
         role: member
     - name: regression
       description: 'CC-Test Regression Project'
-      roles:
+      role_assignments:
       - user: {{ .Values.cc3testAdminUser }}
         role: admin
       - user: {{ .Values.cc3testAdminUser }}
@@ -66,7 +66,7 @@ spec:
 
     groups:
     - name: CC3TEST_API_SUPPORT
-      roles:
+      role_assignments:
       - domain: cc3test
         role: admin
       - domain: cc3test
@@ -78,7 +78,7 @@ spec:
         role: member
 
     - name: CC3TEST_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - domain: cc3test
         role: cloud_identity_viewer
         inherited: true
@@ -88,7 +88,7 @@ spec:
         role: member
 
     - name: CC3TEST_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - domain: cc3test
         role: cloud_identity_viewer
         inherited: true
@@ -98,7 +98,7 @@ spec:
         role: member
 
     - name: CC3TEST_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - domain: cc3test
         role: cloud_identity_viewer
         inherited: true
@@ -108,7 +108,7 @@ spec:
         role: member
 
     - name: CC3TEST_SERVICE_DESK
-      roles:
+      role_assignments:
       - domain: cc3test
         role: cloud_identity_viewer
         inherited: true
@@ -118,7 +118,7 @@ spec:
         role: member
 
     - name: CC3TEST_DOMAIN_ADMINS
-      roles:
+      role_assignments:
       - domain: cc3test
         role: admin
       - domain: cc3test
@@ -137,7 +137,7 @@ spec:
         role: member
 
     - name: CC3TEST_DOMAIN_MEMBERS
-      roles:
+      role_assignments:
       - domain: cc3test
         role: member
 
@@ -151,7 +151,7 @@ spec:
         query_scope: one
         url: {{ .Values.ldapUrl | quote }}
         user: {{ .Values.ldapUser | quote }}
-        password: {{ .Values.ldapPassword | quote }}
+        password: {{ required "A valid .Values.ldapPassword required!" .Values.ldapPassword | quote }}
         suffix: {{ .Values.ldapSuffix | quote }}
         user_objectclass: user
         user_id_attribute: cn
@@ -171,9 +171,10 @@ spec:
         group_desc_attribute: description
         group_member_attribute: member
         group_tree_dn: OU=CC3TEST,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
-        use_pool: true
+        use_pool: {{ .Values.ldapUsePool }}
         pool_size: 10
         pool_connection_lifetime: 60
-        use_auth_pool: true
+        use_auth_pool: {{ .Values.ldapUseAuthPool }}
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
+        debug_level: {{ .Values.ldapDebugLevel }}

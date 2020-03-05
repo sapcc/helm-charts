@@ -27,18 +27,12 @@ spec:
 {{ tuple . "cinder" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "cinder" "scheduler" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "cinder" "scheduler" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
       hostname: cinder-scheduler
       containers:
         - name: cinder-scheduler
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-scheduler:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
@@ -48,13 +42,28 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "cinder-api,rabbitmq"
+              value: "cinder-api,{{ .Release.Name }}-rabbitmq"
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
             - name: PGAPPNAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 20
+          {{- if .Values.pod.resources.scheduler }}
+          resources:
+{{ toYaml .Values.pod.resources.scheduler | indent 12 }}
+          {{- end }}
           volumeMounts:
             - name: etccinder
               mountPath: /etc/cinder

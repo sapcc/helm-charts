@@ -1,0 +1,58 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: disco
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: disco
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+    spec:
+{{- if and .Values.rbac.create .Values.rbac.serviceAccountName }}
+{{- if not (eq .Values.rbac.serviceAccountName "default") }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+{{- end -}}
+{{- end }}
+      containers:
+        - name: disco
+          image: {{ include "image" . }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
+          env:
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: disco-secret
+                  key: os-password
+          args:
+            - disco
+            - --config=/etc/disco/config/disco.conf
+            - --ingress-annotation={{ required ".Values.ingressAnnotation missing" .Values.ingressAnnotation }}
+            - --metric-port={{ required ".Values.metrics.port missing" .Values.metrics.port }}
+            - --recordset-ttl={{ required ".Values.recordsetTTL missing" .Values.recordsetTTL }}
+            - --record={{ required ".Values.record missing" .Values.record }}
+            - --zone-name={{ required ".Values.openstack.zoneName missing" .Values.openstack.zoneName }}
+            - --recheck-period={{ required ".Values.recheckPeriod missing" .Values.recheckPeriod }}
+            - --resync-period={{ required ".Values.resyncPeriod missing" .Values.resyncPeriod }}
+            - --threadiness={{ required ".Values.threadiness missing" .Values.threadiness }}
+            - --install-crd={{ required ".Values.installCRD missing" .Values.installCRD }}
+            - --debug={{ default false .Values.debug }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/disco/config/
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+
+      volumes:
+        - name: config
+          configMap:
+            name: disco-config

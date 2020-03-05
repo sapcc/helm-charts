@@ -1,0 +1,201 @@
+groups:
+- name: openstack-limes.alerts
+  rules:
+
+  - alert: OpenstackLimesHttpErrors
+    expr: sum(increase(http_requests_total{kubernetes_namespace="limes",code=~"5.*"}[1h])) by (kubernetes_name) > 0
+    for: 5m
+    labels:
+      context: api
+      dashboard: limes-overview
+      service: limes
+      severity: info
+      tier: os
+    annotations:
+      description: "{{ $labels.kubernetes_name }} is producing HTTP responses with 5xx status codes."
+      summary: Server errors on {{ $labels.kubernetes_name }}
+
+  - alert: OpenstackLimesNotScraping
+    expr: absent(rate(limes_successful_scrapes{os_cluster="ccloud"}[30m]) > 0)
+    for: 5m
+    labels:
+      context: failedscrapes
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      tier: os
+    annotations:
+      description: There have been no successful scrapes in the last hour in
+        the ccloud cluster, so limes-collect-ccloud is probably dead.
+      summary: Limes is not scraping
+
+  - alert: OpenstackLimesFailedCapacityScrapes
+    expr: sum(increase(limes_failed_capacity_scrapes[5m])) BY (os_cluster, capacitor) > 0
+    for: 1h
+    labels:
+      context: failedcapacityscrapes
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      tier: os
+    annotations:
+      description: Limes cannot scrape capapcity from {{ title $labels.capacitor }}
+        for more than an hour.
+        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+      summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
+
+  - alert: OpenstackLimesMissingCapacity
+    # note: this ignores baremetal capacity ("compute/instances_<flavorname>")
+    # since many of these are zero legitimately (we do not have all BM server
+    # types in all regions)
+    expr: limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0
+    for: 1h
+    labels:
+      context: failedcapacityscrapes
+      dashboard: limes-overview
+      service: limes
+      severity: info
+      meta: 'no capacity for {{ $labels.full_resource }}'
+      tier: os
+    annotations:
+      description: Limes reports no capacity for {{ $labels.full_resource }}.
+        This usually means that the backend service reported weirdly-shaped data
+        to Limes' capacity scanner.
+        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} may contain additional info.
+      summary: Limes reports zero capacity for {{ $labels.full_resource }}
+
+  - alert: OpenstackLimesFailedScrapes
+    expr: sum(increase(limes_failed_scrapes[5m])) BY (os_cluster, service, service_name) > 0
+    for: 1h
+    labels:
+      context: failedscrapes
+      dashboard: limes-overview
+      service: '{{ $labels.service_name }}'
+      severity: warning
+      tier: os
+      playbook: docs/support/playbook/limes/failed_scrapes
+    annotations:
+      description: Limes cannot scrape data from {{ title $labels.service_name }}
+        for more than an hour. Please check if {{ title $labels.service_name }} is working.
+        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+      summary: Limes cannot scrape {{ title $labels.service_name }}
+
+  - alert: OpenstackLimesSuspendedScrapes
+    # this has [15m] instead of [5m] because suspensions last for 10 minutes,
+    # therefore the limes_suspended_scrapes counter only increments that often
+    expr: sum(increase(limes_suspended_scrapes[15m])) BY (os_cluster, service, service_name) > 0
+    for: 1h
+    labels:
+      context: failedscrapes
+      dashboard: limes-overview
+      service: '{{ $labels.service_name }}'
+      severity: warning
+      tier: os
+    annotations:
+      description: Limes has suspended scraping from {{ title $labels.service_name }}
+        for more than an hour. Please check if the internal endpoint for
+        {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
+        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+      summary: Limes cannot find {{ title $labels.service_name }} endpoint
+
+  - alert: OpenstackLimesFailedDomainDiscoveries
+    expr: sum(increase(limes_failed_domain_discoveries[5m])) BY (os_cluster) > 0
+    for: 30m
+    labels:
+      context: faileddiscoveries
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      tier: os
+    annotations:
+      description: Limes cannot discover domains for cluster {{ $labels.os_cluster }}.
+        Please check if "openstack domain list" is working.
+      summary: Limes cannot discover domains.
+
+  - alert: OpenstackLimesFailedProjectDiscoveries
+    expr: sum(increase(limes_failed_project_discoveries[5m])) BY (os_cluster, domain) > 0
+    for: 30m
+    labels:
+      context: faileddiscoveries
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      tier: os
+    annotations:
+      description: Limes cannot discover project in domain {{ $labels.domain }}
+        of cluster {{ $labels.os_cluster }}. Please check if "openstack project
+        list --domain {{ $labels.domain }}" is working.
+      summary: Limes cannot discover projects.
+
+  - alert: OpenstackLimesApiDown
+    expr: blackbox_api_status_gauge{check=~"limes"} == 1
+    for: 20m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is down. See Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
+      summary: '{{ $labels.check }} API down'
+
+  - alert: OpenstackLimesApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"limes"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is flapping'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is flapping for 30 minutes.'
+      summary: '{{ $labels.check }} API flapping'
+
+  - alert: OpenstackLimesAuditEventPublishFailing
+    expr: sum(increase(limes_failed_auditevent_publish[10m])) > 0
+    for: 1h
+    labels:
+      context: auditeventpublish
+      dashboard: limes-overview
+      service: limes
+      severity: info
+      tier: os
+    annotations:
+      description: "Audit events could not be published to the RabbitMQ server."
+      summary: "Audit events publish failing"
+
+  - alert: OpenstackLimesPodSchedulingFailedInsufficientCPU
+    expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"limes-.+"}[30m])) by (pod_name) > 0
+    for: 15m
+    labels:
+      severity: warning
+      tier: os
+      service: limes
+      context: cpu
+      dashboard: limes-overview
+      meta: "{{ $labels.pod_name }}"
+    annotations:
+      summary: Scheduling failed due to insufficient cpu
+      description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
+
+  - alert: OpenstackLimesSeesHypervisorWithoutAZ
+    expr: max by (hypervisor, hostname) (limes_nova_hypervisor_has_az) == 0
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: limes
+      context: nova-hypervisor
+      meta: "Nova hypervisor {{$labels.hypervisor}} is not assigned to any AZ."
+    annotations:
+      summary: Unmatched Nova hypervisors
+      description: Limes cannot determine the AZ of the hypervisor
+        {{$labels.hypervisor}}. Its capacity will be reported in the AZ
+        "unknown" in the resource management UI until this issue is fixed.

@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{required ".Values.image.repository is missing" .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: [sh]
         args:
@@ -21,7 +21,7 @@ spec:
           - |
             while true; do
               if [ $(date '+%H%M') = '{{ .Values.pruning_time }}' ]; then
-                sentry cleanup --days 60
+                sentry cleanup --days 7
               fi
               sleep 55
             done 

@@ -1,0 +1,54 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: fluent-vcenter
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+
+spec:
+  replicas: 0
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: fluent-vcenter
+      annotations:
+        checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: fluent-vcenter-etc
+          configMap:
+            name: fluent-vcenter
+      containers:
+        - name: fluent-vcenter
+          image: {{.Values.global.docker_repo}}/fluentd-vcenter-prometheus:{{.Values.image_version}}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: vclogs
+              containerPort: {{.Values.vcenter_logs_in_port}}
+              protocol: {{.Values.vcenter_logs_in_proto | upper}}
+            - name: esxlogs
+              containerPort: {{.Values.esx_logs_in_port}}
+              protocol: {{.Values.esx_logs_in_proto | upper}}
+            - name: metrics
+              containerPort: {{.Values.prometheus_port}}
+              protocol: TCP
+            - name: syslog
+              containerPort: 514
+              protocol: UDP
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: fluent-vcenter-etc
+              mountPath: /fluentd/etc

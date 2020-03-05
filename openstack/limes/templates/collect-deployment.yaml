@@ -26,6 +26,8 @@ spec:
         checksum: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
+        # The `openstack` Prometheus shall scrape metrics of OpenStack services.
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack | quote }}
     spec:
       volumes:
         - name: config
@@ -54,5 +56,26 @@ spec:
           ports:
             - name: metrics
               containerPort: 8080
+          {{- if $.Values.limes.resources.enabled }}
+          resources:
+            # observed usage for non-CCloud clusters: CPU <= 10m, RAM <= 50 MiB
+            # observed usage for CCloud clusters: CPU = 50m-500m, RAM = 100-150 MiB
+            limits:
+              {{- if eq $cluster_id "ccloud" }}
+                cpu: '1000m'
+                memory: '250Mi'
+              {{- else }}
+                cpu: '20m'
+                memory: '100Mi'
+              {{- end }}
+            requests:
+              {{- if eq $cluster_id "ccloud" }}
+                cpu: '250m'
+                memory: '250Mi'
+              {{- else }}
+                cpu: '10m'
+                memory: '100Mi'
+              {{- end }}
+          {{- end }}
 ---
 {{end}}

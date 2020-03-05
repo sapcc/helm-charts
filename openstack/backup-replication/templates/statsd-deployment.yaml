@@ -1,0 +1,40 @@
+{{ if .Values.source }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: statsd-exporter
+  labels:
+    component: backup-replication
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: statsd-exporter
+  template:
+    metadata:
+      labels:
+        component: statsd-exporter
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/statsd-configmap.yaml") $ | sha256sum }}
+    spec:
+      volumes:
+      - name: config
+        configMap:
+          name: statsd
+      containers:
+      - name: statsd
+        image: prom/statsd-exporter:{{ .Values.statsd.exporter_image_version }}
+        args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+        ports:
+          - name: statsd
+            containerPort: 9125
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+        volumeMounts:
+          - name: config
+            mountPath: /etc/statsd
+{{ end }}

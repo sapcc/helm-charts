@@ -1,0 +1,67 @@
+{{- if .Values.glance_nanny.enabled }}
+{{- if .Values.glance_nanny.db_purge.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: glance-nanny
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: glance-nanny
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: glance-nanny
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: glance-etc
+          configMap:
+            name: glance-etc
+      containers:
+{{- if .Values.glance_nanny.db_purge.enabled }}
+        - name: db-consistency-and-purge
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/glance-nanny:{{ .Values.glance_nanny.image_version }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.glance_nanny.debug }}/bin/bash /scripts/glance-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "glance,glance-mariadb"
+            - name: GLANCE_DB_PURGE_ENABLED
+              value: {{ .Values.glance_nanny.db_purge.enabled | quote }}
+            - name: GLANCE_DB_PURGE_OLDER_THAN
+              value: {{ .Values.glance_nanny.db_purge.older_than | quote }}
+            - name: GLANCE_DB_PURGE_MAX_NUMBER
+              value: {{ .Values.glance_nanny.db_purge.max_number | quote }}
+            - name: GLANCE_NANNY_INTERVAL
+              value: {{ .Values.glance_nanny.interval | quote }}
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: glance.DSN.python
+            {{- end }}
+          volumeMounts:
+            - mountPath: /glance-etc
+              name: glance-etc
+{{- end }}
+{{- end }}
+{{- end }}

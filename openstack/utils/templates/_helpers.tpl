@@ -2,6 +2,16 @@
 {{ range $item, $_ := . -}}{{$item | replace "." "_" -}},{{- end }}
 {{- end -}}
 
+{{- define "util.helpers.valuesToIni" -}}
+  {{- range $section, $values := . -}}
+[{{ $section }}]
+    {{- range $key, $value := $values}}
+{{ $key }} = {{ $value }}
+    {{- end }}
+
+{{ end }}
+{{- end }}
+
 {{- define "loggerIni" -}}
 {{ range $top_level_key, $value := . }}
 [{{ $top_level_key }}]

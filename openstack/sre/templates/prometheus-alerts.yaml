@@ -1,0 +1,60 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: openstack-sre-alerts
+  labels:
+    tier: sre
+    type: alerting-rules
+    prometheus: {{ required ".Values.prometheus.alerts missing" .Values.prometheus.alerts }}
+
+spec:
+  # https://landing.google.com/sre/workbook/chapters/alerting-on-slos/#short_and_long_windows_for_alerting
+  groups:
+  - name: openstack-sre.alerts
+    rules:
+    - alert: OpenstackSRE2or5PctErrorBudgetBurn
+      expr: |2
+          (
+            (100 * global:api_errors_per_request_sli:ratio_rate1h > on (ingress) 14.4 * global:api_errors_per_request_slo:percent)
+            and
+            (100 * global:api_errors_per_request_sli:ratio_rate5m > on (ingress) 14.4 * global:api_errors_per_request_slo:percent)
+          )
+          or
+          (
+            (100 * global:api_errors_per_request_sli:ratio_rate6h > on (ingress) 6 * global:api_errors_per_request_slo:percent)
+            and
+            (100 * global:api_errors_per_request_sli:ratio_rate30m > on (ingress) 6 * global:api_errors_per_request_slo:percent)
+          )
+      for: 2m
+      labels:
+        context: availability
+        service: "{{`{{$labels.ingress}}`}}"
+        severity: info
+        tier: sre
+      annotations:
+        summary: "an api burns its availability error budget very fast"
+        description: "{{`{{$labels.ingress}}`}} api has returned {{`{{$value}}`}}% 5xx."
+
+    - alert: OpenstackSRE10PctErrorBudgetBurn
+      expr: |2
+          (
+            (100 * global:api_errors_per_request_sli:ratio_rate1d > on (ingress) 3 * global:api_errors_per_request_slo:percent)
+            and
+            (100 * global:api_errors_per_request_sli:ratio_rate2h > on (ingress) 3 * global:api_errors_per_request_slo:percent)
+          )
+          or
+          (
+            (100 * global:api_errors_per_request_sli:ratio_rate3d > on (ingress) global:api_errors_per_request_slo:percent)
+            and
+            (100 * global:api_errors_per_request_sli:ratio_rate6h > on (ingress) global:api_errors_per_request_slo:percent)
+          )
+      for: 1h
+      labels:
+        context: availability
+        service: "{{`{{$labels.ingress}}`}}"
+        severity: warning
+        tier: sre
+      annotations:
+        summary: "an api has consumed its availability error budget by 10%"
+        description: "{{`{{$labels.ingress}}`}} api has returned {{`{{$value}}`}}% 5xx"

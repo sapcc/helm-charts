@@ -1,0 +1,53 @@
+{{- if .Values.enabled }}
+{{- if .Values.exporter_types }}
+{{ $global_values := .Values }}
+{{- range $vcenter := .Values.vcenters }}
+{{- $vchostname := split "." $vcenter.hostname }}
+{{- range $exporter_type_values := $global_values.exporter_types }}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: vcenter-exporter-{{ $vchostname._0 }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
+  labels:
+    system: openstack
+    service: metrics
+    component: configuration
+data:
+  config-{{ $vchostname._0 }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}.yaml: |
+    prometheus_port: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port | quote}}
+    log_level: {{ required ".Values.vcenters.log_level is missing" $global_values.log_level | quote }}
+    device_information:
+      hostname: {{ $vcenter.hostname | quote }}
+      username: {{ $vcenter.username | quote }}
+      password: {{ $vcenter.password | quote }}
+      port: {{ $global_values.port | quote }}
+      ignore_ssl: {{ $global_values.ignore_ssl | quote }}
+      availability_zone: {{ $global_values.availability_zone | quote }}
+    exporter_types:
+      {{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}:
+        name: {{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name | quote }}
+      {{- range $key, $val := $exporter_type_values }}
+      {{ if eq $key "collector" }}
+        {{ $key }}:
+          {{- range $listitem := $val }}
+          - {{ $listitem }}
+          {{- end}}
+      {{ else if eq $key "vm_metrics" }}
+        {{ $key }}:
+          {{- range $listitem := $val }}
+          - {{ $listitem }}
+          {{- end }}
+      {{ else if eq $key "hv_metrics" }}
+        {{ $key }}:
+          {{- range $listitem := $val }}
+          - {{ $listitem }}
+          {{- end }}
+      {{ else }}
+        {{ $key }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

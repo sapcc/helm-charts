@@ -31,8 +31,14 @@ spec:
 {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
       - name: ironic-api
+        {{- if .Values.loci.enabled }}
+        image: {{ .Values.global.imageRegistry }}/{{ .Values.loci.imageNamespace }}/loci-ironic:{{ .Values.loci.imageVersion }}
+        {{- else }}
         image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicApi | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        {{- end }}
         imagePullPolicy: IfNotPresent
+        resources:
+{{ toYaml .Values.pod.resources.api | indent 10 }}
         command:
           - dumb-init
           - kubernetes-entrypoint
@@ -44,7 +50,11 @@ spec:
         - name: DEPENDENCY_JOBS
           value: "ironic-db-migration"
         - name: DEPENDENCY_SERVICE
+          {{- if eq .Values.mariadb.enabled true }}
+          value: "ironic-mariadb,rabbitmq"
+          {{- else }}
           value: "ironic-postgresql,rabbitmq"
+          {{- end }}
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
           valueFrom:
@@ -97,13 +107,21 @@ spec:
       - name: statsd
         image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
         imagePullPolicy: IfNotPresent
+        args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+        resources:
+{{ toYaml .Values.pod.resources.statsd | indent 10 }}
         ports:
           - name: statsd
             containerPort: 9125
             protocol: UDP
           - name: metrics
             containerPort: {{ .Values.statsd.port }}
-{{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 8 }}
+        volumeMounts:
+          - name: ironic-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
+{{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 6 }}
       volumes:
       - name: etcironic
         emptyDir: {}

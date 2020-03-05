@@ -1,0 +1,24 @@
+{{- if .Values.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $targets := .Values.metrics.targets -}}
+{{- $port := .Values.listenPort -}}
+{{- $servicetype := .Values.service.type -}}
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $app.fullname }}
+spec:
+  type: {{ required "Value service.type" $servicetype }}
+  ports:
+    - port: {{ required "Value listenPort" $port }}
+      targetPort: {{ required "Value listenPort" $port }}
+      protocol: TCP
+      name: prometheus
+  selector:
+    app: {{ $app.fullname }}
+{{- end }}
+{{- end }}
+{{- end }}

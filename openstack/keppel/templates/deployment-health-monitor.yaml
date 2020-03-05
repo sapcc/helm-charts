@@ -1,0 +1,64 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: keppel-health-monitor
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: keppel-health-monitor
+  template:
+    metadata:
+      labels:
+        name: keppel-health-monitor
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/targets: "openstack"
+    spec:
+      containers:
+        - name: monitor
+          image: {{include "keppel_image" .}}
+          imagePullPolicy: {{.Values.keppel.image_pull_policy}}
+          args: [ server, healthmonitor, {{quote .Values.keppel.healthcheck_account}} ]
+          env:
+            - name:  KEPPEL_DEBUG
+              value: 'false'
+            - name: OS_AUTH_URL
+              value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
+            - name:  OS_AUTH_VERSION
+              value: '3'
+            - name:  OS_IDENTITY_API_VERSION
+              value: '3'
+            - name:  OS_INTERFACE
+              value: internal
+            - name:  OS_PASSWORD
+              value: {{ quote $.Values.keppel.service_password }}
+            - name:  OS_PROJECT_DOMAIN_NAME
+              value: 'Default'
+            - name:  OS_PROJECT_NAME
+              value: 'service'
+            - name:  OS_REGION_NAME
+              value: {{ quote $.Values.global.region }}
+            - name:  OS_USER_DOMAIN_NAME
+              value: 'Default'
+            - name:  OS_USERNAME
+              value: 'keppel'
+          # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
+          # - CPU: spiky, but always below 1m
+          # - memory: usually level around 17 Mi
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "64Mi"
+            limits:
+              cpu: "10m"
+              memory: "64Mi"

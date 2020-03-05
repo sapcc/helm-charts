@@ -1,0 +1,22 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: vcenter-operator-seed
+spec:
+  requires:
+  - monsoon3/nova-seed
+
+  domains:
+  - name: {{ .Values.variables.os_user_domain_name }}
+    users:
+    - name: {{ .Values.variables.os_username }}{{ .Values.global.user_suffix }}
+      description: Vcenter Operator
+      password: {{ tuple . .Values.variables.os_username | include "identity.password_for_user" | quote }}
+  - name: {{ .Values.variables.os_project_domain_name }}
+    projects:
+    - name: {{ .Values.variables.os_project_name }}
+      role_assignments:
+      - user: {{ .Values.variables.os_username }}{{ .Values.global.user_suffix }}@{{ .Values.variables.os_user_domain_name }}
+        role: admin
+      - user: {{ .Values.variables.os_username }}{{ .Values.global.user_suffix }}@{{ .Values.variables.os_user_domain_name }}
+        role: cloud_compute_admin

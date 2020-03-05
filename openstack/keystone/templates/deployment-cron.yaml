@@ -33,23 +33,37 @@ spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: keystone
 {{- end }}
+      initContainers:
+      - name: kubernetes-entrypoint
+        #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
+        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
+        imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+        command:
+          - /usr/local/bin/kubernetes-entrypoint
+        env:
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+{{- if .Release.IsInstall }}
+        - name: DEPENDENCY_JOBS
+          value: keystone-job-migration,keystone-job-bootstrap
+{{- else }}
+  {{- if or .Values.run_db_migration }}
+        - name: DEPENDENCY_JOBS
+          value: keystone-job-migration
+  {{- end }}
+{{- end }}
+        - name: DEPENDENCY_SERVICE
+          value: {{ .Release.Name }}-mariadb
+        - name: COMMAND
+          value: "true"
       containers:
         - name: keystone-cron
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ .Values.cron.imageTag }}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
           imagePullPolicy: {{ .Values.cron.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+            - bash
+            - /scripts/cron
           env:
-            - name: COMMAND
-              value: "bash /scripts/cron"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-{{- if .Release.IsInstall }}
-            - name: DEPENDENCY_JOBS
-              value: keystone-job-migration,keystone-job-bootstrap
-{{- end }}
-            - name: DEPENDENCY_SERVICE
-              value: {{ .Release.Name }}-postgresql
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
@@ -61,7 +75,20 @@ spec:
                   key: keystone.DSN.python
             {{- end }}
             {{- end }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           volumeMounts:
+{{- if ne .Values.api.policy "json" }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+{{- else }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.json
+              subPath: policy.json
+              readOnly: true
+{{- end }}
             - mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               name: keystone-etc
@@ -76,14 +103,9 @@ spec:
             - name: credential-keys
               mountPath: /credential-keys
               readOnly: true
-          {{- if .Values.cron.resources.enabled }}
+          {{- if .Values.cron.resources }}
           resources:
-            limits:
-              cpu: {{ .Values.cron.resources.limits.cpu | quote }}
-              memory: {{ .Values.cron.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.cron.resources.requests.cpu | quote }}
-              memory: {{ .Values.cron.resources.requests.memory | quote }}
+{{ toYaml .Values.cron.resources | indent 12 }}
           {{- end }}
       volumes:
         - name: keystone-etc

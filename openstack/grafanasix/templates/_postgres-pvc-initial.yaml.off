@@ -1,0 +1,16 @@
+# this file can initially be added to create the required pvc if one is configured
+{{- if .Values.postgresql.persistence.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Values.postgresql.persistence.existingClaim | quote }}
+  labels:
+    component: grafana-postgres
+    name: grafana-postgres
+spec:
+  accessModes:
+    - "ReadWriteMany"
+  resources:
+    requests:
+      storage: "10Gi"
+{{- end }}

@@ -1,0 +1,109 @@
+global:
+  region: '@/cc/secrets'
+  domain: '@/cc/secrets'
+
+ldap:
+  host: '@/cc/secrets'
+  port: 636
+  ssl: true
+  ssl_skip_verify: false
+  password: '@/cc/secrets'
+  suffix: '@/cc/secrets'
+  bind_dn: '@/cc/secrets'
+  filter: '@/cc/secrets'
+  group_search_base_dns: '@/cc/secrets'
+  search_filter: '@/cc/secrets'
+  search_base_dbs: '@/cc/secrets'
+  members: '@/cc/secrets'
+  monitoring_user: '@/cc/secrets'
+  monitoring_editor: '@/cc/secrets'
+  monitoring_admin: '@/cc/secrets'
+
+alertmanager:
+  password: '@/cc/secrets'
+
+image:
+  pullPolicy: IfNotPresent
+
+grafana:
+  vice_president: true
+  disco: true
+  image: grafana/grafana
+  image_version: 6.3.5
+  minitrue_version: v0.9.5
+  log_level: 'Info'
+  admin:
+    user: 'grafana_admin'
+    password: '@/cc/secrets'
+  local:
+    user: 'local'
+    password: '@/cc/secrets'
+  db:
+    type: 'postgres'
+    host: 'postgres.grafana'
+    ssl_mode: disable
+  role:
+    viewer: 'monitoring_viewer'
+    editor: 'monitoring_editor'
+    admin: 'monitoring_admin'
+  port:
+    public: '3000'
+  endpoint:
+    port:
+      public: '3000'
+    host:
+      public: '@/cc/secrets'
+  auth:
+    basic_auth:
+      enabled: true
+    tls_client_auth:
+      enabled: true
+      secret: "kube-system/ingress-cacrt"
+    ldap:
+      enabled: true
+    anonymous:
+      enabled: false
+
+ingress:
+  enabled: false
+  global: false
+
+# For kiosk mode
+nginx:
+  enabled: false
+  image: nginx
+  image_version: 1.15-alpine
+  port:
+    public: '3001'
+  endpoint:
+    port:
+      public: '3001'
+    host:
+      public: '@/cc/secrets'
+
+postgresql:
+  image: '@/cc/secrets'
+  imageTag: '9.4.21'
+  metrics:
+    enabled: false
+  postgresDatabase: grafana
+  postgresUser: postgres
+  postgresPassword: '@/cc/secrets'
+  persistence:
+    enabled: false
+    existingClaim: storage-grafana-postgres-0
+  backup:
+    enabled: true
+    metrics: true
+    os_password: '@/cc/secrets'
+  pgbouncer:
+    enabled: false
+  nameOverride: pgsql
+
+# certs required for some datasources
+authentication:
+  enabled: false
+  # defined via secrets.
+  # ssoCert:
+  # ssoKey:
+  # caCert:

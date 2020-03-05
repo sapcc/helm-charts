@@ -1,3 +1,4 @@
+{{- if eq .Values.postgresql.enabled true }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,6 +17,7 @@ data:
     #!/usr/bin/env bash
     export PGUSER={{ default "postgres" .Values.postgresql.postgresUser }}
     psql <<- EOSQL
-        ALTER ROLE {{ .Values.global.dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.global.dbPassword }}';
-        ALTER ROLE {{ .Values.postgresql.postgresUser }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.postgresPassword }}';
+        ALTER ROLE {{ .Values.global.dbUser }} WITH ENCRYPTED PASSWORD '{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}';
+        ALTER ROLE {{ .Values.postgresql.postgresUser }} WITH ENCRYPTED PASSWORD '{{ required "A valid .Values.global.postgresPassword required!" .Values.postgresql.postgresPassword }}';
     EOSQL
+{{- end }}

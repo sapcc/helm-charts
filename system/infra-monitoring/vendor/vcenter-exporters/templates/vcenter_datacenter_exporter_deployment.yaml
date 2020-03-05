@@ -1,0 +1,66 @@
+{{- if .Values.enabled }}
+{{- if .Values.exporter_types }}
+{{ $global_values := .Values }}
+{{- range $vcenter := .Values.vcenters }}
+{{- $vchostname := split "." $vcenter.hostname }}
+{{- range $exporter_type_values := $global_values.exporter_types }}
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: vcenter-exporter-{{ $vchostname._0 }}-{{ required ".Values<exporter_type>.name is missing" $exporter_type_values.name }}
+  labels:
+    system: openstack
+    service: metrics
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: vcenter-exporter-{{ $vchostname._0 }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
+    spec:
+      volumes:
+        - name: maia-etc
+          configMap:
+            name: vcenter-exporter-{{ $vchostname._0 }}-{{ required ".Values..<exporter_type>.name is missing" $exporter_type_values.name }}
+      containers:
+        - name: vcenter-exporter
+          imagePullPolicy: IfNotPresent
+          image: {{ required ".Values.docker_repo is missing" $global_values.docker_repo }}/infrastructure-exporters:{{ $global_values.image_version | replace "string:" "" }}
+          args:
+            - -f
+            - /maia-etc/config-{{ $vchostname._0 }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}.yaml
+            - -t
+            - {{ $exporter_type_values.name }}
+          {{- if $global_values.resources.enabled }}
+          livenessProbe:
+            exec:
+              command: 
+                - sh 
+                - -c
+                - '[ $(ls -l /proc/$(ps -ef | grep cmd.py | grep -v grep | awk "{print $1}")/task | wc -l) -lt 500 ]'
+            initialDelaySeconds: 45
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: {{ required ".Values.resources.requests.memory is missing" $global_values.resources.requests.memory }}
+            limits:
+              memory: {{ required ".Values.resources.limits.memory is missing" $global_values.resources.limits.memory }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /maia-etc
+              name: maia-etc
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

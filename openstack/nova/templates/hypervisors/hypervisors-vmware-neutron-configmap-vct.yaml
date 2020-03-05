@@ -1,0 +1,39 @@
+{{- if and .Values.neutron_dvs_agent_enabled (or (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (.Values.isImageTransportTemplating | default false)) }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vcenter-cluster-neutron-ml2-vmware-configmap'
+  scope: 'cluster'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: neutron-ml2-vmware-{= name =}
+    labels:
+      system: openstack
+      type: configuration
+      component: neutron
+  data:
+    ml2-vmware.ini: |
+      [DEFAULT]
+      host = nova-compute-{= name =}
+      backdoor_socket=/var/lib/neutron/eventlet_backdoor.socket
+
+      [securitygroup]
+      firewall_driver = networking_dvs.plugins.ml2.drivers.mech_dvs.agent.dvs_firewall.DvsSecurityGroupsDriver
+
+      [ml2_vmware]
+      vsphere_hostname = {= host =}
+      cluster_name = {= cluster_name | quote =}
+
+      vsphere_login = {= username | quote =}
+      vsphere_password = {= password | quote =}
+
+      network_maps = "{= physical | ini_escape =}:{= bridge | ini_escape =}"
+
+      [DVS]
+      portgroup_retention_iterations = 50
+{{ end }}

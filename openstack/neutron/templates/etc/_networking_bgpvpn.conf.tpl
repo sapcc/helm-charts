@@ -1,0 +1,2 @@
+[service_providers]
+service_provider=BGPVPN:ASR1K:asr1k_neutron_l3.neutron.services.service_drivers.asr1k.ASR1KBGPVPNDriver:default

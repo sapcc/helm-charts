@@ -1,0 +1,37 @@
+global:
+  region: global
+  domain: cloud.sap
+
+prometheus-uber:
+  name: uber
+
+  retentionTime: 1y
+
+  additionalScrapeConfigs:
+    name: prometheus-uber-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: true
+    disco: false
+    hostsFQDN:
+      - prometheus-uber.global.cloud.sap
+
+  persistence:
+    enabled: true
+    size: 300Gi
+
+  serviceDiscoveries:
+    endpoints:
+      enabled: false
+
+  # Comment the `prometheus-sso-cert` if SSO is not used (aka authentication.enabled=false)
+  secrets:
+    - prometheus-uber-sso-cert
+
+# Regional Prometheis are only accessible after presenting a valid SSO certificate.
+authentication:
+  enabled: false
+  # Defined via secrets.
+  # ssoCert:
+  # ssoKey:

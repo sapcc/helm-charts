@@ -1,0 +1,57 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: es-manager
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+    component: elasticsearch
+    role: manager
+  annotations:
+    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: manager
+      annotations:
+        checksum/application.conf: {{ include  (print $.Template.BasePath "/_application.conf.tpl") . | sha256sum }}
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: payload
+      volumes:
+        - name: es-etc
+          configMap:
+            name: es-manager-etc
+      containers:
+      - name: es-manager
+        image: {{.Values.global.docker_repo}}/elk-elasticsearch-manager:{{.Values.image_version_elasticsearch_manager}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /usr/local/bin/dumb-init
+        args:
+          - /opt/cerebro/bin/cerebro
+          - -Dconfig.file=/es-etc/application.conf
+          - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
+          - -Des.networkaddress.cache.ttl=20
+          - -Des.networkaddress.cache.negative.ttl=10
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        volumeMounts:
+          - mountPath: /es-etc
+            name: es-etc
+        ports:
+          - name: manager
+            containerPort: {{.Values.port_internal}}

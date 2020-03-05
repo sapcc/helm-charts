@@ -4,9 +4,12 @@ log_level = DEBUG
 {{- else -}}
 log_level = INFO
 {{- end }}
+{{- if .Values.sentry.enabled }}
+log_custom_handlers = swift_sentry.sentry_logger
+{{- end }}
 
 [object-expirer]
-concurrency = 2
+concurrency = {{ .Values.object_expirer_concurrency }}
 # auto_create_account_prefix = .
 
 [pipeline:main]

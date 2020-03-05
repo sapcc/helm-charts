@@ -1,0 +1,71 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: BlackboxTestsDatapathScrapeMissing
+    expr: absent(up{component="blackbox-tests",type="datapath"})
+    for: 1h
+    labels:
+      service: blackbox-tests-datapath
+      severity: warning
+      tier: os
+    annotations:
+      description: Blackbox-Tests-Datapath failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: Blackbox-Tests-Datapath cannot be scraped
+
+  - alert: BlackboxDatapathMetricsDown
+    expr: absent(up{kubernetes_name="blackbox-tests-datapath",kubernetes_namespace="blackbox"}) == 1
+    for: 15m
+    labels:
+      service: blackbox-tests-datapath
+      severity: info
+      tier: os
+    annotations:
+      description: Datapath metrics are down for 15 times in a row.
+      summary: Blackbox datapath metrics
+
+  - alert: OpenstackDatapathDown
+    expr: blackbox_datapath_status_gauge{service!="ntp", service!="designate", service!="neutron", service!="nova", service!="keystone", service!="lbaas", service!="manila"} == 1
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: '{{ $labels.check }}'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: Datapath {{ $labels.check }} is down for 15 times in a row.
+      summary: Blackbox datapath test
+
+  - alert: OpenstackDatapathPartiallyDown
+    expr: blackbox_datapath_status_gauge{service!="ntp", service!="designate", service!="neutron", service!="nova", service!="keystone", service!="lbaas", service!="manila"} == 0.5
+    for: 15m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: '{{ $labels.check }}'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: Datapath {{ $labels.check }} is down for 15 times in a row.
+      summary: Blackbox datapath test
+
+  - alert: OpenstackDatapathFlapping
+    expr: changes(blackbox_datapath_status_gauge{service!="ntp", service!="designate", service!="neutron", service!="nova", service!="keystone", service!="lbaas", service!="manila"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: '{{ $labels.check }}'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: Datapath {{ $labels.check }} is flapping for 30 minutes.
+      summary: Blackbox datapath test

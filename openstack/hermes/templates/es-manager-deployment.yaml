@@ -1,0 +1,57 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: es-manager
+  namespace: hermes
+  labels:
+    system: openstack
+    service: audit
+    component: es-manager
+    role: manager
+  #annotations:
+  #  kubernetes.io/change-cause: {{.Values.cluster_deployment_reason}}
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: es-manager
+        role: manager
+      annotations:
+        checksum/application.conf.tpl: {{ include "hermes/templates/etc/_application.conf.tpl" . | sha256sum }}
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: es-etc
+          configMap:
+            name: es-manager-hermes-etc
+      containers:
+      - name: es-manager
+        image: {{.Values.docker_repo}}/elk-elasticsearch-manager:{{.Values.hermes_image_version_elasticsearch_manager}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /usr/local/bin/dumb-init
+        args:
+          - /opt/cerebro/bin/cerebro
+          - -Dconfig.file=/es-etc/elasticsearch-application.conf
+          - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
+          - -Des.networkaddress.cache.ttl=20
+          - -Des.networkaddress.cache.negative.ttl=10
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        volumeMounts:
+          - mountPath: /es-etc
+            name: es-etc
+        ports:
+          - name: manager
+            containerPort: {{.Values.hermes.elasticsearch.manager_port_internal}}

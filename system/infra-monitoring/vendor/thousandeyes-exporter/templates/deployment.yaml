@@ -1,0 +1,53 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ include "infraMonitoring.name" . }}
+        component: thousandeyes
+      annotations:
+        prometheus.io/scrape: {{ .Values.metrics.scrape | quote }}
+        prometheus.io/port: {{ .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ .Values.metrics.targets | quote }}
+    spec:
+      containers:
+         - name: {{ include "infraMonitoring.name" . }}
+           image: {{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.image.namespace }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
+           imagePullPolicy: IfNotPresent
+           env:
+             - name: THOUSANDEYES_TOKEN
+               value: {{ .Values.bearer_token }}
+           ports:
+             - name: metrics
+               containerPort: {{ .Values.metrics.port}}
+               protocol: TCP
+
+           readinessProbe:
+             httpGet:
+               path: /
+               port: {{ .Values.metrics.port}}
+             initialDelaySeconds: 5
+             timeoutSeconds: 5
+             periodSeconds: 10
+
+           livenessProbe:
+             httpGet:
+               path: /
+               port: {{ .Values.metrics.port }}
+             initialDelaySeconds: 5
+             timeoutSeconds: 5
+             periodSeconds: 10

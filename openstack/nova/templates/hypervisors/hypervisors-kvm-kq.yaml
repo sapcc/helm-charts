@@ -1,0 +1,17 @@
+{{- if and (.Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1") (not .Values.hypervisors_kvm)  }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosQuery
+metadata:
+  name: nova-kvm-nodes
+  namespace: monsoon3
+python: |
+    kvm_nodes = []
+
+    v1 = k8s.CoreV1Api()
+    for item in v1.list_node(label_selector='species=hypervisor').items:
+        if any(taint.key=='species' and taint.value=='hypervisor' and taint.effect == 'NoSchedule' for taint in item.spec.taints):
+            kvm_nodes.append({
+                'name': item.spec.external_id.split('.', 1)[0],
+                'node_name': item.spec.external_id,
+            })
+{{- end }}

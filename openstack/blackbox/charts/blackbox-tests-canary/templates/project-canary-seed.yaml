@@ -17,19 +17,27 @@ spec:
 
     groups:
     - name: CC3TEST_DOMAIN_ADMINS
-      roles:
+      role_assignments:
       - project: test
         role: admin
       - project: test
-        role: volume_admin
-      - project: test
-        role: sharedfilesystem_admin
-      - project: test
-        role: network_admin
+        role: automation_admin
       - project: test
         role: compute_admin
       - project: test
+        role: keymanager_admin
+      - project: test
+        role: kubernetes_admin
+      - project: test
+        role: network_admin
+      - project: test
         role: resource_admin
+      - project: test
+        role: sharedfilesystem_admin
+      - project: test
+        role: swiftoperator
+      - project: test
+        role: volume_admin
       - project: test
         role: member
       - project: test
@@ -37,21 +45,29 @@ spec:
 
     projects:
     - name: test
-      roles:
+      role_assignments:
       - user: {{.Values.global.openstack.users.admin.username}}
         role: admin
       - user: {{.Values.global.openstack.users.admin.username}}
-        role: volume_admin
-      - user: {{.Values.global.openstack.users.admin.username}}
-        role: sharedfilesystem_admin
-      - user: {{.Values.global.openstack.users.admin.username}}
-        role: network_admin
+        role: automation_admin
       - user: {{.Values.global.openstack.users.admin.username}}
         role: compute_admin
       - user: {{.Values.global.openstack.users.admin.username}}
-        role: member
+        role: keymanager_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: kubernetes_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: network_admin
       - user: {{.Values.global.openstack.users.admin.username}}
         role: resource_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: sharedfilesystem_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: swiftoperator
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: volume_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: member
       - user: {{.Values.global.openstack.users.admin.username}}
         role: audit_viewer
       - user: {{.Values.global.openstack.users.member.username}}
@@ -72,6 +88,13 @@ spec:
       - name: private_canary_test_cc3test_router
         external_gateway_info:
           network: {{.Values.global.network.monsoon3}}
+          external_fixed_ips:
+          - subnet: {{.Values.global.subnet.monsoon3}}
         interfaces:
         - subnet: private_canary_test_cc3test_sub
 
+  rbac_policies:
+    - object_type: network
+      object_name: {{.Values.global.network.monsoon3}}
+      action: access_as_shared
+      target_tenant_name: test@cc3test

@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: kibana
+  namespace: elk
+  annotations:
+    vice-president: {{ default true .Values.ingress.vice_president | quote }}
+    disco: {{ default true .Values.ingress.disco | quote }}
+    # this is for kibana sso cert evaluation
+  {{- if .Values.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.auth.tls_client_auth.secret }}
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+  {{ end }}
+
+spec:
+  tls:
+     - secretName: kibana
+       hosts: [{{.Values.endpoint_host_public}}.{{.Values.global.region}}.{{.Values.global.domain}}]
+  rules:
+    - host: {{.Values.endpoint_host_public}}.{{.Values.global.region}}.{{.Values.global.domain}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: {{.Values.global.kibana_service}}
+            servicePort: {{.Values.global.kibana_port_public}}

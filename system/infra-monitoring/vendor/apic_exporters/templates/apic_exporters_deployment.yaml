@@ -1,0 +1,44 @@
+{{- if .Values.enabled }}
+{{- if .Values.exporter_types }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: apic-exporters-deployment
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: apic-exporters
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+        prometheus.io/targets: "infra-collector"
+    spec:
+      volumes:
+        - name: apic-exporters-etc
+          configMap:
+            name: apic-exporters
+      containers:
+        - name: apic-exporters
+          imagePullPolicy: IfNotPresent
+          image: {{ .Values.docker_repo }}:{{ .Values.image_version | replace "string:" "" }}
+          args:
+            - -f
+            - /apic-exporters-etc/config-apic-exporters.yaml
+            - -t
+            - apichealth
+          volumeMounts:
+            - mountPath: /apic-exporters-etc
+              name: apic-exporters-etc
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.listen_port }}
+{{- end }}
+{{- end }}

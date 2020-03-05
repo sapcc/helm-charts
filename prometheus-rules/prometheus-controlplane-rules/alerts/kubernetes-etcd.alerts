@@ -1,0 +1,15 @@
+groups:
+- name: kubernetes-etcd.alerts
+  rules:
+  - alert: KubernikusEtcdBackupFailed
+    expr: sum(etcdbr_snapshot_duration_seconds_count{kind="Full", succeeded="false"}) without (succeeded) unless (time() - etcdbr_snapshot_latest_timestamp{kind="Full"} < 2 * 3600)
+    for: 5m
+    labels:
+      tier: kks
+      service: kubernikus
+      severity: warning
+      context: kluster
+      meta: "Latest etcd backup for kluster {{ $labels.release }} older than 2h"
+    annotations:
+      description: Backup of etcd is failing for kluster {{ $labels.release }}. Latest full backup is older then 2 hours.
+      summary: Etcd backup error for kluster {{ $labels.release }}

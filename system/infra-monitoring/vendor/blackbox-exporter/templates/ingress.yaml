@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+  annotations:
+    vice-president: {{ default false .Values.ingress.vice_president | quote }}
+    disco: {{ default false .Values.ingress.disco | quote }}
+
+spec:
+  tls:
+    - secretName: {{ include "infraMonitoring.fullname" . }}
+      hosts: [{{.Values.ingress.hostName}}.{{.Values.global.region}}.{{.Values.global.domain}}]
+  rules:
+    - host: {{.Values.ingress.hostName}}.{{.Values.global.region}}.{{.Values.global.domain}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: {{ include "infraMonitoring.fullname" . }}
+            servicePort: {{ .Values.service.port }}

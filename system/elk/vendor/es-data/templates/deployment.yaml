@@ -1,0 +1,103 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: es-data
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+    component: elasticsearch
+    role: data
+  annotations:
+    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
+spec:
+  serviceName: "es-data"
+  replicas: {{.Values.data_replicas}}
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: data
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: data
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: payload
+      volumes:
+        - name: es-etc
+          configMap:
+            name: es-data-etc
+      initContainers:
+      - name: sysctl
+        image: {{.Values.global.docker_repo}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
+        imagePullPolicy: IfNotPresent
+        command: ['sysctl', '-w', 'vm.max_map_count=262144']
+        securityContext:
+          runAsUser: 0
+          privileged: true
+      containers:
+        - name: es
+          image: {{.Values.global.docker_repo}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
+          imagePullPolicy: IfNotPresent
+#          command: ["/usr/local/bin/dumb-init", "/bin/bash", "-c", "while true; do sleep 1000; done"]
+          command: ["/usr/local/bin/dumb-init", "/bin/bash", "/es-etc/elasticsearch-start"]
+          resources:
+            requests:
+              memory: "10Gi"
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KUBERNETES_CA_CERTIFICATE_FILE
+              value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_MASTER
+              value: "false"
+            - name: NODE_INGEST
+              value: "false"
+            - name: NODE_DATA
+              value: "true"
+            - name: HTTP_ENABLE
+              value: "false"
+            - name: ES_JAVA_OPTS
+              value: "-XX:MaxRAM=10g -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
+            - name: READONLYREST_ENABLE
+              value: "false"
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+                - SYS_RESOURCE
+          volumeMounts:
+            - mountPath: /data
+              name: es
+            - mountPath: /es-etc
+              name: es-etc
+          ports:
+            - name: transport
+              containerPort: {{.Values.global.cluster_port}}
+              protocol: TCP
+            - name: dummymasterport
+              hostPort: {{.Values.data_dummy_port}}
+              hostIP: 127.0.0.1
+              containerPort: {{.Values.data_dummy_port}}
+  volumeClaimTemplates:
+  - metadata:
+      name: es
+      namespace: elk
+#      annotations:
+#        volume.alpha.kubernetes.io/storage-class: anything
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{.Values.data_volumesize}}

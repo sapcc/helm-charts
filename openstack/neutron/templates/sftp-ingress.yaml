@@ -1,0 +1,31 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: neutron-sftp-backup
+  annotations:
+    # The ingress controller won't pick this up
+    kubernetes.io/ingress.class: "noop.disco"
+    # Enable CNAME creation via DISCO.
+    disco: "true"
+    # CNAME to external IP.
+    disco/record: {{ index .Values.sftp.externalIPs 0 | quote }}
+    # Record type.
+    disco/record-type: "A"
+
+# workaround to enable the vice-president for non-ingress based swift.
+# the vp will only evaluate the following spec.tls section
+spec:
+  # Mandatory TLS spec but not used for DISCO.
+  tls:
+     - secretName: not-existent
+       hosts: [something]
+  # DISCO creates CNAME bases on spec.rules[].host
+  rules:
+    - host: {{ include "sftp_api_endpoint_host" . | quote }}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: sftp
+            servicePort: 10022

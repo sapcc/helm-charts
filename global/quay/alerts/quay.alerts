@@ -1,0 +1,41 @@
+groups:
+- name: quay.alerts
+  rules:
+  - alert: KubernetesQuayHighNumberOfDatabaseConnections
+    expr: sum by (datname) (pg_stat_activity_count{kubernetes_namespace="quay-enterprise", datname="quay"}) >= 500
+    for: 5m
+    labels:
+      tier: k8s
+      service: quay
+      severity: warning
+      context: quay
+      meta: "{{ $labels.datname }} has a high number of database connections"
+    annotations:
+      description: High number of database connections
+      summary: "Quay has {{ $labels.value }} database connections and might be unavailable soon"
+
+  - alert: KubernetesQuayPredictHighNumberOfDatabaseConnections
+    expr: predict_linear(pg_stat_activity_count{kubernetes_namespace="quay-enterprise", datname="quay"}[1h], 3*3600) >= 2000
+    for: 5m
+    labels:
+      tier: k8s
+      service: quay
+      severity: warning
+      context: quay
+      meta: "Predicting a high number of database connections for {{ $labels.datname }}"
+    annotations:
+      description: High number of database connections
+      summary: Predicting more than 2000 database connections for quay within the next 3 hours and might be unavailable soon.
+
+  - alert: QuayPostgresDatabaseSize
+    expr: pg_database_size_bytes{datname="quay"} >= 300 * 1024^3
+    for: 5m
+    labels:
+      tier: k8s
+      service: quay
+      severity: warning
+      context: quay
+      meta: "Database {{ $labels.datname }} to large"
+    annotations:
+      description: "The quay database size is greater than 300GB and will exceed the PV limits eventually"
+      summary: Quay database is too large

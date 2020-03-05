@@ -3,24 +3,25 @@
 # Declare variables to be passed into your templates.
 global:
   imageNamespace: monsoon
-  imageRegistry: DEFINED-IN-REGION-CHART
   dbUser: glance
   master_password: ""
   pgbouncer:
     enabled: true
 
-# The registry is deprecated, setting imageVersionGlanceRegistry or imageVersion will enable the deployment (but not the setting)
-imageVersionGlance: null
-imageVersionGlanceApi: null
-imageVersionGlanceRegistry: null
+# The registry is deprecated, setting imageVersionGlanceRegistry will enable the deployment (but not the setting)
+# imageVersionGlance: null
+# imageVersionGlanceApi: null
+# imageVersionGlanceRegistry: null
 
-stores: "swift,file"
+# add 'file' store for the build-up
+stores: "swift"
 default_store: swift
 
+# set file store and persistence to 'true' for the build-up
 file:
-  enabled: true
+  enabled: false
   persistence:
-    enabled: true
+    enabled: false
     existingClaim: glance-pvclaim
 
 swift:
@@ -34,7 +35,7 @@ swift:
 
 api_port_internal: '9292'
 
-replicas: 1
+replicas: 2
 
 upgrades:
   revisionHistory: 3
@@ -46,24 +47,24 @@ upgrades:
 api:
   debug: false
   resources:
-    enabled: false
+    enabled: true
     limits:
-      memory: 128Mi
+      memory: 1Gi
       cpu: 500m
     requests:
-      memory: 128Mi
-      cpu: 500m
+      memory: 1Gi
+      cpu: 300m
 
 registry:
   debug: false
   resources:
-    enabled: false
+    enabled: true
     limits:
-      memory: 128Mi
-      cpu: 500m
+      memory: 1Gi
+      cpu: 200m
     requests:
-      memory: 128Mi
-      cpu: 500m
+      memory: 500Mi
+      cpu: 100m
 
 services:
   type: ClusterIP
@@ -87,93 +88,122 @@ metrics:
   enabled: true
   port: "9102"
 
-memcached:
-  metrics:
-    enabled: true
-
 sentry:
   enabled: true
 
+tempest:
+  imageTag: manila-0.0.2
+  domain_id: null
+  enabled: false
+  expected_failures: {}
+
+unittest:
+  enabled: false
+
+db_name: glance
+
+mariadb:
+  enabled: true
+  name: glance
+  initdb_configmap: glance-initdb
+  persistence_claim:
+    name: db-glance-pvclaim
+
+mysql_metrics:
+  db_name: glance
+  db_user: glance
+  customMetrics:
+    - help: Glance Image count
+      labels:
+      - "id"
+      - "name"
+      - "status"
+      - "size"
+      - "owner"
+      - "visibility"
+      name: openstack_glance_image_gauge
+      query: |
+        SELECT
+          id,
+          name,
+          status,
+          size,
+          owner,
+          visibility,
+          COUNT(*) AS gauge
+        from images
+        where
+          deleted='false'
+        GROUP BY
+          id;
+      values:
+      - "gauge"
+
 postgresql:
-  imageTag: '9.4.14'
-  postgresDatabase: glance
-  dbUser: glance
-  dbInit: glance-db-init
-  dbMaintain: glance-db-maintain
-  pgbouncer:
-    enabled: true
-  persistence:
-    enabled: true
-    existingClaim: db-glance-pvclaim
-  backup:
-    enabled: true
-    metrics: true
-    os_password: null
-  shared_preload_libraries: pg_stat_statements
-  track_activity_query_size: 2048
+  enabled: false
 
 logging:
   formatters:
     context:
-        class: oslo_log.formatters.ContextFormatter
+      class: oslo_log.formatters.ContextFormatter
     default:
-        format: "%(message)s"
+      format: "%(message)s"
   handlers:
     stdout:
-        class: StreamHandler
-        args: "(sys.stdout,)"
-        formatter: context
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
     "null":
-        class: logging.NullHandler
-        args: "()"
-        formatter: default
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
     sentry:
-        class: raven.handlers.logging.SentryHandler
-        level: ERROR
-        args: "()"
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
   loggers:
     root:
-        handlers: "null"
-        level: WARNING
+      handlers: "null"
+      level: WARNING
     glance:
-        handlers: stdout, sentry
-        level: DEBUG
+      handlers: stdout, sentry
+      level: DEBUG
     glance_store:
-        handlers: stdout, sentry
-        level: DEBUG
+      handlers: stdout, sentry
+      level: DEBUG
     amqp:
-        handlers: stdout, sentry
-        level: WARNING
+      handlers: stdout, sentry
+      level: WARNING
     amqplib:
-        handlers: stdout, sentry
-        level: WARNING
+      handlers: stdout, sentry
+      level: WARNING
     boto:
-        handlers: stdout, sentry
-        level: WARNING
+      handlers: stdout, sentry
+      level: WARNING
     eventlet.wsgi.server:
-        handlers: stdout, sentry
-        level: INFO
+      handlers: stdout, sentry
+      level: INFO
     sqlalchemy:
-        handlers: stdout, sentry
-        level: WARNING
+      handlers: stdout, sentry
+      level: WARNING
     suds:
-        handlers: stdout, sentry
-        level: WARNING
+      handlers: stdout, sentry
+      level: WARNING
 
 vice_president: true
 
 imageVersionGlanceNanny: null
 
 nanny:
-  enabled: False
+  enabled: false
   # debug mode - no script run in the containers, just a sleep loop
-  debug: True
+  debug: true
   # run the nanny every n minutes
   interval: 60
   db_purge:
-    enabled: True
+    enabled: true
     # purge deleted db entries older than n days
-    older_than: 7
+    older_than: 14
     # delete at max number of entries in one run
     max_number: 50
 
@@ -181,6 +211,17 @@ nanny:
 watcher:
   enabled: true
 
+
 # openstack-rate-limit-middleware
 ratelimit:
   enabled: false
+
+# openstack-audit-middleware
+audit:
+  enabled: true
+
+# Deploy Glance Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack

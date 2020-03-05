@@ -67,7 +67,7 @@ def ensure_api_token(user, token):
     except ApiToken.DoesNotExist:
         token = ApiToken.objects.create(
              user=user,
-             scope_list=["project:read", "project:write", "project:delete", "team:read", "team:write", "org:read", "org:write", "member:read", "member:write"],
+             scope_list=["project:read", "project:write", "project:delete", "team:read", "team:write", "org:read", "org:write", "member:read", "member:write", "event:read"],
              token=token,
              refresh_token=None,
              expires_at=None,

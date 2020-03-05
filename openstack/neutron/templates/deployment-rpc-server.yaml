@@ -1,0 +1,138 @@
+{{- if .Values.wsgi }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: neutron-rpc-server
+  labels:
+    system: openstack
+    type: rpc
+    component: neutron
+spec:
+  replicas: {{ if not .Values.pod.debug.rpc_server }}{{ .Values.pod.replicas.rpc_server }}{{ else }} 1 {{ end }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: neutron-rpc-server
+  template:
+    metadata:
+      labels:
+        name: neutron-rpc-server
+{{ tuple . "neutron" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+    spec:
+{{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      containers:
+        - name: neutron-server
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionServerRPC | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          env:
+            - name: COMMAND
+              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/neutron_lbaas.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-f5.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "neutron-migration"
+            - name: DEPENDENCY_SERVICE
+{{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
+{{- end }}
+            - name: STATSD_HOST
+              value: "localhost"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: "openstack"
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: neutron.DSN.python
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - mountPath: /etc/neutron
+              name: empty-dir
+            - mountPath: /etc/neutron/neutron.conf
+              name: neutron-etc
+              subPath: neutron.conf
+              readOnly: true
+            - mountPath: /etc/neutron/neutron_lbaas.conf
+              name: neutron-etc
+              subPath: neutron-lbaas.conf
+              readOnly: true
+            - mountPath: /etc/neutron/logging.conf
+              name: neutron-etc
+              subPath: logging.conf
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
+              name: neutron-etc
+              subPath: ml2-conf.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+              name: neutron-etc-region
+              subPath: ml2-conf-aci.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-arista.ini
+              name: neutron-etc-vendor
+              subPath: ml2-conf-arista.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-manila.ini
+              name: neutron-etc-vendor
+              subPath: ml2-conf-manila.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-f5.ini
+              name: neutron-etc-vendor
+              subPath: ml2-conf-f5.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini
+              name: neutron-etc-vendor
+              subPath: ml2-conf-asr1k.ini
+              readOnly: true
+        - name: statsd
+          image: prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{.Values.port_metrics}}
+          volumeMounts:
+            - name: neutron-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+      volumes:
+        - name: empty-dir
+          emptyDir: {}
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+        - name: neutron-etc-vendor
+          configMap:
+            name: neutron-etc-vendor
+        - name: neutron-etc-region
+          configMap:
+            name: neutron-etc-region
+        - name: neutron-bin
+          configMap:
+            name: neutron-bin
+            defaultMode: 0755
+{{- end}}

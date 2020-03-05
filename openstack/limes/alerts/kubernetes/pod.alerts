@@ -1,0 +1,44 @@
+groups:
+- name: openstack-limes-pod.alerts
+  rules:
+      - alert: OpenstackLimesPodSchedulingInsufficientMemory
+        expr: sum(rate(kube_pod_failed_scheduling_memory_total{pod_name=~"limes-.+"}[30m])) by (pod_name) > 0
+        for: 15m
+        labels:
+          severity: warning
+          tier: os
+          service: limes
+          context: memory
+          dashboard: limes-overview
+          meta: "{{ $labels.pod_name }}"
+        annotations:
+          summary: Scheduling failed due to insufficient memory
+          description: The pod {{ $labels.pod_name }} failed to be scheduled. Insufficient memory!
+
+      - alert: OpenstackLimesPodOOMKilled
+        expr: sum(rate(klog_pod_oomkill{pod_name=~"limes-.+",pod_name!~"limes-collect-.+"}[30m])) by (pod_name) > 0
+        for: 5m
+        labels:
+          tier: os
+          service: limes
+          severity: info
+          context: memory
+          dashboard: limes-overview
+          meta: "{{ $labels.pod_name }}"
+        annotations:
+          summary: Pod was oomkilled
+          description: The pod {{ $labels.pod_name }} was oomkilled recently
+
+      - alert: OpenstackLimesPodOOMExceedingLimits
+        expr: limes_container_memory_usage_percent{pod_name!~"limes-collect-.+"} > 70 and predict_linear(limes_container_memory_usage_percent{pod_name!~"limes-collect-.+"}[1h], 7*3600) > 100
+        for: 30m
+        labels:
+          tier: os
+          service: limes
+          severity: info
+          context: memory
+          dashboard: limes-overview
+          meta: "{{ $labels.pod_name }}"
+        annotations:
+          summary: Exceeding memory limits in 8h
+          description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.

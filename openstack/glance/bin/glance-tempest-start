@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+set -xo pipefail
+
+function start_tempest_tests {
+  echo -e "\n === CONFIGURING TEMPEST === \n"
+
+  # ensure rally db is present
+  rally db ensure
+
+  # configure deployment for current region with existing users
+  rally deployment create --file /glance-etc/tempest_deployment_config.json --name tempest_deployment
+
+  # check if we can reach openstack endpoints
+  rally deployment check
+
+  # create tempest verifier fetched from our repo
+  rally --debug verify create-verifier --type tempest --name glance-tempest-verifier --system-wide --source https://github.com/sapcc/tempest --version ccloud
+
+  # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
+  rally --debug verify configure-verifier --extend /glance-etc/tempest_extra_options
+
+  # run the actual tempest tests for glance
+  echo -e "\n === STARTING TEMPEST TESTS FOR glance === \n"
+  # skip-list instead of xfail-list to skip failures in resource setup
+  rally --debug verify start --concurrency 1 --detailed --pattern set=image --skip-list /glance-etc/tempest_expected_failures.yaml
+}
+
+cleanup_tempest_leftovers() {
+  for image in $(openstack image list | grep -E 'tempest' | awk '{ print $2 }'); do openstack image delete ${image}; done
+}
+
+main() {
+  start_tempest_tests
+  TEMPEST_EXIT_CODE=$?
+  cleanup_tempest_leftovers
+  CLEANUP_EXIT_CODE=$?
+  exit $(($TEMPEST_EXIT_CODE + $CLEANUP_EXIT_CODE))
+}
+
+main

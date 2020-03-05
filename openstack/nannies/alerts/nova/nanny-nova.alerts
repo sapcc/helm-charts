@@ -1,0 +1,14 @@
+groups:
+- name: nanny-nova.alerts
+  rules:
+  - alert: OpenstackNovaNannyServerWithoutValidProject
+    expr: sum(nova_nanny_delete_server{kind="plan"}) > 0
+    for: 5m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: The nova-nanny discovered an instance without a valid project id - this should not happen and be investigated ...
+      summary: Nova nanny detected an instance without a valid project id

@@ -1,0 +1,55 @@
+{{- range $source_region, $source := .Values.source }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: backup-replication-from-{{ $source_region }}
+  labels:
+    component: backup-replication
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: backup-replication-from-{{ $source_region }}
+  template:
+    metadata:
+      labels:
+        component: backup-replication-from-{{ $source_region }}
+      annotations:
+        checksum/bin: {{ include (print $.Template.BasePath "/bin-configmap.yaml") $ | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/replication-configmap.yaml") $ | sha256sum }}
+    spec:
+      volumes:
+      - name: bin
+        configMap:
+          name: bin-backup-replication
+          defaultMode: 0550
+      - name: config
+        configMap:
+          name: swift-http-import
+      containers:
+      - name: swift-http-import
+        image: {{include "swift_http_import_image" $}}
+        imagePullPolicy: {{ $.Values.swift_http_import.image_pull_policy }}
+        command:
+        - /sbin/tini
+        args:
+        - /bin-backup-replication/sleep-for
+        - {{ $.Values.swift_http_import.sleep_for | quote }}
+        - /bin-backup-replication/exponential-backoff
+        - /usr/bin/swift-http-import
+        - /etc/swift-http-import/{{ $source_region }}.yaml
+        env:
+        - name: 'LOG_TRANSFERS'
+          value: 'true'
+        - name: 'DEBUG'
+          value: {{ $.Values.swift_http_import.debug | quote }}
+        volumeMounts:
+        - name: bin
+          mountPath: /bin-backup-replication
+        - name: config
+          mountPath: /etc/swift-http-import
+---
+{{- end }}

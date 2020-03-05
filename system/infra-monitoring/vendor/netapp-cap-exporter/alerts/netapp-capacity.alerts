@@ -1,0 +1,84 @@
+groups:
+  - name: netapp-capacity.alerts
+    rules:
+      - alert: NetappFilerScrapeFailure
+        expr: irate(netapp_filer_scrape_failure[5m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+          tier: storage
+          service: netapp-exporter
+          context: exporter-health
+        annotations:
+          description: 'Netapp filer {{ $labels.filer }} '
+          summary: Netapp ONTAP API inaccessible
+
+      - alert: ManilaStorageAggregateHighUsage
+        expr: netapp_aggregate_used_percentage{app=~".*manila", filer!~"ma01-md007"} > 75
+        for: 10m
+        labels:
+          severity: warning
+          tier: os
+          service: manila
+          context: netapp-usage
+          dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          meta: '{{ $value }}% used'
+          playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          summary: 'High Capacity Usage on {{$labels.filer}}'
+
+      - alert: ManilaStorageAggregateHighUsage
+        expr: netapp_aggregate_used_percentage{app=~".*manila", filer=~"ma01-md007"} > 85
+        labels:
+          severity: warning
+          tier: os
+          service: manila
+          context: netapp-usage
+          dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          meta: '{{ $value }}% used'
+          playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          summary: 'High Capacity Usage on {{$labels.filer}}'
+
+      - alert: ManilaStorageAggregateFull
+        expr: netapp_aggregate_used_percentage{app=~".*manila"} > 90
+        labels:
+          severity: critical
+          tier: os
+          service: manila
+          context: netapp-usage
+          dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          meta: '{{ $value }}% used'
+          playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
+
+      - alert: CinderStorageAggregateHighUsage
+        expr: netapp_aggregate_used_percentage{app=~".*cinder"} > 75
+        labels:
+          severity: warning
+          tier: os
+          service: cinder
+          context: netapp-usage
+          dashboard: netapp-capacity-vpods?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          meta: '{{ $value }}% used'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          summary: 'High Capacity Usage on {{$labels.filer}}'
+
+      - alert: CinderStorageAggregateFull
+        expr: netapp_aggregate_used_percentage{app=~".*cinder"} > 90
+        labels:
+          severity: critical
+          tier: os
+          service: cinder
+          context: netapp-usage
+          dashboard: netapp-capacity-vpods?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          meta: '{{ $value }}% used'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
+

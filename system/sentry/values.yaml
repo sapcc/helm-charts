@@ -28,7 +28,7 @@ organizationName: Monsoon
 organizationSlug: monsoon
 image:
   repository: sentry
-  tag: 8.17.0
+#  tag: 8.17.0
   pullPolicy: IfNotPresent
 service:
   name: sentry
@@ -48,16 +48,15 @@ operator:
   enabled: false
   image:
     repository: sapcc/kube-sentry
-    tag: 0.1.5
+    tag: 0.2.1
     pullPolicy: IfNotPresent
 
 postgresql:
-  #postgresPassword:
   postgresDatabase: sentry
   persistence:
     enabled: true
     accessMode: ReadWriteMany
-    size: 10Gi
+    size: 50Gi
   resources:
     requests:
       memory: 10Gi
@@ -73,3 +72,38 @@ redis:
     requests:
       memory: 10Gi
       cpu: 2
+
+# Deploy Sentry Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+
+pgmetrics:
+  db_name: sentry
+
+  customMetrics:
+    sentry_unresolved_issues:
+      query: >
+        SELECT o.slug AS organization, p.slug AS project, COUNT(*) FROM sentry_groupedmessage gm
+          JOIN sentry_project p ON gm.project_id = p.id
+          JOIN sentry_organization o ON p.organization_id = o.id
+         WHERE gm.status = 0
+         GROUP BY o.slug, p.slug
+      metrics:
+        - organization: { usage: LABEL, description: "Sentry organization" }
+        - project:      { usage: LABEL, description: "Sentry project" }
+        - gauge:        { usage: GAUGE, description: "Number of unresolved issues in project" }
+
+    sentry_unresolved_issues_nova:
+      query: >
+        SELECT o.slug AS organization, p.slug AS project, message, COUNT(*) FROM sentry_groupedmessage gm
+          JOIN sentry_project p ON gm.project_id = p.id
+          JOIN sentry_organization o ON p.organization_id = o.id
+         WHERE gm.status = 0 AND p.slug = 'nova'
+         GROUP BY o.slug, p.slug, message
+      metrics:
+        - organization: { usage: LABEL, description: "Sentry organization" }
+        - project:      { usage: LABEL, description: "Sentry project" }
+        - message:      { usage: LABEL, description: "Issue message"}
+        - gauge:        { usage: GAUGE, description: "Number of unresolved issues in project" }

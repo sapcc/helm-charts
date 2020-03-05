@@ -28,6 +28,16 @@ data:
   swift-store.conf: |
 {{ include (print .Template.BasePath "/etc/_swift-store.conf.tpl") . | indent 4 }}
 {{- end }}
+{{- if .Values.tempest.enabled }}
+  tempest_accounts.yaml: |
+{{ include (print .Template.BasePath "/etc/_tempest_accounts.yaml.tpl") . | indent 4 }}
+  tempest_deployment_config.json: |
+{{ include (print .Template.BasePath "/etc/_tempest_deployment_config.json.tpl") . | indent 4 }}
+  tempest_extra_options: |
+{{ include (print .Template.BasePath "/etc/_tempest_extra_options.tpl") . | indent 4 }}
+  tempest_expected_failures.yaml: |
+{{- include (print .Template.BasePath "/etc/_tempest_expected_failures.yaml.tpl") . | indent 4 }}
+{{- end }}
 {{- if .Values.watcher.enabled }}
   watcher.yaml: |
 {{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
@@ -35,4 +45,16 @@ data:
 {{- if .Values.ratelimit.enabled }}
   ratelimit.yaml: |
 {{ include (print .Template.BasePath "/etc/_ratelimit.yaml.tpl") . | indent 4 }}
+{{- if .Values.audit.enabled }}
+  glance_audit_map.yaml: |
+{{ include (print .Template.BasePath "/etc/_glance_audit_map.yaml") . | indent 4 }}
+{{- end }}
+{{- if .Values.metrics.enabled }}
+  statsd-exporter.yaml: |
+    defaults:
+      timer_type: histogram
+      buckets: [.025, .1, .25, 1, 2.5]
+      match_type: glob
+      glob_disable_ordering: false
+      ttl: 0 # metrics do not expire
 {{- end }}

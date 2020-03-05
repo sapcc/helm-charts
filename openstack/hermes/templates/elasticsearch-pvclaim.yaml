@@ -3,6 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: hermes-elasticsearch
+  namespace: hermes
 spec:
   annotations:
     "helm.sh/resource-policy": keep
@@ -11,4 +12,4 @@ spec:
   resources:
     requests:
       # size storage so that the retention kicks in at 70% of capacity consumption
-      storage: {{ div (mul .Values.hermes_elasticsearch_data_retention 100) 70 -}}Gi
+      storage: {{required ".Values.elasticsearch_pv_size is missing" .Values.elasticsearch_pv_size}}Gi

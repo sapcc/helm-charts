@@ -1,0 +1,65 @@
+{{- if not (hasPrefix "queens" .Values.imageVersion) }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: neutron-test-migration
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: neutron-test-migration
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{default "queens-20190318110549" .Values.imageVersionUpgrade }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/db-migrate"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+{{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql"
+{{- end }}
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OS_AUTH_URL
+              value: {{ include "keystone_url" . }}
+            - name: OS_AUTH_VERSION
+              value: "3"
+            - name: OS_USERNAME
+              value: {{.Values.postgresql.backup.os_username}}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{.Values.postgresql.backup.os_user_domain}}
+            - name: OS_PROJECT_NAME
+              value: {{.Values.postgresql.backup.os_project_name}}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{.Values.postgresql.backup.os_project_domain}}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.region }}
+            - name: OS_PASSWORD
+              value: {{.Values.postgresql.backup.os_password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote}}
+          volumeMounts:
+            - mountPath: /etc/neutron
+              name: empty-dir
+            - mountPath: /db-migrate
+              name: container-init
+              subPath: db-migrate
+              readOnly: true
+      volumes:
+        - name: empty-dir
+          emptyDir: {}
+        - name: container-init
+          configMap:
+            name: neutron-bin-test-migrate
+            defaultMode: 0755
+{{- end }}

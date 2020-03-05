@@ -10,6 +10,8 @@ rabbitmq {
     queue => {{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name | quote }}
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
+    heartbeat => 30 
+    connect_retry_interval => 60
     durable => {{ $value.durable | default false }}
   }
 {{ end }}
@@ -151,43 +153,71 @@ filter {
   }
 
   kv { source => "_source" }
+
+  # The following line will create 2 additional 
+  # copies of each document (i.e. including the 
+  # original, 3 in total). 
+  # Each copy will automatically have a "type" field added 
+  # corresponding to the name given in the array.
+  clone {
+    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc']
+  }
 }
 
 output {
-  if ([@metadata][index]) {
-    elasticsearch {
-        index => "audit-%{[@metadata][index]}-%{+YYYY.MM.dd}"
-        template => "/hermes-etc/audit.json"
-        template_name => "audit"
-        template_overwrite => true
-        hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
-        flush_size => 500
-        # retry_max_interval default 64
-        retry_max_interval => 10
-    }
-  } else {
-    elasticsearch {
-        index => "audit-default-%{+YYYY.MM.dd}"
-        template => "/hermes-etc/audit.json"
-        template_name => "audit"
-        template_overwrite => true
-        hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
-        flush_size => 500
-        # retry_max_interval default 64
-        retry_max_interval => 10
+  if [type] == 'clone_for_audit' {
+    if ([@metadata][index]) {
+      elasticsearch {
+          index => "audit-%{[@metadata][index]}-6-%{+YYYY.MM}"
+          template => "/hermes-etc/audit.json"
+          template_name => "audit"
+          template_overwrite => true
+          hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
+          # retry_max_interval default 64
+          retry_max_interval => 10
+      }
+    } else {
+      elasticsearch {
+          index => "audit-default-6-%{+YYYY.MM}"
+          template => "/hermes-etc/audit.json"
+          template_name => "audit"
+          template_overwrite => true
+          hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
+          # retry_max_interval default 64
+          retry_max_interval => 10
+      }
     }
   }
   # cc the target tenant
-  if ([@metadata][index2] and [@metadata][index2] != [@metadata][index]) {
+  if ([@metadata][index2] and [@metadata][index2] != [@metadata][index] and [type] == 'clone_for_cc') {
     elasticsearch {
-        index => "audit-%{[@metadata][index2]}-%{+YYYY.MM.dd}"
+        index => "audit-%{[@metadata][index2]}-6-%{+YYYY.MM}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
         hosts => ["{{.Values.hermes_elasticsearch_host}}:{{.Values.hermes_elasticsearch_port}}"]
-        flush_size => 500
         # retry_max_interval default 64
         retry_max_interval => 10
     }
   }
+
+  {{ if .Values.logstash.swift -}}
+  if [type] == 'clone_for_swift' {
+    s3{
+      endpoint => "{{.Values.logstash.endpoint}}"
+      access_key_id => "{{.Values.logstash.access_key_id}}"
+      secret_access_key => "{{.Values.logstash.secret_access_key}}"
+      region => "{{.Values.logstash.region}}"
+      bucket => "{{.Values.logstash.bucket}}"
+      prefix => "{{.Values.logstash.prefix}}"
+      time_file => {{.Values.logstash.time_file}}
+      #encoding => "gzip"
+      codec => "json_lines"
+      validate_credentials_on_root_bucket => false
+      additional_settings => {
+        "force_path_style" => true
+      }
+    }
+  }
+  {{- end}}
 }

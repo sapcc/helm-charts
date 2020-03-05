@@ -12,7 +12,8 @@ metadata:
 {{- if .Values.metrics.enabled }}
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "{{default 9187 .Values.metrics.port }}"
+    prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 {{- end }}
 spec:
   selector:
@@ -40,6 +41,7 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9188"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 spec:
   clusterIP: None
   ports:

@@ -1,0 +1,76 @@
+{{- if .Values.serviceDiscoveries.kubelet.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: {{ include "prometheus.fullName" . }}-kubelet
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  jobLabel: kubernetes-kubelet
+
+  selector:
+    matchLabels:
+      k8s-app: kubelet
+
+  # Find endpoints in any namespace.
+  namespaceSelector:
+    any: true
+
+  endpoints:
+    - port: https-metrics
+      path: /metrics
+      scheme: https
+      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      honorLabels: true
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecureSkipVerify: true
+
+      relabelings:
+        - separator: ;
+          regex: __meta_kubernetes_node_label_(.+)
+          replacement: $1
+          action: labelmap
+        - separator: ;
+          regex: (.*)
+          targetLabel: component
+          replacement: kubelet
+          action: replace
+        - action: replace
+          sourceLabels: [__meta_kubernetes_endpoint_address_target_name]
+          targetLabel: node
+        - targetLabel: job
+          replacement: kubernetes-kubelet
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+
+      metricRelabelings:
+        - sourceLabels: [ id ]
+          action: replace
+          regex: '^/system\.slice/(.+)\.service$'
+          targetLabel: systemd_service_name
+          replacement: '${1}'
+        - sourceLabels: [ id ]
+          action: replace
+          regex: '^/system\.slice/(.+)\.service$'
+          targetLabel: container_name
+          replacement: '${1}'
+        {{ if .Values.serviceDiscoveries.kubelet.allowedMetrics }}
+        - sourceLabels:
+            - container_name
+            - __name__
+          # The system container POD is used for networking.
+          regex: POD;({{ .Values.serviceDiscoveries.kubelet.allowedMetrics | join "|" }})
+          action: drop
+{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.serviceDiscoveries.kubelet.allowedMetrics | indent 8 }}
+        {{ else }}
+        - sourceLabels:
+            - container_name
+          # The system container POD is used for networking.
+          regex: POD
+          action: drop
+        {{ end }}
+{{- end }}

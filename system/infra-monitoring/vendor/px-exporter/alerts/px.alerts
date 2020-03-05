@@ -1,0 +1,142 @@
+groups:
+- name: alerts for PX control plane
+  rules:
+  - alert: PXBirdExporterAvailabilityMissingExporter
+    expr: sum(up{app=~".+-pxrs-.+", app!~".*pxmon.*"} ==bool  1) != 12
+    for: 0s
+    labels:
+      severity: critical
+      tier: k8s
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXBirdExporterAvailabilityMissingExporter
+    annotations:
+      description: The bird exporter for PX does not send any metrics - this should be checkedr"
+      summary:  The bird exporter for the PX does not send any metrics - this should be checked"
+
+  - alert: PXDomainAllPeersDown
+    expr: sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (pxdomain,region, pxservice) == 0
+    for: 2m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXDomainAllPeersDown
+      dashboard: px-control-plane
+    annotations:
+      description:  "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
+      summary:  "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
+
+  - alert: PXConsumerDown
+    expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id) ==bool 0) * 10) == 10
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXConsumerDown
+      dashboard: px-control-plane
+    annotations:
+      description:  "PX consumer {{ $labels.peer_id }} is not BGP peering with any of the PX route servers for service {{ $labels.pxservice }}. Thus the consumer is unable to use the given PX service."
+      summary:  "PX consumer {{ $labels.peer_id }} is not BGP peering with any of the PX route servers for service {{ $labels.pxservice }}. Thus the consumer is unable to use the given PX service."
+      
+  - alert: PXConsumerWithoutRedundancy
+    expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id) ==bool 0) * 10) + on(region, pxservice, peer_id) group_right() ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id, pxdomain) ==bool 0) * 100) + on (region, pxservice, pxdomain) group_left() (sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) == 100
+    for: 5m
+    labels:
+      severity: warning
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXConsumerWithoutRedundancy
+      dashboard: px-control-plane
+    annotations:
+      description:  "PX consumer {{ $labels.peer_id }} is not peering with PX domain {{ $labels.pxdomain }} for service {{ $labels.pxservice }}. Thus from PX side, there is no redundancy given."
+      summary:  "PX consumer {{ $labels.peer_id }} is not peering with PX domain {{ $labels.pxdomain }} for service {{ $labels.pxservice }}. Thus from PX side, there is no redundancy given."
+  
+  - alert: PXConsumerBgpConnectionDown
+    expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id) ==bool 0) * 10) + on(region, pxservice, peer_id) group_right() ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, peer_id, pxdomain) ==bool 0) * 100) + on (region, pxservice, pxdomain) group_left() (sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) + on(region, pxservice, peer_id, pxdomain) group_right() ((bird_protocol_up{name!~"kernel.", peer_type="PLATF"} ==bool 0 ) * 1000) == 1000
+    for: 5m
+    labels:
+      severity: warning
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXConsumerBgpConnectionDown
+      dashboard: px-control-plane
+    annotations:
+      description:  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
+      summary:  A router {{ $labels.name }} of PX consumer {{ $labels.peer_id }} has lost the BGP session with the PX route server {{ $labels.app }}. Service availability for the platform is at risk.
+
+  - alert: PXTransportRouterBgpDown
+    expr: bird_protocol_up{name!~"kernel.", peer_type="TRANS"} == 0
+    for: 0s
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXTransportRouterBgpDown
+      dashboard: px-control-plane
+    annotations:
+      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
+      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is lost. Redundancy is lost for route server clients peering that route server.
+
+
+  - alert: PXTransportRouterPrefixImportCountZero
+    expr: (sum(bird_protocol_up{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) > 0 ) + on (app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TRANS"} <= 0 
+    for: 0s
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXTransportRouterPrefixImportCountZero
+      dashboard: px-control-plane
+    annotations:
+      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
+      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
+
+  - alert: PXTransportRouterPrefixExportCountZero
+    expr: (sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) <= 0)  + on  (app, ip_version, proto, pxdomain, pxinstance, pxservice)  group_right() (bird_protocol_prefix_export_count{name!~"kernel.", peer_type="TRANS"} <= 0)
+    for: 0s
+    labels:
+      severity: critical
+      tier: k8s
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXTransportRouterPrefixImportCountZero
+      dashboard: px-control-plane
+    annotations:
+      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
+      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 exported routes. Transport routes via this peer are not sent, hence redundancy is degraded.
+  
+  - alert: PXConsumerExceedingRouteLimit
+    expr: bird_protocol_prefix_import_count{pxservice=~"1|2", peer_type="PLATF"} >=10000 or bird_protocol_prefix_import_count{pxservice="3", peer_type="PLATF"} >= 100000
+    for: 2m
+    labels:
+      severity: critical
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXConsumerExceedingRouteLimit
+      dashboard: px-control-plane
+    annotations:
+      description:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes. Routes exceeding the limit will be dropped to limit the effect on the PX service.
+      summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes. Routes exceeding the limit will be dropped to limit the effect on the PX service.
+  
+  - alert: PXRouteTableSignificantChanges
+    expr: floor((floor(delta(sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app)[30m:])) / sum(bird_protocol_prefix_import_count{peer_type="PLATF"} offset 30m) by (app)) * 100) > 25
+    for: 2m
+    labels:
+      severity: warn
+      tier: net
+      service: px
+      context: px
+      playbook: docs/devops/alert/network/px.html#PXRouteTableSignificantChanges
+      dashboard: px-control-plane
+    annotations:
+      description: The route table for PX route server {{$labels.app}} has changed significantly within the last 30 mins. This does not necesarrily inidicate an outage, but the origin of the deviation should be investigated.
+      summary: The route table for PX route server {{$labels.app}} has changed significantly within the last 30 mins. This does not necesarrily inidicate an outage, but the origin of the deviation should be investigated.

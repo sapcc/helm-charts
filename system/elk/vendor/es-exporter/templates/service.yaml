@@ -1,0 +1,22 @@
+{{- range $i, $config := .Values.elasticsearch_config -}}
+{{ if ne $i 0 }}---{{ end }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: es-exporter-{{$config.name}}
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+    component: es-exporter-{{$config.name}}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{$.Values.listen_port}}"
+    prometheus.io/targets: "{{$.Values.alerts.prometheus}}"
+spec:
+  selector:
+    component: es-exporter-{{$config.name}}
+  ports:
+    - name: metrics
+      port: {{$.Values.listen_port}}
+{{ end -}}

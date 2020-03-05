@@ -15,25 +15,29 @@ spec:
   - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-bs-seed
+  - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
   - monsoon3/domain-hcm-seed
   - monsoon3/domain-hcp03-seed
   - monsoon3/domain-hec-seed
   - monsoon3/domain-monsoon3-seed
+  - monsoon3/domain-neo-seed
   - monsoon3/domain-s4-seed
   - monsoon3/domain-wbs-seed
+{{- if .Values.tempest_enabled }}
   - monsoon3/domain-tempest-seed
+{{- end }}
 
   roles:
-  - cloud_dns_admin
-  - cloud_dns_ops
-  - cloud_dns_support
-  - dns_zonemaster
-  - dns_hostmaster
-  - dns_mailmaster
-  - dns_webmaster
-  - dns_admin
-  - dns_viewer
+  - name: cloud_dns_admin
+  - name: cloud_dns_ops
+  - name: cloud_dns_support
+  - name: dns_zonemaster
+  - name: dns_hostmaster
+  - name: dns_mailmaster
+  - name: dns_webmaster
+  - name: dns_admin
+  - name: dns_viewer
 
   services:
   - name: designate
@@ -54,33 +58,39 @@ spec:
   - name: Default
     groups:
     - name: administrators
-      roles:
+      role_assignments:
       - domain: Default
         role: cloud_dns_admin
+      - domain: Default
+        role: cloud_dns_admin
+        inherited: true
       - project: admin
         role: cloud_dns_admin
     users:
     - name: admin
-      roles:
+      role_assignments:
       - domain: Default
         role: cloud_dns_admin
+      - domain: Default
+        role: cloud_dns_admin
+        inherited: true
       - project: admin
         role: cloud_dns_admin
     - name: designate
       description: Designate Service User
       password: {{ .Values.global.designate_service_password }}
-      roles:
+      role_assignments:
       - project: service
         role: service
 
   - name: ccadmin
     projects:
     - name: cloud_admin
-      roles:
+      role_assignments:
       - user: admin@Default
         role: cloud_dns_admin
     - name: master
-      roles:
+      role_assignments:
       - user: admin@Default
         role: cloud_dns_admin
       - user: designate@Default
@@ -90,168 +100,516 @@ spec:
         recordset_records: 1000
         zone_records: 500
         zone_recordsets: 1000
-        zones: 100
+        zones: 1000
       dns_tsigkeys:
       - name: '{{ .Values.tsig_key_name }}'
         algorithm: hmac-sha256
-        secret: '{{ .Values.tsig_key }}' 
+        secret: '{{ .Values.tsig_key }}'
         scope: POOL
         resource_id: '{{ .Values.pool_id }}'
     groups:
     - name: CCADMIN_CLOUD_ADMINS
-      roles:
+      role_assignments:
       - project: cloud_admin
         role: cloud_dns_admin
       - project: master
         role: cloud_dns_admin
+    - name: CCADMIN_API_SUPPORT
+      role_assignments:
+      - project: master
+        role: cloud_dns_admin
+      - domain: ccadmin
+        role: cloud_dns_admin 
+        inherited: true
     - name: CCADMIN_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: master
         role: cloud_dns_ops
+      - domain: ccadmin 
+        role: cloud_dns_ops 
+        inherited: true
     - name: CCADMIN_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: master
         role: cloud_dns_ops
+      - domain: ccadmin 
+        role: cloud_dns_ops 
+        inherited: true        
     - name: CCADMIN_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: master
         role: cloud_dns_ops
+      - domain: ccadmin 
+        role: cloud_dns_ops 
+        inherited: true        
+    - name: CCADMIN_SERVICE_DESK
+      role_assignments:
+      - project: master
+        role: cloud_dns_ops
+      - domain: ccadmin 
+        role: cloud_dns_ops 
+        inherited: true        
     - name: CCADMIN_MONITORING_USERS
-      roles:
+      role_assignments:
       - project: master
         role: dns_webmaster
     - name: CCADMIN_CLOUD_DNS_ADMINS
-      roles:
+      role_assignments:
       - project: master
         role: cloud_dns_admin
     - name: CCADMIN_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: cloud_dns_support
         inherited: true
     - name: CCADMIN_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: cloud_dns_ops
         inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
   - name: cc3test
     groups:
     - name: CC3TEST_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: cc3test
         role: cloud_dns_support
         inherited: true
     - name: CC3TEST_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: cc3test
         role: cloud_dns_ops
         inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
   - name: bs
     groups:
     - name: BS_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: bs
         role: cloud_dns_support
         inherited: true
     - name: BS_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: bs
         role: cloud_dns_ops
         inherited: true
+    - name: BS_API_SUPPORT
+      role_assignments:
+      - domain: bs
+        role: cloud_dns_admin 
+        inherited: true
+    - name: BS_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: bs
+        role: cloud_dns_ops 
+        inherited: true
+    - name: BS_NETWORK_SUPPORT
+      role_assignments:
+      - domain: bs
+        role: cloud_dns_ops 
+        inherited: true
+    - name: BS_STORAGE_SUPPORT
+      role_assignments:
+      - domain: bs
+        role: cloud_dns_ops 
+        inherited: true
+    - name: BS_SERVICE_DESK
+      role_assignments:
+      - domain: bs
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
+
+  - name: cp
+    groups:
+    - name: CP_DOMAIN_DNS_SUPPORT
+      role_assignments:
+      - domain: cp
+        role: cloud_dns_support
+        inherited: true
+    - name: CP_DOMAIN_DNS_OPS
+      role_assignments:
+      - domain: cp
+        role: cloud_dns_ops
+        inherited: true
+    - name: CP_API_SUPPORT
+      role_assignments:
+      - domain: cp
+        role: cloud_dns_admin 
+        inherited: true
+    - name: CP_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: cp
+        role: cloud_dns_ops 
+        inherited: true
+    - name: CP_NETWORK_SUPPORT
+      role_assignments:
+      - domain: cp
+        role: cloud_dns_ops 
+        inherited: true
+    - name: CP_STORAGE_SUPPORT
+      role_assignments:
+      - domain: cp
+        role: cloud_dns_ops 
+        inherited: true
+    - name: CP_SERVICE_DESK
+      role_assignments:
+      - domain: cp
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
   - name: fsn
     groups:
     - name: FSN_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: fsn
         role: cloud_dns_support
         inherited: true
     - name: FSN_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: fsn
         role: cloud_dns_ops
         inherited: true
+    - name: FSN_API_SUPPORT
+      role_assignments:
+      - domain: fsn
+        role: cloud_dns_admin 
+        inherited: true
+    - name: FSN_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: fsn
+        role: cloud_dns_ops 
+        inherited: true
+    - name: FSN_NETWORK_SUPPORT
+      role_assignments:
+      - domain: fsn
+        role: cloud_dns_ops 
+        inherited: true
+    - name: FSN_STORAGE_SUPPORT
+      role_assignments:
+      - domain: fsn
+        role: cloud_dns_ops 
+        inherited: true
+    - name: FSN_SERVICE_DESK
+      role_assignments:
+      - domain: fsn
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
   - name: hcm
     groups:
     - name: HCM_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: hcm
         role: cloud_dns_support
         inherited: true
     - name: HCM_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: hcm
         role: cloud_dns_ops
         inherited: true
+    - name: HCM_API_SUPPORT
+      role_assignments:
+      - domain: hcm
+        role: cloud_dns_admin 
+        inherited: true
+    - name: HCM_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: hcm
+        role: cloud_dns_ops 
+        inherited: true
+    - name: HCM_NETWORK_SUPPORT
+      role_assignments:
+      - domain: hcm
+        role: cloud_dns_ops 
+        inherited: true
+    - name: HCM_STORAGE_SUPPORT
+      role_assignments:
+      - domain: hcm
+        role: cloud_dns_ops 
+        inherited: true
+    - name: HCM_SERVICE_DESK
+      role_assignments:
+      - domain: hcm
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
   - name: hcp03
     groups:
     - name: HCP03_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: hcp03
         role: cloud_dns_support
         inherited: true
     - name: HCP03_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: hcp03
         role: cloud_dns_ops
         inherited: true
+    - name: HCP03_API_SUPPORT
+      role_assignments:
+      - domain: hcp03
+        role: cloud_dns_admin 
+        inherited: true
+    - name: HCP03_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: hcp03
+        role: cloud_dns_ops 
+        inherited: true
+    - name: HCP03_NETWORK_SUPPORT
+      role_assignments:
+      - domain: hcp03
+        role: cloud_dns_ops 
+        inherited: true
+    - name: HCP03_STORAGE_SUPPORT
+      role_assignments:
+      - domain: hcp03
+        role: cloud_dns_ops 
+        inherited: true
+    - name: HCP03_SERVICE_DESK
+      role_assignments:
+      - domain: hcp03
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
   - name: hec
     groups:
     - name: HEC_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: hec
         role: cloud_dns_support
         inherited: true
     - name: HEC_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: hec
         role: cloud_dns_ops
         inherited: true
+    - name: HEC_API_SUPPORT
+      role_assignments:
+      - domain: hec
+        role: cloud_dns_admin 
+        inherited: true
+    - name: HEC_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: hec
+        role: cloud_dns_ops 
+        inherited: true
+    - name: HEC_NETWORK_SUPPORT
+      role_assignments:
+      - domain: hec
+        role: cloud_dns_ops 
+        inherited: true
+    - name: HEC_STORAGE_SUPPORT
+      role_assignments:
+      - domain: hec
+        role: cloud_dns_ops 
+        inherited: true
+    - name: HEC_SERVICE_DESK
+      role_assignments:
+      - domain: hec
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
   - name: monsoon3
     groups:
     - name: MONSOON3_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: monsoon3
         role: cloud_dns_support
         inherited: true
     - name: MONSOON3_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: monsoon3
         role: cloud_dns_ops
         inherited: true
+    - name: MONSOON3_API_SUPPORT
+      role_assignments:
+      - domain: monsoon3
+        role: cloud_dns_admin 
+        inherited: true
+    - name: MONSOON3_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: monsoon3
+        role: cloud_dns_ops 
+        inherited: true
+    - name: MONSOON3_NETWORK_SUPPORT
+      role_assignments:
+      - domain: monsoon3
+        role: cloud_dns_ops 
+        inherited: true
+    - name: MONSOON3_STORAGE_SUPPORT
+      role_assignments:
+      - domain: monsoon3
+        role: cloud_dns_ops 
+        inherited: true
+    - name: MONSOON3_SERVICE_DESK
+      role_assignments:
+      - domain: monsoon3
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
+
+  - name: neo
+    groups:
+    - name: NEO_DOMAIN_DNS_SUPPORT
+      role_assignments:
+      - domain: neo
+        role: cloud_dns_support
+        inherited: true
+    - name: NEO_DOMAIN_DNS_OPS
+      role_assignments:
+      - domain: neo
+        role: cloud_dns_ops
+        inherited: true
+    - name: NEO_API_SUPPORT
+      role_assignments:
+      - domain: neo
+        role: cloud_dns_admin 
+        inherited: true
+    - name: NEO_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: neo
+        role: cloud_dns_ops 
+        inherited: true
+    - name: NEO_NETWORK_SUPPORT
+      role_assignments:
+      - domain: neo
+        role: cloud_dns_ops 
+        inherited: true
+    - name: NEO_STORAGE_SUPPORT
+      role_assignments:
+      - domain: neo
+        role: cloud_dns_ops 
+        inherited: true
+    - name: NEO_SERVICE_DESK
+      role_assignments:
+      - domain: neo
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
   - name: s4
     groups:
     - name: S4_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: s4
         role: cloud_dns_support
         inherited: true
     - name: S4_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: s4
         role: cloud_dns_ops
         inherited: true
+    - name: S4_API_SUPPORT
+      role_assignments:
+      - domain: s4
+        role: cloud_dns_admin 
+        inherited: true
+    - name: S4_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: s4
+        role: cloud_dns_ops 
+        inherited: true
+    - name: S4_NETWORK_SUPPORT
+      role_assignments:
+      - domain: s4
+        role: cloud_dns_ops 
+        inherited: true
+    - name: S4_STORAGE_SUPPORT
+      role_assignments:
+      - domain: s4
+        role: cloud_dns_ops 
+        inherited: true
+    - name: S4_SERVICE_DESK
+      role_assignments:
+      - domain: s4
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
   - name: wbs
     groups:
     - name: WBS_DOMAIN_DNS_SUPPORT
-      roles:
+      role_assignments:
       - domain: wbs
         role: cloud_dns_support
         inherited: true
     - name: WBS_DOMAIN_DNS_OPS
-      roles:
+      role_assignments:
       - domain: wbs
         role: cloud_dns_ops
         inherited: true
+    - name: WBS_API_SUPPORT
+      role_assignments:
+      - domain: wbs
+        role: cloud_dns_admin 
+        inherited: true
+    - name: WBS_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: wbs
+        role: cloud_dns_ops 
+        inherited: true
+    - name: WBS_NETWORK_SUPPORT
+      role_assignments:
+      - domain: wbs
+        role: cloud_dns_ops 
+        inherited: true
+    - name: WBS_STORAGE_SUPPORT
+      role_assignments:
+      - domain: wbs
+        role: cloud_dns_ops 
+        inherited: true
+    - name: WBS_SERVICE_DESK
+      role_assignments:
+      - domain: wbs
+        role: cloud_dns_ops 
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
 
+{{- if .Values.tempest_enabled }}
   - name: tempest
     dns_quota:
       api_export_size: 2000
@@ -261,7 +619,7 @@ spec:
       zones: 1000
     projects:
     - name: tempest1
-      roles:
+      role_assignments:
         - user: admin@Default
           role: cloud_dns_admin
       dns_quota:
@@ -271,7 +629,7 @@ spec:
         zone_recordsets: 2000
         zones: 200
     - name: tempest2
-      roles:
+      role_assignments:
         - user: admin@Default
           role: cloud_dns_admin
       dns_quota:
@@ -282,16 +640,17 @@ spec:
         zones: 200
     users:
     - name: tempestuser1
-      roles:
+      role_assignments:
       - project: tempest1
         role: cloud_dns_ops
       - domain: tempest
         role: cloud_dns_ops
     - name: tempestuser2
-      roles:
+      role_assignments:
       - project: tempest2
         role: cloud_dns_ops
       - domain: tempest
         role: cloud_dns_ops
+{{- end }}
 
 {{- end }}

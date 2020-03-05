@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+{{- if ne .Values.release "rocky" }}
+echo "Status before migration:"
+keystone-status --config-file=/etc/keystone/keystone.conf upgrade check
+{{- end }}
+
 echo "DB Version before migration:"
 keystone-manage --config-file=/etc/keystone/keystone.conf db_version
 
@@ -34,9 +39,8 @@ esac
 echo "DB Version after migration:"
 keystone-manage --config-file=/etc/keystone/keystone.conf db_version
 
+echo "Keystone doctor:"
 keystone-manage --config-file=/etc/keystone/keystone.conf doctor
 
 # don't let the doctor break stuff (as usual not qualified enough and you allways need another opinion :P )
 exit 0
-
-

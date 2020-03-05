@@ -1,0 +1,39 @@
+groups:
+- name: snmpexporteravailability.alerts
+  rules:
+  - alert: SNMPExporterAvailabilityLessMetrics
+    expr: (count(avg_over_time(snmp_scrape_pdus_returned[15m])) by (module) - count(avg_over_time(snmp_scrape_pdus_returned[15m] offset 1h)) by (module)) < 0
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: snmp
+      context: snmp
+      playbook: /docs/devops/alert/network/not-yet-existing.html
+    annotations:
+      description: "TEST ALERT - PLEASE IGNORE - The number of metrics for devices of type `{{ $labels.module }}` got less - this should be checked"
+      summary: "TEST ALERT - PLEASE IGNORE - targets check alert"
+  - alert: SNMPExporterAvailabilityMissingExporter
+    expr: up{job="snmp",module!~"asr01|asr02|asr03|ipn"} == 0
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: snmp
+      context: snmp
+      playbook: /docs/devops/alert/network/not-yet-existing.html
+    annotations:
+      description: "TEST ALERT - PLEASE IGNORE - The snmp exporter for the `{{ $labels.module }}` device `{{ $labels.server_name }}` does not send any metrics - this should be checked"
+      summary: "TEST ALERT - PLEASE IGNORE - snmp exporer check targets"
+  - alert: SNMPExporterAvailabilityMissingMetrics
+    expr: (sum(atlas_targets{module=~"acispine|acistretch|ipn"}) by (module) - count(snmp_scrape_pdus_returned{module=~"acispine|acistretch|ipn"}) by (module) != 0 ) != 0
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: snmp
+      context: snmp
+      playbook: /docs/devops/alert/network/not-yet-existing.html
+    annotations:
+      description: "The n9k/aci snmp exporter does not get any metrics for module `{{ $labels.module }}`. `{{ $labels.value }}` devices are affected."
+      summary: "The n9k snmp exporter check n9k targets"

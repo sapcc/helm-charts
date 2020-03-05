@@ -1,0 +1,129 @@
+# values for Percona XtraDB Cluster
+
+## percona image and version
+## ref: https://hub.docker.com/r/percona/percona-xtradb-cluster/tags/
+image:
+  repository: "percona/percona-xtradb-cluster"
+  tag: "5.7.19"
+  pullPolicy: IfNotPresent
+
+# Desired number of members (per region)
+replicas: 1
+
+# mysqlRootPassword: not-a-secure-password
+# xtraBackupPassword: replicate-my-data
+
+mysqlUser: test
+mysqlPassword: test
+mysqlAllowEmptyPassword: false
+
+mysqlDatabase: test
+pxc_strict_mode: ENFORCING
+allowRootFrom: "%"
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteMany
+  claimName: PerconaClaim  
+  size: 10Gi
+  # storageClass: "-"
+
+podAnnotations: {}
+
+nodeAffinity: {}
+
+tolerations: []
+
+resources:
+ requests:
+   memory: 2048Mi
+   cpu: 1000m
+
+configFiles:
+  node.cnf: |+
+    [mysqld]
+    datadir                         = /var/lib/mysql
+    default_storage_engine          = InnoDB
+    binlog_format                   = ROW
+    innodb_flush_log_at_trx_commit  = 0
+    innodb_flush_method             = O_DIRECT
+    innodb_file_per_table           = 1
+    innodb_autoinc_lock_mode        = 2
+    bind_address                    = 0.0.0.0
+    wsrep_slave_threads             = 2
+    wsrep_cluster_address           = gcomm://
+    wsrep_provider                  = /usr/lib/galera3/libgalera_smm.so
+    wsrep_cluster_name              = galera
+    wsrep_sst_method                = xtrabackup-v2
+
+metricsExporter:
+  enabled: true
+  commandOverrides: []
+  argsOverrides: []
+
+prometheus:
+  ## Are you using [Prometheus Operator](https://coreos.com/operators/prometheus/docs/latest/user-guides/getting-started.html)?
+  operator:
+    ## Setting to true will create Prometheus-Operator specific resources like ServiceMonitors
+    enabled: false
+
+    ## Configures alerts for Prometheus to pick up
+    prometheusRule:
+      enabled: true
+
+      ## Labels to add to alerts
+      labels: {}
+
+      ## Namespace which Prometheus is installed in
+      # namespace: monitoring
+
+      ## Label Selector for Prometheus to find alert rules
+      # selector:
+      #   prometheus: kube-prometheus
+
+    ## Configures targets for Prometheus to pick up
+    serviceMonitor:
+      ## Interval at which Prometheus will scrape metrics exporter
+      interval: 10s
+
+      ## Namespace which Prometheus is installed in
+      # namespace: monitoring
+
+      ## Label Selector for Prometheus to find ServiceMonitors
+      # selector:
+      #   prometheus: kube-prometheus
+
+## When set to true will create sidecar to tail mysql log
+logTail: true
+
+ssl:
+  enabled: false
+  secret: mysql-ssl-certs
+  certificates:
+#  - name: mysql-ssl-certs
+#    ca: |-
+#      -----BEGIN CERTIFICATE-----
+#      ...
+#      -----END CERTIFICATE-----
+#    cert: |-
+#      -----BEGIN CERTIFICATE-----
+#      ...
+#      -----END CERTIFICATE-----
+#    key: |-
+#      -----BEGIN RSA PRIVATE KEY-----
+#      ...
+#      -----END RSA PRIVATE KEY-----
+
+podDisruptionBudget:
+  enabled: false
+  # minAvailable: 1
+  maxUnavailable: 1
+
+service:
+  percona:
+    primary: false
+    headless: false
+    regions:
+      eu-de-1: null
+      eu-de-2: null
+      eu-nl-1: null

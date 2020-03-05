@@ -1,0 +1,40 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: k8s-secrets-certificate-exporter
+  labels:
+    app: k8s-secrets-certificate-exporter
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: k8s-secrets-certificate-exporter
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: {{ required ".Values.metricsPort missing" .Values.metricsPort | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      {{- if .Values.rbac.create }}
+      serviceAccount: {{ required ".Values.rbac.serviceAccountName missing" .Values.rbac.serviceAccountName }}
+      serviceAccountName: {{ required ".Values.rbac.serviceAccountName missing" .Values.rbac.serviceAccountName }}
+      {{ end }}
+      containers:
+        - name: k8s-secrets-certificate-exporter
+          image: {{ include "image" . }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
+          args:
+            - certificate-exporter
+            - --metric-port={{ required ".Values.metricsPort missing " .Values.metricsPort }}
+            - --resync-interval={{ required ".Values.resyncInterval missing" .Values.resyncInterval }}
+            - --recheck-interval={{ required ".Values.recheckInterval missing" .Values.recheckInterval }}
+            - --threadiness={{ required ".Values.threadiness missing" .Values.threadiness }}
+            {{ if .Values.namespace }}
+            - --namespace={{ .Values.namespace }}
+            {{ end }}
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.metricsPort missing" .Values.metricsPort }}
+              protocol: TCP

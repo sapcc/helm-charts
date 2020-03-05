@@ -1,0 +1,22 @@
+{{- if .Values.sidecars.parrot }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: parrot-metrics
+  labels:
+    app: kube-parrot
+
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ required ".Values.parrot.metricPort missing" .Values.parrot.metricPort | quote }}
+    prometheus.io/targets: "kubernetes"
+
+spec:
+  ports:
+  - name: metrics
+    port: {{ required ".Values.parrot.metricPort missing" .Values.parrot.metricPort }}
+
+  selector:
+    name: kube-proxy
+    k8s-app: kube-proxy
+{{- end }}

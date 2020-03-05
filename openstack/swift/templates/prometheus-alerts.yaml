@@ -1,0 +1,63 @@
+{{- $values := .Values }}
+{{- if $values.alerts.enabled }}
+{{- range $target, $unused := $values.alerts.prometheus }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    app: swift
+    tier: os
+    type: alerting-rules
+    prometheus: {{ index $values.alerts.prometheus $target | required (printf "$values.alerts.prometheus.%s missing" $target) }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+# This rule is in here, rather than in a file in alerts/, because we need to use templating.
+metadata:
+  name: alerts-swift-roleassignments.alerts
+  labels:
+    app: swift
+    tier: os
+    type: alerting-rules
+    prometheus: {{ required ".Values.alerts.prometheus.openstack missing" $values.alerts.prometheus.openstack }}
+
+spec:
+  groups:
+  - name: openstack-swift-roleassignments.alerts
+    rules:
+      # allowed role assignments for the `swiftreseller` role:
+      # - group CCADMIN_CLOUD_ADMINS@ccadmin           in project cloud_admin@ccadmin
+      # - user admin@Default                           in project admin@Default (for openstackseeder to create Swift accounts)
+      # - user ironic@Default                          in project service@Default (to read private OS images)
+      # - user limes@Default                           in project cloud_admin@ccadmin (for Limes to get/set quotas)
+      # - user kubernikus@Default                      in project cloud_admin@ccadmin
+      # ONLY EU-NL-1:
+      # - user kubernikus-master@Default               in project cloud_admin@ccadmin
+
+      - alert: OpenstackSwiftUnexpectedCloudAdminRoleAssignments
+        {{- $r := .Values.global.region }}
+        expr: max(openstack_assignments_per_role_gauge{name="swiftreseller"}) > {{if eq $r "eu-nl-1"}} 6 {{ else }} 5 {{ end }}
+        for: 10m
+        labels:
+          tier: os
+          service: swift
+          severity: info
+          playbook: 'docs/support/playbook/unexpected-role-assignments'
+          meta: 'Unexpected role assignments found for Keystone role "swiftreseller"'
+        annotations:
+          summary: 'Unexpected role assignments'
+          description: 'The Keystone role "swiftreseller" is assigned to more users/groups than expected.'
+
+{{- end }}

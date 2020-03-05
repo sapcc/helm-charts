@@ -1,0 +1,83 @@
+{{- if $.Values.health_exporter }}
+{{- if not $.Values.health_statsd }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: swift-health-exporter
+  labels:
+    release: "{{$.Release.Name}}"
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      component: swift-health-exporter
+  template:
+    metadata:
+      labels:
+        component: swift-health-exporter
+      annotations:
+        {{- include "swift_ring_annotations" $ | indent 8 }}
+        {{- include "swift_conf_annotations" $ | indent 8 }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9520"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+    spec:
+      volumes:
+        - name: swift-etc
+          configMap:
+            name: swift-etc
+        - name: swift-account-ring
+          configMap:
+            name: swift-account-ring
+        - name: swift-container-ring
+          configMap:
+            name: swift-container-ring
+        - name: swift-object-ring
+          configMap:
+            name: swift-object-ring
+      containers:
+        - name: collector
+          image: {{ include "swift_image" $ }}
+          command:
+            - /usr/bin/dumb-init
+          # enable all collectors except recon.md5 (it is enabled within the proxy pods)
+          args:
+            - /bin/bash
+            - /usr/bin/swift-start
+            - health-exporter
+            - --no-collector.recon.md5
+            - --collector.dispersion
+            - --collector.recon.diskusage
+            - --collector.recon.driveaudit
+            - --collector.recon.quarantined
+            - --collector.recon.replication
+            - --collector.recon.unmounted
+            - --collector.recon.updater_sweep_time
+          ports:
+            - name: metrics
+              containerPort: 9520
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = ~70m, RAM = 80-110 MiB
+            requests:
+              cpu: "100m"
+              memory: "200Mi"
+          {{- end }}
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc
+            - mountPath: /swift-rings/account
+              name: swift-account-ring
+            - mountPath: /swift-rings/container
+              name: swift-container-ring
+            - mountPath: /swift-rings/object
+              name: swift-object-ring
+{{- end }}
+{{- end }}

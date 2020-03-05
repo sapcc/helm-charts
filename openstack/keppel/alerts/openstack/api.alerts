@@ -1,0 +1,55 @@
+groups:
+- name: openstack-keppel-api.alerts
+  rules:
+
+  - alert: OpenstackKeppelDown
+    expr: keppel_healthmonitor_result != 1 or absent(keppel_healthmonitor_result)
+    for: 3m
+    labels:
+      context: api
+      dashboard: keppel-overview
+      service: keppel
+      severity: warning # TODO raise to critical at some point
+      tier: os
+      meta: 'Keppel health check is not reporting success'
+      playbook: docs/support/playbook/keppel/down
+    annotations:
+      summary: Keppel health check is not reporting success.
+      description: |
+        Keppel health check is not reporting success. Check that the
+        "keppel-health-monitor" pod in the Kubernetes namespace "keppel" is
+        running, and if so, check its log for error messages.
+
+  - alert: OpenstackKeppelSlowPeering
+    expr: time() - keppel_peers_last_peered_at > 1800
+    for: 5m
+    labels:
+      context: api
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+      meta: 'Keppel cannot peer with {{ $labels.hostname }}'
+    annotations:
+      summary: 'Keppel cannot peer with {{ $labels.hostname }}'
+      description: |
+        The Keppel instance in this region should check in with its peer
+        {{ $labels.hostname }} every 10 minutes, but it has not done so in
+        the last 30 minutes. The logs of the keppel-api pods should contain
+        additional information or error messages.
+
+  - alert: OpenstackKeppelSlowBlobReplication
+    expr: keppel_blob_replication_min_started_at > 0 and time() - keppel_blob_replication_min_started_at > 900
+    for: 5m
+    labels:
+      context: api
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+      meta: 'Blob replication is taking a long time'
+    annotations:
+      summary: 'Blob replication is taking a long time'
+      description: |
+        A blob replication has been running in this Keppel instance for more
+        than 15 minutes. This could indicate that the region interconnect is slow.

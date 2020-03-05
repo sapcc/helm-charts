@@ -3,6 +3,10 @@ apiVersion: extensions/v1beta1
 
 metadata:
   name: blackbox-tests-integrity
+  labels:
+    system: openstack
+    component: blackbox-tests
+    type: integrity
 
 spec:
   replicas: {{.Values.global.replicaCount}}
@@ -30,6 +34,9 @@ spec:
               - key: jump.key
                 path: authorized_keys.health
                 mode: 0600
+        - name: statsd-mapping-config
+          configMap:
+            name: blackbox-tests-integrity-statsd-mapping-config
       containers:
         - name: pytest
 {{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
@@ -40,10 +47,10 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "-n 4"
-            - "--timeout 60"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
             - "--disable-pytest-warnings"
-            - "-r a"
+            - "-r ap"
             - "-m integrity"
             - "tests"
           volumeMounts:
@@ -83,15 +90,15 @@ spec:
             - name: VC_USERNAME
               value: {{ .Values.global.vcenter.username | quote }}
             - name: STATSD_HOST
-              value: "localhost"
+              value: {{ .Values.statsd.host | quote }}
             - name: STATSD_PORT
-              value: "9125"
+              value: {{ .Values.statsd.port | quote }}
             - name: STATSD_PREFIX
-              value: "blackbox-integrity"
+              value: {{ .Values.statsd.prefix | quote }}
             - name: TIMEOUT
-              value: {{ .Values.timeout | quote }}
+              value: {{ .Values.parallel.timeout.atomic | quote }}
             - name: SLEEP_ITERATE
-              value: {{ .Values.sleep.iterate | quote }}
+              value: {{ .Values.parallel.iterator.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -131,11 +138,16 @@ spec:
             initialDelaySeconds: 15
 
         - name: statsd
-          image: prom/statsd-exporter:v0.5.0
+          image: prom/statsd-exporter:v0.12.2
           imagePullPolicy: IfNotPresent
+          args:
+            - --statsd.mapping-config=/etc/statsd/statsd-mapping.conf
           ports:
             - name: statsd
-              containerPort: 9125
+              containerPort: {{ .Values.statsd.port}}
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.global.port_metrics}}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/statsd

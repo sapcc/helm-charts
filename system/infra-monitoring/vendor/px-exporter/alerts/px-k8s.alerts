@@ -1,0 +1,97 @@
+groups:
+- name: alerts for PX kubernetes resources
+  rules:
+  - alert: PXServiceDown
+    expr: sum
+      by (px_service) (label_replace((sum by (pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"})
+      * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
+      == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"))
+      < 1
+    for: 0s
+    labels:
+      severity: critical
+      tier: k8s
+      service: k8s
+      context: pxpod
+      playbook: docs/devops/alert/network/px.html#PXServiceDown
+    annotations:
+      description: "All pods for PX service {{ $labels.px_service }} are not ready"
+      summary: "PX Service is down"
+
+  - alert: PXServiceOnRisk
+    expr: sum
+      by (px_service) (label_replace((sum by (pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"})
+      * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
+      == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))), "px_service", "$1", "pod", ".+-pxrs-[0-9]-s([0-9])-[0-9]-.{14,17}"))
+      < 3
+    for: 0s
+    labels:
+      severity: warning
+      tier: k8s
+      service: k8s
+      context: pxpod
+      playbook: docs/devops/alert/network/px.html#PXServiceOnRisk
+    annotations:
+      description: "Only one pod for PX service {{ $labels.px_service }} is running for 10m"
+      summary: "PX Service is on risk"
+
+  - alert: PXPodNotReady
+    expr: sum
+      by(pod) ((kube_pod_info{namespace="px"} * on(node) group_left() sum by(node) (kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"})
+      * on(pod) group_left() sum by(pod) (kube_pod_status_phase{namespace="px", phase="Running"})
+      == 1) * on(pod) group_left() sum by(pod) (kube_pod_status_ready{namespace="px", condition="true"}))
+      == 0
+    for: 0s
+    labels:
+      severity: warning
+      tier: k8s
+      service: k8s
+      context: pxpod
+      playbook: docs/devops/alert/network/px.html#PXPodNotReady
+    annotations:
+      description: "Pod px /{{ $labels.pod }} is not ready for more than 30m"
+      summary: "PX Pod not ready for 30m"
+
+  - alert: PXPodRestartingTooMuch
+    expr: sum
+      by(pod, container) (rate(kube_pod_container_status_restarts_total{namespace="px"}[15m]))
+      > 0
+    for: 0s
+    labels:
+      severity: info
+      tier: k8s
+      service: k8s
+      context: pxpod
+      playbook: docs/devops/alert/network/px.html#PXPodRestartingTooMuch
+    annotations:
+      description: "Container {{ $labels.container }} of pod px /{{ $labels.pod }} is restarting constantly"
+      summary: "Pod is in a restart loop"
+
+  - alert: PXNodeNotReady
+    expr: sum by (node)(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}) == 0
+    for: 0s
+    labels:
+      severity: critical
+      tier: k8s
+      service: k8s
+      context: pxnode
+      dashboard: nodes?var-server={{$labels.node}}
+      playbook: docs/devops/alert/network/px.html#PXNodeNotReady
+    annotations:
+      description: "PX Node {{ $labels.node }} is NotReady for 15m"
+      summary: "PX Node status is NotReady"
+
+  - alert: PXNodeNotReadyFlapping
+    expr: changes(kube_node_status_condition{node=~"^px.+",condition="Ready",status="true"}[15m]) > 2
+    for: 0s
+    labels:
+      severity: warning
+      tier: k8s
+      service: k8s
+      context: pxnode
+      meta: '{{ $labels.node }}'
+      dashboard: nodes?var-server={{$labels.node}}
+      playbook: docs/devops/alert/network/px.html#PXNodeNotReadyFlapping
+    annotations:
+      description: "PX Node {{ $labels.node }} is flapping between Ready and NotReady for 30m"
+      summary: "PX Node readiness is flapping"

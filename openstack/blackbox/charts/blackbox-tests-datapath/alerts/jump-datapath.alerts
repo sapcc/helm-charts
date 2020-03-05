@@ -1,0 +1,49 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: OpenstackJumpHostDatapathDown
+    expr: blackbox_datapath_status_gauge{service=~"jump"} == 1
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is down'
+
+  - alert: OpenstackJumpHostDatapathHalfDown
+    expr: blackbox_datapath_status_gauge{service=~"jump"} == 0.5
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
+
+  - alert: OpenstackJumpHostDatapathFlapping
+    expr: changes(blackbox_datapath_status_gauge{service=~"jump"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'

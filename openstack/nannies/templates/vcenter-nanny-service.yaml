@@ -1,0 +1,29 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+{{- if .Values.vcenter_nanny.enabled }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vcenter-datacenter-nanny-service'
+  scope: 'datacenter'
+template: |{{`
+  kind: Service
+  apiVersion: v1
+  metadata:
+    name: vcenter-nanny-{{ name }}
+    namespace: monsoon3
+    labels:
+      system: openstack
+      service: vcenter-nanny
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9456"
+      prometheus.io/targets: "openstack"
+  spec:
+    selector:
+      component: vcenter-nanny-{{ name }}
+    ports:
+      - name: metrics
+        port: 9456
+`}}
+{{- end }}
+{{- end }}

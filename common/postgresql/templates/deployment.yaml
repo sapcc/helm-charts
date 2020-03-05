@@ -32,9 +32,17 @@ spec:
     spec:
       containers:
       - name: postgres
+{{- if .Values.custom_repository }}
+        image: "{{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/{{ .Values.image }}:{{ .Values.imageTag }}"
+{{- else }}
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+{{- end }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+{{- if .Values.debug }}
+        command: ["sleep", "inf"]
+{{- else }}
         args: ["-c", "config_file=/postgresql-conf/postgresql.conf", "-c", "hba_file=/postgresql-conf/pg-hba.conf"]
+{{- end }}
         env:
         - name: POSTGRES_USER
           value: {{ default "postgres" .Values.postgresUser | quote }}
@@ -77,15 +85,8 @@ spec:
             - exec pg_isready --host $POD_IP
           initialDelaySeconds: 5
           timeoutSeconds: 3
-        {{- if .Values.resources.enabled }}
         resources:
-          limits:
-            cpu: {{ .Values.resources.limits.cpu | quote }}
-            memory: {{ .Values.resources.limits.memory | quote }}
-          requests:
-            cpu: {{ .Values.resources.requests.cpu | quote }}
-            memory: {{ .Values.resources.requests.memory | quote }}
-        {{- end }}
+{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
         volumeMounts:
         - name: data
           mountPath: /postgresql
@@ -101,7 +102,11 @@ spec:
 {{- end }}
 
 {{- if .Values.backup.enabled }}
+{{- if .Values.backup.custom_repository }}
+      - image: {{ .Values.backup.image }}:{{ .Values.backup.imageTag }}
+{{- else }}
       - image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{ .Values.backup.image }}:{{ .Values.backup.imageTag }}
+{{- end }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.backup.imagePullPolicy | quote }}
         name: backup
         env:
@@ -132,7 +137,7 @@ spec:
             value: {{ .Values.global.region }}
 {{- end }}
           - name: OS_PASSWORD
-            value: {{.Values.backup.os_password | default .Values.global.dbBackupServicePassword | quote}}
+            value: {{.Values.backup.os_password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote}}
           - name: BACKUP_PGSQL_FULL
             value: {{.Values.backup.interval_full | quote}}
 {{- end }}
@@ -141,8 +146,16 @@ spec:
         image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
         env:
+        {{- if .Values.metrics.postgresPassword }}
+        # we need support for password overrides in case passwords have a / in them (that breaks the go pq url connection parser)
+        # hence this special sauce (a %2F replacement for the / will help to please go)
+        # PLEASE DO NOT REMOVE THIS
+        - name: DATA_SOURCE_NAME
+          value: postgresql://{{ default .Values.global.dbUser .Values.metrics.postgresUser }}:{{ .Values.metrics.postgresPassword }}@127.0.0.1:5432/{{.Values.postgresDatabase}}?sslmode=disable
+        {{ else }}
         - name: DATA_SOURCE_NAME
           value: postgresql://{{ default .Values.postgresUser .Values.global.dbUser }}:{{ default .Values.postgresPassword .Values.global.dbPassword }}@127.0.0.1:5432/{{.Values.postgresDatabase}}?sslmode=disable
+        {{- end }}
         ports:
         - name: metrics
           containerPort: {{ default 9187 .Values.metrics.port }}

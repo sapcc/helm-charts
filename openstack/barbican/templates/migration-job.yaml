@@ -12,17 +12,19 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: barbican-migration
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{.Values.imageVersionBarbicanApi}}
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-barbican:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "barbican-manage db upgrade"
+              value: "/var/lib/openstack/bin/barbican-status upgrade check"
+            - name: COMMAND
+              value: "/var/lib/openstack/bin/barbican-manage db upgrade"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "barbican-postgresql"
+              value: "barbican-mariadb"
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican

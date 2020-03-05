@@ -1,0 +1,29 @@
+{{- if .Values.enabled }}
+{{- if .Values.exporter_types }}
+{{ $global_values := .Values }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: apic-exporters-service
+  annotations:
+    {{- range $exporter_type_values := .Values.exporter_types }}
+    {{- range $collector := $exporter_type_values.collector }}
+    {{- if eq $collector "maia" }}
+    maia.io/scrape: "true"
+    maia.io/port: {{ $global_values.listen_port | quote }}
+    {{- end }}
+    {{- if eq $collector "prometheus" }}
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ $global_values.listen_port | quote}}
+    prometheus.io/targets: "infra-collector"
+    {{- end }}
+    {{- end }}
+    {{- end }}
+spec:
+  selector:
+    component: apic-exporters-deployment
+  ports:
+  - name: metrics
+    port: {{ $global_values.listen_port }}
+{{- end }}
+{{- end }}

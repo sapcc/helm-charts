@@ -14,11 +14,12 @@ global:
       admin_users: "admin_user"
       autodb_idle_timeout: 3600
       max_client_conn: 16384
-      reserve_pool_size: 4
+      reserve_pool_size: 25
       min_pool_size: 1
-      default_pool_size: 4
-      max_db_connections: 8
+      default_pool_size: 25 # per user and database
+      max_db_connections: 50 # max_connections / dbs / pgbouncers
       server_idle_timeout: 10
+      idle_transaction_timeout: 60
       server_check_delay: 30
       unix_socket_dir: "/tmp"
       listen_addr: "0.0.0.0"
@@ -37,6 +38,8 @@ global:
       application_name_add_host: 1
 
 custom_configmap: false
+## if custom repository is enabled it takes global/imageRegistry and global/imageNamespace
+custom_repository: false
 
 extensions:
   pg_stat_statements:
@@ -100,26 +103,24 @@ pod:
 upgrades:
   revisionHistory: 3
   podReplacementStrategy: Recreate
-
-## Configure resource requests and limits
-## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-##
-resources:
-  enabled: false
-  limits:
-    memory: 256Mi
-    cpu: 500m
-  requests:
-    memory: 256Mi
-    cpu: 500m
-
+## Configure resource requests and limits	
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/	
+##	
+resources: {}
+#  limits:	
+#    memory: 256Mi	
+#    cpu: 500m	
+#  requests:	
+#    memory: 256Mi	
+#    cpu: 500m	
 metrics:
   enabled: false
   image: "wrouesnel/postgres_exporter"
-  imageTag: v0.4.6
+  imageTag: v0.4.7
   imagePullPolicy: IfNotPresent
 
   port: 9187
+
   customMetrics:
     pg_database:
       query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
@@ -152,5 +153,25 @@ backup:
   os_project_name: master
   os_project_domain: ccadmin
 
+  # if custom repository is enabled, .Values.backup.image must be the full
+  # repository URL; .Values.global.imageRegistry is not prepended
+  custom_repository: false
+
 pgbouncer:
   config: {}
+
+cdc:
+  enabled: false
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: true
+
+  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  prometheus: openstack
+
+  # The tier of the alert.
+  tier: os
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:

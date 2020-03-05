@@ -1,0 +1,61 @@
+{{- if and (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (contains ",nsxv3" .Values.ml2_mechanismdrivers ) }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'neutron-ml2-nsxv3-configmap'
+  scope: 'cluster'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  {% if nsx_t_enabled is defined and nsx_t_enabled -%}
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: neutron-ml2-nsxv3-{= name =}
+    labels:
+      system: openstack
+      type: configuration
+      component: neutron
+  data:
+    ml2-nsxv3.ini: |
+      [DEFAULT]
+      # The agent binds only port with the same host
+      host = nova-compute-{= name =}
+      backdoor_socket = /var/lib/neutron/eventlet_backdoor.socket
+
+      [securitygroup]
+      firewall_driver = nsxv3
+
+      [AGENT]
+      {{- range $k, $v := .Values.drivers.nsxv3.defaults.AGENT }}
+      {{ $k }} = {{ $v }}
+      {{- end }}
+      enable_runtime_migration_from_dvs_driver = {{ if contains ",dvs" .Values.ml2_mechanismdrivers }}True{{ else }}False{{ end }}
+
+      [NSXV3]
+      # nsx-t has only admin / audit user
+      nsxv3_login_user = admin
+      {%- set bb = name | replace( "bb", "") | int %}
+      {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
+      {% if name == "bb95" %}
+      {%- set hostname = "nsx-ctl-bb091.cc.qa-de-1.cloud.sap" %}
+      {% endif %}
+      nsxv3_login_hostname = {= hostname =}
+      nsxv3_login_password = {= username | derive_password(hostname) | quote =}
+      {%- set tzname = "bb" + ( '%03d' % bb ) + "-vlan" %}
+      nsxv3_transport_zone_name = {= tzname =}
+      {{- range $k, $v := .Values.drivers.nsxv3.defaults.NSXV3 }}
+      {{ $k }} = {{ $v }}
+      {{- end }}
+
+      [vsphere]
+      # vcenter connection info for the migration functions
+      # TODO - remove it after migration
+      vsphere_login_username = {= username | quote =}
+      vsphere_login_password = {= password | quote =}
+      vsphere_login_hostname = {= host =}
+
+      vsphere_suppress_ssl_wornings = True
+  {% endif %}
+{{ end }}

@@ -1,0 +1,32 @@
+{{- if contains ",f5" .Values.ml2_mechanismdrivers }}
+{{- range $lb := .Values.new_f5.loadbalancers }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neutron-f5-{{$lb.name}}
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+
+data:
+  f5-agent.conf.ini: |
+    [DEFAULT]
+    host = {{ $lb.name }}
+
+    [F5]
+    physical_device_mappings = {{ $lb.physical_device_mappings }}
+    sync_interval = {{ $.Values.new_f5.periodic_interval }}
+    backend = icontrol
+    devices = {{ range $i, $host := $lb.hosts }}
+    {{- tuple $host $lb.username $lb.password | include "f5_url" }}
+    {{- if lt $i (sub (len $lb.hosts) 1) }},{{ end -}}
+    {{- end }}
+
+    [F5_VCMP]
+    username = {{ required "Missing loadbalancer username!" $lb.username }}
+    password = {{ required "Missing loadbalancer password!" $lb.password }}
+    hosts_guest_mappings = {{ $lb.vcmp_host_guest_mapping | join "," }}
+{{- end }}
+{{- end }}

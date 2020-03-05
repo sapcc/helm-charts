@@ -1,0 +1,101 @@
+{{- if .Values.enabled }}
+{{- $values := .Values -}}
+
+{{- range $i, $prober := .Values.probers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: cloudprober-exporter-{{$prober.name}}
+  labels:
+    app: cloudprober-exporter
+    release: "{{$.Release.Name}}"
+
+spec:
+  revisionHistoryLimit: {{ $values.revisionHistoryLimit }}
+  replicas: {{ $values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        name: cloudprober-exporter-{{$prober.name}}
+        app: cloudprober-exporter
+        probed_from: {{$prober.name}}
+        src: {{$prober.ip}}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
+        prometheus.io/scrape: {{ $values.metrics.scrape | quote }}
+        prometheus.io/port: {{ $values.metrics.port | quote }}
+        prometheus.io/targets: {{ $values.metrics.prometheus | quote }}
+    spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{$prober.name}}
+      volumes:
+        - name: cloudprober-exporter
+          configMap:
+            name: cloudprober-exporter
+
+      containers:
+        - name: prober
+          image: "{{ $values.image.repository }}:{{ $values.image.tag }}"
+          imagePullPolicy: {{ $values.pullPolicy }}
+          args: [
+            "--config_file","/cfg/cloudprober.cfg",
+            "--logtostderr"
+          ]
+          volumeMounts:
+          - name: cloudprober-exporter
+            mountPath: /cfg
+          ports:
+          - name: metrics
+            containerPort: {{ $values.metrics.port }}
+            protocol: TCP
+          - name: http
+            containerPort: 80
+            protocol: TCP
+          env:
+          - name: CLOUDPROBER_PORT
+            value: {{ $values.metrics.port | quote }}
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: metrics
+            timeoutSeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: metrics
+            timeoutSeconds: 5
+            periodSeconds: 15
+
+        - name: iperf3-server
+          image: hub.global.cloud.sap/monsoon/iperf3
+          imagePullPolicy: IfNotPresent
+          command:
+          - iperf3
+          - -s
+          ports:
+            - name: tcp
+              containerPort: 5201
+              protocol: TCP
+            - name: udp
+              containerPort: 5201
+              protocol: UDP
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "nc -v -n -z localhost 5201"]
+            timeoutSeconds: 5
+            periodSeconds: 60
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "nc -v -n -z localhost 5201"]
+            timeoutSeconds: 5
+            periodSeconds: 60
+            initialDelaySeconds: 15
+
+---
+{{ end -}}
+{{ end -}}

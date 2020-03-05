@@ -1,0 +1,183 @@
+# NOTE on severities: Alerts have `info` if they don't have a playbook, and `warning` if they do.
+
+groups:
+- name: openstack-castellum-errors.alerts
+  rules:
+
+    ############################################################################
+    # alerts concerning pgmetrics collector (alerting this condition separately
+    # allows to avoid a bunch of absent() checks in other alerts' expressions)
+    #
+    # Note that we do not check absent(castellum_min_greenlit_at_gauge). This
+    # condition will occur during normal operation whenever there are no
+    # operations in state "greenlit".
+    #
+    # We also guard absent(castellum_*_min_scraped_at) to avoid false positives
+    # when there are no resources or assets in the DB.
+
+    - alert: OpenstackCastellumMissingDatabaseMetrics
+      expr: absent(castellum_asset_count_gauge) or absent(castellum_resource_count_gauge) or (castellum_resource_count_gauge > 0 and absent(castellum_resource_min_scraped_at)) or (castellum_asset_count_gauge > 0 and absent(castellum_asset_min_scraped_at))
+      for: 10m
+      labels:
+        context: database-metrics
+        service: castellum
+        severity: warning
+        tier: os
+        playbook: 'docs/support/playbook/castellum/missing_database_metrics.html'
+      annotations:
+        description: The pgmetrics deployment is not sending all expected metrics.
+          Other Castellum alerts may not fire because of missing timeseries.
+          Check if castellum-pgmetrics is working correctly.
+        summary: Missing database metrics (alerting reliability impacted)
+
+    ############################################################################
+    # alerts concerning resource scraping in castellum-observer
+    #
+    # Those alerts fire really slow because of the glacial speed of the Manila
+    # API impacting resource scraping speed.
+
+    - alert: OpenstackCastellumNoResourceScraping
+      expr: absent(rate(castellum_aggregated_successful_resource_scrapes[60m]) > 0)
+        and max(castellum_resource_count_gauge) > 0
+      for: 5m
+      labels:
+        context: resource-scraping
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+        meta: "No resource scraping in the last 60 minutes - Is castellum-observer dead!?"
+      annotations:
+        description: |
+          There have been no successful resource scrapes at all in the last hour. Please check if castellum-observer is dead.
+        summary: Castellum is not scraping any resources
+
+    # Resources should be scraped every 30 minutes. We give some extra margin of
+    # 15 minutes for the scrape to take place, and alert after 45 minutes.
+    - alert: OpenstackCastellumResourcesNotScraped
+      expr: (max by (asset) (time() - castellum_resource_min_scraped_at)) / 60 >= 45
+      for: 3m
+      labels:
+        context: resource-scraping
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+        meta: "Some {{ $labels.asset }} resources not scraped - Check castellum-observer log!"
+        sentry: 'castellum/'
+      annotations:
+        description: |
+          Some `{{ $labels.asset }}` resources are older than 45 minutes, even though they should be scraped every 30 minutes.
+          The scrapes are either taking too long or failing entirely.
+          In the latter case, the `kubectl logs` for castellum-observer contains more information.
+          There may also be an error logged in Sentry.
+        summary: "`{{ $labels.asset }}` resources are not getting scraped"
+
+    ############################################################################
+    # alerts concerning asset scraping in castellum-observer
+
+    - alert: OpenstackCastellumNotScrapingAnyAssets
+      expr: absent(rate(castellum_aggregated_successful_asset_scrapes[30m]) > 0)
+        and max(castellum_asset_count_gauge) > 0
+      for: 5m
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+        meta: "No asset scraping in the last 30 minutes - Is castellum-observer dead!?"
+      annotations:
+        description: |
+          There have been no successful asset scrapes at all in the last hour. Please check if castellum-observer is dead.
+        summary: Castellum is not scraping any assets
+
+    # Assets should be scraped every 5 minutes. We give some extra margin of
+    # 10 minutes for the scrape to take place, and alert after 15 minutes.
+    #
+    # The first alert must have a higher severity than the second one in order to suppress it.
+    - alert: OpenstackCastellumAssetScrapingDelayed
+      expr: (max by (asset) (time() - castellum_asset_min_checked_at)) / 60 >= 45
+      for: 3m
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+        meta: "Some {{ $labels.asset }} asset scrapes are taking too long - Check castellum-observer log!"
+      annotations:
+        description: |
+          Some `{{ $labels.asset }}` assets are older than 15 minutes, even though they should be scraping every 5 minutes.
+          It looks like the asset scraping is taking too long.
+          The `kubectl logs` for castellum-observer may contain more information.
+        summary: "`{{ $labels.asset }}` asset scrapes are taking too long"
+    - alert: OpenstackCastellumAssetScrapingFailing
+      expr: (max by (asset) (time() - castellum_asset_min_scraped_at)) / 60 >= 45
+      for: 3m
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: warning
+        tier: os
+        dashboard: castellum
+        playbook: 'docs/support/playbook/castellum/asset_scraping_failing.html'
+        meta: "Some {{ $labels.asset }} asset scrapes are failing - Check castellum-observer log!"
+      annotations:
+        description: |
+          Some `{{ $labels.asset }}` assets are older than 15 minutes, even though they should be scraped every 5 minutes.
+          It looks like asset scrapes are failing because of backend errors.
+          The `kubectl logs` for castellum-observer contain more information.
+        summary: "`{{ $labels.asset }}` assets are not getting scraped"
+
+    ############################################################################
+    # alerts concerning asset resizing in castellum-worker
+
+    - alert: OpenstackCastellumWorkersNotWorking
+      expr: max(time() - castellum_min_greenlit_at_gauge) BY (asset) > 600
+      for: 5m
+      labels:
+        context: asset-resizing
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+      annotations:
+        description: |
+          Resize operations for `{{ $labels.asset }}` are not getting executed in a timely manner.
+          Either the Castellum workers are not doing their job, or resizing is taking too long.
+          The `kubectl logs` for castellum-worker may contain additional info.
+
+    - alert: OpenstackCastellumErroredAssetResizes
+      expr: sum(increase(castellum_aggregated_errored_asset_resizes[5m])) BY (asset) > 0
+      for: 10m
+      labels:
+        context: asset-resizing
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+      annotations:
+        description: |
+          Castellum cannot resize `{{$labels.asset}}` assets.
+          The `kubectl logs` for castellum-worker contain additional info.
+        summary: Castellum cannot resize `{{$labels.asset}}` assets
+
+    - alert: OpenstackCastellumFailedAssetResizes
+      # This is only a fallback alert if reporting to Sentry is not working,
+      # hence the second half of the error expression.
+      expr: sum(increase(castellum_operation_state_transitions{to_state="failed"}[5m])) BY (asset) > 0 and absent(sentry_unresolved_issues_count{project="castellum"} > 0)
+      for: 30m
+      labels:
+        context: asset-resizing
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+      annotations:
+        description: |
+          Castellum encountered backend errors while resizing `{{$labels.asset}}` assets.
+          The `kubectl logs` for castellum-worker contain additional info.
+          This alert shows up because Sentry has not collected the exception correctly.
+          *Please have a look at the castellum-worker logs even after this alert resolves.*
+        summary: Castellum encountered backend errors while resizing `{{$labels.asset}}` assets

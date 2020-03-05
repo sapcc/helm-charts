@@ -1,0 +1,32 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: supernova
+  annotations:
+    ingress.kubernetes.io/affinity: "cookie"
+    ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
+    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    ingress.kubernetes.io/auth-tls-verify-depth: "1"
+
+{{- if .Values.ingress.internet_facing }}
+    ingress.kubernetes.io/ingress.class: "nginx-internet"
+    kubernetes.io/ingress.class: "nginx-internet"
+{{- end }}  
+    ingress.kubernetes.io/ssl-redirect: "true"
+    vice-president: {{ default false .Values.ingress.vice_president | quote }}
+
+spec:
+  tls:
+     - secretName: supernova
+       hosts: [{{ .Values.ingress.host }}]
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: supernova
+          servicePort: 80
+{{- end }}

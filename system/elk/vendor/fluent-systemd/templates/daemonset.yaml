@@ -1,0 +1,59 @@
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: fluent-systemd
+  namespace: elk
+  annotations:
+    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
+spec:
+  minReadySeconds: 15
+  updateStrategy:
+    type: RollingUpdate
+    maxUnavailable: 6
+  template:
+    metadata:
+      labels:
+        component: fluent-systemd
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/fluent.conf.tpl: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
+        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
+    spec:
+      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
+      tolerations:
+      - key: "species"
+        operator: "Exists"
+        effect: "NoSchedule"
+      {{- end }}
+      volumes:
+        - name: fluent-etc
+          configMap:
+            name: fluent-systemd-etc
+        - name: varlog
+          hostPath:
+            path: /var/log
+      containers:
+        - name: fluent-systemd
+          image: {{.Values.global.docker_repo}}/elk-fluent:{{.Values.image_version}}
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/local/bin/dumb-init", "/usr/local/bin/fluentd", "-c", "/fluent-etc/fluent.conf", "--use-v1-config", "--suppress-repeated-stacktrace"]
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+#            limits:
+#              cpu: 1000m
+#              memory: 2000Mi
+          volumeMounts:
+            - name: fluent-etc
+              mountPath: /fluent-etc
+            - name: varlog
+              mountPath: /var/log
+          ports: 
+            - name: fluent
+              containerPort: {{.Values.port}}
+              hostPort: {{.Values.port}}
+              hostIP: 127.0.0.1

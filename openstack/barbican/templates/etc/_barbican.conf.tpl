@@ -33,27 +33,46 @@ backlog = 4096
 max_allowed_secret_in_bytes = 10000
 max_allowed_request_size_in_bytes = 1000000
 
+{{ if eq .Values.postgresql.enabled false }}
+sql_connection = {{ include "db_url_mysql" . }}
+{{ else }}
 sql_connection = {{ include "db_url" . }}
+{{ end }}
 
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}{{ .Values.rabbitmq.virtual_host | default "/" }}
+{{ include "ini_sections.default_transport_url" . }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 5 }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 10 }}
+max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}
+max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
 [keystone_authtoken]
-auth_plugin = password
+auth_type = v3password
+auth_version = v3
+auth_interface = internal
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.barbican_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "$$" }}
 user_domain_id = default
 project_name = service
 project_domain_id = default
-www_authenticate_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
-auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-auth_type = v3password
+region_name = {{.Values.global.region}}
+memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+service_token_roles_required = True
+token_cache_time = 600
+include_service_catalog = true
+service_type = key-manager
+
+{{- if .Values.audit.enabled }}
+# Defines CADF Audit Middleware section
+[audit_middleware_notifications]
+topics = notifications
+driver = messagingv2
+transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@barbican-rabbitmq-notifications:5672/
+mem_queue_size = 1000
+{{- end }}
 
 {{- include "ini_sections.cache" . }}

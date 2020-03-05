@@ -1,0 +1,44 @@
+groups:
+- name: bios.alerts
+  rules:
+  - alert: BiosCPSettingNotCorrect
+    expr: bios_exporter{job="bios/cisco_cp"} != 0 and bios_exporter{job="bios/cisco_cp",setting_name !~ "memory_memorymode|biosvfselectmemoryrasconfiguration|memory_ras_configuration|bios_memsettings_adddcsetting|bios_memsettings_memopmode"}
+    for: 30m
+    labels:
+      severity: info
+      tier: metal
+      service: baremetal
+      context: "BioSettings"
+      meta: "baremetal {{ $labels.manufacturer }} node {{ $labels.hostname }} BIOS setting is not correct: {{ $labels.setting_name }}"
+      playbook: docs/devops/alert/baremetal/#fix-biossettingnotcorrect 
+    annotations:
+      description: "baremetal {{ $labels.manufacturer }} node {{ $labels.hostname }} BIOS setting is not correct: {{ $labels.setting_name }} for 30m"
+      summary: "Hardware error configuration error for instance: {{ $labels.instance }}"
+
+  - alert: BiosCPNotResponding
+    expr: bios_exporter_up{job="bios/cisco_cp"} == 1
+    for: 30m
+    labels:
+      severity: info
+      tier: metal
+      service: baremetal
+      context: "BioSettings"
+      meta: "{{ $labels.server_name }} is not producing any BIOS metrics. A remoteboard reboot is probably needed."
+      playbook: docs/devops/alert/baremetal/#fix-biossettingnotcorrect
+    annotations:
+      description: "{{ $labels.server_name }} is not producing any BIOS metrics. A remoteboard reboot is probably needed."
+      summary: "{{ $labels.server_name }} is not producing any BIOS metrics. A remoteboard reboot is probably needed."
+
+  - alert: MultipleBiosCPNotReporting
+    expr: count(bios_exporter_up{job="bios/cisco_cp"} == 1) > 10
+    for: 30m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      context: "BioSettings"
+      meta: "More than 10 servers are not reporting their BIOS properly. Please have a look."
+      playbook: docs/devops/alert/baremetal/#fix-multiplebiosnotreporting
+    annotations:
+      description: "More than 10 servers are not reporting their BIOS properly. Please have a look."
+      summary: "More than 10 servers are not reporting their BIOS properly. Please have a look."

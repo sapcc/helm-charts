@@ -1,0 +1,42 @@
+{{ if .Values.cleanup.enabled }}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: concourse-ci-cleanup
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: "*/10 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: concourse-ci-cleanup
+            image:  "{{ .Values.cleanup.image }}:{{ .Values.cleanup.imageTag }}"
+            imagePullPolicy: {{ .Values.cleanup.pullPolicy }}
+            env:
+            - name: CONCOURSE_URL
+              value: {{ .Values.concourse.concourse.web.externalUrl | quote }}
+            - name: CONCOURSE_USER
+              value: "admin"
+            - name: CONCOURSE_PASSWORD
+              value: {{ (split ":" .Values.concourse.secrets.localUsers)._1 | quote }}
+            - name: WORKER_PREFIX
+              value: {{ .Values.cleanup.worker_prefix | quote }}
+{{ if .Values.cleanup.enable_volume_cleanup }}
+            - name: VOLUME_CLEANUP
+              value: {{ .Values.cleanup.enable_volume_cleanup | quote }}
+            - name: VOLUME_PREFIX
+              value: {{ .Values.cleanup.volume_prefix | quote }}
+            - name: OS_AUTH_URL
+              value: {{ $.Values.openstack.auth_url | quote }}
+            - name: OS_APPLICATION_CREDENTIAL_ID
+              value: {{ $.Values.openstack.application_credential_id | quote }}
+            - name: OS_APPLICATION_CREDENTIAL_SECRET
+              value: {{ $.Values.openstack.application_credential_secret | quote }}
+{{ end }}
+          restartPolicy: Never
+          serviceAccountName: concourse-ci-cleanup
+{{ end }}

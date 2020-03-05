@@ -1,0 +1,122 @@
+groups:
+- name: openstack-ironic.alerts
+  rules:
+  - alert: OpenstackIronicUnmatchedNodes
+    expr: max(limes_unmatched_ironic_nodes) by (os_cluster) > 0
+    for: 1m # metric is measured every 15 minutes, so this is practically identical to "for: 15m" except it appears and resolves faster
+    labels:
+      meta: "{{ $value }} Ironic nodes do not match any Nova baremetal flavor"
+      service: ironic
+      severity: info
+      tier: os
+      kibana: "app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-20m,mode:quick,to:now))&_a=(columns:!(_source),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes.labels.name,negate:!f,type:phrase,value:limes-collect-ccloud),query:(match:(kubernetes.labels.name:(query:limes-collect-ccloud,type:phrase))))),index:'logstash-*',interval:auto,query:(query_string:(query:ironic)),sort:!(time,desc))"
+    annotations:
+      description: "{{ $value }} active/available Ironic nodes do not match any Nova
+        baremetal flavor. Make sure that number of cores, RAM size and disk size
+        are set correctly, and that there is a flavor for each type of server."
+      summary: "{{ $value }} Ironic nodes do not match any Nova baremetal flavor."
+
+  - alert: OpenstackIronicApiDown
+    expr: blackbox_api_status_gauge{check=~"ironic"} == 1
+    for: 20m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is down. See Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
+      summary: '{{ $labels.check }} API down'
+
+  - alert: OpenstackIronicApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"ironic"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is flapping'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is flapping for 30 minutes.'
+      summary: '{{ $labels.check }} API flapping'
+
+  - alert: OpenstackIronicCanaryDown
+    expr: blackbox_regression_status_gauge{service=~"ironic"} == 1
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
+
+
+  - alert: OpenstackIronicCanaryTimeout
+    expr: blackbox_regression_status_gauge{service=~"ironic"} == 0.5
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
+
+  - alert: OpenstackIronicNodeInErrorState
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='error'})by(name,last_error) > 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      service: ironic
+      dashboard: ironic-node-overview
+      meta: 'Node {{ $labels.name }} is in error due to {{ $labels.last_error }}'
+      playbook: 'docs/support/playbook/baremetal/bm_node_error_state.html'
+    annotations:
+      description: 'Node {{ $labels.name }} is in error due to {{ $labels.last_error }}'
+      summary: 'Openstack Ironic Node In Error State'
+
+  - alert: OpenstackIronicNodeInDeployFailedState
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='deploy failed'})by(name,last_error) > 0
+    for: 15m
+    labels:
+      severity: warning
+      tier: os
+      service: ironic
+      dashboard: ironic-node-overview
+      meta: 'Node {{ $labels.name }} is in deploy failed state due to {{ $labels.last_error }}'
+      playbook: 'docs/support/playbook/baremetal/bm_node_error_state.html'
+    annotations:
+      description: 'Node {{ $labels.name }} is in deploy failed state due to {{ $labels.last_error }}'
+      summary: 'Openstack Ironic Node In Deploy Failed State'
+
+  - alert: OpenstackIronicNodeInCleanFailedState
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='clean failed'})by(name,last_error) > 0
+    for: 15m
+    labels:
+      severity: warning
+      tier: os
+      service: ironic
+      dashboard: ironic-node-overview
+      meta: 'Node {{ $labels.name }} is in clean failed state due to {{ $labels.last_error }}'
+    annotations:
+      description: 'Node {{ $labels.name }} is in clean failed state due to {{ $labels.last_error }}'
+      summary: 'Openstack Ironic Node In Clean Failed State'

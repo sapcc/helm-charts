@@ -3,9 +3,79 @@ keppel:
   image_tag: latest
   image_pull_policy: Always
 
+  slim: false # set to true for deployments to the small QA regions
+
+  peer_hostnames: []
+
   service_password: DEFINED_IN_VALUES_FILE
-  service_user_id: DEFINED_IN_VALUES_FILE # TODO remove once obsoleted
+
+  # name of Keppel account reserved for keppel-health-monitor
+  healthcheck_account: healthcheck
+
+  # syntax:
+  #   nameclaim_whitelist:
+  #   - project: project@domain # can be a regex
+  #     account: foobar         # can be a regex
+  nameclaim_whitelist: []
 
   issuer:
     key.pem:  DEFINED_IN_VALUES_FILE
     cert.pem: DEFINED_IN_VALUES_FILE
+
+  # Set to non-empty values to enable audit logging to Hermes.
+  rabbitmq:
+    uri: ""
+    queue_name: ""
+
+pgmetrics:
+  db_name: keppel
+
+  customMetrics:
+    keppel_blobs:
+      query: 'SELECT COUNT(*) AS count FROM blobs'
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of blobs stored in Keppel"
+    keppel_repos:
+      query: 'SELECT COUNT(*) AS count FROM repos'
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of repositories stored in Keppel"
+    keppel_manifests:
+      query: 'SELECT COUNT(*) AS count FROM manifests'
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of manifests stored in Keppel"
+    keppel_tags:
+      query: 'SELECT COUNT(*) AS count FROM tags'
+      metrics:
+        - count:
+            usage: "GAUGE"
+            description: "Total number of tags stored in Keppel"
+    keppel_peers:
+      query: >
+        SELECT hostname, COALESCE(EXTRACT(epoch FROM last_peered_at), 0) AS last_peered_at FROM peers
+      metrics:
+        - hostname:
+            usage: "LABEL"
+            description: "Peer hostname"
+        - last_peered_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of when we last issued a password for this peer (should happen every 10 minutes)"
+    keppel_blob_replication:
+      query: >
+        SELECT COALESCE(EXTRACT(epoch FROM MAX(since)), 0) AS min_started_at FROM pending_blobs
+      metrics:
+        - min_started_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp when oldest still-running blob replication was started (or 0 when no replication is in progress)"
+    keppel_upload:
+      query: >
+        SELECT COALESCE(EXTRACT(epoch FROM MAX(updated_at)), 0) AS min_updated_at FROM uploads
+      metrics:
+        - min_updated_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp when oldest still-active upload was started (or 0 when no upload is in progress)"

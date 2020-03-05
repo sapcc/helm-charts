@@ -1,0 +1,19 @@
+{{- if .Values.enabled }}
+{{- $netappFilerYaml := include (print .Template.BasePath "/_netapp_filers.yaml.tpl") . }}
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ required "Value apps[].name" $app.fullname }}
+data:
+  {{- if eq $name "manila" }}
+  netapp-filers.yaml: |
+  {{- $netappFilerYaml | nindent 4 }}
+  {{- else }}
+  netapp-filers.yaml: "TO BE POPULATED BY SIDECAR"
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

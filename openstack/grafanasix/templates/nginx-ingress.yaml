@@ -1,0 +1,25 @@
+{{- if .Values.nginx.enabled }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: grafana-kiosk
+  annotations:
+    vice-president: {{ default false .Values.grafana.vice_president | quote }}
+    disco: {{ default false .Values.grafana.disco | quote }}
+{{- if .Values.ingress.global }}
+    disco/zone-name: "global.cloud.sap"
+{{- end }}
+spec:
+  tls:
+    - secretName: tls-grafana-kiosk
+      hosts: ["{{.Values.nginx.endpoint.host.public}}"]
+  rules:
+    - host: "{{.Values.nginx.endpoint.host.public}}"
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: grafana
+            servicePort: {{.Values.nginx.endpoint.port.public}}
+{{- end }}

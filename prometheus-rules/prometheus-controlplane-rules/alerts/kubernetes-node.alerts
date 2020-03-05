@@ -1,0 +1,65 @@
+groups:
+- name: controlplane.alerts
+  rules:
+
+    ### Node Labels ###
+
+    - alert: KubernetesNodeLabelMissingZone
+      expr: sum(kube_node_labels{label_zone!~"farm|petting-zoo"}) by (node,label_zone) > 0
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: info
+        context: label
+        meta: "{{ $labels.node }}"
+        playbook: "docs/support/playbook/kubernetes/k8s_label_missing.html"
+      annotations:
+        description: Node {{ $labels.node }} is missing the correct zone label. It is currently set to zone='{{ $labels.label_zone }}' Possible scheduling issues.
+        summary: Node {{ $labels.node }} is missing the correct zone label.
+
+    - alert: KubernetesNodeLabelMissingSpecies
+      expr: sum(kube_node_labels{node=~"storage.*", label_species!="swift-storage"}) by (node,label_species) > 0 OR sum(kube_node_labels{node=~"network.*", label_species!="network"}) by (node,label_species) > 0 OR sum(kube_node_labels{node=~"master.*", label_species!="master"}) by (node,label_species) > 0
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: info
+        context: label
+        meta: "{{ $labels.node }}"
+        playbook: "docs/support/playbook/kubernetes/k8s_label_missing.html"
+      annotations:
+        description: Node {{ $labels.node }} is missing the correct species label. It is currently set to species='{{ $labels.label_species }}' Possible scheduling issues.
+        summary: Node {{ $labels.node }} is missing the correct species label.
+
+    ### Node Taints ###
+
+    - alert: KubernetesNodeTaintMissing
+      expr: sum(kube_node_spec_taint{node=~"storage.*", value!~"swift-storage.*"}) by (node,value) > 0 OR sum(kube_node_spec_taint{node=~"network.*", value!~"network|alien"}) by (node,value) > 0
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: info
+        context: label
+        meta: "{{ $labels.node }}"
+        playbook: "docs/support/playbook/kubernetes/k8s_taint_missing.html"
+      annotations:
+        description: Node {{ $labels.node }} is missing the correct taint. It is currently set to value='{{ $labels.value}}' Possible scheduling issues.
+        summary: Node {{ $labels.node }} is missing the correct taint label.
+
+    ### Node Bridge ###
+
+    - alert: KubernetesNodeBridgeFilterVLANTagged
+      expr: kube_node_status_condition{condition="BridgeFilterVLANTagged", status="true"} == 1
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: info
+        context: label
+        meta: "{{ $labels.node }}"
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bridge_filter_iptables.html"
+      annotations:
+        description: VLAN-tagged ARP/IP traffic is filtered by ARPtables/IPtables on {{ $labels.node }}. Network datapath threatened!
+        summary: Bridged VLAN-tagged traffic is filtered by IPtables.

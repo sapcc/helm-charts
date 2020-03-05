@@ -23,6 +23,9 @@ spec:
         - name: blackbox-tests-regression
           persistentVolumeClaim:
             claimName: blackbox-tests-regression
+        - name: statsd-mapping-config
+          configMap:
+            name: blackbox-tests-regression-statsd-mapping-config
         - name: blackbox-jump-key
           secret:
             secretName: blackbox-tests-regression
@@ -40,10 +43,10 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "-n 4"
-            - "--timeout 5400"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
             - "--disable-pytest-warnings"
-            - "-r a"
+            - "-r ap"
             - "tests/test_ironic.py"
             - "-k test_create_bm_server"
           volumeMounts:
@@ -83,11 +86,11 @@ spec:
             - name: JUMP_USER
               value: {{ .Values.global.jump.user | quote }}
             - name: STATSD_HOST
-              value: "localhost"
+              value: {{ .Values.statsd.host | quote }}
             - name: STATSD_PORT
-              value: "9125"
+              value: {{ .Values.statsd.port | quote }}
             - name: STATSD_PREFIX
-              value: "blackbox-regression"
+              value: {{ .Values.statsd.prefix | quote }}
             - name: REGRESSION_PROJECT_ID
               value: {{ .Values.project_id | quote }}
             - name: REGRESSION_PROJECT_NAME
@@ -109,9 +112,9 @@ spec:
             - name: REGRESSION_BM_TIMEOUT
               value: {{ .Values.baremetal.timeout | quote }}
             - name: TIMEOUT
-              value: {{ .Values.timeout | quote }}
+              value: {{ .Values.parallel.timeout.atomic | quote }}
             - name: SLEEP_ITERATE
-              value: {{ .Values.sleep.iterate | quote }}
+              value: {{ .Values.parallel.iterator.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -153,8 +156,8 @@ spec:
           args:
             - "purge"
             - "python helper/purge_resources.py"
-            - "-t baremetal"
-            - "-r 3600"
+            - {{ .Values.parallel.purger.target | printf "-t %s" | quote }}
+            - {{ .Values.parallel.purger.retention | printf "-r %.0f" | quote }}
             - "server"
           volumeMounts:
             - name: blackbox-tests-regression
@@ -182,7 +185,7 @@ spec:
             - name: REGRESSION_PROJECT_DOMAIN
               value: {{ .Values.project_domain | quote }}
             - name: SLEEP_PURGE
-              value: {{ .Values.sleep.purge | quote }}
+              value: {{ .Values.parallel.purger.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -206,11 +209,16 @@ spec:
             initialDelaySeconds: 15
 
         - name: statsd
-          image: prom/statsd-exporter:v0.5.0
+          image: prom/statsd-exporter:v0.12.2
           imagePullPolicy: IfNotPresent
+          args:
+            - --statsd.mapping-config=/etc/statsd/statsd-mapping.conf
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.global.port_metrics}}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/statsd

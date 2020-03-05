@@ -1,14 +1,17 @@
-{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+{{- if or (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (.Values.isImageTransportTemplating | default false) }}
 apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
   name: 'vcenter-datacenter-cinder-configmap'
   scope: 'datacenter'
-template: |{{`
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
   apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: volume-vmware-{{ name }}
+    name: volume-vmware-{= name =}
     labels:
       system: openstack
       type: configuration
@@ -16,23 +19,28 @@ template: |{{`
   data:
     cinder-volume.conf: |
       [DEFAULT]
-      enabled_backends = vmware, vstorageobject
+      enabled_backends = vmware
 
       [backend_defaults]
-      vmware_host_ip = {{ host }}
-      vmware_host_username = {{ username | quote }}
-      vmware_host_password = {{ password | quote }}
-      backend_availability_zone = {{ availability_zone | quote }}`}}
+      vmware_host_ip = {= host =}
+      {{- if .Values.vmware_host_username | default "" }}
+      vmware_host_username = {{ .Values.vmware_host_username }}
+      vmware_host_password = {= "{{ .Values.vmware_host_username }}" | derive_password | quote =}
+      {{- else }}
+      vmware_host_username = {= username | quote =}
+      vmware_host_password = {= password | quote =}
+      {{- end }}
+      backend_availability_zone = {= availability_zone | quote =}
       {{- range $key, $value := .Values.backend_defaults}}
       {{ $key }} = {{ $value }}
-      {{- end }}{{`
+      {{- end }}
 
       [vmware]
       volume_driver = cinder.volume.drivers.vmware.vmdk.VMwareVcVmdkDriver
       volume_backend_name = vmware
+      extra_capabilities = '{"vcenter-shard": "{= host.split(".")[0] =}"}'
 
       [vstorageobject]
       volume_driver = cinder.volume.drivers.vmware.fcd.VMwareVStorageObjectDriver
       volume_backend_name = vstorageobject
-`}}
 {{- end }}

@@ -1,0 +1,65 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: BlackboxTestsCertificatesScrapeMissing
+    expr: absent(up{component="blackbox-tests",type="certificates"})
+    for: 1h
+    labels:
+      service: blackbox-tests-certificates
+      severity: warning
+      tier: os
+    annotations:
+      description: Blackbox-Tests-Certificates failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: Blackbox-Tests-Certificates cannot be scraped
+
+  - alert: BlackboxCertificatesMetricsDown
+    expr: absent(up{kubernetes_name="blackbox-tests-certificates",kubernetes_namespace="blackbox"}) == 1
+    for: 15m
+    labels:
+      service: blackbox-tests-certificates
+      severity: info
+      tier: os
+    annotations:
+      description: Certificates metrics are down for 15 times in a row.
+      summary: Blackbox certificates metrics
+
+  - alert: OpenstackCertificateExpires
+    expr: blackbox_certificates_status_gauge == 1
+    for: 1d
+    labels:
+      context: '{{ $labels.check }}'
+      meta: '{{ $labels.check }}'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      severity: warning
+      tier: os
+      playbook: 'docs/devops/alert/certificates.html'
+    annotations:
+      description: Certificate {{ $labels.check }} expires in the near future.
+      summary: Certificates
+
+  - alert: sslLabsCertificateRatingDegraded
+    expr: blackbox_certificates_status_gauge{check="ssllabs"} == 1
+    for: 1d
+    labels:
+      context: '{{ $labels.check }}'
+      meta: 'sslLabs certificate rating for cc3test.global.cloud.sap degrades from A'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      severity: warning
+      tier: os
+    annotations:
+      description: sslLabs certificate rating for cc3test.global.cloud.sap degrades from A
+      summary: sslLabs certificate rating degradation
+
+  - alert: OpenstackCertificateExpiresSoon
+    expr: blackbox_certificates_status_gauge == 1
+    for: 15d
+    labels:
+      context: '{{ $labels.check }}'
+      meta: '{{ $labels.check }}'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      severity: critical
+      tier: os
+      playbook: 'docs/devops/alert/certificates.html'
+    annotations:
+      description: Certificate {{ $labels.check }} expires in the near future.
+      summary: Certificates

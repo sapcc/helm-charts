@@ -1,0 +1,63 @@
+{{- if .Values.ingress.enabled }}
+{{- $root := . }}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: {{ include "prometheus.fullName" . }}
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+  annotations:
+    vice-president: {{ required ".Values.ingress.vicePresident missing" .Values.ingress.vicePresident | quote }}
+    disco: {{ required ".Values.ingress.disco missing" .Values.ingress.disco | quote }}
+    {{- if .Values.ingress.authentication.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.authTLSSecret missing" .Values.ingress.authentication.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.authTLSVerifyDepth missing" .Values.ingress.authentication.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.authTLSVerifyClient missing" .Values.ingress.authentication.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if .Values.ingress.annotations }}
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+    {{ end }}
+
+spec:
+  rules:
+    {{- range $host := .Values.ingress.hosts }}
+    - host: {{ include "fqdnHelper" (list $host $root) }}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: {{ include "prometheus.fullName" $root }}
+            servicePort: http
+        {{- if $root.Values.thanos.enabled }}
+        - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+          backend:
+            serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
+            servicePort: http
+        {{- end }}
+    {{- end }}
+    {{- range $host := .Values.ingress.hostsFQDN }}
+    - host: {{ $host }}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: {{ include "prometheus.fullName" $root }}
+            servicePort: http
+        {{- if $root.Values.thanos.enabled }}
+        - path: {{ required ".Values.thanos.querier.webRouteprefix missing" $root.Values.thanos.querier.webRouteprefix }}
+          backend:
+            serviceName: {{ include "prometheus.fullName" $root }}-thanos-query
+            servicePort: http
+        {{- end }}
+    {{- end }}
+  tls:
+    - secretName: tls-{{ include "prometheus.externalURL" $root | replace "." "-" }}
+      hosts:
+        {{- range $host := .Values.ingress.hosts }}
+        - {{ include "fqdnHelper" (list $host $root) }}
+        {{- end }}
+        {{- range $host := .Values.ingress.hostsFQDN }}
+        - {{ $host }}
+        {{- end }}
+{{- end }}

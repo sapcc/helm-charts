@@ -1,0 +1,22 @@
+{{- if .Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1" }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosTemplate
+metadata:
+  name: ironic-baremetal-conductors
+  namespace: monsoon3
+requirements:
+- name: ironic-baremetal-blocks
+template: |
+    {{- $conductor := dict "name" "{{block.name}}" "DEFAULT" (dict) "conductor" (dict) "pxe" (dict) "deploy" (dict) "jinja2" true }}
+    {{- $conductor := merge $conductor .Values.conductor.defaults }}
+    {% for block in blocks %}
+{{- tuple . $conductor | include "ironic_conductor_deployment" | indent 4 }}
+    ---
+{{- tuple . $conductor | include "ironic_conductor_configmap" | indent 4 }}
+    ---
+{{- tuple . $conductor | include "ironic_conductor_console_service" | indent 4 }}
+    ---
+{{- tuple . $conductor | include "ironic_conductor_console_ingress" | indent 4 }}
+    {% if not loop.last %}---{% endif %}
+    {% endfor %}
+{{- end  }}

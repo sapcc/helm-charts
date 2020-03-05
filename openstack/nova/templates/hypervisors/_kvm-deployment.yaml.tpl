@@ -1,4 +1,4 @@
-{{- define "kvm_hypervisor" }}
+{{- define "kvm_deployment" }}
 {{- $hypervisor := index . 1 }}
 {{- with index . 0 }}
 kind: Deployment
@@ -20,30 +20,34 @@ spec:
   template:
     metadata:
       labels:
+{{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
         name: nova-compute-{{$hypervisor.name}}
-{{ tuple . "nova" (print "compute-" $hypervisor.name) | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        hypervisor: "kvm"
       annotations:
-        {{- if le .Capabilities.KubeVersion.Minor "6" }}
-        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
-        {{- end }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "kvm_configmap" | sha256sum }}
     spec:
+      terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostNetwork: true
       hostPID: true
       hostIPC: true
       nodeSelector:
         kubernetes.io/hostname: {{$hypervisor.node_name}}
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
       - key: "species"
         operator: "Equal"
         value: "hypervisor"
         effect: "NoSchedule"
-      {{- end }}
+      initContainers:
+        - name: fix-permssion-instance-volume
+          image: busybox
+          command: ["sh", "-c", "chown -R 42436:42436 /var/lib/nova"]
+          volumeMounts:
+            - mountPath: /var/lib/nova/instances
+              name: instances
       containers:
-        - name: nova-compute-minion1
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+        - name: nova-compute
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -90,8 +94,12 @@ spec:
               readOnly: true
             - mountPath: /nova-patches
               name: nova-patches
+            - mountPath: /etc/nova/rootwrap.conf
+              name: nova-etc
+              subPath: rootwrap.conf
+              readOnly: true
         - name: nova-libvirt
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -149,7 +157,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              value: {{ .Values.sentry_dsn | quote }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
@@ -182,13 +190,13 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: nova-container-init
-        - name: neutron-ovs-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-neutron-openvswitch-agent:{{.Values.imageVersionNeutronOpenvswitchAgent}}
+        - name: neutron-openvswitch-agent
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
           command:
-            - /container.init/neutron-ovs-agent-start
+            - /container.init/neutron-openvswitch-agent-start
           volumeMounts:
             - mountPath: /var/run/
               name: run
@@ -200,7 +208,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-vswitchd:{{.Values.imageVersionNeutronVswitchd}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-vswitchd:{{ .Values.imageVersionOpenvswitchVswitchd | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -215,7 +223,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs-db
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-db-server:{{.Values.imageVersionNeutronVswitchdb}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-db-server:{{ .Values.imageVersionOpenvswitchDbServer | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -229,24 +237,24 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
       volumes:
-        - name : instances
+        - name: instances
           persistentVolumeClaim:
             claimName: kvm-shared1-pvclaim
-        - name : libvirt
+        - name: libvirt
           emptyDir:
             medium: Memory
-        - name : run
+        - name: run
           emptyDir:
             medium: Memory
-        - name : modules
+        - name: modules
           hostPath:
             path: /lib/modules
-        - name : cgroup
+        - name: cgroup
           hostPath:
             path: /sys/fs/cgroup
         - name: hypervisor-config
           configMap:
-            name: hypervisor-{{$hypervisor.name}}
+            name: nova-compute-kvm-{{ $hypervisor.name }}
         - name: etclibvirt
           emptyDir: {}
         - name: etcnova

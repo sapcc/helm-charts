@@ -31,15 +31,24 @@ spec:
     spec:
       containers:
         - name: designate-producer
-          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-designate-producer:{{.Values.image_version_designate_producer}}
+          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{.Values.global.image_namespace}}/loci-designate:{{required ".Values.global.image_version_designate_producer is missing" .Values.image_version_designate_producer}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/kubernetes-entrypoint
+          resources:
+             requests:
+               memory: "128Mi"
+               cpu: "100m"
+             limits:
+               memory: "512Mi"
+               cpu: "500m"
           env:
             - name: COMMAND
               value: "/container.init/designate-producer-start"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "designate-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: DEBUG_CONTAINER
               value: "false"
             {{- if .Values.sentry.enabled }}

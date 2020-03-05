@@ -35,26 +35,6 @@ data:
   tls.key: {{ .Values.services.public.tlsKey | b64enc }}
 ---
 {{- end }}
-{{- if eq .Values.release "queens" }}
-{{- if .Values.services.admin.tlsCertificate}}
-kind: Secret
-apiVersion: v1
-
-metadata:
-  name: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
-  labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: keystone
-    type: config
-data:
-  tls.crt: {{ .Values.services.admin.tlsCertificate | b64enc }}
-  tls.key: {{ .Values.services.admin.tlsKey | b64enc }}
----
-{{- end }}
-{{- end }}
 {{- end }}
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -79,7 +59,7 @@ metadata:
     ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/keystone-x509-ca
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
-    ingress.kubernetes.io/auth-tls-verify-depth: "1"
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
     {{- if .Values.services.ingress.vice_president }}
     vice-president: "true"
@@ -88,17 +68,11 @@ spec:
   tls:
     {{- if .Values.services.ingress.vice_president }}
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
-      hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}, {{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+      hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
     {{ else }}
     {{- if .Values.services.public.tlsCertificate }}
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
-    {{- end }}
-    {{- if eq .Values.release "queens" }}
-    {{- if .Values.services.admin.tlsCertificate }}
-    - secretName: tls-{{.Values.services.admin.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
-      hosts: [{{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
-    {{- end }}
     {{- end }}
     {{- end }}
 
@@ -110,13 +84,4 @@ spec:
           backend:
             serviceName: keystone
             servicePort: 5000
-{{- if eq .Values.release "queens" }}
-    - host: {{ .Values.services.admin.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
-      http:
-        paths:
-        - path: /
-          backend:
-            serviceName: keystone
-            servicePort: 35357
-{{- end }}
 {{- end }}

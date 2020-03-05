@@ -1,0 +1,39 @@
+{{- if .Values.hermes.elasticsearch_restore_enabled }}
+{{ $userParts := split "@" .Values.hermes.swift_backup.os_user }}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restore-elasticsearch
+  namespace: hermes
+spec:
+  template:
+    spec:
+      containers:
+      - name: restore-elasticsearch
+        image: hub.global.cloud.sap/monsoon/elktools:latest
+        args: ["-elastichost", "http://{{ .Values.hermes_elasticsearch_host }}:9200"]
+        env:
+        - name: OS_AUTH_URL
+          value: {{ .Values.hermes.auth_url | quote }}
+        - name: OS_REGION_NAME
+          value: {{ .Values.global.region | quote }}
+        - name: OS_PROJECT_NAME
+          value: {{ .Values.hermes.swift_backup.os_project | quote }}
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: {{ .Values.hermes.swift_backup.os_domain | quote }}
+        - name: OS_DOMAIN_NAME
+          value: {{ $userParts._1 | quote }}
+        - name: OS_USER_DOMAIN_NAME
+          value: {{ $userParts._1 | quote }}
+        - name: OS_IDENTITY_API_VERSION
+          value: {{ .Values.hermes.os_identity_api_version | default "3" | quote }}
+        - name: OS_USERNAME
+          value: {{ $userParts._0 | quote }}
+        - name: OS_PASSWORD
+          value: {{ .Values.hermes.password | quote }}
+        - name: OS_CONTAINER
+          value: {{ .Values.hermes.swift_backup.swift_container | quote }}
+      restartPolicy: Never
+  backoffLimit: 4
+{{- end }}

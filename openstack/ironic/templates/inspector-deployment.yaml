@@ -32,14 +32,18 @@ spec:
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
       - name: ironic-inspector
+        {{- if .Values.loci.enabled }}
+        image: {{ .Values.global.imageRegistry }}/{{ .Values.loci.imageNamespace }}/loci-ironic:{{ .Values.loci.imageVersion }}
+        {{- else }}
         image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-inspector:{{.Values.imageVersionIronicInspector | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        {{- end }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "ironic-inspector --config-file /etc/ironic/ironic.conf"
+          value: "ironic-inspector"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
@@ -55,22 +59,24 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        resources:
+{{ toYaml .Values.pod.resources.inspector | indent 10 }}
         volumeMounts:
-        - mountPath: /etc/ironic
+        - mountPath: /etc/ironic-inspector
           name: etcironic
-        - mountPath: /etc/ironic/ironic.conf
+        - mountPath: /etc/ironic-inspector/ironic-inspector.conf
           name: ironic-inspector-etc
-          subPath: ironic.conf
+          subPath: ironic-inspector.conf
           readOnly: true
-        - mountPath: /etc/ironic/policy.json
-          name: ironic-etc
-          subPath: policy.json
-          readOnly: true
-        - mountPath: /etc/ironic/rootwrap.conf
+        - mountPath: /etc/ironic-inspector/rootwrap.conf
           name: ironic-etc
           subPath: rootwrap.conf
           readOnly: true
-        - mountPath: /etc/ironic/logging.ini
+        - mountPath: /etc/sudoers.d/ironic-inspector-rootwrap
+          name: ironic-inspector-rootwrap
+          subPath: ironic-inspector-rootwrap
+          readOnly: true
+        - mountPath: /etc/ironic-inspector/logging.ini
           name: ironic-etc
           subPath: logging.ini
           readOnly: true
@@ -78,6 +84,8 @@ spec:
       - name: dhcp
         image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-staticdhcpd:{{.Values.imageVersionStaticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
+        resources:
+{{ toYaml .Values.pod.resources.dhcp | indent 10 }}
         command:
         - dumb-init
         - staticDHCPd
@@ -107,6 +115,10 @@ spec:
       - name: ironic-inspector-etc
         configMap:
           name: ironic-inspector-etc
+          defaultMode: 0444
+      - name: ironic-inspector-rootwrap
+        configMap:
+          name: ironic-inspector-rootwrap
           defaultMode: 0444
       {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
       - name: dhcp-config

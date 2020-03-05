@@ -16,6 +16,7 @@ spec:
   - monsoon3/designate-seed
   - swift/swift-seed
   - monsoon3/domain-bs-seed
+  - monsoon3/domain-cp-seed
   - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-default-seed
@@ -24,14 +25,16 @@ spec:
   - monsoon3/domain-hcp03-seed
   - monsoon3/domain-hec-seed
   - monsoon3/domain-monsoon3-seed
+  - monsoon3/domain-neo-seed
   - monsoon3/domain-s4-seed
   - monsoon3/domain-wbs-seed
 
   roles:
-    - cloud_resource_admin
-    - cloud_resource_viewer
-    - resource_admin
-    - resource_viewer
+    - name: cloud_resource_admin
+    - name: cloud_resource_viewer
+    - name: resource_admin
+    - name: resource_viewer
+    - name: resource_service
 
   services:
     - name:        limes
@@ -43,6 +46,10 @@ spec:
           interface: public
           enabled:   true
           url:       '{{.Values.limes.clusters.ccloud.catalog_url}}'
+        - region:    '{{.Values.global.region}}'
+          interface: internal
+          enabled:   true
+          url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc'
 
   domains:
     - name: Default
@@ -50,31 +57,21 @@ spec:
         - name: limes
           description: Limes Service
           password: '{{.Values.limes.clusters.ccloud.auth.password}}'
-          roles:
+          role_assignments:
             - project: service
               role:    service
-        - name: admin
-          roles:
-          - domain: Default
-            role: cloud_resource_admin
-          - project: admin
-            role: cloud_resource_admin
-      groups:
-      - name: Administrators
-        roles:
-          - domain: Default
-            role: cloud_resource_admin
-          - project: admin
-            role: cloud_resource_admin
 
     - name: ccadmin
       projects:
       - name: cloud_admin
-        roles:
+        role_assignments:
           # permission to enumerate all projects and domains
           - user: limes@Default
             role: admin
-          # permission to manage all services' quotas
+          # (new-style) permission to manage all services' quotas
+          - user: limes@Default
+            role: resource_service
+          # (old-style) permission to manage all services' quotas
           - user: limes@Default
             role: cloud_network_admin
           - user: limes@Default
@@ -92,81 +89,89 @@ spec:
           # permission to inspect metadata for private images (to determine OS type)
           - user: limes@Default
             role: cloud_image_admin
-          # permission to extract approved quotas from Elektra during transition phase
-          - user: limes@Default
-            role: cloud_resource_admin
-          - user: admin@Default
-            role: cloud_resource_admin
       groups:
       - name: CCADMIN_CLOUD_ADMINS
-        roles:
+        role_assignments:
         - project: cloud_admin
           role: cloud_resource_admin
       - name: CCADMIN_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: ccadmin
           role: resource_admin
 
     - name: bs
       groups:
       - name: BS_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: bs
           role: resource_admin
 
     - name: cc3test
       groups:
       - name: CC3TEST_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: cc3test
+          role: resource_admin
+
+    - name: cp
+      groups:
+      - name: CP_DOMAIN_RESOURCE_ADMINS
+        role_assignments:
+        - domain: cp
           role: resource_admin
 
     - name: fsn
       groups:
       - name: FSN_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: fsn
           role: resource_admin
 
     - name: hcm
       groups:
       - name: HCM_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: hcm
           role: resource_admin
 
     - name: hcp03
       groups:
       - name: HCP03_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: hcp03
           role: resource_admin
 
     - name: hec
       groups:
       - name: HEC_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: hec
           role: resource_admin
 
     - name: monsoon3
       groups:
       - name: MONSOON3_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: monsoon3
           role: resource_admin
 
+    - name: neo
+      groups:
+      - name: NEO_DOMAIN_RESOURCE_ADMINS
+        role_assignments:
+        - domain: neo
+          role: resource_admin
     - name: s4
       groups:
       - name: S4_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: s4
           role: resource_admin
 
     - name: wbs
       groups:
       - name: WBS_DOMAIN_RESOURCE_ADMINS
-        roles:
+        role_assignments:
         - domain: wbs
           role: resource_admin
 

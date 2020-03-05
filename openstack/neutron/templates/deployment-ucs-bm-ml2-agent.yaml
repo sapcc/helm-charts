@@ -1,4 +1,4 @@
-{{- if or (ne (len (keys .Values.cisco_ucsm_bm)) 1) (ne (index (keys .Values.cisco_ucsm_bm) 0) "example.com") -}}
+{{- if contains "cisco_ucsm_bm" .Values.ml2_mechanismdrivers }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -25,19 +25,24 @@ spec:
         name: neutron-cisco-ml2-ucsm-bm
       annotations:
         pod.beta.kubernetes.io/hostname: cisco-ml2-ucsm-bm
-
     spec:
       {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       hostname:  cisco-ml2-ucsm-bm
       {{- end }}
       containers:
         - name: neutron-cisco-ml2-ucsm-bm-agent
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{.Values.image_name}}:{{.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{default .Values.imageVersionUCSM | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
           args:
             - kubernetes-entrypoint
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
           env:
             - name: COMMAND
 {{- if not .Values.pod.debug.cisco_ml2_ucsm_bm }}
@@ -52,6 +57,8 @@ spec:
                   key: neutron.DSN.python
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+          resources:
+{{ toYaml .Values.pod.resources.cisco_ml2_ucsm_bm | indent 12 }}
           volumeMounts:
             - name: etcneutron
               mountPath: /etc/neutron

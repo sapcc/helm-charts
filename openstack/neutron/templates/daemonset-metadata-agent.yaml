@@ -1,0 +1,78 @@
+{{- if .Values.agent.multus | default false }}
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+metadata:
+  name: neutron-metadata-agent
+  labels:
+    system: openstack
+    application: neutron
+    component: metadata-agent
+spec:
+  updateStrategy:
+{{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "staging") }}
+    type: RollingUpdate
+{{- else }}
+    type: OnDelete
+{{- end }}
+  selector:
+    matchLabels:
+      name: neutron-metadata-agent
+  template:
+    metadata:
+      annotations:
+        configmap-etc-hash: {{ include (print .Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
+      labels:
+        name: neutron-metadata-agent
+{{ tuple . "neutron" "metadata-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      nodeSelector:
+        multus: bond1
+      containers:
+        - name: neutron-metadata-agent
+          image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "bash", "-c", "echo -e \"[DEFAULT]\\nhost = $NODE_NAME\\n\" > /etc/neutron/hostname.conf && exec neutron-metadata-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/metadata-agent.ini --config-file /etc/neutron/hostname.conf"]
+          env:
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: neutron.DSN.python
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--binary", "neutron-metadata-agent"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          resources:
+{{  toYaml .Values.pod.resources.metadata_agent | indent 12 }}
+          volumeMounts:
+            - name: metadata-proxy
+              mountPath: /run/metadata_proxy
+            - name: neutron-etc
+              mountPath: /etc/neutron/neutron.conf
+              subPath: neutron.conf
+              readOnly: true
+            - name: neutron-etc
+              mountPath: /etc/neutron/metadata-agent.ini
+              subPath: metadata-agent.ini
+              readOnly: true
+            - name: neutron-etc
+              mountPath: /etc/neutron/logging.conf
+              subPath: logging.conf
+              readOnly: true
+      volumes:
+        - name: metadata-proxy
+          hostPath:
+            path: /run/metadata-proxy
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+  {{- end }}

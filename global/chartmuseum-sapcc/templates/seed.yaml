@@ -1,0 +1,33 @@
+{{- if .Values.seed.enabled }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: chartmuseum-seed
+
+spec:
+  requires:
+    - swift/swift-seed
+    - monsoon3/domain-ccadmin-seed
+    - monsoon3/domain-default-seed
+
+  domains:
+    - name: {{ required ".Values.seed.openstack.userDomainName missing" .Values.seed.openstack.userDomainName }}
+      users:
+        - name: {{ required ".Values.seed.openstack.userName missing" .Values.seed.openstack.username }}
+          description: ChartMuseum Service User
+          password: {{ required ".Values.seed.openstack.password missing" .Values.seed.openstack.password | quote }}
+          role_assignments:
+            - project: service
+              role:    service
+
+    - name: {{ required ".Values.seed.openstack.projectDomainName missing" .Values.seed.openstack.projectDomainName }}
+      projects:
+        - name: {{ required ".Values.seed.openstack.projectName missing" .Values.seed.openstack.projectName }}
+          role_assignments:
+            # Permission to write to ccadmin/master containers.
+            - user: {{ required ".Values.seed.openstack.userName missing" .Values.seed.openstack.username }}@{{ required ".Values.seed.openstack.userDomainName missing" .Values.seed.openstack.userDomainName }}
+              role: swiftoperator
+          swift:
+            containers:
+              - name: {{ required ".Values.seed.openstack.containerName misssing" .Values.seed.openstack.containerName }}
+{{ end }}

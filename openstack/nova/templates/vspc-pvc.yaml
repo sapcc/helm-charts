@@ -1,0 +1,17 @@
+{{- if not .Values.vspc.pvc.existingClaim -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-vspc-pvclaim
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  accessModes:
+    - {{ .Values.vspc.pvc.accessMode | default "ReadWriteMany" | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.vspc.pvc.size | default "10Gi" | quote }}
+{{- end }}

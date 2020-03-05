@@ -1,0 +1,76 @@
+groups:
+- name: openstack-glance.alerts
+  rules:
+  - alert: OpenstackGlanceApiDown
+    expr: blackbox_api_status_gauge{check=~"glance"} == 1
+    for: 20m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is down. See Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
+      summary: '{{ $labels.check }} API down'
+
+  - alert: OpenstackGlanceApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"glance"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is flapping'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is flapping for 30 minutes.'
+      summary: '{{ $labels.check }} API flapping'
+
+  - alert: OpenstackGlanceImageInQueuedState
+    expr: count(openstack_glance_image_gauge{status="queued"})by(id,exported_name,owner) > 0
+    for: 30m
+    labels:
+      severity: info
+      tier: os
+      service: glance
+      context: glance
+      dashboard: glance
+      meta: 'Image {{ $labels.exported_name }} is in Queued State'
+    annotations:
+      description: 'Image {{ $labels.exported_name }} with id {{ $labels.id }} in project_id {{ $labels.owner }} is Queued'
+      summary: 'Image is in Queued State'
+
+  - alert: OpenstackGlanceImageInKilledState
+    expr: count(openstack_glance_image_gauge{status="killed"})by(id,exported_name,owner) > 0
+    for: 30m
+    labels:
+      severity: info
+      tier: os
+      service: glance
+      context: glance
+      dashboard: glance
+      meta: 'Image {{ $labels.exported_name }} is in Killed State'
+    annotations:
+      description: 'Image {{ $labels.exported_name }} with id {{ $labels.id }} in project_id {{ $labels.owner }} is Killed'
+      summary: 'Image is in Killed State'
+
+  - alert: OpenstackGlanceUnresolvedSentryIssues
+    expr: sentry_unresolved_issues_count{project="glance"} > 0
+    for: 10m
+    labels:
+      context: sentry-metrics
+      service: glance
+      severity: info
+      tier: os
+      sentry: 'glance/'
+    annotations:
+      description: glance has encountered unexpected errors and reported
+        them to Sentry. Please have a look at the list of unresolved issues
+        at <https://sentry.{{ $labels.region }}.cloud.sap/monsoon/glance/>.
+      summary: glance has reported issues to Sentry

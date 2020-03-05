@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{.Values.name}}-mariadb
+  name: {{ include "fullName" . }}
   labels:
     system: openstack
     type: database
@@ -13,39 +13,98 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: {{.Values.name}}-mariadb
+      app: {{ include "fullName" . }}
   template:
     metadata:
       labels:
-        app: {{.Values.name}}-mariadb
+        app: {{ include "fullName" . }}
+        name: {{ template "fullName" . }}
+      annotations:
+        checksum/secrets: {{ include (print $.Template.BasePath  "/secret.yaml") . | sha256sum }}
+        checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
+{{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
 
     spec:
+      affinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- else }}
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: "failure-domain.beta.kubernetes.io/zone"
+                  operator: In
+                  values:
+                  - {{.Values.global.region}}a
+{{- end }}
       containers:
       - name: mariadb
         image: {{.Values.image}}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value:
-            {{.Values.root_password}}
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: root-password
         ports:
           - name: mariadb
             containerPort: 3306
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          exec:
+            command: ["sh", "-c", "exec mysqladmin status -uroot -p$MYSQL_ROOT_PASSWORD"]
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "exec mysqladmin status -uroot -p$MYSQL_ROOT_PASSWORD"]
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
         volumeMounts:
+{{- if .Values.persistence_claim.enabled }}
           - name: mariadb-persistent-storage
             mountPath: /var/lib/mysql
             readOnly: false
+{{- end }}
+          - mountPath: /etc/mysql/mariadb.conf.d/
+            name: mariadb-etc
+{{- if .Values.initdb_configmap }}
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
+{{ end }}
 {{- if .Values.backup.enabled }}
           - name: db-socket
             mountPath: /var/run/mysqld
       - name: backup
-        image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/backup-tools:{{ .Values.backup.image_version }}
+        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/backup-tools:{{ .Values.backup.image_version }}
         imagePullPolicy: IfNotPresent
         env:
           - name: MYSQL_ROOT_PASSWORD
-            value: {{ .Values.root_password }}
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-{{.Values.name}}
+                key: root-password
           - name: MY_POD_NAME
             value: mysql-backup-{{ .Values.name }}
           - name: MY_POD_NAMESPACE
@@ -67,27 +126,126 @@ spec:
           - name: OS_REGION_NAME
             value: {{ .Values.global.region }}
           - name: OS_PASSWORD
-            value: {{ .Values.backup.os_password | quote }}
+            value: {{ .Values.backup.os_password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote }}
           - name: BACKUP_MYSQL_FULL
             value: {{ .Values.backup.interval_full | quote }}
           - name: BACKUP_MYSQL_INCR
             value: {{ .Values.backup.interval_incr | quote }}
         volumeMounts:
+{{- if .Values.persistence_claim.enabled }}
         - mountPath: /db/data
           name: mariadb-persistent-storage
           readOnly: true
+{{- end }}
         - mountPath: /db/socket
           name: db-socket
 {{- end }}
+{{- if .Values.backup_v2.enabled }}
+      - name: mariabackup
+        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/maria-back-me-up:{{ .Values.backup_v2.image_version }}
+        readinessProbe:
+          httpGet:
+            path: /health/readiness
+            port: 8082
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 3
+          failureThreshold: 1
+          successThreshold: 1
+        ports:
+          - containerPort: 8081
+            name: http
+            protocol: TCP
+          - containerPort: 8082
+            name: metrics
+            protocol: TCP
+        env:
+{{- if .Values.backup_v2.oauth.enabled }}
+        - name: OAUTH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: OAUTH_CLIENT_ID
+        - name: OAUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: OAUTH_CLIENT_SECRET
+        - name: OAUTH_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: OAUTH_COOKIE_SECRET
+{{- end }}
+        - name: CONFIG_FILE
+          value: "/etc/config/config.yaml"
+        volumeMounts:
+{{- if .Values.persistence_claim.enabled }}
+        - name: mariadb-persistent-storage
+          mountPath: /var/lib/mysql
+          readOnly: false
+{{- end }}
+        - name: mariadb-backup-etc
+          mountPath: /etc/config
+          readOnly: true
+{{- end }}
+{{- if .Values.metrics.enabled }}
+      - name: metrics
+        image: {{ .Values.metrics.image }}:{{ .Values.metrics.image_version }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        args:
+        {{- range $flag := .Values.metrics.flags }}
+          - "--{{$flag}}"
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 9104
+            scheme: HTTP
+          periodSeconds: 20
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 9104
+            scheme: HTTP
+          periodSeconds: 20
+          timeoutSeconds: 10
+        env:
+          - name: DATA_SOURCE_NAME # FIXME: get password from secret
+            value: root:{{ include "mariadb.root_password" . }}@tcp({{ include (print .Release.Name "_db_host") . }}:3306)/
+          - name: LOGLEVEL
+            value: {{ default "info" .Values.metrics.loglevel }}
+        ports:
+          - name: metrics
+            containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+        {{- if .Values.metrics.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.metrics.resources.limits.cpu | quote }}
+            memory: {{ .Values.metrics.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.metrics.resources.requests.cpu | quote }}
+            memory: {{ .Values.metrics.resources.requests.memory | quote }}
+        {{- end }}
+{{- end }}
       volumes:
-{{- if .Values.persistence_claim }}
+        - name: mariadb-etc
+          configMap:
+            name: mariadb-{{.Values.name}}-etc
+{{- if .Values.persistence_claim.enabled }}
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
-           claimName: {{.Values.persistence_claim }}
+           claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
 {{- end }}
 {{- if .Values.backup.enabled }}
         - name: db-socket
           emptyDir: {}
+{{- end }}
+{{- if .Values.backup_v2.enabled }}
+        - name: mariadb-backup-etc
+          configMap:
+            name:  mariadb-backup-{{.Values.name}}-etc
 {{- end }}
 {{- if .Values.initdb_configmap }}
         - name: initdb

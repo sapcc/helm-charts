@@ -1,0 +1,181 @@
+global:
+  region:
+  domain:
+  clusterType: metal
+
+  rbac:
+    create: true
+
+prometheus-operator:
+  prometheusOperator:
+    createCustomResource: false
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "kubernetes"
+        prometheus.io/port: "8080"
+    serviceAccount:
+      create: true
+
+# Values for operated Prometheus collector.
+prometheus-collector:
+  name: collector-kubernetes
+
+  retentionTime: 1h
+
+  additionalScrapeConfigs:
+    name: k8s-collector-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: true
+    hosts:
+      - prometheus-collector-kubernetes
+      - prometheus-collector.metal
+
+  # Store in memory.
+  persistence:
+    enabled: false
+
+  serviceAccount:
+    create: false
+    name: default
+
+  # Discover targets with `prometheus.io/targets=kubernetes` annotation as well.
+  serviceDiscoveries:
+    additionalTargets:
+      - kubernetes
+    pods:
+      enabled: false
+    kubeAPIServer:
+      enabled: true
+    cAdvisor:
+      enabled: true
+    kubelet:
+      enabled: true
+    nodeExporter:
+      enabled: true
+    kubeDNS:
+      enabled: true
+
+# Values for Prometheus frontend.
+prometheus-frontend:
+  name: kubernetes
+
+  retentionTime: 21d
+
+  additionalScrapeConfigs:
+    name: k8s-frontend-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: true
+    hosts:
+      - prometheus-kubernetes
+      - prometheus.metal
+
+  # Store in memory.
+  persistence:
+    enabled: true
+    size: 300Gi
+
+  serviceAccount:
+    create: false
+    name: default
+
+  # No service discoveries. Only federate from collector Prometheus.
+  serviceDiscoveries:
+    endpoints:
+      enabled: false
+    pods:
+      enabled: false
+    kubeAPIServer:
+      enabled: false
+    cAdvisor:
+      enabled: false
+    kubelet:
+      enabled: false
+    nodeExporter:
+      enabled: false
+    kubeDNS:
+      enabled: false
+
+  # Send alerts to these alertmanagers.
+  alertmanagers:
+    # Enabled via secrets.
+    authentication:
+      enabled: false
+
+    hosts:
+      - alertmanager.scaleout.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-nl-1.cloud.sap
+
+# Deploy basic set of Prometheus alert and aggregation rules for monitoring Kubernetes.
+prometheus-kubernetes-rules:
+  prometheusName: kubernetes
+  prometheusCollectorName: collector-kubernetes
+  tier: k8s
+
+prometheus-node-exporter:
+  image:
+    repository: prom/node-exporter
+
+  serviceAccount:
+    create: true
+
+  extraArgs:
+    - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
+    - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
+    - --collector.processes
+    - --path.rootfs=/rootfs
+    - --collector.systemd.enable-task-metrics
+    - --collector.systemd.enable-restarts-metrics
+    - --collector.systemd.enable-start-time-metrics
+
+  extraHostVolumeMounts:
+    - name: dbus
+      hostPath: /var/run/dbus/system_bus_socket
+      mountPath: /var/run/dbus/system_bus_socket
+      readOnly: true
+    - name: rootfs
+      hostPath: /
+      mountPath: /rootfs
+      readOnly: true
+      mountPropagation: HostToContainer
+
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+
+kube-state-metrics:
+  image:
+    repository: sapcc/kube-state-metrics
+    # Newer versions of kube-state-metrics use k8s.io/api/apps/v1 for DaemonSet, Deployment and StatefulSet.
+    # Thus we need to stick with v1.5.0 until our k8s clusters were updated.
+    tag: v1.5.0
+
+  rbac:
+    create: true
+
+  customLabels:
+    app: kube-state-metrics
+
+  prometheusScrape: false
+
+  collectors:
+    # Not useful.
+    configmaps: false
+    secrets: false
+    cronjobs: false
+    horizontalpodautoscalers: false
+    certificatesigningrequests: false
+    ingresses: false
+
+  resources:
+    requests:
+      memory: 150Mi
+      cpu: 100m
+
+kube-state-metrics-exporter:
+  prometheusName: collector-kubernetes

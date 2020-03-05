@@ -1,0 +1,75 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+    name: {{ include "atlas.fullname" . }}
+    labels:
+      app: {{ include "atlas.name" . }}
+      chart: {{ include "atlas.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      system: infra_monitoring
+      component: service_discovery
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "atlas.name" . }}
+      release: {{ .Release.Name }}
+      component: service_discovery
+  template:
+    metadata:
+      labels:
+        app: {{ include "atlas.name" . }}
+        release: {{ .Release.Name }}
+        component: service_discovery
+    spec:
+      containers:
+      - name: {{ include "atlas.name" . }}
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 300
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
+        env:
+        - name: VERSION
+          value: "{{ .Values.tag }}"
+        - name: LOG_LEVEL
+          value: "{{ .Values.log_level }}"
+        - name: K8S_NAMESPACE
+          value: "{{ .Values.configmap.namespace }}"
+        - name: K8S_REGION
+          value: {{ .Values.global.region }}
+        - name: PROM_CONFIGMAP_NAME
+          value: "{{ .Values.configmap.name }}"
+        - name: CONFIG_FILE
+          value: "{{ .Values.config_file }}"
+        - name: WRITE_TO
+          value: "{{ .Values.write_to }}"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/config
+          readOnly: true
+      - name: atlas-config-reloader
+        args:
+        - -volume-dir=/etc/config
+        - -webhook-url=http://localhost:8080/-/reload
+        image: jimmidyson/configmap-reload:v0.3.0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /etc/config
+          name: config
+          readOnly: true 
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "atlas.fullname" . }}

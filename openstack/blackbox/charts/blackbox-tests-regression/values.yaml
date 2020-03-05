@@ -12,7 +12,20 @@ baremetal:
   flavor_name: DEFINED-IN-REGION-SECRETS
   nodes: DEFINED-IN-REGION-SECRETS
   timeout: DEFINED-IN-REGION-SECRETS
-timeout: 600
-sleep:
-  iterate: 10800
-  purge: 7200
+parallel:
+  workers: 4
+  timeout:
+    global: 3000
+    atomic: 600
+  iterator:
+    sleep: 3600
+  purger:
+    sleep: 7200
+    retention: 3600
+    target: "baremetal"
+statsd:
+  host: "localhost"
+  port: "9125"
+  prefix: "blackbox-regression"
+  ttl: "0"
+

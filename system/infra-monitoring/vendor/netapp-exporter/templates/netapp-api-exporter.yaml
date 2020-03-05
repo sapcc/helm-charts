@@ -1,0 +1,59 @@
+{{- if .Values.enabled }}
+{{- if .Values.api_exporter.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
+kind: Service
+apiVersion: v1
+metadata:
+  name:  {{ .Values.api_exporter.name }}
+  annotations:
+    prometheus.io/scrape: {{ $scrape | quote }}
+    prometheus.io/port: {{ $port | quote }}
+    prometheus.io/targets: {{ $targets | quote }}
+spec:
+  selector:
+    app: {{ .Values.api_exporter.name }} 
+  ports:
+  - name:  prometheus
+    port:  9108
+    targetPort:  9108
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name:  {{ .Values.api_exporter.name }}
+spec:
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: {{ .Values.api_exporter.name }} 
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.api_exporter.name }}
+      annotations:
+       prometheus.io/scrape: {{ $scrape | quote }}
+       prometheus.io/port: {{ $port | quote }}
+       prometheus.io/targets: {{ $targets | quote }}
+    spec:
+      volumes:
+        - name: netap-etc
+          configMap:
+            name: netapp-etc
+      containers:
+      - name: {{ .Values.api_exporter.name }} 
+        image: {{ .Values.api_exporter.image }}:{{ .Values.api_exporter.imageVersion }}
+        ports:
+        - containerPort: 9108
+        volumeMounts:
+        - name: netap-etc
+          subPath: netapp_filers.yaml
+          mountPath: /app/netapp_filers.yaml
+        resources:
+          requests:
+            memory: {{ .Values.api_exporter.memory }}
+            cpu: {{ .Values.api_exporter.cpu }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,39 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "infraMonitoring.name" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+         app: {{ include "infraMonitoring.name" . }}
+         release: {{ .Release.Name }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "infraMonitoring.name" . }}
+      containers:
+         - name: {{ include "infraMonitoring.name" . }}
+           imagePullPolicy: IfNotPresent
+           image: {{ .Values.docker_repo }}/vasa-exporter:{{ .Values.image_version | replace "string:" "" }}
+           command:
+             - python3
+           args:
+             - /vasa-exporter/vasa_exporter.py
+             - /config/vasa-exporter.cfg
+           volumeMounts:
+             - name: config
+               mountPath: /config
+           ports:
+             - name: metrics
+               containerPort: {{ .Values.listen_port }}

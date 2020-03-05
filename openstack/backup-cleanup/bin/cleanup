@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -euo pipefail
+
+eval "$(swift auth)"
+# This will fail and cause the exit if credentials are not correct
+swift stat ${CONTAINER_NAME} > /dev/null
+
+for slo in $(swift list ${SEGMENTS_CONTAINER_NAME} --prefix ${OS_REGION_NAME} | awk -F '/slo' '{print $1}' | uniq); do
+  if ! swift --quiet stat ${CONTAINER_NAME} ${slo} >/dev/null 2>&1; then
+    swift delete ${SEGMENTS_CONTAINER_NAME} --prefix ${slo}
+  fi
+done

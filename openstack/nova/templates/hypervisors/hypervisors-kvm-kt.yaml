@@ -1,0 +1,20 @@
+{{- if and (.Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1") (not .Values.hypervisors_kvm)  }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosTemplate
+metadata:
+  name: nova-compute-kvm
+  namespace: monsoon3
+requirements:
+- name: nova-kvm-nodes
+template: |
+    {{- $hypervisor := dict "name" "{{node.name}}" "node_name" "{{node.node_name}}"}}
+    {{- $hypervisor := merge $hypervisor .Values.defaults.hypervisor.kvm .Values.defaults.hypervisor.common }}
+    {%- for node in kvm_nodes %}
+{{ tuple . $hypervisor | include "kvm_deployment" | indent 4 }}
+    ---
+{{ tuple . $hypervisor | include "kvm_configmap" | indent 4 }}
+    {%- if not loop.last %}
+    ---
+    {%- endif %}
+    {%- endfor %}
+{{- end  }}

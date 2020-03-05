@@ -1,0 +1,13 @@
+{{- range $index, $member := .Values.dynomite.member }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-%d" "dynomite" $index }}
+  labels:
+    app: {{ printf "%s-%d" "dynomite" $index }}
+    release: "{{ $.Release.Name }}"
+data:
+  dynomite.yaml: |
+{{ tuple $ $member $index | include "dynomite/templates/etc/_dynomite.yaml.tpl" | indent 4 }}
+---
+{{- end }}

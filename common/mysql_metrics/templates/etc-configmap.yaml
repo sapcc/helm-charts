@@ -16,6 +16,6 @@ data:
     - name: "default"
       interval: '1m'
       connections:
-      - "mysql://{{ .Values.db_user }}:{{ .Values.db_password }}@tcp({{ include (print .Release.Name "_db_host") . }}:3306)/{{ .Values.db_name }}"
+      - "mysql://{{ required ".Values.db_user missing" .Values.db_user }}:{{include "mysql_metrics.db_password" .}}@tcp({{ include (print .Release.Name "_db_host") . }}:3306)/{{ required ".Values.db_name missing" .Values.db_name }}"
       queries:
-{{ toYaml .Values.customMetrics | indent 9}}
+{{ toYaml .Values.customMetrics | indent 6}}

@@ -1,0 +1,15 @@
+groups:
+- name: puma.alerts
+  rules:
+  - alert: OpenstackElektraPumaRequestBacklog
+    expr: sum(puma_request_backlog{name="elektra"}) BY (region) > 1
+    for: 3m
+    labels:
+      context: openstack
+      dashboard: elektra-details
+      service: elektra
+      severity: warning
+      tier: os
+    annotations:
+      description: 'Number of puma waiting requests for Elektra > 0 : {{ $value }}.'
+      summary: Elektra puma waiting requests

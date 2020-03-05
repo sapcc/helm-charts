@@ -1,0 +1,32 @@
+{{- if .Values.hermes.swift_backup.enabled }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: logstash-swift-seed
+spec:
+  requires:
+  - swift/swift-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-default-seed
+
+  domains:
+    - name: {{ required ".Values.hermes.swift_backup.os_domain is missing" .Values.hermes.swift_backup.os_domain }}
+      projects:
+      - name: {{ required ".Values.hermes.swift_backup.os_project is missing" .Values.hermes.swift_backup.os_project }}
+        role_assignments:
+          - user: {{ required ".Values.hermes.swift_backup.os_user is missing" .Values.hermes.swift_backup.os_user }}
+            role: swiftoperator
+        swift:
+          enabled: true
+          containers:
+          - name: {{ required ".Values.hermes.swift_backup.swift_container is missing" .Values.hermes.swift_backup.swift_container }}
+            metadata:
+              meta-web-listings: 'true'
+              meta-web-listings-label: {{ required ".Values.hermes.swift_backup.meta_web_listings_label is missing" .Values.hermes.swift_backup.meta_web_listings_label }}
+              read: .r:*,.rlistings
+        ec2_creds:
+          - user: {{ required ".Values.hermes.swift_backup.ec2_user is missing" .Values.hermes.swift_backup.ec2_user }}
+            user_domain: {{ required ".Values.hermes.swift_backup.ec2_user_domain is missing" .Values.hermes.swift_backup.ec2_user_domain }}
+            access: {{ required ".Values.logstash.access_key_id is missing" .Values.logstash.access_key_id }}
+            key: {{ required ".Values.logstash.secret_access_key is missing" .Values.logstash.secret_access_key }}
+{{- end }}

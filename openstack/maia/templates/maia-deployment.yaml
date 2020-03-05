@@ -32,13 +32,23 @@ spec:
       containers:
         - name: maia
           # remove the "string:" prefix which is used to prevent helm's --set option from reformatting plain numbers into floats in scientific notation
-          image: {{ .Values.maia.docker_repo }}:{{ .Values.maia.image_version | replace "string:" "" }}
+          image: {{ required "maia.docker_repo variable is missing" .Values.maia.docker_repo }}:{{ required "maia.image_version variable missing" .Values.maia.image_version | replace "string:" "" }}
           imagePullPolicy: IfNotPresent
 #          command: ["sh"]
 #          args:
-#            - -c
-#            - "ls /etc/maia; sleep 10000"
+#           - -c
+#           - "ls /etc/maia; sleep 10000"
           args: ["serve"]
+          env:
+            - name: MAIA_DEBUG
+              value: {{ $.Values.maia.debug | quote }}
+          resources:
+              requests:
+                  memory: {{ .Values.maia.resources.memory.expected }}
+                  cpu: {{ .Values.maia.resources.cpu.expected }}
+              limits:
+                  memory: {{ .Values.maia.resources.memory.tolerated }}
+                  cpu: {{ .Values.maia.resources.cpu.tolerated }}
           volumeMounts:
             - mountPath: /etc/maia
               name: maia-etc

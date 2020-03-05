@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: es-query-exporter
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+    component: es-query-exporter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.listen_port }}"
+    prometheus.io/targets: "{{ .Values.alerts.prometheus }}"
+spec:
+  selector:
+    component: es-query-exporter
+  ports:
+    - name: metrics
+      port: {{ .Values.listen_port }}

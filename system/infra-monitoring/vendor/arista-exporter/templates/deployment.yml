@@ -1,0 +1,38 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: arista
+    spec:
+      containers:
+      - name: {{ include "infraMonitoring.name" . }}
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        env:
+        - name: APP_ENV
+          value: "{{ .Values.app_env }}"
+        - name: ARISTA_USERNAME
+          value: "{{ .Values.global.arista_username }}"
+        - name: ARISTA_PASSWORD
+          value: "{{ .Values.global.arista_password }}"
+        ports:
+        - containerPort: 9200

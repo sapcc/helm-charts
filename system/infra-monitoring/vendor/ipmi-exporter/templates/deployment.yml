@@ -1,0 +1,51 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: ipmi
+    spec:
+      containers:
+      - name: {{ include "infraMonitoring.name" . }}
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        env:
+        - name: APP_ENV
+          value: "{{ .Values.app_env }}"
+        {{- if .Values.ironic.enabled }}
+        - name: IPMI_USER
+          value: "{{ .Values.global.ipmi_username | default .Values.ipmi_username }}"
+        - name: IPMI_PASSWORD
+          value: "{{ .Values.global.ipmi_password | default .Values.ipmi_password }}"
+        {{- end }}
+        {{- if .Values.netbox.enabled }}
+        - name: NETBOX_CP_USER
+          value: {{ required "ipmi_username_cp needs to be defined in global values" .Values.global.ipmi_username_cp }}
+        - name: NETBOX_CP_PASSWORD
+          value: {{ required "ipmi_password_cp needs to be defined in global values" .Values.global.ipmi_password_cp }}
+        {{- end }}
+        {{- if .Values.global.ipmi_username_bb }}
+        - name: ESXI_USER
+          value: {{ required "ipmi_username_bb needs to be defined in global values" .Values.global.ipmi_username_bb }}
+        - name: ESXI_PASSWORD
+          value: {{ required "ipmi_password_bb needs to be defined in global values" .Values.global.ipmi_password_bb }}
+        {{- end }}
+        ports:
+        - containerPort: {{ .Values.listen_port }}

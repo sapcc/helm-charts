@@ -1,0 +1,101 @@
+{{- if .Values.enabled }}
+{{- $values := .Values -}}
+{{- $release := .Release -}}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $targets := .Values.metrics.targets -}}
+{{- $port := .Values.listenPort -}}
+{{- $secretName := include "netapp-cap-exporter.fullname" . -}}
+{{- range $name, $app := .Values.apps }}
+{{- $configmapName := $app.fullname -}}
+{{- if $app.enabled }}
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ $app.fullname }}
+spec:
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: {{ $app.fullname }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ $app.fullname }}
+      annotations:
+        prometheus.io/scrape: {{ $scrape | quote }}
+        prometheus.io/targets: {{ $targets | quote }}
+        prometheus.io/port: {{ $port | quote }}
+    spec:
+      volumes:
+        - name: etc
+          configMap:
+            name: {{ $configmapName }}
+      containers:
+        - name: exporter
+          image: "{{ $values.exporter.image.repository }}:{{ $values.exporter.image.tag }}"
+          imagePullPolicy: {{ $values.exporter.image.pullPolicy }}
+          args: [ --config=/etc/netapp/netapp-filers.yaml ]
+          env:
+          - name: NETAPP_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: netappUser
+          - name: NETAPP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: netappPassword
+          ports:
+            - name: prometheus
+              containerPort: {{ $port }}
+          {{- if ne $name "manila" }}
+          livenessProbe:
+            httpGet:
+              port: 8086
+              path: /live
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 3
+          {{- end }}
+          resources:
+            {{- toYaml $values.exporter.resources | nindent 12 }}
+          volumeMounts:
+            - name: etc
+              mountPath: /etc/netapp
+{{/* manila filers are predefined in secrets */}}
+        {{- if ne $name "manila" }}
+        - name: netappsd
+          args:
+            - -configmap
+            - {{ $configmapName }}
+            - -key
+            - netapp-filers.yaml
+            - -namespace
+            - {{ $release.Namespace }}
+            - -netbox-host
+            - {{ required "Value global.netbox_host" $values.global.netbox_host }}
+            - -netbox-api-token
+            - {{ required "Value global.netbox_api_token" $values.global.netbox_api_token }}
+            - -region
+            - {{ required "Value global.region" $values.global.region }}
+            - -query
+            - {{ required "Value .netappsd.query of group" $app.netappsd.query }}
+          image: "{{ $values.netappsd.image.repository }}:{{ $values.netappsd.image.tag }}"
+          imagePullPolicy: {{ $values.netappsd.image.pullPolicy }}
+          livenessProbe:
+            httpGet:
+              port: 8086
+              path: /live
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 6
+          resources:
+            {{- toYaml $values.netappsd.resources | nindent 12 }}
+        {{- end }}
+
+{{- end }}
+{{- end }}
+{{- end }}

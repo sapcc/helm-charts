@@ -1,0 +1,15 @@
+groups:
+- name: openstack-arc.alerts
+  rules:
+  - alert: OpenstackArcPostgresDatabasesize
+    expr: max(pg_database_size_bytes{app="arc-postgresql"}) >= 4.294967296e+10
+    for: 3m
+    labels:
+      context: databasesize
+      dashboard: arc-postgres-capacity
+      service: arc
+      severity: warning
+      tier: os
+    annotations:
+      description: 'The database size for Arc >= 40 Gb : {{ $value }} bytes.'
+      summary: Arc Database size too large

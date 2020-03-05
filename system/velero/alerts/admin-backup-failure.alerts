@@ -1,0 +1,15 @@
+groups:
+- name: velero-backup.alerts
+  rules:
+  - alert: AdminVeleroFullBackupFailed
+    expr: sum(increase(velero_backup_failure_total{schedule="velero-full"}[6h])) > 0
+    for: 5m
+    labels:
+      tier: kks
+      service: velero
+      severity: warning
+      context: backup
+      meta: "Latest velero full backup for admin cluster failed"
+    annotations:
+      description: Latest velero full backup failed for admin cluster.
+      summary: Velero full backup failure for admin cluster.

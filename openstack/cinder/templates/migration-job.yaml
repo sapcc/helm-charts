@@ -12,7 +12,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: cinder-migration
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-api:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
@@ -22,7 +22,11 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "cinder-postgresql"
+{{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql"
+{{- end }}
             - name: PGAPPNAME
               valueFrom:
                 fieldRef:

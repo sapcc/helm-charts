@@ -1,0 +1,98 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: nova-placement-api
+  labels:
+    system: openstack
+    type: api
+    component: nova
+spec:
+  replicas: {{ .Values.pod.replicas.placement }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: nova-placement-api
+  template:
+    metadata:
+      labels:
+        name: nova-placement-api
+{{ tuple . "nova" "placement-api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+    spec:
+{{ tuple . "nova" "placement-api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      containers:
+        - name: nova-placement
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-placement-api:{{.Values.imageVersionNovaPlacementApi |  default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "uwsgi --ini /etc/nova/placement_uwsgi.ini"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "nova-migration"
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,{{ .Release.Name }}-rabbitmq"
+              # plus soft-dependency to nova-rabbitmq-notifications
+{{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+{{- end }}
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+{{- if not .Values.pod.debug.api }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.global.placementApiPortInternal}}
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+            periodSeconds: 30
+{{- end }}
+          {{- if .Values.pod.resources.placement }}
+          resources:
+{{ toYaml .Values.pod.resources.placement | indent 12 }}
+          {{- end }}
+          ports:
+            - name: placement-api
+              containerPort: {{.Values.global.placementApiPortInternal}}
+          volumeMounts:
+            - mountPath: /etc/nova
+              name: etcnova
+            - mountPath: /etc/nova/nova.conf
+              name: nova-etc
+              subPath: nova.conf
+              readOnly: true
+            - mountPath: /etc/nova/policy.json
+              name: nova-etc
+              subPath: policy.json
+              readOnly: true
+            - mountPath: /etc/nova/logging.ini
+              name: nova-etc
+              subPath: logging.ini
+              readOnly: true
+            - mountPath: /etc/nova/placement_uwsgi.ini
+              name: nova-etc
+              subPath: placement_uwsgi.ini
+              readOnly: true
+      volumes:
+        - name: etcnova
+          emptyDir: {}
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+

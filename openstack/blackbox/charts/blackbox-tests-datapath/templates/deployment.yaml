@@ -3,6 +3,10 @@ apiVersion: extensions/v1beta1
 
 metadata:
   name: blackbox-tests-datapath
+  labels:
+    system: openstack
+    component: blackbox-tests
+    type: datapath
 
 spec:
   replicas: {{.Values.global.replicaCount}}
@@ -23,6 +27,9 @@ spec:
         - name: blackbox-tests-datapath
           persistentVolumeClaim:
             claimName: blackbox-tests-datapath
+        - name: statsd-mapping-config
+          configMap:
+            name: blackbox-tests-datapath-statsd-mapping-config
         - name: blackbox-jump-key
           secret:
             secretName: blackbox-tests-datapath
@@ -40,10 +47,10 @@ spec:
           args:
             - "iterate"
             - "pytest"
-            - "-n 4"
-            - "--timeout 30"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
             - "--disable-pytest-warnings"
-            - "-r a"
+            - "-r ap"
             - "tests/test_datapath.py"
           volumeMounts:
             - name: blackbox-tests-datapath
@@ -75,6 +82,8 @@ spec:
               value: {{ .Values.global.jump.user | quote }}
             - name: DATAPATH_JUMP_HOST_FLOAT_IP
               value: {{ .Values.jump_host_floating_ip | quote }}
+            - name: CANARY_JUMP_HOST_FLOAT_IPS
+              value: {{ .Values.canary_jump_host_ips | quote }}
             - name: DATAPATH_SERVER_FIXED_IPS
               value: {{ .Values.server_fixed_ips | quote }}
             - name: DATAPATH_SERVER_FLOAT_IPS
@@ -99,16 +108,33 @@ spec:
               value: {{ .Values.ad_nodes | quote }}
             - name: DATAPATH_AD_DNS
               value: {{ .Values.ad_dns | quote }}
+            - name: DATAPATH_AD_BIND_DN
+              value: {{ .Values.ad_ldap_user | quote }}
+            - name: DATAPATH_AD_BIND_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-datapath
+                  key: ldap.password
+            - name: DATAPATH_AD_OU_SUFFIX
+              value: {{ .Values.ad_ldap_suffix | quote }}
+            - name: DATAPATH_AD_GROUP
+              value: {{ .Values.ad_test_group | quote }}
+            - name: DATAPATH_AD_USER
+              value: {{ .Values.ad_test_user | quote }}
+            - name: DATAPATH_EWS_DNS
+              value: {{ .Values.ews_dns | quote }}
             - name: DATAPATH_S4_FIPS
               value: {{ .Values.s4_fips | quote }}
             - name: STATSD_HOST
-              value: "localhost"
+              value: {{ .Values.statsd.host | quote }}
             - name: STATSD_PORT
-              value: "9125"
+              value: {{ .Values.statsd.port | quote }}
             - name: STATSD_PREFIX
-              value: "blackbox-datapath"
+              value: {{ .Values.statsd.prefix | quote }}
+            - name: TIMEOUT
+              value: {{ .Values.parallel.timeout.atomic | quote }}
             - name: SLEEP_ITERATE
-              value: {{ .Values.sleep.iterate | quote }}
+              value: {{ .Values.parallel.iterator.sleep | quote }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -137,11 +163,16 @@ spec:
             initialDelaySeconds: 15
 
         - name: statsd
-          image: prom/statsd-exporter:v0.5.0
+          image: prom/statsd-exporter:v0.12.2
           imagePullPolicy: IfNotPresent
+          args:
+            - --statsd.mapping-config=/etc/statsd/statsd-mapping.conf
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.global.port_metrics}}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/statsd

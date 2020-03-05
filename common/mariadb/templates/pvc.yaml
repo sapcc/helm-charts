@@ -1,0 +1,19 @@
+{{- if and .Values.persistence_claim.enabled .Values.persistence_claim.autoprovision }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ required "Values.persistence_claim.name missing"  .Values.persistence_claim.name }}
+spec:
+{{- if .Values.persistence_claim.access_modes }}
+  accessModes:
+  {{- range $accessMode := .Values.persistence_claim.access_modes }}
+  - {{ $accessMode }}
+  {{- end }}
+{{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence_claim.size }}
+  {{- if .Values.persistence_claim.storage_class }}
+  storageClassName: .Values.persistence_claim.storage_class
+  {{- end }}
+{{ end }}

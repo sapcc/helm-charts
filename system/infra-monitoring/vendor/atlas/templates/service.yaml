@@ -1,0 +1,27 @@
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "atlas.fullname" . }}
+  labels:
+    service: {{ include "atlas.name" . }}
+    chart: {{ include "atlas.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+    component: service_discovery
+  annotations:
+    prometheus.io/scrape: {{ $scrape | quote }}
+    prometheus.io/port: {{ $port | quote }}
+    prometheus.io/targets: {{ $targets | quote }}
+spec:
+  selector:
+    app: {{ include "atlas.name" . }}
+  ports:
+    - port: 8080
+      name: metrics
+      targetPort: metrics
+      protocol: TCP

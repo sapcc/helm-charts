@@ -3,6 +3,9 @@
 # Reference for this file's format:
 # <https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration>
 
+defaults:
+  ttl: 3h
+
 mappings:
 
   ##############################################################################
@@ -16,6 +19,8 @@ mappings:
     status: $4
     type: $1
 - match: swift.proxy-server.*.policy.*.GET.*.first-byte.timing
+  timer_type: histogram
+  buckets: [0.025, 0.1, 0.25, 1, 2.5]
   name: swift_proxy_firstbyte
   labels:
     policy: $2
@@ -36,6 +41,8 @@ mappings:
     status: $3
     type: $1
 - match: swift.proxy-server.*.GET.*.first-byte.timing
+  timer_type: histogram
+  buckets: [0.025, 0.1, 0.25, 1, 2.5]
   name: swift_proxy_firstbyte
   labels:
     policy: all
@@ -108,6 +115,11 @@ mappings:
   name: swift_object_replicator
   labels:
     action: $1
+- match: swift.object-server.async_pendings.project.*.*
+  name: swift_async_pendings_detail
+  labels:
+    project_id: $1
+    container:  $2
 
   ##############################################################################
   # remove superfluous "timing" word from timer names

@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-flannel
+  labels:
+    tier: node
+    k8s-app: flannel
+spec:
+  selector:
+    matchLabels:
+      tier: node
+      k8s-app: flannel
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        tier: node
+        k8s-app: flannel
+{{- if (semverCompare "< 1.13-0" .Capabilities.KubeVersion.GitVersion ) }}
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+{{- end }}
+    spec:
+{{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
+      priorityClassName: system-node-critical
+{{- end }}
+      containers:
+      - name: kube-flannel
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        command: 
+          - "/opt/bin/flanneld"
+          - "--ip-masq"
+          - "--kube-subnet-mgr"
+          - "--iface=$(POD_IP)"
+          - "-kubeconfig-file={{ .Values.kubeConfig }}"
+        securityContext:
+          privileged: true
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+          - name: run
+            mountPath: /run
+          - name: flannel-cfg
+            mountPath: /etc/kube-flannel/
+          - name: cni-cfg
+            mountPath: /etc/cni/net.d
+          - name: etc-kubernetes
+            mountPath: /etc/kubernetes
+            readOnly: true
+      hostNetwork: true
+      volumes:
+        - name: run
+          hostPath:
+            path: /run
+        - name: flannel-cfg
+          hostPath:
+            path: /etc/kube-flannel/
+        - name: cni-cfg
+          hostPath:
+            path: /etc/cni/net.d
+        - name: etc-kubernetes
+          hostPath:
+            path: /etc/kubernetes

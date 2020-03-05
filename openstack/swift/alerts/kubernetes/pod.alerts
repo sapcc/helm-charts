@@ -1,0 +1,54 @@
+groups:
+- name: openstack-swift-pod.alerts
+  rules:
+    - alert: OpenstackSwiftPodSchedulingFailedInsufficientCPU
+      expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"swift-.+"}[30m])) by (pod_name) > 0
+      for: 15m
+      labels:
+        severity: warning
+        tier: os
+        service: swift
+        context: cpu
+        meta: "{{ $labels.pod_name }}"
+      annotations:
+        summary: Scheduling failed due to insufficient cpu
+        description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
+
+    - alert: OpenstackSwiftPodSchedulingInsufficientMemory
+      expr: sum(rate(kube_pod_failed_scheduling_memory_total{pod_name=~"swift-.+"}[30m])) by (pod_name) > 0
+      for: 15m
+      labels:
+        severity: warning
+        tier: os
+        service: swift
+        context: memory
+        meta: "{{ $labels.pod_name }}"
+      annotations:
+        summary: Scheduling failed due to insufficient memory
+        description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient memory!
+
+    - alert: OpenstackSwiftPodOOMKilled
+      expr: sum(rate(klog_pod_oomkill{pod_name=~"swift-.+"}[30m])) by (pod_name) > 0
+      for: 5m
+      labels:
+        tier: os
+        service: swift
+        severity: info
+        context: memory
+        meta: "{{ $labels.pod_name }}"
+      annotations:
+        summary: Pod was oomkilled
+        description: The pod {{ $labels.pod_name }} was oomkilled recently
+
+    - alert: OpenstackSwiftPodOOMExceedingLimits
+      expr: swift_container_memory_usage_percent > 70 and predict_linear(swift_container_memory_usage_percent[1h], 7*3600) > 100
+      for: 30m
+      labels:
+        tier: os
+        service: swift
+        severity: info
+        context: memory
+        meta: "{{ $labels.pod }}/{{ $labels.container }}"
+      annotations:
+        summary: Exceeding memory limits in 8h
+        description: The container {{ $labels.pod }}/{{ $labels.container }} will exceed its memory limit in 8h.

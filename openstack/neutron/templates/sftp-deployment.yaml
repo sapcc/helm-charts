@@ -1,0 +1,49 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: neutron-sftp-backup
+  labels:
+    release: "{{.Release.Name}}"
+spec:
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      component: neutron-sftp-backup
+  template:
+    metadata:
+      labels:
+        component: neutron-sftp-backup
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: sftp
+          image: hub.global.cloud.sap/monsoon/swift-sftp:20190711151344
+          args: ['server', '-f', '/etc/swift-sftp.conf']
+          env:
+            - name: USERNAME
+              value: {{ .Values.sftp.user | quote }}
+            - name: PASSWORD
+              value: {{ derivePassword 1 "long" .Values.global.master_password .Values.sftp.user (include "sftp_api_endpoint_host" .) | quote }}
+          resources:
+{{ toYaml .Values.pod.resources.sftp_backup | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/swift-sftp.conf
+              name: neutron-sftp-backup
+              subPath: swift-sftp.conf
+              readOnly: true
+            - mountPath: /etc/ssh_host_id_ec
+              name: neutron-sftp-backup
+              subPath: ssh_host_id_ec
+              readOnly: true
+            - mountPath: /tmp
+              name: cache-volume
+      volumes:
+        - name: neutron-sftp-backup
+          configMap:
+            name: neutron-sftp-backup
+        - name: cache-volume
+          emptyDir: {}

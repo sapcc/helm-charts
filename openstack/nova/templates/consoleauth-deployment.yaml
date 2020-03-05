@@ -1,0 +1,76 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: nova-consoleauth
+  labels:
+    system: openstack
+    type: backend
+    component: nova
+spec:
+  replicas: {{ .Values.pod.replicas.consoleauth }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: nova-consoleauth
+  template:
+    metadata:
+      labels:
+        name: nova-consoleauth
+{{ tuple . "nova" "console-auth" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+    spec:
+{{ tuple . "nova" "console-auth" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      hostname: nova-console
+      volumes:
+      - name: etcnova
+        emptyDir: {}
+      - name: nova-etc
+        configMap:
+          name: nova-etc
+      containers:
+      - name: nova-consoleauth
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-consoleauth:{{.Values.imageVersionNovaConsoleauth |  default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+        - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "nova-consoleauth"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: "nova-api"
+{{- if .Values.python_warnings }}
+        - name: PYTHONWARNINGS
+          value: {{ .Values.python_warnings | quote }}
+{{- end }}
+        volumeMounts:
+        - name: etcnova
+          mountPath: /etc/nova
+        - name: nova-etc
+          mountPath: /etc/nova/nova.conf
+          subPath: nova.conf
+          readOnly: true
+        - name: nova-etc
+          mountPath: /etc/nova/policy.json
+          subPath: policy.json
+          readOnly: true
+        - name: nova-etc
+          mountPath: /etc/nova/logging.ini
+          subPath: logging.ini
+          readOnly: true
+{{ $envAll := . }}
+{{- range $name, $config := .Values.consoles }}
+---
+{{ tuple $envAll $name $config | include "nova.console_deployment" }}
+{{- end }}

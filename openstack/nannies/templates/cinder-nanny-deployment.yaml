@@ -1,0 +1,140 @@
+{{- if .Values.cinder_nanny.enabled }}
+{{- if or .Values.cinder_nanny.db_purge.enabled .Values.cinder_nanny.quota_sync.enabled .Values.cinder_nanny.db_cleanup.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cinder-nanny
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: cinder-nanny
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: cinder-nanny
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: cinder-etc
+          configMap:
+            name: cinder-etc
+      containers:
+{{- if .Values.cinder_nanny.db_purge.enabled }}
+        - name: db-consistency-and-purge
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/cinder-nanny:{{required ".Values.cinder_nanny.image_version is missing" .Values.cinder_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.cinder_nanny.debug }}/bin/bash /scripts/cinder-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "cinder-mariadb,cinder-api"
+            - name: CINDER_DB_PURGE_ENABLED
+              value: {{ .Values.cinder_nanny.db_purge.enabled | quote }}
+            - name: CINDER_DB_PURGE_OLDER_THAN
+              value: {{ .Values.cinder_nanny.db_purge.older_than | quote }}
+            - name: CINDER_CONSISTENCY_ENABLED
+              value: {{ .Values.cinder_nanny.consistency.enabled | quote }}
+            - name: CINDER_CONSISTENCY_DRY_RUN
+              value: {{ .Values.cinder_nanny.consistency.dry_run | quote }}
+            - name: CINDER_CONSISTENCY_FIX_LIMIT
+              value: {{ .Values.cinder_nanny.consistency.fix_limit | quote }}
+            - name: CINDER_NANNY_INTERVAL
+              value: {{ .Values.cinder_nanny.interval | quote }}
+            - name: OS_AUTH_URL
+              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
+            - name: OS_PROJECT_NAME
+              value: "cloud_admin"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "ccadmin"
+            - name: OS_USERNAME
+              value: "nova_nanny"
+            - name: OS_USER_DOMAIN_NAME
+              value: "Default"
+            - name: OS_PASSWORD
+              value: {{ derivePassword 1 "long" .Values.global.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+          volumeMounts:
+            - mountPath: /cinder-etc
+              name: cinder-etc
+{{- end }}
+{{- if .Values.cinder_nanny.quota_sync.enabled }}
+        - name: quota-sync
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/cinder-nanny:{{required ".Values.cinder_nanny.image_version is missing" .Values.cinder_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.cinder_nanny.debug }}/bin/bash /scripts/cinder-quota-sync.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "cinder-mariadb,cinder-api"
+            - name: CINDER_QUOTA_SYNC_ENABLED
+              value: {{ .Values.cinder_nanny.quota_sync.enabled | quote }}
+            - name: CINDER_QUOTA_SYNC_DRY_RUN
+              value: {{ .Values.cinder_nanny.quota_sync.dry_run | quote }}
+            - name: CINDER_NANNY_INTERVAL
+              value: {{ .Values.cinder_nanny.interval | quote }}
+          volumeMounts:
+            - mountPath: /cinder-etc
+              name: cinder-etc
+{{- end }}
+{{- if .Values.cinder_nanny.db_cleanup.enabled }}
+        - name: db-cleanup
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/cinder-nanny:{{required ".Values.cinder_nanny.image_version is missing" .Values.cinder_nanny.image_version}}
+          #imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.cinder_nanny.debug }}/bin/bash /scripts/cinder-db-cleanup.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "cinder-mariadb,cinder-api"
+            - name: CINDER_DB_CLEANUP_ENABLED
+              value: {{ .Values.cinder_nanny.db_cleanup.enabled | quote }}
+            - name: CINDER_DB_CLEANUP_DRY_RUN
+              value: {{ .Values.cinder_nanny.db_cleanup.dry_run | quote }}
+            - name: CINDER_DB_CLEANUP_INTERVAL
+              value: {{ .Values.cinder_nanny.db_cleanup.interval | quote }}
+            - name: CINDER_DB_CLEANUP_ITERATIONS
+              value: {{ .Values.cinder_nanny.db_cleanup.iterations | quote }}
+            - name: OS_AUTH_URL
+              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
+            - name: OS_PROJECT_NAME
+              value: "cloud_admin"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "ccadmin"
+            - name: OS_USERNAME
+              value: "cinder_nanny"
+            - name: OS_USER_DOMAIN_NAME
+              value: "Default"
+            - name: OS_PASSWORD
+              value: {{ derivePassword 1 "long" .Values.global.master_password "cinder_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

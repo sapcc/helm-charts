@@ -1,0 +1,282 @@
+{{- $root := . -}}
+
+apiVersion: v1
+kind: ConfigMap
+annotations:
+  "helm.sh/hook": "pre-install"
+  "helm.sh/hook": "pre-upgrade"
+
+metadata:
+  name:  {{ include "atlas.fullname" . }}
+  labels:
+    app: {{ include "atlas.name" . }}
+    chart: {{ include "atlas.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+
+data:
+  atlas.yaml: |
+    discoveries:
+      ironic:
+        refresh_interval: 600
+        targets_file_name: "ironic.json"
+        metrics_label: "ironic"
+        os_auth:
+          auth_url: {{ printf "https://identity-3.%s.cloud.sap/v3" .Values.global.region | quote }}
+          user: "{{ .Values.global.ipmi_exporter_user }}"
+          password: "{{ .Values.global.ipmi_exporter_user_passwd }}"
+          user_domain_name: "{{ .Values.os_user_domain_name }}"
+          project_name: "{{ .Values.os_project_name }}"
+          domain_name: "{{ .Values.os_project_domain_name }}"
+      netbox:
+        refresh_interval: 600
+        targets_file_name: "netbox.json"
+        netbox_host: "{{ .Values.global.netbox_host }}"
+        netbox_api_token: {{ required "netbox_api_token needs to be defined in global values" .Values.global.netbox_api_token }}
+        dcim:
+          devices:
+            - custom_labels: 
+                module: "vmware-esxi"
+                job: "vmware-esxi"
+              target: 2
+              metrics_label: "vmware-esxi"
+              platform: "vmware-esxi"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+
+            - custom_labels: 
+                module: "asw-eapi"
+                job: "asw-eapi"
+              target: 1
+              metrics_label: "asw-eapi"
+              q: "asw20"
+              manufacturer: "arista"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+
+            - custom_labels: 
+                module: "acileaf"
+                job: "snmp"
+                tenant: "cnd-gmponaci"
+              target: 1
+              metrics_label: "acileaf"
+              role: "aci-leaf"
+              manufacturer: "cisco"
+              tenant: "cnd-gmponaci"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+            - custom_labels:
+                module: "acileaf"
+                job: "snmp"
+                tenant: "converged-cloud"
+              target: 1
+              metrics_label: "acileaf"
+              role: "aci-leaf"
+              manufacturer: "cisco"
+              tenant: "converged-cloud"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+            - custom_labels: 
+                module: "ipn"
+                job: "snmp"
+              metrics_label: "ipn"
+              role: "aci-ipn"
+              target: 1
+              manufacturer: "cisco"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+            - custom_labels:
+                module: "acispine"
+                job: "snmp"
+              metrics_label: "acispine"
+              role: "aci-spine"
+              target: 1
+              manufacturer: "cisco"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+            - custom_labels:
+                module: "acistretch"
+                job: "snmp"
+              metrics_label: "acistretch"
+              role: "aci-stretch"
+              target: 1
+              manufacturer: "cisco"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+            - custom_labels: 
+                module: "f5customer"
+                job: "snmp"
+              metrics_label: "f5"
+              target: 1
+              manufacturer: "f5"
+              region: "{{ .Values.global.region }}"
+              tag: "cc-net-f5-guest-lbaas"
+              q: "f5"
+              status: "active"
+            - custom_labels: 
+                module: "f5mgmt"
+                job: "snmp"
+              metrics_label: "f5"
+              target: 1
+              manufacturer: "f5"
+              region: "{{ .Values.global.region }}"
+              tag: "cc-net-f5-guest-mgmt"
+              q: "f5"
+              status: "active"
+            - custom_labels: 
+                module: "f5physical"
+                job: "snmp"
+              metrics_label: "f5"
+              target: 1
+              manufacturer: "f5"
+              region: "{{ .Values.global.region }}"
+              tag: "cc-net-f5-host"
+              q: "f5"
+              status: "active"
+            - custom_labels: 
+                module: "asr03"
+                job: "snmp"
+              metrics_label: "asr03"
+              target: 1
+              manufacturer: "cisco"
+              region: "{{ .Values.global.region }}"
+              q: "asr03"
+              status: "active"
+            - custom_labels: 
+                module: "asr04"
+                job: "snmp"
+              metrics_label: "asr04"
+              target: 1
+              manufacturer: "cisco"
+              region: "{{ .Values.global.region }}"
+              q: "asr04"
+              status: "active"
+            - custom_labels: 
+                module: "asr"
+                job: "snmp"
+              metrics_label: "asr"
+              target: 1
+              manufacturer: "cisco"
+              region: "{{ .Values.global.region }}"
+              q: "asr1"
+              status: "active"
+            - custom_labels: 
+                module: "asw"
+                job: "snmp"
+              metrics_label: "asw"
+              target: 1
+              manufacturer: "arista"
+              region: "{{ .Values.global.region }}"
+              q: "asw2"
+              status: "active"
+            - custom_labels:
+                module: "asw9"
+                job: "snmp"
+              metrics_label: "asw9"
+              target: 1
+              manufacturer: "arista"
+              region: "{{ .Values.global.region }}"
+              q: "asw9"
+              status: "active"
+            - custom_labels:
+                module: "n9kpx"
+                job: "snmp"
+              target: 1
+              metrics_label: "n9kpx"
+              role: "px-switch"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+            - custom_labels: 
+                module: "pxdlrouternxos"
+                job: "snmp"
+              target: 1
+              metrics_label: "pxdlrouternxos"
+              role: "directlink-router"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+            - custom_labels: 
+                module: "n3k"
+                job: "snmp"
+              target: 1
+              metrics_label: "n3k"
+              role: "management-switch"
+              manufacturer: "cisco"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+{{- if .Values.global.n7k.enabled }}
+            - custom_labels: 
+                module: "n7k"
+                job: "snmp"
+              metrics_label: "n7k"
+              target: 1
+              manufacturer: "cisco"
+              region: "{{ .Values.global.region }}"
+              q: "n7k"
+              status: "active"
+{{- range $switch := .Values.global.n7k.context }}
+            - custom_labels:
+                job: "snmp"
+                module: "n7k{{ $switch.context_name | lower }}"
+              metrics_label: "n7k{{ $switch.context_name | lower }}"
+              target: 1
+              region: "{{ $root.Values.global.region }}"
+              manufacturer: "cisco"
+              q: "n7k"
+              status: "active"
+{{- end }}
+{{- end }}
+            - custom_labels: 
+                job: "cp/netbox"
+              metrics_label: "control_plane"
+              target: 2
+              region: "{{ .Values.global.region }}"
+              status: "active"
+              q: "cp"
+              role: "server"
+              management_ip: true
+              has_primary_ip: true
+            - custom_labels:
+                job: "bios/vpod"
+              metrics_label: "cisco"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+              q: "bb"
+              role: "server"
+              target: 1
+              platform: "vmware-esxi"
+            - custom_labels: 
+                job: "bios/cisco_cp"
+              target: 2
+              region: "{{ .Values.global.region }}"
+              status: "active"
+              q: "cp"
+              role: "server"
+              manufacturer: "cisco"
+              management_ip: true
+              has_primary_ip: true
+        virtualization:
+          vm:
+            - custom_labels:
+                module: "asa"
+                job: "snmp"
+              metrics_label: "asa"
+              target: 1
+              role: "firewall"
+              q: "{{ $root.Values.global.region }}"
+              status: "active"
+            - custom_labels:
+                job: "vcenter"
+              metrics_label: "vcenter" 
+              target: 1
+              q: "vc"
+              platform: "vmware-vcsa"
+              status: "active"
+              region: "{{ .Values.global.region }}"
+            - custom_labels:
+                job: "vrops"
+              metrics_label: "vrops" 
+              target: 1
+              q: "vrops-vc-"
+              platform: "vmware-vrops"
+              status: "active"
+              region: "{{ .Values.global.region }}"

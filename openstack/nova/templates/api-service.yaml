@@ -10,7 +10,8 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     maia.io/scrape: "true"
-    prometheus.io/port: "{{.Values.portMetrics}}"
+    prometheus.io/port: {{ required ".Values.portMetrics missing" .Values.portMetrics | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 
 spec:
   selector:
@@ -19,7 +20,7 @@ spec:
     - name: nova-api
       port: {{.Values.global.novaApiPortInternal}}
     - name: nova-metadata
-      port: {{.Values.global.novaMetadataPortInternal}}
+      port: {{.Values.global.novaApiMetadataPortInternal}}
 #    - name: statsd-listen
 #      port: 9125
 #    - name: metrics-listen

@@ -1,0 +1,39 @@
+{{- if and (.Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1") }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosQuery
+metadata:
+  name: nova-auto-assign-aggregates
+  namespace: monsoon3
+requirements:
+- name: nova-seed
+  kind: OpenstackSeed
+context: nova@Default/service
+python: |
+    endpoint_filter={'service_type': 'compute', 'interface': 'public'}
+    resp = os.session.get('/os-aggregates', endpoint_filter=endpoint_filter).json()
+    aggregates = {ag.get('availability_zone'): ag for ag in resp.get('aggregates', [])
+                  if ag.get('name', '').lower() == ag.get('availability_zone')}
+
+    for service in os.compute.services():
+        if (service.binary != 'nova-compute' or
+                service.state != 'up' or
+                service.status == 'disabled' or
+                'testing' in service.host or
+                '.' in service.host):
+            continue
+
+        _, host = service.host.rsplit('-', 1)
+
+        params={'q': host + '-01'}
+        resp = requests.get('https://netbox.global.cloud.sap/api/dcim/racks/', params=params, verify=False).json()
+        if resp.get('count', 0) == 1:
+            site = resp['results'][0].get('site', {}).get('name')
+            if site:
+                az = site.lower()
+                ag = aggregates[az]
+                if service.host not in ag['hosts']:
+                    LOG.debug("Add Host %s to %s", service.host, ag['name'])
+                    os.session.post('/os-aggregates/%d/action' % ag['id'],
+                        json={'add_host': {'host': service.host}},
+                        endpoint_filter=endpoint_filter)
+{{- end  }}

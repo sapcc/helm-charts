@@ -32,11 +32,12 @@ spec:
         chart-version: {{.Chart.Version}}
         checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.file.persistence.enabled }}
       initContainers:
       - name: permissions
         securityContext:
           runAsUser: 0
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{ .Values.global.imageNamespace}}/loci-glance:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - mountPath: /glance_store
@@ -48,34 +49,35 @@ spec:
         - -xc
         - |
           chown -R glance:glance /glance_store
+      {{- end }}
       containers:
       - name: api
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-glance:{{.Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /healthcheck
             port: {{.Values.api_port_internal}}
-          initialDelaySeconds: 15
+          initialDelaySeconds: 20
           timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /healthcheck
             port: {{.Values.api_port_internal}}
-          initialDelaySeconds: 15
+          initialDelaySeconds: 20
           timeoutSeconds: 5
         command:
         - dumb-init
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "glance-api"
+          value: "/var/lib/openstack/bin/glance-api"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_JOBS
           value: "glance-migration-job"
         - name: DEPENDENCY_SERVICE
-          value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
+          value: {{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached
         - name: DEBUG_CONTAINER
           value: "false"
         - name: PGAPPNAME
@@ -146,12 +148,16 @@ spec:
         - name: glance-etc
           mountPath: /etc/glance/ratelimit.yaml
           subPath: ratelimit.yaml
+        {{- if .Values.audit.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/glance_audit_map.yaml
+          subPath: glance_audit_map.yaml
           readOnly: true
         {{- end }}
 
-      {{- if (or .Values.imageVersionGlanceRegistry .Values.imageVersion .Values.image_version) }}
+      {{- if .Values.imageVersionGlanceRegistry }}
       - name: registry
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-registry:{{.Values.imageVersionGlanceRegistry | default .Values.imageVersion | default .Values.image_version }}
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-registry:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
@@ -160,6 +166,8 @@ spec:
           httpGet:
             path: /healthcheck
             port: 9191
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
         env:
         - name: COMMAND
           value: "glance-registry"
@@ -223,19 +231,29 @@ spec:
         - name: glance-etc
           mountPath: /etc/glance/ratelimit.yaml
           subPath: ratelimit.yaml
+        {{- if .Values.audit.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/glance_audit_map.yaml
+          subPath: glance_audit_map.yaml
           readOnly: true
         {{- end }}
       {{- end }}
       {{- if .Values.metrics.enabled }}
       - name: statsd
-        image: prom/statsd-exporter:v0.5.0
+        image: prom/statsd-exporter:v0.8.1
         imagePullPolicy: {{ .Values.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
+        args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         ports:
         - name: statsd
           containerPort: 9125
           protocol: UDP
         - name: metrics
           containerPort: {{ .Values.metrics.port }}
+        volumeMounts:
+          - name: glance-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
       {{- end }}
       volumes:
       - name: etcglance

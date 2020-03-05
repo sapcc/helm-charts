@@ -1,0 +1,51 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    app: conntrack-nanny
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  name: conntrack-nanny
+spec:
+  revisionHistoryLimit: 3
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: conntrack-nanny
+  template:
+    metadata:
+      labels:
+        app: conntrack-nanny
+      #annotations:
+      #  prometheus.io/scrape: "true"
+      #  prometheus.io/port: "9191"
+      name: conntrack-nanny
+    spec:
+      hostNetwork: true
+      containers:
+      - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        #ports:
+        #- containerPort: 9191
+        #  name: metrics
+        #  protocol: TCP
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+        name: nanny
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
+          #privileged: true
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

@@ -9,6 +9,8 @@ Charts are grouped logically into:
   * `common`: Reusable charts
   * `global`: Singletons that only exist once in a global context
   * `openstack`: Openstack and dependent or related services
+  * `prometheus-exporters`: A curated collection of Prometheus exporters
+  * `prometheus-rules`: Prometheus alert- & aggregation rules specific to our controlplane
   * `system`: Infrastructure required by the control plane 
 
 This structure is just a logical grouping, it does not represent deployable
@@ -63,6 +65,9 @@ This has the benefits that:
   * Pods and other Kubernetes primitives are reflected at a known place in
       Kubernetes
 
+### Test a Chart
+
+Opening a PR to this repository triggers the Helm chart tests which are described in detail [here](./ci/README.md).  
 
 ### Install/Update of a Chart/Release 
 

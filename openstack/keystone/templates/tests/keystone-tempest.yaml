@@ -1,3 +1,4 @@
+{{- if .Values.tempest.enabled }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -47,7 +48,7 @@ spec:
         - name: OS_USERNAME
           value: "admin"
         - name: OS_PASSWORD
-          value: {{ .Values.tempest.adminPassword | quote }}
+          value: {{ required "A valid .Values.tempest.adminPassword required!" .Values.tempest.adminPassword | quote }}
         - name: OS_USER_DOMAIN_NAME
           value: "tempest"
         - name: OS_DOMAIN_NAME
@@ -74,6 +75,10 @@ spec:
           mountPath: /etc/tempest/accounts.yaml
           subPath: accounts.yaml
           readOnly: true
+        - name: keystone-etc
+          mountPath: /etc/tempest/tempest-skip-list.yaml
+          subPath: tempest-skip-list.yaml
+          readOnly: true
   volumes:
     - name: etc-tempest
       emptyDir: {}
@@ -87,3 +92,4 @@ spec:
       configMap:
         name: keystone-bin
         defaultMode: 0555
+{{- end }}

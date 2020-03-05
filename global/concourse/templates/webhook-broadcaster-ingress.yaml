@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: webhook-broadcaster
+  annotations:
+    disco: "true"
+    vice-president: "true"
+  labels:
+    app: webhook-broadcaster
+spec:
+  rules:
+  - host: webhook.{{ .Values.concourse.concourse.web.externalDomain }}
+    http:
+      paths:
+      - backend:
+          serviceName: webhook-broadcaster
+          servicePort: 8080
+  tls:
+  - hosts:
+    - webhook.{{ .Values.concourse.concourse.web.externalDomain }}
+    secretName: webhook-broadcaster-tls
+

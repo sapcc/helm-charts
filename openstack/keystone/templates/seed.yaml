@@ -10,10 +10,30 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   roles:
-  - admin
-  - member
-  - service
-  - cloud_identity_viewer
+  - name: admin
+    description: Keystone Administrator
+  - name: member
+    description: Keystone Member
+  - name: reader
+    description: Keystone Read-Only
+  - name: service
+    description: Keystone Service
+  - name: cloud_identity_viewer
+    description: Keystone Cloud Read-Only (deprecated)
+  - name: role_admin
+    description: Keystone Role Administrator
+  - name: role_viewer
+    description: Keystone Role Read-Only
+
+  role_inferences:
+    - prior_role: admin
+      implied_role: member
+    - prior_role: member
+      implied_role: reader
+    - prior_role: cloud_identity_viewer
+      implied_role: reader
+    - prior_role: role_admin
+      implied_role: role_viewer
 
   regions:
   - id: af
@@ -86,6 +106,9 @@ spec:
   - id: qa-de-1
     description: 'QA Germany - Walldorf/Rot'
     parent_region: eu
+  - id: qa-de-2
+    description: 'QA 2 Germany - Walldorf/Rot'
+    parent_region: eu
 
   services:
   - name: keystone
@@ -102,17 +125,9 @@ spec:
     - interface: admin
       region: {{ .Values.global.region }}
 {{- if eq .Values.services.admin.scheme "https" }}
-{{- if eq .Values.release "queens" }}
-      url: https://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}/v3
-{{- else }}
       url: https://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}/v3
-{{- end }}
-{{- else }}
-{{- if eq .Values.release "queens" }}
-      url: {{.Values.services.admin.scheme}}://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:35357/v3
 {{- else }}
       url: {{.Values.services.public.scheme}}://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
-{{- end }}
 {{- end }}
     - interface: internal
       region: {{ .Values.global.region }}
@@ -131,29 +146,33 @@ spec:
     - name: admin
       description: Openstack Cloud Administrator
       enabled: true
-      roles:
+      role_assignments:
       - domain: Default
         role: admin
       - project: admin
         role: admin
       - project: service
+        role: admin
+      - system: all
         role: admin
 
     groups:
     - name: administrators
       description: Administrators
-      roles:
+      role_assignments:
       - domain: Default
         role: admin
       - project: admin
         role: admin
       - project: service
         role: admin
+      - system: all
+        role: admin
       users:
       - admin
     - name: members
       description: Members
-      roles:
+      role_assignments:
       - domain: Default
         role: member
     projects:

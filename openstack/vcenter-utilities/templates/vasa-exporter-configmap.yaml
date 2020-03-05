@@ -1,0 +1,32 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+{{- if .Values.vasa_exporter.enabled }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vasa-exporter-configmap'
+  scope: 'datacenter'
+template: |{{`
+  kind: ConfigMap
+  apiVersion: v1
+  metadata:
+    name: vasa-exporter-{{ name }}
+    namespace: monsoon3
+    labels:
+      system: openstack
+      service: metrics
+      component: configuration
+  data:
+    vasa_exporter-{{ name }}.cfg: |
+      [Default]
+      port = `}}{{ .Values.vasa_exporter.vp_port | quote }}{{`
+      vp_user = `}}'{{ .Values.vasa_exporter.vp_user }}'{{`
+      vp_pass = `}}'{{ .Values.vasa_exporter.vp_pass }}'{{`
+      vvol_user = `}}'{{ .Values.vasa_exporter.vvol_user }}'{{`
+      vvol_pass = `}}'{{ .Values.vasa_exporter.vvol_pass }}'{{`
+      vc_user = '{{ username }}'
+      vc_pass = '{{ password }}'
+      vc_host = {{ host | quote }}
+      prometheus_port = `}}{{ .Values.vasa_exporter.prometheus_port | quote }}{{`
+`}}
+{{- end }}
+{{- end }}

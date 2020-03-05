@@ -10,42 +10,49 @@ spec:
 #  - keystone-seed
   - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-default-seed
   - monsoon3/domain-monsoon3-seed
   - monsoon3/domain-bs-seed
+  - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
   - monsoon3/domain-hcm-seed
   - monsoon3/domain-hcp03-seed
   - monsoon3/domain-hec-seed
+  - monsoon3/domain-neo-seed
   - monsoon3/domain-s4-seed
   - monsoon3/domain-wbs-seed
 
   roles:
-  - monitoring_viewer
-  - monitoring_admin
+  # TODO: these roles are no longer used by Maia, but by Grafana (indirectly)
+  - name: monitoring_viewer
+  - name: monitoring_admin
 
   services:
+  # register Maia in the OpenStack service catalog
   - name: maia
     type: metrics
     description: Expose Prometheus metrics as multi-tenant OpenStack service
     endpoints:
     - interface: public
       region: {{.Values.global.region}}
-      url: '{{.Values.maia.endpoint_protocol_public}}://{{.Values.maia.endpoint_host_public}}:{{.Values.maia.endpoint_port_public}}/api/v1'
+      url: '{{.Values.maia.endpoint_protocol_public}}://{{.Values.maia.endpoint_host_public}}:{{.Values.maia.endpoint_port_public}}'
 
   domains:
+  # seed technical service user
   - name: {{.Values.maia.service_user.user_domain_name}}
     users:
     - name: {{.Values.maia.service_user.name}}
       description: 'Maia API User'
       password: {{ .Values.maia.service_user.password | quote }}
-      roles:
+      role_assignments:
       - project: {{.Values.maia.service_user.project_name}}
         role: service
 
+  # grant -Maia- Grafana specific roles to CC groups
   - name: ccadmin
     projects:
     - name: master
-      roles:
+      role_assignments:
       - group: CCADMIN_CLOUD_ADMINS
         role: monitoring_admin
       - group: CCADMIN_DOMAIN_ADMINS
@@ -54,7 +61,7 @@ spec:
         role: monitoring_viewer
     groups:
     - name: CCADMIN_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: monitoring_admin
       - project: api_tools
@@ -63,7 +70,7 @@ spec:
         role: monitoring_admin
         inherited: true
     - name: CCADMIN_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: monitoring_admin
       - project: compute_tools
@@ -72,7 +79,7 @@ spec:
         role: monitoring_viewer
         inherited: true
     - name: CCADMIN_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: monitoring_admin
       - project: network_tools
@@ -81,7 +88,7 @@ spec:
         role: monitoring_viewer
         inherited: true
     - name: CCADMIN_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: monitoring_admin
       - project: storage_tools
@@ -90,7 +97,7 @@ spec:
         role: monitoring_viewer
         inherited: true
     - name: CCADMIN_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: monitoring_admin
       - domain: ccadmin
@@ -98,75 +105,125 @@ spec:
         inherited: true
 
   - name: bs
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
     groups:
     - name: BS_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: monitoring_admin
       - domain: bs
         role: monitoring_admin
         inherited: true
     - name: BS_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: monitoring_admin
       - domain: bs
         role: monitoring_viewer
         inherited: true
     - name: BS_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: monitoring_admin
       - domain: bs
         role: monitoring_viewer
         inherited: true
     - name: BS_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: monitoring_admin
       - domain: bs
         role: monitoring_viewer
         inherited: true
     - name: BS_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: monitoring_admin
       - domain: bs
         role: monitoring_viewer
         inherited: true
 
+  - name: cp
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
+    groups:
+    - name: CP_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: monitoring_admin
+      - domain: cp
+        role: monitoring_admin
+        inherited: true
+    - name: CP_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: monitoring_admin
+      - domain: cp
+        role: monitoring_viewer
+        inherited: true
+    - name: CP_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: monitoring_admin
+      - domain: cp
+        role: monitoring_viewer
+        inherited: true
+    - name: CP_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: monitoring_admin
+      - domain: cp
+        role: monitoring_viewer
+        inherited: true
+    - name: CP_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: monitoring_admin
+      - domain: cp
+        role: monitoring_viewer
+        inherited: true
+
   - name: fsn
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
     groups:
     - name: FSN_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: monitoring_admin
       - domain: fsn
         role: monitoring_admin
         inherited: true
     - name: FSN_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: monitoring_admin
       - domain: fsn
         role: monitoring_viewer
         inherited: true
     - name: FSN_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: monitoring_admin
       - domain: fsn
         role: monitoring_viewer
         inherited: true
     - name: FSN_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: monitoring_admin
       - domain: fsn
         role: monitoring_viewer
         inherited: true
     - name: FSN_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: monitoring_admin
       - domain: fsn
@@ -174,37 +231,41 @@ spec:
         inherited: true
 
   - name: hcm
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
     groups:
     - name: HCM_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: monitoring_admin
       - domain: hcm
         role: monitoring_admin
         inherited: true
     - name: HCM_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: monitoring_admin
       - domain: hcm
         role: monitoring_viewer
         inherited: true
     - name: HCM_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: monitoring_admin
       - domain: hcm
         role: monitoring_viewer
         inherited: true
     - name: HCM_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: monitoring_admin
       - domain: hcm
         role: monitoring_viewer
         inherited: true
     - name: HCM_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: monitoring_admin
       - domain: hcm
@@ -212,37 +273,41 @@ spec:
         inherited: true
 
   - name: hcp03
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
     groups:
     - name: HCP03_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: monitoring_admin
       - domain: hcp03
         role: monitoring_admin
         inherited: true
     - name: HCP03_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: monitoring_admin
       - domain: hcp03
         role: monitoring_viewer
         inherited: true
     - name: HCP03_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: monitoring_admin
       - domain: hcp03
         role: monitoring_viewer
         inherited: true
     - name: HCP03_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: monitoring_admin
       - domain: hcp03
         role: monitoring_viewer
         inherited: true
     - name: HCP03_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: monitoring_admin
       - domain: hcp03
@@ -250,37 +315,41 @@ spec:
         inherited: true
 
   - name: hec
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
     groups:
     - name: HEC_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: monitoring_admin
       - domain: hec
         role: monitoring_admin
         inherited: true
     - name: HEC_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: monitoring_admin
       - domain: hec
         role: monitoring_viewer
         inherited: true
     - name: HEC_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: monitoring_admin
       - domain: hec
         role: monitoring_viewer
         inherited: true
     - name: HEC_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: monitoring_admin
       - domain: hec
         role: monitoring_viewer
         inherited: true
     - name: HEC_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: monitoring_admin
       - domain: hec
@@ -288,75 +357,125 @@ spec:
         inherited: true
 
   - name: monsoon3
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
     groups:
     - name: MONSOON3_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: monitoring_admin
       - domain: monsoon3
         role: monitoring_admin
         inherited: true
     - name: MONSOON3_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: monitoring_admin
       - domain: monsoon3
         role: monitoring_viewer
         inherited: true
     - name: MONSOON3_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: monitoring_admin
       - domain: monsoon3
         role: monitoring_viewer
         inherited: true
     - name: MONSOON3_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: monitoring_admin
       - domain: monsoon3
         role: monitoring_viewer
         inherited: true
     - name: MONSOON3_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: monitoring_admin
       - domain: monsoon3
         role: monitoring_viewer
         inherited: true
 
+  - name: neo
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
+    groups:
+    - name: NEO_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: monitoring_admin
+      - domain: neo
+        role: monitoring_admin
+        inherited: true
+    - name: NEO_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: monitoring_admin
+      - domain: neo
+        role: monitoring_viewer
+        inherited: true
+    - name: NEO_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: monitoring_admin
+      - domain: neo
+        role: monitoring_viewer
+        inherited: true
+    - name: NEO_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: monitoring_admin
+      - domain: neo
+        role: monitoring_viewer
+        inherited: true
+    - name: NEO_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: monitoring_admin
+      - domain: neo
+        role: monitoring_viewer
+        inherited: true
+
   - name: s4
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
     groups:
     - name: S4_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: monitoring_admin
       - domain: s4
         role: monitoring_admin
         inherited: true
     - name: S4_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: monitoring_admin
       - domain: s4
         role: monitoring_viewer
         inherited: true
     - name: S4_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: monitoring_admin
       - domain: s4
         role: monitoring_viewer
         inherited: true
     - name: S4_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: monitoring_admin
       - domain: s4
         role: monitoring_viewer
         inherited: true
     - name: S4_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: monitoring_admin
       - domain: s4
@@ -364,37 +483,41 @@ spec:
         inherited: true
 
   - name: wbs
+    role_assignments:
+      - user: gaas@Default
+        role: monitoring_viewer
+        inherited: true
     groups:
     - name: WBS_API_SUPPORT
-      roles:
+      role_assignments:
       - project: api_support
         role: monitoring_admin
       - domain: wbs
         role: monitoring_admin
         inherited: true
     - name: WBS_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - project: compute_support
         role: monitoring_admin
       - domain: wbs
         role: monitoring_viewer
         inherited: true
     - name: WBS_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - project: network_support
         role: monitoring_admin
       - domain: wbs
         role: monitoring_viewer
         inherited: true
     - name: WBS_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - project: storage_support
         role: monitoring_admin
       - domain: wbs
         role: monitoring_viewer
         inherited: true
     - name: WBS_SERVICE_DESK
-      roles:
+      role_assignments:
       - project: service_desk
         role: monitoring_admin
       - domain: wbs
@@ -404,7 +527,7 @@ spec:
   - name: cc3test
     groups:
     - name: CC3TEST_DOMAIN_ADMINS
-      roles:
+      role_assignments:
       - project: admin
         role: monitoring_admin
 

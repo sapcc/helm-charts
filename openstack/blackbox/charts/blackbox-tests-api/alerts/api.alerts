@@ -1,0 +1,44 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: OpenstackApiDown
+    expr: blackbox_api_status_gauge{check!="arc", check!="barbican", check!="billing", check!="cinder", check!="designate", check!="elektra", check!="glance", check!="hermes", check!="ironic", check!="keystone", check!="lbaas", check!="limes", check!="lyra", check!="manila", check!="maia", check!="neutron", check!="nova", check!="swift", check!~"vcenter-.+"} == 1
+    for: 20m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: 'API is down: {{ $labels.check }}. See Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_api'
+    annotations:
+      description: 'API is down for 20 min: {{ $labels.check }}. See Sentry for details.'
+      summary: 'API {{ $labels.check }} down'
+
+  - alert: OpenstackApiFlapping
+    expr: changes(blackbox_api_status_gauge{check!="arc", check!="barbican", check!="billing", check!="cinder", check!="designate", check!="elektra", check!="glance", check!="hermes", check!="ironic", check!="keystone", check!="lbaas", check!="limes", check!="lyra", check!="manila", check!="maia", check!="neutron", check!="nova", check!="swift", check!~"vcenter-.+"}[30m]) > 8
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: 'API is flapping: {{ $labels.check }}'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_api'
+    annotations:
+      description: API {{ $labels.check }} is flapping for 30 minutes.
+      summary: 'API {{ $labels.check }} flapping'
+
+  - alert: BlackboxApiMetricsDown
+    expr: absent(up{kubernetes_name="blackbox-tests-api",kubernetes_namespace="blackbox"}) == 1
+    for: 15m
+    labels:
+      service: blackbox-tests-api
+      severity: info
+      tier: os
+    annotations:
+      description: Api metrics are down for 15 times in a row.
+      summary: Blackbox api metrics

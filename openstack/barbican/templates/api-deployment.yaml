@@ -36,20 +36,20 @@ spec:
 {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: barbican-api
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{.Values.imageVersionBarbicanApi}}
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/barbican/bin/barbican-api"
+              value: "/var/lib/openstack/bin/barbican-api"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
               value: "barbican-migration"
             - name: DEPENDENCY_SERVICE
-              value: "barbican-postgresql,barbican-rabbitmq"
+              value: "barbican-mariadb,barbican-rabbitmq"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -97,15 +97,32 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+            {{- if .Values.audit.enabled }}
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican_audit_map.yaml
+              subPath: barbican_audit_map.yaml
+              readOnly: true
+            {{- end }}
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 300m
         - name: statsd
           image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.statsd.port }}
+          volumeMounts:
+            - name: barbican-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+
       volumes:
         - name: barbican-etc
           configMap:

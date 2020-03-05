@@ -17,7 +17,7 @@ spec:
 
     groups:
     - name: CC3TEST_DOMAIN_ADMINS
-      roles:
+      role_assignments:
       - project: admin
         role: admin
       - project: admin
@@ -30,6 +30,8 @@ spec:
         role: compute_admin
       - project: admin
         role: resource_admin
+      - project: admin
+        role: keymanager_admin
       - project: admin
         role: member
       - project: admin
@@ -37,7 +39,7 @@ spec:
 
     projects:
     - name: admin
-      roles:
+      role_assignments:
       - user: {{.Values.global.openstack.users.admin.username}}
         role: admin
       - user: {{.Values.global.openstack.users.admin.username}}
@@ -50,6 +52,8 @@ spec:
         role: compute_admin
       - user: {{.Values.global.openstack.users.admin.username}}
         role: resource_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: keymanager_admin
       - user: {{.Values.global.openstack.users.admin.username}}
         role: member
       - user: {{.Values.global.openstack.users.admin.username}}
@@ -77,10 +81,20 @@ spec:
       - name: private_datapath_admin_cc3test_router
         external_gateway_info:
           network: {{.Values.global.network.monsoon3}}
+          external_fixed_ips:
+          - subnet: {{.Values.global.subnet.monsoon3}}
         interfaces:
         - subnet: private_datapath_admin_cc3test_sub
       - name: private_internet_admin_cc3test_router
         external_gateway_info:
           network: {{.Values.global.network.hcp03}}
+          external_fixed_ips:
+          - subnet: {{.Values.global.subnet.hcp03}}
         interfaces:
         - subnet: private_internet_admin_cc3test_sub
+
+  rbac_policies:
+  - object_type: network
+    object_name: {{.Values.global.network.monsoon3}}
+    action: access_as_shared
+    target_tenant_name: admin@cc3test

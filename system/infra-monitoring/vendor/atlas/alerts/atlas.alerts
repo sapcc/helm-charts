@@ -1,0 +1,26 @@
+groups:
+- name: atlas.alerts
+  rules:
+  - alert: AtlasIronicSDDown
+    expr: absent(atlas_sd_up{discovery= "ironic"}) or atlas_sd_up{discovery= "ironic"} == 0
+    for: 10m
+    labels:
+      severity: info
+      tier: os
+      context: atlas
+      meta: "ironic service discovery failure"
+    annotations:
+      description: "ironic service discovery failed to get ironic nodes"
+      summary: "ironic service discovery failed to get ironic nodes"
+
+  - alert: AtlasNetboxSDDown
+    expr: absent(atlas_sd_up{discovery= "netbox"}) or atlas_sd_up{discovery= "netbox"} == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: monitor
+      context: atlas
+      meta: "netbox service discovery failure"
+    annotations:
+      description: "netbox discovery failed"
+      summary: "netbox discovery failed"

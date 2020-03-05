@@ -1,0 +1,82 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.graphite.name }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.graphite.name }}
+spec:
+  selector:
+    app: {{ .Values.graphite.name }}
+  ports:
+  - name: nginx
+    port: 80
+  - name: carbon-receiver
+    port: 2003
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.graphite.name }}
+spec:
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.graphite.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.graphite.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.graphite.name }}
+    spec:
+      volumes:
+      - name: netapp-etc
+        configMap:
+          name: netapp-etc
+      - name: pv-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.graphite.name }}
+      containers:
+      - name: {{ .Values.graphite.name }}
+        image: {{ .Values.graphite.image }}
+        ports:
+        - containerPort: 80
+        - containerPort: 2003
+        - containerPort: 2004
+        - containerPort: 2023
+        - containerPort: 2024
+        - containerPort: 8125
+          protocol: UDP
+        - containerPort: 8126
+        volumeMounts:
+          - name: pv-storage
+            subPath: storage
+            mountPath: /opt/graphite/storage
+          - name: pv-storage
+            subPath: log
+            mountPath: /var/log
+          - name: pv-storage
+            subPath: log-graphite
+            mountPath: /var/log/graphite
+          - name: netapp-etc
+            subPath: storage-schemas.conf
+            mountPath: /opt/graphite/conf/storage-schemas.conf
+          - name: netapp-etc
+            subPath: carbon.conf
+            mountPath: /opt/graphite/conf/carbon.conf
+        resources:
+          requests:
+            memory: {{ .Values.graphite.memory }}
+            cpu: {{ .Values.graphite.cpu }}
+          limits:
+            cpu: {{ .Values.graphite.cpulimit }}
+{{- end }}

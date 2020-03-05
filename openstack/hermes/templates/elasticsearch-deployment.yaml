@@ -30,12 +30,13 @@ spec:
           command:
             - /bin/sh
             - -c
-            - chown 1000:1000 /data/ &&
-              rm -rf /data/es-config &&
-              mkdir /data/es-config &&
+            - chown -R 1000:1000 /data &&
+              mkdir -p /data/es-config &&
+              chown -R 1000:1000 /data/es-config &&
               cp /hermes-etc/* /data/es-config &&
-              mkdir /data/es-config/scripts &&
-              mkdir -p /data/snapshots
+              mkdir -p /data/es-config/scripts &&
+              mkdir -p /data/snapshots &&
+              chown -R 1000:1000 /data/snapshots
           volumeMounts:
             - name: data
               mountPath: /data
@@ -52,17 +53,22 @@ spec:
             claimName: hermes-elasticsearch
       containers:
         - name: elasticsearch
-          image: docker.elastic.co/elasticsearch/elasticsearch:{{.Values.hermes_image_version_elasticsearch}}
+          image: hub.global.cloud.sap/monsoon/hermes-elasticsearch:{{.Values.hermes_image_version_elasticsearch}}
           imagePullPolicy: IfNotPresent
-          command:
-            - elasticsearch
-          args:
-            # read the config from the provided real config
-            - "-Epath.conf=/data/es-config/"
+          securityContext:
+            runAsUser: 1000
+          #command: ["/bin/bash", "-c", "while true; do sleep 1000; done"]
+          command: [elasticsearch]
           env:
             # tell elasticsearch where to find jvm.options
             - name: ES_JVM_OPTIONS
               value: "/data/es-config/jvm.options"
+            - name: ES_PATH_CONF
+              value: "/data/es-config/"
           volumeMounts:
             - name: data
               mountPath: /data
+          resources:
+            requests:
+              memory: {{required ".Values.resources_requests_memory_es is missing" .Values.resources_requests_memory_es}}
+              cpu: {{required ".Values.resources_requests_cpu_es is missing" .Values.resources_requests_cpu_es}}

@@ -1,0 +1,31 @@
+{{- if .Values.externalURL}}
+{{- $fullName := include "wham.fullname" . -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+    name: {{ $fullName }}
+    labels:
+        app: {{ include "wham.name" . }}
+        chart: {{ include "wham.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+    annotations:
+        vice-president: "true"
+        disco: "true"
+        disco/record: "ingress.scaleout.{{ .Values.global.region }}.cloud.sap"
+
+spec:
+  tls:
+    - hosts:
+      - {{ required "missing externalURL" .Values.externalURL }}
+      secretName: tls-{{ required "missing externalURL" .Values.externalURL | replace "." "-" }}
+  rules:
+    - host: {{ required "missing externalURL" .Values.externalURL }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: http
+{{- end }}

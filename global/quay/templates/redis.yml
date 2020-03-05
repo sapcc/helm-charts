@@ -1,0 +1,35 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "quay.fullname" . }}-redis
+  labels:
+    chart: {{ template "quay.chart" . }}
+    release: {{ .Release.Name }}
+    quay-enterprise-component: redis
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        release: {{ .Release.Name }}
+        quay-enterprise-component: redis
+    spec:
+      containers:
+      - name: redis-master
+        image: quay.io/quay/redis
+        ports:
+        - containerPort: 6379
+---
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: {{ template "quay.fullname" . }}-redis
+  namespace: quay-enterprise
+
+spec:
+  selector:
+    quay-enterprise-component: redis
+    release: {{ .Release.Name }}
+  ports:
+    - port: 6379

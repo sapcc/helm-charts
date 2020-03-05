@@ -1,16 +1,15 @@
 ## Bitnami Redis image version
 ## ref: https://hub.docker.com/r/bitnami/redis/tags/
 ##
-image: redis:3.2.5-alpine 
+image:
+  repository: redis
+  tag: 5.0.5-alpine
+  pullPolicy: IfNotPresent
 
-## Specify a imagePullPolicy
-## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
-## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-##
-# imagePullPolicy:
+# Port for the Redis.
+redisPort: 6379
 
 ## Redis password
-## Defaults to a random 10-character alphanumeric string if not set
 ## ref: https://github.com/bitnami/bitnami-docker-redis#setting-the-server-password-on-first-run
 ##
 # redisPassword:
@@ -30,3 +29,22 @@ resources:
   requests:
     memory: 256Mi
     cpu: 100m
+
+# Prometheus metrics via oliver006/redis_exporter sidecar.
+metrics:
+  enabled: true
+
+  image:
+    repository: oliver006/redis_exporter
+    tag: v1.0.3
+    pullPolicy: IfNotPresent
+
+  # Port to expose metrics on.
+  port: 9121
+
+  # Name of the Prometheus by which the metrics will be scraped.
+  prometheus: openstack
+
+  ## Configure resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources
+  resources: {}

@@ -1,0 +1,36 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: vcenter-operator
+spec:
+  replicas: {{ .Values.pod.replicas.operator }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: vcenter-operator
+  template:
+    metadata:
+      labels:
+        name: vcenter-operator
+{{ tuple . "vcenter-operator" "operator" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      serviceAccountName: {{ .Chart.Name }}
+      containers:
+      - name: operator
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{required ".Values.global.image_namespace is missing" .Values.global.image_namespace}}/ubuntu-source-vcenter-operator:{{ .Values.imageVersionVcenterOperator | default .Values.imageVersion | required "Please set imageVersion or similar"}}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+        - vcenter-operator
+        env:
+        - name: SERVICE_DOMAIN
+          value: "cc.{{.Values.global.region}}.{{.Values.global.tld}}"
+        - name: LOG_LEVEL
+          value: {{ .Values.log_level | default "INFO" }}

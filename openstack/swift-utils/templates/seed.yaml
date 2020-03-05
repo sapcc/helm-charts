@@ -15,12 +15,14 @@ spec:
     - swift/swift-seed #  and all its dependencies
     - monsoon3/domain-default-seed
     - monsoon3/domain-bs-seed
+    - monsoon3/domain-cp-seed
     - monsoon3/domain-ccadmin-seed
     - monsoon3/domain-fsn-seed
     - monsoon3/domain-hcp03-seed
     - monsoon3/domain-hcm-seed
     - monsoon3/domain-hec-seed
     - monsoon3/domain-monsoon3-seed
+    - monsoon3/domain-neo-seed
     - monsoon3/domain-s4-seed
     - monsoon3/domain-wbs-seed
     - monsoon3/domain-cc3test-seed
@@ -31,7 +33,7 @@ spec:
       - name: swift_caretaker
         description: 'Swift Account Caretaker'
         password: {{ $.Values.swift_account_caretaker.password }}
-        roles:
+        role_assignments:
           - project: service
             role: service
           # needs to be admin in all domains to list projects
@@ -40,6 +42,8 @@ spec:
           - domain: ccadmin
             role: admin
           - domain: bs
+            role: admin
+          - domain: cp
             role: admin
           - domain: fsn
             role: admin
@@ -51,32 +55,48 @@ spec:
             role: admin
           - domain: monsoon3
             role: admin
+          - domain: neo
+            role: admin
           - domain: s4
             role: admin
           - domain: wbs
             role: admin
           - domain: cc3test
             role: admin
+      {{- if $.Values.velero_backup_password }}
+      - name: velero_backup
+        description: 'Velero Backup'
+        password: {{ .Values.velero_backup_password }}
+      {{- end}}
 
     # TODO: move this to the Glance/image-build/Ironic/Backup/whatever chart
     - name: ccadmin
       projects:
         - name: master
+          {{- if .Values.velero_backup_password }}
+          role_assignments:
+            - user: velero_backup@Default
+              role: service
+          {{- end }}
           swift:
             enabled: true
+            {{- if .Values.velero_backup_password }}
+            containers:
+              - name: velero-backup
+            {{- end }}
 
     - name: cc3test
       projects:
         - name: swift_dispersion
           description: 'dispersion of objects and containers'
-          roles:
+          role_assignments:
             - user: swift_dispersion@Default
               role: swiftoperator
           swift:
             enabled: true
         - name: swift_test
           description: 'used by automatic tests for Swift and related components'
-          roles:
+          role_assignments:
             - user: swift_caretaker@Default
               role: swiftoperator
           swift:
@@ -88,7 +108,7 @@ spec:
                   meta-web-listings: 'true'
       groups:
         - name: CC3TEST_DOMAIN_ADMINS
-          roles:
+          role_assignments:
             - project: swift_test
               role: admin
             - project: swift_test

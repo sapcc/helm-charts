@@ -1,0 +1,29 @@
+groups:
+- name: pingexporter.alerts
+  rules:
+  - alert: NetworkInterconnectExporterNotRunning
+    expr: absent(ping_up) or ping_up == 0
+    for: 15m
+    labels:
+      meta: Ping exporter is not running in {{ $labels.region }}
+      severity: info
+      tier: os
+    annotations:
+      description: Ping exporter is not running in {{ $labels.region }}
+      summary: Ping exporter is not running in {{ $labels.region }}
+
+- name: interconnect.alerts
+  rules:
+  - alert: NetworkInterconnectDown
+    expr: ping_loss_percent == 1
+    for: 5m
+    labels:
+      context: interconnect
+      dashboard: network-interconnect-sli-overview
+      playbook: /docs/devops/alert/network/interconnect.html
+      meta: 'Datapath from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down for 5 minutes'
+      severity: info
+      tier: net
+    annotations:
+      description: 'Datapath from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down for 5 minutes'
+      summary: 'Datapath from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down for 5 minutes'

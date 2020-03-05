@@ -3,6 +3,7 @@ apiVersion: extensions/v1beta1
 
 metadata:
   name: hermes-api
+  namespace: hermes
 
 spec:
   replicas: 1
@@ -21,8 +22,8 @@ spec:
             name: hermes
       containers:
         - name: api
-          image: {{.Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
-          imagePullPolicy: {{.Values.hermes.image_pull_policy}}
+          image: {{required ".Values.hermes.image is missing" .Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
+          imagePullPolicy: {{required ".Values.hermes.image_pull_policy is missing" .Values.hermes.image_pull_policy}}
           args:
             - -f
             - /etc/hermes/hermes.conf
@@ -34,7 +35,16 @@ spec:
           volumeMounts:
             - mountPath: /etc/hermes
               name: config
+          resources:
+            requests:
+              memory: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_memory_api}}
+              cpu: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_cpu_api}}
           livenessProbe:
+            #exec: 
+            #  command:
+            #    - /bin/false
+            #  initialDelaySeconds: 21600
+            #  periodSeconds: 21600 # restart api every 6 hours
             httpGet:
               path: /v1/
               port: 80

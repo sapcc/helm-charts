@@ -1,0 +1,201 @@
+groups:
+- name: openstack-manila.alerts
+  rules:
+  - alert: OpenstackManilaSharesStuck
+    expr: (sum(openstack_manila_shares_stuck_count_gauge) BY (host, status)) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} shares'
+      playbook: docs/support/playbook/manila/shares_stuck.html
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Sum of Openstack Manila Shares Stuck is more than 1
+      summary: Manila shares in stuck state
+
+  - alert: OpenstackManilaSharesStuckCreate
+    expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="creating"})
+      BY (host) > 120
+    for: 5m
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} seconds'
+      playbook: docs/support/playbook/manila/shares_stuck.html
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Manila Shares taking more than 2 minutes to create in {{ $labels.host }}
+      summary: Manila Shares taking more than 2 minutes to create
+
+  - alert: OpenstackManilaSharesStuckDelete
+    expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="deleting"})
+      BY (host) > 120
+    for: 5m
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} seconds'
+      playbook: docs/support/playbook/manila/shares_stuck.html
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Manila Shares taking more than 2 minutes to delete in {{ $labels.host }}
+      summary: Manila Shares taking more than 2 minutes to delete
+
+  - alert: OpenstackManilaShareServerHigh
+    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
+      "short_hostname", "$1", "manila_host", "(.*)@.*") >= 240
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} share server'
+      playbook: docs/support/playbook/manila/backend_full.html
+      service: manila
+      severity: warning
+      tier: os
+      context: share-server-limit
+    annotations:
+      description: 'Panel: Share Server netapp host distribution'
+      summary: High number of share servers on {{ $labels.short_hostname }}
+
+  - alert: OpenstackManilaShareServerFull
+    expr: label_replace(count(openstack_manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
+      "short_hostname", "$1", "manila_host", "(.*)@.*") >= 250
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} share server'
+      playbook: docs/support/playbook/manila/backend_full.html
+      service: manila
+      severity: critical
+      tier: os
+      context: share-server-limit
+    annotations:
+      description: 'Panel: Share Server netapp host distribution'
+      summary: Share servers on {{ $labels.short_hostname }} exhausted
+
+  - alert: OpenstackManilaApiDown
+    expr: blackbox_api_status_gauge{check=~"manila"} == 1
+    for: 20m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is down. See Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
+      summary: '{{ $labels.check }} API down'
+
+  - alert: OpenstackManilaApiFlapping
+    expr: changes(blackbox_api_status_gauge{check=~"manila"}[30m]) > 8
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-blackbox-details
+      meta: '{{ $labels.check }} API is flapping'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: '{{ $labels.check }} API is flapping for 30 minutes.'
+      summary: '{{ $labels.check }} API flapping'
+
+  - alert: OpenstackManilaDatapathDown
+    expr: blackbox_datapath_status_gauge{service=~"manila"} == 1
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 15 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is down'
+
+  - alert: OpenstackManilaDatapathHalfDown
+    expr: blackbox_datapath_status_gauge{service=~"manila"} == 0.5
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 15 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
+
+  - alert: OpenstackManilaDatapathFlapping
+    expr: changes(blackbox_datapath_status_gauge{service=~"manila"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
+    annotations:
+      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
+      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: OpenstackManilaCanaryDown
+    expr: blackbox_canary_status_gauge{service=~"manila"} == 1
+    for: 1h
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
+
+  - alert: OpenstackManilaCanaryTimeout
+    expr: blackbox_canary_status_gauge{service=~"manila"} == 0.5
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
+
+  - alert: OpenstackManilaCanaryFlapping
+    expr: changes(blackbox_canary_status_gauge{service=~"manila"}[2h]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'

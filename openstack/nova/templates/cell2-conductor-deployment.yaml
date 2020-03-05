@@ -1,0 +1,103 @@
+{{- if .Values.cell2.enabled }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.cell2.name }}-conductor
+  labels:
+    system: openstack
+    type: backend
+    component: nova
+spec:
+  replicas: 1
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: nova-conductor
+  template:
+    metadata:
+      labels:
+        name: nova-conductor
+{{ tuple . "nova" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+    spec:
+{{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
+      hostname: nova-conductor
+      initContainers:
+        - name: nova-db-sync
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          command: ['sh', '-c', 'nova-manage db sync --local_cell']
+          volumeMounts:
+            - mountPath: /etc/nova
+              name: etcnova
+            - mountPath: /etc/nova/nova.conf
+              name: nova-etc
+              subPath: nova-cell2.conf
+              readOnly: true
+      containers:
+        - name: nova-conductor
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "nova-conductor --config-file etc/nova/nova.conf --config-file /etc/nova/nova-conductor.conf --config-file /etc/nova/nova-cell2.conf"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-postgresql"
+{{- if .Values.python_warnings}}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+{{- end }}
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 20
+          {{- if .Values.pod.resources.conductor }}
+          resources:
+{{ toYaml .Values.pod.resources.conductor | indent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /etc/nova
+              name: etcnova
+            - mountPath: /etc/nova/nova.conf
+              name: nova-etc
+              subPath: nova.conf
+              readOnly: true
+            - mountPath: /etc/nova/nova-cell2.conf
+              name: nova-etc
+              subPath: nova-cell2.conf
+              readOnly: true
+            - mountPath: /etc/nova/nova-conductor.conf
+              name: nova-etc
+              subPath: nova-conductor.conf
+              readOnly: true
+            - mountPath: /etc/nova/logging.ini
+              name: nova-etc
+              subPath: logging.ini
+              readOnly: true
+      volumes:
+        - name: etcnova
+          emptyDir: {}
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+{{- end }}

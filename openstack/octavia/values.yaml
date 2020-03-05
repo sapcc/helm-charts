@@ -1,0 +1,86 @@
+# Default values for octavia.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 3
+
+api_port_internal: 9876
+api_backdoor: false
+
+global:
+  imageNamespace: monsoon
+  master_password: ""
+  dbUser: octavia
+
+db_name: octavia
+
+mariadb:
+  enabled: true
+  name: octavia
+  initdb_configmap: octavia-initdb
+  persistence_claim:
+    name: db-octavia-pvclaim
+
+ingress:
+  annotations:
+    vice-president: "true"
+    disco: "true"
+
+mysql_metrics:
+  db_name: octavia
+  db_user: octavia
+
+pod:
+  resources:
+    api: null
+    housekeeping: null
+    worker: null
+    driver_agent: null
+    status_manager: null
+
+providers: "noop_driver: 'The No-Op driver.', f5: 'F5 BigIP driver.'"
+default_provider: "f5"
+
+# Deploy Octavia Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+
+sentry:
+  enabled: true
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: "raven.handlers.logging.SentryHandler"
+      level: ERROR
+      transport: ThreadedRequestsHTTPTransport
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    octavia:
+      handlers: stdout, sentry
+      level: DEBUG
+    octavia.common.keystone:
+      handlers: stdout, sentry
+      level: WARNING
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
+

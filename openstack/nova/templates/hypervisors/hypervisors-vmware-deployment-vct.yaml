@@ -1,0 +1,197 @@
+{{- if or (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (.Values.isImageTransportTemplating | default false) }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vcenter-cluster-nova-compute-deployment'
+  scope: 'cluster'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  apiVersion: extensions/v1beta1
+  kind: Deployment
+  metadata:
+    name: nova-compute-{= name =}
+    labels:
+      system: openstack
+      type: backend
+      component: nova
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
+    selector:
+      matchLabels:
+          name: nova-compute-{= name =}
+    template:
+      metadata:
+        labels:
+{{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
+          name: nova-compute-{= name =}
+          hypervisor: "vmware"
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "9102"
+          prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+          configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+          configmap-nova-compute-hash: {= "vcenter_cluster/{{ .Release.Namespace }}/vcenter-cluster-nova-compute-configmap.yaml.j2" | render | sha256sum =}
+      spec:
+{{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
+        containers:
+        - name: nova-compute
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.global.image_namespace }}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          terminationGracePeriodSeconds: 900
+          command:
+          - dumb-init
+          - kubernetes-entrypoint
+          env:
+          - name: COMMAND
+            value: "nova-compute"
+          - name: NAMESPACE
+            value: {{ .Release.Namespace }}
+          - name: SENTRY_DSN
+            value: {{ .Values.sentry_dsn | quote }}
+          - name: STATSD_HOST
+            value: "localhost"
+          - name: STATSD_PORT
+            value: "9125"
+          - name: PYTHONWARNINGS
+            value: "ignore:Unverified HTTPS request"
+          - name: PGAPPNAME
+            value: nova-compute-{= name =}
+          {{- if .Values.pod.resources.hv_vmware }}
+          resources:
+{{ toYaml .Values.pod.resources.hv_vmware | indent 12 }}
+          {{- end }}
+          volumeMounts:
+          - mountPath: /etc/nova
+            name: etcnova
+          - mountPath: /etc/nova/nova.conf
+            name: nova-etc
+            subPath: nova.conf
+            readOnly: true
+          - mountPath: /etc/nova/policy.json
+            name: nova-etc
+            subPath: policy.json
+            readOnly: true
+          - mountPath: /etc/nova/logging.ini
+            name: nova-etc
+            subPath: logging.ini
+            readOnly: true
+          - mountPath: /etc/nova/nova-compute.conf
+            name: hypervisor-config
+            subPath: nova-compute.conf
+            readOnly: true
+          - mountPath: /etc/nova/hostgroup-reservations.json
+            name: hypervisor-config
+            subPath: hostgroup-reservations.json
+            readOnly: true
+          - mountPath: /etc/sudoers
+            name: nova-etc
+            subPath: sudoers
+            readOnly: true
+          - mountPath: /etc/nova/rootwrap.conf
+            name: nova-etc
+            subPath: rootwrap.conf
+            readOnly: true
+          - mountPath: /etc/nova/rootwrap.d/compute.filters
+            name: nova-etc
+            subPath: compute.filters
+            readOnly: true
+        {{- if .Values.neutron_dvs_agent_enabled }}
+        - name: neutron-dvs-agent
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init"]
+          args: ["neutron-dvs-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-vmware.ini"]
+          env:
+          - name: SENTRY_DSN
+            value: {{ .Values.neutron.sentry_dsn | quote }}
+          - name: STATSD_HOST
+            value: "localhost"
+          - name: STATSD_PORT
+            value: "9125"
+          - name: PYTHONWARNINGS
+            value: "ignore:Unverified HTTPS request"
+          - name: PGAPPNAME
+            value: neutron-dvs-agent-{= name =}
+          livenessProbe:
+            initialDelaySeconds: 300
+            periodSeconds: 5
+            exec:
+              command:
+              - bash
+              - -c
+              - "[ -f /tmp/neutron-dvs-agent.alive ] && [ $(($(date +%s) - $(date -r /tmp/neutron-dvs-agent.alive +%s))) -lt 300 ]"
+          {{- if .Values.pod.resources.hv_vmware_dvs }}
+          resources:
+{{ toYaml .Values.pod.resources.hv_vmware_dvs | indent 12 }}
+          {{- end }}
+          volumeMounts:
+          - mountPath: /etc/neutron
+            name: etcneutron
+          - mountPath: /etc/neutron/neutron.conf
+            name: neutron-etc
+            subPath: neutron.conf
+            readOnly: true
+          - mountPath: /etc/neutron/api-paste.ini
+            name: neutron-etc
+            subPath: api-paste.ini
+            readOnly: true
+          - mountPath: /etc/neutron/policy.json
+            name: neutron-etc
+            subPath: neutron-policy.json
+            readOnly: true
+          - mountPath: /etc/neutron/logging.conf
+            name: neutron-etc
+            subPath: logging.conf
+            readOnly: true
+          - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
+            name: neutron-etc
+            subPath: ml2-conf.ini
+            readOnly: true
+          - mountPath: /etc/neutron/plugins/ml2/ml2-vmware.ini
+            name: ml2-conf-vmware
+            subPath: ml2-vmware.ini
+            readOnly: true
+        {{- end }}
+        - name: statsd
+          image: prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          ports:
+          - name: statsd
+            containerPort: 9125
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+          volumeMounts:
+            - name: nova-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+        volumes:
+        - name: etcnova
+          emptyDir: {}
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+        - name: hypervisor-config
+          configMap:
+            name: nova-compute-vmware-{= name =}
+       {{- if .Values.neutron_dvs_agent_enabled }}
+        - name: etcneutron
+          emptyDir: {}
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+        - name: ml2-conf-vmware
+          configMap:
+            name: neutron-ml2-vmware-{= name =}
+        {{- end }}
+{{- end }}

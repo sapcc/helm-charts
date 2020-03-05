@@ -1,3 +1,4 @@
+{{- if .Values.tempestAdminPassword }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -24,25 +25,51 @@ spec:
       description: 'Tempest Test Project 1'
     - name: tempest2
       description: 'Tempest Test Project 2'
+    - name: tempest3
+      description: 'Tempest Test Project 3'
+    - name: tempest4
+      description: 'Tempest Test Project 4'
+    - name: tempest5
+      description: 'Tempest Test Project 5'
 
     users:
     - name: admin
       description: 'Tempest Administrator'
       password: {{ .Values.tempestAdminPassword | quote }}
-      roles:
+      role_assignments:
       - project: admin
+        role: admin
+      - system: all
         role: admin
     - name: tempestuser1
       description: 'Tempest Test User 1'
       password: {{ .Values.tempestAdminPassword | quote }}
-      roles:
+      role_assignments:
       - project: tempest1
         role: admin
     - name: tempestuser2
       description: 'Tempest Test User 2'
       password: {{ .Values.tempestAdminPassword | quote }}
-      roles:
+      role_assignments:
       - project: tempest2
+        role: admin
+    - name: tempestuser3
+      description: 'Tempest Test User 3'
+      password: {{ .Values.tempestAdminPassword | quote }}
+      role_assignments:
+      - project: tempest3
+        role: admin
+    - name: tempestuser4
+      description: 'Tempest Test User 4'
+      password: {{ .Values.tempestAdminPassword | quote }}
+      role_assignments:
+      - project: tempest4
+        role: admin
+    - name: tempestuser5
+      description: 'Tempest Test User 5'
+      password: {{ .Values.tempestAdminPassword | quote }}
+      role_assignments:
+      - project: tempest5
         role: admin
 
     groups:
@@ -50,7 +77,7 @@ spec:
       description: 'Administrators'
       users:
       - admin
-      roles:
+      role_assignments:
       - project: admin
         role: admin
       - project: service
@@ -60,3 +87,4 @@ spec:
       - domain: tempest
         role: admin
         inherited: true
+{{- end }}

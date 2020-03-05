@@ -1,0 +1,15 @@
+{{- if .Values.alerts.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: secrets-exporter-certificate-expiry
+  labels:
+    app: k8s-secrets-certificate-exporter
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_cert-expiry.alerts.tpl") . | indent 2 }}
+
+{{- end }}

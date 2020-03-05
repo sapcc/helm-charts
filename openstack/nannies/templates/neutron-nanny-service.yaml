@@ -1,0 +1,22 @@
+{{- if .Values.neutron_nanny.enabled }}
+{{- if .Values.neutron_nanny.cleanup_pending_lb.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: neutron-nanny
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: neutron-nanny
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9456"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  selector:
+    component: neutron-nanny
+  ports:
+    - name: metrics
+      port: 9456
+{{- end }}
+{{- end }}

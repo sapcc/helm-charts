@@ -1,0 +1,40 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "region_check.fullname" . }}
+  labels:
+    system: openstack
+    type: configuration
+    app.kubernetes.io/name: {{ include "region_check.name" . }}
+    helm.sh/chart: {{ include "region_check.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": "pre-upgrade"
+    "helm.sh/hook-weight": "-42"
+    "helm.sh/hook-delete-policy": "hook-succeeded,hook-failed"
+spec:
+{{ if ge .Capabilities.KubeVersion.Minor "8" }}
+  backoffLimit: 2
+{{ else }}
+  activeDeadlineSeconds: 120
+{{ end }}
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: check
+          image: hub.global.cloud.sap/monsoon/kube-python:1.0.0
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-c"]
+          args: ["/container.init/region-check.py --namespace {{ .Release.Namespace }} --region {{ .Values.global.region }} --suffix {{ .Values.global.tld }}"]
+          volumeMounts:
+            - mountPath: /container.init
+              name: container-init
+      volumes:
+        - name: container-init
+          configMap:
+            name: {{ include "region_check.fullname" . }}
+            defaultMode: 0755
+{{- end }}

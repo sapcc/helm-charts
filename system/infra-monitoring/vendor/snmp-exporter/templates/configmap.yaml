@@ -1,0 +1,230 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+data:
+  snmp-exporter.yaml: |
+{{- if .Values.arista.snmpv3.enabled }}
+    asw:
+{{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
+      version: {{ .Values.arista.snmpv3.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.arista.snmpv3.security_level }}
+        username: {{ .Values.arista.snmpv3.username }}
+        password: {{ .Values.arista.snmpv3.password }}
+        auth_protocol: {{ .Values.arista.snmpv3.auth_protocol }}
+        priv_protocol: {{ .Values.arista.snmpv3.priv_protocol }}
+        priv_password: {{ .Values.arista.snmpv3.priv_password }}
+{{- else }}
+    asw:
+{{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
+      version: {{ .Values.arista.version }}
+      auth:
+        community: {{ .Values.arista.community }}
+{{- end }}
+{{- if .Values.arista.snmpv3.enabled }}
+    asw9:
+  {{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
+      version: {{ .Values.arista.snmpv3.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.arista.snmpv3.security_level }}
+        username: {{ .Values.arista.snmpv3.username }}
+        password: {{ .Values.arista.snmpv3.password }}
+        auth_protocol: {{ .Values.arista.snmpv3.auth_protocol }}
+        priv_protocol: {{ .Values.arista.snmpv3.priv_protocol }}
+        priv_password: {{ .Values.arista.snmpv3.priv_password }}
+{{- else }}
+    asw9:
+{{ .Files.Get "_snmp-exporter-arista.yaml" | indent 4}}
+      version: {{ .Values.arista.version }}
+      auth:
+        community: {{ .Values.arista.community }}
+{{- end }}
+{{- if .Values.asa.enabled }}
+    asa:
+{{ .Files.Get "_snmp-exporter-asa.yaml" | indent 4}}
+      version: {{ .Values.asa.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.asa.security_level }}
+        username: {{ .Values.asa.username }}
+        password: {{ .Values.asa.password }}
+        auth_protocol: {{ .Values.asa.auth_protocol }}
+        priv_protocol: {{ .Values.asa.priv_protocol }}
+        priv_password: {{ .Values.asa.priv_password }}
+{{- end }}
+    asr:
+{{ .Files.Get "_snmp-exporter-asr.yaml" | indent 4}}
+      version: {{ .Values.asr.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.asr.security_level }}
+        username: {{ .Values.asr.username }}
+        password: {{ .Values.asr.password }}
+        auth_protocol: {{ .Values.asr.auth_protocol }}
+        priv_protocol: {{ .Values.asr.priv_protocol }}
+        priv_password: {{ .Values.asr.priv_password }}
+{{ .Files.Get "_snmp-exporter-f5customer.yaml" | indent 4}}
+      version: {{ .Values.f5.version }}
+      auth:
+        community: {{ .Values.f5.community }}
+{{ .Files.Get "_snmp-exporter-f5mgmt.yaml" | indent 4}}
+      version: {{ .Values.f5.version }}
+      auth:
+        community: {{ .Values.f5.community }}
+{{ .Files.Get "_snmp-exporter-f5physical.yaml" | indent 4}}
+      version: {{ .Values.f5.version }}
+      auth:
+        community: {{ .Values.f5.community }}
+    asr03:
+{{ .Files.Get "_snmp-exporter-asr03.yaml" | indent 4}}
+      version: {{ .Values.asr03.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.asr03.security_level }}
+        username: {{ .Values.asr03.username }}
+        password: {{ .Values.asr03.password }} 
+        auth_protocol: {{ .Values.asr03.auth_protocol }}
+        priv_protocol: {{ .Values.asr03.priv_protocol }}
+        priv_password: {{ .Values.asr03.priv_password }}
+    asr04:
+{{ .Files.Get "_snmp-exporter-asr04.yaml" | indent 4}}
+      version: {{ .Values.asr04.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.asr04.security_level }}
+        username: {{ .Values.asr04.username }}
+        password: {{ .Values.asr04.password }}
+        auth_protocol: {{ .Values.asr04.auth_protocol }}
+        priv_protocol: {{ .Values.asr04.priv_protocol }}
+        priv_password: {{ .Values.asr04.priv_password }}
+    n3k:
+{{ .Files.Get "_snmp-exporter-n3k.yaml" | indent 4}}
+      version: {{ .Values.n3k.version }}
+      auth:
+        community: {{ .Values.n3k.community }}
+{{- if .Values.global.n7k.enabled }}
+    n7k:
+{{ .Files.Get "_snmp-exporter-n7k.yaml" | indent 4}}
+      version: {{ .Values.global.n7k.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.global.n7k.security_level }}
+        username: {{ .Values.global.n7k.username }}
+        password: {{ .Values.global.n7k.password }} 
+        auth_protocol: {{ .Values.global.n7k.auth_protocol }}
+        priv_protocol: {{ .Values.global.n7k.priv_protocol }}
+        priv_password: {{ .Values.global.n7k.priv_password }}
+{{- range $switch := .Values.global.n7k.context }}
+    n7k{{ $switch.context_name | lower }}:
+{{ $.Files.Get "_snmp-exporter-n7k-context.yaml" | indent 4}}
+      version: {{ $switch.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ $switch.security_level }}
+        username: {{ $switch.username }}
+        password: {{ $switch.password }} 
+        auth_protocol: {{ $switch.auth_protocol }}
+        priv_protocol: {{ $switch.priv_protocol }}
+        priv_password: {{ $switch.priv_password }}
+        context_name: {{ $switch.context_name }}
+{{- end }}
+{{- else if .Values.n7k.community }}
+    n7k:
+{{ $.Files.Get "_snmp-exporter-n7k.yaml" | indent 4}}
+      version: {{ .Values.n7k.version }}
+      auth:
+        community: {{ .Values.n7k.community }}
+{{- end }}
+{{ .Files.Get "_snmp-exporter-pxdlrouternxos.yaml" | indent 4}}
+      version: {{ .Values.pxdlrouternxos.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.pxdlrouternxos.security_level }}
+        username: {{ .Values.pxdlrouternxos.username }}
+        password: {{ .Values.pxdlrouternxos.password }}
+        auth_protocol: {{ .Values.pxdlrouternxos.auth_protocol }}
+        priv_protocol: {{ .Values.pxdlrouternxos.priv_protocol }}
+        priv_password: {{ .Values.pxdlrouternxos.priv_password }}
+    acileaf:
+{{ .Files.Get "_snmp-exporter-acileaf.yaml" | indent 4}}
+      version: {{ .Values.acileaf.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.acileaf.security_level }}
+        username: {{ .Values.acileaf.username }}
+        password: {{ .Values.acileaf.password }}
+        auth_protocol: {{ .Values.acileaf.auth_protocol }}
+        priv_protocol: {{ .Values.acileaf.priv_protocol }}
+        priv_password: {{ .Values.acileaf.priv_password }}
+{{ .Files.Get "_snmp-exporter-n9kpx.yaml" | indent 4}}
+      version: {{ .Values.n9kpx.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.n9kpx.security_level }}
+        username: {{ .Values.n9kpx.username }}
+        password: {{ .Values.n9kpx.password }}
+        auth_protocol: {{ .Values.n9kpx.auth_protocol }}
+        priv_protocol: {{ .Values.n9kpx.priv_protocol }}
+        priv_password: {{ .Values.n9kpx.priv_password }}
+{{- if .Values.ipn.enabled }}
+    ipn:
+{{ .Files.Get "_snmp-exporter-ipn.yaml" | indent 4}}
+      version: {{ .Values.ipn.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.ipn.security_level }}
+        username: {{ .Values.ipn.username }}
+        password: {{ .Values.ipn.password }}
+        auth_protocol: {{ .Values.ipn.auth_protocol }}
+        priv_protocol: {{ .Values.ipn.priv_protocol }}
+        priv_password: {{ .Values.ipn.priv_password }}
+{{- end }}
+{{ .Files.Get "_snmp-exporter-acispine.yaml" | indent 4}}
+      version: {{ .Values.acispine.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.acispine.security_level }}
+        username: {{ .Values.acispine.username }}
+        password: {{ .Values.acispine.password }}
+        auth_protocol: {{ .Values.acispine.auth_protocol }}
+        priv_protocol: {{ .Values.acispine.priv_protocol }}
+        priv_password: {{ .Values.acispine.priv_password }}
+{{ .Files.Get "_snmp-exporter-acistretch.yaml" | indent 4}}
+      version: {{ .Values.acistretch.version }}
+      auth:
+        community: {{ .Values.acistretch.community }}

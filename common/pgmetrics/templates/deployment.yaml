@@ -1,3 +1,4 @@
+{{- if .Release.IsUpgrade }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -32,6 +33,7 @@ spec:
         # Would be nice to have metrics in Maia as well: maia.io/scrape: "true"
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ default 9187 .Values.port | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       containers:
       - name: metrics
@@ -68,7 +70,6 @@ spec:
             cpu: {{ .Values.resources.requests.cpu | quote }}
             memory: {{ .Values.resources.requests.memory | quote }}
         {{- end }}
-      {{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
       {{- if .Values.dependencyJobs }}
       initContainers:
         - name: init
@@ -82,7 +83,6 @@ spec:
           command:
             - kubernetes-entrypoint
       {{- end }}
-      {{- end }}
       volumes:
       {{- if .Values.customMetrics }}
       - name: custom-metrics
@@ -92,3 +92,4 @@ spec:
           - key: custom-metrics.yaml
             path: custom-metrics.yaml
       {{- end }}
+{{- end }}

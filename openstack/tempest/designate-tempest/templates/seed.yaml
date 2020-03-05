@@ -1,0 +1,55 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Chart.Name }}-seed
+  labels:
+    component: designate
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-tempest-seed
+
+  domains:
+  - name: tempest
+    dns_quota:
+      api_export_size: 2000
+      recordset_records: 2000
+      zone_records: 10000
+      zone_recordsets: 10000
+      zones: 1000
+    projects:
+    - name: tempest1
+      role_assignments:
+        - user: admin@Default
+          role: cloud_dns_admin
+      dns_quota:
+        api_export_size: 2000
+        recordset_records: 2000
+        zone_records: 2000
+        zone_recordsets: 2000
+        zones: 200
+    - name: tempest2
+      role_assignments:
+        - user: admin@Default
+          role: cloud_dns_admin
+      dns_quota:
+        api_export_size: 2000
+        recordset_records: 2000
+        zone_records: 2000
+        zone_recordsets: 2000
+        zones: 200
+    users:
+    - name: tempestuser1
+      role_assignments:
+      - project: tempest1
+        role: cloud_dns_ops
+      - domain: tempest
+        role: cloud_dns_ops
+    - name: tempestuser2
+      role_assignments:
+      - project: tempest2
+        role: cloud_dns_ops
+      - domain: tempest
+        role: cloud_dns_ops

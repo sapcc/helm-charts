@@ -1,0 +1,28 @@
+groups:
+- name: kubernetes-controller-manager.alerts
+  rules:
+    - alert: KubernetesControllerManagerDown
+      expr: count(up{job="kube-system/controller-manager"} == 1) == 0
+      for: 5m
+      labels:
+        tier: k8s
+        service: k8s
+        severity: warning
+        context: controller-manager
+        dashboard: kubernetes-health
+      annotations:
+        description: No controller-manager is running. Deployments and replication controllers are not making progress
+        summary: Controller manager is down
+
+    - alert: KubernetesControllerManagerScrapeMissing
+      expr: absent(up{job="kube-system/controller-manager"})
+      for: 1h
+      labels:
+        tier: k8s
+        service: k8s
+        severity: info
+        context: controller-manager
+        dashboard: kubernetes-health
+      annotations:
+        description: ControllerManager failed to be scraped
+        summary: ControllerManager cannot be scraped

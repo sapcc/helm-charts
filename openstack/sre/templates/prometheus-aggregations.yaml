@@ -1,0 +1,31 @@
+{{- $values := .Values }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: openstack-sre-aggregations
+  labels:
+    tier: sre
+    type: aggregation-rules
+    prometheus: {{ required ".Values.prometheus.aggregations missing" $values.prometheus.aggregations }}
+
+spec:
+  groups:
+  - name: openstack-sre.aggregations
+    rules:
+{{- range $api, $slo := $values.slo.api_error_ratio_percent }}
+    - record: global:api_errors_per_request_slo:percent
+      labels:
+          ingress: {{ $api | quote }}
+          region: {{required ".Values.global.region missing" $values.global.region}}
+      expr: {{ $slo | quote }}
+
+{{- end }}
+
+{{- range $period := $values.periods }}
+    - record: global:api_errors_per_request_sli:ratio_rate{{$period}}
+      expr: |2
+          (sum by(region,ingress) (rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}])) OR (0 * count by (region, ingress) (nginx_ingress_controller_requests) )) /  sum by(region, ingress) (rate(nginx_ingress_controller_requests[{{$period}}]))
+
+{{- end }}

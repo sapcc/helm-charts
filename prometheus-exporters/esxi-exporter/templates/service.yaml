@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: esxi-exporter
+  namespace: infra-monitoring
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.listen_port | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  selector:
+    app: esxi-exporter
+  ports:
+    - name: metrics
+      port: {{ .Values.listen_port }}

@@ -1,11 +1,9 @@
-{{- if .Values.shares }}
-{{- range $az, $shares := .Values.shares -}}
-{{- range $i, $share := $shares.shares_netapp -}}
-{{ list $ $share $az | include "share_netapp" }}
+{{- if required ".Values.global.netapp is missing" .Values.global.netapp }}
+{{- if .Values.global.netapp.filers }}
+{{- range $i, $share := .Values.global.netapp.filers -}}
+{{ list $ $share | include "share_netapp" }}
 ---
-{{ list $ $share $az | include "share_netapp_nanny" }}
----
-{{ list $ $share $az | include "share_netapp_configmap" }}
+{{ list $ $share | include "share_netapp_configmap" }}
 ---
 {{- end -}}
 {{- end -}}

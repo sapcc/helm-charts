@@ -1,0 +1,190 @@
+{{- if (semverCompare ">= 1.9-0" .Capabilities.KubeVersion.GitVersion) }} 
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1 
+{{- end}}
+kind: DaemonSet
+metadata:
+  labels:
+    k8s-app: kube-proxy
+  name: kube-proxy
+spec:
+  selector:
+    matchLabels:
+      name: kube-proxy
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: kube-proxy
+        k8s-app: kube-proxy
+      annotations:
+        configmap-kube-proxy-hash: {{ include (print $.Template.BasePath "/configmap-kube-proxy.yaml") $ | sha256sum }}
+{{- if .Values.sidecars.ipmasq }}
+        configmap-ipmasq-hash: {{ include (print $.Template.BasePath "/configmap-ipmasq.yaml") $ | sha256sum }}  
+{{- end }}
+{{- if (semverCompare "< 1.13-0" .Capabilities.KubeVersion.GitVersion ) }}
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+{{- end }}
+    spec:
+{{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
+      priorityClassName: system-node-critical
+{{- end }}
+      containers:
+      - name: proxy
+        image: "{{ .Values.images.proxy.repository }}:{{ .Values.images.proxy.tag }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /hyperkube
+          - kube-proxy
+          - --config=/var/lib/kube-proxy/config
+          - --hostname-override=$(NODE_NAME)
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        livenessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /healthz
+            port: 10249
+          initialDelaySeconds: 15
+          timeoutSeconds: 1
+        securityContext:
+           privileged: true
+        volumeMounts:
+          - mountPath: /var/lib/kube-proxy
+            name: kube-proxy
+          - mountPath: /run/xtables.lock
+            name: xtables-lock
+            readOnly: false
+          - mountPath: /lib/modules
+            name: lib-modules
+            readOnly: true
+        {{ if .Values.proxy.metricPort -}}
+        ports:
+          - name: proxy-metrics
+            containerPort: {{ required ".Values.proxy.metricPort missing" .Values.proxy.metricPort }}
+        {{- end }}
+{{- if .Values.sidecars.parrot }}
+      - name: parrot
+        image: "{{ .Values.images.parrot.repository }}:{{ .Values.images.parrot.tag }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /parrot
+          - --as={{ required ".Values.parrot.as" .Values.parrot.as }}
+          - --nodename=$(NODE_NAME)
+          - --hostip=$(HOST_IP)
+          - --logtostderr
+{{- if .Values.parrot.metricPort }}
+          - --metric-port={{ .Values.parrot.metricPort }}
+{{- end }}
+{{- if .Values.parrot.neighbors }}
+{{- range $neighbor := .Values.parrot.neighbors }}
+          - --neighbor={{ $neighbor }}
+{{- end }}
+{{- end }}
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP 
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        volumeMounts:
+          - name: etc-kubernetes-kube-parrot
+            mountPath: /etc/kubernetes/kube-parrot
+        {{ if .Values.parrot.metricPort -}}
+        ports:
+          - name: parrot-metrics
+            containerPort: {{ .Values.parrot.metricPort }}
+            hostPort: {{ .Values.parrot.metricPort }}
+        {{- end }}
+{{- end }}
+{{- if .Values.sidecars.externalip }}
+      - name: externalip
+        image: "{{ .Values.images.externalip.repository }}:{{ .Values.images.externalip.tag }}"
+        command:
+          - /externalip 
+{{- if .Values.externalip.ignoreaddress }}
+          - --ignore-address={{ .Values.externalip.ignoreaddress}} 
+{{- end }}
+          - --source-address=$(HOST_IP) 
+          - --interface=dummy0 
+          - --logtostderr 
+        env: 
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        securityContext:
+            privileged: true
+{{- end }}
+{{- if .Values.sidecars.nanny }}
+      - name: nanny
+        imagePullPolicy: IfNotPresent
+        image: "{{ .Values.images.nanny.repository }}:{{ .Values.images.nanny.tag }}"
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+{{- end }}
+{{- if .Values.sidecars.ipmasq }}
+      - name: ipmasq
+        image: "{{ .Values.images.ipmasq.repository }}:{{ .Values.images.ipmasq.tag }}"
+        securityContext:
+          privileged: false
+          capabilities:
+            add: ["NET_ADMIN", "NET_RAW"]
+        volumeMounts:
+          - name: ipmasq
+            mountPath: /etc/config
+{{- end }}
+      hostNetwork: true
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+{{- if .Values.selector }}
+        kubernetes.cloud.sap/provisioned-by: kubernikus
+{{- end }}
+      serviceAccountName: kube-proxy
+      terminationGracePeriodSeconds: 5
+      tolerations:
+{{- if .Values.toleration }}
+        - key: "kubernetes.cloud.sap/unification"
+          operator: "Exists"
+          effect: "NoSchedule"
+{{- else }}
+        - operator: Exists
+{{- end }}
+      volumes:
+        - name: kube-proxy
+          configMap:
+            name: kube-proxy
+        - name: xtables-lock
+          hostPath:
+            path: /run/xtables.lock
+            type: FileOrCreate
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+{{- if .Values.sidecars.ipmasq }}
+        - name: ipmasq
+          configMap:
+            name: ipmasq
+{{- end }}
+{{- if .Values.sidecars.parrot }}
+        - name: etc-kubernetes-kube-parrot
+          hostPath:
+            path: /etc/kubernetes/kube-parrot
+{{- end }}

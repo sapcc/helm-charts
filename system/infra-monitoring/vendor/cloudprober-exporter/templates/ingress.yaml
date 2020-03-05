@@ -1,0 +1,42 @@
+{{- if .Values.enabled }}
+{{- $values := .Values -}}
+
+{{- range $i, $prober := .Values.probers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: cloudprober-exporter-{{$prober.name}}
+  labels:
+    app: cloudprober-exporter
+    release: "{{$.Release.Name}}"
+  annotations:
+    vice-president: {{ default false $values.ingress.vice_president | quote }}
+    disco: {{ default false $values.ingress.disco | quote }}
+
+spec:
+  tls:
+    - secretName: cloudprober-exporter-{{$prober.name}}
+      hosts: [{{$values.ingress.hostName_prefix}}-{{$prober.name}}.{{$values.global.region}}.{{$values.global.domain}}]
+  rules:
+    - host: {{$values.ingress.hostName_prefix}}-{{$prober.name}}.{{$values.global.region}}.{{$values.global.domain}}
+      http:
+        paths:
+        - path: /metrics
+          backend:
+            serviceName: cloudprober-exporter-{{$prober.name}}
+            servicePort: 9313
+        - path: /config
+          backend:
+            serviceName: cloudprober-exporter-{{$prober.name}}
+            servicePort: 9313
+        - path: /web
+          backend:
+            serviceName: cloudprober-exporter-{{$prober.name}}
+            servicePort: 1080
+
+---
+{{ end -}}
+{{ end -}}

@@ -19,14 +19,14 @@ spec:
     projects:
     - name: cloud_admin
       description: 'Cloud Administrator Project'
-      roles:
+      role_assignments:
       - user: admin@Default
         role: admin
     - name: admin
       description: 'Domain Administrator Project'
     - name: master
       description: 'Container Project'
-      roles:
+      role_assignments:
       - user: admin@Default
         role: admin
     - name: ccadmin-net-infra
@@ -35,11 +35,21 @@ spec:
       description: 'Home of private networks, backup networks and routers for the ccadmin domain'
     - name: BaremetalMonitoring
       description: 'Appliances used for monitoring bare metal servers'
-      roles:
+      role_assignments:
       - group: CCADMIN_CLOUD_ADMINS
         role: admin
       - group: CCADMIN_CLOUD_ADMINS
         role: member
+      - group: CCADMIN_BAME_ADMIN
+        role: admin
+      - group: CCADMIN_BAME_ADMIN
+        role: member
+      - user: TCC_D032408_WS
+        role: admin
+      - user: TCC_D032408_WS
+        role: automation_admin
+      - user: TCC_D032408_WS
+        role: securitygroup_admin
     - name: support
       description: 'Support Teams'
     - name: api_support
@@ -75,7 +85,7 @@ spec:
 
     groups:
     - name: CCADMIN_API_SUPPORT
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: admin
       - domain: ccadmin
@@ -91,7 +101,7 @@ spec:
         role: member
 
     - name: CCADMIN_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: cloud_identity_viewer
         inherited: true
@@ -105,7 +115,7 @@ spec:
         role: member
 
     - name: CCADMIN_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: cloud_identity_viewer
         inherited: true
@@ -119,7 +129,7 @@ spec:
         role: member
 
     - name: CCADMIN_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: cloud_identity_viewer
         inherited: true
@@ -133,7 +143,7 @@ spec:
         role: member
 
     - name: CCADMIN_SERVICE_DESK
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: cloud_identity_viewer
         inherited: true
@@ -143,12 +153,12 @@ spec:
         role: member
 
     - name: CCADMIN_DOMAIN_MEMBERS
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: member
 
     - name: CCADMIN_DOMAIN_ADMINS
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: admin
       - domain: ccadmin
@@ -169,7 +179,7 @@ spec:
         role: admin
 
     - name: CCADMIN_CLOUD_ADMINS
-      roles:
+      role_assignments:
       - domain: ccadmin
         role: admin
       - domain: ccadmin
@@ -194,7 +204,7 @@ spec:
         role: admin
 
     - name: CCADMIN_DOMAIN_NETWORK_ADMINS
-      roles:
+      role_assignments:
       - project: ccadmin-net-infra
         role: admin
 
@@ -207,7 +217,7 @@ spec:
         tls_req_cert: allow
         url: {{ .Values.ldapUrl | quote }}
         user: {{ .Values.ldapUser | quote }}
-        password: {{ .Values.ldapPassword | quote }}
+        password: {{ required "A valid .Values.ldapPassword required!" .Values.ldapPassword | quote }}
         suffix: {{ .Values.ldapSuffix | quote }}
         query_scope: one
         user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
@@ -228,9 +238,9 @@ spec:
         group_desc_attribute: description
         group_member_attribute: member
         group_tree_dn: OU=CCADMIN,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
-        use_pool: true
-        pool_size: 10
-        pool_connection_lifetime: 60
-        use_auth_pool: true
+        use_pool: {{ .Values.ldapUsePool }}
+        pool_size: 100
+        use_auth_pool: {{ .Values.ldapUseAuthPool }}
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
+        debug_level: {{ .Values.ldapDebugLevel }}

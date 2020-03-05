@@ -8,23 +8,32 @@ global:
 # region: cluster
 # clusterDomain: cluster.local
   dbUser: keystone
-  dbPassword: DEFINED-IN-REGION-CHART
+  dbPassword: ""
 # imageRegistry: hub.global.cloud.sap
 
-debug: False
+debug: false
+insecure_debug: false
 
 # run a db_sync to migrate the db schema ?
-run_db_migration: False
+run_db_migration: false
 
 # ignore invalid role assignments
-skipRepairRoleAssignments: False
+skipRepairRoleAssignments: false
+
+# suppress pre-deployment region check
+skipRegionCheck: false
 
 # current keystone release
-release: queens
+release: rocky
+
+## Affinity for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
+nodeAffinity: {}
 
 api:
   image: "monsoon/loci-keystone"
-  imageTag: queens-20180814091359
+  #imageTag: latest
 
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
@@ -33,11 +42,20 @@ api:
   # imagePullPolicy:
 
   adminUser: admin
-  adminPassword: secret
+  adminPassword: ""
   adminProjectName: admin
   cloudAdminDomainName: Default
   cloudAdminProjectName: admin
-  cloudAdminProjectId: put-your-cloud-admin-project-id-here
+  cloudAdminProjectId: ""
+
+  # run keystone with pre-stein .json policy file or current train .yaml policy (with system scope support)
+  policy: json
+
+  ## specify override default tags to be added to each newly created project
+  ## else they will be calculated based on the availability zones
+  # default_tags:
+  #   - vc-a-0
+  #   - vc-b-0
 
   notifications:
     enabled: true
@@ -58,18 +76,17 @@ api:
     allow_expired_window: 28800
     # maximum size of a token (LDAP seems to go over the default 255)
     max_token_size: 268
+    # The number of seconds to cache token creation and validation data.
+    cache_time: 3600
 
   fernet:
     maxActiveKeys: 3
     secrets:
-    - c1dVSlFZVjRQRnBGR3pwSk1nMll6eEFwX2VDNURwRFVzLVd5aEVYaVI1dz0=
-    - M1V0dHp6bk5LYzVlQ1doMjdvUUctSGdmVFFEcWxIeDZXdHFDT25vT3RHUT0=
-    - WmlYLUZUZ1BNVnNPU2tib01YUkc0SkhZMGswLXFfeVF0eTdHbVBjSDZjND0=
+      0: <put-your-fernet-keys-here>
 
   credentials:
     secrets:
-    - RUdXZU5oVFR1TUU3TkFqazJrZWpqSE5vZ0lqeHFMTTljeUZxb2dZakNQZz0=
-    - OUhUQnBzTDBLTkFfTnhqZlFWX0dmc0tlc2FnUUZYTFBrN2hpWldpQmN6cz0=
+      0: <put-your-credential-keys-here>
 
   auth:
   # Allowed authentication methods. (list value)
@@ -84,13 +101,6 @@ api:
     port: 1812
     secret: <your-shared-secret>
 
-  # Trusted x509 certificate
-  cc_x509:
-    trusted_issuer_cn: SSO_CA
-    trusted_issuer_o: SAP-AG
-    user_domain_id_header: HTTP_X_USER_DOMAIN_ID
-    user_domain_name_header: HTTP_X_USER_DOMAIN_NAME
-
   # OAuth1
   oauth1:
     # Number of seconds for the OAuth Request Token to remain valid after being
@@ -103,36 +113,39 @@ api:
     # means that access tokens will last forever. (integer value)
     access_token_duration: 0
 
+  identity:
+    # Maximum number of entities that will be returned in an identity collection. 0 disables the limit
+    list_limit: 1500
+
   metrics:
     enabled: true
     port: '9102'
 
     image: prom/statsd-exporter
-    imageTag: v0.5.0
+    imageTag: v0.12.2
     prefix: openstack
 
     resources:
       enabled: false
-      limits:
-        memory: 128Mi
-        cpu: 500m
       requests:
-        memory: 128Mi
-        cpu: 500m
+        memory: 100Mi
+        cpu: 150m
+      limits:
+        memory: 150Mi
+        cpu: 300m
 
   terminationGracePeriodSeconds: 30
   minReadySeconds: 5
-  replicas: 2
 
   resources:
-    enabled: false
-
     requests:
-      memory: "128Mi"
-      cpu: "100m"
+      memory: 2Gi
+      cpu: 1500m
     limits:
-      memory: "1024Mi"
-      cpu: "2000m"
+      memory: 3Gi
+      cpu: 2000m
+
+  replicas: 3
 
   upgrades:
     revisionHistory: 3
@@ -141,23 +154,24 @@ api:
       maxUnavailable: 0
       maxSurge: 1
 
+  pdb:
+    minAvailable: 1
+
 cron:
   image: "monsoon/loci-keystone"
-  imageTag: queens-20180814091359
+  #imageTag: latest
 
   cronSchedule: "0 * * * *"
 
   replicas: 1
 
   resources:
-    enabled: false
-
     requests:
-      memory: "128Mi"
-      cpu: "100m"
+      memory: 2Gi
+      cpu: 500m
     limits:
-      memory: "1024Mi"
-      cpu: "2000m"
+      memory: 3Gi
+      cpu: 1000m
 
   upgrades:
     revisionHistory: 3
@@ -166,16 +180,21 @@ cron:
       maxUnavailable: 0
       maxSurge: 3
 
+cache:
+  expiration_time: 600
+
 tempest:
+  enabled: false
   image: "monsoon/rally-openstack"
-  imageTag: "ccloud-1.2.0"
-  adminPassword: DEFINE_IN_REGION_VALUES
-  userPassword: DEFINE_IN_REGION_VALUES
+  #imageTag: "ccloud-1.5.0"
+  imageTag: "ccloud-train"
+  adminPassword: ""
+  userPassword: ""
 # tempest domain-id  -- do not set in production environments!
   domainId: not_set_this_in_production
 
 sentry:
-  enabled: false
+  enabled: true
 # dsn: put-your-sentry-dsn-here or leave it up to the sentry-operator to provide one in a k8s sentry secret
 
 services:
@@ -205,7 +224,7 @@ services:
 
   admin:
     scheme: http
-    host: identity-admin-3
+    host: identity-3
     #tlsCertificate:
     #tlsKey:
 
@@ -214,86 +233,186 @@ rabbitmq:
   # host: rabbitmq
   users:
     default:
-      password: admin123
+      password: ""
     admin:
-      password: secret123
+      password: ""
+
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 1000m
+    limits:
+      cpu: 2000m
+
+  nodeAffinity: {}
 
   metrics:
     enabled: true
-    password: openstack
+    password: ""
 
 memcached:
-  ## default: {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-  # host: memcached
-  port: 11211
+  memcached:
+    maxItemMemory: 2048
 
-  metrics:
+  resources:
     enabled: true
+    limits:
+      memory: 2560Mi
+      cpu: 1000m
+    requests:
+      memory: 2560Mi
+      cpu: 500m
 
-postgresql:
-  postgresDatabase: keystone
-  postgresUser: postgres
-  postgresPassword: secret
+  nodeAffinity: {}
 
-  dbInit: keystone-db-init
-  dbMaintain: keystone-db-maintain
+mariadb:
+  name: keystone
+  initdb_configmap: keystone-initdb
 
-  persistence:
-    enabled: false
+  persistence_claim:
+    name: db-keystone-pvclaim
 
-  backup:
-    enabled: false
-    imageTag: v0.5.15
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 500Mi
 
-pgmetrics:
+  nodeAffinity: {}
+
+mysql_metrics:
   db_name: keystone
-
+  db_user: root
+  #db_password: DEFINED-IN-REGION-CHART
+  nodeAffinity: {}
   customMetrics:
-    openstack_roles_total:
-      query: "SELECT COUNT(*) as gauge FROM role"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone role count"
-    openstack_users_total:
-      query: "SELECT COUNT(*) as gauge FROM id_mapping WHERE entity_type = 'user'"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone user count"
-    openstack_groups_total:
-      query: "SELECT COUNT(*) as gauge FROM id_mapping WHERE entity_type = 'group'"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone group count"
-    openstack_domains_total:
-      query: "SELECT COUNT(*) - 1 as gauge FROM project WHERE domain_id = '<<keystone.domain.root>>'"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone domain count"
-    openstack_projects_total:
-      query: "SELECT COUNT(*) as gauge FROM project WHERE domain_id != '<<keystone.domain.root>>'"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone project count"
-    openstack_assignments_total:
-      query: "SELECT COUNT(*) as gauge FROM assignment"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone role-assignment count"
-    openstack_revocations_total:
-      query: "SELECT COUNT(*) as gauge FROM revocation_event"
-      metrics:
-        - gauge:
-            usage: "GAUGE"
-            description: "Total keystone token revocation count"
+    - name: openstack_roles_total
+      help: Total keystone role count
+      query: |
+        SELECT
+          COUNT(*) as roles
+        FROM role
+      values:
+      - "roles"
+    - name: openstack_users_total
+      help: Total keystone user count
+      query: |
+        SELECT
+          COUNT(*) as users
+        FROM id_mapping
+        WHERE entity_type = 'user'
+      values:
+      - "users"
+    - name: openstack_groups_total
+      help: Total keystone group count
+      query: |
+        SELECT
+          COUNT(*) as groups
+        FROM id_mapping
+        WHERE entity_type = 'group'
+      values:
+      - "groups"
+    - name: openstack_domains_total
+      help: Total keystone domain count
+      query: |
+        SELECT
+          COUNT(*) - 1 as domains
+        FROM project
+        WHERE domain_id = '<<keystone.domain.root>>'
+      values:
+      - "domains"
+    - name: openstack_projects_total
+      help: Total keystone project count
+      query: |
+        SELECT
+          COUNT(*) as projects
+        FROM project
+        WHERE domain_id != '<<keystone.domain.root>>'
+      values:
+      - "projects"
+    - name: openstack_assignments_total
+      help: Total keystone role-assignment count
+      query: |
+        SELECT
+          COUNT(*) as role_assignments
+        FROM assignment
+      values:
+      - "role_assignments"
+    - name: openstack_revocations_total
+      help: Total keystone token revocation count
+      query: |
+        SELECT
+          COUNT(*) as revocations
+        FROM revocation_event
+      values:
+      - "revocations"
+    - name: openstack_assignments_per_role
+      help: Total keystone role-assignment count per role
+      labels:
+      - "role_name"
+      query: |
+        SELECT
+          COUNT(*) as assignments,
+          r.name AS role_name
+        FROM assignment a
+        JOIN role r ON r.id = a.role_id
+        GROUP BY r.name
+      values:
+      - "assignments"
+    - name: mysql_database_size
+      help: Total database size
+      labels:
+      - "schema_name"
+      query: |
+          SELECT table_schema AS schema_name,
+            ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) AS size_in_mb
+          FROM information_schema.tables
+          GROUP BY table_schema
+      values:
+      - "size_in_mb"
 
 rbac:
-  enabled: false
+  enabled: true
 
 watcher:
   enabled: true
+
+lifesaver:
+  enabled: true
+
+cors:
+  enabled: false
+
+# Deploy Keystone Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+
+# Deploy SRE monitoring & alerting
+sre:
+  enabled: true
+  # Name of the Prometheus to which the sre metrics & alerts should be assigned to.
+  prometheus:
+    aggregations: openstack
+    alerts: openstack
+
+  periods:
+    - 5m
+    - 30m
+    - 1h
+    - 2h
+    - 6h
+    - 1d
+    - 3d
+
+  # keystone latency slo settings
+  slo:
+    # which 'seconds' bucket in the openstack-watcher histogramm to evaluate (target value)
+    # the chosen value needs to match an existing bucket size in the histogram
+    api_latency_violations_per_request:
+      token_create: 0.25
+      token_validate: 0.1
+    # max. failure rate that is tolerable
+    api_latency_violations_per_request_ratio_percent:
+      token_create: 5
+      token_validate: 2

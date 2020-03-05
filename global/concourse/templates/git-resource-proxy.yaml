@@ -1,0 +1,81 @@
+{{ if .Values.gitResourceProxy.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: git-resource-proxy
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/targets: kubernetes
+  name: git-resource-proxy-svc
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: git-resource-proxy
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: git-resource-proxy
+spec:
+  replicas: {{ .Values.gitResourceProxy.replicas }}
+  selector:
+    matchLabels:
+      app: git-resource-proxy
+  template:
+    metadata:
+      labels:
+        app: git-resource-proxy
+    spec:
+      containers:
+      - name: git-resource-proxy
+        image: "{{ .Values.gitResourceProxy.image }}:{{ .Values.gitResourceProxy.imageTag }}"
+        imagePullPolicy: {{ .Values.gitResourceProxy.imagePullPolicy | quote }}
+        env:
+        - name: TIMEOUT
+          value: {{ .Values.gitResourceProxy.timeout | quote }}
+        {{- if .Values.gitResourceProxy.debug }}
+        - name: DEBUG
+          value: "on"
+        {{- end }}
+        ports:
+        - containerPort: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: git-resource-proxy
+  annotations:
+    kubernetes.io/ingress.class: "git-proxy"
+    nginx.ingress.kubernetes.io/load-balance: "least_conn"
+spec:
+  rules:
+  - host: git-resource-proxy
+    http:
+      paths:
+      - backend:
+          serviceName: git-resource-proxy-svc
+          servicePort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: git-resource-proxy
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx-ingress
+    component: controller
+    release: {{ .Release.Name }}
+  sessionAffinity: None
+  type: ClusterIP
+{{- end }}

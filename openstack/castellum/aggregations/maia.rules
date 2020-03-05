@@ -1,0 +1,8 @@
+groups:
+- name: castellum-maia
+  rules:
+    # aggregate counters from observer and workers into one aggregate counter;
+    # otherwise prometheus-maia will not ingest the metrics properly because
+    # they only differ in labels that are dropped by its relabel config
+    - record: castellum_aggregated_operation_state_transitions
+      expr: sum(castellum_operation_state_transitions) by (asset,project_id,from_state,to_state)

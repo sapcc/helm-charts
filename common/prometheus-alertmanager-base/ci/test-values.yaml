@@ -1,0 +1,51 @@
+global:
+  region: regionOne
+  domain: evil.corp
+  clusterType: controlplane
+  cluster: x-regionOne
+  tier: alertTierKubernetes
+
+name: regionOneAlertmanager
+
+# Number of replicas of the Alertmanager.
+replicas: 1
+
+ingress:
+  enabled: true
+  host: regionOneAlertmanager
+
+configmaps:
+  - foo
+
+secrets:
+  - bar
+
+resources:
+  requests:
+    cpu: 4
+    memory: 8Gi
+
+mesh:
+  port: 1234
+  nodePort: 1234
+
+nodeSelector:
+  species: bastion
+
+tplConfig: true
+
+config:
+  global:
+    resolve_timeout: 5m
+
+  route:
+    group_by: ['job']
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 12h
+    receiver: 'webhook'
+
+  receivers:
+    - name: 'webhook'
+      webhook_configs:
+        - url: 'http://alertmanager.{{ .Values.global.region }}:30500/'

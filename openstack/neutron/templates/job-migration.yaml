@@ -12,7 +12,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: neutron-migration
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{.Values.image_name}}:{{.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/kubernetes-entrypoint
@@ -22,7 +22,11 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "neutron-postgresql"
+{{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql"
+{{- end }}
             - name: PGAPPNAME
               valueFrom:
                 fieldRef:

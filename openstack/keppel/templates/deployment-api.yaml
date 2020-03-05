@@ -6,7 +6,7 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
-  replicas: 1
+  replicas: {{ if .Values.keppel.slim }} 1 {{ else }} 4 {{ end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -14,11 +14,11 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      app: keppel-api
+      name: keppel-api
   template:
     metadata:
       labels:
-        app: keppel-api
+        name: keppel-api
       annotations:
         checksum: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
     spec:
@@ -30,32 +30,31 @@ spec:
         - name: api
           image: {{include "keppel_image" .}}
           imagePullPolicy: {{.Values.keppel.image_pull_policy}}
-          command: [ /usr/bin/keppel-api ]
-          args: [ /etc/keppel/keppel-api.yaml ]
-          env:
-            - name: KEPPEL_DEBUG
-              value: '0'
-          {{- if eq .Values.global.region "staging" }}
-            # preparations for quickly enabling mitmproxy for debugging
-            # (see also templates/staging-only.yaml)
-            - name: KEPPEL_INSECURE
-              value: '0'
-            - name: _HTTP_PROXY
-              value: 'http://dev-toolbox:8080'
-          {{- end }}
+          args: [ server, api ]
+          env: {{ include "keppel_environment" $ | indent 12 }}
           volumeMounts:
             - mountPath: /etc/keppel
               name: config
           livenessProbe:
             httpGet:
-              path: /health
+              path: /healthcheck
               port: 80
             timeoutSeconds: 10
             periodSeconds: 60
             initialDelaySeconds: 60
           readinessProbe:
             httpGet:
-              path: /health
+              path: /healthcheck
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
+          # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
+          # - CPU: currently below 10m, but we'll give it lots of headroom for initial growth
+          # - RAM: levels off around 20 Mi
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "50m"
+              memory: "64Mi"

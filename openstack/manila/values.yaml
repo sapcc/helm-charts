@@ -5,16 +5,18 @@
 
 global:
   dbUser: manila
-  imageNamespace: monsoon
+  dbBackupServicePassword: null
   imageRegistry: DEFINED-IN-REGION-CHART
-  master_password: ""
-  pgbouncer:
-    enabled: true
+  master_password: null
   metrics_port: 9102
 
+loci:
+  imageNamespace: monsoon
+  imageVersion: DEFINED-IN-REGION-CHART
+
 api_port_internal: '8786'
+api_backdoor: false
 debug: "True"
-imageVersionManilaApi: pike-20180904.1
 
 logging:
   formatters:
@@ -69,178 +71,282 @@ logging:
       level: INFO
 
 memcached:
+  enabled: true
   metrics:
     enabled: true
 
-imageVersionManilaNanny: pike-20180814080537
-imageVersionRally: queens-20180726.1
-imageVersionNetappManilaNanny: pike-20180627131707
-nanny:
-  enabled: true
-  # debug mode - no script run in the containers, just a sleep loop
-  debug: false
-  # run the nanny every n minutes
-  interval: 60
-  db_purge:
-    enabled: true
-    # purge deleted db entries older than n days
-    older_than: 7
-  quota_sync:
-    enabled: true
-    # dry run mode, i.e. just check for quota out of sync without fixing it
-    dry_run: false
-  consistency:
-    enabled: true
-    # dry run mode, i.e. just check for consistency without fixing it
-    dry_run: false
-  db_cleanup:
-    enabled: false
-    # dry run mode, i.e. just check for objects without valid project without fixing it
-    dry_run: true
-  netapp:
-    interval: 240
 
-pgmetrics:
-  dependencyJobs: "monsoon3:manila-migration"
+mysql_metrics:
+  db_password: null
+  db_name: manila
+  db_user: manila
   customMetrics:
-    openstack_manila_share_servers:
-      query: "SELECT host, share_network_id, status, COUNT(*) AS count_gauge FROM share_servers GROUP BY host, share_network_id, status"
-      metrics:
-        - host:
-            usage: "LABEL"
-            description: "Project ID"
-        - share_network_id:
-            usage: "LABEL"
-            description: "Share Network ID"
-        - status:
-            usage: "LABEL"
-            description: "Status of the Server"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of share networks"
-    openstack_manila_shares:
-      query: "SELECT coalesce(share_instances.share_type_id, 'N/A') AS share_type_id, share_instances.host, shares.project_id, shares.id, share_instances.status, COUNT(*) AS count_gauge, SUM(size) size_gauge FROM shares INNER JOIN share_instances ON shares.id=share_instances.share_id GROUP BY share_instances.share_type_id, share_instances.host, share_instances.status, shares.id, shares.project_id"
-      metrics:
-        - share_type_id:
-            usage: "LABEL"
-            description: "Type of the share"
-        - host:
-            usage: "LABEL"
-            description: "Host Name"
-        - project_id:
-            usage: "LABEL"
-            description: "Project ID"
-        - id:
-            usage: "LABEL"
-            description: "Share ID"
-        - status:
-            usage: "LABEL"
-            description: "Share status"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of shares"
-        - size_gauge:
-            usage: "GAUGE"
-            description: "Size of shares"
-    openstack_manila_snapshot:
-      query: "SELECT share_snapshots.project_id, share_snapshots.share_id, share_snapshots.id, share_snapshot_instances.status, COUNT(*) AS count_gauge, SUM(share_snapshots.size) size_gauge FROM share_snapshots INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id GROUP BY share_snapshots.id, share_snapshots.project_id, share_snapshots.share_id, share_snapshot_instances.status"
-      metrics:
-        - project_id:
-            usage: "LABEL"
-            description: "Project ID"
-        - share_id:
-            usage: "LABEL"
-            description: "Share ID"
-        - id:
-            usage: "LABEL"
-            description: "Snapshot ID"
-        - status:
-            usage: "LABEL"
-            description: "Snapshot status"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of shares"
-        - size_gauge:
-            usage: "GAUGE"
-            description: "Size of shares"
-    openstack_manila_shares_stuck:
-      query: "SELECT share_id, status, host, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge from share_instances where deleted='False' and status in ('deleting','creating') GROUP BY share_id, status, host"
-      metrics:
-        - share_id:
-            usage: "LABEL"
-            description: "SHARE ID"
-        - status:
-            usage: "LABEL"
-            description: "Share status"
-        - host:
-            usage: "LABEL"
-            description: "Share Backend"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of shares"
-        - max_duration_gauge:
-            usage: "GAUGE"
-            description: "Maximum duration of state"
-    openstack_manila_snapshot_stuck:
-      query: "SELECT share_snapshots.project_id, share_snapshots.share_id, share_snapshots.id, share_snapshot_instances.status, COUNT(*) FILTER (WHERE share_snapshot_instances.updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - share_snapshot_instances.updated_at)) AS max_duration_gauge FROM share_snapshots INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id WHERE share_snapshot_instances.status in ('deleting','creating') GROUP BY share_snapshots.id, share_snapshots.project_id, share_snapshots.share_id, share_snapshot_instances.status"
-      metrics:
-        - project_id:
-            usage: "LABEL"
-            description: "Snapshot Project ID"
-        - share_id:
-            usage: "LABEL"
-            description: "Share ID"
-        - id:
-            usage: "LABEL"
-            description: "Snapshot ID"
-        - status:
-            usage: "LABEL"
-            description: "Snapshot status"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of shares"
-        - max_duration_gauge:
-            usage: "GAUGE"
-            description: "Maximum duration of state"
+    - help: Manila Share servers count
+      labels:
+      - "manila_host"
+      - "share_network_id"
+      - "status"
+      name: openstack_manila_share_servers_count_gauge
+      query: |
+        SELECT
+          host AS manila_host,
+          share_network_id,
+          status,
+          COUNT(*) AS count_gauge
+        FROM share_servers
+        GROUP BY manila_host, share_network_id, status;
+      values:
+      - "count_gauge"
+    - help: Manila Shares count
+      labels:
+      - "share_type_id"
+      - "availability_zone_name"
+      - "manila_host"
+      - "project_id"
+      - "id"
+      - "status"
+      name: openstack_manila_shares_count_gauge
+      query: |
+        SELECT
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
+          availability_zones.name AS availability_zone_name,
+          share_instances.host AS manila_host,
+          shares.project_id,
+          shares.id,
+          share_instances.status,
+          COUNT(*) AS count_gauge
+        FROM shares
+        JOIN share_instances ON shares.id=share_instances.share_id
+        JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        GROUP BY
+          share_instances.share_type_id,
+          manila_host,
+          share_instances.status,
+          shares.id,
+          shares.project_id,
+          availability_zones.id;
+      values:
+      - "count_gauge"
+    - help: Manila Shares size
+      labels:
+      - "share_type_id"
+      - "availability_zone_name"
+      - "manila_host"
+      - "project_id"
+      - "id"
+      - "status"
+      name: openstack_manila_shares_size_gauge
+      query: |
+        SELECT
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
+          availability_zones.name AS availability_zone_name,
+          share_instances.host AS manila_host,
+          shares.project_id,
+          shares.id,
+          share_instances.status,
+          SUM(size) size_gauge
+        FROM shares
+        JOIN share_instances ON shares.id=share_instances.share_id
+        JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        GROUP BY
+          share_instances.share_type_id,
+          manila_host,
+          share_instances.status,
+          shares.id,
+          shares.project_id,
+          availability_zones.id;
+      values:
+      - "size_gauge"
+    - help: Manila Snapshot count
+      labels:
+      - "project_id"
+      - "share_id"
+      - "id"
+      - "status"
+      name: openstack_manila_snapshot_count_gauge
+      query: |
+        SELECT
+          share_snapshots.project_id,
+          share_snapshots.share_id,
+          share_snapshots.id,
+          share_snapshot_instances.status,
+          COUNT(*) AS count_gauge
+        FROM share_snapshots
+        INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
+        GROUP BY
+          share_snapshots.id,
+          share_snapshots.project_id,
+          share_snapshots.share_id,
+          share_snapshot_instances.status;
+      values:
+      - "count_gauge"
+    - help: Manila Snapshot Size
+      labels:
+      - "project_id"
+      - "share_id"
+      - "id"
+      - "status"
+      name: openstack_manila_snapshot_size_gauge
+      query: |
+        SELECT
+          share_snapshots.project_id,
+          share_snapshots.share_id,
+          share_snapshots.id,
+          share_snapshot_instances.status,
+          SUM(share_snapshots.size) size_gauge
+        FROM share_snapshots
+        INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
+        GROUP BY
+          share_snapshots.id,
+          share_snapshots.project_id,
+          share_snapshots.share_id,
+          share_snapshot_instances.status;
+      values:
+      - "size_gauge"
+    - help: Manila Shares Stuck Count
+      labels:
+      - "share_id"
+      - "status"
+      - "manila_host"
+      name: openstack_manila_shares_stuck_count_gauge
+      query: |
+        SELECT
+          share_id,
+          status,
+          host AS manila_host,
+        COUNT(*) AS count_gauge
+        FROM share_instances
+        WHERE deleted=False AND status in ('deleting','creating') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        GROUP BY
+          share_id,
+          status,
+          manila_host;
+      values:
+      - "count_gauge"
+    - help: Manila Shares Stuck Max Duration
+      labels:
+      - "share_id"
+      - "status"
+      - "manila_host"
+      name: openstack_manila_shares_stuck_max_duration_gauge
+      query: |
+        SELECT
+          share_id,
+          status,
+          host AS manila_host,
+          MAX(NOW() - updated_at) AS max_duration_gauge
+        FROM share_instances
+        WHERE deleted=False AND status in ('deleting','creating') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        GROUP BY
+          share_id,
+          status,
+          manila_host;
+      values:
+      - "max_duration_gauge"
+    - help: Manila Snapshot Stuck Count
+      labels:
+      - "project_id"
+      - "share_id"
+      - "id"
+      - "status"
+      name: openstack_manila_snapshot_stuck_count_gauge
+      query: |
+        SELECT
+          share_snapshots.project_id,
+          share_snapshots.share_id,
+          share_snapshots.id,
+          share_snapshot_instances.status,
+        COUNT(*) AS count_gauge
+        FROM share_snapshots
+        INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
+        WHERE share_snapshot_instances.status in ('deleting','creating') AND (share_snapshot_instances.updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        GROUP BY
+          share_snapshots.id,
+          share_snapshots.project_id,
+          share_snapshots.share_id,
+          share_snapshot_instances.status;
+      values:
+      - "count_gauge"
+    - help: Manila Snapshot Stuck Max Duration
+      labels:
+      - "project_id"
+      - "share_id"
+      - "id"
+      - "status"
+      name: openstack_manila_snapshot_stuck_max_duration_gauge
+      query: |
+        SELECT
+          share_snapshots.project_id,
+          share_snapshots.share_id,
+          share_snapshots.id,
+          share_snapshot_instances.status,
+          MAX(NOW() - share_snapshot_instances.updated_at) AS max_duration_gauge
+        FROM share_snapshots
+        INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
+        WHERE share_snapshot_instances.status in ('deleting','creating') AND (share_snapshot_instances.updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        GROUP BY
+          share_snapshots.id,
+          share_snapshots.project_id,
+          share_snapshots.share_id,
+          share_snapshot_instances.status;
+      values:
+      - "max_duration_gauge"
 
 pod:
   replicas:
-    api: 2
+    api: 5
   lifecycle:
     upgrades:
       deployments:
         revision_history: 5
         pod_replacement_strategy: RollingUpdate
         rolling_update:
-           max_unavailable: 0
-           max_surge: 1
+          max_unavailable: 0
+          max_surge: 1
+  resources:
+    api:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+    api_statsd:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+    scheduler:
+      requests:
+        memory: "256Mi"
+        cpu: "1000m"
+    share: # is not scalable -> qosClass: guaranteed
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
 
-postgresql:
-  custom_configmap: false
-  imageTag: '9.4.14'
-  postgresDatabase: manila
-  dbInit: manila-db-init
-  dbMaintain: manila-db-maintain
-  pgbouncer:
-    enabled: true
-  persistence:
-    enabled: true
-    existingClaim: db-manila-pvclaim
+db_name: manila
+
+mariadb:
+  enabled: true
+  root_password: null # define in region or use master_password mechanism
+  buffer_pool_size: "8192M"
+  log_file_size: "2048M"
+  name: manila
+  initdb_configmap: manila-initdb
+  persistence_claim:
+    name: db-manila-pvclaim
   backup:
     enabled: true
-    metrics: true
-    os_password: null
-  # metrics:
-  #   customMetrics:
-  #     pg_database:
-  #       query: "SELECT d.datname AS datname, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size_bytes FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
-  #       metrics:
-  #         - datname:
-  #             usage: "LABEL"
-  #             description: "Name of the database"
-  #         - size_bytes:
-  #             usage: "GAUGE"
-  #             description: "Size of the database in bytes"
+    os_password: null # use dbBackupServicePassword from globals
+  extraConfigFiles:
+    manila.cnf: |+
+      [mysqld]
+      net_read_timeout=300
+      net_write_timeout=300
+
+# needed for utils ini_sections
+postgresql:
+  enabled: false
 
 rabbitmq:
   persistence:
@@ -249,39 +355,28 @@ rabbitmq:
 sentry:
   enabled: true
 
-tempest:
-  domain_id: null
-  enabled: false
-  revert_to_snapshot_tests: false
-  share_network_id: null
-  alt_share_network_id: null
-  admin_share_network_id: null
-  expected_failures: {}
-
-unittest:
-  enabled: false
-
-# Dictionary mapping availability-zones to shares
-# shares:
-#   nova1:
-#     shares_netapp:
-#      - name: DEFINED-IN-REGION-CHART
-#        backend_name: custom-name-used-in-type
-#        share_server_cleanup_interval: 10
-#        host: my-netapp-host
-#        username: my-netapp-user
-#        password: my-netapp-pw
-#        root_volume_aggregate: DEFINED-IN-REGION-CHART
-#        aggregate_search_pattern: DEFINED-IN-REGION-CHART
-#        port_search_pattern: DEFINED-IN-REGION-CHART
-#        physical_network: DEFINED-IN-REGION-CHART
-#        mtu: DEFINED-IN-REGION-CHART
-#        reserved_share_percentage: 0
+# netapp filer back ends, required input
+# netapp:
+#   filers:
+#    - name: DEFINED-IN-REGION-CHART
+#      availability_zone: DEFINED-IN-REGION-CHART
+#      backend_name: custom-name-used-in-type
+#      debug: false
+#      share_server_cleanup_interval: 10
+#      host: my-netapp-host
+#      username: my-netapp-user
+#      password: my-netapp-pw
+#      root_volume_aggregate: DEFINED-IN-REGION-CHART
+#      aggregate_search_pattern: DEFINED-IN-REGION-CHART
+#      port_search_pattern: DEFINED-IN-REGION-CHART
+#      physical_network: DEFINED-IN-REGION-CHART
+#      mtu: DEFINED-IN-REGION-CHART
+#      reserved_share_percentage: 0
 
 vice_president: true
 
 audit:
-  enabled: false
+  enabled: true
   # do by default not attach the request payloads of create/update calls to the event
   record_payloads: false
   metrics_enabled: true
@@ -294,3 +389,8 @@ rabbitmq_notifications:
 # openstack-watcher-middleware
 watcher:
   enabled: true
+
+# prometheus alerts
+alerts:
+  enabled: true
+  prometheus: openstack

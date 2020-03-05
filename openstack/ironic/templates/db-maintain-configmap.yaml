@@ -1,4 +1,4 @@
-{{- if .Values.postgresql.postgresPassword }}
+{{- if eq .Values.postgresql.enabled true }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,7 +10,7 @@ metadata:
 
 data:
   db-maintain.sql: |
-    ALTER ROLE {{.Values.dbUser}} WITH ENCRYPTED PASSWORD '{{.Values.global.dbPassword}}';
-    ALTER ROLE {{.Values.inspectordbUser}} WITH ENCRYPTED PASSWORD '{{.Values.inspectordbPassword}}';
-    ALTER ROLE {{.Values.postgresql.postgresUser}} WITH ENCRYPTED PASSWORD '{{.Values.postgresql.postgresPassword}}';
+    ALTER ROLE {{.Values.global.dbUser}} WITH ENCRYPTED PASSWORD '{{required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword}}';
+    ALTER ROLE {{.Values.inspectordbUser}} WITH ENCRYPTED PASSWORD '{{required "A valid .Values.inspectordbPassword required!" .Values.inspectordbPassword}}';
+    ALTER ROLE {{.Values.postgresql.postgresUser}} WITH ENCRYPTED PASSWORD '{{required "A valid .Values.postgresql.postgresPassword required!" .Values.postgresql.postgresPassword}}';
 {{- end }}

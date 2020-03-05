@@ -43,7 +43,7 @@ spec:
 
     groups:
     - name: S4_API_SUPPORT
-      roles:
+      role_assignments:
       - domain: s4
         role: admin
       - domain: s4
@@ -55,7 +55,7 @@ spec:
         role: member
 
     - name: S4_COMPUTE_SUPPORT
-      roles:
+      role_assignments:
       - domain: s4
         role: cloud_identity_viewer
         inherited: true
@@ -65,7 +65,7 @@ spec:
         role: member
 
     - name: S4_STORAGE_SUPPORT
-      roles:
+      role_assignments:
       - domain: s4
         role: cloud_identity_viewer
         inherited: true
@@ -75,7 +75,7 @@ spec:
         role: member
 
     - name: S4_NETWORK_SUPPORT
-      roles:
+      role_assignments:
       - domain: s4
         role: cloud_identity_viewer
         inherited: true
@@ -85,7 +85,7 @@ spec:
         role: member
 
     - name: S4_SERVICE_DESK
-      roles:
+      role_assignments:
       - domain: s4
         role: cloud_identity_viewer
         inherited: true
@@ -95,12 +95,12 @@ spec:
         role: member
 
     - name: S4_DOMAIN_MEMBERS
-      roles:
+      role_assignments:
       - domain: s4
         role: member
 
     - name: S4_DOMAIN_ADMINS
-      roles:
+      role_assignments:
       - domain: s4
         role: member
       - domain: s4
@@ -115,14 +115,14 @@ spec:
         role: admin
 
     - name: S4_DOMAIN_NETWORK_ADMINS
-      roles:
+      role_assignments:
       - project: s4-net-infra
         role: admin
       - project: s4-shared-infra
         role: admin
 
     - name: S4_DOMAIN_RESOURCE_ADMINS
-      roles:
+      role_assignments:
       - domain: s4
         role: admin
 
@@ -135,7 +135,7 @@ spec:
         tls_req_cert: allow
         url: {{ .Values.ldapUrl | quote }}
         user: {{ .Values.ldapUser | quote }}
-        password: {{ .Values.ldapPassword | quote }}
+        password: {{ required "A valid .Values.ldapPassword required!" .Values.ldapPassword | quote }}
         suffix: {{ .Values.ldapSuffix | quote }}
         query_scope: one
         user_tree_dn: OU=Identities,{{ .Values.ldapSuffix }}
@@ -156,9 +156,9 @@ spec:
         group_desc_attribute: description
         group_member_attribute: member
         group_tree_dn: OU=S4,OU=OSDomains,OU=CCloud,{{ .Values.ldapSuffix }}
-        use_pool: true
-        pool_size: 10
-        pool_connection_lifetime: 60
-        use_auth_pool: true
+        use_pool: {{ .Values.ldapUsePool }}
+        pool_size: 100
+        use_auth_pool: {{ .Values.ldapUseAuthPool }}
         auth_pool_size: 100
         auth_pool_connection_lifetime: 60
+        debug_level: {{ .Values.ldapDebugLevel }}

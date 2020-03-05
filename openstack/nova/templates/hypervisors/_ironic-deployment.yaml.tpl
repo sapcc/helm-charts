@@ -1,10 +1,10 @@
-{{- define "ironic_hypervisor" -}}
+{{- define "ironic_deployment" -}}
 {{- $hypervisor := index . 1 -}}
 {{- with index . 0 -}}
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: nova-compute-ironic
+  name: nova-compute-{{$hypervisor.name}}
   labels:
     system: openstack
     type: backend
@@ -19,23 +19,24 @@ spec:
       maxSurge: 3
   selector:
     matchLabels:
-      name: nova-compute-ironic
+      name: nova-compute-{{$hypervisor.name}}
   template:
     metadata:
       labels:
-        name: nova-compute-ironic
-{{ tuple . "nova" "compute-ironic" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        name: nova-compute-{{$hypervisor.name}}
+        hypervisor: "ironic"
       annotations:
-        pod.beta.kubernetes.io/hostname: nova-compute-ironic
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
     spec:
-      hostname: nova-compute-ironic
+      terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       containers:
-        - name: nova-compute-ironic
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+        - name: nova-compute
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
+            - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND
@@ -52,6 +53,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          {{- if .Values.pod.resources.hv_ironic }}
+          resources:
+{{ toYaml .Values.pod.resources.hv_ironic | indent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: /etc/nova
               name: etcnova
@@ -84,6 +89,6 @@ spec:
             name: nova-patches
         - name: hypervisor-config
           configMap:
-            name:  hypervisor-{{$hypervisor.name}}
+            name: nova-compute-{{$hypervisor.name}}
 {{- end -}}
 {{- end -}}

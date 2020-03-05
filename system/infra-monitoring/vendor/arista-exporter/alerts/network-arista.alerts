@@ -1,0 +1,130 @@
+groups:
+- name: metal-arista.alerts
+  rules:      
+  - alert: MetalIronicAristaMonTotalInfo
+    # Total of ACL, IFP or EFP table is above 50%
+    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 70)  by (instance, model, serial, table)
+    for: 60m
+    labels:
+      severity: info
+      tier: net
+      service: arista
+      context: "{{ $labels.instance }}"
+      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }} usage"
+      playbook: /docs/devops/alert/network/switch.html#arista
+      dashboard: arista-monitoring-tcam-details?var-instance={{ $labels.instance }}
+    annotations:
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} above 50% for 60 min"
+      summary: "TCAM usage info for switch {{ $labels.instance }}"
+      
+  - alert: MetalIronicAristaMonTotalWarn
+    # Total of ACL, IFP or EFP table is above 90%
+    expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 90)  by (instance, model, serial, table)
+    for: 60m
+    labels:
+      severity: warning
+      tier: net
+      service: arista
+      context: "{{ $labels.instance }}"
+      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }} usage"
+      playbook: /docs/devops/alert/network/switch.html#arista
+      dashboard: arista-monitoring-tcam-details?var-instance={{ $labels.instance }}
+    annotations:
+      description: "Switch {{ $labels.instance }} TCAM usage of table {{ $labels.table }} above 80% for 60 min"
+      summary: "TCAM usage warning for switch {{ $labels.instance }}"
+      
+  - alert: MetalIronicAristaMonEFPCritical
+    # sum of EFP Slices per chip is above 275%
+    expr: sum(arista_tcam{table=~"EFP", feature !~ ""}) by (instance, model, serial, chip, table)  > 275
+    for: 30m
+    labels:
+      severity: critical
+      tier: os
+      service: arista
+      context: "{{ $labels.instance }}"
+      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }}, Chip {{ $labels.chip }} usage"
+      playbook: /docs/devops/alert/network/switch.html#arista_efp
+      dashboard: arista-monitoring-tcam-details?var-instance={{ $labels.instance }}&var-table={{ $labels.table }}
+    annotations:
+      description: "Switch {{ $labels.instance }}: Sum of {{ $labels.table }} TCAM Slice usage of {{ $labels.chip }} above 275% for 30 min"
+      summary: "TCAM {{ $labels.table }} Slice usage alert for switch {{ $labels.instance }}"
+
+  - alert: MetalIronicAristaMonEFPWarning
+    # sum of EFP Slices per chip is above 195%
+    expr: sum(arista_tcam{table=~"EFP", feature !~ ""}) by (instance, model, serial, chip, table)  > 195
+    for: 30m
+    labels:
+      severity: warning
+      tier: os
+      service: arista
+      context: "{{ $labels.instance }}"
+      meta: "Switch {{ $labels.instance }}: Table {{ $labels.table }}, Chip {{ $labels.chip }} usage"
+      playbook: /docs/devops/alert/network/switch.html#arista_efp
+      dashboard: arista-monitoring-tcam-details?var-instance={{ $labels.instance }}&var-table={{ $labels.table }}
+    annotations:
+      description: "Switch {{ $labels.instance }}: Sum of {{ $labels.table }} TCAM Slice usage of {{ $labels.chip }} above 195% for 30 min"
+      summary: "TCAM {{ $labels.table }} Slice usage alert for switch {{ $labels.instance }}"
+
+  - alert: MetalIronicAristaMonSwitchDownCritical
+    # No metrics could be retrieved from the switch. Means API is not reachable.
+    expr: count(arista_up == 0) by (instance)
+    for: 10m
+    labels:
+      severity: critical
+      tier: net
+      service: arista
+      context: "{{ $labels.instance }}"
+      meta: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+      playbook: /docs/devops/alert/network/switch.html#arista
+      dashboard: arista-monitoring-overview?var-instance={{ $labels.instance }}
+    annotations:
+      description: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+      summary: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+
+  - alert: MetalIronicAristaMonDiscoveryWar
+    # No metrics could be retrieved from the switch. Likely not in DNS.
+    expr: count(up{job="baremetal/arista"} == 0) by (instance)
+    for: 60m
+    labels:
+      severity: warning
+      tier: net
+      service: arista
+      context: "{{ $labels.instance }}"
+      meta: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+      playbook: /docs/devops/alert/network/switch.html#arista
+      dashboard: arista-monitoring-overview?var-instance={{ $labels.instance }}
+    annotations:
+      description: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+      summary: "Arista metrics cannot be fetched from switch {{ $labels.instance }}"
+
+  - alert: MetalIronicAristaMonResponseWarn
+    # Slow response from the Switch above 2 second.
+    expr: count(arista_response > 2) by (instance)
+    for: 10m
+    labels:
+      severity: warning
+      tier: net
+      service: arista
+      context: "{{ $labels.instance }}"
+      meta: "Arista switch {{ $labels.instance }} slow response"
+      playbook: /docs/devops/alert/network/switch.html#arista
+      dashboard: arista-monitoring-overview?panelId=7&fullscreen&orgId=1&var-instance={{ $labels.instance }}
+    annotations:
+      description: "Arista switch {{ $labels.instance }} responding slower than 2 seconds."
+      summary: "Arista switch {{ $labels.instance }} responding slower than 2 seconds."
+
+  - alert: MetalIronicAristaMonResponseCritical
+    # Slow response from the Switch above 5 second but below 20 seconds (which is the timeout value an dis covered by the down alert)
+    expr: count(arista_response > 5 and arista_response < 20) by (instance)
+    for: 10m
+    labels:
+      severity: critical
+      tier: net
+      service: arista
+      context: "{{ $labels.instance }}"
+      meta: "Arista switch {{ $labels.instance }} slow response"
+      playbook: /docs/devops/alert/network/switch.html#arista
+      dashboard: arista-monitoring-overview?panelId=7&fullscreen&orgId=1&var-instance={{ $labels.instance }}
+    annotations:
+      description: "Arista switch {{ $labels.instance }} responding slower than 5 seconds."
+      summary: "Arista switch {{ $labels.instance }} responding slower than 5 seconds."

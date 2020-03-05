@@ -1,0 +1,64 @@
+{{- if .Values.sre.enabled }}
+{{- $values := .Values }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: openstack-keystone-sre-alerts
+  labels:
+    tier: sre
+    type: alerting-rules
+    prometheus: {{ required ".Values.sre.prometheus.alerts missing" $values.sre.prometheus.alerts }}
+
+spec:
+  # https://landing.google.com/sre/workbook/chapters/alerting-on-slos/#short_and_long_windows_for_alerting
+  groups:
+  - name: openstack-keystone-sre.alerts
+    rules:
+    - alert: OpenstackKeystoneSRE2or5PctErrorBudgetBurn
+      expr: |2
+          (
+            (100 * global:api_latency_violations_per_request_sli:ratio_rate1h > on (region, service, api) 14.4 * global:api_latency_violations_per_request_slo:percent)
+            and
+            (100 * global:api_latency_violations_per_request_sli:ratio_rate5m > on (region, service, api) 14.4 * global:api_latency_violations_per_request_slo:percent)
+          )
+          or
+          (
+            (100 * global:api_latency_violations_per_request_sli:ratio_rate6h > on (region, service, api) 6 * global:api_latency_violations_per_request_slo:percent)
+            and
+            (100 * global:api_latency_violations_per_request_sli:ratio_rate30m > on (region, service, api) 6 * global:api_latency_violations_per_request_slo:percent)
+          )
+      for: 2m
+      labels:
+        context: availability
+        service: "{{`{{$labels.service}}`}}"
+        severity: info
+        tier: sre
+      annotations:
+        summary: "an api burns its latency error budget very fast"
+        description: "{{`{{$labels.service}}`}} api {{`{{$labels.api}}`}} has returned {{`{{$value}}`}}%."
+
+    - alert: OpenstackKeystoneSRE10PctErrorBudgetBurn
+      expr: |2
+          (
+            (100 * global:api_latency_violations_per_request_sli:ratio_rate1d > on (region, service, api) 3 * global:api_latency_violations_per_request_slo:percent)
+            and
+            (100 * global:api_latency_violations_per_request_sli:ratio_rate2h > on (region, service, api) 3 * global:api_latency_violations_per_request_slo:percent)
+          )
+          or
+          (
+            (100 * global:api_latency_violations_per_request_sli:ratio_rate3d > on (region, service, api) global:api_latency_violations_per_request_slo:percent)
+            and
+            (100 * global:api_latency_violations_per_request_sli:ratio_rate6h > on (region, service, api) global:api_latency_violations_per_request_slo:percent)
+          )
+      for: 1h
+      labels:
+        context: availability
+        service: "{{`{{$labels.service}}`}}"
+        severity: warning
+        tier: sre
+      annotations:
+        summary: "an api has consumed its latency error budget by 10%"
+        description: "{{`{{$labels.service}}`}} api {{`{{$labels.api}}`}} has returned {{`{{$value}}`}}%"
+{{- end -}}

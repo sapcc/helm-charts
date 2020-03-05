@@ -1,0 +1,50 @@
+# Default values for netapp-cap-exporter.
+apps:
+  cinder:
+    enabled: false
+    fullname: "netapp-capacity-exporter-cinder"
+    netappsd:
+      query: bb
+  baremetal:
+    enabled: false
+    fullname: "netapp-capacity-exporter-bare-metal"
+    netappsd:
+      query: bm
+  controlplane:
+    enabled: false
+    fullname: "netapp-capacity-exporter-control-plane"
+    netappsd:
+      query: cp
+  manila:
+    enabled: false
+    fullname: "netapp-capacity-exporter-manila"
+
+fullnameOverride: "netapp-capacity-exporter"
+listenPort: 9108
+
+exporter:
+  image:
+    repository: hub.global.cloud.sap/monsoon/netapp-api-exporter
+    tag: v20200227105421-master-c9c3fc8
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: 200Mi
+      cpu: 100m
+
+netappsd:
+  image: 
+    repository: hub.global.cloud.sap/monsoon/netappsd
+    tag: v20200225123300-master-3b9254b
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: 50Mi
+      cpu: 50m
+
+service:
+  type: ClusterIP
+
+metrics:
+  scrape: true
+  targets: infra-collector

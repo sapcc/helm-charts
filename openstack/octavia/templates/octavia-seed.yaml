@@ -1,0 +1,41 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: octavia-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+
+  services:
+  - name: octavia
+    type: load-balancer
+    description: Openstack Loadbalancer as a Service
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "octavia_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{include "octavia_api_endpoint_host_public" .}}'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "octavia_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}'
+
+  domains:
+  - name: Default
+    users:
+    - name: octavia
+      description: 'Octavia Service'
+      password: {{ .Values.global.octavia_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "$$" | quote }}
+      role_assignments:
+      - project: service
+        role: service
+      - project: service
+        role: cloud_network_admin
+      - project: service
+        role: cloud_keymanager_admin

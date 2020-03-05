@@ -1,0 +1,75 @@
+{{- if .Values.thanos.enabled }}
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: {{ include "prometheus.fullName" . }}-thanos-store
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-store
+      thanos-peers: "true"
+      prometheus: {{ include "prometheus.name" . }}
+  serviceName: thanos-store
+  template:
+    metadata:
+      labels:
+        app: thanos-store
+        thanos-peers: "true"
+        prometheus: {{ include "prometheus.name" . }}
+    spec:
+      containers:
+      - args:
+        - store
+        - --http-address=0.0.0.0:{{ required ".Values.thanos.store.service.httpPort missing" .Values.thanos.store.service.httpPort }}
+        - --grpc-address=0.0.0.0:{{ required ".Values.thanos.store.service.grpcPort missing" .Values.thanos.store.service.grpcPort }}
+        - --log.level={{ .Values.logLevel }}
+        - --data-dir=/data
+        - --objstore.config=$(OBJSTORE_CONFIG)
+        - --index-cache-size={{ required ".Values.thanos.store.indexCacheSize missing" .Values.thanos.store.indexCacheSize }}
+        - --chunk-pool-size={{ required ".Values.thanos.store.chunkPoolSize missing" .Values.thanos.store.chunkPoolSize }}
+        - --store.grpc.series-sample-limit={{ required ".Values.thanos.store.seriesSampleLimit missing" .Values.thanos.store.seriesSampleLimit }}
+        - --store.grpc.series-max-concurrency={{ required ".Values.thanos.store.seriesMaxConcurrency missing" .Values.thanos.store.seriesMaxConcurrency }}
+        env:
+        - name: OBJSTORE_CONFIG
+          valueFrom:
+            secretKeyRef:
+              key: {{ include "thanos.objectStorageConfig.key" . }}
+              name: {{ include "thanos.objectStorageConfig.name" . }}
+        image: {{ include "thanos.image" . }}
+        name: thanos-store
+        ports:
+        - containerPort: {{ required ".Values.thanos.store.service.grpcPort missing" .Values.thanos.store.service.grpcPort }}
+          name: grpc
+        - containerPort: {{ required ".Values.thanos.store.service.httpPort missing" .Values.thanos.store.service.httpPort }}
+          name: http
+        - containerPort: 10900
+          name: cluster
+{{- if not .Values.thanos.store.persistence.enabled }}
+        volumeMounts:
+        - mountPath: /data
+          name: data
+          readOnly: false
+      volumes:
+        - emptyDir: {}
+          name: data
+{{- else }}
+        volumeMounts:
+          - mountPath: /data
+            name: {{ include "prometheus.fullName" . }}-thanos-store
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ include "prometheus.fullName" . }}-thanos-store
+        labels:
+          prometheus: {{ include "prometheus.name" . }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ required ".Values.thanos.store.persistence.size missing" .Values.thanos.store.persistence.size | quote }}
+{{- end }}
+{{ end }}

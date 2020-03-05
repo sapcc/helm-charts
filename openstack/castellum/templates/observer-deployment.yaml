@@ -1,0 +1,46 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: castellum-observer
+  labels:
+    release: "{{.Release.Name}}"
+
+spec:
+  minReadySeconds: 10 # to capture errors from config parsing
+  revisionHistoryLimit: 5
+  replicas: 1 # observer cannot be parallelized!
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: castellum-observer
+  template:
+    metadata:
+      labels:
+        name: castellum-observer
+        app: castellum-observer
+      annotations:
+        checksum: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: castellum
+      containers:
+        - name: observer
+          image: {{ include "castellum_image" . }}
+          imagePullPolicy: {{ .Values.castellum.image_pull_policy }}
+          args:
+            - observer
+          env: {{ include "castellum_common_envvars" . | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/castellum
+              name: config
+          ports:
+            - name: http
+              containerPort: 8080
+          {{- include "castellum_liveness_readiness_probes" . | indent 10 }}

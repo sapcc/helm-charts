@@ -1,0 +1,48 @@
+{{- if .Values.serviceDiscoveries.kubeAPIServer.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: {{ include "prometheus.fullName" . }}-kubernetes-apiserver
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  selector:
+    matchLabels:
+      component: apiserver
+      provider: kubernetes
+
+  # Find endpoints in any namespace.
+  namespaceSelector:
+    any: true
+
+  endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      port: https
+      scheme: https
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        serverName: kubernetes
+        insecureSkipVerify: false
+
+      relabelings:
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+            - __meta_kubernetes_service_name
+            - __meta_kubernetes_endpoint_port_name
+          action: keep
+          regex: default;kubernetes;https
+        - targetLabel: __address__
+          replacement: $(KUBERNETES_SERVICE_HOST)
+        - targetLabel: component
+          replacement: apiserver
+        - targetLabel: job
+          replacement: kubernetes-apiserver
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+
+      metricRelabelings:
+{{ include "prometheus.keep-metrics.metric-relabel-config" .Values.serviceDiscoveries.kubeAPIServer.allowedMetrics | indent 8 }}
+{{- end }}

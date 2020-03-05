@@ -1,11 +1,11 @@
 {{- $probing := .Values.probing }}
-{{- range $index, $cluster := .Values.clusters }}
+{{- range $cluster_id, $cluster := .Values.clusters }}
 {{- if not $cluster.tls_crt }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 
 metadata:
-  name: swift-{{$cluster.name}}
+  name: swift-{{$cluster_id}}
   annotations:
     # the ingress controller won't pick this up
     kubernetes.io/ingress.class: "noop.vice-president"
@@ -21,9 +21,9 @@ metadata:
 # the vp will only evaluate the following spec.tls section
 spec:
   tls:
-     - secretName: tls-swift-{{$cluster.name}}
+     - secretName: tls-swift-{{$cluster_id}}
        hosts: [{{$cluster.endpoint_host}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
-       {{- range $index, $san := $cluster.sans }},{{$san}}.{{$.Values.global.region}}.{{$.Values.global.tld}}{{ end }}]
+       {{- range $index, $san := $cluster.sans }}, {{ printf "%s.%s.%s" $san $.Values.global.region $.Values.global.tld | quote }}{{ end }}]
   # the following is mandatory in an ingress resource, but will be ignored by the vice-president
   rules:
     - host: {{$cluster.endpoint_host}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
@@ -31,7 +31,7 @@ spec:
         paths:
         - path: /
           backend:
-            serviceName: swift-{{$cluster.name}}
+            serviceName: swift-{{$cluster_id}}
             servicePort: 9090
 ---
 {{- end }}

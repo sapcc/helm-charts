@@ -1,0 +1,47 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wall-e
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+  annotations:
+    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component:  elk-wall-e
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/curator.yml.tpl: {{ include  (print $.Template.BasePath "/_curator.yml.tpl") . | sha256sum }}
+        checksum/delete_indices.yml.tpl: {{ include  (print $.Template.BasePath "/_delete_indices.yml.tpl") . | sha256sum }}
+        checksum/wall-e-start.tpl: {{ include  (print $.Template.BasePath "/_wall-e-start.tpl") . | sha256sum }}
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: payload
+      volumes:
+        - name: wall-e-etc
+          configMap:
+            name: wall-e-etc
+      containers:
+        - name: wall-e
+          image: {{.Values.global.docker_repo}}/elk-wall-e:{{.Values.image_version_wall_e}}
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/local/bin/dumb-init", "/bin/bash", "/wall-e-etc/wall-e-start"]
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - mountPath: /wall-e-etc
+              name: wall-e-etc

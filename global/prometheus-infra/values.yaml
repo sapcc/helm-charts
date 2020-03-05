@@ -1,0 +1,86 @@
+global:
+  region: global
+  domain: cloud.sap
+
+# Values for global infrastructure Prometheus.
+prometheus-infra-global:
+  name: infra-global
+
+  retentionTime: 90d
+
+  additionalScrapeConfigs:
+    name: infra-global-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: true
+    hostsFQDN:
+      - prometheus-infra.global.cloud.sap
+    annotations:
+      disco/zone-name: "global.cloud.sap."
+
+  persistence:
+    enabled: true
+    size: 300Gi
+
+  serviceDiscoveries:
+    endpoints:
+      enabled: false
+
+  # Comment the `prometheus-sso-cert` if SSO is not used (aka authentication.enabled=false)
+  secrets:
+    - prometheus-infra-sso-cert
+
+  alertmanagers:
+    # Enabled via secrets
+    authentication:
+      enabled: false
+
+    hosts:
+      - alertmanager.scaleout.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-nl-1.cloud.sap
+
+  # send alerts to dedicated tier
+  alerts:
+    tier: monitor
+
+# Basic alerts for global Prometheus.
+alerts:
+  prometheus: infra-global
+
+aggregations:
+  prometheus: infra-global
+
+
+# List of regions to which the prometheus-infra is deployed.
+regionList:
+  - "qa-de-1"
+  - "eu-de-1"
+  - "eu-de-2"
+  - "eu-nl-1"
+  - "eu-ru-1"
+  - "la-br-1"
+  - "na-ca-1"
+  - "na-us-1"
+  - "na-us-2"
+  - "na-us-3"
+  - "ap-ae-1"
+  - "ap-au-1"
+  - "ap-cn-1"
+  - "ap-jp-1"
+  - "ap-jp-2"
+  - "ap-sa-1"
+
+# Regional Prometheis are only accessible after presenting a valid SSO certificate.
+authentication:
+  enabled: true
+  # Defined via secrets.
+  # ssoCert:
+  # ssoKey:
+
+sre:
+  # aggregation periods
+  periods:
+    - 1d
+    - 3d
+    - 7d

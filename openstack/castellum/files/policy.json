@@ -1,0 +1,20 @@
+{
+  "project_scope": "project_id:%(target.project.id)s",
+  "domain_scope":  "domain_id:%(target.project.domain.id)s",
+  "cluster_scope": "project_domain_name:ccadmin and project_name:cloud_admin",
+  "project_or_domain_scope": "rule:project_scope or rule:domain_scope",
+
+  "project:access": "rule:project_scope or rule:domain_scope or rule:cluster_scope",
+
+  "project_nfs_editor": "role:cloud_sharedfilesystem_admin or (rule:project_or_domain_scope and role:sharedfilesystem_admin)",
+  "project_nfs_viewer": "role:cloud_sharedfilesystem_viewer or (rule:project_or_domain_scope and role:sharedfilesystem_viewer) or rule:project_nfs_editor",
+
+  "project:edit:nfs-shares": "rule:project_nfs_editor",
+  "project:show:nfs-shares": "rule:project_nfs_viewer",
+
+  "project_quota_editor": "role:cloud_resource_admin or (rule:domain_scope and role:resource_admin)",
+  "project_quota_viewer": "role:cloud_resource_viewer or (rule:domain_scope and role:resource_viewer) or (rule:project_scope and (role:member or role:_member_ or role:Member or role:resource_viewer or role:resource_admin)) or rule:project_quota_editor",
+
+  "project:edit:project-quota": "rule:project_quota_editor",
+  "project:show:project-quota": "rule:project_quota_viewer"
+}

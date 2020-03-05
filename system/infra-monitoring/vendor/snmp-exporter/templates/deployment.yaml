@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: snmp
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: snmp-exporter-etc
+          configMap:
+            name: {{ include "infraMonitoring.fullname" . }}
+      containers:
+        - name: {{ include "infraMonitoring.name" . }}
+          image: {{ required "docker_repo variable is missing" .Values.docker_repo}}:{{ required "image_version variable is missing" .Values.image_version }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/snmp_exporter
+          args:
+            - --config.file=/snmp-exporter-etc/snmp-exporter.yaml
+          volumeMounts:
+            - mountPath: /snmp-exporter-etc
+              name: snmp-exporter-etc
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.listen_port }}

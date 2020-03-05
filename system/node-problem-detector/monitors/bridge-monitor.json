@@ -1,0 +1,34 @@
+{
+  "plugin": "custom",
+  "pluginConfig": {
+    "invoke_interval": "30s",
+    "timeout": "5s",
+    "max_output_length": 80,
+    "concurrency": 1,
+    "enable_message_change_based_condition_update": false
+  },
+  "source": "bridge-filter-custom-plugin-monitor",
+  "metricsReporting": true,
+  "conditions": [
+    {
+      "type": "BridgeFilterVLANTagged",
+      "reason": "BridgeDoesNotPassVLANTaggedTraffic",
+      "message": "Don’t pass bridged VLAN-tagged ARP/IP traffic to ARPtables/IPtables"
+    }
+  ],
+  "rules": [
+    {
+      "type": "temporary",
+      "reason": "BridgePassedVLANTaggedTraffic",
+      "path": "/config/test-bridge.sh",
+      "timeout": "3s"
+    },
+    {
+      "type": "permanent",
+      "condition": "BridgeFilterVLANTagged",
+      "reason": "BridgePassedVLANTaggedTraffic",
+      "path": "/config/test-bridge.sh",
+      "timeout": "3s"
+    }
+  ]
+}

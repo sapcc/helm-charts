@@ -1,0 +1,22 @@
+{{- if .Values.thanos.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prometheus.fullName" . }}-thanos-query
+  labels:
+    app: thanos-query
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  ports:
+  - name: http
+    port: {{ required ".Values.thanos.querier.service.httpPort missing" .Values.thanos.querier.service.httpPort }}
+    targetPort: http
+  - name: grpc
+    port: {{ required ".Values.thanos.querier.service.grpcPort missing" .Values.thanos.querier.service.grpcPort }}
+    targetPort: grpc
+
+  selector:
+    app: thanos-query
+    prometheus: {{ include "prometheus.name" . }}
+{{ end }}

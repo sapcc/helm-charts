@@ -1,0 +1,105 @@
+{{- if .Values.serviceDiscoveries.pods.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: {{ include "prometheus.fullName" . }}-pod-sd
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  jobLabel: pod-sd
+
+  # Selector not used but required in k8s 1.10+ .
+  selector:
+    matchExpressions:
+      - key: foo
+        operator: DoesNotExist
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    any: true
+
+  podMetricsEndpoints:
+    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      scheme: http
+      relabelings:
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+          regex: 'true'
+        {{- if .Values.serviceDiscoveries.pods.limitToPrometheusTargets }}
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_targets
+          regex: {{ include "prometheusTargetsValue" . | quote }}
+        {{- end }}
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_container_port_number
+            - __meta_kubernetes_pod_container_port_name
+            - __meta_kubernetes_pod_annotation_prometheus_io_port
+          regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.+;\d+)'
+        - sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_path
+          targetLabel: __metrics_path__
+          regex: '(.+)'
+        - sourceLabels:
+            - __address__
+            - __meta_kubernetes_pod_annotation_prometheus_io_port
+          targetLabel: __address__
+          regex: '([^:]+)(?::\d+)?;(\d+)'
+          replacement: ${1}:${2}
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_pod_name
+          targetLabel: kubernetes_pod_name
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+
+    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      scheme: http
+      relabelings:
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+          regex: 'true'
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_targets
+          regex: {{ include "prometheusTargetsValue" . | quote }}
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_port_1
+          regex: '\d+'
+        - action: keep
+          sourceLabels:
+            - __meta_kubernetes_pod_container_port_number
+            - __meta_kubernetes_pod_container_port_name
+            - __meta_kubernetes_pod_annotation_prometheus_io_port_1
+          regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.+;\d+)'
+        - sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_path
+          targetLabel: __metrics_path__
+          regex: '(.+)'
+        - sourceLabels:
+            - __address__
+            - __meta_kubernetes_pod_annotation_prometheus_io_port_1
+          targetLabel: __address__
+          regex: '([^:]+)(?::\d+)?;(\d+)'
+          replacement: ${1}:${2}
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_pod_name
+          targetLabel: kubernetes_pod_name
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ end }}

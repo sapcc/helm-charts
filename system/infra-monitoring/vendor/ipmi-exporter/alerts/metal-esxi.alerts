@@ -1,0 +1,58 @@
+groups:
+- name: metal-esxi.alerts
+  rules:      
+  - alert: MetalESXiSensorWarning
+    expr: count(ipmi_sensor_state{job="vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot)"} == 2) by (server_name, type, exported_name, manufacturer, model, server_id)
+    for: 10m
+    labels:
+      severity: warning
+      tier: vpod
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ESXi Host {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.exported_name }} / server_id: {{ $labels.server_id }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ESXi Host {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} / Server ID: {{ $labels.server_id }}"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
+      
+  - alert: MetalESXiMemoryInfo
+    expr: sum(ipmi_memory_errors{job="vmware-esxi"} > 16000) by (server_name, exported_name, manufacturer, model, server_id, serial)
+    for: 30m
+    labels:
+      severity: info
+      tier: vpod
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} has {{ $value }} correctable ECC errors. Serial: {{ $labels.serial }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} has {{ $value }} correctable ECC errors. Serial: {{ $labels.serial }}"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
+      
+  - alert: MetalESXiSensorInfo
+    expr: count(ipmi_sensor_state{job="vmware-esxi", type=~"(Power Supply|Cable/Interconnect|Version Change)"} == 2) by (server_name, type, exported_name, manufacturer, model, server_id)
+    for: 10m
+    labels:
+      severity: info
+      tier: vpod
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ESXi Host {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.exported_name }} / server_id: {{ $labels.server_id }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ESXi Host {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} / Server ID: {{ $labels.server_id }}"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
+      
+  - alert: MetalESXiMetricsDownInfo
+    expr: count(ipmi_up{job="vmware-esxi"} == 0 or up{job="vmware-esxi"} == 0) by (server_name, maintenance, serial) 
+    for: 10m
+    labels:
+      severity: info
+      tier: vpod
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, serial {{ $labels.serial }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, serial {{ $labels.serial }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, serial {{ $labels.serial }}"

@@ -30,6 +30,7 @@ spec:
         {{- if $opts.prometheus }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9200"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
 {{ tuple . .Values.postgresDatabase "pgbouncer" | include "kubernetes_pod_anti_affinity" | indent 6 }}
@@ -58,7 +59,29 @@ spec:
               value: {{ $opts.config.reserve_pool_size | quote }}
             - name: STATS_PASS
               value: {{ $opts.config.stats_pass | default (derivePassword 1 "long" "password" "stats_user" (print .Values.postgresDatabase "-postgresql." .Release.Namespace ".svc.kubernetes." .Values.global.region "." .Values.global.tld)) | quote }}
+            - name: LOGLEVEL
+              value: {{ .Values.global.pgbouncer.logLevel | default "INFO" }}
 {{- if not $opts.debug }}
+  {{- if semverCompare ">=20190123.2" (default .Values.pgbouncer.image_version .Values.global.pgbouncer.imageTag | default .Values.global.pgbouncer.imageTag | default .Values.global.pgbouncer.image_version ) }}
+          livenessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+              - "[ -f /tmp/pgbouncer-alive ] && [ $(($(date +%s) - $(date -r /tmp/pgbouncer-alive +%s))) -lt 5 ]"
+            initialDelaySeconds: 3
+            periodSeconds: 1
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+              - "[ -f /tmp/pgbouncer-ready ] && [ $(($(date +%s) - $(date -r /tmp/pgbouncer-ready +%s))) -lt 5 ]"
+            initialDelaySeconds: 3
+            periodSeconds: 1
+            failureThreshold: 5
+  {{- else }}
           livenessProbe:
             exec:
               command:
@@ -72,7 +95,8 @@ spec:
               - pgbouncer-k8s-readiness
             initialDelaySeconds: 3
             periodSeconds: 1
-            failureThreshold: 3
+            failureThreshold: 5
+  {{- end }}
 {{- end }}
           ports:
             - name: pgbouncer

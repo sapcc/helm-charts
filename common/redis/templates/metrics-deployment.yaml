@@ -1,0 +1,54 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+
+metadata:
+  name: {{ template "redis.fullname" . }}-metrics
+  labels:
+    app: {{ template "redis.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "redis.fullname" . }}
+      chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+      release: "{{ .Release.Name }}"
+      heritage: "{{ .Release.Service }}"
+  template:
+    metadata:
+      labels:
+        app: {{ template "redis.fullname" . }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        promtheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+    spec:
+      containers:
+        - name: metrics
+          image: {{ template "redis.metrics.image" . }}
+          imagePullPolicy: {{ .Values.metrics.image.pullPolicy | quote }}
+          env:
+            - name: REDIS_ADDR
+              value: {{ printf "%s:%d" ( include "redis.fullname" . ) (int .Values.redisPort) | quote }}
+            - name: REDIS_ALIAS
+              value: {{ template "redis.fullname" . }}
+            {{ if .Values.redisPassword }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "redis.fullname" . }}
+                  key: redis-password
+            {{ end }}
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+          resources:
+{{ toYaml .Values.metrics.resources | indent 12 }}
+{{ end }}

@@ -1,0 +1,62 @@
+{{ if .Values.tempest.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: glance-tempest
+  annotations:
+    "helm.sh/hook": test-success
+  labels:
+    system: openstack
+    type: configuration
+    component: glance
+spec:
+  restartPolicy: Never
+  containers:
+    - name: glance-tempest
+      image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/rally-openstack:{{.Values.tempest.imageTag}}
+      imagePullPolicy: IfNotPresent
+      command:
+        - /usr/local/bin/kubernetes-entrypoint
+      env:
+        - name: COMMAND
+          value: "/container.init/glance-tempest-start"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: glance
+        - name: OS_REGION_NAME
+          value: {{ .Values.global.region }}
+        - name: OS_USER_DOMAIN_NAME
+          value: "tempest"
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: "tempest"
+        - name: OS_INTERFACE
+          value: "internal"
+        - name: OS_ENDPOINT_TYPE
+          value: "internalURL"
+        - name: OS_TENANT_NAME
+          value: "tempest2"
+        - name: OS_PROJECT_NAME
+          value: "tempest2"
+        - name: OS_USERNAME
+          value: "tempestuser2"
+        - name: OS_PASSWORD
+          value: {{ .Values.tempestAdminPassword | quote }}
+        - name: OS_IDENTITY_API_VERSION
+          value: "3"
+        - name: OS_AUTH_URL
+          value: "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3"
+      volumeMounts:
+        - mountPath: /glance-etc
+          name: glance-etc
+        - mountPath: /container.init
+          name: container-init
+  volumes:
+    - name: glance-etc
+      configMap:
+        name: glance-etc
+    - name: container-init
+      configMap:
+        name: glance-bin
+        defaultMode: 0755
+{{ end }}

@@ -1,0 +1,99 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vcenter-datacenter-cinder-backup-deployment'
+  scope: 'datacenter'
+template: |{{`
+  kind: Deployment
+  apiVersion: extensions/v1beta1
+  metadata:
+    name: cinder-volume-backup-vmware-{{ name }}
+    labels:
+      system: openstack
+      type: backend
+      component: cinder
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    selector:
+      matchLabels:
+          name: cinder-volume-backup-vmware-{{ name }}
+    template:
+      metadata:
+        labels:
+          application: cinder
+          component: volume-backup-vmware
+          name: cinder-volume-backup-vmware-{{ name }}
+      spec:
+        hostname: cinder-volume-backup-vmware-{{ name }}
+        containers:
+        - name: cinder-volume-backup-vmware-{{ name }}
+          image: `}}{{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-cinder:{{.Values.imageVersionCinderVolumeBackup | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}{{`
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add: ["SYS_ADMIN"]
+          command:
+          - dumb-init
+          - kubernetes-entrypoint
+          env:
+          - name: COMMAND
+            value: 'cinder-backup'
+          - name: NAMESPACE
+            value: {{ namespace }}
+          - name: SENTRY_DSN
+            value: `}}{{ .Values.sentry_dsn | quote }}{{`
+          - name: PYTHONWARNINGS
+            value: 'ignore:Unverified HTTPS request'
+          - name: PGAPPNAME
+            value: cinder-volume-backup-vmware-{{ name }}
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder-backup.conf"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 20
+          volumeMounts:
+          - name: etccinder
+            mountPath: /etc/cinder
+          - name: cinder-etc
+            mountPath: /etc/cinder/cinder.conf
+            subPath: cinder.conf
+            readOnly: true
+          - name: cinder-etc
+            mountPath: /etc/cinder/policy.json
+            subPath: policy.json
+            readOnly: true
+          - name: cinder-etc
+            mountPath: /etc/cinder/rootwrap.conf
+            subPath: rootwrap.conf
+            readOnly: true
+          - name: cinder-etc
+            mountPath: /etc/cinder/rootwrap.d/volume.filters
+            subPath: volume.filters
+            readOnly: true
+          - name: cinder-etc
+            mountPath: /etc/cinder/logging.ini
+            subPath: logging.ini
+            readOnly: true
+          - name: backup-config
+            mountPath: /etc/cinder/cinder-backup.conf
+            subPath: cinder-backup.conf
+            readOnly: true
+        volumes:
+        - name: etccinder
+          emptyDir: {}
+        - name: cinder-etc
+          configMap:
+            name: cinder-etc
+        - name: backup-config
+          configMap:
+            name:  backup-vmware-{{ name }}
+`}}
+{{- end }}

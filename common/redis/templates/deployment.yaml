@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ template "redis.fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "redis.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -11,22 +11,29 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
+        app: {{ template "redis.fullname" . }}
     spec:
       containers:
-      - name: {{ template "fullname" . }}
-        image: "{{ .Values.image }}"
-        imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
-        args: [ {{- if .Values.config }} /etc/redis/redis.conf, {{- end }} --requirepass, $(REDIS_PASSWORD) ]
+      - name: {{ template "redis.fullname" . }}
+        image: {{ template "redis.image" . }}
+        imagePullPolicy: {{ default "" .Values.image.pullPolicy | quote }}
+        args:
+        {{- if .Values.config }}
+        - /etc/redis/redis.conf
+        {{- end }}
+        {{- if .Values.redisPassword }}
+        - --requirepass
+        - $(REDIS_PASSWORD)
         env:
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "fullname" . }}
+              name: {{ template "redis.fullname" . }}
               key: redis-password
+        {{ end }}
         ports:
         - name: redis
-          containerPort: 6379
+          containerPort: {{ required ".Values.redisPort missing" .Values.redisPort }}
         livenessProbe:
           exec:
             command:
@@ -54,13 +61,14 @@ spec:
       - name: redis-data
       {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "fullname" . }}
+          claimName: {{ template "redis.fullname" . }}
       {{- else }}
-        emptyDir: {}
+        emptyDir:
+          medium: Memory
       {{- end }}
       {{- if .Values.config }}
       - name: redis-config
         configMap:
-          name: {{ template "fullname" . }}
+          name: {{ template "redis.fullname" . }}
           defaultMode: 0444
       {{- end }}

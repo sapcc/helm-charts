@@ -42,7 +42,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: {{ .Release.Name }}-postgresql
+              value: {{ .Release.Name }}-mariadb
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
@@ -61,14 +61,17 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
+{{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
-              mountPath: /etc/keystone/keystone-paste.ini
-              subPath: keystone-paste.ini
+              mountPath: /etc/keystone/policy.yaml
+              subPath: policy.yaml
               readOnly: true
+{{- else }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.json
               subPath: policy.json
               readOnly: true
+{{- end }}
             - name: keystone-etc
               mountPath: /etc/keystone/logging.conf
               subPath: logging.conf

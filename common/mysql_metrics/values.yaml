@@ -2,12 +2,50 @@ global:
   tld: cloud.sap
   region: local
 
-db_name: DEFINED-IN-COMPONENT-CHART
-db_user: DEFINED-IN-COMPONENT-CHART
-db_password: null
+#db_name: DEFINED-IN-COMPONENT-CHART
+#db_user: DEFINED-IN-COMPONENT-CHART
+#db_password: null
 
 port_metrics: '9237'
 loglevel: info
-image: justwatch/sql_exporter
-imageTag: 0.2.0
+image: hub.global.cloud.sap/monsoon/sql_exporter
+imageTag: 0.2.4
 imagePullPolicy: IfNotPresent
+
+## Affinity for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
+nodeAffinity: {}
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 5m
+    memory: 32Mi
+customMetrics:
+  - name: mysql_database_size
+    help: Total database size
+    labels:
+    - "schema_name"
+    query: |
+        SELECT table_schema AS schema_name,
+          ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) AS size_in_mb
+        FROM information_schema.tables
+        GROUP BY table_schema
+    values:
+    - "size_in_mb"
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: true
+
+  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  prometheus: openstack
+
+  # The tier of the alert.
+  tier: os
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:

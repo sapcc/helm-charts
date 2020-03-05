@@ -1,0 +1,16 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app: {{ template "name" . }}
+  name: "{{ .Release.Namespace }}:{{ template "name" . }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "{{ .Release.Namespace }}:{{ template "name" . }}"
+subjects:
+  - kind: ServiceAccount
+    name: {{ required ".Values.rbac.serviceAccountName missing" .Values.rbac.serviceAccountName }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

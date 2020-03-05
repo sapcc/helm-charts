@@ -1,7 +1,7 @@
 client:
   hosts:
-    - {{.Values.hermes_elasticsearch_host}}
-  port: {{.Values.hermes_elasticsearch_port}}
+    - {{required ".Values.hermes_elasticsearch_host is missing" .Values.hermes_elasticsearch_host}}
+  port: {{required ".Values.hermes_elasticsearch_port" .Values.hermes_elasticsearch_port}}
   url_prefix:
   use_ssl: False
   certificate:

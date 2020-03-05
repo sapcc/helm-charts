@@ -6,8 +6,9 @@ metadata:
   name: designate-worker
   labels:
     system: openstack
+    application: designate
     type: backend
-    component: designate
+    component: worker
 spec:
   replicas: {{ .Values.pod.replicas.worker }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -29,22 +30,20 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - designate-worker
-            topologyKey: "kubernetes.io/hostname"
+{{ tuple . "designate" "worker" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: designate-worker
-          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-designate-worker:{{.Values.image_version_designate_worker}}
+          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{.Values.global.image_namespace}}/loci-designate:{{required ".Values.global.image_version_designate_worker is missing" .Values.image_version_designate_worker}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/kubernetes-entrypoint
+          resources:
+             requests:
+               memory: "256Mi"
+               cpu: "250m"
+             limits:
+               memory: "1024Mi"
+               cpu: "1000m"
           env:
             - name: COMMAND
               value: "/container.init/designate-worker-start"
@@ -52,6 +51,13 @@ spec:
               value: {{ .Release.Namespace }}
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:

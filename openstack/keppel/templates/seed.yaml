@@ -14,15 +14,28 @@ spec:
   - monsoon3/domain-{{.}}-seed
   {{- end }}
 
-  # TODO:
-  # - service catalog entry
-  # - support seed
+  # TODO: support seed
 
   roles:
-    - cloud_registry_admin
-    - cloud_registry_viewer
-    - registry_admin
-    - registry_viewer
+    - name: cloud_registry_admin
+    - name: cloud_registry_viewer
+    - name: registry_admin
+    - name: registry_viewer
+
+  services:
+    - name:        keppel
+      type:        keppel
+      description: 'Multi-tenant container image registry'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $.Values.global.region }}'
+          interface: public
+          enabled:   true
+          url:       'https://keppel.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+        - region:    '{{ $.Values.global.region }}'
+          interface: internal
+          enabled:   true
+          url:       'http://keppel-api.{{ $.Release.Namespace }}.svc'
 
   domains:
     - name: Default
@@ -30,31 +43,26 @@ spec:
         - name: keppel
           description: Keppel Service
           password: '{{.Values.keppel.service_password}}'
-          roles:
+          role_assignments:
             - project: service
               role:    service
-        - name: admin
-          roles:
-          - domain: Default
-            role: cloud_registry_admin
-          - project: admin
-            role: cloud_registry_admin
-      groups:
-        - name: Administrators
-          roles:
-            - domain: Default
-              role: cloud_registry_admin
-            - project: admin
-              role: cloud_registry_admin
+            - project: service
+              role:    role_viewer # to list Keystone roles
+            - project: service
+              role:    admin          # for keppel-health-monitor (creating a Keppel account includes creating role assignments)
+            - project: service
+              role:    registry_admin # for keppel-health-monitor
 
     - name: ccadmin
       groups:
         - name: CCADMIN_CLOUD_ADMINS
-          roles:
+          role_assignments:
             - project: cloud_admin
               role: cloud_registry_admin
+            - project: master
+              role: registry_admin
         - name: CCADMIN_DOMAIN_REGISTRY_ADMINS
-          roles:
+          role_assignments:
             - domain: ccadmin
               role: registry_admin
 
@@ -62,7 +70,7 @@ spec:
     - name: {{.}}
       groups:
         - name: {{. | upper}}_DOMAIN_REGISTRY_ADMINS
-          roles:
+          role_assignments:
             - domain: {{.}}
               role: registry_admin
     {{- end }}

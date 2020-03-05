@@ -1,0 +1,35 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apic-exporters
+{{- if .Values.exporter_types }}
+data:
+  config-apic-exporters.yaml: |
+    prometheus_port: {{ .Values.listen_port }}
+    log_level: {{ .Values.aci.log_level }}
+    device_information:
+      hosts: {{ .Values.aci.apic_hosts }}
+      username: {{ .Values.aci.apic_user }}
+      password: {{ .Values.aci.apic_password }}
+      tenant_name: {{ .Values.aci.apic_tenant_name }}
+      proxy: {{- range $key, $val := .Values.aci.proxy }}
+        {{ $key }}: {{ $val | quote }}
+      {{- end }}
+    exporter_types:
+      {{- range $exporter_type_values := .Values.exporter_types  }}
+      {{ $exporter_type_values.name }}:
+        name: {{ $exporter_type_values.name | quote }}
+      {{- range $key, $val := $exporter_type_values }}
+      {{ if eq $key "collector" }}
+        {{ $key }}:
+          {{- range $listitem := $val }}
+          - {{ $listitem }}
+          {{- end}}
+      {{ else }}
+        {{ $key }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
+{{- end }}
+{{- end }}

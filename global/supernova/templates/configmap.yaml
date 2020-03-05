@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: editors
+
+data:
+{{- $dict := dict }}
+{{- range $group, $users := .Values.groups }}
+{{- range $user := $users}}
+{{ $_ := set $user "id" (toString $user.sAMAccountName) }}
+{{ $_ := set $user "email" (toString $user.mail) }}
+{{ $_ := set $user "fullName" (toString $user.displayName) }}
+{{- $user := pick $user "email" "fullName" "id"}}
+{{- $_ := set $dict (toString $user.id) $user }}
+{{- end }}
+{{- end }}
+  editors.json: |
+{{ toPrettyJson $dict | indent 4}}

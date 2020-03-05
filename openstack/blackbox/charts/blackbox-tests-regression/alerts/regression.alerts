@@ -1,0 +1,13 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: BlackboxTestsRegressionScrapeMissing
+    expr: absent(up{component="blackbox-tests",type="regression"})
+    for: 1h
+    labels:
+      service: blackbox-tests-regression
+      severity: warning
+      tier: os
+    annotations:
+      description: Blackbox-Tests-Regression failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: Blackbox-Tests-Regression cannot be scraped

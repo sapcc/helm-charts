@@ -1,0 +1,268 @@
+{{- if .Values.nova_nanny.enabled }}
+{{- if or .Values.nova_nanny.db_purge.enabled .Values.nova_nanny.consistency.enabled .Values.nova_nanny.quota_sync.enabled .Values.nova_nanny.db_cleanup.enabled .Values.nova_nanny.sync_neutron_cache.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nova-nanny
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: nova-nanny
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: nova-nanny
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+      containers:
+{{- if or .Values.nova_nanny.db_purge.enabled .Values.nova_nanny.consistency.enabled }}
+        - name: db-consistency-and-purge
+          image: {{.Values.global.imageRegistry}}/monsoon/nova-nanny:{{.Values.nova_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,nova-api"
+            - name: NOVA_DB_PURGE_ENABLED
+              value: {{ .Values.nova_nanny.db_purge.enabled | quote }}
+            - name: NOVA_DB_PURGE_DRY_RUN
+              value: {{ .Values.nova_nanny.db_purge.dry_run | quote }}
+            - name: NOVA_DB_PURGE_OLDER_THAN
+              value: {{ .Values.nova_nanny.db_purge.older_than | quote }}
+            - name: NOVA_DB_PURGE_MAX_NUMBER
+              value: {{ .Values.nova_nanny.db_purge.max_number | quote }}
+            - name: NOVA_CONSISTENCY_ENABLED
+              value: {{ .Values.nova_nanny.consistency.enabled | quote }}
+            - name: NOVA_CONSISTENCY_DRY_RUN
+              value: {{ .Values.nova_nanny.consistency.dry_run | quote }}
+            - name: NOVA_CONSISTENCY_OLDER_THAN
+              value: {{ .Values.nova_nanny.consistency.older_than | quote }}
+            - name: NOVA_CONSISTENCY_MAX_INSTANCE_FAULTS
+              value: {{ .Values.nova_nanny.consistency.max_instance_faults | quote }}
+            - name: NOVA_CONSISTENCY_FIX_LIMIT
+              value: {{ .Values.nova_nanny.consistency.fix_limit | quote }}
+            - name: NOVA_QUEENS_INSTANCE_MAPPING_ENABLED
+              value: {{ .Values.nova_nanny.consistency.queens_instance_mapping_enabled | quote }}
+            - name: NOVA_QUEENS_INSTANCE_MAPPING_DRY_RUN
+              value: {{ .Values.nova_nanny.consistency.queens_instance_mapping_dry_run | quote }}
+            - name: NOVA_NANNY_INTERVAL
+              value: {{ .Values.nova_nanny.interval | quote }}
+            - name: NOVA_CELL2_ENABLED
+              value: "false"
+            - name: OS_AUTH_URL
+              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
+            - name: OS_PROJECT_NAME
+              value: "cloud_admin"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "ccadmin"
+            - name: OS_USERNAME
+              value: "nova_nanny"
+            - name: OS_USER_DOMAIN_NAME
+              value: "Default"
+            - name: OS_PASSWORD
+              value: {{ derivePassword 1 "long" .Values.global.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+          volumeMounts:
+            - mountPath: /nova-etc
+              name: nova-etc
+{{- if .Values.nova_nanny.cell2.enabled }}
+        - name: db-consistency-and-purge-cell2
+          image: {{.Values.global.imageRegistry}}/monsoon/nova-nanny:{{.Values.nova_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,nova-api"
+            - name: NOVA_DB_PURGE_ENABLED
+              value: {{ .Values.nova_nanny.db_purge.enabled | quote }}
+            - name: NOVA_DB_PURGE_DRY_RUN
+              value: {{ .Values.nova_nanny.db_purge.dry_run | quote }}
+            - name: NOVA_DB_PURGE_OLDER_THAN
+              value: {{ .Values.nova_nanny.db_purge.older_than | quote }}
+            - name: NOVA_DB_PURGE_MAX_NUMBER
+              value: {{ .Values.nova_nanny.db_purge.max_number | quote }}
+            - name: NOVA_CONSISTENCY_ENABLED
+              value: {{ .Values.nova_nanny.consistency.enabled | quote }}
+            - name: NOVA_CONSISTENCY_DRY_RUN
+              value: {{ .Values.nova_nanny.consistency.dry_run | quote }}
+            - name: NOVA_CONSISTENCY_OLDER_THAN
+              value: {{ .Values.nova_nanny.consistency.older_than | quote }}
+            - name: NOVA_CONSISTENCY_MAX_INSTANCE_FAULTS
+              value: {{ .Values.nova_nanny.consistency.max_instance_faults | quote }}
+            - name: NOVA_QUEENS_INSTANCE_MAPPING_ENABLED
+              value: "false"
+            - name: NOVA_QUEENS_INSTANCE_MAPPING_DRY_RUN
+              value: "true"
+            - name: NOVA_NANNY_INTERVAL
+              value: {{ .Values.nova_nanny.interval | quote }}
+            - name: NOVA_CELL2_ENABLED
+              value: "true"
+            - name: OS_AUTH_URL
+              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
+            - name: OS_PROJECT_NAME
+              value: "cloud_admin"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "ccadmin"
+            - name: OS_USERNAME
+              value: "nova_nanny"
+            - name: OS_USER_DOMAIN_NAME
+              value: "Default"
+            - name: OS_PASSWORD
+              value: {{ derivePassword 1 "long" .Values.global.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+          volumeMounts:
+            - mountPath: /nova-etc
+              name: nova-etc
+{{- end }}
+{{- end }}
+{{- if .Values.nova_nanny.quota_sync.enabled_disabled_for_now_as_not_used }}
+        - name: quota-sync
+          image: {{.Values.global.imageRegistry}}/monsoon/nova-nanny:{{.Values.nova_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-quota-sync.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,nova-api"
+            - name: NOVA_QUOTA_SYNC_ENABLED
+              value: {{ .Values.nova_nanny.quota_sync.enabled | quote }}
+            - name: NOVA_QUOTA_SYNC_DRY_RUN
+              value: {{ .Values.nova_nanny.quota_sync.dry_run | quote }}
+            - name: NOVA_NANNY_INTERVAL
+              value: {{ .Values.nova_nanny.nanny.interval | quote }}
+          volumeMounts:
+            - mountPath: /nova-etc
+              name: nova-etc
+{{- end }}
+{{- if .Values.nova_nanny.db_cleanup.enabled }}
+        - name: db-cleanup
+          image: {{.Values.global.imageRegistry}}/monsoon/nova-nanny:{{.Values.nova_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-db-cleanup.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,nova-api"
+            - name: NOVA_DB_CLEANUP_ENABLED
+              value: {{ .Values.nova_nanny.db_cleanup.enabled | quote }}
+            - name: NOVA_DB_CLEANUP_DRY_RUN
+              value: {{ .Values.nova_nanny.db_cleanup.dry_run | quote }}
+            - name: NOVA_DB_CLEANUP_INTERVAL
+              value: {{ .Values.nova_nanny.db_cleanup.interval | quote }}
+            - name: NOVA_DB_CLEANUP_ITERATIONS
+              value: {{ .Values.nova_nanny.db_cleanup.iterations | quote }}
+            - name: OS_AUTH_URL
+              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
+            - name: OS_PROJECT_NAME
+              value: "cloud_admin"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "ccadmin"
+            - name: OS_USERNAME
+              value: "nova_nanny"
+            - name: OS_USER_DOMAIN_NAME
+              value: "Default"
+            - name: OS_PASSWORD
+              value: {{ derivePassword 1 "long" .Values.global.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+{{- end }}
+{{- if .Values.nova_nanny.sync_neutron_cache.enabled }}
+        - name: sync-neutron-cache
+          image: {{.Values.global.imageRegistry}}/monsoon/nova-nanny:{{.Values.nova_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-sync-neutron-cache.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,nova-api,neutron-server"
+            - name: NOVA_SYNC_NEUTRON_CACHE_ENABLED
+              value: {{ .Values.nova_nanny.sync_neutron_cache.enabled | quote }}
+            - name: NOVA_SYNC_NEUTRON_CACHE_DRY_RUN
+              value: {{ .Values.nova_nanny.sync_neutron_cache.dry_run | quote }}
+            - name: NOVA_SYNC_NEUTRON_CACHE_INTERVAL
+              value: {{ .Values.nova_nanny.sync_neutron_cache.interval | quote }}
+            - name: NOVA_SYNC_NEUTRON_CACHE_BAREMETAL
+              value: {{ .Values.nova_nanny.sync_neutron_cache.baremetal | quote }}
+            - name: NOVA_CELL2_ENABLED
+              value: "false"
+          volumeMounts:
+            - mountPath: /nova-etc
+              name: nova-etc
+{{- if .Values.nova_nanny.cell2.enabled }}
+        - name: sync-neutron-cache-cell2
+          image: {{.Values.global.imageRegistry}}/monsoon/nova-nanny:{{.Values.nova_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-sync-neutron-cache.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,nova-api,neutron-server"
+            - name: NOVA_SYNC_NEUTRON_CACHE_ENABLED
+              value: {{ .Values.nova_nanny.sync_neutron_cache.enabled | quote }}
+            - name: NOVA_SYNC_NEUTRON_CACHE_DRY_RUN
+              # value: {{ .Values.nova_nanny.sync_neutron_cache.dry_run | quote }}
+              value: "true"
+            - name: NOVA_SYNC_NEUTRON_CACHE_INTERVAL
+              value: {{ .Values.nova_nanny.sync_neutron_cache.interval | quote }}
+            - name: NOVA_CELL2_ENABLED
+              value: "true"
+          volumeMounts:
+            - mountPath: /nova-etc
+              name: nova-etc
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

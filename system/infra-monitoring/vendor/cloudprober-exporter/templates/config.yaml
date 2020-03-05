@@ -1,0 +1,70 @@
+{{ if .Values.enabled }}
+{{- $values := .Values -}}
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: cloudprober-exporter
+  labels:
+    app: cloudprober-exporter
+    release: "{{$.Release.Name}}"
+
+data:
+  cloudprober.cfg: |
+    {{- range $i, $config := .Values.static_ping_targets }}
+    probe {
+      type: PING
+      name: "ping-{{ $config.name }}"
+      targets {
+        host_names: "{{ $config.target }}"
+      }
+      ping_probe {
+        use_datagram_socket: false
+      }
+      interval_msec: {{ $values.pingIntervalMsec }}
+      timeout_msec: {{ $values.pingTimeoutMsec }}
+
+      latency_unit: "ms"
+      latency_distribution {
+              explicit_buckets: "2,4,8,16,32,64,128,256,512"
+      }
+    }
+    {{- end }}
+    {{- range $i, $config := .Values.static_http_targets }}
+    probe {
+      type: HTTP
+      name: "http-{{ $config.name }}"
+      targets {
+        host_names: "{{ $config.target }}"
+      }
+      http_probe {
+        port: {{ $config.port }}
+      {{- if $config.relative_url }}
+        relative_url: {{ $config.relative_url | quote }}
+      {{- end }}
+      }
+      interval_msec: {{ $values.httpIntervalMsec }}
+      timeout_msec: {{ $values.httpTimeoutMsec }}
+    }
+    {{- end }}
+    server {
+      type: HTTP
+      http_server {
+        port: 80
+
+        # Return a repeated pattern of "cloudprobe" at the URL /data_4096.
+        pattern_data_handler {
+           response_size: 4096
+           pattern: "cloudprober"
+        }
+      }
+    }
+    surfacer {
+      type: PROMETHEUS
+
+      prometheus_surfacer {
+        metrics_prefix: "cloudprober_"
+      }
+    }
+  {{ end -}}

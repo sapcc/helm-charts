@@ -5,8 +5,9 @@ metadata:
   name: designate-api
   labels:
     system: openstack
+    application: designate
     type: api
-    component: designate
+    component: api
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -28,22 +29,20 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - designate-api
-            topologyKey: "kubernetes.io/hostname"
+{{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: designate-api
-          image: {{.Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-designate-api:{{.Values.image_version_designate_api}}
+          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/loci-designate:{{required ".Values.image_version_designate_api is missing" .Values.image_version_designate_api}}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
+          resources:
+             requests:
+               memory: "256Mi"
+               cpu: "100m"
+             limits:
+               memory: "1024Mi"
+               cpu: "1000m"
           env:
             - name: COMMAND
               value: "/container.init/designate-api-start"
@@ -57,6 +56,11 @@ spec:
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -79,14 +83,20 @@ spec:
             - mountPath: /container.init
               name: container-init
         - name: statsd
-          image: prom/statsd-exporter:v0.5.0
+          image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{.Values.global.designate_metrics_port}}
+          volumeMounts:
+            - name: designate-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
       volumes:
         - name: designate-etc
           configMap:

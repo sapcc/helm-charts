@@ -33,12 +33,12 @@ spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: neutron-server
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{.Values.image_name}}:{{.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
 {{- if not .Values.pod.debug.server }}
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthcheck
               port: {{.Values.global.neutron_api_port_internal | default 9696}}
             initialDelaySeconds: 120
             timeoutSeconds: 5
@@ -49,23 +49,30 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 5
 {{- end }}
-          command:
-            - /usr/local/bin/kubernetes-entrypoint
+          command: ['dumb-init', 'kubernetes-entrypoint']
           env:
             - name: COMMAND
+{{- if .Values.wsgi }}
+              value: "uwsgi --procname-prefix neutron-api --ini /etc/neutron/uwsgi.ini"
+{{- else }}
               value: "/container.init/neutron-server-start"
+{{- end }}
             - name: DEBUG_CONTAINER
-            {{ if .Values.pod.debug.server }}
+            {{- if .Values.pod.debug.server }}
               value: "true"
-            {{else}}
+            {{- else}}
               value: "false"
-            {{ end }}
+            {{- end }}
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
               value: "neutron-migration"
             - name: DEPENDENCY_SERVICE
-              value: "neutron-postgresql,rabbitmq"
+{{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- else }}
+              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
+{{- end }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
@@ -81,16 +88,92 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: JAEGER_AGENT_HOST
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
+          resources:
+{{ toYaml .Values.pod.resources.server | indent 12 }}
           ports:
-            - name: neutron-api{{- tuple .Values.api.override | include "utils.snippets.debug.debuggable_port" }}
+            - name: neutron-api
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}
           volumeMounts:
+{{- if .Values.wsgi }}
+            - mountPath: /etc/neutron
+              name: empty-dir
+            - mountPath: /etc/neutron/neutron.conf
+              name: neutron-etc
+              subPath: neutron.conf
+              readOnly: true
+            - mountPath: /etc/neutron/uwsgi.ini
+              name: neutron-etc
+              subPath: uwsgi.ini
+              readOnly: true
+            - mountPath: /etc/neutron/neutron_lbaas.conf
+              name: neutron-etc
+              subPath: neutron-lbaas.conf
+              readOnly: true
+            - mountPath: /etc/neutron/policy.json
+              name: neutron-etc
+              subPath: neutron-policy.json
+              readOnly: true
+            - mountPath: /etc/neutron/rootwrap.conf
+              name: neutron-etc
+              subPath: rootwrap.conf
+              readOnly: true
+            - mountPath: /etc/neutron/api-paste.ini
+              name: neutron-etc
+              subPath: api-paste.ini
+              readOnly: true
+            - mountPath: /etc/neutron/logging.conf
+              name: neutron-etc
+              subPath: logging.conf
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
+              name: neutron-etc
+              subPath: ml2-conf.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+              name: neutron-etc-region
+              subPath: ml2-conf-aci.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-arista.ini
+              name: neutron-etc-vendor
+              subPath: ml2-conf-arista.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-manila.ini
+              name: neutron-etc-vendor
+              subPath: ml2-conf-manila.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-f5.ini
+              name: neutron-etc-vendor
+              subPath: ml2-conf-f5.ini
+              readOnly: true
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini
+              name: neutron-etc-vendor
+              subPath: ml2-conf-asr1k.ini
+              readOnly: true
+            {{- if .Values.bgp_vpn.enabled }}
+            - mountPath: /etc/neutron/networking-bgpvpn.conf
+              name: neutron-etc
+              subPath: networking-bgpvpn.conf
+              readOnly: true
+            {{- end}}
+
+            {{- if .Values.audit.enabled }}
+            - mountPath: /etc/neutron/neutron_audit_map.yaml
+              name: neutron-etc
+              subPath: neutron_audit_map.yaml
+              readOnly: true
+            {{- end }}
+            {{- if .Values.watcher.enabled }}
+            - mountPath: /etc/neutron/watcher.yaml
+              name: neutron-etc
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
+            {{- if .Values.pod.debug.server }}
             - mountPath: /development
               name: development
+            {{- end }}
+
+{{- else }}
             - mountPath: /neutron-etc
               name: neutron-etc
             - mountPath: /neutron-etc-vendor
@@ -99,17 +182,30 @@ spec:
               name: neutron-etc-region
             - mountPath: /container.init
               name: container-init
+            {{- if .Values.pod.debug.server }}
+            - mountPath: /development
+              name: development
+            {{- end }}
+
+{{- end }}
         - name: statsd
-          image: prom/statsd-exporter:v0.5.0
+          image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{.Values.port_metrics}}
-{{- tuple . .Values.api.override "neutron-api" | include "utils.snippets.debug.debug_port_container" | indent 8 }}
+          volumeMounts:
+            - name: neutron-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
       volumes:
+        - name: empty-dir
+          emptyDir: {}
         - name: neutron-etc
           configMap:
             name: neutron-etc
@@ -119,11 +215,12 @@ spec:
         - name: neutron-etc-region
           configMap:
             name: neutron-etc-region
+{{- if .Values.pod.debug.server }}
         - name: development
           persistentVolumeClaim:
             claimName: development-pvclaim
+{{- end }}
         - name: container-init
           configMap:
             name: neutron-bin
             defaultMode: 0755
-{{- default 9696 .Values.global.neutron_api_port_internal | tuple . .Values.api.override "neutron-api" | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}

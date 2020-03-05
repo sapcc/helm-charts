@@ -4,9 +4,13 @@ apiVersion: extensions/v1beta1
 metadata:
   name: manila-api
   labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
     system: openstack
-    type: api
     component: manila
+    type: api
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -30,22 +34,46 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
 {{ tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-      containers:
-        - name: manila-api
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-manila-api:{{.Values.imageVersionManilaApi}}
-          imagePullPolicy: IfNotPresent
-          command:
-            - dumb-init
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "manila-api --config-file /etc/manila/manila.conf"
+      initContainers:
+      - name: kubernetes-entrypoint
+        image: {{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /usr/local/bin/kubernetes-entrypoint
+        env:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: "manila-migration"
+              value: {{ .Release.Name }}-migration
             - name: DEPENDENCY_SERVICE
-              value: "manila-postgresql,manila-rabbitmq,manila-memcached"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+            - name: COMMAND
+              value: "true"
+      containers:
+        - name: manila-api
+          image: {{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/loci-manila:{{.Values.loci.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command:
+          {{- if .Values.api_backdoor }}
+            - dumb-init
+            - kubernetes-entrypoint
+          {{- else }}
+            - /scripts/manila-api.sh
+            - start
+          {{- end }}
+          env:
+          {{- if .Values.api_backdoor }}
+            - name: COMMAND
+              value: "manila-api --config-file /etc/manila/manila.conf"
+          {{- end }}
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: STATSD_HOST
+              value: localhost
+            - name: STATSD_PORT
+              value: "9125"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -58,16 +86,24 @@ spec:
               path: /
               port: {{.Values.api_port_internal}}
             initialDelaySeconds: 15
-            timeoutSeconds: 5
+            timeoutSeconds: 15
           readinessProbe:
             httpGet:
               path: /healthcheck
-              port: manila-api
+              port: {{.Values.api_port_internal}}
             initialDelaySeconds: 5
-            imeoutSeconds: 5
+            timeoutSeconds: 5
           ports:
             - name: manila-api
               containerPort: {{.Values.api_port_internal}}
+          {{- if not .Values.api_backdoor }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /scripts/manila-api.sh
+                  - stop
+          {{- end }}
           volumeMounts:
             - name: etcmanila
               mountPath: /etc/manila
@@ -75,6 +111,10 @@ spec:
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
               readOnly: true
+            {{- if not .Values.api_backdoor }}
+            - name: wsgi-manila
+              mountPath: /var/www/cgi-bin/manila
+            {{- end }}
             - name: manila-etc
               mountPath: /etc/manila/api-paste.ini
               subPath: api-paste.ini
@@ -99,18 +139,49 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+            {{- if not .Values.api_backdoor }}
+            - name: manila-etc
+              mountPath: /etc/apache2/conf-enabled/wsgi-manila.conf
+              subPath: wsgi-manila.conf
+              readOnly: true
+            {{- end }}
+            - name: manila-bin
+              mountPath: /scripts
+              readOnly: true
+          {{- if .Values.pod.resources.api }}
+          resources:
+            {{ toYaml .Values.pod.resources.api | nindent 13 }}
+          {{- end }}
         - name: statsd
-          image: prom/statsd-exporter:v0.6.0
+          image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.global.metrics_port }}
+          volumeMounts:
+            - name: manila-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+          {{- if .Values.pod.resources.api_statsd }}
+          resources:
+            {{- toYaml .Values.pod.resources.api_statsd | trim | nindent 12 }}
+          {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}
+        {{- if not .Values.api_backdoor }}
+        - name: wsgi-manila
+          emptyDir: {}
+        {{- end }}
         - name: manila-etc
           configMap:
             name: manila-etc
+        - name: manila-bin
+          configMap:
+            name: manila-bin
+            defaultMode: 0555

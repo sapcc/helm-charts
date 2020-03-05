@@ -14,6 +14,12 @@ spec:
     - swift/swift-seed
     - limes/limes-seed
 
+  roles:
+  - name: masterdata_admin
+    description: Master data administrator
+  - name: masterdata_viewer
+    description: Master data read-only
+
   services:
   - name: sapcc-billing
     type: sapcc-billing
@@ -29,24 +35,12 @@ spec:
     - name: billing
       description: 'Billing Service'
       password: {{ .Values.billingServicePassword | quote }}
-      roles:
+      role_assignments:
       - project: service
         role: service
 
-  - name: ccadmin
-    projects:
-    - name: billing
-      description: 'Billing Administration for Converged Cloud'
-      roles:
-      - user: billing@Default
-        role: swiftoperator
-      - user: billing@Default
-        role: cloud_resource_viewer
-      swift:
-        enabled: true
-
   - name: cc3test
-    roles:
+    role_assignments:
     - user: {{ .Values.cc3testBillingDomainAdmUser | quote }}
       role: admin
     - user: {{ .Values.cc3testBillingDomainUsrUser | quote }}
@@ -55,7 +49,7 @@ spec:
     projects:
     - name: billing_test
       description: 'project for used for testing the billing service'
-      roles:
+      role_assignments:
       - user: {{ .Values.cc3testBillingProjectAdmUser | quote }}
         role: admin
       - user: {{ .Values.cc3testBillingProjectUsrUser | quote }}
@@ -65,6 +59,457 @@ spec:
 
     groups:
     - name: CC3TEST_DOMAIN_ADMINS
-      roles:
+      role_assignments:
       - project: billing_test
         role: admin
+
+  - name: ccadmin
+    projects:
+    - name: billing
+      description: 'Billing Administration for Converged Cloud'
+      role_assignments:
+      - user: billing@Default
+        role: swiftoperator
+      - user: billing@Default
+        role: cloud_resource_viewer
+      swift:
+        enabled: true
+    groups:
+    - name: CCADMIN_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - project: api_tools
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_admin
+        inherited: true
+    - name: CCADMIN_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - project: compute_tools
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_viewer
+        inherited: true
+    - name: CCADMIN_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_viewer
+        inherited: true
+    - name: CCADMIN_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - project: storage_tools
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_viewer
+        inherited: true
+    - name: CCADMIN_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: ccadmin
+        role: masterdata_viewer
+        inherited: true
+
+  - name: bs
+    groups:
+    - name: BS_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: bs
+        role: masterdata_admin
+        inherited: true
+    - name: BS_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: bs
+        role: masterdata_viewer
+        inherited: true
+    - name: BS_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: bs
+        role: masterdata_viewer
+        inherited: true
+    - name: BS_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: bs
+        role: masterdata_viewer
+        inherited: true
+    - name: BS_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: bs
+        role: masterdata_viewer
+        inherited: true
+  {{- if and (ne .Values.global.region "staging") (ne .Values.global.region "qa-de-1") }}
+    - name: BS_CCloud_SO_TLO
+      role_assignments:
+      - domain: bs
+        role: masterdata_viewer
+        inherited: true
+    - name: BS_CCLOUD_SM
+      role_assignments:
+      - domain: bs
+        role: masterdata_viewer
+        inherited: true
+  {{- end }}
+
+  - name: cp
+    groups:
+    - name: CP_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: cp
+        role: masterdata_admin
+        inherited: true
+    - name: CP_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: cp
+        role: masterdata_viewer
+        inherited: true
+    - name: CP_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: cp
+        role: masterdata_viewer
+        inherited: true
+    - name: CP_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: cp
+        role: masterdata_viewer
+        inherited: true
+    - name: CP_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: cp
+        role: masterdata_viewer
+        inherited: true
+
+  - name: fsn
+    groups:
+    - name: FSN_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: fsn
+        role: masterdata_admin
+        inherited: true
+    - name: FSN_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: fsn
+        role: masterdata_viewer
+        inherited: true
+    - name: FSN_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: fsn
+        role: masterdata_viewer
+        inherited: true
+    - name: FSN_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: fsn
+        role: masterdata_viewer
+        inherited: true
+    - name: FSN_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: fsn
+        role: masterdata_viewer
+        inherited: true
+
+  - name: hcm
+    groups:
+    - name: HCM_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: hcm
+        role: masterdata_admin
+        inherited: true
+    - name: HCM_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: hcm
+        role: masterdata_viewer
+        inherited: true
+    - name: HCM_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: hcm
+        role: masterdata_viewer
+        inherited: true
+    - name: HCM_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: hcm
+        role: masterdata_viewer
+        inherited: true
+    - name: HCM_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: hcm
+        role: masterdata_viewer
+        inherited: true
+
+  - name: hcp03
+    groups:
+    - name: HCP03_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: hcp03
+        role: masterdata_admin
+        inherited: true
+    - name: HCP03_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: hcp03
+        role: masterdata_viewer
+        inherited: true
+    - name: HCP03_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: hcp03
+        role: masterdata_viewer
+        inherited: true
+    - name: HCP03_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: hcp03
+        role: masterdata_viewer
+        inherited: true
+    - name: HCP03_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: hcp03
+        role: masterdata_viewer
+        inherited: true
+
+  - name: hec
+    groups:
+    - name: HEC_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: hec
+        role: masterdata_admin
+        inherited: true
+    - name: HEC_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: hec
+        role: masterdata_viewer
+        inherited: true
+    - name: HEC_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: hec
+        role: masterdata_viewer
+        inherited: true
+    - name: HEC_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: hec
+        role: masterdata_viewer
+        inherited: true
+    - name: HEC_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: hec
+        role: masterdata_viewer
+        inherited: true
+
+  - name: monsoon3
+    groups:
+    - name: MONSOON3_DOMAIN_ADMINS
+      role_assignments:
+      - project: cc-demo
+        role: masterdata_admin
+    - name: MONSOON3_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_admin
+        inherited: true
+    - name: MONSOON3_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_viewer
+        inherited: true
+    - name: MONSOON3_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_viewer
+        inherited: true
+    - name: MONSOON3_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_viewer
+        inherited: true
+    - name: MONSOON3_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: monsoon3
+        role: masterdata_viewer
+        inherited: true
+
+  - name: neo
+    groups:
+    - name: NEO_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: neo
+        role: masterdata_admin
+        inherited: true
+    - name: NEO_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: neo
+        role: masterdata_viewer
+        inherited: true
+    - name: NEO_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: neo
+        role: masterdata_viewer
+        inherited: true
+    - name: NEO_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: neo
+        role: masterdata_viewer
+        inherited: true
+    - name: NEO_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: neo
+        role: masterdata_viewer
+        inherited: true
+
+
+  - name: s4
+    groups:
+    - name: S4_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: s4
+        role: masterdata_admin
+        inherited: true
+    - name: S4_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: s4
+        role: masterdata_viewer
+        inherited: true
+    - name: S4_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: s4
+        role: masterdata_viewer
+        inherited: true
+    - name: S4_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: s4
+        role: masterdata_viewer
+        inherited: true
+    - name: S4_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: s4
+        role: masterdata_viewer
+        inherited: true
+
+  - name: wbs
+    groups:
+    - name: WBS_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: masterdata_admin
+      - domain: wbs
+        role: masterdata_admin
+        inherited: true
+    - name: WBS_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: masterdata_admin
+      - domain: wbs
+        role: masterdata_viewer
+        inherited: true
+    - name: WBS_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: masterdata_admin
+      - domain: wbs
+        role: masterdata_viewer
+        inherited: true
+    - name: WBS_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: masterdata_admin
+      - domain: wbs
+        role: masterdata_viewer
+        inherited: true
+    - name: WBS_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: masterdata_admin
+      - domain: wbs
+        role: masterdata_viewer
+        inherited: true

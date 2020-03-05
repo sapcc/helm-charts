@@ -1,0 +1,49 @@
+{{- if .Values.thanos.enabled }}
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: {{ include "prometheus.fullName" . }}-thanos-compactor
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-compactor
+      prometheus: {{ include "prometheus.name" . }}
+  serviceName: thanos-compactor
+  template:
+    metadata:
+      labels:
+        app: thanos-compactor
+        prometheus: {{ include "prometheus.name" . }}
+    spec:
+      containers:
+      - args:
+        - compact
+        - --http-address=0.0.0.0:{{ required ".Values.thanos.compactor.service.httpPort missing" .Values.thanos.compactor.service.httpPort }}
+        - --log.level={{ .Values.logLevel }}
+        - --data-dir=/var/thanos/store
+        - --objstore.config=$(OBJSTORE_CONFIG)
+        - --wait
+        env:
+        - name: OBJSTORE_CONFIG
+          valueFrom:
+            secretKeyRef:
+              key: {{ include "thanos.objectStorageConfig.key" . }}
+              name: {{ include "thanos.objectStorageConfig.name" . }}
+        image: {{ include "thanos.image" . }}
+        name: thanos-compactor
+        ports:
+        - containerPort: {{ required ".Values.thanos.compactor.service.httpPort missing" .Values.thanos.compactor.service.httpPort }}
+          name: http
+        volumeMounts:
+        - mountPath: /var/thanos/store
+          name: data
+          readOnly: false
+      volumes:
+      - emptyDir: {}
+        name: data
+  volumeClaimTemplates: []
+{{ end }}

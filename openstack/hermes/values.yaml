@@ -1,4 +1,4 @@
-global.region: DEFINED_IN_VALUES_FILE
+# global.region: DEFINED_IN_VALUES_FILE
 hermes:
   debug: 0
   insecure: 0
@@ -15,7 +15,30 @@ hermes:
 logstash:
   debug: false
 
-image_version_hermes_kibana: DEFINED-IN-REGION-SECRETS
+## Configure resource requests and limits
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+##
+resources_requests_memory_api: "256Mi"
+resources_requests_cpu_api: "250m"
+resources_requests_memory_es: "256Mi"
+resources_requests_cpu_es: "250m"
+resources_requests_memory_ls: "256Mi"
+resources_requests_cpu_ls: "250m"
+resources_requests_memory_ki: "256Mi"
+resources_requests_cpu_ki: "250m"
+
+# the elasticsearch disk is 100g, a bit less will be the filesystem and 70g should be below 80% where we would alert
+# Current value get's multipled, and divided to create the volume size. 
+# hermes_elasticsearch_data_retention: DEFINED-IN-REGION-SECRETS
+elasticsearch_pv_size: 92
+
+# image_version_hermes_kibana: DEFINED-IN-REGION-SECRETS
+
+elasticsearch_exporter:
+  enabled: false
+  listen_port: 9102
+  targets: prometheus-openstack
+
 hermes_kibana_port_public: '5601'
 deploy_kibana: false # true in staging values
 
@@ -25,7 +48,14 @@ rabbitmq_notifications:
   users:
     default:
       user: openstack
-      password: DEFINED-IN-SECRETS
+      # password: DEFINED-IN-SECRETS
     admin:
       user: admin
-      password: DEFINED-IN-SECRETS
+      # password: DEFINED-IN-SECRETS
+
+# Deploy hermes Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+  

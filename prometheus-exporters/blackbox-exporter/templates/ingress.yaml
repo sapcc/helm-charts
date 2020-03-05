@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    app: {{ template "blackbox-exporter.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  annotations:
+    vice-president: {{ default false .Values.ingress.vice_president | quote }}
+    disco: {{ default false .Values.ingress.disco | quote }}
+
+spec:
+  tls:
+    - secretName: tls-{{ include "hostname" . | replace "." "-" }}
+      hosts: [{{ include "hostname" . }}]
+  rules:
+    - host: {{ include "hostname" . }}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: {{ .Chart.Name }}
+            servicePort: {{ required ".Values.service.port missing" .Values.service.port }}

@@ -1,0 +1,57 @@
+{{ if .Values.enabled }}
+{{- $values := .Values -}}
+{{- range $i, $prober := .Values.pingProbers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: ping-exporter-{{$prober}}
+  labels:
+    app: ping-exporter
+    release: "{{$.Release.Name}}"
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: {{ $values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        name: ping-exporter-{{$prober}}
+        app: ping-exporter
+        probed_from: {{$prober}}
+      annotations:
+        prometheus.io/scrape: {{ $values.metrics.scrape | quote }}
+        prometheus.io/port: {{ $values.metrics.port | quote }}
+        prometheus.io/targets: {{ $values.metrics.prometheus | quote }}
+    spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{$prober}}
+      containers:
+        - name: ping-exporter-{{$prober}}
+          image: "{{ $values.image.repository }}:{{ $values.image.tag }}"
+          imagePullPolicy: {{ $values.pullPolicy }}
+          command:
+            - /app/ping_exporter
+          args:
+            - --ping.interval={{ $values.pingInterval }}
+            - --ping.timeout={{ $values.pingTimeout }}
+            - --ping.history-size={{ $values.pingHistorySize }}
+            - --ping.size={{ $values.pingPayloadSize }}
+            - --log.level={{ $values.logLevel }}
+            - --metrics.deprecated=disable
+            {{- range $i, $config := $values.static_ping_targets }}
+            - {{ $config.target | trim }}
+            {{- end }}
+          ports:
+            - name: metrics
+              containerPort: 9427
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: metrics
+---
+{{ end -}}
+{{ end -}}

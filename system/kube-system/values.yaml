@@ -1,2 +1,122 @@
+# ingress related but independent values
 ingress:
-  external_service_ip: DEFINED-AS-VALUE
+  tls_client_auth:
+    enabled: false
+    cacrt: |
+      -----BEGIN CERTIFICATE-----
+      -----END CERTIFICATE-----
+
+  external_public_service:
+    enabled: false
+    #ip:
+
+nginx-ingress:
+  revisionHistoryLimit: 5
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true
+
+  controller:
+    image:
+      repository: sapcc/nginx-ingress-controller
+      tag: "0.29.0"
+
+    minReadySeconds: 60
+
+    extraArgs:
+      annotations-prefix: ingress.kubernetes.io
+
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+
+    livenessProbe:
+      initialDelaySeconds: 30
+
+    replicaCount: 3
+
+    service:
+      omitClusterIP: true
+
+    metrics:
+      enabled: true
+      service:
+        omitClusterIP: true
+      serviceMonitor:
+        enabled: true
+        additionalLabels:
+          prometheus: "kubernetes"
+
+    config:
+      http-snippet: |
+        map $ssl_client_s_dn $ssl_client_s_dn_cn {
+            default "anonymous";
+            ~CN=(?<CN>[^/,\"]+) $CN;
+        }
+      location-snippet: |
+        proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
+      proxy-send-timeout: "300"
+      proxy-read-timeout: "300"
+      proxy-body-size: "0k"
+      server-name-hash-bucket-size: "128"
+      map-hash-bucket-size: "128"
+      disable-ipv6: "true"
+      ssl-redirect: "true"
+      enable-underscores-in-headers: "true"
+      worker-shutdown-timeout: "18000s"
+      worker-processes: "8"
+
+
+    affinity:
+      # don't co-locate replicas of the ingress controller on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - nginx-ingress
+                - key: component
+                  operator: In
+                  values:
+                    - controller
+
+  defaultBackend:
+    enabled: true
+
+    image:
+      repository: sapcc/defaultbackend
+      tag: "1.5"
+
+    service:
+      omitClusterIP: true
+
+    resources:
+      limits:
+        cpu: 10m
+        memory: 20Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
+
+    affinity:
+      # don't co-locate replicas of the ingress backend on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - nginx-ingress
+                - key: component
+                  operator: In
+                  values:
+                    - default-backend

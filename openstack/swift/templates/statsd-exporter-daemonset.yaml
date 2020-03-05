@@ -18,7 +18,6 @@ spec:
         from: daemonset
         restart: directly
       annotations:
-        {{- include "swift_daemonset_annotations" . | indent 8 }}
         {{- include "swift_prometheus_annotations" . | indent 8 }}
         checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
     spec:
@@ -31,4 +30,15 @@ spec:
           configMap:
             name: swift-etc
       containers:
-        {{- include "swift_statsd_exporter_container" . | indent 8 }}
+        - name: statsd
+          image: prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
+          args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: 9102
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc

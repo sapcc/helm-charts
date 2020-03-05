@@ -1,0 +1,79 @@
+{{- if .Values.enabled }}
+{{- if .Values.harvest.enabled }}
+{{- $scrape := .Values.metrics.scrape -}}
+{{- $port := .Values.metrics.port -}}
+{{- $targets := .Values.metrics.targets -}}
+kind: Service
+apiVersion: v1
+metadata:
+  name:  {{ .Values.harvest.name }}
+  annotations:
+    prometheus.io/scrape: {{ $scrape | quote }}
+    prometheus.io/port: {{ $port | quote }}
+    prometheus.io/targets: {{ $targets | quote }}
+spec:
+  selector:
+    app:  {{ .Values.harvest.name }}
+  ports:
+  - name:  prometheus
+    port:  9108
+    targetPort:  9108
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.harvest.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.harvest.name }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.harvest.name }}
+      annotations:
+        prometheus.io/scrape: {{ $scrape | quote }}
+        prometheus.io/port: {{ $port | quote }}
+        prometheus.io/targets: {{ $targets | quote }}
+    spec:
+      volumes:
+        - name: netapp-harvest-conf
+          configMap:
+            name: netapp-etc
+      containers:
+      - name: harvest
+        image: {{ .Values.harvest.harvest.image }}
+        volumeMounts:
+        - name: netapp-harvest-conf
+          subPath: netapp-harvest.conf
+          mountPath: /opt/netapp-harvest/netapp-harvest.conf
+        resources:
+          requests:
+            memory: {{ .Values.harvest.harvest.memory }}
+            cpu: {{ .Values.harvest.harvest.cpu }}
+
+      - name: duplicator
+        image: {{ .Values.harvest.duplicator.image }}
+        command: [ "gotee" ]
+        args: [ "--listen", ":2003", "-1", ":9109", "-2", "netapp-graphite:2003" ]
+        resources:
+          requests:
+            memory: {{ .Values.harvest.duplicator.memory }}
+            cpu: {{ .Values.harvest.duplicator.cpu }}
+
+      - name: graphite-exporter
+        image: {{ .Values.harvest.graphiteExporter.image }}
+        args: [ "--graphite.mapping-config", "/tmp/graphite-mapping.conf" ]
+        ports:
+        - containerPort: 9108
+        volumeMounts:
+        - name: netapp-harvest-conf
+          subPath: graphite-mapping.conf
+          mountPath: /tmp/graphite-mapping.conf
+        resources:
+          requests:
+            memory: {{ .Values.harvest.graphiteExporter.memory }}
+            cpu: {{ .Values.harvest.graphiteExporter.cpu }}
+{{- end }}
+{{- end }}

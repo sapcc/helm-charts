@@ -30,12 +30,11 @@ spec:
             name: kibana-etc
       containers:
         - name: kibana
-          image: {{.Values.docker_repo}}/monasca-kibana:{{.Values.hermes_image_version_kibana}}
+          image: docker.elastic.co/kibana/kibana-oss:{{.Values.hermes_image_version_kibana}}
           imagePullPolicy: IfNotPresent
-          command:
-            - /usr/local/bin/dumb-init
           args:
-            - /usr/local/bin/kubernetes-entrypoint
+            - "/bin/bash"
+            - "/usr/local/bin/kibana-docker"
           env:
             - name: COMMAND
               value: "/opt/kibana/bin/kibana -c /hermes-etc/kibana.yml"
@@ -49,4 +48,8 @@ spec:
           volumeMounts:
             - mountPath: /hermes-etc
               name: hermes-etc
+          resources:
+            requests:
+              memory: {{.Values.resources_requests_memory_ki}}
+              cpu: {{.Values.resources_requests_cpu_ki}}
 {{ end }}

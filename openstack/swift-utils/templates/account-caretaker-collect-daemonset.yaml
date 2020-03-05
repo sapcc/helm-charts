@@ -18,16 +18,17 @@ spec:
         component: swift-account-caretaker-collect
         from: daemonset
       annotations:
-        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":{{ quote .Values.species }}}]'
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
       - key: "species"
         operator: "Equal"
-        value: {{ quote .Values.species }}
+        value: "{{.Values.species}}"
         effect: "NoSchedule"
-      {{- end }}
+      - key: "species"
+        operator: "Equal"
+        value: "{{.Values.species}}-multipath"
+        effect: "NoSchedule"
       # Run daemonset in Hostnetwork to get the real hostname
       hostNetwork: true
       nodeSelector:

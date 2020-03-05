@@ -5,6 +5,7 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "{{.Values.unbound.port_unbound_exporter}}"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     parrot.sap.cc/announce: 'true'
     service.alpha.kubernetes.io/reject-traffic-on-external-ip: "false"
 spec:
@@ -20,4 +21,4 @@ spec:
       protocol: UDP
       port: 53
       targetPort: dns-udp
-  externalIPs: ["{{.Values.unbound.externalIP}}"]
+  externalIPs: ["{{ required "A valid .Values.unbound.externalIP required!" .Values.unbound.externalIP }}"]

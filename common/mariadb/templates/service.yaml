@@ -2,7 +2,7 @@ kind: Service
 apiVersion: v1
 
 metadata:
-  name: {{.Values.name}}-mariadb
+  name: {{ include "fullName" . }}
   namespace:  {{.Release.Namespace}}
   labels:
     system: openstack
@@ -12,9 +12,9 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app: {{.Values.name}}-mariadb
+    app: {{ include "fullName" . }}
   ports:
-    - name: {{.Values.name}}-mariadb
+    - name: {{ include "fullName" . }}
       port: {{.Values.port_public}}
 
 {{- if .Values.backup.enabled }}
@@ -22,15 +22,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{.Values.name}}-mariadb-backup-metrics
+  name: {{ include "fullName" . }}-backup-metrics
   labels:
-    app: {{.Values.name}}-mariadb
+    app: {{ include "fullName" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9188"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 spec:
   clusterIP: None
   ports:
@@ -38,5 +39,32 @@ spec:
       port: 9188
       protocol: TCP
   selector:
-    app: {{.Values.name}}-mariadb
+    app: {{ include "fullName" . }}
 {{- end }}
+{{- if .Values.backup_v2.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fullName" . }}-backup
+  labels:
+    app: {{ include "fullName" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8082"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  selector:
+    app: {{ include "fullName" . }}
+  ports:
+    - port: 8081
+      name: http
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 8082
+      protocol: TCP
+{{- end }} 

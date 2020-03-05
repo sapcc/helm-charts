@@ -1,0 +1,35 @@
+# This ServiceMonitor is used for monitoring the Prometheus itself and - if enabled - its Thanos components deployed alongside.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: {{ include "prometheus.fullName" . }}
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  jobLabel: {{ include "prometheus.name" . }}
+
+  selector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" . }}
+
+  endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      port: http
+      scheme: http
+      relabelings:
+        - action: replace
+          targetLabel: prometheus
+          replacement: {{ include "prometheus.name" . }}
+        - action: labelmap
+          regex: '__meta_kubernetes_service_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_service_name
+          targetLabel: kubernetes_name
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}

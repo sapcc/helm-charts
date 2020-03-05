@@ -1,0 +1,28 @@
+groups:
+- name: elkquery.alerts
+  rules:
+  - alert: ElkControlplaneSystemdLogsMissing
+    expr: delta(elasticsearch_systemd_logs_doc_count[15m]) == 0
+    for: 15m
+    labels:
+      context: logshipping
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html#fluent-systemd-logs-are-missing
+    annotations:
+      description: One or more fluent-systemd nodes are  not shipping any logs. Check controlplane fluent-systemd in elk namespace.'
+      summary: 'ELK in {{ $labels.region }} one or more fluent-systemd nodes are  not shipping any logs. Check controlplane fluent-systemd in elk namespace.'
+
+  - alert: ElkEsQueryExporterMissing
+    expr: up{job=~"es-query-exporter"} == 0
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html
+    annotations:
+      description: 'es-query-exporter in {{ $labels.region }} is missing.'
+      summary: 'es-query-exporter in {{ $labels.region }} is missing.'

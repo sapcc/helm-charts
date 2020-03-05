@@ -6,10 +6,8 @@
 #
 global:
   imageNamespace: monsoon
-  imageRegistry: DEFINED-IN-REGION-CHART
   master_password: ""
-  pgbouncer:
-    enabled: true
+  dbUser: barbican
 
 pod:
   replicas:
@@ -20,153 +18,149 @@ pod:
         revisionHistory: 5
         podReplacementStrategy: RollingUpdate
         rollingUpdate:
-           maxUnavailable: 0
-           maxSurge: 1
+          maxUnavailable: 0
+          maxSurge: 1
 
 api_port_internal: '9311'
 debug: "True"
-
-dbUser: barbican
-dbName: barbican
-dbPassword: null
 
 statsd:
   port: 9102
   image:
     repository:  prom/statsd-exporter
-    tag: v0.5.0
+    tag: v0.8.1
 
-pg_cluster:
-    enabled: false
-    aws_access_key_id: "ccbaa643ef0f4184a1f045b15bcf5c95"
-    aws_secret_access_key: "f2abac607dbd45108075bbc9dbce18e3"
-    wal_s3_bucket: "db-backup-pgcluster"
-    backup_schedule: "* * * * *"
+db_name: barbican
 
 postgresql:
-  imageTag: '9.4.14'
-  postgresDatabase: barbican
-  postgresPassword: null
-  dbInit: barbican-db-init
-  dbMaintain: barbican-db-maintain
-  pgbouncer:
-    enabled: true
-  persistence:
-    enabled: true
-    existingClaim: db-barbican-pvclaim
-  backup:
-    enabled: true
-    metrics: true
-    os_password: null
+  enabled: false
 
-pgmetrics:
+mariadb:
+  enabled: true
   name: barbican
+  initdb_configmap: barbican-initdb
+  persistence_claim:
+    name: db-barbican-pvclaim
+
+mysql_metrics:
   db_name: barbican
+  db_user: barbican
   customMetrics:
-    openstack_barbican_containers:
-      query: "SELECT containers.name AS container_name, containers.type, containers.id, containers.status, projects.external_id AS project_id, COUNT(*) AS count_gauge from containers INNER JOIN projects on containers.project_id=projects.id where containers.deleted='false' GROUP BY containers.name, containers.type, containers.id, containers.status, projects.external_id"
-      metrics:
-        - id:
-            usage: "LABEL"
-            description: "Container ID"
-        - status:
-            usage: "LABEL"
-            description: "Container state"
-        - container_name:
-            usage: "LABEL"
-            description: "Container name"
-        - project_id:
-            usage: "LABEL"
-            description: "Project ID of the container"
-        - type:
-            usage: "LABEL"
-            description: "Type of container"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of containers"
-    openstack_barbican_secrets:
-      query: "SELECT secrets.id, secrets.status, secrets.name AS secret_name, secrets.expiration, projects.external_id AS project_id, secrets.secret_type, COUNT(*) AS count_gauge from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false' GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type"
-      metrics:
-        - id:
-            usage: "LABEL"
-            description: "Secret ID"
-        - status:
-            usage: "LABEL"
-            description: "Secret state"
-        - secret_name:
-            usage: "LABEL"
-            description: "Secret name"
-        - expiration:
-            usage: "LABEL"
-            description: "Secret Expiration time"
-        - project_id:
-            usage: "LABEL"
-            description: "Project ID of the secret"
-        - secret_type:
-            usage: "LABEL"
-            description: "Type of secret"
-        - count_gauge:
-            usage: "GAUGE"
-            description: "Number of secrets"
-    openstack_barbican_certificate:
-      query: "SELECT secrets.status, secrets.expiration AS expiration_date, secrets.name AS certificate_name, projects.external_id AS project_id from secrets INNER JOIN projects on secrets.project_id=projects.id where secrets.deleted='false' AND secret_type='certificate' GROUP BY secrets.status, secrets.name, projects.external_id, secrets.expiration"
-      metrics:
-        - status:
-            usage: "LABEL"
-            description: "Secret state"
-        - certificate_name:
-            usage: "LABEL"
-            description: "Secret name"
-        - expiration_date:
-            usage: "GAUGE"
-            description: "Secret Expiration time"
-        - project_id:
-            usage: "LABEL"
-            description: "Project ID of the secret"
+    - help: Barbican container count by type
+      labels:
+      - "id"
+      - "status"
+      - "container_name"
+      - "project_id"
+      - "type"
+      name: openstack_barbican_containers_count_gauge
+      query: |
+        SELECT
+          containers.name  AS container_name,
+          containers.type,
+          containers.id,
+          containers.status,
+          projects.external_id  AS project_id,
+          COUNT(*) AS count_gauge
+        from containers
+        INNER JOIN
+          projects
+        on
+          containers.project_id=projects.id
+        where
+          containers.deleted='false'
+        GROUP BY
+          containers.name,
+          containers.type,
+          containers.id,
+          containers.status,
+          projects.external_id;
+      values:
+      - "count_gauge"
+    - help: Barbican secret count by type
+      labels:
+      - "id"
+      - "status"
+      - "secret_name"
+      - "expiration"
+      - "project_id"
+      - "secret_type"
+      name: openstack_barbican_secrets_count_gauge
+      query: |
+        SELECT
+          secrets.id,
+          secrets.status,
+          secrets.name  AS secret_name,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
+          projects.external_id  AS project_id,
+          secrets.secret_type ,
+          COUNT(*)  AS count_gauge
+        from secrets
+        INNER JOIN projects
+        on secrets.project_id=projects.id
+        where secrets.deleted='false'
+        GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
+      values:
+      - "count_gauge"
+    - help: Barbican container expiration date
+      labels:
+      - "status"
+      - "expiration_date"
+      - "certificate_name"
+      - "project_id"
+      name: openstack_barbican_certificate_expiration_date
+      query: |
+        SELECT
+          secrets.status,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration_date,
+          secrets.name  AS certificate_name,
+          projects.external_id  AS project_id,
+          COUNT(*)  AS count_gauge
+        from secrets
+        INNER JOIN projects
+        on secrets.project_id=projects.id
+        where secrets.deleted='false' AND secret_type='certificate'
+        GROUP BY secrets.status, secrets.name, projects.external_id, secrets.expiration;
+      values:
+      - "expiration_date"
+
 
 rabbitmq:
-  users:
-    default:
-      password: null
-    admin:
-      password: null
   persistence:
     enabled: false
-  metrics:
-    password: null
 
 logging:
-    formatters:
-        context:
-            class: oslo_log.formatters.ContextFormatter
-        default:
-            format: "%(message)s"
-    handlers:
-        stdout:
-            class: StreamHandler
-            args: "(sys.stdout,)"
-            formatter: context
-        "null":
-            class: logging.NullHandler
-            formatter: default
-            args: "()"
-        sentry:
-            class: raven.handlers.logging.SentryHandler
-            level: ERROR
-            args: "()"
-    loggers:
-        root:
-            handlers: stdout, sentry
-            level: WARNING
-        barbican:
-            handlers: stdout, sentry
-            level: INFO
-        eventlet.wsgi.server:
-            handlers: stdout, sentry
-            level: INFO
-        sqlalchemy.engine.base.Engine:
-            handlers: stdout, sentry
-            level: WARNING
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    barbican:
+      handlers: stdout, sentry
+      level: INFO
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    sqlalchemy.engine.base.Engine:
+      handlers: stdout, sentry
+      level: WARNING
 
 sentry:
   enabled: true
@@ -175,3 +169,13 @@ vice_president: true
 # sapcc/openstack-watcher-middleware
 watcher:
   enabled: true
+
+# sapcc/openstack-audit-middleware
+audit:
+  enabled: true
+
+# Deploy Barbican Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack

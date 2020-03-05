@@ -1,0 +1,120 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    system: openstack
+    service: monitoring
+    component: grafana
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: grafana
+        component: grafana
+      annotations:
+        checksum/grafana.etc: {{ include "grafanasix/templates/grafana-etc-configmap.yaml" . | sha256sum }}
+        checksum/grafana.bin: {{ include "grafanasix/templates/grafana-bin-configmap.yaml" . | sha256sum }}
+        checksum/grafana.ini: {{ include "grafanasix/templates/_grafana.ini.tpl" . | sha256sum }}
+        checksum/ldap.toml: {{ include "grafanasix/templates/_ldap.toml.tpl" . | sha256sum }}
+        checksum/grafana-start: {{ include "grafanasix/templates/_grafana-start.tpl" . | sha256sum }}
+        checksum/grafana-initial-setup: {{ include "grafanasix/templates/_grafana-initial-setup.tpl" . | sha256sum }}
+        checksum/helpers: {{ include "grafanasix/templates/_helpers.tpl" . | sha256sum }}
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: grafana-bin
+          configMap:
+            name: grafana-bin
+        - name: grafana-etc
+          configMap:
+            name: grafana-etc
+{{- if .Values.authentication.enabled }}
+        - name: grafana-ds-certs
+          secret:
+            secretName: grafana-ds-certs
+{{- end }}
+        - name: grafana-git
+          emptyDir: {}
+        - name: grafana-content
+          emptyDir: {}
+      containers:
+        - name: "grafana"
+          image: {{.Values.grafana.image}}:{{.Values.grafana.image_version}}
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          command:
+            - /bin/bash
+          args:
+            # - -c
+            # - sleep inf
+            - /grafana-bin/grafana-start
+          env:
+            - name: GF_PATHS_PROVISIONING
+              value: "/var/lib/grafana/provisioning"
+          ports:
+            - name: nodejs
+              containerPort: 3000
+          volumeMounts:
+            - name: grafana-bin
+              mountPath: /grafana-bin
+            - name: grafana-etc
+              mountPath: /grafana-etc
+{{- if .Values.authentication.enabled }}
+            - name: grafana-ds-certs
+              mountPath: /grafana-ds-certs
+{{- end }}
+            - name: grafana-content
+              mountPath: /git
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 3000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+        - name: "gitsync"
+          image: hub.global.cloud.sap/monsoon/git-sync:v3_1_1__linux_amd64
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          args:
+            - "--repo={{.Values.grafana.gitsync.repository}}"
+            - "--branch={{.Values.grafana.gitsync.branch}}"
+            - "--wait=30"
+          env:
+            - name: GIT_SSL_NO_VERIFY
+              value: "true"
+          volumeMounts:
+            - name: grafana-git
+              mountPath: /tmp/git
+        - name: "minitrue"
+          image: hub.global.cloud.sap/monsoon/grafana-minitrue:{{.Values.grafana.minitrue_version}}
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          command:
+            - /minitrue.sh
+          env:
+            - name: PATH_IN
+              value: "/gitsync_in/grafana-content"
+            - name: PATH_OUT
+              value: "/minitrue_out/grafana-content"
+            - name: SLEEP_TIME_IN_SEC
+              value: "60"
+          volumeMounts:
+            - name: grafana-git
+              mountPath: /gitsync_in
+            - name: grafana-content
+              mountPath: /minitrue_out
+{{- if .Values.nginx.enabled }}
+        - name: nginx
+          image: "{{ .Values.nginx.image }}:{{ .Values.nginx.image_version }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: grafana-etc
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+          ports:
+            - name: http
+              containerPort: {{ .Values.nginx.port.public }}
+              protocol: TCP
+{{- end }}

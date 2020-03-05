@@ -1,10 +1,12 @@
+{{- range $suffix := list "" "-multipath" }}
+---
 kind: DaemonSet
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: swift-drive-autopilot
+  name: swift-drive-autopilot{{$suffix}}
   labels:
-    release: "{{.Release.Name}}"
+    release: "{{$.Release.Name}}"
 
 spec:
   minReadySeconds: 15
@@ -13,23 +15,29 @@ spec:
   template:
     metadata:
       labels:
-        component: swift-drive-autopilot
+        component: swift-drive-autopilot{{$suffix}}
         from: daemonset
-        release: "{{.Release.Name}}"
+        release: "{{$.Release.Name}}"
       annotations:
-        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":{{quote .Values.species}}}]'
         prometheus.io/scrape: "true"
         prometheus.io/port: "9102"
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
       - key: "species"
         operator: "Equal"
-        value: {{quote .Values.species}}
+        value: "{{$.Values.species}}"
+        effect: "NoSchedule"
+      {{- if eq $suffix "-multipath" }}
+      - key: "species"
+        operator: "Equal"
+        value: "{{$.Values.species}}-multipath"
         effect: "NoSchedule"
       {{- end }}
       nodeSelector:
-        species: {{quote .Values.species}}
+        species: {{quote $.Values.species}}
+        {{- if eq $suffix "-multipath" }}
+        multipath-disks: "true"
+        {{- end }}
       volumes:
         - name: config
           configMap:
@@ -39,11 +47,11 @@ spec:
             path: /
       containers:
         - name: boot
-          image: {{.Values.global.imageRegistry}}/monsoon/swift-drive-autopilot:{{include "image_version" .}}
+          image: {{$.Values.global.imageRegistry}}/monsoon/swift-drive-autopilot:{{include "image_version" $}}
           securityContext:
             privileged: true
           args:
-            - /etc/drive-autopilot/config.yaml
+            - /etc/drive-autopilot/config{{$suffix}}.yaml
           # env:
           #   - name: 'DEBUG'
           #     value: '1'
@@ -55,3 +63,4 @@ spec:
           ports:
             - name: metrics
               containerPort: 9102
+{{- end }}

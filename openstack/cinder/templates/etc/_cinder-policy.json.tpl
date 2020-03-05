@@ -1,5 +1,6 @@
 {
   "context_is_cloud_admin":  "role:cloud_volume_admin",
+  "context_is_quota_admin":  "role:resource_service",
   "context_is_admin":  "rule:context_is_cloud_admin",
   "owner": "project_id:%(project_id)s",
   "member": "role:member and rule:owner",
@@ -52,10 +53,10 @@
   "volume_extension:extended_snapshot_attributes": "rule:context_is_editor",
   "volume_extension:volume_image_metadata": "rule:context_is_editor",
 
-  "volume_extension:quotas:show": "rule:context_is_viewer",
-  "volume_extension:quotas:update": "rule:context_is_admin",
-  "volume_extension:quotas:delete": "rule:context_is_admin",
-  "volume_extension:quota_classes": "rule:context_is_admin",
+  "volume_extension:quotas:show": "rule:context_is_viewer or rule:context_is_quota_admin",
+  "volume_extension:quotas:update": "rule:context_is_quota_admin",
+  "volume_extension:quotas:delete": "rule:context_is_quota_admin",
+  "volume_extension:quota_classes": "rule:context_is_admin or rule:context_is_quota_admin",
   "volume_extension:quota_classes:validate_setup_for_nested_quota_use": "rule:context_is_admin",
 
   "volume_extension:volume_admin_actions:reset_status": "rule:context_is_volume_admin",
@@ -69,7 +70,7 @@
   "volume_extension:volume_admin_actions:migrate_volume_completion": "rule:context_is_admin",
 
   "volume_extension:volume_host_attribute": "rule:context_is_admin",
-  "volume_extension:volume_tenant_attribute": "rule:context_is_admin",
+  "volume_extension:volume_tenant_attribute": "rule:context_is_viewer",
   "volume_extension:volume_mig_status_attribute": "rule:context_is_admin",
   "volume_extension:hosts": "rule:context_is_admin",
   "volume_extension:services:index": "rule:context_is_admin",
@@ -93,13 +94,13 @@
   "volume:failover_replication": "rule:context_is_admin",
   "volume:list_replication_targets": "rule:context_is_admin",
 
-  "backup:create" : "rule:context_is_admin",
-  "backup:delete": "rule:context_is_admin",
-  "backup:get": "rule:context_is_admin",
-  "backup:get_all": "rule:context_is_admin",
-  "backup:restore": "rule:context_is_admin",
-  "backup:backup-import": "rule:context_is_admin",
-  "backup:backup-export": "rule:context_is_admin",
+  "backup:create" : "rule:context_is_editor",
+  "backup:delete": "rule:context_is_editor",
+  "backup:get": "rule:context_is_editor",
+  "backup:get_all": "rule:context_is_editor",
+  "backup:restore": "rule:context_is_editor",
+  "backup:backup-import": "rule:context_is_editor",
+  "backup:backup-export": "rule:context_is_editor",
 
   "snapshot_extension:snapshot_actions:update_snapshot_status": "rule:context_is_admin",
   "snapshot_extension:snapshot_manage": "rule:context_is_admin",

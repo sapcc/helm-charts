@@ -17,25 +17,23 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
-{{- define "swift_daemonset_annotations" }}
-scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":{{ .Values.species | quote }}}]'
-{{- end -}}
-
-{{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_tolerations" }}
-{{- if ge .Capabilities.KubeVersion.Minor "7" }}
 tolerations:
 - key: "species"
   operator: "Equal"
-  value: {{ .Values.species | quote}}
+  value: "{{ .Values.species }}"
   effect: "NoSchedule"
-{{- end }}
+- key: "species"
+  operator: "Equal"
+  value: "{{ .Values.species }}-multipath"
+  effect: "NoSchedule"
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_prometheus_annotations" }}
 prometheus.io/scrape: "true"
 prometheus.io/port: "9102"
+prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack }}
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
@@ -128,22 +126,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end }}
 
 {{- /**********************************************************************************/ -}}
-{{- define "swift_statsd_exporter_container" }}
-- name: statsd
-  image: prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
-  args: [ -statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
-  ports:
-    - name: statsd
-      containerPort: 9125
-      protocol: UDP
-    - name: metrics
-      containerPort: 9102
-  volumeMounts:
-    - mountPath: /swift-etc
-      name: swift-etc
-{{- end -}}
-
-{{- /**********************************************************************************/ -}}
 {{- define "swift_nginx_location" }}
 {{- $context := index . 0 }}
 location / {
@@ -185,4 +167,15 @@ limit_conn_status 429;
 limit_req zone=req_limit burst={{ $cluster.rate_limit_burst }} nodelay;
 limit_req_status 429;
 {{- end }}
+{{- end -}}
+
+{{- /* Generate backend host for sapcc/openstack-ratelimit-middleware */ -}}
+{{- define "sapcc_ratelimit_backend_host" -}}
+{{- $release := index . 0 -}}
+{{- $context := index . 1 -}}
+{{- if $context.sapcc_ratelimit.backend.host -}}
+{{- $context.sapcc_ratelimit.backend.host -}}
+{{- else -}}
+{{- $release.Name -}}-sapcc-ratelimit-redis
+{{- end -}}
 {{- end -}}

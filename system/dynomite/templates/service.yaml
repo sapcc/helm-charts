@@ -1,0 +1,28 @@
+{{- range $index, $member := .Values.dynomite.member }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ printf "%s-%d" "dynomite" $index }}
+  labels:
+    app: {{ printf "%s-%d" "dynomite" $index }}
+    release: "{{ $.Release.Name }}"
+spec:
+  type: LoadBalancer
+  selector:
+    app: {{ printf "%s-%d" "dynomite" $index }}
+  loadBalancerIP: {{ $member | include "dynomite.ip" }}
+  ports:
+    - name: listen
+      port: {{ required "$.Values.dynomite.service.port.listen missing" $.Values.dynomite.service.port.listen }}
+      targetPort: listen
+    - name: dyn-listen
+      port:  {{ required "$.Values.dynomite.service.port.dyn_listen missing" $.Values.dynomite.service.port.dyn_listen }}
+      targetPort: dyn-listen
+    - name: admin
+      port:  {{ required "$.Values.dynomite.service.port.admin missing" $.Values.dynomite.service.port.admin }}
+      targetPort: admin
+    - name: redis
+      port:  {{ required "$.Values.redis.service.port missing" $.Values.redis.service.port }}
+      targetPort: redis
+---
+{{- end }}

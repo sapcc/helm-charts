@@ -28,18 +28,13 @@ spec:
       annotations:
         pod.beta.kubernetes.io/hostname: nova-scheduler
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
+      terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-scheduler
       containers:
         - name: nova-scheduler
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-scheduler:{{.Values.imageVersionNovaScheduler | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-scheduler:{{.Values.imageVersionNovaScheduler | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -50,7 +45,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "nova-api,rabbitmq"
+              value: "nova-api,{{ .Release.Name }}-rabbitmq"
 {{- if .Values.python_warnings}}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
@@ -59,6 +54,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 20
+          {{- if .Values.pod.resources.scheduler }}
+          resources:
+{{ toYaml .Values.pod.resources.scheduler | indent 12 }}
+          {{- end }}
           volumeMounts:
             - name: etcnova
               mountPath: /etc/nova

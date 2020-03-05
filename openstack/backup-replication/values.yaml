@@ -1,39 +1,47 @@
-# Default values for backup-replication.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-enabled: false
-repository: sapcc/backup-replication
-image_version: v0.2.5
+global:
+  region: DEFINED_IN_VALUES_FILE
 
-# in a future release it will be the cronjob time "5 */8 * * *" for every 8 hours
-# currently its hardcoded 8 hours
-# backup_replication_cronjob: "5 */8 * * *"
+swift_http_import:
+  image: sapcc/swift-http-import
+  image_tag: latest
+  image_pull_policy: IfNotPresent
+  debug: 'false'
+  sleep_for: 3600
+  transfer_workers: 3
+  not_older_than: '3 days'
+  immutable: '.sql.gz$'
+  segmenting:
+    min_bytes: 1073741824
+    segment_bytes: 1073741824
 
-# this value are seconds 864000 are 10 days
-backup_expire_after: 864000
-from:
-  os_auth_url: DEFINED-IN-REGION-SECRETS
-  os_auth_version: DEFINED-IN-REGION-SECRETS
-  os_username: DEFINED-IN-REGION-SECRETS
-  os_user_domain: DEFINED-IN-REGION-SECRETS
-  os_project_name: DEFINED-IN-REGION-SECRETS
-  os_project_domain: DEFINED-IN-REGION-SECRETS
-  os_region_name: DEFINED-IN-REGION-SECRETS
-  os_password: DEFINED-IN-REGION-SECRETS
-to:
-  - os_auth_url: DEFINED-IN-REGION-SECRETS
-    os_auth_version: DEFINED-IN-REGION-SECRETS
-    os_username: DEFINED-IN-REGION-SECRETS
-    os_user_domain: DEFINED-IN-REGION-SECRETS
-    os_project_name: DEFINED-IN-REGION-SECRETS
-    os_project_domain: DEFINED-IN-REGION-SECRETS
-    os_region_name: DEFINED-IN-REGION-SECRETS
-    os_password: DEFINED-IN-REGION-SECRETS
-  - os_auth_url: DEFINED-IN-REGION-SECRETS
-    os_auth_version: DEFINED-IN-REGION-SECRETS
-    os_username: DEFINED-IN-REGION-SECRETS
-    os_user_domain: DEFINED-IN-REGION-SECRETS
-    os_project_name: DEFINED-IN-REGION-SECRETS
-    os_project_domain: DEFINED-IN-REGION-SECRETS
-    os_region_name: DEFINED-IN-REGION-SECRETS
-    os_password: DEFINED-IN-REGION-SECRETS
+statsd:
+  exporter_image_version: 'v0.8.1'
+
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+
+# target:
+#   auth_url: DEFINED_IN_VALUES_FILE
+#   user_name: DEFINED_IN_VALUES_FILE
+#   user_domain_name: DEFINED_IN_VALUES_FILE
+#   project_name: DEFINED_IN_VALUES_FILE
+#   project_domain_name: DEFINED_IN_VALUES_FILE
+#   password: DEFINED_IN_VALUES_FILE
+
+# source:
+#   DEFINED_IN_VALUES_FILE:
+#     auth_url: DEFINED_IN_VALUES_FILE
+#     user_name: DEFINED_IN_VALUES_FILE
+#     user_domain_name: DEFINED_IN_VALUES_FILE
+#     project_name: DEFINED_IN_VALUES_FILE
+#     project_domain_name: DEFINED_IN_VALUES_FILE
+#     password: DEFINED_IN_VALUES_FILE
+#     jobs:
+#       - from:
+#           container: DEFINED_IN_VALUES_FILE
+#           object_prefix: DEFINED_IN_VALUES_FILE
+#         to:
+#           container: DEFINED_IN_VALUES_FILE
+#           object_prefix: DEFINED_IN_VALUES_FILE

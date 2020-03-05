@@ -1,16 +1,16 @@
-{{- range $index, $cluster := .Values.clusters }}
+{{- range $cluster_id, $cluster := .Values.clusters }}
 kind: Service
 apiVersion: v1
 metadata:
-  name: swift-proxy-{{$cluster.name}}
+  name: swift-proxy-{{$cluster_id}}
   labels:
     release: "{{$.Release.Name}}"
-    os-cluster: {{$cluster.name}}
+    os-cluster: {{$cluster_id}}
   annotations:
-    {{- include "swift_prometheus_annotations" . | indent 4 }}
+    {{- include "swift_prometheus_annotations" $ | indent 4 }}
 spec:
   selector:
-    component: swift-proxy-{{$cluster.name}}
+    component: swift-proxy-{{$cluster_id}}
   ports:
     - name: api
       port: {{$cluster.proxy_public_port}}
@@ -23,4 +23,4 @@ spec:
   externalIPs:
     - {{$cluster.proxy_public_ip}}
 ---
-{{end}}
+{{- end }}

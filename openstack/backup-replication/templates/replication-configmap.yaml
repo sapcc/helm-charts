@@ -1,0 +1,47 @@
+{{ if .Values.source }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: swift-http-import
+  labels:
+    component: backup-replication
+
+data:
+{{- range $source_region, $source := .Values.source }}
+  {{ $source_region }}.yaml: |
+    swift:
+      auth_url: {{ $.Values.target.auth_url }}
+      user_name: {{ $.Values.target.user_name }}
+      user_domain_name: {{ $.Values.target.user_domain_name }}
+      project_name: {{ $.Values.target.project_name }}
+      project_domain_name: {{ $.Values.target.project_domain_name }}
+      password: {{ $.Values.target.password }}
+    statsd:
+      hostname: statsd
+      port: 9125
+      prefix: backup_replication.{{ $source_region }}
+    workers:
+      transfer: {{ $.Values.swift_http_import.transfer_workers }}
+    jobs:
+    {{- range $index, $job := $source.jobs }}
+      - from:
+          auth_url: {{ $source.auth_url }}
+          user_name: {{ $source.user_name }}
+          user_domain_name: {{ $source.user_domain_name }}
+          project_name: {{ $source.project_name }}
+          project_domain_name: {{ $source.project_domain_name }}
+          password: {{ $source.password }}
+          container: {{ $job.from.container }}
+          object_prefix: {{ $job.from.object_prefix }}
+        to:
+          container: {{ $job.to.container }}
+          object_prefix: {{ $job.to.object_prefix }}
+        segmenting:
+          min_bytes: {{ $.Values.swift_http_import.segmenting.min_bytes | printf "%0.f" }}
+          segment_bytes: {{ $.Values.swift_http_import.segmenting.segment_bytes | printf "%0.f" }}
+        match:
+          not_older_than: {{ $.Values.swift_http_import.not_older_than }}
+        immutable: {{ $.Values.swift_http_import.immutable }}
+    {{- end }}
+{{- end }}
+{{ end }}

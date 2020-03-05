@@ -1,0 +1,23 @@
+{{- if not (contains "metadata" .Values.api.DEFAULT.enabled_apis) }}
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: nova-api-metadata
+  labels:
+    system: openstack
+    type: api
+    component: nova
+  annotations:
+    prometheus.io/scrape: "true"
+    maia.io/scrape: "true"
+    prometheus.io/port: {{ required ".Values.portMetrics missing" .Values.portMetrics | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+
+spec:
+  selector:
+    name: nova-api-metadata
+  ports:
+    - name: nova-api-metadata
+      port: {{.Values.global.novaApiMetadataPortInternal}}
+{{- end }}

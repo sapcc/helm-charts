@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: elk
+  labels:
+    system: openstack
+    service: logging
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: kibana
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}        
+        checksum/kibana.yml.tpl: {{ include (print $.Template.BasePath "/_kibana.yml.tpl") . | sha256sum }}
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: payload
+      volumes:
+        - name: kibana-etc
+          configMap:
+            name: kibana-etc
+      containers:
+        - name: kibana
+          image: docker.elastic.co/kibana/kibana:{{.Values.image_version_kibana}}
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/share/kibana/bin/kibana", "--allow-root"]
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "es-client.elk"
+          ports:
+            - name: nodejs
+              containerPort: {{.Values.global.kibana_port_public}}
+          volumeMounts:
+            - mountPath: /usr/share/kibana/config
+              name: kibana-etc

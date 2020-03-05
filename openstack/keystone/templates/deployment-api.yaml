@@ -35,45 +35,70 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-          {"podAntiAffinity":
-            {"preferredDuringSchedulingIgnoredDuringExecution": [
-              {"weight": 10, "podAffinityTerm":
-                {"topologyKey": "kubernetes.io/hostname",
-                 "labelSelector": { "matchExpressions": [
-                    {"key": "app", "operator": "In", "values": ["{{ template "fullname" . }}"]},
-                    {"key": "release", "operator": "In", "values": ["{{ .Release.Name }}"]},
-                    {"key": "system", "operator": "In", "values": ["openstack"]},
-                    {"key": "component", "operator": "In", "values": ["keystone"]},
-                    {"key": "type", "operator": "In", "values": ["api"]}
-                  ]}
-                }
-              }
-            ]}
-          }
-{{- end }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: keystone
 {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 10
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - keystone-api
+                - key: system
+                  operator: In
+                  values:
+                  - openstack
+                - key: component
+                  operator: In
+                  values:
+                  - keystone
+                - key: type
+                  operator: In
+                  values:
+                  - api
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.api.terminationGracePeriodSeconds | default "30" }}
+      initContainers:
+      - name: kubernetes-entrypoint
+        #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
+        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+        imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+        command:
+          - /usr/local/bin/kubernetes-entrypoint
+        env:
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+{{- if .Release.IsInstall }}
+        - name: DEPENDENCY_JOBS
+          value: keystone-job-migration,keystone-job-bootstrap
+{{- else }}
+  {{- if or .Values.run_db_migration }}
+        - name: DEPENDENCY_JOBS
+          value: keystone-job-migration
+  {{- end }}
+{{- end }}
+        - name: DEPENDENCY_SERVICE
+          value: {{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached
+        - name: COMMAND
+          value: "true"
       containers:
         - name: keystone-api
-          image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
           imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+            - /scripts/keystone-api.sh
+            - start
           env:
-            - name: COMMAND
-              value: "/scripts/keystone-api.sh start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-{{- if .Release.IsInstall }}
-            - name: DEPENDENCY_JOBS
-              value: keystone-job-migration,keystone-job-bootstrap
-{{- end }}
-            - name: DEPENDENCY_SERVICE
-              value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
@@ -93,13 +118,11 @@ spec:
             - name: STATSD_PREFIX
               value: {{ .Values.api.metrics.prefix | default "openstack" | quote }}
             {{- end }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           ports:
             - name: public
               containerPort: 5000
-{{- if eq .Values.release "queens" }}
-            - name: admin
-              containerPort: 35357
-{{- end }}
           lifecycle:
             preStop:
               exec:
@@ -109,12 +132,15 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /healthcheck
               port: 5000
-            initialDelaySeconds: 15
-            timeoutSeconds: 15
+            initialDelaySeconds: 50
+            periodSeconds: 20
+            timeoutSeconds: 5
           volumeMounts:
             - name: etc-keystone
               mountPath: /etc/keystone
@@ -124,14 +150,17 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
+{{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
-              mountPath: /etc/keystone/keystone-paste.ini
-              subPath: keystone-paste.ini
+              mountPath: /etc/keystone/policy.yaml
+              subPath: policy.yaml
               readOnly: true
+{{- else }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.json
               subPath: policy.json
               readOnly: true
+{{- end }}
             - name: keystone-etc
               mountPath: /etc/keystone/logging.conf
               subPath: logging.conf
@@ -154,6 +183,12 @@ spec:
               mountPath: /etc/apache2/mods-available/mpm_event.conf
               subPath: mpm_event.conf
               readOnly: true
+            {{- if ne .Values.release "rocky" }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/access_rules.json
+              subPath: access_rules.json
+              readOnly: true
+            {{- end }}
             - name: fernet
               mountPath: /fernet-keys
               readOnly: true
@@ -163,33 +198,32 @@ spec:
             - name: keystone-bin
               mountPath: /scripts
               readOnly: true
-          {{- if .Values.api.resources.enabled }}
+          {{- if .Values.api.resources }}
           resources:
-            limits:
-              cpu: {{ .Values.api.resources.limits.cpu | quote }}
-              memory: {{ .Values.api.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.api.resources.requests.cpu | quote }}
-              memory: {{ .Values.api.resources.requests.memory | quote }}
+{{ toYaml .Values.api.resources | indent 12 }}
           {{- end }}
+
         {{- if .Values.api.metrics.enabled }}
         - name: keystone-statsd
           image: "{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
           imagePullPolicy: {{ .Values.api.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
+          command:
+            - /bin/statsd_exporter
+            - --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml
+          volumeMounts:
+            - name: keystone-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{ .Values.api.metrics.port }}
-          {{- if .Values.api.metrics.resources.enabled }}
+          {{- if .Values.api.metrics.resources }}
           resources:
-            limits:
-              cpu: {{ .Values.api.metrics.resources.limits.cpu | quote }}
-              memory: {{ .Values.api.metrics.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.api.metrics.resources.requests.cpu | quote }}
-              memory: {{ .Values.api.metrics.resources.requests.memory | quote }}
+{{ toYaml .Values.api.metrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
       volumes:

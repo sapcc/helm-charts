@@ -1,0 +1,93 @@
+groups:
+- name: neutron.alerts
+  rules:
+  - alert: OpenstackNeutronIntegrityOutOfFIPs
+    expr: blackbox_integrity_status_gauge{context="Floating-IP"} == 1
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Floating IPs network: {{ $labels.check }} exhausted soon'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/support/playbook/neutron/fip_exhausted.html
+    annotations:
+      description: 'The Floating IPs on {{ $labels.check }} might
+        get exhausted soon as utilized more than 90% of fips. This is heads up
+        to check the current FIPs network situation and add new subnet to network soon'
+      summary: Floating IPs possibly soon exhausted
+
+  - alert: OpenstackNeutronPredictOutOfFIP
+    expr: predict_linear(snmp_asr_cnatAddrBindNumberOfEntries[1d], 3600 * 24 * 4) > 800
+    for: 10m
+    labels:
+      context: floatingip
+      dashboard: maia-asr-info
+      service: neutron
+      severity: warning
+      tier: os
+    annotations:
+      description: 'STILL IN TEST MODE: The Floating IP''s on {{ $labels.job }} might
+        possibly get exhausted soon. This is not an exact warning, but a heads up
+        to check the current FIP situation.'
+      summary: 'STILL IN TEST MODE: Floating IP''s possibly soon exhausted'
+
+  - alert: OpenstackNeutronDhcpAgentLostNetworks
+    expr: blackbox_integrity_status_gauge{check=~"dhcp_agent-.+"} == 1
+    for: 15m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'DHCP agent has less subnets than subnets with dhcp enabled: {{ $labels.check }}'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/support/playbook/neutron/dhcp_down.html
+    annotations:
+      description: 'DHCP agent has less subnets than subnets with dhcp enabled for 15 min: {{ $labels.check }}'
+      summary: Openstack Neutron DHCP Agent lost private networks
+
+  - alert: OpenstackNeutronMonitorAgentHeartbeat
+    expr: max(openstack_neutron_monitor_agents_heartbeat_seconds) by (agent_type) > 75
+    for: 10m
+    labels:
+      context: Agent Heartbeat
+      dashboard: neutron
+      service: Neutron
+      severity: warning
+      tier: os
+      meta: 'Agent {{ $labels.agent_type }} Heartbeat is above 75secs in {{ $labels.host }}'
+      playbook: docs/support/playbook/neutron/agent_heartbeat.html
+    annotations:
+      description: Agent {{ $labels.agent_type }} Heartbeat is above 75secs in {{ $labels.host }}
+      summary: Openstack Neutron Metric to monitor Agents Heartbeat
+
+  - alert: OpenstackNeutronNetworkCountAsync
+    expr: kube_pod_container_status_ready{container="neutron-dhcp-agent"} == 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Not all networks have been synced by agent: {{ $labels.pod }}'
+      playbook: docs/support/playbook/neutron/dhcp_down.html
+    annotations:
+      description: 'Not all networks have been synced by agent for 5 min: {{ $labels.pod }}'
+      summary: Openstack Neutron DHCP Agent lost private networks
+
+  - alert: OpenstackNeutronWaitingDatabaseConnections
+    expr: sum by (application) (pgbouncer_pools_client_waiting_connections{application=~"neutron"}) > 10
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.application }}'
+      context: '{{ $labels.application }}'
+      dashboard: pgbouncer
+      meta: '{{ $labels.application }} has waiting database connections for 15 min'
+#      playbook: 'docs/devops/alert/{{ $labels.application }}'
+    annotations:
+      description: '{{ $labels.application }} has more than 10 waiting database connections for 15 min, please check pgbouncer logs'
+      summary: '{{ $labels.application }} waiting db connections'

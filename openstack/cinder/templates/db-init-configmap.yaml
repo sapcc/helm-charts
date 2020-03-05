@@ -1,4 +1,4 @@
-{{- if .Values.dbPassword }}
+{{- if .Values.global.dbPassword }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,7 +10,7 @@ metadata:
 
 data:
   db-init.sql: |
-    CREATE DATABASE {{.Values.dbName}};
-    CREATE ROLE {{.Values.dbUser}} WITH ENCRYPTED PASSWORD '{{.Values.dbPassword}}' LOGIN;
-    GRANT ALL PRIVILEGES ON DATABASE {{.Values.dbName}} TO {{.Values.dbUser}};
+    CREATE DATABASE {{.Values.db_name}};
+    CREATE ROLE {{.Values.global.dbUser}} WITH ENCRYPTED PASSWORD '{{required ".Values.global.dbPassword is missing" .Values.global.dbPassword}}' LOGIN;
+    GRANT ALL PRIVILEGES ON DATABASE {{.Values.db_name}} TO {{.Values.global.dbUser}};
 {{- end }}

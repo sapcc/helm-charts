@@ -1,0 +1,21 @@
+{{- if (index .Values (print .Chart.Name | replace "-" "_")).tempest.enabled}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-etc
+  labels:
+    system: openstack
+    type: configuration
+    component: glance
+data:
+  tempest_accounts.yaml: |
+{{ include (print .Template.BasePath "/etc/_tempest_accounts.yaml.tpl") . | indent 4 }}
+  tempest_deployment_config.json: |
+{{ include (print .Template.BasePath "/etc/_tempest_deployment_config.json.tpl") . | indent 4 }}
+  tempest_expected_failures_list.yaml: |
+{{- include "tempest-base.expected_failures" (dict "myXfails" (index .Values (print .Chart.Name | replace "-" "_")).tempest.expected_failures) | indent 4 }}
+  tempest_skip_list.yaml: |
+{{- include "tempest-base.skip_list" (dict "mySkipList" (index .Values (print .Chart.Name | replace "-" "_")).tempest.skip_list)| indent 4 }}
+  tempest_extra_options: |
+{{- include "tempest-base.extra_options" . | indent 4 }}
+{{ end }}

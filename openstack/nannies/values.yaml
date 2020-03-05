@@ -1,0 +1,226 @@
+vcenter_nanny:
+  enabled: False
+  docker_repo: DEFINED-IN-REGION-CHART
+  image_version: DEFINED-IN-REGION-CHART
+  debug: True
+  # dry run mode, i.e. just pretend to cleanup the entries
+  dry_run: true
+  # power off machines discovered as orphaned
+  power_off: false
+  # unregister machines discovered as orphaned
+  unregister: false
+  # delete machines discovered as orphaned
+  delete: false
+  # detach discovered ghost volumes
+  detach_ghost_volumes: false
+  # detach discovered ghost ports
+  detach_ghost_ports: false
+  # how many ghost volumes or ports to detach at maximum - if more: deny to delete any
+  detach_ghost_limit: 3
+  # enable or disable volume attachment consistency check
+  vol_check: false
+  # size of vms considered a bigvm for drs disablement in gb
+  bigvm_size: 1024
+  # size of vms considered a bigvm for setting memory shares to high in gb
+  bigvm_shares_action_size: 255
+  # run the db cleanup every n minutes
+  interval: 720
+  # really delete entities after how many iterations
+  iterations: 14
+
+# these are used by the vcenter-nanny, but set during deployment via helm --set-string
+from_cinder:
+  global:
+    dbPassword: "will_be_set_by_helm_deployment"
+from_nova:
+  global:
+    dbPassword: "will_be_set_by_helm_deployment"
+current_region: "will_be_set_by_helm_deployment"
+
+vcenter_nanny_consistency:
+  enabled: False
+  # this one we use from the vcenter nanny entry above as we use the same docker repo
+  # docker_repo: DEFINED-IN-REGION-CHART
+  consistency_image_version: DEFINED-IN-REGION-CHART
+  debug: True
+  # dry run mode, i.e. just pretend to cleanup the entries
+  dry_run: true
+  # run the db consistency check every minutes
+  interval: 60
+  # warn after how many iterations
+  iterations: 3
+  # maximum number of inconsistent volumes to fix automatically - otherwise fixing will be denied
+  fix_limit: 10
+  # if cells are enabled, put the VCENTER_CONSISTENCY_HOST here as a reference to the az with an own cell db - False if not relevant
+  cell2_vc: False
+
+# nova nanny
+nova_nanny:
+  image_version: DEFINED-IN-REGION-CHART
+  enabled: False
+  # run the pod with an infinite sleep loop for debugging
+  debug: False
+  # run the nanny every n minutes
+  interval: 15
+  # the quota sync part is hard disabled in the deployment for now as we do not need it anymore and to avoid accidental enablement
+  quota_sync:
+    enabled: False
+  db_purge:
+    enabled: False
+    # dry run mode, i.e. just pretend to purge the entries
+    dry_run: True
+    # purge instance entries older than n days
+    older_than: 14
+    # purge at max n entries in one run
+    max_number: 50
+  consistency:
+    enabled: False
+    # dry run mode, i.e. just check for consistency without fixing it
+    dry_run: True
+    # detect problems in the instance mappings we saw in queens
+    queens_instance_mapping_enabled: True
+    # dry run mode, i.e. just check for consistency without fixing it
+    queens_instance_mapping_dry_run: True
+    # purge deleted block_device_mappings and reservations older than n days
+    older_than: 21
+    # keep at max n instance fault entries per instance
+    max_instance_faults: 10
+    # how many inconsistencies to fix at max - otherwise fixing will be denied
+    fix_limit: 25
+  db_cleanup:
+    enabled: False
+    # dry run mode, i.e. just pretend to cleanup the entries
+    dry_run: True
+    # run the db cleanup every n minutes
+    interval: 720
+    # really delete entities after how many iterations
+    iterations: 14
+  sync_neutron_cache:
+    enabled: False
+    # dry run mode, i.e. just pretend to cleanup the entries
+    dry_run: True
+    # run the db cleanup every n minutes
+    interval: 360
+    # sync the neutron cache for bare metal nodes as well?
+    baremetal: false
+  cell2:
+    # this should be true if we have a second cell defined in this region
+    enabled: False
+
+# cinder nanny
+cinder_nanny:
+  image_version: DEFINED-IN-REGION-CHART
+  enabled: False
+  # run the pod with an infinite sleep loop for debugging
+  debug: False
+  # run the nanny every n minutes
+  interval: 60
+  quota_sync:
+    enabled: False
+  db_purge:
+    enabled: False
+    # purge deleted cinder entities older than n days
+    older_than: 14
+  consistency:
+    enabled: False
+    # dry run mode, i.e. just check for consistency without fixing it
+    dry_run: True
+    # how many inconsistencies to fix at max - otherwise fixing will be denied
+    fix_limit: 25
+  db_cleanup:
+    enabled: False
+    # dry run mode, i.e. just pretend to cleanup the entries
+    dry_run: true
+    # run the db cleanup every n minutes
+    interval: 720
+    # really delete entities after how many iterations
+    iterations: 14
+
+# glance nanny
+glance_nanny:
+  image_version: DEFINED-IN-REGION-CHART
+  enabled: False
+  # debug mode - no script run in the containers, just a sleep loop
+  debug: True
+  # run the nanny every n minutes
+  interval: 60
+  db_purge:
+    enabled: True
+    # purge deleted db entries older than n days
+    older_than: 14
+    # delete at max number of entries in one run
+    max_number: 50
+
+# neutron nanny
+neutron_nanny:
+  image_version: DEFINED-IN-REGION-CHART
+  enabled: False
+  # run the pod with an infinite sleep loop for debugging
+  debug: False
+  cleanup_pending_lb:
+    enabled: False
+    # dry run mode, i.e. just pretend to cleanup the entries
+    dry_run: True
+    # run the db cleanup every n minutes
+    interval: 60
+    # really delete entities after how many iterations
+    iterations: 3
+  # is mariadb enabled in manila deployment or not
+  mariadb:
+    enabled: false
+
+# manila nanny
+manila_nanny:
+  image_version: 'stein-20200304132621'
+  image_netapp_version: 'stein-20200127130533'
+  enabled: false
+  # debug mode - no script run in the containers, just a sleep loop
+  debug: false
+  # run the nanny every n seconds
+  interval: 3600
+  db_purge:
+    enabled: false
+    dry_run: true
+    # purge deleted db entries older than n days
+    older_than: 14
+  consistency:
+    enabled: false
+    dry_run: true
+  quota_sync:
+    enabled: false
+    dry_run: true
+    resources:
+     requests:
+        memory: "64Mi"
+        cpu: "300m"
+  share_size_sync:
+    enabled: false
+    dry_run: true
+    interval: 120
+  db_cleanup:
+    enabled: false
+    dry_run: true
+  netapp:
+    interval: 240
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "500m"
+  # default pod resources of nanny containers, can be overridden by individual nanny
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+  # is mariadb enabled in manila deployment or not
+  mariadb:
+    enabled: false
+
+# Deploy Nanny Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+
+# currently used by glance nanny only
+sentry:
+  enabled: true

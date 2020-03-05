@@ -1,0 +1,65 @@
+# Might we worth building your own ipxe stack here: https://rom-o-matic.eu/
+{{- if .Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1" }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosQuery
+metadata:
+  name: ironic-migrate-nodes
+  namespace: monsoon3
+  execute: True
+requirements:
+- name: ironic-seed
+  kind: OpenstackSeed
+- name: ironic-baremetal-blocks
+context: ironic@Default/service
+python: |
+    from ironicclient import client as bmclient
+    from novaclient import client as computeclient
+
+    bm = bmclient.get_client(1, session=os.session, os_ironic_api_version='1.46')
+    compute = computeclient.Client('2', session=os.session)
+
+    flavor_map = dict()
+
+    for f in compute.flavors.list(is_public=True):
+        if f.name[0] != 'z':
+            continue
+        resources = (f.vcpus, f.ram, f.disk)
+        LOG.debug("Flavor %s: %s", f.name, resources)
+        if resources in flavor_map:
+            conflict = flavor_map[resources]
+            LOG.error("Duplicate resources %s and %s", f.name, conflict)
+            os.exit(1)
+
+        flavor_map[resources] = f.name
+
+    for node in nodes:
+        if not node.get('maintenance') \
+                and not node.get('provision_state') in ['enroll','manageable','available']:
+            continue
+
+        prop = node['properties']
+        name = node['name']
+
+        if name is None:
+            continue
+
+        resources = (int(prop['cpus']),
+                     int(prop['memory_mb']),
+                     int(prop['local_gb']))
+        flavor = flavor_map.get(resources)
+        patch = []
+
+        if not flavor:
+            LOG.warning("Cannot find flavor for %s: %s", name, resources)
+        elif node.get('resource_class') != flavor:
+            LOG.info("%s: Flavor '%s' -> '%s'", name, node['resource_class'], flavor)
+            patch = [{"op": "replace", "path": "/resource_class", "value": flavor}]
+
+        block_name = name.split('-')[-1]
+        if not node.get('conductor_group'):
+            LOG.info("Migrating node %s: Group -> '%s'", name, block_name)
+            patch = [{"op": "replace", "path": "/conductor_group", "value": block_name}]
+
+        if patch:
+            bm.node.update(node['uuid'], patch)
+{{- end  }}

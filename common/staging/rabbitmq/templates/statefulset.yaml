@@ -1,0 +1,130 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: {{ template "rabbitmq.fullname" . }}
+  labels:
+    app: {{ template "rabbitmq.fullname" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: rabbitmq
+spec:
+  serviceName: {{ template "rabbitmq.fullname" . }}
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  updateStrategy:
+    type: {{ .Values.upgrades.updateStrategy }}
+  selector:
+    matchLabels:
+      app: {{ template "rabbitmq.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "rabbitmq.fullname" . }}
+        release: {{ .Release.Name }}
+      annotations:
+        checksum/etc.config: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        dashboard/url: http://{{ template "rabbitmq.release_host" . }}:{{ .Values.ports.management }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: rabbitmq
+        image: "{{ .Values.image }}:{{.Values.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: management
+          initialDelaySeconds: 180
+          timeoutSeconds: 10
+          periodSeconds: 60
+        readinessProbe:
+          exec:
+            command: ["rabbitmqctl", "node_health_check"]
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
+          periodSeconds: 10
+        env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: RABBITMQ_NODENAME
+            value: rabbit@$(MY_POD_NAME).{{ template "rabbitmq.release_host" . }}
+          - name: RABBITMQ_USE_LONGNAME
+            value: "true"
+          - name: K8S_SERVICE_NAME
+            value: {{ template "rabbitmq.fullname" . }}
+          - name: RABBITMQ_ERLANG_COOKIE
+            value: "{{ .Values.erlangCookie }}"
+        resources:
+{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
+        ports:
+          - name: epmd
+            protocol: TCP
+            containerPort: {{ default "4369" .Values.ports.epmd }}
+          - name: public
+            protocol: TCP
+            containerPort: {{ default "5672" .Values.ports.public }}
+          - name: management
+            protocol: TCP
+            containerPort: {{ default "15672" .Values.ports.management }}
+          - name: clustering
+            protocol: TCP
+            containerPort: {{ default "25672" .Values.ports.clustering }}
+        volumeMounts:
+          - name: rabbitmq-storage
+            mountPath: /var/lib/rabbitmq
+          - name: config-volume
+            mountPath: /etc/rabbitmq
+{{- if .Values.metrics.enabled }}
+      - name: metrics
+        image: "{{ .Values.metrics.image }}:{{.Values.metrics.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
+        env:
+          - name: PUBLISH_PORT
+            value: {{ default "9150" .Values.metrics.port | quote }}
+          - name: RABBIT_USER
+            value: {{ .Values.metrics.user | quote }}
+          - name: RABBIT_PASSWORD
+            value: {{ .Values.metrics.password | default (tuple . .Values.metrics.user | include "rabbitmq.password_for_user") | quote }}
+          - name: RABBIT_URL
+            value: "http://127.0.0.1:{{.Values.ports.management}}"
+          - name: RABBIT_CAPABILITIES
+            value: "bert,no_sort"
+          - name: SKIP_QUEUES
+            value: {{ .Values.metrics.skipQueues }}
+          - name: RABBIT_EXPORTERS
+            value: {{ .Values.metrics.exporters }}
+        resources:
+{{ toYaml (required "missing .resources" .Values.metrics.resources) | indent 10 }}
+        ports:
+          - name: metrics
+            containerPort: {{ default "9150" .Values.metrics.port }}
+{{- end }}
+      volumes:
+        - name: rabbitmq-storage
+{{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (include "rabbitmq.fullname" .) }}
+{{- else if not .Values.persistenceTemplate.enabled }}
+          emptyDir: {}
+{{- end }}
+        - name: config-volume
+          configMap:
+            name: {{ template "rabbitmq.fullname" . }}-config
+            items:
+              - key: rabbitmq.conf
+                path: rabbitmq.conf
+              - key: enabled_plugins
+                path: enabled_plugins
+              - key: definitions.json
+                path: definitions.json
+{{- if .Values.persistenceTemplate.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ template "rabbitmq.fullname" . }}
+    spec:
+{{- .Values.persistenceTemplate.spec | toYaml | indent 6 }}
+{{- end }}

@@ -17,19 +17,27 @@ spec:
 
     groups:
     - name: CC3TEST_DOMAIN_ADMINS
-      roles:
+      role_assignments:
       - project: regression
         role: admin
       - project: regression
-        role: volume_admin
-      - project: regression
-        role: sharedfilesystem_admin
-      - project: regression
-        role: network_admin
+        role: automation_admin
       - project: regression
         role: compute_admin
       - project: regression
+        role: keymanager_admin
+      - project: regression
+        role: kubernetes_admin
+      - project: regression
+        role: network_admin
+      - project: regression
         role: resource_admin
+      - project: regression
+        role: sharedfilesystem_admin
+      - project: regression
+        role: swiftoperator
+      - project: regression
+        role: volume_admin
       - project: regression
         role: member
       - project: regression
@@ -37,19 +45,27 @@ spec:
 
     projects:
     - name: regression
-      roles:
+      role_assignments:
       - user: {{.Values.global.openstack.users.admin.username}}
         role: admin
       - user: {{.Values.global.openstack.users.admin.username}}
-        role: volume_admin
-      - user: {{.Values.global.openstack.users.admin.username}}
-        role: sharedfilesystem_admin
-      - user: {{.Values.global.openstack.users.admin.username}}
-        role: network_admin
+        role: automation_admin
       - user: {{.Values.global.openstack.users.admin.username}}
         role: compute_admin
       - user: {{.Values.global.openstack.users.admin.username}}
+        role: keymanager_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: kubernetes_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: network_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
         role: resource_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: sharedfilesystem_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: swiftoperator
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: volume_admin
       - user: {{.Values.global.openstack.users.admin.username}}
         role: member
       - user: {{.Values.global.openstack.users.admin.username}}
@@ -72,6 +88,13 @@ spec:
       - name: private_regression_regression_cc3test_router
         external_gateway_info:
           network: {{.Values.global.network.monsoon3}}
+          external_fixed_ips:
+          - subnet: {{.Values.global.subnet.monsoon3}}
         interfaces:
         - subnet: private_regression_regression_cc3test_sub
 
+  rbac_policies:
+  - object_type: network
+    object_name: {{.Values.global.network.monsoon3}}
+    action: access_as_shared
+    target_tenant_name: regression@cc3test

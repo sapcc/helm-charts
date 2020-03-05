@@ -4,8 +4,13 @@ apiVersion: v1
 metadata:
   name: blackbox-tests-certificates
   annotations:
-    "prometheus.io/scrape": "true"
-    "prometheus.io/port": "{{.Values.global.port_metrics}}"
+    prometheus.io/scrape: "true"
+    prometheus.io/port:  {{ .Values.global.port_metrics | quote }}
+    prometheus.io/targets: {{ .Values.global.alerts.prometheus | quote }}
+  labels:
+    system: openstack
+    component: blackbox-tests
+    type: certificates
 
 spec:
   selector:

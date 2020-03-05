@@ -1,0 +1,158 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+
+metadata:
+  name: {{ include "prometheus.name" . }}
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  replicas: 1
+
+  {{ if .Values.rbac.create -}}
+  serviceAccountName: {{ include "serviceAccount.name" . }}
+  {{- end }}
+
+  image: {{ include "prometheus.image" . }}
+
+  # Select all ServiceMonitors with the label 'prometheus: <name>'.
+  serviceMonitorSelector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" . }}
+
+  {{ if or .Values.serviceDiscoveries.pods.enabled .Values.serviceDiscoveries.kubeDNS.enabled -}}
+  # Select all PodMonitors with the label 'prometheus: <name>'.
+  podMonitorSelector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" . }}
+  {{- end }}
+
+  # Select all (aggregation, alerting) PrometheusRules with the label 'prometheus: <name>'.
+  ruleSelector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" . }}
+
+  # Find rules in every namespace.
+  ruleNamespaceSelector:
+    any: true
+
+  # The labels to add to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager).
+  # If Thanos is enabled the prefix `thanos_` is added to external labels to avoid overriding existing ones (region, cluster)
+  # which might have been added by previous Prometheis in the federation hierarchy.
+  externalLabels:
+    {{ include "thanosPrefix" . -}}region: {{ required ".Values.global.region missing" .Values.global.region }}
+    {{ include "thanosPrefix" . -}}cluster: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+    {{ include "thanosPrefix" . -}}cluster_type: {{ required ".Values.global.clusterType missing" .Values.global.clusterType }}
+    {{- if .Values.externalLabels }}
+{{ toYaml .Values.externalLabels | indent 4 }}
+    {{- end }}
+
+  {{ if .Values.additionalScrapeConfigs -}}
+  # Inject additional scrape configurations.
+  additionalScrapeConfigs:
+{{ toYaml .Values.additionalScrapeConfigs | indent 4}}
+  {{- end }}
+
+  {{ if .Values.scrapeInterval }}
+  # Interval between consecutive scrapes.
+  scrapeInterval: {{ .Values.scrapeInterval }}
+  {{ end }}
+
+  {{ if .Values.configMaps }}
+  # Mount additional configmaps from the same namespace.
+  configMaps:
+{{ toYaml .Values.configMaps | indent 4 }}
+  {{- end }}
+
+  # Mount additional secrets from the same namespace.
+  secrets: {{ if not (or .Values.secrets .Values.alertmanagers.authentication.enabled) }}[]{{ end }}
+  {{ if .Values.secrets }}
+{{ toYaml .Values.secrets | indent 4 }}
+  {{ end }}
+  {{- if .Values.alertmanagers.authentication.enabled }}
+    - {{ include "prometheus.fullName" . }}-alertmanager-sso-cert
+  {{ end }}
+
+  {{ if .Values.alertmanagers.hosts -}}
+  # Alertmanager configuration.
+  additionalAlertManagerConfigs:
+    name: {{ include "prometheus.fullName" . }}-alertmanager-config
+    key: config.yaml
+  {{- end }}
+
+  {{ if .Values.ingress.enabled -}}
+  # The external URL of the Prometheus.
+  externalUrl: https://{{ include "prometheus.externalURL" . }}
+  {{- end }}
+
+  # The retention time of the Prometheus.
+  retention: {{ default "7d" .Values.retentionTime }}
+
+  # The log level of the Prometheus.
+  logLevel: {{ default "info" .Values.logLevel }}
+
+  # Storage configuration.
+  # If configured, persistent storage is used, alternatively data is stored in memory.
+  storage:
+    {{- if .Values.persistence.enabled }}
+    volumeClaimTemplate:
+      metadata:
+        name: {{ include "pvc.name" . }}
+        labels:
+          prometheus: {{ include "prometheus.name" . }}
+      spec:
+        accessModes:
+          - {{ required ".Values.persistence.accessMode missing" .Values.persistence.accessMode | quote }}
+        resources:
+          requests:
+            storage: {{ required ".Values.persistence.size missing" .Values.persistence.size | quote }}
+        {{ if .Values.persistence.selector }}
+        selector:
+{{ toYaml .Values.persistence.selector | indent 10 }}
+        {{ end }}
+    {{ else }}
+    emptyDir:
+      medium: Memory
+    {{- end -}}
+
+  {{ if .Values.thanos.enabled }}
+  # Thanos configuration.
+  thanos:
+    {{- if not .Values.thanos.spec.objectStorageConfig }}
+    objectStorageConfig:
+      name: {{ include "thanos.objectStorageConfig.name" . }}
+      key: {{ include "thanos.objectStorageConfig.key" . }}
+      optional: true
+    {{ end }}
+{{ toYaml .Values.thanos.spec | indent 4 }}
+  {{- end -}}
+
+  {{ if .Values.resources }}
+  # Kubernetes resource requests and limits if configured.
+  resources:
+{{ toYaml .Values.resources | indent 4 }}
+  {{ end }}
+
+  {{ if .Values.securityContext }}
+  # A security context defines privilege and access control settings for a Pod or Container.
+  securityContext:
+{{ toYaml .Values.securityContext | indent 4 }}
+  {{ end }}
+
+  {{ if .Values.tolerations }}
+  # The pod tolerations.
+  tolerations:
+{{ toYaml .Values.tolerations | indent 4 }}
+  {{ end }}
+
+  {{ if .Values.affinity }}
+  # Assign custom affinity rules to the prometheus instance.
+  affinity:
+{{ toYaml .Values.affinity | indent 4 }}
+  {{ end }}
+
+  {{ if .Values.nodeSelector }}
+  # Define which Nodes the Pods are scheduled on.
+  nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 4 }}
+  {{ end }}

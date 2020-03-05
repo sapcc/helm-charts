@@ -1,12 +1,12 @@
-{{- range $index, $cluster := .Values.clusters }}
+{{- range $cluster_id, $cluster := .Values.clusters }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: swift-proxy-{{$cluster.name}}
+  name: swift-proxy-{{$cluster_id}}
   labels:
     release: "{{$.Release.Name}}"
-    os-cluster: {{$cluster.name}}
+    os-cluster: {{$cluster_id}}
 spec:
   revisionHistoryLimit: 5
   replicas: {{$cluster.replicas}}
@@ -21,21 +21,30 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      component: swift-proxy-{{$cluster.name}}
+      component: swift-proxy-{{$cluster_id}}
   template:
     metadata:
       labels:
-        component: swift-proxy-{{$cluster.name}}
+        component: swift-proxy-{{$cluster_id}}
       annotations:
         checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
         checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" $ | sha256sum }}
         {{- include "swift_ring_annotations" $ | indent 8 }}
+        {{- if $.Values.health_exporter }}
+        {{- if not $.Values.health_statsd }}
+        # Prometheus annotations for the swift-health-exporter, the annotations
+        # for the statsd-exporter are on the proxy-service level instead
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9520"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+        {{- end }}
+        {{- end }}
     spec:
       volumes:
         - name: tls-secret
           secret:
-            secretName: tls-swift-{{$cluster.name}}
+            secretName: tls-swift-{{$cluster_id}}
         - name: swift-bin
           configMap:
             name: swift-bin
@@ -44,7 +53,7 @@ spec:
             name: swift-etc
         - name: swift-etc-cluster
           configMap:
-            name: swift-etc-{{$cluster.name}}
+            name: swift-etc-{{$cluster_id}}
         - name: swift-account-ring
           configMap:
             name: swift-account-ring
@@ -66,6 +75,23 @@ spec:
           env:
             - name: DEBUG_CONTAINER
               value: "false"
+            {{- if $.Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: swift.DSN.public
+            {{- end }}
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 300m-2500m, RAM = 450-800 MiB
+            requests:
+              cpu: "2000m"
+              memory: "1024Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1024Mi"
+          {{- end }}
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc
@@ -84,6 +110,16 @@ spec:
           args:
             - /bin/sh
             - /swift-bin/nginx-start
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 10m-500m, RAM = 20-50 MiB
+            requests:
+              cpu: "1000m"
+              memory: "100Mi"
+            limits:
+              cpu: "1000m"
+              memory: "100Mi"
+          {{- end }}
           volumeMounts:
             - mountPath: /swift-bin
               name: swift-bin
@@ -104,7 +140,7 @@ spec:
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 10
-        {{- if $.Values.health_statsd }}
+        {{- if or $.Values.health_statsd $.Values.health_exporter }}
         - name: collector
           image: {{ include "swift_image" $ }}
           command:
@@ -112,6 +148,7 @@ spec:
           args:
             - /bin/bash
             - /usr/bin/swift-start
+          {{- if $.Values.health_statsd }}
             - health-statsd
           env:
             - name: DEBUG_CONTAINER
@@ -122,6 +159,23 @@ spec:
               value: "info"
             - name: ADD_HOSTNAME_SUFFIX
               value: "true"
+          {{- else }}
+            - health-exporter
+          ports:
+            - name: metrics
+              containerPort: 9520
+          {{- end }}
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = ~10m, RAM = 40-60 MiB
+            # low cpu allocation results in performance degradation
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+            limits:
+              cpu: "100m"
+              memory: "100Mi"
+          {{- end }}
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc
@@ -132,7 +186,28 @@ spec:
             - mountPath: /swift-rings/object
               name: swift-object-ring
         {{- end}}
-        {{- include "swift_statsd_exporter_container" $ | indent 8 }}
+        - name: statsd
+          image: prom/statsd-exporter:{{$.Values.image_version_auxiliary_statsd_exporter}}
+          args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+          {{- if $.Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
+            requests:
+              cpu: "120m"
+              memory: "1024Mi"
+            limits:
+              cpu: "120m"
+              memory: "1024Mi"
+          {{- end }}
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: 9102
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc
 
 ---
-{{end}}
+{{- end }}

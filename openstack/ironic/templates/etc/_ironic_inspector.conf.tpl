@@ -1,12 +1,9 @@
 [DEFAULT]
-log_config_append = /etc/ironic/logging.ini
-
-enabled_drivers = {{.Values.enabled_drivers | default "pxe_ipmitool,agent_ipmitool"}}
-enabled_network_interfaces = noop,flat,neutron
-default_network_interface = neutron
+log_config_append = /etc/ironic-inspector/logging.ini
+{{- include "ini_sections.default_transport_url" . }}
 
 [ironic]
-os_region = {{.Values.global.region}}
+region_name = {{.Values.global.region}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
@@ -22,6 +19,7 @@ host_ip = 0.0.0.0
 manage_firewall = False
 
 [processing]
+store_data = swift
 always_store_ramdisk_logs = true
 ramdisk_logs_dir = /var/log/kolla/ironic/
 add_ports = all
@@ -35,26 +33,37 @@ processing_hooks = $default_processing_hooks,local_link_connection
 [discovery]
 enroll_node_driver = agent_ipmitool
 
+[pxe_filter]
+driver = noop
+
 [database]
+{{- if eq .Values.mariadb.enabled true }}
+connection = mysql+pymysql://ironic_inspector:{{.Values.inspectordbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic_inspector?charset=utf8
+{{- include "ini_sections.database_options_mysql" . }}
+{{- else }}
 connection = {{ tuple . "ironic_inspector" "ironic_inspector" .Values.inspectordbPassword | include "db_url" }}
 {{- include "ini_sections.database_options" . }}
+{{- end }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 
 [keystone_authtoken]
-auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
+auth_interface = internal
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
 password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser| include "identity.password_for_user") }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-memcache_servers = {{include "memcached_host" .}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 region_name = {{.Values.global.region}}
+service_token_roles_required = True
 insecure = True
-
-{{include "oslo_messaging_rabbit" .}}
+token_cache_time = 600
+include_service_catalog = true
+service_type = baremetal
 
 [oslo_middleware]
 enable_proxy_headers_parsing = True

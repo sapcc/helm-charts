@@ -1,0 +1,41 @@
+global:
+  rbac:
+    create: true
+
+kube-dns:
+  domain:
+  clusterip:
+
+kube-fip-controller:
+  enabled: false
+
+disco:
+  enabled: false
+  rbac:
+    create: true
+    serviceAccountName: disco
+
+node-problem-detector:
+  systemLogMonitors:
+    - kernel-monitor.json
+
+  customPluginMonitors:
+    - bridge-monitor.json
+
+  additionalHostVolumeMounts:
+    # Required by the bridge monitor.
+    - name: hostproc
+      hostPath: /proc
+      mountPath: /host/proc
+      readOnly: true
+
+vice-president:
+  president:
+    rbac:
+      create: true
+      serviceAccountName: vice-president
+
+container-linux-update-operator:
+  rbac:
+    create: true
+    serviceAccountName: container-linux-update-operator

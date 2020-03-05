@@ -14,6 +14,7 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "{{.Values.api.metrics.port}}"
+    prometheus.io/targets: "{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}"
 {{- end }}
 spec:
   selector:
@@ -24,12 +25,6 @@ spec:
       protocol: "TCP"
       port: 5000
       targetPort: 5000
-{{- if eq .Values.release "queens" }}
-    - name: admin
-      protocol: "TCP"
-      port: 35357
-      targetPort: 35357
-{{- end }}
 {{- if .Values.services.externalip }}
   externalIPs: [
     {{ .Values.services.externalip | quote }}

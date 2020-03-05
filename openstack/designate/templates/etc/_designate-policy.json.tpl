@@ -14,7 +14,7 @@
     "context_is_mailmaster": "rule:context_is_dns_support or (role:dns_mailmaster and rule:owner)",
     "context_is_webmaster": "rule:context_is_dns_support or rule:context_is_mailmaster or rule:context_is_hostmaster or (role:dns_webmaster and rule:owner)",
     "context_is_editor": "rule:dns_admin or rule:member",
-    "context_is_viewer": "rule:context_is_master or rule:context_is_editor or rule:viewer",
+    "context_is_viewer": "rule:context_is_master or rule:context_is_editor or rule:viewer or rule:member",
 
     "context_is_master": "rule:context_is_dns_support or rule:context_is_zonemaster or rule:context_is_hostmaster or rule:context_is_mailmaster or rule:context_is_webmaster or rule:context_is_editor",
 
@@ -22,9 +22,9 @@
 
     "default": "rule:context_is_viewer",
 
-    "all_tenants": "rule:admin",
+    "all_tenants": "rule:admin or rule:context_is_dns_support",
     "edit_managed_records" : "rule:admin",
-    "use_low_ttl": "rule:admin",
+    "use_low_ttl": "rule:admin or rule:context_is_dns_support",
 
     "get_quotas": "rule:context_is_viewer",
     "get_quota": "rule:context_is_viewer",
@@ -43,19 +43,19 @@
 
     "find_tenants": "rule:admin or rule:context_is_dns_ops",
     "get_tenant": "rule:admin or rule:context_is_dns_ops",
-    "count_tenants": "rule:admin  or rule:context_is_dns_ops",
+    "count_tenants": "rule:admin or rule:context_is_dns_ops",
 
     "create_zone": "rule:context_is_dns_ops",
     "create_sub_zone": "rule:context_is_zonemaster",
+    "create_super_zone": "rule:context_is_cloud_admin",
     "get_zones": "rule:context_is_viewer",
     "get_zone": "rule:context_is_viewer",
     "get_zone_servers": "rule:context_is_viewer",
     "find_zones": "rule:context_is_viewer",
     "find_zone": "rule:context_is_viewer",
-    "update_zone": "rule:context_is_dns_support",
+    "update_zone": "rule:context_is_master",
     "update_sub_zone": "rule:context_is_master",
     "delete_zone": "rule:context_is_master",
-    "delete_sub_zone": "rule:context_is_master",
 
     "xfr_zone": "rule:context_is_master or rule:admin",
     "abandon_zone": "rule:context_is_dns_ops",
@@ -67,6 +67,7 @@
     "create_A_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "create_AAAA_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "create_CNAME_recordset": "rule:context_is_webmaster or rule:context_is_editor",
+    "create_CAA_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "create_MX_recordset": "rule:context_is_mailmaster or rule:context_is_editor",
     "create_NS_recordset": "rule:context_is_hostmaster or rule:context_is_editor",
     "create_PTR_recordset": "rule:context_is_webmaster or rule:context_is_editor",
@@ -74,11 +75,13 @@
     "create_SPF_recordset": "rule:context_is_mailmaster or rule:context_is_editor",
     "create_SRV_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "create_SSHFP_recordset": "rule:admin",
+    "create_NAPTR_recordset": "rule:admin",
     "create_TXT_recordset": "rule:context_is_webmaster or rule:context_is_editor",
 
     "update_A_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "update_AAAA_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "update_CNAME_recordset": "rule:context_is_webmaster or rule:context_is_editor",
+    "update_CAA_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "update_MX_recordset": "rule:context_is_mailmaster or rule:context_is_editor",
     "update_NS_recordset": "rule:context_is_hostmaster or rule:context_is_editor",
     "update_PTR_recordset": "rule:context_is_webmaster or rule:context_is_editor",
@@ -86,11 +89,13 @@
     "update_SPF_recordset": "rule:context_is_mailmaster or rule:context_is_editor",
     "update_SRV_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "update_SSHFP_recordset": "rule:admin",
+    "update_NAPTR_recordset": "rule:admin",
     "update_TXT_recordset": "rule:context_is_webmaster or rule:context_is_editor",
 
     "delete_A_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "delete_AAAA_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "delete_CNAME_recordset": "rule:context_is_webmaster or rule:context_is_editor",
+    "delete_CAA_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "delete_MX_recordset": "rule:context_is_mailmaster or rule:context_is_editor",
     "delete_NS_recordset": "rule:context_is_hostmaster or rule:context_is_editor",
     "delete_PTR_recordset": "rule:context_is_webmaster or rule:context_is_editor",
@@ -98,6 +103,7 @@
     "delete_SPF_recordset": "rule:context_is_mailmaster or rule:context_is_editor",
     "delete_SRV_recordset": "rule:context_is_webmaster or rule:context_is_editor",
     "delete_SSHFP_recordset": "rule:admin",
+    "delete_NAPTR_recordset": "rule:admin",
     "delete_TXT_recordset": "rule:context_is_webmaster or rule:context_is_editor",
 
     "get_recordsets": "rule:context_is_viewer",
@@ -114,7 +120,7 @@
     "delete_record": "rule:context_is_master",
     "count_records": "rule:context_is_viewer",
 
-    "use_sudo": "rule:admin or rule:context_is_dns_ops",
+    "use_sudo": "rule:context_is_dns_ops",
     "create_blacklist": "rule:context_is_dns_ops",
     "find_blacklist": "rule:context_is_dns_support",
     "find_blacklists": "rule:context_is_dns_support",
@@ -129,7 +135,7 @@
     "get_pool": "rule:admin",
     "update_pool": "rule:admin",
     "delete_pool": "rule:admin",
-    "zone_create_forced_pool": "rule:admin",
+    "zone_create_forced_pool": "rule:admin or role:cloud_dns_support or role:cloud_dns_ops or role:dns_zonemaster",
     "diagnostics_ping": "rule:admin",
     "diagnostics_sync_zones": "rule:admin",
     "diagnostics_sync_zone": "rule:admin",
@@ -152,11 +158,11 @@
     "update_zone_transfer_accept": "rule:admin",
     "delete_zone_transfer_accept": "rule:admin",
 
-    "create_zone_import": "rule:context_is_cloud_dns_ops",
-    "find_zone_imports": "rule:context_is_cloud_dns_ops",
-    "get_zone_import": "rule:context_is_cloud_dns_ops",
-    "update_zone_import": "rule:context_is_cloud_dns_ops",
-    "delete_zone_import": "rule:context_is_cloud_dns_ops",
+    "create_zone_import": "rule:context_is_dns_ops",
+    "find_zone_imports": "rule:context_is_dns_ops",
+    "get_zone_import": "rule:context_is_dns_ops",
+    "update_zone_import": "rule:context_is_dns_ops",
+    "delete_zone_import": "rule:context_is_dns_ops",
 
     "zone_export": "rule:context_is_master",
     "create_zone_export": "rule:context_is_master",
@@ -166,5 +172,5 @@
 
     "find_service_status": "rule:admin",
     "find_service_statuses": "rule:admin",
-    "update_service_service_status": "rule:admin"
+    "update_service_status": "rule:admin"
 }

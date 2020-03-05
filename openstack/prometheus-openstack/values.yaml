@@ -1,0 +1,47 @@
+global:
+  clusterType: metal
+  domain: cloud.sap
+
+  # Defined via secrets.
+  # region:
+
+openstack-prometheus:
+  name: openstack
+
+  retentionTime: 7d
+
+  additionalScrapeConfigs:
+    name: openstack-additional-scrape-config
+    key: scrape-config.yaml
+
+  ingress:
+    enabled: true
+    hosts:
+      - prometheus-openstack
+
+  persistence:
+    enabled: true
+    size: 300Gi
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 10Gi
+
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true
+
+  alertmanagers:
+    # Enabled via secrets
+    authentication:
+      enabled: false
+
+    hosts:
+      - alertmanager.scaleout.eu-de-1.cloud.sap
+      - alertmanager.scaleout.eu-nl-1.cloud.sap
+
+kube_state_metrics_exporter:
+  prometheusName: openstack

@@ -1,0 +1,156 @@
+{{- if not (contains "metadata" .Values.api.DEFAULT.enabled_apis) }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: nova-api-metadata
+  labels:
+    system: openstack
+    type: api
+    component: nova
+spec:
+  replicas: {{ .Values.pod.replicas.metadata }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: nova-api-metadata
+  template:
+    metadata:
+      labels:
+        name: nova-api-metadata
+{{ tuple . "nova" "api-metadata" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
+{{ tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      containers:
+        - name: nova-api-metadata
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "nova-api-metadata"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "nova-migration"
+            - name: DEPENDENCY_SERVICE
+              value: "nova-postgresql,{{ .Release.Name }}-rabbitmq"
+              # plus soft-dependency to nova-rabbitmq-notifications
+            - name: STATSD_HOST
+              value: "localhost"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: SENTRY_DSN
+              value: {{.Values.sentry_dsn | quote}}
+{{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+{{- end }}
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.global.novaApiMetadataPortInternal}}
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{.Values.global.novaApiMetadataPortInternal}}
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          {{- if .Values.pod.resources.metadata }}
+          resources:
+{{ toYaml .Values.pod.resources.metadata | indent 12 }}
+          {{- end }}
+          ports:
+            - name: nova-metdata
+              containerPort: {{.Values.global.novaApiMetadataPortInternal}}
+          volumeMounts:
+            - mountPath: /etc/nova
+              name: etcnova
+            - mountPath: /etc/nova/nova.conf
+              name: nova-etc
+              subPath: nova.conf
+              readOnly: true
+            - mountPath: /etc/nova/nova-api-metadata.conf
+              name: nova-etc
+              subPath: nova-api-metadata.conf
+              readOnly: true
+            - mountPath: /etc/nova/api-paste.ini
+              name: nova-etc
+              subPath: api-paste.ini
+              readOnly: true
+{{- if .Values.audit.enabled }}
+            - mountPath: /etc/nova/nova_audit_map.yaml
+              name: nova-etc
+              subPath: nova_audit_map.yaml
+              readOnly: true
+{{- end }}
+            - mountPath: /etc/nova/policy.json
+              name: nova-etc
+              subPath: policy.json
+              readOnly: true
+            - mountPath: /etc/nova/logging.ini
+              name: nova-etc
+              subPath: logging.ini
+              readOnly: true
+            - mountPath: /etc/nova/rootwrap.conf
+              name: nova-etc
+              subPath: rootwrap.conf
+              readOnly: true
+            - mountPath: /etc/nova/rootwrap.d/api-metadata.filters
+              name: nova-etc
+              subPath: api-metadata.filters
+              readOnly: true
+            - mountPath: /var/lib/kolla/venv/bin/iptables-restore
+              name: nova-bin
+              subPath: iptables-restore.mock
+              readOnly: true
+            {{- if .Values.watcher.enabled }}
+            - name: nova-etc
+              mountPath: /etc/nova/watcher.yaml
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
+        - name: statsd
+          image: prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{.Values.portMetrics}}
+          volumeMounts:
+            - name: nova-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+      volumes:
+        - name: etcnova
+          emptyDir: {}
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+        - name: nova-bin
+          configMap:
+            name: nova-bin
+            defaultMode: 0755
+{{- end }}

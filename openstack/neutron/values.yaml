@@ -7,11 +7,10 @@ osprofiler: {}
 
 global:
   dbUser: neutron
-  dbPassword: DEFINED-IN-REGION-CHART
-  imageRegistry:
-  fernetRouter:
-    image: "monsoon/fernet-router:latest"
+  # dbPassword:
+  # imageRegistry:
   metadata_workers: 1
+  rpc_response_timeout: 60
 
 pod:
   replicas:
@@ -22,8 +21,8 @@ pod:
         revision_history: 5
         pod_replacement_strategy: RollingUpdate
         rolling_update:
-           max_unavailable: 0
-           max_surge: 1
+          max_unavailable: 0
+          max_surge: 1
   debug:
     server: false
     dhcp_agent: false
@@ -32,117 +31,206 @@ pod:
     asr_agent: false
     f5_agent: false
     cisco_ml2_ucsm_bm: false
-
-agent:
-  enable_daemonset: false
-  disable_deployments: false
-  image_tag: mitaka
-  image_name: neutron
-
-
-api:
-  override: {}
+  resources:
+    metadata_agent:
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    aci_agent:
+      limits:
+        cpu: '500m'
+        memory: '1Gi'
+      requests:
+        cpu: '250m'
+        memory: '512Mi'
+    server:
+      requests:
+        cpu: "4000m"
+        memory: "8Gi"
+    cisco_ml2_ucsm_bm:
+      requests:
+        cpu: "256m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "1024Mi"
+    sftp_backup:
+      requests:
+        cpu: "256m"
+        memory: "32Mi"
+      limits:
+        cpu: "500m"
+        memory: "64Mi"
+    dhcp_agent:
+      requests:
+        cpu: "256m"
+        memory: "1Gi"
+      limits:
+        cpu: "512m"
+        memory: "2.5Gi"
+    linuxbridge_agent:
+      requests:
+        cpu: "64m"
+        memory: "256Mi"
+      limits:
+        cpu: "256m"
+        memory: "512Mi"
+    nsxv3_agent:
+      requests:
+        cpu: "64m"
+        memory: "256Mi"
+      limit:
+        cpu: "128m"
+        memory: "512Mi"
 
 debug: "True"
-
 port_metrics: '9102'
 l2_port_metrics: '9102'
 l3_port_metrics: '9103'
 
-image_tag: mitaka
-image_name: neutron
+new_f5:
+  periodic_interval: 120
+  loadbalancers: []
+
+imageName: 'monsoon/loci-neutron'
+# imageVersion:
+# imageVersionServerRPC:
+# imageVersionServerAPI:
+# imageVersionF5:
+# imageVersionACI:
+# imageVersionASR1kML2:
+# imageVersionASR1k:
+# imageVersionUCSM:
+# imageVersionNSXv3:
+# imageVersionNSXTExporter:
+# imageVersionNanny:
+# imageVersionNetworkAgent:
+# imageVersionNetworkAgentDHCP:
+# imageVersionNetworkAgentMetadata:
+# imageVersionNetworkAgentL3:
+# imageVersionNetworkAgentOVS:
+# imageVersionIronicAgent:
 
 service_plugins: neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2,networking_cisco.plugins.cisco.service_plugins.cisco_device_manager_plugin.CiscoDeviceManagerPlugin,networking_cisco.plugins.cisco.service_plugins.cisco_router_plugin.CiscoRouterPlugin
 default_router_type: ASR1k_router
 router_scheduler_driver: neutron.scheduler.l3_agent_scheduler.LeastRoutersScheduler
 
-
 aci:
-  apic_hosts: DEFINED-IN-REGION-CHART
-  apic_user: DEFINED-IN-REGION-CHART
-  apic_password: DEFINED-IN-REGION-CHART
-  apic_tenant_name: DEFINED-IN-REGION-CHART
   apic_application_profile: converged_cloud_openstack
   support_remote_mac_clear: 'True'
-  
+  sync_allocations: 'True'
+  # apic_hosts: null
+  # apic_user: null
+  # apic_password: null
+  # apic_tenant_name: null
+
 arista:
   api_type: nocvx
   sync_interval: 60
   conn_timeout: 30
   lossy_consolidation_limit: 50
-  eapi_host: DEFINED-IN-REGION-CHART
-  eapi_username: DEFINED-IN-REGION-CHART
-  eapi_password: DEFINED-IN-REGION-CHART
-  switches:
-    - host: DEFINED-IN-REGION-CHART
-      user: DEFINED-IN-REGION-CHART
-      password: DEFINED-IN-REGION-CHART
+  # eapi_host:
+  # eapi_username:
+  # eapi_password:
+  # switches:
+  #  - host:
+  #    user:
+  #    password:
+
+bgp_vpn:
+  enabled: false
 
 asr:
+
   config_agents: []
 
 f5:
   snat_per_subnet: 1
-  loadbalancers:
-    - name: DEFINED-IN-REGION-CHART
-      username: DEFINED-IN-REGION-CHART
-      password: DEFINED-IN-REGION-CHART
-      guest_host: DEFINED-IN-REGION-CHART
-      vcmp_host: DEFINED-IN-REGION-CHART
-      external_physical_mappings: DEFINED-IN-REGION-CHART
-      physical_network: DEFINED-IN-REGION-CHART
+  # loadbalancers:
+  #  - name: null
+  #    username:
+  #    password:
+  #    guest_host:
+  #    vcmp_host:
+  #    external_physical_mappings:
+  #    physical_network:
 
 hypervisors_vmware: []
 
-manila:
-  physnet: ab123
+# manila:
+#   physnet:
 
-cisco_ucsm_bm:
-  example.com:
-    user: DEFINED-IN-REGION-CHART
-    password: DEFINED-IN-REGION-CHART
-    physical_network: DEFINED-IN-REGION-CHART
-    vnic_paths: DEFINED-IN-REGION-CHART
+# SFTP-swift bridge (e.g. for nsx-t backups in control-plane)
+sftp:
+  enabled: false
+  externalIPs: []
+  user: db_backup
 
+drivers:
+  nsxv3:
+    defaults:
+      AGENT:
+        polling_interval: 240
+        quitting_rpc_timeout: 120
+        db_max_records_per_query: 1000
+      NSXV3:
+        nsxv3_connection_retry_count: 10
+        nsxv3_connection_retry_sleep: 5
+        nsxv3_login_port: 443
+        nsxv3_suppress_ssl_wornings: true
+        nsxv3_max_records_per_query: 2000
+        nsxv3_requests_per_second: 80
+# cisco_ucsm_bm:
+#  example.com:
+#    user:
+#    password:
+#    physical_network:
+#    vnic_paths:
 
 logging:
-    formatters:
-        context:
-            class: oslo_log.formatters.ContextFormatter
-        default:
-            format: "%(message)s"
-    handlers:
-        stdout:
-            class: StreamHandler
-            args: "(sys.stdout,)"
-            formatter: context
-        "null":
-            class: logging.NullHandler
-            formatter: default
-            args: "()"
-        sentry:
-            class: "raven.handlers.logging.SentryHandler"
-            level: ERROR
-            args: "()"
-    loggers:
-        root:
-            handlers: stdout, sentry
-            level: WARNING
-        neutron:
-            handlers: stdout, sentry
-            level: WARNING
-        neutron_lbaas:
-            handlers: stdout, sentry
-            level: WARNING
-        suds:
-            handlers: "null"
-            level: ERROR
-        eventlet.wsgi.server:
-            handlers: stdout, sentry
-            level: INFO
-        auditmiddleware:
-            handlers: stdout, sentry
-            level: INFO
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: "raven.handlers.logging.SentryHandler"
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    neutron:
+      handlers: stdout, sentry
+      level: WARNING
+    neutron_lbaas:
+      handlers: stdout, sentry
+      level: WARNING
+    neutron.pecan_wsgi.hooks.policy_enforcement:
+      handlers: stdout, sentry
+      level: INFO
+    suds:
+      handlers: "null"
+      level: ERROR
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
 
 pgmetrics:
   name: neutron
@@ -176,7 +264,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "lbaas Count"
     openstack_neutron_SAP_IP_status:
-      query: "SELECT floatingips.floating_network_id, networks.name AS network_name, floatingips.status, COUNT(*) AS gauge FROM floatingips INNER JOIN networks ON floatingips.tenant_id=networks.tenant_id WHERE floating_ip_address LIKE '10%' GROUP BY floatingips.floating_network_id, floatingips.status, networks.name"
+      query: "SELECT floatingips.floating_network_id, networks.name AS network_name, floatingips.status, COUNT(*) AS gauge FROM floatingips INNER JOIN networks ON floatingips.project_id=networks.project_id WHERE floating_ip_address LIKE '10%' GROUP BY floatingips.floating_network_id, floatingips.status, networks.name"
       metrics:
         - floating_network_id:
             usage: "LABEL"
@@ -191,7 +279,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "Count of Floating IP by status"
     openstack_neutron_ext_IP_status:
-      query: "SELECT floatingips.floating_network_id, networks.name AS network_name, floatingips.status, COUNT(*) AS gauge FROM floatingips INNER JOIN networks ON floatingips.tenant_id=networks.tenant_id WHERE floating_ip_address LIKE '15%' GROUP BY floatingips.floating_network_id, floatingips.status, networks.name"
+      query: "SELECT floatingips.floating_network_id, networks.name AS network_name, floatingips.status, COUNT(*) AS gauge FROM floatingips INNER JOIN networks ON floatingips.project_id=networks.project_id WHERE floating_ip_address LIKE '15%' GROUP BY floatingips.floating_network_id, floatingips.status, networks.name"
       metrics:
         - floating_network_id:
             usage: "LABEL"
@@ -230,41 +318,255 @@ pgmetrics:
             usage: "GAUGE"
             description: "Internet IPs used per subnet"
     openstack_neutron_monitor_sec_grp:
-     query: "select securitygroupportbindings.security_group_id AS security_group_id, count(*) as count from securitygroupportbindings join securitygrouprules on securitygroupportbindings.security_group_id = securitygrouprules.security_group_id group by securitygroupportbindings.security_group_id order by count desc limit 10"
-     metrics:
+      query: "select securitygroupportbindings.security_group_id AS security_group_id, count(*) as count from securitygroupportbindings join securitygrouprules on securitygroupportbindings.security_group_id = securitygrouprules.security_group_id group by securitygroupportbindings.security_group_id order by count desc limit 10"
+      metrics:
         - security_group_id:
             usage: "LABEL"
             description: "security group id details"
         - count:
             usage: "GAUGE"
             description: "Estimate on number of filter rules"
-    openstack_neutron_monitor_agents:
-      query: "SELECT host, agent_type, EXTRACT(EPOCH FROM (now() - heartbeat_timestamp)) as heartbeat_seconds FROM agents WHERE admin_state_up"
+    openstack_neutron_sg_count:
+      query: "select count(*) as count from securitygrouprules"
       metrics:
-      - host:
-          usage: "LABEL"
-          description: "Name of the agents host"
-      - agent_type:
-          usage: "LABEL"
-          description: "Type of the agent"
-      - heartbeat_seconds:
-          usage: "GAUGE"
-          description: "Seconds since the last heartbeat"
+        - count:
+            usage: "GAUGE"
+            description: "Count of total security group rules"
+    openstack_neutron_monitor_agents:
+      query: "SELECT host, agent_type, load, EXTRACT(EPOCH FROM (now() - heartbeat_timestamp)) as heartbeat_seconds FROM agents WHERE admin_state_up and EXTRACT(EPOCH FROM (now() - heartbeat_timestamp)) < 90"
+      metrics:
+        - host:
+            usage: "LABEL"
+            description: "Name of the agents host"
+        - agent_type:
+            usage: "LABEL"
+            description: "Type of the agent"
+        - heartbeat_seconds:
+            usage: "GAUGE"
+            description: "Seconds since the last heartbeat"
+        - load:
+            usage: "GAUGE"
+            description: "Load of the agent"
+
+db_name: neutron
+
+mariadb:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  name: neutron
+  initdb_configmap: neutron-initdb
+  persistence_claim:
+    name: db-neutron-pvclaim
+  backup:
+    enabled: true
+    image_version: v0.6.4
+  extraConfigFiles:
+    neutron.cnf: |+
+      [mysqld]
+      innodb_deadlock_detect    = 0
+      innodb_lock_wait_timeout  = 5
+
+mysql_metrics:
+  db_name: neutron
+  db_user: neutron
+  customMetrics:
+    - help: Total Neutron networks count
+      labels:
+      - "status"
+      name: openstack_neutron_networks_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          status
+        FROM networks
+        GROUP BY networks.status;
+      values:
+      - "count_gauge"
+    - help: Total Neutron Router count
+      labels:
+      - "status"
+      name: openstack_neutron_routers_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          status
+        FROM routers
+        GROUP BY routers.status;
+      values:
+      - "count_gauge"
+    - help: Total Neutron Loadbalancer count
+      labels:
+      - "operating_status"
+      name: openstack_neutron_loadbalancer_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          operating_status
+        FROM lbaas_loadbalancers
+        GROUP BY lbaas_loadbalancers.operating_status;
+      values:
+      - "count_gauge"
+    - help: Neutron SAP Floating IP by status
+      labels:
+      - "floating_network_id"
+      - "network_name"
+      - "status"
+      name: openstack_neutron_SAP_IP_status_gauge
+      query: |
+        SELECT
+          floatingips.floating_network_id,
+          networks.name AS network_name,
+          floatingips.status,
+          COUNT(*) AS count_gauge
+        FROM floatingips
+        INNER JOIN networks
+        ON floatingips.project_id=networks.project_id
+        WHERE floating_ip_address LIKE '10%'
+        GROUP BY floatingips.floating_network_id, floatingips.status, networks.name;
+      values:
+      - "count_gauge"
+    - help: Neutron Internet Floating IP by status
+      labels:
+      - "floating_network_id"
+      - "network_name"
+      - "status"
+      name: openstack_neutron_ext_IP_status_gauge
+      query: |
+        SELECT
+          floatingips.floating_network_id,
+          networks.name AS network_name,
+          floatingips.status,
+          COUNT(*) AS count_gauge
+        FROM floatingips
+        INNER JOIN networks
+        ON floatingips.project_id=networks.project_id
+        WHERE floating_ip_address LIKE '15%'
+        GROUP BY floatingips.floating_network_id, floatingips.status, networks.name;
+      values:
+      - "count_gauge"
+    - help: Neutron SAP Floating IP used per subnet
+      labels:
+      - "subnet_id"
+      - "network_id"
+      name: openstack_neutron_SAP_IPused_per_subnet_gauge
+      query: |
+        SELECT
+          subnet_id,
+          COUNT(*) AS count_gauge,
+          network_id
+        FROM ipallocations
+        WHERE ip_address LIKE '10%'
+        GROUP BY ipallocations.subnet_id, ipallocations.network_id;
+      values:
+      - "count_gauge"
+    - help: Neutron Internet Floating IP used per subnet
+      labels:
+      - "subnet_id"
+      - "network_id"
+      name: openstack_neutron_ext_IPused_per_subnet_gauge
+      query: |
+        SELECT
+          subnet_id,
+          COUNT(*) AS count_gauge,
+          network_id
+        FROM ipallocations
+        WHERE ip_address LIKE '15%'
+        GROUP BY ipallocations.subnet_id, ipallocations.network_id;
+      values:
+      - "count_gauge"
+    - help: Neutron estimate on number of filter rules
+      labels:
+      - "security_group_id"
+      name: openstack_neutron_monitor_sec_grp_count
+      query: |
+        SELECT
+          securitygroupportbindings.security_group_id AS security_group_id,
+          COUNT(*) as count_gauge
+        FROM securitygroupportbindings
+        JOIN securitygrouprules
+        ON securitygroupportbindings.security_group_id = securitygrouprules.security_group_id
+        GROUP BY securitygroupportbindings.security_group_id
+        ORDER BY count_gauge desc limit 10;
+      values:
+      - "count_gauge"
+    - help: Neutron Security Group total count
+      labels: []
+      name: openstack_neutron_sg_count_count
+      query: |
+        SELECT
+          COUNT(*) as count_gauge
+        FROM securitygrouprules;
+      values:
+      - "count_gauge"
+    - help: Neutron agent seconds since the last heartbeat
+      labels:
+      - "neutron_host"
+      - "agent_type"
+      name: openstack_neutron_monitor_agents_heartbeat_seconds
+      query: |
+        SELECT
+          host AS neutron_host,
+          agent_type,
+          (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(heartbeat_timestamp)) AS heartbeat_seconds
+        FROM agents
+        WHERE admin_state_up AND heartbeat_timestamp > (DATE_SUB(now(), INTERVAL 90 SECOND));
+      values:
+      - "heartbeat_seconds"
+    - help: Neutron agents load
+      labels:
+      - "neutron_host"
+      - "agent_type"
+      name: openstack_neutron_monitor_agents_load
+      query: |
+        SELECT
+          host AS neutron_host,
+          agent_type,
+          `load`
+        FROM agents
+        WHERE admin_state_up AND heartbeat_timestamp > (DATE_SUB(now(), INTERVAL 90 SECOND));
+      values:
+      - "load"
+
 
 postgresql:
+  enabled: true
+  custom_repository: true
+  imageTag: "9.4.21"
+  
   postgresDatabase: neutron
-  postgresUser: postgres
-  postgresPassword: DEFINED-IN-REGION-CHART
-
+  # postgresPassword:
   dbInit: neutron-db-init
   dbMaintain: neutron-db-maintain
-
   persistence:
     enabled: false
-
   backup:
     enabled: false
     image_version: v0.5.15
+
+  resources:
+    requests:
+      cpu: "3000m" # 3 cpu
+      memory: "2Gi" # 1.5Gi high recorded
+
+  max_connections: 500
+  shared_buffers: '4GB'
+  temp_buffers: '32MB'
+  work_mem: '64MB'
+  maintenance_work_mem: '256MB'
+  max_stack_depth: '4MB'
+  effective_cache_size: '16GB'
+  autovacuum_analyze_scale_factor: '0.02'
+  autovacuum_vacuum_scale_factor: '0.01'
+  random_page_cost: '1.1'
+  
+  pgbouncer:
+    enabled: true
+    config:
+      max_db_connections: 83
+      default_pool_size: 50
+      reserve_pool_size: 100
+      idle_transaction_timeout: 60
 
 sentry:
   enabled: true
@@ -277,13 +579,43 @@ audit:
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
 
+rabbitmq:
+  persistence:
+    enabled: false
+
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 2000m
+    limits:
+      cpu: 4000m
+
 rabbitmq_notifications:
   name: neutron
-
-secgroup_entanglement_exporter:
-  image_tag: DEFINED_IN_VALUES_FILE
-  release:   DEFINED_IN_VALUES_FILE # Neutron release in lower case, e.g. "queens"
 
 # openstack-watcher-middleware
 watcher:
   enabled: true
+
+# neutron nanny
+nanny:
+  enabled: false
+  # run the pod with an infinite sleep loop for debugging
+  debug: false
+  cleanup_pending_lb:
+    enabled: false
+    # dry run mode, i.e. just pretend to cleanup the entries
+    dry_run: true
+    # run the db cleanup every n minutes
+    interval: 60
+    # really delete entities after how many iterations
+    iterations: 3
+
+unittest:
+  enabled: false
+
+# Deploy Neutron Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack

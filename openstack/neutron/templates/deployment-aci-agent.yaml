@@ -24,16 +24,27 @@ spec:
         name: neutron-aci-agent
       annotations:
         pod.beta.kubernetes.io/hostname:  aci-agent-pet
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
+        configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
     spec:
       {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       hostname:  aci-agent-pet
       {{- end }}
       containers:
         - name: neutron-aci-agent
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{.Values.image_name}}:{{.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionACI | default .Values.imageVersion | required "Please set neutron.imageVersionACI or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-aci-agent-start
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          resources:
+{{ toYaml .Values.pod.resources.aci_agent | indent 12 }}
           env:
             - name: DEBUG_CONTAINER
               value: "false"

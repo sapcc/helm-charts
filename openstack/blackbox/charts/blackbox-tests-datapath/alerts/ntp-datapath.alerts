@@ -1,0 +1,33 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: NetworkNTPServerClockOffsetLarger1Sec
+    expr: blackbox_datapath_status_gauge{service="ntp"} == 5
+    for: 15m
+    labels:
+      severity: warning
+      tier: net
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is larger than 5 second.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/network/ntp.html#ntp_offset'
+    annotations:
+      description: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is larger than 5 second form 15 minutes.'
+      summary: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is larger than 5 second form 15 minutes.'
+
+  - alert: NetworkNTPServerClockOffsetFlapping
+    expr: changes(blackbox_datapath_status_gauge{service="ntp"}[30m]) > 8
+    labels:
+      severity: warning
+      tier: net
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is flapping.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/network/ntp.html#ntp_offset'
+    annotations:
+      description: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is flapping for 30 minutes.'
+      summary: 'Clock offset between the local host and remote NTP server {{ $labels.check }} is flapping for 30 minutes.'

@@ -10,7 +10,27 @@ metadata:
 
 data:
   db-maintain.sql: |
-    ALTER ROLE {{.Values.dbUser}} WITH ENCRYPTED PASSWORD '{{.Values.dbPassword}}';
-    ALTER ROLE {{.Values.apidbUser}} WITH ENCRYPTED PASSWORD '{{.Values.apidbPassword}}';
-    ALTER ROLE {{.Values.postgresql.user}} WITH ENCRYPTED PASSWORD '{{.Values.postgresql.postgresPassword}}';
-{{- end }}
+    \set ON_ERROR_STOP off {{/* We even expect the CREATE to fail, except for the first run */}}
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+    CREATE ROLE {{ default .Values.dbUser .Values.global.dbUser }} WITH ENCRYPTED PASSWORD '{{ default .Values.dbPassword .Values.global.dbPassword | default (tuple . (default .Values.dbUser .Values.global.dbUser) | include "postgres.password_for_user" ) }}' LOGIN;
+    CREATE ROLE {{ .Values.apidbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.apidbPassword | default (tuple . .Values.apidbUser | include "postgres.password_for_user" ) }}' LOGIN;
+    CREATE ROLE {{ .Values.cell0dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.cell0dbPassword | default (tuple . .Values.cell0dbUser | include "postgres.password_for_user") }}' LOGIN;
+
+    CREATE DATABASE {{ .Values.dbName }} WITH OWNER {{ default .Values.dbUser .Values.global.dbUser }};
+    CREATE DATABASE {{ .Values.apidbName }} WITH OWNER {{ .Values.apidbUser }};
+    CREATE DATABASE {{ .Values.cell0dbName }} WITH OWNER {{ .Values.cell0dbUser }};
+    \set ON_ERROR_STOP on
+
+    ALTER ROLE {{ .Values.postgresql.user }} WITH ENCRYPTED PASSWORD '{{ .Values.postgresql.postgresPassword  | default (tuple . .Values.postgresql.user | include "postgres.password_for_user") }}';
+    ALTER ROLE {{ default .Values.dbUser .Values.global.dbUser }} WITH ENCRYPTED PASSWORD '{{ default .Values.dbPassword .Values.global.dbPassword | default (tuple . (default .Values.dbUser .Values.global.dbUser) | include "postgres.password_for_user" ) }}';
+    ALTER ROLE {{ .Values.apidbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.apidbPassword | default (tuple . .Values.apidbUser | include "postgres.password_for_user" ) }}';
+    ALTER ROLE {{ .Values.cell0dbUser }} WITH ENCRYPTED PASSWORD '{{ .Values.cell0dbPassword | default (tuple . .Values.cell0dbUser | include "postgres.password_for_user" ) }}';
+
+    ALTER DATABASE {{ .Values.dbName }} OWNER TO {{ default .Values.dbUser .Values.global.dbUser }};
+    ALTER DATABASE {{ .Values.apidbName }} OWNER TO {{ .Values.apidbUser }};
+    ALTER DATABASE {{ .Values.cell0dbName }} OWNER TO {{ .Values.cell0dbUser }};
+
+    GRANT ALL PRIVILEGES ON DATABASE {{.Values.dbName}} TO {{default .Values.dbUser .Values.global.dbUser}};
+    GRANT ALL PRIVILEGES ON DATABASE {{.Values.apidbName}} TO {{.Values.apidbUser}};
+    GRANT ALL PRIVILEGES ON DATABASE {{.Values.cell0dbName}} TO {{.Values.cell0dbUser}};
+{{ end }}

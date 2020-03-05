@@ -1,0 +1,108 @@
+groups:
+- name: vmware-datastore.alerts
+  rules:
+  - alert: VVOLDatastoreNotAccessible
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+"} == 1
+    for: 20m
+    labels:
+      severity: critical
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore is not accessible: {{ $labels.check }}. See Sentry for details.'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/devops/alert/vcenter/#test_vvol_ds_1
+    annotations:
+      description: 'Datastore is not accessible for 20 min: {{ $labels.check }}. See Sentry for details.'
+      summary: vVOL Datastore accessibility check
+
+  - alert: VVOLDatastoreNotAccessibleFromHost
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+"} == 2
+    for: 20m
+    labels:
+      severity: critical
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore is not accessible from host: {{ $labels.check }}. See Sentry for details. '
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/devops/alert/vcenter/#test_vvol_ds_2
+      awx: #/templates/job_template/114
+    annotations:
+      description: 'Datastore is not accessible from host for 20 min: {{ $labels.check }}. See Sentry for details.'
+      summary: vVOL Datastore accessibility check from host
+
+  - alert: VVOLDatastoreOverallStatusRed
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+"} == 3
+    for: 20m
+    labels:
+      severity: warning
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore has overall status red: {{ $labels.check }}. See Sentry for details. '
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/devops/alert/vcenter/#test_vvol_ds_3
+    annotations:
+      description: 'Datastore has overall status red for 20 min: {{ $labels.check }}. See Sentry for details.'
+      summary: vVOL Datastore overall status check
+
+  - alert: VVOLDatastoreZeroCapacity
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+"} == 5
+    for: 20m
+    labels:
+      severity: critical
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore has zero capacity: {{ $labels.check }}. See Sentry for details. '
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/devops/alert/vcenter/#test_vvol_ds_4
+    annotations:
+      description: 'Datastore has zero capacity for 20 min: {{ $labels.check }}. See Sentry for details.'
+      summary: vVOL Datastore capacity check
+
+  - alert: VVOLDatastoreZeroFreeSpace
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+"} == 6
+    for: 20m
+    labels:
+      severity: critical
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore has no free space: {{ $labels.check }}. See Sentry for details. '
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/devops/alert/vcenter/#test_vvol_ds_5
+    annotations:
+      description: 'Datastore has no free space for 20 min: {{ $labels.check }}. See Sentry for details.'
+      summary: vVOL Datastore free space check
+
+  - alert: VVOLDatastore80PercentFull
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+"} == 7
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore is 80 percent full: {{ $labels.check }}. See Sentry for details. '
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/devops/alert/vcenter/#test_vvol_ds_6
+    annotations:
+      description: 'Datastore is 80 percent full for 20 min: {{ $labels.check }}. See Sentry for details.'
+      summary: vVOL Datastore 80 percent full check
+
+  - alert: VVOLDatastore90PercentFull
+    expr: blackbox_integrity_status_gauge{check=~"vvol_ds-.+"} == 8
+    for: 20m
+    labels:
+      severity: warning
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.context }}'
+      meta: 'Datastore is 90 percent full: {{ $labels.check }}. See Sentry for details. '
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      playbook: docs/devops/alert/vcenter/#test_vvol_ds_6
+    annotations:
+      description: 'Datastore is 90 percent full for 20 min: {{ $labels.check }}. See Sentry for details.'
+      summary: vVOL Datastore 90 percent full check

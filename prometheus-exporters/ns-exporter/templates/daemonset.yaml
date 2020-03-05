@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    app: ns-exporter
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  name: ns-exporter
+spec:
+  revisionHistoryLimit: 3
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: ns-exporter
+  template:
+    metadata:
+      labels:
+        app: ns-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+      name: ns-exporter
+    spec:
+      hostPID: true
+      containers:
+      - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        args:
+          - -concurrency={{ default 1  .Values.concurrency }}
+          - -interval={{ default "1m" .Values.interval }}
+        ports:
+        - containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+          name: metrics
+          protocol: TCP
+        env:
+          - name: OS_AUTH_URL
+            value: {{ required ".Values.authURL missing" .Values.authURL }}
+          - name: OS_USERNAME
+            value: {{ .Values.username }}
+          - name: OS_DOMAIN_NAME
+            value: {{ .Values.userDomainName }}
+          - name: OS_PROJECT_NAME
+            value: {{ .Values.projectName }}
+          - name: OS_PROJECT_DOMAIN_NAME
+            value: {{ .Values.projectDomainName }}
+          - name: OS_PASSWORD
+            valueFrom: { secretKeyRef:    { name: ns-exporter, key: password } }
+        imagePullPolicy: IfNotPresent
+        name: exporter
+        securityContext:
+          privileged: true
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+      {{- end }}

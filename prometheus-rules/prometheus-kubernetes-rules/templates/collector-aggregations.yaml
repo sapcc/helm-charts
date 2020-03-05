@@ -1,0 +1,11 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: kubernetes-resource-aggregation-rules
+  labels:
+    tier: {{ required ".Values.tier missing" .Values.tier }}
+    prometheus: {{ if .Values.prometheusCollectorName -}}{{- .Values.prometheusCollectorName -}}{{- else -}}{{- .Values.prometheusName -}}{{- end }}
+
+spec:
+{{ include (print .Template.BasePath "/aggregations/collector/_resource.rules.tpl") . | indent 2 }}

@@ -1,0 +1,69 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: nova-vspc
+  namespace: monsoon3
+  labels:
+    system: openstack
+    type: collector
+    component: nova
+spec:
+  replicas: {{ .Values.vspc.replicas | default 1 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: nova-vspc
+  template:
+    metadata:
+      labels:
+        name: nova-vspc
+{{ tuple . "nova" "vspc" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        pod.beta.kubernetes.io/hostname: nova-vspc
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+    spec:
+      hostname: nova-vspc
+      containers:
+        - name: vmware-vspc
+          image: hub.global.cloud.sap/monsoon/vmware-vspc:{{ .Values.vspc.version }}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', '--', 'vmware-vspc', '--config-file', '/etc/vspc.conf']
+          env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: SENTRY_DSN
+              value: {{.Values.sentry_dsn | quote}}
+{{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+{{- end }}
+          ports:
+            - containerPort: {{ .Values.vspc.telnet.portInternal }}
+            - containerPort: {{ .Values.vspc.web.portInternal }}
+          volumeMounts:
+            - mountPath: /var/run/serial_log_dir
+              name: serial-log-dir
+            - mountPath: /etc/vspc.conf
+              name: nova-etc
+              subPath: vspc.conf
+              readOnly: true
+        - name: log-nanny
+          image: busybox
+          args: ['sh', '-c', 'while true; do find /var/run/serial_log_dir -mtime +30 -exec rm {} \;; sleep 1d; done']
+          volumeMounts:
+            - mountPath: /var/run/serial_log_dir
+              name: serial-log-dir
+      volumes:
+        - name: etcnova
+          emptyDir: {}
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+        - name: serial-log-dir
+          persistentVolumeClaim:
+            claimName: {{ .Values.vspc.pvc.existingClaim | default "nova-vspc-pvclaim" }}

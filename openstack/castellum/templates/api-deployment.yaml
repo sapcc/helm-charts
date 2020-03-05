@@ -1,0 +1,43 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: castellum-api
+  labels:
+    release: "{{.Release.Name}}"
+
+spec:
+  minReadySeconds: 10 # to capture errors from config parsing
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name: castellum-api
+  template:
+    metadata:
+      labels:
+        name: castellum-api
+        app: castellum-api
+      annotations:
+        checksum: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: castellum
+      containers:
+        - name: api
+          image: {{ include "castellum_image" . }}
+          imagePullPolicy: {{ .Values.castellum.image_pull_policy }}
+          args:
+            - api
+          env: {{ include "castellum_common_envvars" . | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/castellum
+              name: config
+          ports:
+            - name: http
+              containerPort: 8080
+          {{- include "castellum_liveness_readiness_probes" . | indent 10 }}

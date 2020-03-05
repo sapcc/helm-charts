@@ -52,6 +52,16 @@ spec:
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - /bin/false
+          #   initialDelaySeconds: 900
+          #   periodSeconds: 3600 # Restart once per hour in case of rabbitmq shutdown
+          resources:
+            requests:
+              memory: {{required ".Values.resources_requests_memory_ls is missing" .Values.resources_requests_memory_ls}}
+              cpu: {{required ".Values.resources_requests_cpu_ls is missing" .Values.resources_requests_cpu_ls}}
 
         - name: logstash-exporter
           image: bonniernews/logstash_exporter:v0.1.2

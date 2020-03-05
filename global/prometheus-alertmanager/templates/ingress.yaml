@@ -3,17 +3,18 @@ kind: Ingress
 
 metadata:
   name: prometheus-alertmanager
-  {{- if .Values.vice_president }}
   annotations:
-    vice-president: "true"
-  {{- end}}
+    ingress.kubernetes.io/enable-cors: "true"
+
+    vice-president: {{ default false .Values.vice_president | quote }}
+    disco: {{ default false .Values.disco | quote }}
 
 spec:
   tls:
      - secretName: prometheus-alertmanager
-       hosts: [alertmanager.{{.Values.global.region}}.{{.Values.global.domain}}]
+       hosts: [alertmanager.{{ required "missing .Values.global.region" .Values.global.region }}.{{ required "missing .Values.global.domain" .Values.global.domain}}]
   rules:
-    - host: alertmanager.{{.Values.global.region}}.{{.Values.global.domain}}
+    - host: alertmanager.{{ required "missing .Values.global.region" .Values.global.region }}.{{ required "missing .Values.global.domain" .Values.global.domain}}
       http:
         paths:
         - path: /

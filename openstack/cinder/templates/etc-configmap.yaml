@@ -14,8 +14,12 @@ data:
 {{ include (print $.Template.BasePath "/etc/_cinder.conf.tpl") . | indent 4 }}
   rootwrap.conf: |
 {{ include (print .Template.BasePath "/etc/_rootwrap.conf.tpl") . | indent 4 }}
+  volume.filters: |
+{{ include (print .Template.BasePath "/etc/_volume.filters.tpl") . | indent 4 }}
   policy.json: |
 {{ include (print $.Template.BasePath "/etc/_cinder-policy.json.tpl") . | indent 4 }}
+  resource_filters.json: |
+{{ include (print $.Template.BasePath "/etc/_resource_filters.json.tpl") . | indent 4 }}
 {{- if .Values.audit.enabled }}
   cinder_audit_map.yaml: |
 {{ include (print .Template.BasePath "/etc/_cinder_audit_map.yaml.tpl") . | indent 4 }}
@@ -26,3 +30,10 @@ data:
   watcher.yaml: |
 {{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
 {{- end }}
+  statsd-exporter.yaml: |
+    defaults:
+      timer_type: histogram
+      buckets: [.025, .1, .25, 1, 2.5]
+      match_type: glob
+      glob_disable_ordering: false
+      ttl: 0 # metrics do not expire

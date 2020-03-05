@@ -1,0 +1,36 @@
+groups:
+- name: vcenter-log.alerts
+  rules:
+  - alert: VcenterPatchMissing
+    expr: sum(increase(vcenter_SR17595168510[30m])) by (host) > 0
+    labels:
+      tier: vmware
+      service: vcenter-logs
+      severity: info
+      meta: "{{ $labels.host }}"
+      dashboard: none
+    annotations:
+      description: "vcenter `{{ $labels.host }}` is missing VMWare patch SR17595168510"
+      summary: "Log entry in `{{ $labels.host }}` show missing VMWare patch SR17595168510"
+  - alert: VcenterPatchMissing
+    expr: sum(increase(vcenter_SR17629377811[30m])) by (host) > 0
+    labels:
+      tier: vmware
+      service: vcenter-logs
+      severity: info
+      meta: "{{ $labels.host }}"
+      dashboard: none
+    annotations:
+      description: "vcenter `{{ $labels.host }}` is missing VMWare patch SR17629377811"
+      summary: "Log entry in `{{ $labels.host }}` show missing VMWare patch SR17629377811"
+  - alert: VcenterDVSOutOfMemory
+    expr: sum(increase(vcenter_OOM[30m])) by (host) > 0
+    labels:
+      tier: vmware
+      service: vcenter-dvswitch
+      severity: info
+      meta: "{{ $labels.host }}"
+      dashboard: none
+    annotations:
+      description: "vcenter `{{ $labels.host }}` has a dvSwitch reporting out of memory"
+      summary: "Log entry in `{{ $labels.host }}` show dvSwitch reporting out of memory"

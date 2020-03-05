@@ -1,0 +1,16 @@
+groups:
+- name: snmp-asr04.alerts
+  rules:
+  - alert: NetworkAsr04NtpNotInSync
+    expr: snmp_asr04_ntpEntStatusCurrentMode != 6
+    for: 15m
+    labels:
+      severity: critical
+      tier: net
+      service: asr04
+      context: "{{ $labels.component }}"
+      meta: "Cisco ASR04 device `{{ $labels.component }}` NTP is not in sync for 15 min."
+      playbook: /docs/devops/alert/network/ntp.html
+    annotations:
+      description: "Cisco ASR04 device `{{ $labels.component }}` NTP is not in sync for 15 min."
+      summary: "Cisco ASR04  device `{{ $labels.component }}` NTP is not in sync for 15 min."

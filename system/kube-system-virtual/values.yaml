@@ -1,0 +1,55 @@
+global:
+  region:
+  domain:
+
+externalIPs: 
+  ingress: 
+
+ingress:
+  tls_client_auth:
+    ca_cert:
+
+container-linux-update-operator:
+  rbac:
+    create: true
+
+kube-proxy:
+  selector:   false
+  toleration: false
+  images:
+    proxy: 
+      repository: sapcc/hyperkube
+      tag: v1.15.2
+  clusterCIDR: 10.180.0.0/17
+
+  sidecars:
+    parrot:     false
+    externalip: false
+    nanny:      false
+    ipmasq:     false
+
+kube-flannel:
+  image:
+    repository: quay.io/coreos/flannel
+    tag: v0.11.0-amd64
+  kubeConfig: /etc/kubernetes/kubelet/kubeconfig
+
+wormhole:
+  image:
+    repository: sapcc/kubernikus
+    tag: f4a0f3eff2603895b25d3f98f865a6fc7e3a26df
+  interface:
+    ipAddress: 1.1.1.1
+    port: 6443
+  kubeConfig: /etc/kubernetes/kubelet/kubeconfig
+
+disco:
+  rbac:
+    create: true
+    serviceAccountName: disco
+
+vice-president:
+  president:
+    rbac:
+      create: true 
+      serviceAccountName: president

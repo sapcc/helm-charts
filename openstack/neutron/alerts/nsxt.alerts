@@ -1,0 +1,129 @@
+groups:
+- name: nsxt.alerts
+  rules:
+  - alert: NSXTManagementNodeOffline
+    expr: nsxv3_cluster_management_offline_nodes > 0
+    for: 5m
+    labels:
+      severity: critical
+      tier: vmware
+      meta: 'NSX-T Management Node offline: {{ $labels.nsxv3_manager_hostname }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#management_node_offline
+    annotations:
+      description: 'NSX-T Management Node offline: {{ $labels.nsxv3_manager_hostname }}'
+      summary: 'NSX-T Management Node offline'
+
+  - alert: NSXTClusterControlStatusNoControllers
+    expr: nsxv3_cluster_control_status == 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Cluster has no Controllers: {{ $labels.name }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_no_controllers
+    annotations:
+      description: 'NSX-T Cluster has no Controllers: {{ $labels.name }}'
+      summary: 'NSX-T Cluster has no Controllers'
+
+  - alert: NSXTClusterControlStatusUnstable
+    expr: nsxv3_cluster_control_status == -1
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Cluster Control Status is unstable: {{ $labels.nsxv3_manager_hostname }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_unstable
+    annotations:
+      description: 'NSX-T Cluster Control Status is unstable: {{ $labels.nsxv3_manager_hostname }}'
+      summary: 'NSX-T Cluster Control Status is unstable'
+
+  - alert: NSXTClusterControlStatusDegraded
+    expr: nsxv3_cluster_control_status == -2
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Cluster Control Status degraded: {{ $labels.nsxv3_manager_hostname }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_degraded
+    annotations:
+      description:  'NSX-T Cluster Control Status degraded: {{ $labels.nsxv3_manager_hostname }}'
+      summary:  'NSX-T Cluster Control Status degraded'
+
+  - alert: NSXTClusterControlStatusUnkown
+    expr: nsxv3_cluster_control_status < -2
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Cluster Control Status unkown: {{ $labels.nsxv3_manager_hostname }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_unkown
+    annotations:
+      description:  'NSX-T Cluster Control Status unkown: {{ $labels.nsxv3_manager_hostname }}'
+      summary:  'NSX-T Cluster Control Status unkown'
+
+  - alert: NSXTExporterScrapeOlderOneHour
+    expr: nsxv3_cluster_management_last_successful_data_fetch{name=~"neutron-nsxv3-agent-bb.*"} < (time()-3600)
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Exporter last success fetch older one hour: {{ $labels.nsxv3_manager_hostname }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+    annotations:
+      description:  'NSX-T Exporter last success fetch older one hour: {{ $labels.nsxv3_manager_hostname }}'
+      summary:  'NSX-T Exporter last success fetch older one hour'
+
+  - alert: NSXTExporterNoData
+    expr: absent(nsxv3_cluster_management_last_successful_data_fetch)
+    for: 60m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Exporter has no data'
+      dashboard: nsx-t
+    annotations:
+      description:  'NSX-T Exporter has no data'
+      summary:  'NSX-T Exporter has no data'
+
+  - alert: NSXTPodNotReady
+    expr: kube_pod_status_phase_normalized{phase="Running", pod=~"neutron-nsxv3-agent-.+"}
+      * on(pod, node) kube_pod_status_ready_normalized{condition="false", pod=~"neutron-nsxv3-agent-.+"} * on(node)
+      group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"})
+      == 1
+    for: 30m
+    labels:
+      severity: warning
+      tier: k8s
+      service: k8s
+      playbook: docs/devops/alert/nsxt/#nsxt_pod_not_ready
+    annotations:
+      description: "NSX-T Pod {{ $labels.pod }} is not ready for more than 30m"
+      summary: "NSX-T Pod not ready for 30m"
+
+  - alert: NSXTPodRestartingTooMuch
+    expr: sum by(pod, container) (rate(kube_pod_container_status_restarts_total{container="neutron-nsxv3-agent"}[15m])) > 0
+    for: 30m
+    labels:
+      severity: info
+      tier: k8s
+      service: k8s
+      playbook: docs/devops/alert/nsxt/#nsxt_pod_not_ready
+    annotations:
+      description: "NSX-T Agent {{ $labels.pod }} is restarting constantly"
+      summary: "Pod is in a restart loop"
+
+  - alert: NSXTMemoryUsageOver95
+    expr: avg by (nsxv3_manager_hostname, nsxv3_node_ip) (nsxv3_management_node_memory_use/nsxv3_management_node_memory_total * 100 > 95)
+    for: 30m
+    labels:
+      severity: warning
+      tier: vmware
+      meta: 'NSX-T Node {{ $labels.nsxv3_node_ip }} of cluster {{ $labels.nsxv3_manager_hostname }} has memory usage of over 95%'
+    annotations:
+      description: "NSX-T Node {{ $labels.nsxv3_node_ip }} of cluster {{ $labels.nsxv3_manager_hostname }} has memory usage of over 95%"
+      summary: "NSX-T Node memory critical"
+

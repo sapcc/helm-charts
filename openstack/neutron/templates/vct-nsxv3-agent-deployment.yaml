@@ -1,0 +1,121 @@
+{{- if or (.Values.isImageTransportTemplating | default false) (and (contains ",nsxv3" .Values.ml2_mechanismdrivers) (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1")) }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'neutron-nsxv3-agent-deployment'
+  scope: 'cluster'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  {% if nsx_t_enabled is defined and nsx_t_enabled -%}
+  apiVersion: extensions/v1beta1
+  kind: Deployment
+  metadata:
+    name: neutron-nsxv3-agent-{= name =}
+    labels:
+      system: openstack
+      type: backend
+      component: neutron
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
+    selector:
+      matchLabels:
+          name: neutron-nsxv3-agent-{= name =}
+    template:
+      metadata:
+        labels:
+{{ tuple . "neutron" "nsxv3" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
+          name: neutron-nsxv3-agent-{= name =}
+        annotations:
+          configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "9191"
+          prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+      spec:
+        containers:
+        - name: neutron-nsxv3-agent
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNSXv3 | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init"]
+          args: ["neutron-nsxv3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
+          env:
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: neutron.DSN.python
+          - name: PYTHONWARNINGS
+            value: "ignore:Unverified HTTPS request"
+          - name: PGAPPNAME
+            value: neutron-nsxv3-agent-{= name =}
+          - name: REQUESTS_CA_BUNDLE
+            value: ""
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini", "--binary", "neutron-nsxv3-agent"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          resources:
+{{ toYaml .Values.pod.resources.nsxv3_agent | indent 12 }}
+          volumeMounts:
+          - mountPath: /etc/neutron
+            name: etc-neutron
+            readOnly: true
+        - name: exporter
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/nsx-t-exporter:{{.Values.imageVersionNSXTExporter | required "Please set neutron.imageVersionNSXTExporter"}}
+          env:
+            {%- set bb = name | replace( "bb", "") | int %}
+            {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
+            - name: NSXV3_LOGIN_HOST
+              value: {= hostname =}
+            - name: NSXV3_LOGIN_PORT
+              value: "443"
+            - name: NSXV3_LOGIN_USER
+              value: "admin"
+            - name: NSXV3_LOGIN_PASSWORD
+              value: {= username | derive_password(hostname) | quote =}
+            - name: NSXV3_REQUESTS_PER_SECOND
+              value: "10"
+            - name: NSXV3_REQUEST_TIMEOUT_SECONDS
+              value: "120"
+            - name: NSXV3_CONNECTION_POOL_SIZE
+              value: "100"
+            - name: NSXV3_SUPPRESS_SSL_WARNINGS
+              value: "true"
+            - name: SCRAP_PORT
+              value: "9191"
+            - name: SCRAP_SCHEDULE_SECONDS
+              values: "300"
+        volumes:
+        - name: etc-neutron
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: api-paste.ini
+                  path: api-paste.ini
+                - key: neutron-policy.json
+                  path: policy.json
+                - key: logging.conf
+                  path: logging.conf
+                - key: ml2-conf.ini
+                  path: plugins/ml2/ml2-conf.ini
+                name: neutron-etc
+            - configMap:
+                items:
+                - key: ml2-nsxv3.ini
+                  path: plugins/ml2/ml2-nsxv3.ini
+                name: neutron-ml2-nsxv3-{= name =}
+  {% endif %}
+{{- end }}

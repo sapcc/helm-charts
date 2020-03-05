@@ -12,25 +12,31 @@ spec:
   replicas: 1
   revisionHistoryLimit: 5
   strategy:
-   type: Recreate
+    type: Recreate
   selector:
-   matchLabels:
-    name: {{ template "fullname" . }}
+    matchLabels:
+      name: {{ template "fullname" . }}
   template:
-   metadata:
-    labels:
-     name: {{ template "fullname" . }}
-    annotations:
-      chart-version: {{.Chart.Version}}
-      checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "{{ .Values.port_metrics }}"
-   spec:
-    volumes:
+    metadata:
+      labels:
+        name: {{ template "fullname" . }}
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.port_metrics missing" .Values.port_metrics | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      affinity:
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+      volumes:
       - name: config-metrics
         configMap:
           name: {{ template "fullname" . }}-etc
-    containers:
+      containers:
       - name: metrics
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
@@ -42,25 +48,20 @@ spec:
           timeoutSeconds: 10
         env:
           - name: LOGLEVEL
-            value: {{ .Values.loglevel }}
+            value: {{ required ".Values.loglevel missing" .Values.loglevel }}
           - name: CONFIG
             value: /conf/config.yml
         ports:
           - name: metrics
-            containerPort: {{ .Values.port_metrics }}
+            containerPort: {{ required ".Values.port_metrics missing" .Values.port_metrics }}
         readinessProbe:
           httpGet:
             path: /healthz
-            port: {{ .Values.port_metrics }}
+            port: {{ required ".Values.port_metrics missing" .Values.port_metrics }}
           initialDelaySeconds: 10
           timeoutSeconds: 10
         resources:
-          limits:
-            cpu: 250m
-            memory: 256Mi
-          requests:
-            cpu: 5m
-            memory: 32Mi
+{{ toYaml (required "missing .resources" .Values.resources) | trim | indent 10 }}
         volumeMounts:
           - name: config-metrics
             mountPath: /conf

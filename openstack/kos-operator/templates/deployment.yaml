@@ -1,0 +1,35 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: kos-operator
+  labels:
+    system: openstack
+    type: api
+    component: ironic
+spec:
+  replicas: {{ .Values.pod.replicas.operator }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: kos-operator
+  template:
+    metadata:
+      labels:
+        name: kos-operator
+{{ tuple . "kos-operator" "operator" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      containers:
+      - name: operator
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-kos-operator:{{ .Values.imageVersionKosOperator | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+        - kos-operator

@@ -27,34 +27,29 @@ spec:
 {{ tuple . "nova" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
+      terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
 {{- if .Values.pod.debug.api }}
       securityContext:
         runAsUser: 0
 {{- end }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
       containers:
         - name: nova-api
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "{{ if not .Values.pod.debug.api }}nova-api{{ else }}sleep inf{{ end }}"
+              value: "{{ if not .Values.pod.debug.api }}{{ .Values.global.novaApi.executable }}{{ else }}sleep inf{{ end }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
               value: "nova-migration"
             - name: DEPENDENCY_SERVICE
-              value: "nova-postgresql,rabbitmq"
+              value: "nova-postgresql,{{ .Release.Name }}-rabbitmq"
               # plus soft-dependency to nova-rabbitmq-notifications
             - name: STATSD_HOST
               value: "localhost"
@@ -75,8 +70,8 @@ spec:
             httpGet:
               path: /
               port: {{.Values.global.novaApiPortInternal}}
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /healthcheck
@@ -84,17 +79,25 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 5
 {{- end }}
+          {{- if .Values.pod.resources.api }}
+          resources:
+{{ toYaml .Values.pod.resources.api | indent 12 }}
+          {{- end }}
           ports:
             - name: nova-api
               containerPort: {{.Values.global.novaApiPortInternal}}
             - name: nova-metdata
-              containerPort: {{.Values.global.novaMetadataPortInternal}}
+              containerPort: {{.Values.global.novaApiMetadataPortInternal}}
           volumeMounts:
             - mountPath: /etc/nova
               name: etcnova
             - mountPath: /etc/nova/nova.conf
               name: nova-etc
               subPath: nova.conf
+              readOnly: true
+            - mountPath: /etc/nova/nova-api.conf
+              name: nova-etc
+              subPath: nova-api.conf
               readOnly: true
             - mountPath: /etc/nova/api-paste.ini
               name: nova-etc
@@ -133,14 +136,20 @@ spec:
               readOnly: true
             {{- end }}
         - name: statsd
-          image: prom/statsd-exporter:v0.5.0
+          image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
               containerPort: {{.Values.portMetrics}}
+          volumeMounts:
+            - name: nova-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
       volumes:
         - name: etcnova
           emptyDir: {}

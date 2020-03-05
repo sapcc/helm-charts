@@ -1,0 +1,24 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: BlackboxTestsIntegrityScrapeMissing
+    expr: absent(up{component="blackbox-tests",type="integrity"})
+    for: 1h
+    labels:
+      service: blackbox-tests-integrity
+      severity: warning
+      tier: os
+    annotations:
+      description: Blackbox-Tests-Integrity failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: Blackbox-Tests-Integrity cannot be scraped
+
+  - alert: BlackboxIntegrityMetricsDown
+    expr: absent(up{kubernetes_name="blackbox-tests-integrity",kubernetes_namespace="blackbox"}) == 1
+    for: 15m
+    labels:
+      service: blackbox-tests-integrity
+      severity: info
+      tier: os
+    annotations:
+      description: Integrity metrics are down for 15 times in a row.
+      summary: Blackbox integrity metrics

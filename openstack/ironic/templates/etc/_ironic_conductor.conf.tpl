@@ -5,6 +5,7 @@
 {{- $tftp_ip :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 {{- $deploy_port :=  $conductor.tftp_ip | default .Values.tftp_ip | default .Values.global.ironic_tftp_ip }}
 [DEFAULT]
+host = ironic-conductor-{{$conductor.name}}
 {{- if $conductor.enabled_drivers }}
 enabled_drivers = {{ $conductor.enabled_drivers}}
 {{- end }}
@@ -12,39 +13,64 @@ enabled_drivers = {{ $conductor.enabled_drivers}}
 {{ $k }} = {{ $v }}
 {{- end }}
 
+[agent]
+{{- range $k, $v :=  $conductor.agent }}
+{{ $k }} = {{ $v }}
+{{- end }}
+
 [conductor]
-api_url = {{ .Values.global.ironic_api_endpoint_protocol_public | default "https" }}://{{include "ironic_api_endpoint_host_public" .}}:{{ .Values.global.ironic_api_port_public | default "443" }}
-clean_nodes = {{ $conductor.clean_nodes | default "False" }}
-automated_clean = {{ $conductor.automated_clean | default "False" }}
+{{- range $k, $v :=  $conductor.conductor }}
+{{ $k }} = {{ $v }}
+{{- end }}
 
 [console]
 terminal_pid_dir = /shellinabox
 terminal_url_scheme = https://{{ include "ironic_console_endpoint_host_public" . }}/{{$conductor.name}}/%(uuid)s/%(expiry)s/%(digest)s
 socket_permission = 0666
-ssh_command_pattern = sshpass -f %(pw_file)s ssh -oLogLevel=error -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -oKexAlgorithms=+diffie-hellman-group1-sha1 -l %(username)s %(address)s
-url_auth_digest_secret = {{.Values.console.secret}}
+ssh_command_pattern = sshpass -f %(pw_file)s ssh -oLogLevel={{ .Values.console.ssh_loglevel | default "error" }} -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -oKexAlgorithms=+diffie-hellman-group1-sha1 -c 'aes128-cbc','aes256-cbc','3des-cbc' -l %(username)s %(address)s
+url_auth_digest_secret = {{required "A valid .Values.console.secret required!" .Values.console.secret}}
 
 [deploy]
 # We expose this directory over http and tftp
 http_root = /tftpboot
 http_url = {{ .Values.conductor.deploy.protocol }}://{{ $tftp_ip }}:{{ .Values.conductor.deploy.port }}/tftpboot
+{{- range $k, $v :=  $conductor.deploy }}
+{{ $k }} = {{ $v }}
+{{- end }}
+
+[dhcp]
+{{- range $k, $v :=  $conductor.dhcp }}
+{{ $k }} = {{ $v }}
+{{- end }}
 
 [pxe]
 tftp_server = {{ $tftp_ip }}
 tftp_root = /tftpboot
 
-ipxe_enabled = {{ $conductor.ipxe_enabled | default .Values.conductor.ipxe_enabled | default "False" }}
-ipxe_use_swift = {{ $conductor.ipxe_use_swift | default .Values.conductor.ipxe_use_swift | default "False" }}
+{{- range $k, $v :=  $conductor.pxe }}
+{{ $k }} = {{ $v }}
+{{- end }}
 
-pxe_append_params = {{ $conductor.pxe_append_params | default .Values.conductor.pxe_append_params }}
-pxe_bootfile_name = {{ $conductor.pxe_bootfile_name | default .Values.conductor.pxe_bootfile_name | default "pxelinux.0" }}
-{{- if $conductor.ipxe_enabled }}
-pxe_config_template = $pybasedir/drivers/modules/ipxe_config.template
+{{- if $conductor.pxe.ipxe_enabled }}
+pxe_config_template = /etc/ironic/ipxe_config.template
 {{- else }}
 pxe_config_template = /etc/ironic/pxe_config.template
 {{- end }}
-
 uefi_pxe_bootfile_name = ipxe.efi
-uefi_pxe_config_template = $pybasedir/drivers/modules/ipxe_config.template
+uefi_pxe_config_template = /etc/ironic/ipxe_config.template
+
+{{- if $conductor.jinja2 }}
+{{`
+{%- for section in block %}
+{%- if block[section] is mapping %}
+
+[{{ section }}]
+{%- for k in block[section] %}
+{{ k }} = {{ block[section][k] }}
+{%- endfor %}
+{%- endif %}
+{%- endfor %}
+`}}
+{{- end }}
 {{- end }}
 {{- end }}

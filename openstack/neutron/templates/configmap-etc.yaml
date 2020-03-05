@@ -12,10 +12,16 @@ data:
 {{ include (print .Template.BasePath "/etc/_api-paste.ini.tpl") . | indent 4 }}
   dhcp-agent.ini: |
 {{ include (print .Template.BasePath "/etc/_dhcp-agent.ini.tpl") . | indent 4 }}
+  linux-bridge.ini: |
+{{ include (print .Template.BasePath "/etc/_linux-bridge.ini.tpl") . | indent 4 }}
   dnsmasq.conf: |
 {{ include (print .Template.BasePath "/etc/_dnsmasq.conf.tpl") . | indent 4 }}
   l3-agent.ini: |
 {{ include (print .Template.BasePath "/etc/_l3-agent.ini.tpl") . | indent 4 }}
+{{- if .Values.bgp_vpn.enabled }}
+  networking-bgpvpn.conf: |
+{{ include (print .Template.BasePath "/etc/_networking_bgpvpn.conf.tpl") . | indent 4 }}
+{{- end}}
   metadata-agent.ini: |
 {{ include (print .Template.BasePath "/etc/_metadata-agent.ini.tpl") . | indent 4 }}
   ml2-conf.ini: |
@@ -36,6 +42,8 @@ data:
 {{ include (print .Template.BasePath "/etc/_sudoers.tpl") . | indent 4 }}
   logging.conf: |
 {{ include "loggerIni" .Values.logging | indent 4 }}
+  uwsgi.ini: |
+{{ include (print .Template.BasePath "/etc/_uwsgi.ini.tpl") . | indent 4 }}
 {{- if .Values.audit.enabled }}
   neutron_audit_map.yaml: |
 {{ include (print .Template.BasePath "/etc/_neutron_audit_map.yaml") . | indent 4 }}
@@ -44,3 +52,22 @@ data:
   watcher.yaml: |
 {{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
 {{- end }}
+  statsd-exporter.yaml: |
+    defaults:
+      timer_type: histogram
+      buckets: [.025, .1, .25, 1, 2.5]
+      match_type: glob
+      glob_disable_ordering: false
+      ttl: 0 # metrics do not expire
+  az-a.conf: |
+    [agent]
+    availability_zone = {{ .Values.global.region }}a
+  az-b.conf: |
+    [agent]
+    availability_zone = {{ .Values.global.region }}b
+  az-c.conf: |
+    [agent]
+    availability_zone = {{ .Values.global.region }}c
+  az-d.conf: |
+    [agent]
+    availability_zone = {{ .Values.global.region }}d

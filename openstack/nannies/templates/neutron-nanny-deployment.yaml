@@ -1,0 +1,62 @@
+{{- if .Values.neutron_nanny.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: neutron-nanny
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: neutron-nanny
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: neutron-nanny
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+      containers:
+{{- if .Values.neutron_nanny.cleanup_pending_lb.enabled }}
+        - name: cleanup-pending-lb
+          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/neutron-nanny:{{.Values.neutron_nanny.image_version | required "Please set neutron_nanny.image_version"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.neutron_nanny.debug }}/bin/bash /scripts/neutron-cleanup-pending-lb.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              {{- if .Values.neutron_nanny.mariadb.enabled }}
+              value: "neutron-mariadb,neutron-server"
+              {{- else }}
+              value: "neutron-postgresql,neutron-server"
+              {{- end }}
+            - name: NEUTRON_CLEANUP_PENDING_LB_ENABLED
+              value: {{ .Values.neutron_nanny.cleanup_pending_lb.enabled | quote }}
+            - name: NEUTRON_CLEANUP_PENDING_LB_DRY_RUN
+              value: {{ .Values.neutron_nanny.cleanup_pending_lb.dry_run | quote }}
+            - name: NEUTRON_CLEANUP_PENDING_LB_INTERVAL
+              value: {{ .Values.neutron_nanny.cleanup_pending_lb.interval | quote }}
+            - name: NEUTRON_CLEANUP_PENDING_LB_ITERATIONS
+              value: {{ .Values.neutron_nanny.cleanup_pending_lb.iterations | quote }}
+          volumeMounts:
+            - mountPath: /neutron-etc
+              name: neutron-etc
+{{- end }}
+{{- end }}

@@ -1,0 +1,114 @@
+groups:
+- name: metal-ironic.alerts
+  rules:      
+  - alert: MetalIronicSensorCritical
+    expr: count(ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt)", maintenance="false", provision_state=~"(deploy|active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    for: 10m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.instance }}"
+      meta: "ironic node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ironic node {{ $labels.instance }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      summary: "Hardware error for instance: {{ $labels.instance }}"
+      
+  - alert: MetalIronicSensorWarning
+    expr: count((ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt|Version Change)", maintenance="false", provision_state=~"(manageable|available)"} == 2) or (ipmi_sensor_state{job="ipmi/ironic", type=~"(Drive Slot|Version Change|Cable/Interconnect)", maintenance="false"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    for: 10m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.instance }}"
+      meta: "ironic node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ironic node {{ $labels.instance }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      summary: "Hardware error for instance: {{ $labels.instance }}"
+      
+  - alert: MetalIronicSensorInfo
+    expr: count(ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt|Version Change|Drive Slot|Power Supply|Cable/Interconnect)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    for: 10m
+    labels:
+      severity: info
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.instance }}"
+      meta: "ironic node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ironic node {{ $labels.instance }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      summary: "Hardware error for instance: {{ $labels.instance }}"
+      
+  - alert: MetalIronicMetricsDownCritical
+    expr: count(up{job="ipmi/ironic", provision_state="active", maintenance="false"} == 0) by (server_name, maintenance, provision_state, serial) 
+    for: 30m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      summary: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      
+  - alert: MetalIronicMetricsDownWarning
+    expr: count(up{job="ipmi/ironic", provision_state!="active"} == 0 or up{job="ipmi/ironic", provision_state="active", maintenance="true"} == 0) by (server_name, maintenance, provision_state, serial) 
+    for: 10m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      summary: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+
+  - alert: MetalIronicIPMIDownCritical
+    expr: count(ipmi_up{job="ipmi/ironic", provision_state="active", maintenance="false"} == 0) by (server_name, maintenance, provision_state, serial) 
+    for: 30m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      
+  - alert: MetalIronicIPMIDownWarning
+    expr: count(ipmi_up{job="ipmi/ironic", provision_state!="active"} == 0 or ipmi_up{job="ipmi/ironic", provision_state="active", maintenance="true"} == 0) by (server_name, maintenance, provision_state, serial)
+    for: 10m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
+
+  - alert: MetalIronicMemoryInfo
+    expr: sum(ipmi_memory_errors{job="ipmi/ironic"} > 16000) by (server_name, name, manufacturer, model, provision_state, server_id, serial)
+    for: 30m
+    labels:
+      severity: info
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "control plane node {{ $labels.server_name }} hardware error. Module {{ $labels.name }} has {{ $value }} correctable ECC errors. / Serial: {{ $labels.serial }}"
+      playbook: docs/support/playbook/baremetal/controlplane_safe_shutdown.html
+    annotations:
+      description: "control plane node {{ $labels.server_name }} hardware error. Module {{ $labels.name }} has {{ $value }} correctable ECC errors. / Serial: {{ $labels.serial }}"
+      summary: "Hardware error for instance: {{ $labels.server_name }}"

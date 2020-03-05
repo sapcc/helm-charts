@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "region_check.fullname" . }}
+  labels:
+    system: openstack
+    type: configuration
+    app.kubernetes.io/name: {{ include "region_check.name" . }}
+    helm.sh/chart: {{ include "region_check.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": "pre-upgrade"
+    "helm.sh/hook-weight": "-43"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+data:
+  region-check.py: |
+{{ .Files.Get "bin/region-check.py" | indent 4 }}

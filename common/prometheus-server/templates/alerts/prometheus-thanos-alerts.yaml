@@ -1,0 +1,18 @@
+{{- $root := . }}
+{{- if and .Values.alertmanagers.hosts .Values.thanos.enabled }}
+{{- range tuple "compactor" "query" "sidecar" "store" }}
+{{- $path := (printf "%s/alerts/_thanos-%s.alerts.tpl" $root.Template.BasePath . ) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "prometheus.fullName" $root }}-{{ printf "thanos-%s.alerts" . }}
+  labels:
+    prometheus: {{ include "prometheus.name" $root }}
+
+spec:
+{{ include $path $root | indent 2 }}
+
+{{- end }}
+{{- end }}

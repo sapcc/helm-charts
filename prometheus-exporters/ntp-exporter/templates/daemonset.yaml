@@ -1,0 +1,37 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: ntp-exporter
+spec:
+  minReadySeconds: 5
+
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+  template:
+    metadata:
+      name: ntp-exporter
+      labels:
+        app: ntp-exporter
+
+    spec:
+      tolerations:
+      - key: "species"
+        operator: "Exists"
+        effect: "NoSchedule"
+
+      containers:
+        - name:  ntp-exporter
+          image: {{ required ".Values.image.repository missing" .Values.image.repository }}:{{ required ".Values.image.tag missing" .Values.image.tag }}
+          args:
+            - "-ntp.server={{ required ".Values.ntp.server missing" .Values.ntp.server }}"
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+
+          {{- if .Values.resources }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          {{- end }}

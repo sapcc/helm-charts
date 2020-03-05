@@ -33,7 +33,7 @@ spec:
       {{- end }}
       containers:
         - name: neutron-f5agent-{{ $loadbalancer.name }}
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/{{$context.Values.image_name}}:{{$context.Values.f5_image_tag | default $context.Values.image_tag}}
+          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/monsoon/loci-neutron:{{ $context.Values.imageVersionF5 | default $context.Values.imageVersion | required "Please set neutron.imageVersionF5 or similar"}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

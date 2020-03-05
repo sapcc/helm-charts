@@ -1,0 +1,99 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+{{- if .Values.vcenter_nanny_consistency.enabled }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vcenter-datacenter-nanny-consistency-deployment'
+  scope: 'datacenter'
+template: |{{`
+  kind: Deployment
+  apiVersion: extensions/v1beta1
+  metadata:
+    name: vcenter-nanny-consistency-{{ name }}
+    namespace: monsoon3
+    labels:
+      system: openstack
+      service: vcenter-nanny-consistency
+  spec:
+    replicas: 1
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    template:
+      metadata:
+        labels:
+          component: vcenter-nanny-consistency-{{ name }}
+      spec:
+        nodeSelector:
+          zone: farm
+        volumes:
+          - name: nova-etc
+            configMap:
+              name: nova-etc
+          - name: cinder-etc
+            configMap:
+              name: cinder-etc
+        containers:
+          - name: vcenter-consistency
+            image: `}}{{ .Values.vcenter_nanny.docker_repo }}/vcenter-nanny:{{ .Values.vcenter_nanny_consistency.consistency_image_version | replace "string:" "" }}{{`
+            imagePullPolicy: IfNotPresent
+            command:
+              - dumb-init
+              - kubernetes-entrypoint
+            env:
+              - name: COMMAND
+                value: "`}}{{ if .Values.vcenter_nanny_consistency.debug }}sleep inf{{ else }}/bin/bash /scripts/vcenter-consistency.sh{{ end }}{{`"
+              - name: NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.namespace
+              - name: DEPENDENCY_SERVICE
+                value: "nova-postgresql,nova-api"
+              - name: VCENTER_CONSISTENCY_ENABLED
+                value: "`}}{{ .Values.vcenter_nanny_consistency.enabled }}{{`"
+              - name: VCENTER_CONSISTENCY_DRY_RUN
+                value: "`}}{{ .Values.vcenter_nanny_consistency.dry_run }}{{`"
+              - name: VCENTER_CONSISTENCY_HOST
+                value: {{ host | quote }}
+              - name: VCENTER_CONSISTENCY_USER
+                value: {{ username | quote }}
+              - name: VCENTER_CONSISTENCY_PASSWORD
+                value: {{ password | quote }}
+              - name: VCENTER_CONSISTENCY_ITERATIONS
+                value: "`}}{{ .Values.vcenter_nanny_consistency.iterations }}{{`"
+              - name: VCENTER_CONSISTENCY_INTERVAL
+                value: "`}}{{ .Values.vcenter_nanny_consistency.interval }}{{`"
+              - name: VCENTER_CONSISTENCY_FIX_LIMIT
+                value: "`}}{{ .Values.vcenter_nanny_consistency.fix_limit }}{{`"
+              - name: CINDER_POSTGRESQL_PW
+                value: "`}}{{ .Values.from_cinder.global.dbPassword }}{{`"
+              - name: NOVA_POSTGRESQL_PW
+                value: "`}}{{ .Values.from_nova.global.dbPassword }}{{`"
+              - name: REGION
+                value: "`}}{{ .Values.current_region }}{{`"
+              - name: NOVA_CELL2_ENABLED
+                value: "`}}{{ .Values.from_nova.cell2_enabled }}{{`"
+              - name: NOVA_CELL2_VC
+                value: "`}}{{ .Values.vcenter_nanny_consistency.cell2_vc }}{{`"
+              - name: OS_AUTH_URL
+                value: "https://identity-3.{{ availability_zone[:-1] }}.cloud.sap:443/v3"
+              - name: OS_PROJECT_NAME
+                value: "cloud_admin"
+              - name: OS_PROJECT_DOMAIN_NAME
+                value: "ccadmin"
+              - name: OS_USERNAME
+                value: "vcenter_nanny"
+              - name: OS_USER_DOMAIN_NAME
+                value: "Default"
+              - name: OS_PASSWORD
+                value: {{ "vcenter_nanny" | derive_password("identity-3." + availability_zone[:-1] + ".cloud.sap") | quote }}
+            volumeMounts:
+              - mountPath: /nova-etc
+                name: nova-etc
+              - mountPath: /cinder-etc
+                name: cinder-etc
+`}}
+{{- end }}
+{{- end }}

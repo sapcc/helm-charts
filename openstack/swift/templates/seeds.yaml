@@ -1,4 +1,4 @@
-{{- range $index, $cluster := .Values.clusters }}
+{{- range $cluster_id, $cluster := .Values.clusters }}
 {{- if $cluster.seed }}
 # If more than one cluster has seed = true, that should fail with having
 # multiple seeds with the same name - wrong configured
@@ -15,17 +15,14 @@ metadata:
     type: seed
 spec:
   requires:
-  #- monsoon3/keystone-seed                 # uncomment once keystone is deployed via its own helm-charts chart
-  #- monsoon3/glance-seed                   # uncomment once glance is deployed via its own helm-charts chart
-  #- monsoon3/ironic-seed                   # uncomment once ironic is deployed via its own helm-charts chart
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-monsoon3-seed
   - monsoon3/domain-cc3test-seed
 
   roles:
-  - swiftoperator
-  - swiftreseller
+  - name: swiftoperator
+  - name: swiftreseller
 
   services:
   - name: swift
@@ -46,47 +43,31 @@ spec:
   - name: Default
     users:
     - name: admin
-      roles:
-      - domain: Default
-        role: swiftreseller
+      role_assignments:
       - project: admin
-        role: swiftreseller
+        role: swiftreseller # used by openstack-seeder to create Swift accounts
     - name: swift
       description: 'Swift Service'
       password: '{{ $cluster.swift_service_password }}'
-      roles:
+      role_assignments:
       - project: service
         role: service
     - name: swift_dispersion
       description: 'Swift Dispersion'
       password: {{ $.Values.dispersion_password }}
-    - name: ironic
-      roles:
-      - project: service
-        role: swiftreseller
-
-    groups:
-    - name: administrators
-      roles:
-      - domain: Default
-        role: swiftreseller
-      - project: admin
-        role: swiftreseller
 
   - name: ccadmin
     projects:
     - name: cloud_admin
-      roles:
-      - user: admin@Default
-        role: swiftreseller
+      role_assignments:
       - group: CCADMIN_CLOUD_ADMINS
         role: swiftreseller
     - name: master # Swift account is enabled in swift-utils-seed
-      roles:
+      role_assignments:
       - group: CCADMIN_CLOUD_ADMINS
-        role: swiftreseller
+        role: swiftoperator
       - group: CCADMIN_DOMAIN_ADMINS
-        role: swiftreseller
+        role: swiftoperator
       - user: db_backup@Default
         role: swiftoperator
       - user: docker_registry@Default
@@ -103,7 +84,7 @@ spec:
   - name: monsoon3
     projects:
     - name: cc-demo
-      roles:
+      role_assignments:
       - group: MONSOON3_DOMAIN_ADMINS
         role: swiftoperator
 {{- end }}

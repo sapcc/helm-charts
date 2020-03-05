@@ -5,8 +5,9 @@
     "member": "role:member and rule:owner",
     "viewer": "role:network_viewer and rule:owner",
     "admin": "role:network_admin and rule:owner",
+    "compute_admin_wsg": "role:compute_admin_wsg and rule:owner",
     "context_is_network_admin": "rule:context_is_admin or rule:admin",
-    "context_is_editor": "rule:context_is_network_admin or rule:member",
+    "context_is_editor": "rule:context_is_network_admin or rule:member or rule:compute_admin_wsg",
     "context_is_viewer":  "rule:context_is_editor or rule:viewer",
     "network_view_all": "role:network_viewer or role:member or role:network_admin or rule:context_is_admin",
 
@@ -21,6 +22,8 @@
 
     "compute_admin": "role:compute_admin and rule:owner",
     "context_is_compute_admin": "role:cloud_compute_admin or rule:compute_admin",
+    "context_is_securitygroup_admin": "(role:securitygroup_admin and rule:owner) or rule:context_is_compute_admin or rule:context_is_network_admin",
+    "context_is_securitygroup_viewer": "(role:securitygroup_viewer and rule:owner) or rule:context_is_viewer or rule:context_is_securitygroup_admin",
 
     "shared": "field:networks:shared=True",
     "shared_firewalls": "field:firewalls:shared=True",
@@ -104,7 +107,8 @@
     "get_port:binding:host_id": "rule:context_is_network_viewer",
     "get_port:binding:profile": "rule:context_is_network_viewer",
     "get_port:binding:vnic_type": "rule:context_is_network_viewer",
-    "update_port": "rule:context_is_editor",
+    "update_port": "rule:context_is_editor or rule:context_is_securitygroup_admin",
+    "update_port:security_groups": "rule:context_is_editor or rule:context_is_securitygroup_admin",
     "update_port:device_owner": "(not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "update_port:mac_address": "rule:context_is_admin",
     "update_port:fixed_ips": "rule:context_is_editor",
@@ -139,17 +143,17 @@
     "create_router:external_gateway_info:external_fixed_ips": "rule:context_is_network_admin",
     "update_router:external_gateway_info:external_fixed_ips": "rule:context_is_network_admin",
 
-    "create_security_group": "rule:context_is_compute_admin or rule:context_is_network_admin",
-    "get_security_group": "rule:context_is_viewer",
-    "get_security_groups": "rule:context_is_viewer",
-    "update_security_group": "rule:context_is_compute_admin or rule:context_is_network_admin",
-    "delete_security_group": "rule:context_is_compute_admin or rule:context_is_network_admin",
+    "create_security_group": "rule:context_is_securitygroup_admin",
+    "get_security_group": "rule:context_is_securitygroup_viewer",
+    "get_security_groups": "rule:context_is_securitygroup_viewer",
+    "update_security_group": "rule:context_is_securitygroup_admin",
+    "delete_security_group": "rule:context_is_securitygroup_admin",
 
-    "create_security_group_rule": "rule:context_is_compute_admin or rule:context_is_network_admin",
-    "get_security_group_rule": "rule:context_is_viewer",
-    "get_security_group_rules": "rule:context_is_viewer",
-    "update_security_group_rule": "rule:context_is_compute_admin or rule:context_is_network_admin",
-    "delete_security_group_rule": "rule:context_is_compute_admin or rule:context_is_network_admin",
+    "create_security_group_rule": "rule:context_is_securitygroup_admin",
+    "get_security_group_rule": "rule:context_is_securitygroup_viewer",
+    "get_security_group_rules": "rule:context_is_securitygroup_viewer",
+    "update_security_group_rule": "rule:context_is_securitygroup_admin",
+    "delete_security_group_rule": "rule:context_is_securitygroup_admin",
 
     "create_firewall": "rule:context_is_admin",
     "get_firewall": "rule:context_is_admin",
@@ -216,7 +220,7 @@
     "delete_metering_label_rule": "rule:context_is_admin",
     "get_metering_label_rule": "rule:context_is_admin",
 
-    "get_service_provider": "rule:context_is_editor",
+    "get_service_provider": "rule:context_is_admin",
     "get_lsn": "rule:context_is_admin",
     "create_lsn": "rule:context_is_admin",
 
@@ -256,5 +260,57 @@
     "create_flavor_service_profile": "rule:context_is_admin",
     "delete_flavor_service_profile": "rule:context_is_admin",
     "get_flavor_service_profile": "rule:context_is_admin",
-    "get_auto_allocated_topology": "rule:context_is_admin"
+    "get_auto_allocated_topology": "rule:context_is_network_admin",
+
+    "create_trunk": "rule:context_is_admin",
+    "get_trunk": "rule:context_is_admin",
+    "delete_trunk": "rule:context_is_admin",
+    "get_subports": "rule:context_is_admin",
+    "add_subports": "rule:context_is_admin",
+    "remove_subports": "rule:context_is_admin",
+
+    "get_loggable_resources": "rule:context_is_admin",
+    "create_log": "rule:context_is_admin",
+    "update_log": "rule:context_is_admin",
+    "delete_log": "rule:context_is_admin",
+    "get_logs": "rule:context_is_admin",
+    "get_log": "rule:context_is_admin",
+
+    "create_bgpvpn": "rule:context_is_admin",
+    "update_bgpvpn": "rule:context_is_admin",
+    "delete_bgpvpn": "rule:context_is_admin",
+    "get_bgpvpn": "rule:context_is_admin",
+    "get_bgpvpn:tenant_id": "rule:context_is_admin",
+    "get_bgpvpn:route_targets": "rule:context_is_admin",
+    "get_bgpvpn:import_targets": "rule:context_is_admin",
+    "get_bgpvpn:export_targets": "rule:context_is_admin",
+    "get_bgpvpn:route_distinguishers": "rule:context_is_admin",
+    "get_bgpvpn:vni": "rule:context_is_admin",
+    "update_bgpvpn:tenant_id": "rule:context_is_admin",
+    "update_bgpvpn:route_targets": "rule:context_is_admin",
+    "update_bgpvpn:import_targets": "rule:context_is_admin",
+    "update_bgpvpn:export_targets": "rule:context_is_admin",
+    "update_bgpvpn:route_distinguishers": "rule:context_is_admin",
+    "update_bgpvpn:vni": "rule:context_is_admin",
+
+    "create_bgpvpn_network_association": "rule:context_is_admin",
+    "update_bgpvpn_network_association": "rule:context_is_admin",
+    "delete_bgpvpn_network_association": "rule:context_is_admin",
+    "get_bgpvpn_network_association": "rule:context_is_admin",
+    "get_bgpvpn_network_association:tenant_id": "rule:context_is_admin",
+
+
+    "create_bgpvpn_port_association": "rule:context_is_admin",
+    "update_bgpvpn_port_association": "rule:context_is_admin",
+    "delete_bgpvpn_port_association": "rule:context_is_admin",
+    "get_bgpvpn_port_association": "rule:context_is_admin",
+    "get_bgpvpn_port_association:tenant_id": "rule:context_is_admin",
+
+    "create_bgpvpn_router_association": "rule:context_is_admin",
+    "update_bgpvpn_router_association": "rule:context_is_admin",
+    "delete_bgpvpn_router_association": "rule:context_is_admin",
+    "get_bgpvpn_router_association": "rule:context_is_admin",
+    "get_bgpvpn_router_association:tenant_id": "rule:context_is_admin"
+
+
 }

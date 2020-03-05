@@ -30,7 +30,7 @@ api_paste_config = /etc/designate/api-paste.ini
 #root_helper = sudo designate-rootwrap /etc/designate/rootwrap.conf
 
 # Which networking API to use, Defaults to neutron
-#network_api = neutron
+network_api = neutron
 
 # Supported record types
 #supported_record_type = A, AAAA, CNAME, MX, SRV, TXT, SPF, NS, PTR, SSHFP, SOA
@@ -54,10 +54,14 @@ rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 5 }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 10 }}
+min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size | default 10 }}
+max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
+max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
 #transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}/{{ .Values.rabbitmq.virtual_host | default "/" }}
+
+[oslo_policy]
+policy_file = policy.json
 
 [oslo_messaging_notifications]
 driver = noop
@@ -184,16 +188,22 @@ enabled_extensions_v2 = quotas, reports
 # Keystone Middleware
 #-----------------------
 [keystone_authtoken]
-auth_uri = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
+auth_plugin = v3password
+auth_version = v3
+auth_interface = internal
+www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.designate_service_user }}
 password = {{ .Values.global.designate_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-memcache_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
-auth_type = v3password
+region_name = {{.Values.global.region}}
+memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 insecure = True
+token_cache_time = 600
+include_service_catalog = true
+service_type = dns
 
 #-----------------------
 
@@ -352,14 +362,14 @@ notify = {{ .Values.worker_notify }}
 ##############
 [network_api:neutron]
 # Comma separated list of values, formatted "<name>|<neutron_uri>"
-#endpoints = RegionOne|http://localhost:9696
-#endpoint_type = publicURL
-#timeout = 30
+endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
+endpoint_type = publicURL
+timeout = 20
+insecure = True
 #admin_username = designate
 #admin_password = designate
 #admin_tenant_name = designate
 #auth_url = http://localhost:35357/v2.0
-#insecure = False
 #auth_strategy = keystone
 #ca_certificates_file =
 
@@ -373,14 +383,16 @@ notify = {{ .Values.worker_notify }}
 # Database connection string - to configure options for a given implementation
 # like sqlalchemy or other see below
 #connection = sqlite:///$state_path/designate.sqlite
-connection = mysql+pymysql://root:{{.Values.mariadb.root_password}}@designate-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/{{.Values.db_name}}
+connection = {{ include "db_url_mysql" . }}
+
+mysql_sql_mode = TRADITIONAL
 
 #connection_debug = 0
 #connection_trace = False
 #sqlite_synchronous = True
 #idle_timeout = 3600
 #max_retries = 10
-#retry_interval = 10
+retry_interval = 1
 
 ########################
 ## Handler Configuration

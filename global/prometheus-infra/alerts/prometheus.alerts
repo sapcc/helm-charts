@@ -1,0 +1,15 @@
+groups:
+- name: prometheus.alerts
+  rules:
+  - alert: InfraPrometheusFederationRegions
+    expr: absent(up{job="prometheus-regions-federation"}) or up{job="prometheus-regions-federation"} == 0
+    for: 15m
+    labels:
+      context: availability-global
+      meta: Global Infrastructure Prometheus can't federate data from Prometheus in {{ $labels.region }}
+      service: prometheus
+      severity: info
+      tier: monitor
+    annotations:
+      description: Global Infrastructure Prometheus can't federate data from {{ $labels.region }}. Alerting will be unavailable! This could mean the region is partly down!
+      summary: Global Infrastructure Prometheus federation is having trouble

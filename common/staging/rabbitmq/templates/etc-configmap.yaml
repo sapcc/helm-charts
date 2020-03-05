@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "rabbitmq.fullname" . }}-config
+  labels:
+    app: {{ template "rabbitmq.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: rabbitmq
+data:
+  rabbitmq.conf: |
+{{ include (print .Template.BasePath "/etc/_rabbitmq.conf.tpl") . | indent 4 }}
+  enabled_plugins: |
+{{ include (print .Template.BasePath "/etc/_enabled_plugins.tpl") . | indent 4 }}
+  definitions.json: |
+{{ include (print .Template.BasePath "/etc/_definitions.json.tpl") . | indent 4 }}
+

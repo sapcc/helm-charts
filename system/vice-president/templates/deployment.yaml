@@ -1,0 +1,60 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "name" . }}
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: {{ default 9091 .Values.president.metricsPort | quote }}
+        prometheus.io/targets:  {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ include "fullImage" . | quote }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
+          args:
+            - vice-president
+            - --vice-president-config=/etc/vice-president/config/vice-president.conf
+            - --vice-cert=/etc/vice-president/secrets/vice.cert
+            - --vice-key=/etc/vice-president/secrets/vice.key
+            - --intermediate-cert=/etc/vice-president/secrets/intermediate.cert
+            - --metric-port={{ default 9091 .Values.president.metricsPort }}
+            - --min-cert-validity-days={{ default 30 .Values.president.minCertValidityDays }}
+            - --enable-validate-remote-cert={{ default false .Values.president.enableValidateRemoteCert }}
+            - --enable-symantec-metrics={{ default false .Values.president.enableSymantecMetrics }}
+            - --certificate-recheck-interval={{ default "10m" .Values.president.certificateRecheckInterval }}
+            - --resync-interval={{ default "4m" .Values.president.resyncInterval }}
+            - --rate-limit={{ default 3 .Values.president.rateLimit }}
+            - --threadiness={{ default 10 .Values.president.threadiness }}
+            - --debug={{ default false .Values.president.debug }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vice-president/config
+            - name: certs
+              mountPath: /etc/vice-president/secrets
+          ports:
+            - name: metrics
+              containerPort: {{ default 9091 .Values.president.metricsPort }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "name" . }}
+        - name: certs
+          secret:
+            secretName: {{ template "name" . }}
+      {{- if .Values.president.rbac.create }}
+      serviceAccount: {{ required ".Values.president.rbac.serviceAccountName" .Values.president.rbac.serviceAccountName }}
+      serviceAccountName: {{ required ".Values.president.rbac.serviceAccountName" .Values.president.rbac.serviceAccountName }}
+      {{- end }}

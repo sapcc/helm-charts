@@ -35,7 +35,7 @@ spec:
       hostname: cinder-volume-netapp-{{$volume.name}}
       containers:
       - name: cinder-volume-netapp-{{$volume.name}}
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-volume:{{.Values.imageVersionCinderVolume | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-cinder:{{.Values.imageVersionCinderVolume | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:
         - kubernetes-entrypoint
@@ -44,8 +44,13 @@ spec:
           value: "cinder-volume"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
+        {{- if .Values.sentry.enabled }}
         - name: SENTRY_DSN
-          value: {{.Values.sentry_dsn | quote}}
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN.python
+        {{- end }}
 {{- if or $volume.python_warnings .Values.python_warnings }}
         - name: PYTHONWARNINGS
           value: {{ or $volume.python_warnings .Values.python_warnings }}
