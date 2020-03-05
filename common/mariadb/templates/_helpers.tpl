@@ -14,19 +14,19 @@
 
 {{define "keystone_url"}}http://keystone.{{ default .Release.Namespace .Values.global.keystoneNamespace }}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3{{end}}
 
-{{- define "db_host"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end}}
+{{- define "mariadb.db_host"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end}}
 
 {{- define "mariadb.password_for_fixed_user_and_host" }}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $host := index . 2 }}
-    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host }}
+    {{- derivePassword 1 "basic" $envAll.Values.global.master_password $user $host }}
 {{- end }}
 
 {{- define "mariadb.password_for_fixed_user"}}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
-    {{- tuple $envAll $user ( include "db_host" $envAll ) | include "mariadb.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll $user ( include "mariadb.db_host" $envAll ) | include "mariadb.password_for_fixed_user_and_host" }}
 {{- end }}
 
 {{- define "mariadb.password_for_user"}}
@@ -35,7 +35,7 @@
     {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "mariadb.password_for_fixed_user" }}
 {{- end }}
 
-{{- define "root_password" -}}
+{{- define "mariadb.root_password" -}}
 {{- if hasKey .Values "root_password" -}}
 {{- .Values.root_password }}
 {{- else -}}

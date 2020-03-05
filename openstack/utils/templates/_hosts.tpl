@@ -17,7 +17,9 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 ?connect_timeout=10&keepalives_idle=5&keepalives_interval=5&keepalives_count=10
 {{- end}}
 
-{{define "db_url_mysql" }}mysql+pymysql://root:{{.Values.mariadb.root_password}}@{{.Values.db_name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/{{.Values.db_name}}?charset=utf8{{end}}
+{{define "db_host_mysql"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+
+{{define "db_url_mysql" }}mysql+pymysql://root:{{.Values.mariadb.root_password | default (include "utils.root_password" .)}}@{{include "db_host_mysql" .}}/{{.Values.db_name}}?charset=utf8{{end}}
 
 {{define "nova_db_host"}}postgres-nova.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "nova_api_endpoint_host_admin"}}nova-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
@@ -36,7 +38,7 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $service := index . 2 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) | include "utils.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) ("long") | include "utils.password_for_fixed_user_and_host" }}
 {{- end }}
 
 {{define "nova_console_endpoint_host_public"}}compute-console-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
@@ -107,14 +109,31 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $host := index . 2 }}
-    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host }}
+    {{- $template:= index . 3 }}
+    {{- derivePassword 1 $template $envAll.Values.global.master_password $user $host }}
 {{- end }}
 
 {{- define "identity.password_for_user" }}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) | include "utils.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) ("long")| include "utils.password_for_fixed_user_and_host" }}
 {{- end }}
+
+{{- define "utils.password_for_fixed_user_mysql"}}
+    {{- $envAll := index . 0 }}
+    {{- $user := index . 1 }}
+    {{- tuple $envAll $user ( include "db_host_mysql" $envAll ) ("basic") | include "utils.password_for_fixed_user_and_host" }}
+{{- end }}
+
+{{- define "utils.password_for_user_mysql"}}
+    {{- $envAll := index . 0 }}
+    {{- $user := index . 1 }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "utils.password_for_fixed_user_mysql" }}
+{{- end }}
+
+{{- define "utils.root_password" -}}
+{{- tuple . "root" | include "utils.password_for_user_mysql" }}
+{{- end -}}
 
 {{ define "f5_url" }}
     {{- $host := index . 0 }}

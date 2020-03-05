@@ -17,6 +17,11 @@ spec:
         checksum/dynomite-config: {{ tuple $ $member $index | include "dynomite/templates/etc/_dynomite.yaml.tpl" | sha256sum }}
         checksum/redis-config: {{ tuple $ $member $index | include "dynomite/templates/etc/_redis.conf.tpl" | sha256sum }}
         checksum/bin-config: {{ include "dynomite/templates/configmap-bin.yaml" $ | sha256sum }}
+        # No prometheus.io/port annotation here as it will result in metrics
+        # being scraped from non-collector containers within the pod. Having
+        # the port named as 'metrics' at the container level is sufficient.
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "kubernetes"
     spec:
       volumes:
         - name: secret
@@ -198,5 +203,24 @@ spec:
           volumeMounts:
             - name: redis-storage
               mountPath: /data
+        - name: collector
+          imagePullPolicy: {{ $.Values.backup.image.pullPolicy }}
+          image: {{ template "backup.image" $ }}
+          env:
+            - name: DYNO_INSTANCE
+              value: {{ $member | include "dynomite.ip" }}
+            - name: REQUIREPASS
+              valueFrom:
+                secretKeyRef:
+                  name: dynomite-secret
+                  key: redis_password
+          args:
+            - metrics
+            {{- if $.Values.redis.password }}
+            - --backend-password=$(REQUIREPASS)
+            {{- end }}
+          ports:
+            - name: metrics
+              containerPort: 9682
 ---
 {{- end }}

@@ -11,44 +11,52 @@ metadata:
     component: database
 data:
   config.yaml: |
-    full_backup_interval_in_hours: {{ .Values.backup_v2.full_backup_interval_in_hours }}
-    incremental_backup_interval_in_minutes: {{ .Values.backup_v2.incremental_backup_interval_in_minutes }}
-    service_name: {{ .Values.name }}
-    backup_dir: {{ .Values.backup_v2.backup_dir }}
     namespace: {{ .Release.Namespace }}
-    enable_init_restore: {{ .Values.backup_v2.enable_init_restore }}
-    maria_db:
-      user: root
-      version: {{ .Values.backup_v2.maria_db.version }}
-      password: {{ include "root_password" . }}
-      host: 127.0.0.1
-      port: 3306
-      data_dir: ./db_prod
-      log_bin: mysqld-bin
-      databases:
-      {{- range $db := .Values.backup_v2.databases }}
-        - "{{$db}}"
-      {{- end }}
-      verify_tables:
-      {{- range $tl := .Values.backup_v2.verify_tables }}
-        - "{{$tl}}"
-      {{- end }}
-    s3:
-      - name: aws_{{ .Values.global.mariadb.backup_v2.region }}
-        aws_access_key_id: {{ .Values.global.mariadb.backup_v2.aws_access_key_id }}
-        aws_secret_access_key: {{ .Values.global.mariadb.backup_v2.aws_secret_access_key }}
-        region: {{ .Values.global.mariadb.backup_v2.region }}
-        bucket_name: "mariadb-backup-{{ .Values.global.region }}"
-        server_side_encryption: "AES256"
-      - name: swift_{{ .Values.global.region }}
-        aws_access_key_id: {{ .Values.global.mariadb.backup_v2.swift_access_key_id }}
-        aws_secret_access_key: {{ .Values.global.mariadb.backup_v2.swift_secret_access_key }}
-        aws_endpoint: {{ .Values.global.mariadb.backup_v2.swift_endpoint }}
-        region: {{ .Values.global.region }}
-        bucket_name: "mariadb-backup-{{ .Values.global.region }}"
-        s3_force_path_style: true
-    oauth:
-      enabled: {{ default true .Values.backup_v2.oauth.enabled}}
-      provider_url: "https://auth.mariabackup.{{ .Values.global.region }}.cloud.sap"
-      redirect_url: "https://{{ .Values.name }}.mariabackup.{{ .Values.global.region }}.cloud.sap"
+    service_name: {{ .Values.name }}
+    backup_service:
+      full_backup_interval_in_hours: {{ .Values.backup_v2.full_backup_interval_in_hours }}
+      incremental_backup_interval_in_minutes: {{ .Values.backup_v2.incremental_backup_interval_in_minutes }}
+      backup_dir: {{ .Values.backup_v2.backup_dir }}
+      enable_init_restore: {{ .Values.backup_v2.enable_init_restore }}
+      oauth:
+        enabled: {{ default true .Values.backup_v2.oauth.enabled}}
+        provider_url: "https://auth.mariabackup.{{ .Values.global.region }}.cloud.sap"
+        redirect_url: "https://{{ .Values.name }}.mariabackup.{{ .Values.global.region }}.cloud.sap"
+      maria_db:
+        user: root
+        version: {{ .Values.backup_v2.maria_db.version }}
+        password: {{ include "mariadb.root_password" . }}
+        host: {{ include "fullName" . }}
+        port: 3306
+        data_dir: ./db_prod
+        log_bin: mysqld-bin
+        databases:
+        {{- range $db := .Values.backup_v2.databases }}
+          - "{{$db}}"
+        {{- end }}
+        verify_tables:
+        {{- range $tl := .Values.backup_v2.verify_tables }}
+          - "{{$tl}}"
+        {{- end }}
+    storage_services:
+      s3:
+        - name: aws_{{ .Values.global.mariadb.backup_v2.region }}
+          aws_access_key_id: {{ .Values.global.mariadb.backup_v2.aws_access_key_id }}
+          aws_secret_access_key: {{ .Values.global.mariadb.backup_v2.aws_secret_access_key }}
+          region: {{ .Values.global.mariadb.backup_v2.region }}
+          bucket_name: "mariadb-backup-{{ .Values.global.region }}"
+          server_side_encryption: "AES256"
+      swift:
+        - name: swift_{{ .Values.global.region }}
+          auth_version: {{ .Values.backup_v2.swift.auth_version }}
+          auth_url:  https://identity-3.{{ .Values.global.region }}.cloud.sap/v3
+          user_name: {{ .Values.backup_v2.swift.user_name }}
+          user_domain_name: {{ .Values.backup_v2.swift.user_domain_name }}
+          project_name: {{ .Values.backup_v2.swift.project_name }}
+          project_domain_name: {{ .Values.backup_v2.swift.project_domain_name }}
+          password: {{ .Values.backup_v2.swift.password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote }}
+          region: {{ .Values.global.region }}
+          container_name: "mariadb-backup-{{ .Values.global.region }}"
+    verification_services:
+      interval_in_minutes: {{ .Values.backup_v2.verification_interval }}
 {{- end }}

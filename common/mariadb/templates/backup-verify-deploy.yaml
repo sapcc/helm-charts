@@ -1,0 +1,51 @@
+{{- if .Values.backup_v2.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "fullName" . }}-verification
+  labels:
+    system: openstack
+    type: database
+    component: {{ .Values.name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ include "fullName" . }}-verification
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullName" . }}-verification
+        name: {{ template "fullName" . }}-verification
+      annotations:
+{{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
+    spec:
+      serviceAccountName: maria-back-me-up
+      containers:
+      - name: mariabackup-verification
+        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/maria-back-me-up:{{ .Values.backup_v2.image_version }}
+        command:
+          - verification
+        ports:
+          - containerPort: 8082
+            name: metrics
+            protocol: TCP
+        env:
+          - name: CONFIG_FILE
+            value: "/etc/config/config.yaml"
+        volumeMounts:
+          - name: mariadb-backup-etc
+            mountPath: /etc/config
+            readOnly: true
+      volumes:
+        - name: mariadb-backup-etc
+          configMap:
+            name:  mariadb-backup-{{.Values.name}}-etc
+{{- end }}
