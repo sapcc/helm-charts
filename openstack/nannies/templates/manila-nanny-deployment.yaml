@@ -1,6 +1,6 @@
 {{- if .Release.IsUpgrade }}
 {{- if .Values.manila_nanny.enabled }}
-{{- if or .Values.manila_nanny.db_purge.enabled .Values.manila_nanny.quota_sync.enabled .Values.manila_nanny.db_cleanup.enabled .Values.manila_nanny.share_size_sync.enabled }}
+{{- if or .Values.manila_nanny.db_purge.enabled .Values.manila_nanny.quota_sync.enabled .Values.manila_nanny.db_cleanup.enabled .Values.manila_nanny.share_sync.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -155,8 +155,8 @@ spec:
             {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
-{{- if .Values.manila_nanny.share_size_sync.enabled }}
-        - name: share-size-sync
+{{- if .Values.manila_nanny.share_sync.enabled }}
+        - name: share-sync
           image: {{.Values.global.imageRegistry}}/monsoon/manila-nanny:{{.Values.manila_nanny.image_version}}
           imagePullPolicy: IfNotPresent
           command:
@@ -178,19 +178,19 @@ spec:
             - name: MANILA_SHARE_SIZE_SYNC_ENABLED
               value: "true"
             - name: MANILA_SHARE_SIZE_SYNC_DRY_RUN
-              value: {{ .Values.manila_nanny.share_size_sync.dry_run | quote }}
+              value: {{ .Values.manila_nanny.share_sync.dry_run | quote }}
             - name: PROMETHEUS_HOST
               value: http://prometheus-infra-collector.infra-monitoring.svc:9090
             - name: MANILA_NANNY_INTERVAL
-              value: {{ .Values.manila_nanny.share_size_sync.interval | quote }}
+              value: {{ .Values.manila_nanny.share_sync.interval | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
-          {{- if .Values.manila_nanny.share_size_sync.resources }}
+          {{- if .Values.manila_nanny.share_sync.resources }}
           resources:
-            {{ toYaml .Values.manila_nanny.share_size_sync.resources | nindent 13 }}
+            {{ toYaml .Values.manila_nanny.share_sync.resources | nindent 13 }}
           {{- else if .Values.manila_nanny.resources }}
           resources:
             {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
