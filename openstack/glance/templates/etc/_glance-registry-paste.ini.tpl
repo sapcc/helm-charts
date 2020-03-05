@@ -67,3 +67,4 @@ record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 {{- end }}
 
+{{- end }}
