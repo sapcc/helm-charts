@@ -413,9 +413,9 @@
 
 {{- $values := .Values.redfish_exporter -}}
 {{- if $values.enabled }}
-- job_name: 'redfish/ironic'
+- job_name: 'redfish/bm'
   params:
-    job: [redfish/ironic]
+    job: [redfish/bm]
   scrape_interval: {{$values.ironic_scrapeInterval}}
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
@@ -423,6 +423,9 @@
         - /etc/prometheus/configmaps/atlas-sd/ironic.json
   metrics_path: /redfish
   relabel_configs:
+    - source_labels: [job]
+      regex: redfish/bm
+      action: keep
     - source_labels: [__address__]
       target_label: __param_target
     - source_labels: [__param_target]
@@ -452,9 +455,9 @@
     - source_labels: [__meta_serial]
       target_label: server_serial
 
-- job_name: 'redfish/esxi'
+- job_name: 'redfish/bb'
   params:
-    job: [redfish/esxi]
+    job: [redfish/bb]
   scrape_interval: {{$values.esxi_scrapeInterval}}
   scrape_timeout: {{$values.esxi_scrapeTimeout}}
   file_sd_configs:
@@ -463,7 +466,7 @@
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
-      regex: redfish/esxi
+      regex: redfish/bb
       action: keep
     - source_labels: [__address__]
       target_label: __param_target
