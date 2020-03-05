@@ -48,13 +48,13 @@ data:
           server_side_encryption: "AES256"
       swift:
         - name: swift_{{ .Values.global.region }}
-          auth_version: {{ .Values.global.mariadb.backup_v2.swift.auth_version }}
-          auth_url: {{ .Values.global.mariadb.backup_v2.swift.auth_url }}
-          user_name: {{ .Values.global.mariadb.backup_v2.swift.user_name }}
-          user_domain_name: {{ .Values.global.mariadb.backup_v2.swift.user_domain_name }}
-          project_name: {{ .Values.global.mariadb.backup_v2.swift.project_name }}
-          project_domain_name: {{ .Values.global.mariadb.backup_v2.swift.project_domain_name }}
-          password: "{{ .Values.global.mariadb.backup_v2.swift.password }}"
+          auth_version: {{ .Values.backup_v2.swift.auth_version }}
+          auth_url:  https://identity-3.{{ .Values.global.region }}.cloud.sap/v3
+          user_name: {{ .Values.backup_v2.swift.user_name }}
+          user_domain_name: {{ .Values.backup_v2.swift.user_domain_name }}
+          project_name: {{ .Values.backup_v2.swift.project_name }}
+          project_domain_name: {{ .Values.backup_v2.swift.project_domain_name }}
+          password: {{ .Values.backup.os_password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote }}
           region: {{ .Values.global.region }}
           container_name: "mariadb-backup-{{ .Values.global.region }}"
     verification_services:
