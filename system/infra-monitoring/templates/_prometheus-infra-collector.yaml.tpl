@@ -420,7 +420,7 @@
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/ironic.json
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
