@@ -1,13 +1,17 @@
 {{- define "dynomite.image" -}}
-{{- required ".Values.dynomite.image.repository missing" .Values.dynomite.image.repository -}}:{{- required ".Values.dynomite.image.tag missing" .Values.dynomite.image.tag -}}
-{{- end -}}
+  {{- if typeIs "string" $.Values.dynomite.image.tag -}}
+    {{ required "This release should be installed by the deployment pipeline!" "" }}
+  {{- else -}}
+    {{- if typeIs "float64" .Values.dynomite.image.tag -}}
+      {{ .Values.global.registry }}/{{ .Values.dynomite.image.repository }}:{{ .Values.dynomite.image.tag | printf "%0.f" }}
+    {{- else -}}
+      {{ .Values.global.registry }}/{{ .Values.dynomite.image.repository }}:{{ .Values.dynomite.image.tag }}
+    {{- end -}}
+  {{- end -}}
+{{- end }}
 
 {{- define "redis.image" -}}
 {{- required ".Values.redis.image.repository missing" .Values.redis.image.repository -}}:{{- required ".Values.redis.image.tag missing" .Values.redis.image.tag -}}
-{{- end -}}
-
-{{- define "backup.image" -}}
-{{- required ".Values.backup.image.repository missing" .Values.backup.image.repository -}}:{{- required ".Values.backup.image.tag missing" .Values.backup.image.tag -}}
 {{- end -}}
 
 {{- define "dynomite.ip" -}}

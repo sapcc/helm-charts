@@ -41,8 +41,8 @@ spec:
           emptyDir: {}
       initContainers:
         - name: restore
-          imagePullPolicy: {{ $.Values.backup.image.pullPolicy }}
-          image: {{ template "backup.image" $ }}
+          imagePullPolicy: {{ $.Values.dynomite.image.pullPolicy }}
+          image: {{ template "dynomite.image" $ }}
           env:
             - name: OS_AUTH_URL
               value: {{ required ".Values.backup.auth.os_auth_url" $.Values.backup.auth.os_auth_url }}
@@ -61,6 +61,8 @@ spec:
                 secretKeyRef:
                   name: dynomite-secret
                   key: db_backup_password
+          commad:
+            - /usr/bin/powder-monkey
           args:
             - backend
             # Replace `listbackups` with `restore` to trigger a manual restore
@@ -166,8 +168,8 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 1
         - name: backup
-          imagePullPolicy: {{ $.Values.backup.image.pullPolicy }}
-          image: {{ template "backup.image" $ }}
+          imagePullPolicy: {{ $.Values.dynomite.image.pullPolicy }}
+          image: {{ template "dynomite.image" $ }}
           env:
             - name: OS_AUTH_URL
               value: {{ required ".Values.backup.auth.os_auth_url" $.Values.backup.auth.os_auth_url }}
@@ -191,6 +193,8 @@ spec:
                 secretKeyRef:
                   name: dynomite-secret
                   key: redis_password
+          commad:
+            - /usr/bin/powder-monkey
           args:
             - backend
             {{- if $.Values.redis.password }}
@@ -204,8 +208,8 @@ spec:
             - name: redis-storage
               mountPath: /data
         - name: collector
-          imagePullPolicy: {{ $.Values.backup.image.pullPolicy }}
-          image: {{ template "backup.image" $ }}
+          imagePullPolicy: {{ $.Values.dynomite.image.pullPolicy }}
+          image: {{ template "dynomite.image" $ }}
           env:
             - name: DYNO_INSTANCE
               value: {{ $member | include "dynomite.ip" }}
@@ -214,6 +218,8 @@ spec:
                 secretKeyRef:
                   name: dynomite-secret
                   key: redis_password
+          commad:
+            - /usr/bin/powder-monkey
           args:
             - metrics
             {{- if $.Values.redis.password }}
