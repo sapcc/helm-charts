@@ -66,7 +66,11 @@ spec:
           args:
             - backend
             # Replace `listbackups` with `restore` to trigger a manual restore
+            {{- if eq $.Values.dynomite.recover "restore" }}
+            - restore
+            {{- else }}
             - listbackups
+            {{- end }}
             # [datacenter]/dynomite/[rack]/[ip]-[token]
             - {{ $member | include "dynomite.dc" }}/dynomite/{{ $member | include "dynomite.rack" }}/{{ $member | include "dynomite.ip" }}-{{ $member | include "dynomite.token" }}
           volumeMounts:
@@ -79,7 +83,7 @@ spec:
           env:
             - name: DYNO_INSTANCE
               value: {{ $member | include "dynomite.ip" }}
-            {{- if $.Values.dynomite.warmup }}
+            {{- if eq $.Values.dynomite.recover "warmup" }}
             - name: WARMUP_PEER
               value: {{ tuple $member $.Values.dynomite.foreign_member | include "dynomite.token_peers" }}
             - name: WARMUP_ALLOWED_DIFF
