@@ -18,9 +18,7 @@ keppel:
   #     account: foobar         # can be a regex
   nameclaim_whitelist: []
 
-  issuer:
-    key.pem:  DEFINED_IN_VALUES_FILE
-    cert.pem: DEFINED_IN_VALUES_FILE
+  issuer_key.pem: DEFINED_IN_VALUES_FILE
 
   # Set to non-empty values to enable audit logging to Hermes.
   rabbitmq:
@@ -44,11 +42,17 @@ pgmetrics:
             usage: "GAUGE"
             description: "Total number of repositories stored in Keppel"
     keppel_manifests:
-      query: 'SELECT COUNT(*) AS count FROM manifests'
+      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM manifests"
       metrics:
         - count:
             usage: "GAUGE"
             description: "Total number of manifests stored in Keppel"
+        - min_validated_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of oldest manifest validation"
+        - validation_errors:
+            usage: "GAUGE"
+            description: "Number of manifests stored in Keppel that failed their last validation"
     keppel_tags:
       query: 'SELECT COUNT(*) AS count FROM tags'
       metrics:

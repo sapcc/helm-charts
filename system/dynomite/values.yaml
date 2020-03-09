@@ -19,15 +19,17 @@ dynomite:
 #    - ip4:8101:rack1:dc2:2147483647
 #    - ip5:8101:rack1:dc2:4294967294
   image:
-    repository: keppel.eu-de-1.cloud.sap/ccloud/dynomite
-    tag: "20200219150831"
+    repository: dynomite-powder-monkey
+    tag: DEFINED_BY_PIPELINE
     pullPolicy: IfNotPresent
   service:
     port:
       listen: 8102
       dyn_listen: 8101
       admin: 22222
-  warmup: true
+  # `warmup`  from another dynomite cluster
+  # `restore` from database backup
+  recover: warmup
 
 redis:
   image:
@@ -39,10 +41,6 @@ redis:
   password:
 
 backup:
-  image:
-    repository: keppel.eu-de-1.cloud.sap/ccloud/powder-monkey
-    tag: "20200304092421"
-    pullPolicy: IfNotPresent
   auth:
     os_auth_url:
     os_username: db_backup

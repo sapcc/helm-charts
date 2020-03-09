@@ -37,8 +37,6 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: 'kubernetes'
 - name:  KEPPEL_DRIVER_STORAGE
   value: 'swift'
-- name:  KEPPEL_ISSUER_CERT
-  value: '/etc/keppel/issuer-cert.pem'
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel/issuer-key.pem'
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
