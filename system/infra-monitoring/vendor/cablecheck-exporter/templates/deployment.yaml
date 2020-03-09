@@ -7,6 +7,9 @@ metadata:
 spec:
   schedule: "0 09 */1 * *"
   jobTemplate:
+  concurrencyPolicy: Replace
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 0
     spec:
       template:
         spec:
@@ -17,6 +20,4 @@ spec:
             command: ["python", "/opt/cablecheck.py"]
             args: ["--switch-pw", "{{ .Values.global.arista_password }}", "--region={{ .Values.global.region }}", "--checkphyscable=True", "--checklacp=True", "--sendtoswift=True", "--sendtoslack=True", "--debug=True", "--checkcabletype=True"]
           restartPolicy: OnFailure
-          concurrencyPolicy: Replace
-          successfulJobsHistoryLimit: 0
-          failedJobsHistoryLimit: 0
+
