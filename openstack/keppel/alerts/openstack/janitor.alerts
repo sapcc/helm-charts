@@ -16,3 +16,34 @@ groups:
       description: |
         There are some uploads that are way older than 24 hours, which keppel-janitor should have cleaned up by now.
         Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotValidatingManifests
+    expr: time() - keppel_manifests_min_validated_at > 90000
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Manifests are not being validated'
+      description: |
+        The keppel-janitor should be validating each manifest every 6 hours, but some manifests have not been validated on schedule.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelManifestValidationFailed
+    expr: keppel_manifest_validation_errors > 0
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Manifests are failing validation'
+      description: |
+        Some manifests stored in Keppel have failed their routine validation.
+        This could hint at the manifests or its metadata being corrupted.
+        The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM manifests`.
