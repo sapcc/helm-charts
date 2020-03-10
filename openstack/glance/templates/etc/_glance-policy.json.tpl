@@ -5,14 +5,14 @@
     "admin": "role:image_admin and rule:owner",
     "member": "role:member and rule:owner",
     "viewer": "role:image_viewer and rule:owner",
-    "context_is_image_admin":  "rule:context_is_admin or rule:admin",
+    "context_is_image_admin":  "rule:context_is_admin or role:admin or rule:admin",
     "context_is_image_viewer":  "rule:context_is_image_admin or rule:viewer or role:member",
     "default": "rule:context_is_admin",
-    
+
     "add_image": "rule:context_is_image_admin",
     "delete_image": "rule:context_is_image_admin",
     "get_image": "rule:context_is_image_viewer",
-    "get_images": "rule:context_is_admin",
+    "get_images": "rule:context_is_image_admin",
     "modify_image": "rule:context_is_image_admin",
     "publicize_image": "rule:context_is_image_admin",
     "copy_from": "rule:context_is_image_admin",
@@ -31,11 +31,11 @@
     "modify_member": "rule:context_is_image_admin",
     "manage_image_cache": "rule:context_is_admin",
 
-    "get_task": "rule:context_is_image_viewer",
-    "get_tasks": "rule:context_is_image_viewer",
+    "get_task": "rule:context_is_image_admin",
+    "get_tasks": "rule:context_is_image_admin",
     "add_task": "rule:context_is_image_admin",
     "modify_task": "rule:context_is_image_admin",
-    "tasks_api_access": "role:admin",
+    "tasks_api_access": "rule:context_is_image_admin",
 
     "deactivate": "rule:context_is_image_admin",
     "reactivate": "rule:context_is_image_admin",
