@@ -52,6 +52,18 @@ spec:
               value: 'Default'
             - name:  OS_USERNAME
               value: 'keppel'
+          # NOTE: This is only a readiness probe for a reason.
+          # - We want the readiness probe to have `k rollout status` fail (and
+          #   therefore turn the pipeline red) when a new version is rotten.
+          # - We *don't* want the liveness probe because it just makes the
+          #   container restart uselessly when the health check starts failing
+          #   at some point.
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
           # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
           # - CPU: spiky, but always below 1m
           # - memory: usually level around 17 Mi
