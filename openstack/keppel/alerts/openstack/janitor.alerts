@@ -45,5 +45,37 @@ groups:
       summary: 'Manifests are failing validation'
       description: |
         Some manifests stored in Keppel have failed their routine validation.
-        This could hint at the manifests or its metadata being corrupted.
+        This could hint at the manifests or their metadata being corrupted.
         The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM manifests`.
+
+  - alert: OpenstackKeppelNotSweepingBlobMounts
+    expr: keppel_repos_count > 0 and time() - keppel_repos_min_blob_mounts_sweeped_at > 7200
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Blob mounts are not being sweeped'
+      description: |
+        In each repository, blob mounts should be sweeped once per hour.
+        However, some repos have not been sweeped for over two hours, so it looks like blob mount sweeping is having issues.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotDeletingBlobMounts
+    expr: keppel_blob_mounts_min_marked_for_deletion_at > 0 and time() - keppel_blob_mounts_min_marked_for_deletion_at > 10800
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Blob mounts are marked for deletion, but do not get deleted'
+      description: |
+        When blob mounts are marked for deletion, they should be deleted (or unmarked) in the next blob mount sweep one hour later.
+        However, there are some blob mounts that are marked for deletion for over three hours already. This could indicate a problem with blob mount sweeping.
+        Check the logs of keppel-janitor for details.
