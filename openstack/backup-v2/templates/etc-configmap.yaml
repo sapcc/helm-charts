@@ -1,0 +1,61 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  labels:
+    app: db-backup-dex
+  name: db-backup-dex
+  namespace: monsoon3
+data:
+  config.yaml: |
+    issuer: https://auth.mariabackup.qa-de-1.cloud.sap
+    
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+    
+    web:
+      http: 0.0.0.0:80
+    
+    frontend:
+      theme: ccloud
+      issuer: "Converged Cloud Mariadb Backup"
+    expiry:
+      signingKeys: "{{ .Values.signingKeys }}"
+      idTokens: "{{ .Values.idTokens }}"
+    
+    logger:
+      level: debug
+    connectors:
+      - type: ldap
+        id: ldap
+        name: Active Directory
+        config:
+          host: ldap-qa.global.cloud.sap:636
+          bindDN: CN=monsoon-service,CN=Users,DC=ad,DC=qa-de-1,DC=cloud,DC=sap
+          bindPW: K8Qu73as3AR3vgTA
+          insecureSkipVerify: true
+          userSearch:
+            baseDN: OU=Identities,DC=ad,DC=qa-de-1,DC=cloud,DC=sap
+            #filter: "(objectClass=person)(memberOf=CN=CP_CONV_K8S_USERS,OU=Permissions,OU=CCloud,DC=ad,DC=qa-de-1,DC=cloud,DC=sap)(camObjectStatus=X)(!(userAccountControl:1.2.840.113556.1.4.803:=2))"
+            filter: "(objectClass=person)(memberOf=CN=CCADMIN_DOMAIN_ADMINS,OU=CCADMIN,OU=OSDomains,OU=CCloud,DC=ad,DC=qa-de-1,DC=cloud,DC=sap)(camObjectStatus=X)(!(userAccountControl:1.2.840.113556.1.4.803:=2))"
+            username: cn
+            idAttr: distinguishedName
+            emailAttr: mail
+            nameAttr: displayName
+          # Group search queries for groups given a user entry.
+          groupSearch:
+            baseDN: OU=Permissions,OU=CCloud,DC=ad,DC=qa-de-1,DC=cloud,DC=sap
+            filter: "(objectClass=group)"
+            userAttr: distinguishedName
+            groupAttr: member
+            nameAttr: cn
+
+    oauth2:
+      skipApprovalScreen: false
+      responseTypes: ["code", "token", "id_token"]
+    
+    staticClients:
+    {{- range $sc := .Values.static_clients }}
+      "{{$sc}}"
+    {{- end }}

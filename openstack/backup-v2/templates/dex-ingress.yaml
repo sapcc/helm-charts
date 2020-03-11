@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+    annotations:
+      vice-president: "true"
+    name:  db-backup-dex-ingress
+
+spec:
+  rules:
+    - host: auth.mariabackup.{{ .Values.global.region }}.cloud.sap
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName:  db-backup-dex
+              servicePort: 80
+  tls:
+    - hosts:
+      - auth.mariabackup.{{ .Values.global.region }}.cloud.sap
+      secretName: tls-auth-mariabackup-{{ .Values.global.region }}-cloud-sap
