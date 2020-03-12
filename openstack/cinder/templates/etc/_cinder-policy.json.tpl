@@ -100,7 +100,7 @@
   "backup:get_all": "rule:context_is_editor",
   "backup:restore": "rule:context_is_editor",
   "backup:backup-import": "rule:context_is_editor",
-  "backup:backup-export": "rule:context_is_editor",
+  "backup:export-import": "rule:context_is_editor",
 
   "snapshot_extension:snapshot_actions:update_snapshot_status": "rule:context_is_admin",
   "snapshot_extension:snapshot_manage": "rule:context_is_admin",
