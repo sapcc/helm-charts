@@ -62,6 +62,7 @@ groups:
       description: |
         In each repository, blob mounts should be sweeped once per hour.
         However, some repos have not been sweeped for over two hours, so it looks like blob mount sweeping is having issues.
+        In some cases, invalid manifests in the repo could be blocking the blob mount sweep.
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingBlobMounts
@@ -78,4 +79,36 @@ groups:
       description: |
         When blob mounts are marked for deletion, they should be deleted (or unmarked) in the next blob mount sweep one hour later.
         However, there are some blob mounts that are marked for deletion for over three hours already. This could indicate a problem with blob mount sweeping.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotSweepingBlobs
+    expr: keppel_accounts_count > 0 and time() - keppel_accounts_min_blobs_sweeped_at > 7200
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Blobs are not being sweeped'
+      description: |
+        In each account, blobs should be sweeped once per hour.
+        However, some accounts have not been sweeped for over two hours, so it looks like blob sweeping is having issues.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotDeletingBlobs
+    expr: keppel_blobs_min_marked_for_deletion_at > 0 and time() - keppel_blobs_min_marked_for_deletion_at > 10800
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Blobs are marked for deletion, but do not get deleted'
+      description: |
+        When blobs are marked for deletion, they should be deleted (or unmarked) in the next blob sweep one hour later.
+        However, there are some blobs that are marked for deletion for over three hours already. This could indicate a problem with blob sweeping.
         Check the logs of keppel-janitor for details.

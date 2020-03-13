@@ -7,8 +7,7 @@ metadata:
   namespace: monsoon3
 data:
   config.yaml: |
-    issuer: https://auth.mariabackup.qa-de-1.cloud.sap
-    
+    issuer: https://auth.mariabackup.{{ .Values.global.region }}.cloud.sap
     storage:
       type: kubernetes
       config:
@@ -31,9 +30,9 @@ data:
         id: ldap
         name: Active Directory
         config:
-          host: ldap-qa.global.cloud.sap:636
+          host: {{ .Values.ldap_host }}
           bindDN: CN=monsoon-service,CN=Users,DC=ad,DC=qa-de-1,DC=cloud,DC=sap
-          bindPW: K8Qu73as3AR3vgTA
+          bindPW: {{ .Values.ldap_password}}
           insecureSkipVerify: true
           userSearch:
             baseDN: OU=Identities,DC=ad,DC=qa-de-1,DC=cloud,DC=sap
@@ -50,7 +49,6 @@ data:
             userAttr: distinguishedName
             groupAttr: member
             nameAttr: cn
-
     oauth2:
       skipApprovalScreen: false
       responseTypes: ["code", "token", "id_token"]
