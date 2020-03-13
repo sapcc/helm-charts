@@ -416,8 +416,8 @@
 - job_name: 'redfish/bm'
   params:
     job: [redfish/bm]
-  scrape_interval: {{$values.ironic_scrapeInterval}}
-  scrape_timeout: {{$values.ironic_scrapeTimeout}}
+  scrape_interval: {{$values.bm_scrapeInterval}}
+  scrape_timeout: {{$values.bm_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
@@ -458,8 +458,8 @@
 - job_name: 'redfish/bb'
   params:
     job: [redfish/bb]
-  scrape_interval: {{$values.esxi_scrapeInterval}}
-  scrape_timeout: {{$values.esxi_scrapeTimeout}}
+  scrape_interval: {{$values.bb_scrapeInterval}}
+  scrape_timeout: {{$values.bb_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-sd/netbox.json
