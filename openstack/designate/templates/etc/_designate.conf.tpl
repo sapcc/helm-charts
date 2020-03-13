@@ -478,3 +478,5 @@ topics = notifications
 driver = messagingv2
 transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@designate-rabbitmq-notifications:5672/
 mem_queue_size = 1000
+
+{{- include "ini_sections.cache" . }}
