@@ -256,6 +256,8 @@ quota:
   security_groups: 0
 
   server_group_members: 40
+  # we don't want to set unlimited because that has too much potential to break things
+  key_pairs: 10000
 
 
 placement:
@@ -508,6 +510,15 @@ pgmetrics:
       - interval:
           usage: "GAUGE"
           description: "Seconds since the latest instance_action was created."
+    openstack_compute_node_actions_without_events:
+      query: "SELECT i.host AS host, COUNT(*) - COUNT(iae.start_time) AS \"actions\" FROM instance_actions AS ia JOIN instances AS i ON i.uuid = ia.instance_uuid LEFT OUTER JOIN instance_actions_events AS iae ON iae.action_id = ia.id WHERE ia.deleted = 0 AND ia.created_at > (NOW() - interval '1 week') GROUP by i.host;"
+      metrics:
+      - host:
+          usage: "LABEL"
+          description: "name of the nova-compute service"
+      - actions:
+          usage: "GAUGE"
+          description: "instance_actions entries without instance instance_action_events entries"
 
 
 postgresql:

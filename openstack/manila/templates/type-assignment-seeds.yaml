@@ -1,0 +1,24 @@
+{{- if .Release.IsUpgrade }}
+{{- if .Capabilities.APIVersions.Has "openstack.stable.sap.cc/v1"}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: manila-type-assignment-seed
+  labels:
+    component: manila
+    app: manila
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/manila-type-seed
+
+  domains:
+  - name: monsoon3
+    projects:
+    - name: storage_support
+      share_types:
+      - integration
+{{- end }}
+{{- end }}

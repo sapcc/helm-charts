@@ -24,6 +24,9 @@ spec:
         name: neutron-aci-agent
       annotations:
         pod.beta.kubernetes.io/hostname:  aci-agent-pet
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
+        configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
     spec:
       {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       hostname:  aci-agent-pet

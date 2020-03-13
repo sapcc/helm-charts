@@ -55,14 +55,10 @@ template: |{{`
             value: cinder-volume-backup-vmware-{{ name }}
           livenessProbe:
             exec:
-              command:
-              - bash
-              - -e
-              - -c
-              - source <(grep -Pzo '\[keystone_authtoken\][^[]*' /etc/cinder/cinder.conf | tr -d '\000' | while read var equal val; do test "$equal" = "=" && echo export OS_${var^^}=${val} ; done); export OS_IDENTITY_API_VERSION=3; test "$(openstack volume service list -f value --host "cinder-backup-{{ name }}" -c State)" = "up"
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder-backup.conf"]
             initialDelaySeconds: 60
-            periodSeconds: 10
-            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 20
           volumeMounts:
           - name: etccinder
             mountPath: /etc/cinder
@@ -85,6 +81,10 @@ template: |{{`
           - name: cinder-etc
             mountPath: /etc/cinder/logging.ini
             subPath: logging.ini
+            readOnly: true
+          - name: cinder-etc
+            mountPath: /etc/sudoers
+            subPath: sudoers
             readOnly: true
           - name: backup-config
             mountPath: /etc/cinder/cinder-backup.conf

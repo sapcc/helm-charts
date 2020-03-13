@@ -16,8 +16,10 @@ admin_domain_scope = True
 default_credentials_domain_name = tempest
 
 [share]
-share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
-alt_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
+# FIXME: manila tempest always uses the alternative project (but it fails if there is only one project)
+# so share and alt are intentially cross assigned
+share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
+alt_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
 admin_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
 run_revert_to_snapshot_tests = {{ default false (index .Values (print .Chart.Name | replace "-" "_")).tempest.run_revert_to_snapshot_tests }}
 run_multiple_share_replicas_tests = False
