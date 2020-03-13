@@ -41,6 +41,10 @@
       - '{__name__=~"^vasa_.+"}'
       - '{__name__=~"^snmp_asr03_rttMonLatestRttOper.+"}'
       - '{__name__=~"^snmp_asr03_rttMonJitterStats.+"}'
+      - '{__name__=~"^cucsFcErrStatsLinkFailures.+"}'
+      - '{__name__=~"^cucsFcErrStatsSignalLosses.+"}'
+      - '{__name__=~"^cucsFcErrStatsSyncLosses.+"}'
+      - '{__name__=~"^cucsFcErrStatsCrcRx.+"}'
       - '{__name__=~"^up"}'
 
   relabel_configs:
