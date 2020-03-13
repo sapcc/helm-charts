@@ -1,5 +1,6 @@
 {
     "context_is_cloud_admin": "role:cloud_dns_admin",
+    "context_is_quota_admin": "role:resource_service",
     "admin": "rule:context_is_cloud_admin or is_admin:True",
     "primary_zone": "target.zone_type:SECONDARY",
     "owner": "tenant:%(tenant_id)s",
@@ -26,10 +27,10 @@
     "edit_managed_records" : "rule:admin",
     "use_low_ttl": "rule:admin or rule:context_is_dns_support",
 
-    "get_quotas": "rule:context_is_viewer",
-    "get_quota": "rule:context_is_viewer",
-    "set_quota": "rule:admin",
-    "reset_quotas": "rule:admin",
+    "get_quotas": "rule:context_is_viewer or rule:context_is_quota_admin",
+    "get_quota": "rule:context_is_viewer or rule:context_is_quota_admin",
+    "set_quota": "rule:context_is_quota_admin",
+    "reset_quotas": "rule:context_is_quota_admin",
     "create_tld": "rule:admin",
     "find_tlds": "rule:admin",
     "get_tld": "rule:admin",
