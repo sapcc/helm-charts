@@ -31,20 +31,20 @@ data:
         name: Active Directory
         config:
           host: {{ .Values.ldap_host }}
-          bindDN: CN=monsoon-service,CN=Users,DC=ad,DC=qa-de-1,DC=cloud,DC=sap
+          bindDN: CN=monsoon-service,CN=Users,DC=ad,DC={{ .Values.ldap_region }},DC=cloud,DC=sap
           bindPW: {{ .Values.ldap_password}}
           insecureSkipVerify: true
           userSearch:
-            baseDN: OU=Identities,DC=ad,DC=qa-de-1,DC=cloud,DC=sap
-            #filter: "(objectClass=person)(memberOf=CN=CP_CONV_K8S_USERS,OU=Permissions,OU=CCloud,DC=ad,DC=qa-de-1,DC=cloud,DC=sap)(camObjectStatus=X)(!(userAccountControl:1.2.840.113556.1.4.803:=2))"
-            filter: "(objectClass=person)(memberOf=CN=CCADMIN_DOMAIN_ADMINS,OU=CCADMIN,OU=OSDomains,OU=CCloud,DC=ad,DC=qa-de-1,DC=cloud,DC=sap)(camObjectStatus=X)(!(userAccountControl:1.2.840.113556.1.4.803:=2))"
+            baseDN: OU=Identities,DC=ad,DC={{ .Values.ldap_region }},DC=cloud,DC=sap
+            #filter: "(objectClass=person)(memberOf=CN=CP_CONV_K8S_USERS,OU=Permissions,OU=CCloud,DC=ad,DC={{ .Values.ldap_region }},DC=cloud,DC=sap)(camObjectStatus=X)(!(userAccountControl:1.2.840.113556.1.4.803:=2))"
+            filter: "(objectClass=person)(memberOf=CN=CCADMIN_DOMAIN_ADMINS,OU=CCADMIN,OU=OSDomains,OU=CCloud,DC=ad,DC={{ .Values.ldap_region }},DC=cloud,DC=sap)(camObjectStatus=X)(!(userAccountControl:1.2.840.113556.1.4.803:=2))"
             username: cn
             idAttr: distinguishedName
             emailAttr: mail
             nameAttr: displayName
           # Group search queries for groups given a user entry.
           groupSearch:
-            baseDN: OU=Permissions,OU=CCloud,DC=ad,DC=qa-de-1,DC=cloud,DC=sap
+            baseDN: OU=Permissions,OU=CCloud,DC=ad,DC={{ .Values.ldap_region }},DC=cloud,DC=sap
             filter: "(objectClass=group)"
             userAttr: distinguishedName
             groupAttr: member
