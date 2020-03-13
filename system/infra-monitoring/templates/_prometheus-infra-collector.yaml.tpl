@@ -411,6 +411,71 @@
       replacement: ipmi-exporter:{{$values.listen_port}}
 {{- end }}
 
+{{- $values := .Values.redfish_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'redfish/bm'
+  params:
+    job: [redfish/bm]
+  scrape_interval: {{$values.ironic_scrapeInterval}}
+  scrape_timeout: {{$values.ironic_scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  metrics_path: /redfish
+  relabel_configs:
+    - source_labels: [job]
+      regex: redfish/bm
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: redfish-exporter:{{$values.listen_port}}
+
+- job_name: 'redfish/cp'
+  params:
+    job: [redfish/cp]
+  scrape_interval: {{$values.cp_scrapeInterval}}
+  scrape_timeout: {{$values.cp_scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  metrics_path: /redfish
+  relabel_configs:
+    - source_labels: [job]
+      regex: redfish/cp
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: redfish-exporter:{{$values.listen_port}}
+    - source_labels: [__meta_serial]
+      target_label: server_serial
+
+- job_name: 'redfish/bb'
+  params:
+    job: [redfish/bb]
+  scrape_interval: {{$values.esxi_scrapeInterval}}
+  scrape_timeout: {{$values.esxi_scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+  metrics_path: /redfish
+  relabel_configs:
+    - source_labels: [job]
+      regex: redfish/bb
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: redfish-exporter:{{$values.listen_port}}
+{{- end }}
+
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vasa'
