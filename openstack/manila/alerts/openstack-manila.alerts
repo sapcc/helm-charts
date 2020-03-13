@@ -199,3 +199,35 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
+
+# alerts for other cert checks are in blackbox chart, this is filer cert only
+  - alert: OpenstackManilaFilerCertificateExpires
+    expr: blackbox_certificates_status_gauge{check=~".*stnpca.*cc"} == 1
+    # starts firing on expiration in 30 days (CERTS_ALERT_PERIOD) -> we want a warning 14 days before (30-16)
+    for: 16d
+    labels:
+      context: '{{ $labels.check }}'
+      meta: '{{ $labels.check }}'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      severity: warning
+      tier: os
+      playbook: 'docs/support/playbook/manila/filer_cert_expired.html'
+    annotations:
+      description: Certificate {{ $labels.check }} expires in less than 14 days. See Sentry for details
+      summary: Certificates
+
+# alerts for other cert checks are in blackbox chart, this is filer cert only
+  - alert: OpenstackManilaFilerOpenstackCertificateExpiresSoon
+    expr: blackbox_certificates_status_gauge{check=~".*stnpca.*cc"} == 1
+    # starts firing on expiration in 30 days (CERTS_ALERT_PERIOD) -> we want a critical alert 7 days before (30-23)
+    for: 23d
+    labels:
+      context: '{{ $labels.check }}'
+      meta: '{{ $labels.check }}'
+      sentry: blackbox/?query=test_{{ $labels.check }}
+      severity: critical
+      tier: os
+      playbook: 'docs/support/playbook/manila/filer_cert_expired.html'
+    annotations:
+      description: Certificate {{ $labels.check }} expires in less than 7 days. See Sentry for details
+      summary: Certificates

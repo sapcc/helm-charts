@@ -46,20 +46,12 @@ spec:
                   values:
                   - {{.Values.global.region}}a
 {{- end }}
-{{- if .Values.backup_v2.enabled }}
-      serviceAccountName: maria-back-me-up
-{{- end }}
       containers:
       - name: mariadb
         image: {{.Values.image}}
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         env:
-        - name:  MYSQL_ROOT_PASSWORD # for setup
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-{{.Values.name}}
-              key: root-password
-        - name:  MYSQL_PWD # for cli
+        - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
               name: mariadb-{{.Values.name}}
@@ -151,6 +143,8 @@ spec:
 {{- if .Values.backup_v2.enabled }}
       - name: mariabackup
         image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/maria-back-me-up:{{ .Values.backup_v2.image_version }}
+        command:
+          - backup
         readinessProbe:
           httpGet:
             path: /health/readiness
@@ -221,7 +215,7 @@ spec:
           timeoutSeconds: 10
         env:
           - name: DATA_SOURCE_NAME # FIXME: get password from secret
-            value: root:{{ include "root_password" . }}@tcp({{ include (print .Release.Name "_db_host") . }}:3306)/
+            value: root:{{ include "mariadb.root_password" . }}@tcp({{ include (print .Release.Name "_db_host") . }}:3306)/
           - name: LOGLEVEL
             value: {{ default "info" .Values.metrics.loglevel }}
         ports:

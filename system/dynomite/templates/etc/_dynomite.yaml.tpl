@@ -1,7 +1,7 @@
 {{- $context := index . 0 -}}
 {{- $member := index . 1 -}}
 {{- $index := index . 2 -}}
-dynomite-{{ $member | include "dynomite.dc" }}:
+dyn_o_mite:
   datacenter: {{ $member | include "dynomite.dc" }}
   rack: {{ $member | include "dynomite.rack" }}
   data_store: 0

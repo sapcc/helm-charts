@@ -5,9 +5,9 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
     {{- if typeIs "float64" .Values.keppel.image_tag -}}
-      {{$.Values.keppel.image}}:{{$.Values.keppel.image_tag | printf "%0.f"}}
+      {{ $.Values.global.registryAlternateRegion }}/keppel:{{$.Values.keppel.image_tag | printf "%0.f"}}
     {{- else -}}
-      {{$.Values.keppel.image}}:{{$.Values.keppel.image_tag}}
+      {{ $.Values.global.registryAlternateRegion }}/keppel:{{$.Values.keppel.image_tag}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
@@ -37,8 +37,6 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: 'kubernetes'
 - name:  KEPPEL_DRIVER_STORAGE
   value: 'swift'
-- name:  KEPPEL_ISSUER_CERT
-  value: '/etc/keppel/issuer-cert.pem'
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel/issuer-key.pem'
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
