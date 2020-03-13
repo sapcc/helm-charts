@@ -5,8 +5,8 @@
     "admin": "role:image_admin and rule:owner",
     "member": "role:member and rule:owner",
     "viewer": "role:image_viewer and rule:owner",
-    "context_is_image_admin":  "rule:context_is_admin or role:admin or rule:admin",
-    "context_is_image_viewer":  "rule:context_is_image_admin or rule:viewer or role:member",
+    "context_is_image_admin":  "rule:context_is_admin or rule:admin",
+    "context_is_image_viewer":  "rule:context_is_image_admin or rule:viewer or rule:member",
     "default": "rule:context_is_admin",
 
     "add_image": "rule:context_is_image_admin",
@@ -14,7 +14,7 @@
     "get_image": "rule:context_is_image_viewer",
     "get_images": "rule:context_is_image_admin",
     "modify_image": "rule:context_is_image_admin",
-    "publicize_image": "rule:context_is_image_admin",
+    "publicize_image": "rule:context_is_cloud_admin",
     "copy_from": "rule:context_is_image_admin",
 
     "download_image": "rule:context_is_image_viewer",
