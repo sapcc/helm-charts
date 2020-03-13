@@ -39,6 +39,8 @@
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^pxcloudprober_.+"}'
       - '{__name__=~"^vasa_.+"}'
+      - '{__name__=~"^snmp_asr03_rttMonLatestRttOper.+"}'
+      - '{__name__=~"^snmp_asr03_rttMonJitterStats.+"}'
       - '{__name__=~"^up"}'
 
   relabel_configs:
