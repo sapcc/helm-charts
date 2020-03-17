@@ -51,6 +51,7 @@
       - '{__name__=~"^snmp_cucsFcErrStatsSyncLosses"}'
       - '{__name__=~"^snmp_cucsFcErrStatsCrcRx"}'
       - '{__name__=~"^up"}'
+      - '{__name__=~"^vrops_datastore_stats",vccluster=~".+"}'
 
   relabel_configs:
     - action: replace
