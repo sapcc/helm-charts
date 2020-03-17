@@ -72,6 +72,8 @@
       - '{__name__=~"^bios_exporter",setting_name=~"memory_memorymode|biosvfselectmemoryrasconfiguration|memory_ras_configuration|bios_memsettings_adddcsetting|bios_memsettings_memopmode"}'
       - '{__name__=~"^bios_exporter_up"}'
       - '{__name__=~"^pxcloudprober_.+"}'
+      - '{__name__=~"^vrops_datastore_stats",vccluster=~".+"}'
+
 
   relabel_configs:
     - action: replace
