@@ -7,7 +7,8 @@ cd /root/helm-charts/system/infra-monitoring/vendor/snmp-exporter/generator/
 
 export modules=`ls  ../_snmp-exporter-*|awk -F- '{ print $3}'|awk -F. '{ print $1}'`
 
-for i in $(ls  ../_snmp-exporter-*|awk -F- '{ print $3}'|awk -F. '{ print $1}');
+for i in $modules;
+
 do
     cp -f ./${i}-generator.yaml ./generator.yml
         /gopath/bin/generator generate
@@ -29,6 +30,12 @@ do
         fi
 done
 
-sed -i '2d' ../_snmp-exporter-arista.yaml
-sed -i '2d' ../_snmp-exporter-n7k.yaml
+
+if grep -q "arista:" ../_snmp-exporter-arista.yaml; then
+    sed -i '2d' ../_snmp-exporter-arista.yaml
+fi
+
+if grep -q "n7k:" ../_snmp-exporter-n7k.yaml; then
+    sed -i '2d' ../_snmp-exporter-n7k.yaml
+fi
 
