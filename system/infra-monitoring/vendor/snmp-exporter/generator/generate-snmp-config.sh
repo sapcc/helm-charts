@@ -16,6 +16,7 @@ do
                 echo "############### config for ${i} ##############"
                 echo "##############################################"
         mv -f ./snmp.yml ./_snmp-exporter-${i}.yaml.tmp
+        rm -d ./generator.yml
         if test -f "${i}-additional-oids.yaml"; then
             awk -v f=$i '{ print; } /walk:/ { system ( "cat "f"-additional-oids.yaml" ) } \' _snmp-exporter-${i}.yaml.tmp  > ../_snmp-exporter-${i}.yaml
             sed -i "s/- name: /- name: snmp_${i}_/g" ../_snmp-exporter-${i}.yaml
