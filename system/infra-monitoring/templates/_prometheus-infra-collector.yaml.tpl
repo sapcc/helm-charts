@@ -253,6 +253,10 @@
     - source_labels: [__name__, ifDescr]
       regex: 'snmp_acileaf_if.+;(Tunnel)[0-9]*'
       action: drop
+    - source_labels: [__name__, snmp_acileaf_sysDescr]
+      regex: 'snmp_acileaf_sysDescr;(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
     - source_labels: [__name__, snmp_acispine_sysDescr]
       regex: 'snmp_acispine_sysDescr;(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
@@ -264,10 +268,6 @@
     - source_labels: [__name__, snmp_acistretch_sysDescr]
       regex: "snmp_acistretch_sysDescr;(?s)(.*)Version ([0-9.]*)(.*)"
       replacement: '$2'
-      target_label: image_version
-    - source_labels: [__name__, snmp_acileaf_ciscoImageString]
-      regex: 'snmp_acileaf_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
       target_label: image_version
 # hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
     - source_labels: [__name__, devicename]
