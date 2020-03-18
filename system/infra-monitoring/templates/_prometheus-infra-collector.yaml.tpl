@@ -246,8 +246,8 @@
       replacement: '$3_$4'
       target_label: image_version
     - source_labels: [__name__, snmp_asr_sysDescr]
-      regex: 'snmp_asr_sysDescr;(?s)(.*)(Version )([0-9().a-zIU:]*)(,)? (CUST-SPECIAL:|[A-Z0-9:\-]*)(\[|, )?([0-9A-Za-z\/\-_]*|[A-Z0-9]*)'
-      replacement: ${3}${7}
+      regex: 'snmp_asr_sysDescr;(?s)(.*)(Version )([0-9().a-zIU:]*)(,)? (CUST-SPECIAL:)?([A-Z0-9_]*)?'
+      replacement: ${3}${6}
       target_label: image_version
     - source_labels: [__name__, snmp_asr03_sysDescr]
       regex: 'snmp_asr03_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
