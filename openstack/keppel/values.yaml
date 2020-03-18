@@ -84,6 +84,18 @@ pgmetrics:
         - validation_errors:
             usage: "GAUGE"
             description: "Number of manifests stored in Keppel that failed their last validation"
+    keppel_unknown_blobs:
+      query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(marked_for_deletion_at)), 0) AS min_marked_for_deletion_at FROM unknown_blobs'
+      metrics:
+        - min_marked_for_deletion_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp when oldest not-yet-deleted unknown manifest was marked for deletion, or 0 if there are no unknown manifests at the moment"
+    keppel_unknown_manifests:
+      query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(marked_for_deletion_at)), 0) AS min_marked_for_deletion_at FROM unknown_manifests'
+      metrics:
+        - min_marked_for_deletion_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp when oldest not-yet-deleted unknown manifest was marked for deletion, or 0 if there are no unknown manifests at the moment"
     keppel_tags:
       query: 'SELECT COUNT(*) AS count FROM tags'
       metrics:

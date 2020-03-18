@@ -128,3 +128,51 @@ groups:
         When blobs are marked for deletion, they should be deleted (or unmarked) in the next blob sweep one hour later.
         However, there are some blobs that are marked for deletion for over three hours already. This could indicate a problem with blob sweeping.
         Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotSweepingStorage
+    expr: keppel_accounts_count > 0 and time() - keppel_accounts_min_storage_sweeped_at > 43200
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Storages are not being sweeped'
+      description: |
+        In each account, the backing storage should be sweeped every 6 hours.
+        However, some accounts have not been sweeped for over 12 hours, so it looks like blob sweeping is having issues.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotDeletingUnknownBlobs
+    expr: keppel_unknown_blobs_min_marked_for_deletion_at > 0 and time() - keppel_unknown_blobs_min_marked_for_deletion_at > 43200
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Unknown blobs exist, but do not get deleted'
+      description: |
+        When the storage sweep encounters unknown blobs in the backing storage, they should be deleted (or unmarked) in the next storage sweep 6 hours later.
+        However, there are some unknown blobs that are marked for deletion for over 12 hours already. This could indicate a problem with storage sweeping.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotDeletingUnknownManifests
+    expr: keppel_unknown_manifests_min_marked_for_deletion_at > 0 and time() - keppel_unknown_manifests_min_marked_for_deletion_at > 43200
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Unknown manifests exist, but do not get deleted'
+      description: |
+        When the storage sweep encounters unknown manifests in the backing storage, they should be deleted (or unmarked) in the next storage sweep 6 hours later.
+        However, there are some unknown manifests that are marked for deletion for over 12 hours already. This could indicate a problem with storage sweeping.
+        Check the logs of keppel-janitor for details.
