@@ -1,6 +1,12 @@
 #!/bin/bash
 #set -x
 
+if [[ $# -eq 0 ]] ; then
+    echo 'Please set the module name like "asr" or "all" to create snmp config'
+    exit 1
+fi
+
+
 cd
 #git clone https://github.com/sapcc/helm-charts.git
 cd /root/helm-charts/system/infra-monitoring/vendor/snmp-exporter/generator/
