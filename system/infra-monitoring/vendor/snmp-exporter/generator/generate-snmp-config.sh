@@ -46,3 +46,10 @@ if grep -q "n7k:" ../_snmp-exporter-n7k.yaml; then
     sed -i '2d' ../_snmp-exporter-n7k.yaml
 fi
 
+if grep -q "n7k:" ../_snmp-exporter-n7kcontext.yaml; then
+    sed -i '2d' ../_snmp-exporter-n7kcontext.yaml
+fi
+
+if grep -q "asw:" ../_snmp-exporter-arista.yaml; then
+    sed -i '2d' ../_snmp-exporter-arista.yaml
+fi
