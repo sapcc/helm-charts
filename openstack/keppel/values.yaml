@@ -40,7 +40,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of oldest storage sweep, or 0 if no accounts have ever been sweeped"
     keppel_blobs:
-      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(marked_for_deletion_at)), 0) AS min_marked_for_deletion_at FROM blobs'
+      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(marked_for_deletion_at)), 0) AS min_marked_for_deletion_at, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs'
       metrics:
         - count:
             usage: "GAUGE"
@@ -48,6 +48,12 @@ pgmetrics:
         - min_marked_for_deletion_at:
             usage: "GAUGE"
             description: "UNIX timestamp when oldest not-yet-deleted blob was marked for deletion, or 0 if no blobs are currently marked for deletion"
+        - min_validated_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of oldest blob validation"
+        - validation_errors:
+            usage: "GAUGE"
+            description: "Number of blobs stored in Keppel that failed their last validation"
     keppel_blob_mounts:
       query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(marked_for_deletion_at)), 0) AS min_marked_for_deletion_at FROM blob_mounts'
       metrics:

@@ -17,6 +17,37 @@ groups:
         There are some uploads that are way older than 24 hours, which keppel-janitor should have cleaned up by now.
         Check the logs of keppel-janitor for details.
 
+  - alert: OpenstackKeppelNotValidatingBlobs
+    expr: time() - keppel_blobs_min_validated_at > 691200 # 8 days (in seconds)
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Blobs are not being validated'
+      description: |
+        The keppel-janitor should be validating each blob every 7 days, but some blobs have not been validated on schedule.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelBlobValidationFailed
+    expr: keppel_blob_validation_errors > 0
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Blobs are failing validation'
+      description: |
+        Some blobs stored in Keppel have failed their routine validation.
+        This could hint at the blob contents being corrupted.
+        The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM blobs`.
+
   - alert: OpenstackKeppelNotValidatingManifests
     expr: time() - keppel_manifests_min_validated_at > 90000
     for: 5m
