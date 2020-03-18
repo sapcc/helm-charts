@@ -6,7 +6,11 @@ rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | defa
 rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
 
 [service_providers]
+{{- if .Values.octavia }}
+service_provider = LOADBALANCERV2:Octavia:neutron_lbaas.drivers.octavia.driver.OctaviaDriver:default
+{{- else }}
 service_provider = LOADBALANCERV2:F5Networks:neutron_lbaas.drivers.f5.driver_v2.F5LBaaSV2Driver:default
+{{- end }}
 
 [service_auth]
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal| default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3

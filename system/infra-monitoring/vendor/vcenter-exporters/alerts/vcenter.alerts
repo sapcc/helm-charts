@@ -26,17 +26,17 @@ groups:
       description: "Failover host {{ $labels.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
       summary: "Failover host {{ $labels.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
   - alert: VCenterRedundancyLostHAPolicyFaulty
-    expr: sum(vcenter_prod_cluster) by(hostname) - sum(vcenter_failover_host) by(hostname) > 0 
+    expr: sum(vcenter_cluster_ha_configured) by(cluster, hostname) unless sum(vcenter_failover_host) by(cluster, hostname) != 0
     for: 30m
     labels:
       severity: critical
       tier: vmware
       service: compute
-      meta: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for a cluster, failover will not work in all prod clusters"
+      meta: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for cluster {{ $labels.cluster }}, failover will not work."
       playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
     annotations:
-      description: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for a cluster, failover will not work in all prod clusters"
-      summary: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for a cluster, failover will not work in all prod clusters"
+      description: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for cluster {{ $labels.cluster }}, failover will not work."
+      summary: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for cluster {{ $labels.cluster }}, failover will not work."
   - alert: VCenterRedundancyLostHAPolicyNotConfigured
     expr: vcenter_cluster_ha_configured == 0
     for: 30m

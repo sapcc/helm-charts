@@ -81,6 +81,23 @@ spec:
           resources:
             {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /etc/manila/probe
+            timeoutSeconds: 3
+            periodSeconds: 10
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - grep
+              - 'ready'
+              - /etc/manila/probe
+            timeoutSeconds: 3
+            periodSeconds: 5
+            initialDelaySeconds: 5
       volumes:
         - name: etcmanila
           emptyDir: {}

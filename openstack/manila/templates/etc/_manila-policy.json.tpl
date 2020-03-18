@@ -96,6 +96,7 @@
   "share_type:show": "rule:context_is_viewer",
   "share_type:default": "rule:context_is_viewer",
   "share_type:create": "rule:context_is_cloud_editor",
+  "share_type:update": "rule:context_is_cloud_editor",
   "share_type:delete": "rule:context_is_cloud_editor",
   "share_type:add_project_access": "rule:context_is_cloud_editor",
   "share_type:list_project_access": "rule:context_is_cloud_viewer",
@@ -132,6 +133,11 @@
   "share_network:add_security_service": "rule:context_is_sharedfilesystem_admin",
   "share_network:remove_security_service": "rule:context_is_sharedfilesystem_admin",
   "share_network:get_all_share_networks": "rule:context_is_cloud_viewer",
+
+  "share_network_subnet:create": "rule:context_is_sharedfilesystem_admin",
+  "share_network_subnet:delete": "rule:context_is_sharedfilesystem_admin",
+  "share_network_subnet:index": "rule:context_is_viewer",
+  "share_network_subnet:show": "rule:context_is_viewer",
 
   "scheduler_stats:pools:index": "rule:context_is_cloud_viewer",
   "scheduler_stats:pools:detail": "rule:context_is_cloud_viewer",

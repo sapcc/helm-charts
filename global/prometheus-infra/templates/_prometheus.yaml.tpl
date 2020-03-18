@@ -16,6 +16,13 @@
       - '{__name__=~"^snmp_asr_disman.+"}'
       - '{__name__=~"^snmp_asr_ciscoImageString"}'
       - '{__name__=~"^snmp_asr03_ciscoImageString"}'
+      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperCompletionTime"}'
+      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperSense"}'
+      - '{__name__=~"^snmp_asr03_rttMonLatestRttOperTime"}'
+      - '{__name__=~"^snmp_asr03_rttMonJitterStatsCompletions"}'
+      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketLossSD"}'
+      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketLossDS"}'
+      - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketOutOfSequence"}'
       - '{__name__=~"^snmp_asr04_ciscoImageString"}'
       - '{__name__=~"^snmp_n3k_ciscoImageString"}'
       - '{__name__=~"^snmp_n7k_ciscoImageString"}'
@@ -65,6 +72,8 @@
       - '{__name__=~"^bios_exporter",setting_name=~"memory_memorymode|biosvfselectmemoryrasconfiguration|memory_ras_configuration|bios_memsettings_adddcsetting|bios_memsettings_memopmode"}'
       - '{__name__=~"^bios_exporter_up"}'
       - '{__name__=~"^pxcloudprober_.+"}'
+      - '{__name__=~"^vrops_datastore_stats",vccluster=~".+"}'
+
 
   relabel_configs:
     - action: replace

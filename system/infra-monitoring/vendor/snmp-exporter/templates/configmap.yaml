@@ -52,8 +52,6 @@ data:
       auth:
         community: {{ .Values.arista.community }}
 {{- end }}
-{{- if .Values.asa.enabled }}
-    asa:
 {{ .Files.Get "_snmp-exporter-asa.yaml" | indent 4}}
       version: {{ .Values.asa.version }}
       max_repetitions: 25
@@ -66,8 +64,6 @@ data:
         auth_protocol: {{ .Values.asa.auth_protocol }}
         priv_protocol: {{ .Values.asa.priv_protocol }}
         priv_password: {{ .Values.asa.priv_password }}
-{{- end }}
-    asr:
 {{ .Files.Get "_snmp-exporter-asr.yaml" | indent 4}}
       version: {{ .Values.asr.version }}
       max_repetitions: 25
@@ -92,7 +88,6 @@ data:
       version: {{ .Values.f5.version }}
       auth:
         community: {{ .Values.f5.community }}
-    asr03:
 {{ .Files.Get "_snmp-exporter-asr03.yaml" | indent 4}}
       version: {{ .Values.asr03.version }}
       max_repetitions: 25
@@ -105,7 +100,6 @@ data:
         auth_protocol: {{ .Values.asr03.auth_protocol }}
         priv_protocol: {{ .Values.asr03.priv_protocol }}
         priv_password: {{ .Values.asr03.priv_password }}
-    asr04:
 {{ .Files.Get "_snmp-exporter-asr04.yaml" | indent 4}}
       version: {{ .Values.asr04.version }}
       max_repetitions: 25
@@ -118,7 +112,6 @@ data:
         auth_protocol: {{ .Values.asr04.auth_protocol }}
         priv_protocol: {{ .Values.asr04.priv_protocol }}
         priv_password: {{ .Values.asr04.priv_password }}
-    n3k:
 {{ .Files.Get "_snmp-exporter-n3k.yaml" | indent 4}}
       version: {{ .Values.n3k.version }}
       auth:
@@ -139,7 +132,7 @@ data:
         priv_password: {{ .Values.global.n7k.priv_password }}
 {{- range $switch := .Values.global.n7k.context }}
     n7k{{ $switch.context_name | lower }}:
-{{ $.Files.Get "_snmp-exporter-n7k-context.yaml" | indent 4}}
+{{ $.Files.Get "_snmp-exporter-n7kcontext.yaml" | indent 4}}
       version: {{ $switch.version }}
       max_repetitions: 25
       retries: 3
@@ -172,7 +165,6 @@ data:
         auth_protocol: {{ .Values.pxdlrouternxos.auth_protocol }}
         priv_protocol: {{ .Values.pxdlrouternxos.priv_protocol }}
         priv_password: {{ .Values.pxdlrouternxos.priv_password }}
-    acileaf:
 {{ .Files.Get "_snmp-exporter-acileaf.yaml" | indent 4}}
       version: {{ .Values.acileaf.version }}
       max_repetitions: 25
@@ -197,8 +189,6 @@ data:
         auth_protocol: {{ .Values.n9kpx.auth_protocol }}
         priv_protocol: {{ .Values.n9kpx.priv_protocol }}
         priv_password: {{ .Values.n9kpx.priv_password }}
-{{- if .Values.ipn.enabled }}
-    ipn:
 {{ .Files.Get "_snmp-exporter-ipn.yaml" | indent 4}}
       version: {{ .Values.ipn.version }}
       max_repetitions: 25
@@ -211,7 +201,6 @@ data:
         auth_protocol: {{ .Values.ipn.auth_protocol }}
         priv_protocol: {{ .Values.ipn.priv_protocol }}
         priv_password: {{ .Values.ipn.priv_password }}
-{{- end }}
 {{ .Files.Get "_snmp-exporter-acispine.yaml" | indent 4}}
       version: {{ .Values.acispine.version }}
       max_repetitions: 25
@@ -228,3 +217,17 @@ data:
       version: {{ .Values.acistretch.version }}
       auth:
         community: {{ .Values.acistretch.community }}
+{{- if .Values.ucs.enabled }}
+{{ .Files.Get "_snmp-exporter-ucs.yaml" | indent 4}}
+      version: {{ .Values.ucs.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.ucs.security_level }}
+        username: {{ .Values.ucs.username }}
+        password: {{ .Values.ucs.password }}
+        auth_protocol: {{ .Values.ucs.auth_protocol }}
+        priv_protocol: {{ .Values.ucs.priv_protocol }}
+        priv_password: {{ .Values.ucs.priv_password }}
+{{- end }}

@@ -1,0 +1,29 @@
+groups:
+- name: datastore.alerts
+  rules:
+  - alert: DataStoreCapacityLeftCritical
+    expr: vrops_datastore_stats{vccluster=~".+",statkey="diskspace_total_usage_gigabytes"} / ignoring (statkey) vrops_datastore_stats{vccluster=~".+",statkey="diskspace_capacity_gigabytes"} > 0.9
+    for: 20m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      context: "vrops-exporter"
+      meta: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
+    annotations:
+      description: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+  - alert: DataStoreCapacityLeftWarning
+    expr: vrops_datastore_stats{vccluster=~".+",statkey="diskspace_total_usage_gigabytes"} / ignoring (statkey) vrops_datastore_stats{vccluster=~".+",statkey="diskspace_capacity_gigabytes"} > 0.75
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      context: "vrops-exporter"
+      meta: "Datastore {{ $labels.datastore }} utilization > 75% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
+    annotations:
+      description: "Datastore {{ $labels.datastore }} utilization > 75% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} utilization > 75% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"

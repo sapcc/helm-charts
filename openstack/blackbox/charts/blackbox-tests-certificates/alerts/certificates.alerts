@@ -23,8 +23,9 @@ groups:
       description: Certificates metrics are down for 15 times in a row.
       summary: Blackbox certificates metrics
 
+# alerts for stnpca checks are in manila chart
   - alert: OpenstackCertificateExpires
-    expr: blackbox_certificates_status_gauge == 1
+    expr: blackbox_certificates_status_gauge{check!~".*stnpca.*cc"} == 1
     for: 1d
     labels:
       context: '{{ $labels.check }}'
@@ -50,8 +51,9 @@ groups:
       description: sslLabs certificate rating for cc3test.global.cloud.sap degrades from A
       summary: sslLabs certificate rating degradation
 
+# alerts for stnpca checks are in manila chart
   - alert: OpenstackCertificateExpiresSoon
-    expr: blackbox_certificates_status_gauge == 1
+    expr: blackbox_certificates_status_gauge{check!~".*stnpca.*cc"} == 1
     for: 15d
     labels:
       context: '{{ $labels.check }}'

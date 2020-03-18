@@ -73,6 +73,10 @@ spec:
           mountPath: /etc/cinder/cinder-volume.conf
           subPath: cinder-volume.conf
           readOnly: true
+        - name: cinder-etc
+          mountPath: /etc/sudoers
+          subPath: sudoers
+          readOnly: true
       volumes:
       - name: etccinder
         emptyDir: {}

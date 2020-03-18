@@ -29,8 +29,11 @@ spec:
            image: {{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.image.namespace }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
            imagePullPolicy: IfNotPresent
            env:
-             - name: THOUSANDEYES_TOKEN
-               value: {{ .Values.bearer_token }}
+             - name: THOUSANDEYES_BASIC_AUTH_USER
+               value: {{ .Values.basic_auth_user }}
+             - name: THOUSANDEYES_BASIC_AUTH_TOKEN
+               value: {{ .Values.basic_auth_token }}
+           args: ["-GetHTTP"]
            ports:
              - name: metrics
                containerPort: {{ .Values.metrics.port}}
