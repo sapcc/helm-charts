@@ -207,8 +207,8 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
-    - source_labels: [__name__, snmp_n3k_ciscoImageString]
-      regex: 'snmp_n3k_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_n3k_sysDescr]
+      regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_pxdlrouternxos_ciscoImageString]
@@ -219,20 +219,8 @@
       regex: 'snmp_n9kpx_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_ipn_ciscoImageString]
-      regex: 'snmp_ipn_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
-      target_label: image_version
-    - source_labels: [__name__, snmp_asr_ciscoImageString]
-      regex: 'snmp_asr_ciscoImageString;(?s)(.*)(Version )([0-9a-z.]*)(, CUST-SPECIAL:)([0-9A-Za-z._-]*)(.*)'
-      replacement: '$3-$5'
-      target_label: image_version
-    - source_labels: [__name__, snmp_asr03_ciscoImageString]
-      regex: 'snmp_asr03_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
-      target_label: image_version
-    - source_labels: [__name__, snmp_asr04_ciscoImageString]
-      regex: 'snmp_asr04_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_ipn_sysDescr]
+      regex: 'snmp_ipn_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_arista_entPhysicalSoftwareRev]
@@ -255,6 +243,18 @@
       target_label: image_version
     - source_labels: [__name__, snmp_acispine_sysDescr]
       regex: 'snmp_acispine_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr_sysDescr]
+      regex: 'snmp_asr_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr03_sysDescr]
+      regex: 'snmp_asr03_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr04_sysDescr]
+      regex: 'snmp_asr04_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_f5_sysProductVersion]
