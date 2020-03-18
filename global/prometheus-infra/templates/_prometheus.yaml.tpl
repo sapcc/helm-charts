@@ -25,7 +25,7 @@
       - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketOutOfSequence"}'
       - '{__name__=~"^snmp_asr04_ciscoImageString"}'
       - '{__name__=~"^snmp_n3k_ciscoImageString"}'
-      - '{__name__=~"^snmp_n7k_ciscoImageString"}'
+      - '{__name__=~"^snmp_n7k_sysDescr"}'
       - '{__name__=~"^snmp_pxdlrouternxos_ciscoImageString"}'
       - '{__name__=~"^snmp_n9kpx_ciscoImageString"}'
       - '{__name__=~"^snmp_ipn_ciscoImageString"}'
