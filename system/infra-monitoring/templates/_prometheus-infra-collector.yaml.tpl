@@ -544,3 +544,11 @@
     - target_label: __address__
       replacement: esxi-exporter:9203
 {{- end }}
+- job_name: 'cablecheck-exporter'
+  params:
+    job: [cablecheck-exporter]
+  scrape_interval: 30m
+  scrape_timeout: 60m
+  static_configs:
+      - targets :
+        - cablecheck-exporter:9100
