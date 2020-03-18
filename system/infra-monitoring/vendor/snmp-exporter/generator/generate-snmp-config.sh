@@ -6,12 +6,29 @@ if [[ $# -eq 0 ]] ; then
     exit 1
 fi
 
+if [ $1 = "all" ]; then
+
+   export modules=`ls  ../_snmp-exporter-*|awk -F- '{ print $3}'|awk -F. '{ print $1}'`
+
+else
+   export modules=`ls  ../_snmp-exporter-*|awk -F- '{ print $3}'|awk -F. '{ print $1}'`
+   echo $modules |grep -qw $1
+
+   if [ $? -eq 0 ] ; then
+
+   export modules=$1
+
+   else 
+   echo "no module named $1"
+   exit 1
+   fi
+
+fi
 
 cd
 #git clone https://github.com/sapcc/helm-charts.git
 cd /root/helm-charts/system/infra-monitoring/vendor/snmp-exporter/generator/
 
-export modules=`ls  ../_snmp-exporter-*|awk -F- '{ print $3}'|awk -F. '{ print $1}'`
 
 for i in $modules;
 
