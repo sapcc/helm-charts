@@ -26,7 +26,7 @@
       - '{__name__=~"^snmp_asr04_sysDescr"}'
       - '{__name__=~"^snmp_n3k_sysDescr"}'
       - '{__name__=~"^snmp_n7k_sysDescr"}'
-      - '{__name__=~"^snmp_pxdlrouternxos_ciscoImageString"}'
+      - '{__name__=~"^snmp_pxdlrouternxos_sysDescr"}'
       - '{__name__=~"^snmp_n9kpx_ciscoImageString"}'
       - '{__name__=~"^snmp_ipn_sysDescr"}'
       - '{__name__=~"^snmp_acispine_sysDescr"}'

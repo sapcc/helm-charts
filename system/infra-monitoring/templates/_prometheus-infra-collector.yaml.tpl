@@ -211,8 +211,8 @@
       regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_pxdlrouternxos_ciscoImageString]
-      regex: 'snmp_pxdlrouternxos_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_pxdlrouternxos_sysDescr]
+      regex: 'snmp_pxdlrouternxos_ciscoImageString;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_n9kpx_ciscoImageString]
