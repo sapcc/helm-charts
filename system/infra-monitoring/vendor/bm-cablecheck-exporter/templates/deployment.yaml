@@ -1,0 +1,30 @@
+apiVersion: batch/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "bm-cablecheck-exporter.fullname" . }}
+  labels:
+    app: {{ include "bm-cablecheck-exporter.name" . }}
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ include "bm-cablecheck-exporter.name" . }}
+        release: {{ .Release.Name }}
+        component: bm-cablecheck-exporter
+    spec:
+      containers:
+      - name: bm-cablecheck-exporter
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        imagePullPolicy: IfNotPresent
+        command: ["python", "/opt/exporter.py"]
+          args: ["--switch-pw", "{{ .Values.global.arista_password }}", "--region={{ .Values.global.region }}", "--checkphyscable=True", "--checklacp=True", "--sendtoswift=True", "--sendtoslack=True", "--debug=True", "--checkcabletype=True"]
+          restartPolicy: OnFailure
+      ports:
+        - containerPort: 9100
