@@ -1,0 +1,56 @@
+groups:
+- name: octavia.alerts
+  rules:
+  - alert: OpenstackOctaviaMonitorAgentHeartbeat
+    expr: max(octavia_monitor_agents_heartbeat_seconds) > 120
+    for: 10m
+    labels:
+      context: Agent Heartbeat
+      dashboard: octavia
+      service: Octavia
+      severity: warning
+      tier: os
+      meta: 'Agent Heartbeat is above 75secs in {{ $labels.host }}'
+      playbook: docs/support/playbook/octavia/agent_heartbeat.html
+    annotations:
+      description: Agent Heartbeat is above 75secs in {{ $labels.host }}
+      summary: Openstack Octavia Metric to monitor Agents Heartbeat
+  - alert: OpenstackOctaviaFailoverEvent
+    expr: rate(octavia_as3_failover_total{job="pods"}[5m])
+    for: 10m
+    labels:
+      context: F5 Failover
+      dashboard: octavia
+      service: Octavia
+      severity: warning
+      tier: os
+      meta: 'Agent detected failover in {{ $labels.app_kubernetes_io_name }}'
+    annotations:
+      description: Agent detected failover {{ $labels.app_kubernetes_io_name }}
+      summary: Openstack Octavia Metric to monitor F5 failover events
+  - alert: OpenstackOctaviaLoadbalancerErrored
+    expr: rate(octavia_loadbalancers_count_gauge{status="ERROR"}[5m]) > 0
+    for: 10m
+    labels:
+      context: Loadbalancer go to ERROR
+      dashboard: octavia
+      service: Octavia
+      severity: warning
+      tier: os
+      meta: 'Load Balancers in {{ $labels.host }} gone to ERROR state'
+    annotations:
+      description: Loadbalancers in {{ $labels.host }} gone to ERROR state
+      summary: Openstack Octavia Metric to monitor erroneous loadbalancers
+  - alert: OpenstackOctaviaLoadbalancerPending
+    expr: octavia_loadbalancers_count_gauge{status=~"PENDING.*"}[5m] > 0
+    for: 30m
+    labels:
+      context: Loadbalancer stuck in PENDING state
+      dashboard: octavia
+      service: Octavia
+      severity: warning
+      tier: os
+      meta: 'Load Balancers in {{ $labels.host }} stuck in {{ $labels.status }} state'
+    annotations:
+      description: Load Balancers in {{ $labels.host }} stuck in {{ $labels.status }} state
+      summary: Openstack Octavia Metric to monitor pending loadbalancers
