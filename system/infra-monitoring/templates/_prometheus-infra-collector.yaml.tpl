@@ -243,7 +243,7 @@
       target_label: image_version
     - source_labels: [__name__, snmp_acispine_sysDescr]
       regex: 'snmp_acispine_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
-      replacement: '$3_$4'
+      replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_asr_sysDescr]
       regex: 'snmp_asr_sysDescr;(?s)(.*)(Version )([0-9().a-zIU:]*)(, )?(CUST-SPECIAL:)?([A-Z0-9_]*)?(.*)'
