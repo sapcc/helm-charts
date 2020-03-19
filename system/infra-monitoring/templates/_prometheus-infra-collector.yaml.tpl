@@ -546,7 +546,7 @@
 {{- end }}
 
 #normal scrape intervals are too frequent, that's why we only occasionally want to query here.
-{{- $values := .Values.esxi_exporter -}}
+{{- $values := .Values.bm_cablecheck_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'bm_cablecheck_exporter'
   params:
