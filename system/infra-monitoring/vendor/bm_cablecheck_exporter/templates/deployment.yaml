@@ -1,9 +1,13 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ include "bm_cablecheck_exporter.fullname" . }}
+  name: {{ include "infraMonitoring.name" . }}
   labels:
-    app: {{ include "bm_cablecheck_exporter.name" . }}
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
 
 spec:
   replicas: 1
@@ -15,12 +19,11 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ include "bm_cablecheck_exporter.name" . }}
+        app: {{ include "infraMonitoring.name" . }}
         release: {{ .Release.Name }}
-        component: bm_cablecheck_exporter
     spec:
       containers:
-      - name: bm-cablecheck-exporter
+      - name: {{ include "infraMonitoring.name" . }}
         image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
         imagePullPolicy: IfNotPresent
         command: ["python", "/opt/exporter.py"]
