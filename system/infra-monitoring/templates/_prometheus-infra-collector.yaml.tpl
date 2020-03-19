@@ -546,14 +546,19 @@
 {{- end }}
 
 #normal scrape intervals are too frequent, that's why we only occasionally want to query here.
-{{- $values := .Values.bm_cablecheck_exporter -}}
+{{- $values := .Values.bm-cablecheck-exporter -}}
 {{- if $values.enabled }}
-- job_name: 'bm_cablecheck_exporter'
+- job_name: 'bm-cablecheck-exporter'
   params:
-    job: [bm_cablecheck_exporter]
-  scrape_interval: {{$values.bm_cablecheck_scrapeInterval}}
-  scrape_timeout: {{$values.bm_cablecheck_scrapeTimeout}}
+    job: [bm-cablecheck-exporter]
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   static_configs:
       - targets :
-        - bm_cablecheck_exporter:9100
+        - bm-cablecheck-exporter:9100
+  metrics_path: /
+  relabel_conigs:
+    - source_labels: [job]
+      regex: bm-cablecheck-exporter 
+      action: keep
 {{- end }}
