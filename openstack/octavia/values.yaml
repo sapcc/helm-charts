@@ -33,24 +33,24 @@ mysql_metrics:
     - help: Total Load Balancer count
       labels:
       - "status"
-      - "host"
+      - "octavia_host"
       name: octavia_loadbalancers_count_gauge
       query: |
         SELECT
           COUNT(*) AS count_gauge,
           provisioning_status AS status,
-          server_group_id as host
+          server_group_id as octavia_host
         FROM load_balancer
         GROUP BY load_balancer.provisioning_status;
       values:
       - "count_gauge"
     - help: Worker agent seconds since the last heartbeat
       labels:
-      - "host"
+      - "octavia_host"
       name: octavia_monitor_agents_heartbeat_seconds
       query: |
         SELECT
-          compute_flavor AS host,
+          compute_flavor AS octavia_host,
           (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(updated_at))) AS heartbeat_seconds
         FROM amphora
         WHERE status = 'READY'
