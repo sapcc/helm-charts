@@ -547,8 +547,8 @@
 - job_name: 'cablecheck-exporter'
   params:
     job: [cablecheck-exporter]
-  scrape_interval: 30m
-  scrape_timeout: 60m
+  scrape_interval: {{$values.cablecheck_scrapeInterval}}
+  scrape_timeout: {{$values.cablecheck_scrapeTimeout}}
   static_configs:
       - targets :
         - cablecheck-exporter:9100
