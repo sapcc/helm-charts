@@ -544,7 +544,7 @@
     - target_label: __address__
       replacement: esxi-exporter:9203
 {{- end }}
-- job_name: 'cablecheck-exporter'
+- job_name: 'bm-cablecheck-exporter'
   params:
     job: [bm-cablecheck-exporter]
   scrape_interval: {{$values.bm-cablecheck_scrapeInterval}}
