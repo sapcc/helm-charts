@@ -544,11 +544,11 @@
     - target_label: __address__
       replacement: esxi-exporter:9203
 {{- end }}
-- job_name: 'bm-cablecheck-exporter'
+- job_name: 'bm_cablecheck_exporter'
   params:
-    job: [bm-cablecheck-exporter]
-  scrape_interval: {{$values.bm-cablecheck_scrapeInterval}}
-  scrape_timeout: {{$values.bm-cablecheck_scrapeTimeout}}
+    job: [bm_cablecheck_exporter]
+  scrape_interval: {{$values.bm_cablecheck_scrapeInterval}}
+  scrape_timeout: {{$values.bm_cablecheck_scrapeTimeout}}
   static_configs:
       - targets :
-        - cablecheck-exporter:9100
+        - bm_cablecheck_exporter:9100
