@@ -207,36 +207,20 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
-    - source_labels: [__name__, snmp_n3k_ciscoImageString]
-      regex: 'snmp_n3k_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_n3k_sysDescr]
+      regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_n7k_ciscoImageString]
-      regex: 'snmp_n7k_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
-      target_label: image_version
-    - source_labels: [__name__, snmp_pxdlrouternxos_ciscoImageString]
-      regex: 'snmp_pxdlrouternxos_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_pxdlrouternxos_sysDescr]
+      regex: 'snmp_pxdlrouternxos_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_n9kpx_ciscoImageString]
       regex: 'snmp_n9kpx_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_ipn_ciscoImageString]
-      regex: 'snmp_ipn_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
-      target_label: image_version
-    - source_labels: [__name__, snmp_asr_ciscoImageString]
-      regex: 'snmp_asr_ciscoImageString;(?s)(.*)(Version )([0-9a-z.]*)(, CUST-SPECIAL:)([0-9A-Za-z._-]*)(.*)'
-      replacement: '$3-$5'
-      target_label: image_version
-    - source_labels: [__name__, snmp_asr03_ciscoImageString]
-      regex: 'snmp_asr03_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
-      target_label: image_version
-    - source_labels: [__name__, snmp_asr04_ciscoImageString]
-      regex: 'snmp_asr04_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_ipn_sysDescr]
+      regex: 'snmp_ipn_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_arista_entPhysicalSoftwareRev]
@@ -250,8 +234,27 @@
     - source_labels: [__name__, device]
       regex: 'snmp_asa_sysDescr;(ASA0102-CC-CORP|AsSA0102-CC-DMZ|ASA0102-CC-HEC|ASA0102-CC-INTERNET|ASA0102-CC-SAAS|ASA0102a-CC-HEC|ASA0102a-CC-DMZ|ASA0102a-CC-CORP|ASA0102a-CC-INTERNET|ASA0102a-CC-SAAS)'
       action: drop
+    - source_labels: [__name__, ifDescr]
+      regex: 'snmp_acileaf_if.+;(Tunnel)[0-9]*'
+      action: drop
+    - source_labels: [__name__, snmp_acileaf_sysDescr]
+      regex: 'snmp_acileaf_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
     - source_labels: [__name__, snmp_acispine_sysDescr]
-      regex: 'snmp_acispine_sysDescr;(.*)(Version )([0-9().a-z]*)(,.*)'
+      regex: 'snmp_acispine_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3_$4'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr_sysDescr]
+      regex: 'snmp_asr_sysDescr;(?s)(.*)(Version )([0-9().a-zIU:]*)(, )?(CUST-SPECIAL:)?([A-Z0-9_]*)?(.*)'
+      replacement: ${3}${6}
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr03_sysDescr]
+      regex: 'snmp_asr03_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr04_sysDescr]
+      regex: 'snmp_asr04_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_f5_sysProductVersion]
@@ -262,8 +265,8 @@
       regex: "snmp_acistretch_sysDescr;(?s)(.*)Version ([0-9.]*)(.*)"
       replacement: '$2'
       target_label: image_version
-    - source_labels: [__name__, snmp_acileaf_ciscoImageString]
-      regex: 'snmp_acileaf_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_n7k_sysDescr]
+      regex: 'snmp_n7k_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
 # hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"

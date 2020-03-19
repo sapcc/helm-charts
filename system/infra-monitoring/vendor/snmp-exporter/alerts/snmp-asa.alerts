@@ -10,7 +10,20 @@ groups:
         service: asa
         context: asa
         meta: "asa device `{{ $labels.devicename }}` CLUSTER-STATE is DEGRADED. Immediate device check required."
-        playbook: 'docs/devops/alert/network/asa.html#asa_cluster_degraded'
+        playbook: '/docs/devops/alert/network/firewall.html#asa_cluster_degraded'
       annotations:
         description: "asa device `{{ $labels.devicename }}` CLUSTER-STATE is DEGRADED. Immediate device check required."
         summary: "asa device `{{ $labels.devicename }}` CLUSTER-STATE is DEGRADED. Immediate device check required."
+
+    - alert: NetworkASACpuUsage
+      expr: max(snmp_asa_cpmCPUTotal1minRev{devicename=~".*ASA....$"}) by (devicename) > 80
+      for: 5m
+      labels:
+        severity: info
+        tier: net
+        service: asa
+        context: asa
+        meta: "asa device `{{ $labels.devicename }}` is running on high CPU utilisation."
+      annotations:
+        description: "asa device `{{ $labels.devicename }}` is running on high CPU utilisation."
+        summary: "asa device `{{ $labels.devicename }}` is running on high CPU utilisation."

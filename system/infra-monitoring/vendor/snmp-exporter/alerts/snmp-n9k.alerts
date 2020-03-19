@@ -105,15 +105,41 @@ groups:
       description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
       summary: 'N9K acileaf interface Out error rate check'
 
-  - alert: ApicPhysicalInterfaceResets
-    expr: sum(resets(({__name__=~"snmp_(ipn|acispine|acileaf)_sysUpTime"} - on (server_id) group_right(server_name, interface) ({__name__=~"snmp_(ipn|acispine|acileaf)_ifLastChange"}))[5m:]))by (module,devicename,ifDescr) > 2
+  - alert: NetworkAciSpineInterfaceResets
+    expr: sum(resets(({__name__=~"snmp_acispine_sysUpTime"} - on (server_id) group_right(server_name, interface) ({__name__=~"snmp_acispine_ifLastChange"}))[5m:]))by (module,devicename,ifDescr) > 2
     labels:
-      severity: warning
+      severity: critical
       tier: net
-      service: apic
-      context: apic_physical_interface_resets
+      service: aci
+      context: aci_spine_interface_resets
       playbook: docs/devops/alert/network/aci.html#interface_reset
-      meta: "`{{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
+      meta: "`ACI spine {{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
     annotations:
-      description: "`{{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
-      summary: 'Network interfce reset check'
+      description: "`Aci spine {{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
+      summary: 'ACI spine interface reset check'
+
+  - alert: NetworkAciLeafInterfaceResets
+    expr: sum(resets(({__name__=~"snmp_acileaf_sysUpTime"} - on (server_id) group_right(server_name, interface) ({__name__=~"snmp_acileaf_ifLastChange"}))[5m:]))by (module,devicename,ifDescr) > 2
+    labels:
+      severity: critical
+      tier: net
+      service: aci
+      context: aci_leaf_interface_resets
+      playbook: docs/devops/alert/network/aci.html#interface_reset
+      meta: "`ACI leaf {{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
+    annotations:
+      description: "`Aci leaf {{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
+      summary: 'ACI leaf interface reset check'
+
+  - alert: NetworkAciIpnInterfaceResets
+    expr: sum(resets(({__name__=~"snmp_ipn_sysUpTime"} - on (server_id) group_right(server_name, interface) ({__name__=~"snmp_ipn_ifLastChange"}))[5m:]))by (module,devicename,ifDescr) > 2
+    labels:
+      severity: critical
+      tier: net
+      service: aci
+      context: aci_ipn_interface_resets
+      playbook: docs/devops/alert/network/aci.html#interface_reset
+      meta: "`ACI ipn {{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
+    annotations:
+      description: "`Aci ipn {{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
+      summary: 'ACI ipn interface reset check'
