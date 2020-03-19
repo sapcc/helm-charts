@@ -1,7 +1,7 @@
 groups:
 - name: metal-esxi.alerts
   rules:      
-  - alert: MetalESXiSensorWarning
+  - alert: MetalESXiSensorWarn
     expr: count(ipmi_sensor_state{job="vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot)"} == 2) by (server_name, type, exported_name, manufacturer, model, server_id)
     for: 10m
     labels:
@@ -15,11 +15,11 @@ groups:
       description: "ESXi Host {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
-  - alert: MetalESXiMemoryInfo
+  - alert: MetalESXiMemoryWarn
     expr: sum(ipmi_memory_errors{job="vmware-esxi"} > 16000) by (server_name, exported_name, manufacturer, model, server_id, serial)
     for: 30m
     labels:
-      severity: info
+      severity: warning
       tier: vpod
       service: baremetal
       context: "{{ $labels.server_name }}"
