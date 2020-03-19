@@ -554,10 +554,9 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   static_configs:
-      - targets :
-        - bm-cablecheck-exporter:9100
+    - targets : ['bm-cablecheck-exporter:9100']
   metrics_path: /
-  relabel_conigs:
+  relabel_configs:
     - source_labels: [job]
       regex: bm-cablecheck-exporter 
       action: keep
