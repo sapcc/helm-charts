@@ -32,19 +32,23 @@ cd /root/helm-charts/system/infra-monitoring/vendor/snmp-exporter/generator/
 
 for i in $modules;
 
-do
-    cp -f ./${i}-generator.yaml ./generator.yml
-        /gopath/bin/generator generate
-                echo "##############################################"
-                echo "############### config for ${i} ##############"
-                echo "##############################################"
+  do
+        cp -f ./${i}-generator.yaml ./generator.yml
+        echo "##############################################"
+        echo "############### config for ${i} ##############"
+        echo "##############################################"
+ 
+        /gopath/bin/generator generate || exit
+
+
         mv -f ./snmp.yml ./_snmp-exporter-${i}.yaml.tmp
         rm -d ./generator.yml
+
         if test -f "${i}-additional-oids.yaml"; then
             awk -v f=$i '{ print; } /walk:/ { system ( "cat "f"-additional-oids.yaml" ) } \' _snmp-exporter-${i}.yaml.tmp  > ../_snmp-exporter-${i}.yaml
         else
             mv -f ./_snmp-exporter-${i}.yaml.tmp ../_snmp-exporter-${i}.yaml
-    fi
+        fi
  
         if [[ "$i" =~ ^(f5mgmt|f5physical|f5customer)$ ]]; then
             sed -i "s/- name: /- name: snmp_f5_/g" ../_snmp-exporter-${i}.yaml
