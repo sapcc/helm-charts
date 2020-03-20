@@ -243,7 +243,7 @@
       target_label: image_version
     - source_labels: [__name__, snmp_acispine_sysDescr]
       regex: 'snmp_acispine_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
-      replacement: '$3_$4'
+      replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_asr_sysDescr]
       regex: 'snmp_asr_sysDescr;(?s)(.*)(Version )([0-9().a-zIU:]*)(, )?(CUST-SPECIAL:)?([A-Z0-9_]*)?(.*)'
@@ -508,6 +508,23 @@
       - {{ . }}
       {{- end }}
   scheme: https
+{{- end }}
+
+#normal scrape intervals are too frequent, that's why we only occasionally want to query here.
+{{- $values := .Values.bm_cablecheck_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'bm-cablecheck-exporter'
+  params:
+    job: [bm-cablecheck-exporter]
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  static_configs:
+    - targets : ['bm-cablecheck-exporter:9100']
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: bm-cablecheck-exporter
+      action: keep
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
