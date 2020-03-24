@@ -4,6 +4,7 @@ groups:
   - alert: {{ include "alerts.service" . | title }}RabbitMQRPCUnackTotal
     expr: sum(rabbitmq_queue_messages_unacknowledged{app=~"{{ include "alerts.service" . }}-rabbitmq"}) by (app) > {{ .Values.alerts.rabbit_queue_length | default 1000 }}
     labels:
+      for: {{ .Values.alerts.unacknowledged_total_wait_for | default "1m" }}
       severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       service:  {{ include "alerts.service" . }}
