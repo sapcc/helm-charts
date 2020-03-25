@@ -275,13 +275,13 @@
       replacement: '$2'
       target_label: device
     - source_labels: [__name__, cucsEtherErrStatsDn]
-      regex: 'snmp_ucs_cucsEtherErrStats.+;.+(switch-ether).(port)-([0-4]|[7-9]|\d{2}).+'
+      regex: 'snmp_ucs_cucsEtherErrStats.+;.+(port)-([0-4]|[7-9]|\d{2}).+'
       action: drop
     - source_labels: [__name__, cucsEtherErrStatsDn]
       regex: 'snmp_ucs_cucsEtherErrStats.+;^(fabric).(lan).+'
       action: drop
     - source_labels: [__name__, cucsEtherErrStatsDn]
-      regex: 'snmp_ucs_cucsFcErrStats.+;.+(switch-fc).(port)-([3-9]|\d{2}).+'
+      regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
 {{- end }}
 
