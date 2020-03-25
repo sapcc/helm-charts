@@ -278,7 +278,7 @@
       regex: 'snmp_ucs_cucsEtherErrStats.+;.+(port)-([0-4]|[7-9]|\d{2}).+'
       action: drop
     - source_labels: [__name__, cucsEtherErrStatsDn]
-      regex: 'snmp_ucs_cucsEtherErrStats.+;^(fabric).(lan).+'
+      regex: 'snmp_ucs_cucsEtherErrStats.+;.+(lan).+'
       action: drop
     - source_labels: [__name__, cucsEtherErrStatsDn]
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
