@@ -27,7 +27,7 @@ fi
 
 cd
 #git clone https://github.com/sapcc/helm-charts.git
-cd /root/helm-charts/system/infra-monitoring/vendor/snmp-exporter/generator/
+cd ./helm-charts/system/infra-monitoring/vendor/snmp-exporter/generator/
 
 
 for i in $modules;
