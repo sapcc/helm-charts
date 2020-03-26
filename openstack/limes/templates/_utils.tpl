@@ -5,9 +5,9 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
     {{- if typeIs "float64" .Values.limes.image_tag -}}
-      {{$.Values.limes.image}}:{{$.Values.limes.image_tag | printf "%0.f"}}
+      {{$.Values.global.registry}}/limes:{{$.Values.limes.image_tag | printf "%0.f"}}
     {{- else -}}
-      {{$.Values.limes.image}}:{{$.Values.limes.image_tag}}
+      {{$.Values.global.registry}}/limes:{{$.Values.limes.image_tag}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
