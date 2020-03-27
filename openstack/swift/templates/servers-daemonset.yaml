@@ -1,5 +1,9 @@
 kind: DaemonSet
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: swift-servers
@@ -11,6 +15,9 @@ spec:
   minReadySeconds: 60 # longer wait here to be extra sure that the new servers are operational
   updateStrategy:
     type: RollingUpdate
+  selector:
+    matchLabels:
+      component: swift-servers
   template:
     metadata:
       labels:
