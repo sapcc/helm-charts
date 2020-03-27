@@ -1,6 +1,10 @@
 {{ range $cluster_id, $config := .Values.limes.certs }}
 kind: Ingress
+{{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: limes-api-{{$cluster_id}}
