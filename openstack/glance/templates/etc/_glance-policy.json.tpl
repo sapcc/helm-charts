@@ -2,6 +2,7 @@
     "context_is_cloud_admin":  "role:cloud_image_admin",
     "context_is_admin":  "rule:context_is_cloud_admin",
     "default": "rule:context_is_admin",
+
     "add_image": "",
     "delete_image": "",
     "get_image": "",
@@ -46,5 +47,9 @@
     "get_metadef_tags":"",
     "modify_metadef_tag":"",
     "add_metadef_tag":"",
-    "add_metadef_tags":""
+    "add_metadef_tags":"",
+
+    "pp:image_admin_only":"role:image_admin or role:cloud_image_admin",
+    "pp:image_viewer_only":"role:image_viewer or role:image_admin"
 }
+
