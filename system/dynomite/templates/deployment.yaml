@@ -1,11 +1,18 @@
 {{- range $index, $member := .Values.dynomite.member }}
 kind: Deployment
+{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 metadata:
   name: {{ printf "%s-%d" "dynomite" $index }}
   labels:
     release: "{{ $.Release.Name }}"
 spec:
+  selector:
+    matchLabels:
+      app: {{ printf "%s-%d" "dynomite" $index }}
   revisionHistoryLimit: 3
   strategy:
     type: Recreate
