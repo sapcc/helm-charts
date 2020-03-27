@@ -76,8 +76,8 @@
   "os_load-balancer_api:quota:get_all": "rule:context_is_viewer-quota",
   "os_load-balancer_api:quota:get_all-global": "rule:context_is_viewer-quota-global",
   "os_load-balancer_api:quota:get_one": "rule:context_is_viewer-quota",
-  "os_load-balancer_api:quota:put": "rule:context_is_editor-quota",
-  "os_load-balancer_api:quota:delete": "rule:context_is_editor-quota",
+  "os_load-balancer_api:quota:put": "role:resource_service",
+  "os_load-balancer_api:quota:delete": "role:resource_service",
   "os_load-balancer_api:quota:get_defaults": "rule:context_is_viewer-quota",
 
   "os_load-balancer_api:amphora:get_all": "rule:context_is_load-balancer_admin",
