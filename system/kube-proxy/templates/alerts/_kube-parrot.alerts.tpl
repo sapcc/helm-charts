@@ -5,7 +5,7 @@ groups:
     ### Kube Parrot ###
 
     - alert: KubeParrotBgpNeighborSessionDown
-      expr: sum by (node) (kube_parrot_bgp_neighbor_session_status{status="established"}) < 2
+      expr: sum by (node) (kube_parrot_bgp_neighbor_session_status{status="established"}) < {{ .Values.parrot.bgpNeighborCount }}
       for: 5m
       labels:
         tier: k8s
@@ -14,8 +14,8 @@ groups:
         context: availability
         playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor.html"
       annotations:
-        description: Node {{ $labels.node }} has less than 2 BGP neighbors. Network datapath threatened!
-        summary: Node {{ $labels.node }} has less than 2 BGP neighbors.
+        description: Node {{`{{ $labels.node }}`}} has less than {{ .Values.parrot.bgpNeighborCount }} BGP neighbors. Network datapath threatened!
+        summary: Node {{`{{ $labels.node }}`}} has less than {{ .Values.parrot.bgpNeighborCount }} BGP neighbors.
 
     - alert: KubeParrotBgpNeighborMissingRouteAdvertisement
       expr: sum by (node,neighbor) (kube_parrot_bgp_neighbor_advertised_route_count_total) < 1
@@ -27,5 +27,5 @@ groups:
         context: availability
         playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor.html"
       annotations:
-        description: Node {{ $labels.node }} is not advertising any prefixes to its BGP neighbors. Network datapath threatened!
-        summary: Node {{ $labels.node }} is not advertising any prefixes to its BGP neighbors.
+        description: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbors. Network datapath threatened!
+        summary: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbors.
