@@ -27,8 +27,6 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.json
-- name: CASTELLUM_SENTRY_DSN
-  valueFrom: { secretKeyRef: { name: sentry, key: castellum.DSN.public } }
 - name: CASTELLUM_RABBITMQ_URI
   value: "{{ .Values.castellum.rabbitmq.uri }}"
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
