@@ -24,7 +24,7 @@ max_overflow = -1
 {{- end }}
 
 {{- define "ini_sections.database_options_mysql" }}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
+max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 50 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 {{- end }}
 
