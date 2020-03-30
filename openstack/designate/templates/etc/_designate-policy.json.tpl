@@ -130,9 +130,9 @@
     "use_blacklisted_zone": "rule:context_is_dns_ops",
 
     "create_pool": "rule:admin",
-    "find_pools": "rule:admin",
-    "find_pool": "rule:admin",
-    "get_pool": "rule:admin",
+    "find_pools": "rule:context_is_dns_ops",
+    "find_pool": "rule:context_is_dns_ops",
+    "get_pool": "rule:context_is_dns_ops",
     "update_pool": "rule:admin",
     "delete_pool": "rule:admin",
     "zone_create_forced_pool": "rule:admin or role:cloud_dns_support or role:cloud_dns_ops or role:dns_zonemaster",
