@@ -178,21 +178,19 @@ groups:
           The `kubectl logs` for castellum-worker contain additional info.
         summary: Castellum cannot resize `{{$labels.asset}}` assets
 
-    - alert: OpenstackCastellumFailedAssetResizes
-      # This is only a fallback alert if reporting to Sentry is not working,
-      # hence the second half of the error expression.
-      expr: sum(increase(castellum_operation_state_transitions{to_state="failed"}[5m])) BY (asset) > 0 and absent(sentry_unresolved_issues_count{project="castellum"} > 0)
-      for: 30m
+    - alert: OpenstackCastellumAssetResizingFailing
+      expr: castellum_asset_resize_errors_gauge > 0
+      for: 5m
       labels:
         context: asset-resizing
         service: castellum
-        severity: info
+        severity: warning
         tier: os
+        playbook: 'docs/support/playbook/castellum/asset_resizing_failing.html'
         dashboard: castellum
+        meta: "Some asset resizes are failing!"
       annotations:
         description: |
-          Castellum encountered backend errors while resizing `{{$labels.asset}}` assets.
-          The `kubectl logs` for castellum-worker contain additional info.
-          This alert shows up because Sentry has not collected the exception correctly.
-          *Please have a look at the castellum-worker logs even after this alert resolves.*
+          Castellum encountered backend errors while resizing some assets.
+          Check https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors
         summary: Castellum encountered backend errors while resizing `{{$labels.asset}}` assets

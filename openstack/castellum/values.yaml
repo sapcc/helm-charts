@@ -115,3 +115,18 @@ pgmetrics:
         - gauge:
             usage: "GAUGE"
             description: "Total number of assets that failed their last scrape"
+
+    castellum_asset_resize_errors:
+      query: >
+        WITH latest_finished_operations AS (
+          SELECT DISTINCT ON (asset_id) o.* FROM finished_operations o
+            JOIN assets a ON a.id = o.asset_id
+          ORDER BY o.asset_id, o.finished_at DESC
+        )
+        SELECT COUNT(asset_id) as gauge
+          FROM latest_finished_operations
+         WHERE outcome = 'errored'
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total number of assets that failed their last resize"
