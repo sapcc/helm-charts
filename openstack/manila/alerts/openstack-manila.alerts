@@ -153,8 +153,24 @@ groups:
       description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'
 
+  - alert: OpenstackManilaCanaryMountShareDown
+    expr: blackbox_canary_status_gauge{service=~"manila", check=~"mount_share-.+"} == 1
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_share'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
+
   - alert: OpenstackManilaCanaryDown
-    expr: blackbox_canary_status_gauge{service=~"manila"} == 1
+    expr: blackbox_canary_status_gauge{service=~"manila", check!~"mount_share-.+"} == 1
     for: 1h
     labels:
       severity: warning
@@ -169,8 +185,24 @@ groups:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
 
+  - alert: OpenstackManilaCanaryMountShareTimeout
+    expr: blackbox_canary_status_gauge{service=~"manila", check=~"mount_share-.+"} == 0.5
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_share'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
+
   - alert: OpenstackManilaCanaryTimeout
-    expr: blackbox_canary_status_gauge{service=~"manila"} == 0.5
+    expr: blackbox_canary_status_gauge{service=~"manila", check!~"mount_share-.+"} == 0.5
     for: 1h
     labels:
       severity: info
@@ -185,8 +217,39 @@ groups:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
 
+  - alert: OpenstackManilaCanaryMountSharePrepFails
+    expr: blackbox_canary_status_gauge{service=~"manila", check=~"mount_share-.+"} == 0.4
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} test preparation is broken for 1 hour. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_share'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} test preparation is broken for 1 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} test preparation is broken'
+
+  - alert: OpenstackManilaCanaryMountShareFlapping
+    expr: changes(blackbox_canary_status_gauge{service=~"manila", check=~"mount_share-.+"}[2h]) > 8
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_mount_share'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
+
   - alert: OpenstackManilaCanaryFlapping
-    expr: changes(blackbox_canary_status_gauge{service=~"manila"}[2h]) > 8
+    expr: changes(blackbox_canary_status_gauge{service=~"manila", check!~"mount_share-.+"}[2h]) > 8
     labels:
       severity: warning
       tier: os
