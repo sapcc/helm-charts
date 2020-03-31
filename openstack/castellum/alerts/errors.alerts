@@ -124,12 +124,13 @@ groups:
       annotations:
         description: |
           Some `{{ $labels.asset }}` assets are older than 15 minutes, even though they should be scraping every 5 minutes.
-          It looks like the asset scraping is taking too long.
-          The `kubectl logs` for castellum-observer may contain more information.
+          It looks like the asset scraping are either taking too long or failing entirely.
+          In the latter case, check https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors
         summary: "`{{ $labels.asset }}` asset scrapes are taking too long"
+
     - alert: OpenstackCastellumAssetScrapingFailing
-      expr: (max by (asset) (time() - castellum_asset_min_scraped_at)) / 60 >= 45
-      for: 3m
+      expr: castellum_asset_scrape_errors_gauge > 0
+      for: 5m
       labels:
         context: asset-scraping
         service: castellum
@@ -137,13 +138,12 @@ groups:
         tier: os
         dashboard: castellum
         playbook: 'docs/support/playbook/castellum/asset_scraping_failing.html'
-        meta: "Some {{ $labels.asset }} asset scrapes are failing - Check castellum-observer log!"
+        meta: "Some asset scrapes are failing!"
       annotations:
         description: |
-          Some `{{ $labels.asset }}` assets are older than 15 minutes, even though they should be scraped every 5 minutes.
-          It looks like asset scrapes are failing because of backend errors.
-          The `kubectl logs` for castellum-observer contain more information.
-        summary: "`{{ $labels.asset }}` assets are not getting scraped"
+          Some assets failed to scrape.
+          Check https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors
+        summary: "Asset scrapes are failing!"
 
     ############################################################################
     # alerts concerning asset resizing in castellum-worker

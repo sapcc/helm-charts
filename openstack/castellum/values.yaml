@@ -84,7 +84,7 @@ pgmetrics:
             description: "Lowest checked_at timestamp of any project resource with this asset type"
     castellum_asset:
       query: >
-        SELECT r.asset_type AS asset, MIN(a.checked_at) AS min_checked_at, MIN(a.scraped_at) AS min_scraped_at
+        SELECT r.asset_type AS asset, MIN(a.checked_at) AS min_checked_at
           FROM resources r
           JOIN assets a ON a.resource_id = r.id
           GROUP BY r.asset_type
@@ -95,9 +95,7 @@ pgmetrics:
         - min_checked_at:
             usage: "GAUGE"
             description: "Lowest checked_at timestamp of any asset with this type"
-        - min_scraped_at:
-            usage: "GAUGE"
-            description: "Lowest scraped_at timestamp of any asset with this type"
+
     castellum_resource_scrape_errors:
       query: >
         SELECT COUNT(id) as gauge
@@ -107,3 +105,13 @@ pgmetrics:
         - gauge:
             usage: "GAUGE"
             description: "Total number of resources that failed their last scrape"
+
+    castellum_asset_scrape_errors:
+      query: >
+        SELECT COUNT(id) as gauge
+          FROM assets
+         WHERE scrape_error_message != ''
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total number of assets that failed their last scrape"
