@@ -54,8 +54,8 @@ groups:
 
     # Resources should be scraped every 30 minutes. We give some extra margin of
     # 15 minutes for the scrape to take place, and alert after 45 minutes.
-    - alert: OpenstackCastellumResourcesNotScraped
-      expr: (max by (asset) (time() - castellum_resource_min_scraped_at)) / 60 >= 45
+    - alert: OpenstackCastellumResourceScrapingDelayed
+      expr: (max by (asset) (time() - castellum_resource_min_checked_at)) / 60 >= 45
       for: 3m
       labels:
         context: resource-scraping
@@ -63,13 +63,30 @@ groups:
         severity: info
         tier: os
         dashboard: castellum
-        meta: "Some {{ $labels.asset }} resources not scraped - Check castellum-observer log!"
+        meta: "Some {{ $labels.asset }} resource scrapes are taking too long - Check castellum-observer log!"
       annotations:
         description: |
           Some `{{ $labels.asset }}` resources are older than 45 minutes, even though they should be scraped every 30 minutes.
           The scrapes are either taking too long or failing entirely.
-          In the latter case, the `kubectl logs` for castellum-observer contains more information.
-        summary: "`{{ $labels.asset }}` resources are not getting scraped"
+          In the latter case, check https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/resource-scrape-errors
+        summary: "`{{ $labels.asset }}` resources scrapes are taking too long"
+
+    - alert: OpenstackCastellumResourceScrapingFailing
+      expr: castellum_resource_scrape_errors_gauge > 0
+      for: 5m
+      labels:
+        context: resource-scraping
+        service: castellum
+        severity: warning
+        tier: os
+        dashboard: castellum
+        playbook: 'docs/support/playbook/castellum/resource_scraping_failing.html'
+        meta: "Some resource scrapes are failing!"
+      annotations:
+        description: |
+          Some resources failed to scrape.
+          Check https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/resource-scrape-errors
+        summary: "Resource scrapes are failing!"
 
     ############################################################################
     # alerts concerning asset scraping in castellum-observer
