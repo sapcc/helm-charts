@@ -1,6 +1,10 @@
 {{- if .Values.ingress.enabled }}
-apiVersion: extensions/v1beta1
 kind: Ingress
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: {{ include "alertmanager.fullname" . }}

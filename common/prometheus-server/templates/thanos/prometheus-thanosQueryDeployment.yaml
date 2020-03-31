@@ -1,6 +1,11 @@
 {{- if .Values.thanos.enabled }}
-apiVersion: apps/v1beta2
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: apps/v1beta2
+{{- end }}
+
 metadata:
   name: {{ include "prometheus.fullName" . }}-thanos-query
   labels:
