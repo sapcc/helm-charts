@@ -41,6 +41,9 @@ template: |
         - name: cinder-volume-vmware-{= name =}
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add: ["SYS_ADMIN"]
           command:
           - dumb-init
           - kubernetes-entrypoint
