@@ -17,6 +17,7 @@ allow_resize_to_same_host = true
 always_resize_on_same_host = {{ .Values.always_resize_on_same_host | default false }}
 
 enable_new_services = {{ .Values.enable_new_services | default .Release.IsInstall }}
+service_down_time = {{ .Values.service_down_time | default 60 }}
 
 osapi_compute_link_prefix=https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
 memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
