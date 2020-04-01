@@ -708,6 +708,145 @@ spec:
             periodSeconds: 15
             initialDelaySeconds: 15
 
+        - name: kubernikus
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - {{ .Values.serial.timeout.global | printf "--timeout %.0f" | quote }}
+            - "--disable-pytest-warnings"
+            - "--duration=0"
+            - "-r ap"
+            - "-m \"canary and kubernikus\""
+            - "tests"
+          volumeMounts:
+            - name: blackbox-tests-canary
+              mountPath: /opt/logs
+              readOnly: false
+            - name: blackbox-jump-key
+              mountPath: /opt/keys
+              readOnly: true
+          env:
+            - name: PYTHONHASHSEED
+              value: "0"
+            - name: OS_AUTH_URL
+              value: {{ .Values.global.openstack.auth_url | quote }}
+            - name: OS_IDENTITY_API_VERSION
+              value: {{ .Values.global.openstack.identity_api_version | quote }}
+            - name: OS_VOLUME_API_VERSION
+              value: {{ .Values.global.openstack.volume_api_version | quote }}
+            - name: OS_USERNAME
+              value: {{ .Values.global.openstack.users.admin.username | quote }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.user_domain_name | quote }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.global.openstack.users.admin.project_name | quote }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.project_domain_name | quote }}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.openstack.region_name | quote }}
+            - name: CC_USERNAME
+              value: {{ .Values.global.openstack.users.ccadmin.username | quote }}
+            - name: CC_USER_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.ccadmin.user_domain_name | quote }}
+            - name: CC_PROJECT_NAME
+              value: {{ .Values.global.openstack.users.ccadmin.project_name | quote }}
+            - name: CC_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.ccadmin.project_domain_name | quote }}
+            - name: JUMP_URL
+              value: {{ .Values.global.jump.url | quote }}
+            - name: JUMP_USER
+              value: {{ .Values.global.jump.user | quote }}
+            - name: VC_USERNAME
+              value: {{ .Values.global.vcenter.username | quote }}
+            - name: STATSD_HOST
+              value: {{ .Values.statsd.host | quote }}
+            - name: STATSD_PORT
+              value: {{ .Values.statsd.port | quote }}
+            - name: STATSD_PREFIX
+              value: {{ .Values.statsd.prefix | quote }}
+            - name: CANARY_PROJECT_ID
+              value: {{ .Values.project_id | quote }}
+            - name: CANARY_PROJECT_NAME
+              value: {{ .Values.project_name | quote }}
+            - name: CANARY_PROJECT_DOMAIN
+              value: {{ .Values.project_domain | quote }}
+            - name: CANARY_JUMP_HOST_FLOAT_IPS
+              value: {{ .Values.jump_host_ips | quote }}
+            - name: CANARY_IMAGE_NAME
+              value: {{ .Values.image_name | quote }}
+            - name: CANARY_FLAVOR_ID
+              value: {{ .Values.flavor_id | quote }}
+            - name: CANARY_AVAILABILITY_ZONES
+              value: {{ .Values.availability_zones | quote }}
+            - name: CANARY_FIXED_NETWORK_ID
+              value: {{ .Values.fixed_network_id | quote }}
+            - name: CANARY_FLOATIP_NETWORK_ID
+              value: {{ .Values.floatip_network_id | quote }}
+            - name: CANARY_AUTOMATION_ID
+              value: {{ .Values.automation_id | quote }}
+            - name: CANARY_DNS_ZONE_NAME
+              value: {{ .Values.dns_zone_name | quote }}
+            - name: CANARY_FS_AVAILABILITY_ZONES
+              value: {{ .Values.fs_availability_zones | quote }}
+            - name: CANARY_CINDER_AVAILABILITY_ZONES
+              value: {{ .Values.cinder.availability_zones | quote }}
+            - name: CANARY_CINDER_BLOCK_COUNT
+              value: {{ .Values.cinder.block_count | quote }}
+            - name: CANARY_CINDER_DD_TIMEOUT
+              value: {{ .Values.cinder.dd_timeout | quote }}
+            - name: TIMEOUT
+              value: {{ .Values.serial.timeout.atomic | quote }}
+            - name: SLEEP_ITERATE
+              value: {{ .Values.serial.iterator.sleep | quote }}
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-canary
+                  key: os.password
+            - name: CC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-canary
+                  key: cc.password
+            - name: VC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-canary
+                  key: vc.password
+{{- if .Values.osprofiler  }}
+            - name: OS_PROFILER_HMACS
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-canary
+                  key: os.profiler.hmacs
+{{- end }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: blackbox.DSN
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
         - name: serial
 {{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
           image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
