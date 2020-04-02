@@ -19,10 +19,6 @@ spec:
       labels:
         app: {{ include "infraMonitoring.name" . }}
         component: thousandeyes
-      annotations:
-        prometheus.io/scrape: {{ .Values.metrics.scrape | quote }}
-        prometheus.io/port: {{ .Values.metrics.port | quote }}
-        prometheus.io/targets: {{ .Values.metrics.targets | quote }}
     spec:
       containers:
          - name: {{ include "infraMonitoring.name" . }}
@@ -33,7 +29,7 @@ spec:
                value: {{ .Values.basic_auth_user }}
              - name: THOUSANDEYES_BASIC_AUTH_TOKEN
                value: {{ .Values.basic_auth_token }}
-           args: ["-GetHTTP"]
+           args: ["-GetHTTP=true","-GetHttpMetrics=true"]
            ports:
              - name: metrics
                containerPort: {{ .Values.metrics.port}}
