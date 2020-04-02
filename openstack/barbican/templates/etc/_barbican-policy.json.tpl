@@ -7,7 +7,7 @@
     "key_admin": "role:keymanager_admin",
     "context_is_key_admin": "rule:context_is_admin or rule:key_admin",
     "context_is_editor": "rule:context_is_key_admin",
-    "context_is_viewer":  "rule:context_is_editor or rule:viewer or role:member",
+    "context_is_viewer":  "rule:context_is_editor or rule:viewer",
 
     "secret_project_match": "project_id:%(target.secret.project_id)s",
     "secret_acl_read": "'read':%(target.secret.read)s",
