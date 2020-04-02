@@ -34,9 +34,7 @@ spec:
         prometheus.io/port_1: "{{$context.Values.l2_port_metrics |  default 9102}}"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $context.Values.alerts.prometheus | quote }}
     spec:
-      {{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
       hostname:  {{ $config_agent.hostname }}
-      {{- end }}
       containers:
         - name: neutron-asr1k
           image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1k or similar"}}

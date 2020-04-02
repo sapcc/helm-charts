@@ -31,9 +31,7 @@ spec:
         prometheus.io/port: "8000"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
     spec:
-      {{- if ge $.Capabilities.KubeVersion.Minor "7" }}
       hostname: neutron-f5-{{ $lb.name }}
-      {{- end }}
       containers:
         - name: neutron-f5-agent
           image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{ $.Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
