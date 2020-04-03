@@ -10,10 +10,8 @@ metadata:
 {{- if .Values.service.labels }}
 {{ toYaml .Values.service.labels | indent 4}}
 {{- end }}
-{{- with .Values.service.annotations }}
   annotations:
-{{ toYaml . | indent 4 }}
-{{- end }}
+    parrot.sap.cc/announce: 'true'
 spec:
   type: {{ .Values.service.type }}
 {{- with .Values.service.loadBalancerSourceRanges }}
@@ -28,6 +26,7 @@ spec:
       protocol: TCP
       name: http
       targetPort: {{ .Values.httpPort }}
+  externalIPs: ["{{.Values.external_ip}}"]
   selector:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name | quote }}
