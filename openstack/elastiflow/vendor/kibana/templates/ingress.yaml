@@ -15,10 +15,9 @@ metadata:
 {{ toYaml . | indent 4 }}
 {{- end }}
 spec:
-{{- if .Values.ingress.tls }}
   tls:
-{{ toYaml .Values.ingress.tls | indent 4 }}
-{{- end }}
+    - secretName: elastiflow-kibana
+      hosts: [{{ required ".Values.ingress.endpoint_host_public variable missing" .Values.ingress.endpoint_host_public }}]
   rules:
   {{- range .Values.ingress.hosts }}
     - host: {{ . }}
