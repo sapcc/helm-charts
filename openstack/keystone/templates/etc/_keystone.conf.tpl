@@ -35,9 +35,11 @@ methods = {{ .Values.api.auth.methods | default "password,token,application_cred
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
 {{- end }}
 
-{{ if .Values.global.api.cc_password }}
+{{- if hasKey .Values.global "api"}}
+{{- if hasKey .Values.global.api "cc_password"}}
 [cc_password]
 url = {{ required "missing global.api.cc_password.url" .Values.global.api.cc_password.url }}
+{{- end }}
 {{- end }}
 
 [cc_x509]
