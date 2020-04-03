@@ -94,7 +94,7 @@
 
     "identity:ec2_get_credential": "user_id:%(user_id)s and user_id:%(target.credential.user_id)s",
     "identity:ec2_list_credentials": "user_id:%(user_id)s",
-    "identity:ec2_create_credential": "rule:cloud_admin or user_id:%(user_id)s",
+    "identity:ec2_create_credential": "(rule:cloud_admin or user_id:%(user_id)s) and project_id:%(project_id)s",
     "identity:ec2_delete_credential": "rule:cloud_admin or (user_id:%(user_id)s and user_id:%(target.credential.user_id)s)",
 
     "identity:get_role": "rule:admin_required or rule:cloud_viewer or role:role_admin or role:role_viewer",
