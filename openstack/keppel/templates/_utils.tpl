@@ -33,8 +33,8 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: 'keystone'
 - name:  KEPPEL_DRIVER_NAMECLAIM
   value: 'openstack-basic'
-- name:  KEPPEL_DRIVER_ORCHESTRATION
-  value: 'kubernetes'
+- name:  KEPPEL_DRIVER_RATELIMIT
+  value: 'basic'
 - name:  KEPPEL_DRIVER_STORAGE
   value: 'swift'
 - name:  KEPPEL_ISSUER_KEY
@@ -47,6 +47,16 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: '/etc/keppel/policy.json'
 - name:  KEPPEL_PEERS
   value: {{ $.Values.keppel.peer_hostnames | join "," | quote }}
+- name:  KEPPEL_RATELIMIT_BLOB_PULLS
+  value: '1000r/m' # per account
+- name:  KEPPEL_RATELIMIT_BLOB_PUSHES
+  value: '100r/m'  # per account
+- name:  KEPPEL_RATELIMIT_MANIFEST_PULLS
+  value: '100r/m'  # per account
+- name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
+  value: '10r/m'   # per account
+- name:  KEPPEL_REDIS_URI
+  value: 'redis://:{{$.Values.redis.redisPassword}}@{{.Release.Name}}-redis/1'
 - name:  OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name:  OS_AUTH_VERSION

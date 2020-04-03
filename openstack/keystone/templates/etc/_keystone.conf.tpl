@@ -35,6 +35,13 @@ methods = {{ .Values.api.auth.methods | default "password,token,application_cred
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
 {{- end }}
 
+{{- if hasKey .Values.global "api"}}
+{{- if hasKey .Values.global.api "cc_password"}}
+[cc_password]
+url = {{ required "missing global.api.cc_password.url" .Values.global.api.cc_password.url }}
+{{- end }}
+{{- end }}
+
 [cc_x509]
 trusted_issuer = CN=SSO_CA,O=SAP-AG,C=DE
 trusted_issuer = CN=SAP SSO CA G2,O=SAP SE,L=Walldorf,C=DE
