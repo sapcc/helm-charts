@@ -7,21 +7,18 @@ fi
 
 . /startup-scripts/functions.sh
 
-
-{{- $cluster_ips := "" }}
+{{- $current_region := .Values.global.region -}}
+{{- $cluster_ips := values .Values.service.percona.regions }}
 
 {{ range $region, $ip := .Values.service.percona.regions -}}
-
-{{ if eq .Values.global.region $region }}
-# the node IP is a service IP
+{{ if eq $region $current_region }}
+# the node IP is a K8s service IP
 ipaddr={{ $ip }}
 {{- end }}
-
-# the IP list of all nodes
-{{- $cluster_ips := (printf "%v,%v" $cluster_ips $ip) }}
 {{- end }}
 
-cluster_ips={{ $cluster_ips }}
+# Cluster IPs are all K8s service IPs
+cluster_ips="{{ include "helm-toolkit.utils.joinListWithComma" $cluster_ips }}"
 hostname=$(hostname)
 echo "I AM $hostname - $ipaddr"
 
@@ -48,7 +45,7 @@ touch /var/log/mysqld.log
 chown mysql:mysql /var/log/mysqld.log
 write_password_file
 exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_name=$hostname \
---wsrep_cluster_address="gcomm://$cluster_ips" --wsrep_sst_method=xtrabackup-v2 \
+--wsrep_cluster_address="gcomm://{{ include "helm-toolkit.utils.joinListWithComma" $cluster_ips }}" --wsrep_sst_method=xtrabackup-v2 \
 --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
 --wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" $CMDARG
 

@@ -7,6 +7,7 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
+  podManagementPolicy: Parallel
   replicas: {{ .Values.replicas | default 1 }}
   selector:
     matchLabels:
@@ -51,7 +52,7 @@ spec:
         - "-fr"
         - "/var/lib/mysql/lost+found"
         volumeMounts:
-        - name: mysql-data
+        - name: "{{ .Values.persistence.claimName }}"
           mountPath: /var/lib/mysql
       containers:
       - name: database

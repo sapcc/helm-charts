@@ -12,12 +12,13 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   type: ClusterIP
+{{ $current_region := .Values.global.region }}
+{{ range $region, $ip := .Values.service.percona.regions }}
+{{ if eq $region $current_region }}
   externalIPs:
-{{- range $region, $ip := .Values.service.percona.regions -}}
-{{- if eq .Values.global.region $region -}}
-  - {{ $ip }}
-{{- end }}
-{{- end }}
+    - {{ $ip }}
+{{ end }}
+{{ end }}
   ports:
   - name: galera
     port: 4567
