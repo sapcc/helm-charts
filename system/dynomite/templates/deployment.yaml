@@ -92,7 +92,7 @@ spec:
               value: {{ $member | include "dynomite.ip" }}
             {{- if eq $.Values.dynomite.recover "warmup" }}
             - name: WARMUP_PEER
-              value: {{ tuple $member $.Values.dynomite.foreign_member | include "dynomite.token_peers" }}
+              value: {{ required "WARMUP_PEER required" (tuple ( default "" $.Values.dynomite.warmup_rack ) $member $.Values.dynomite.foreign_member | include "dynomite.token_peer" ) }}
             - name: WARMUP_ALLOWED_DIFF
               value: "10"
             {{- end }}
