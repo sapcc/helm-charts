@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "infraMonitoring.name" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ include "infraMonitoring.name" . }}
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        imagePullPolicy: IfNotPresent
+        command: ["python", "/opt/exporter.py"]
+        args: ["--switch-pw", "{{ .Values.neutron-vendor.credential_1_password }}", "--region={{ .Values.global.region }}", "--sendtoswift=True", "--sendtoslack=True"]
+        restartPolicy: OnFailure
+        ports:
+          - containerPort: 9100
