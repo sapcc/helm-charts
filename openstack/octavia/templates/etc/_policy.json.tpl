@@ -60,17 +60,17 @@
     "os_load-balancer_api:loadbalancer:put_failover": "rule:context_is_loadbalancer_admin",
 
     "os_load-balancer_api:member:get_all": "rule:context_is_viewer",
-    "os_load-balancer_api:member:post": "rule:context_is_editor",
+    "os_load-balancer_api:member:post": "rule:context_is_editor or rule:memberadmin",
     "os_load-balancer_api:member:get_one": "rule:context_is_viewer",
-    "os_load-balancer_api:member:put": "rule:context_is_editor",
-    "os_load-balancer_api:member:delete": "rule:context_is_editor",
+    "os_load-balancer_api:member:put": "rule:context_is_editor or rule:memberadmin",
+    "os_load-balancer_api:member:delete": "rule:context_is_editor or rule:memberadmin",
 
     "os_load-balancer_api:pool:get_all": "rule:context_is_viewer",
     "os_load-balancer_api:pool:get_all-global": "rule:context_is_editor",
     "os_load-balancer_api:pool:post": "rule:context_is_editor",
     "os_load-balancer_api:pool:get_one": "rule:context_is_viewer",
     "os_load-balancer_api:pool:put": "rule:context_is_editor",
-    "os_load-balancer_api:pool:delete": "rule:context_is_editor or rule:memberadmin",
+    "os_load-balancer_api:pool:delete": "rule:context_is_editor",
 
     "os_load-balancer_api:provider:get_all": "rule:context_is_viewer",
 
