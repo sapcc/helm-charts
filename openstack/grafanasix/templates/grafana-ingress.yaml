@@ -1,6 +1,10 @@
 {{- if .Values.ingress.enabled }}
-apiVersion: extensions/v1beta1
 kind: Ingress
+{{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: grafana
@@ -27,8 +31,12 @@ spec:
             servicePort: {{.Values.grafana.endpoint.port.public}}
 {{- if .Values.ingress.global }}
 --- 
-apiVersion: extensions/v1beta1
 kind: Ingress
+{{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: grafana-global
