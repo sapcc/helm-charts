@@ -283,6 +283,27 @@
     - source_labels: [__name__, cucsFcErrStatsDn]
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
+    - source_labels: [__name__, type]
+      regex: '^thousandeyes_test_html_.+;(.+)-(.+)'
+      replacement: '$1'
+      target_label: ptype
+    - source_labels: [__name__, type]
+      regex: '^thousandeyes_test_html_.+;(.+)-(.+)'
+      replacement: '$2'
+      target_label: probed_to_type
+    - source_labels: [__name__, test_name]
+      regex: '^thousandeyes_test_html_.+;([0-9A-Z-]*)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*'
+      replacement: '$1'
+      target_label: probed_to
+    - source_labels: [__name__, test_name]
+      regex: '^thousandeyes_test_html_.+;([0-9A-Z-]*)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*'
+      replacement: '$2'
+      target_label: dst
+    - source_labels: [__name__, agent_name, country]
+      regex: '^thousandeyes_test_html_.+;(.+),\s(\w*)\s*(.*);(.+)'
+      separator: ','
+      replacement: '$1', '$4'
+      target_label: probed_from
 {{- end }}
 
 {{- $values := .Values.bios_exporter -}}
