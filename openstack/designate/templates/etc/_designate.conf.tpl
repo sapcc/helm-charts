@@ -82,7 +82,7 @@ rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 #-----------------------
 [service:central]
 # Number of central worker processes to spawn
-#workers = None
+workers = 2
 
 # Number of central greenthreads to spawn
 #threads = 1000
