@@ -13,7 +13,7 @@ groups:
       severity: warning
       context: node
       meta: "High CPU usage on {{`{{ $labels.node }}`}}"
-      dashboard: nodes?var-server={{`{{$labels.node}}`}}
+      dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
       playbook: docs/support/playbook/kubernetes/k8s_node_host_high_cpu_usage.html
     annotations:
       summary: High load on node
