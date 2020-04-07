@@ -76,7 +76,7 @@
       - '{__name__=~"^pxcloudprober_.+"}'
       - '{__name__=~"^vrops_datastore_stats",vccluster=~".+",datastore!~"node.*"}'
       - '{__name__=~"^cablecheck_error_status"}'
-
+      - '{__name__=~"^cablecheck_error_status_vpods"}'
 
   relabel_configs:
     - action: replace
