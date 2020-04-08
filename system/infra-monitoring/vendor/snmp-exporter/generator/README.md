@@ -16,7 +16,7 @@ docker run -v ~/github.com/sapcc/helm-charts:/root/helm-charts -ti hub.global.cl
 
 or
 
-docker run -v ~/github.com/sapcc/helm-charts:/root/helm-charts -ti hub.global.cloud.sap/monsoon/snmp-exporter-generator:lastest /start.sh <module>
+docker run -v ~/github.com/sapcc/helm-charts:/root/helm-charts -ti hub.global.cloud.sap/monsoon/snmp-exporter-generator:latest /start.sh <module>
 
 
 ```
