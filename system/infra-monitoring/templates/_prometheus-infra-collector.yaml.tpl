@@ -125,7 +125,7 @@
       target_label: dst
     - source_labels: [__name__, agent_name, country]
       regex: '^thousandeyes_test_html_.+;(.+),\s(\w*)\s*(.*);(.+)'
-      replacement: '$1, $4'
+      replacement: '$4, $1'
       target_label: probed_from
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
