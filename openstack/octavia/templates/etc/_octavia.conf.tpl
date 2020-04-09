@@ -34,7 +34,7 @@ heartbeat_key = unused
 health_check_interval = 30
 
 [networking]
-f5_network_segment_physical_network = cp090
+f5_network_segment_physical_network = {{ required "A valid .Values.network_segment_physical_network required!" .Values.network_segment_physical_network }}
 
 [database]
 connection = {{ include "db_url_mysql" . }}
