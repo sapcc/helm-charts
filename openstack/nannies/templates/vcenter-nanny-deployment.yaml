@@ -1,14 +1,18 @@
 {{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
 {{- if .Values.vcenter_nanny.enabled }}
-apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
+apiVersion: vcenter-operator.stable.sap.cc/v1
 metadata:
   name: 'vcenter-datacenter-nanny-deployment'
 options:
   scope: 'datacenter'
 template: |{{`
   kind: Deployment
+  {{- if .Capabilities.APIVersions.Has "apps/v1" }}
+  apiVersion: apps/v1
+  {{- else }}
   apiVersion: extensions/v1beta1
+  {{- end }}
   metadata:
     name: vcenter-nanny-{{ name }}
     namespace: monsoon3

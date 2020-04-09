@@ -1,7 +1,11 @@
 {{- if .Values.cinder_nanny.enabled }}
 {{- if or .Values.cinder_nanny.db_purge.enabled .Values.cinder_nanny.quota_sync.enabled .Values.cinder_nanny.db_cleanup.enabled }}
-apiVersion: extensions/v1beta1
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
 metadata:
   name: cinder-nanny
   namespace: monsoon3

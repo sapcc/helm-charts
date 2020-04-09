@@ -82,7 +82,7 @@ rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 #-----------------------
 [service:central]
 # Number of central worker processes to spawn
-#workers = None
+workers = 2
 
 # Number of central greenthreads to spawn
 #threads = 1000
@@ -331,7 +331,7 @@ query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 enabled = {{.Values.worker_enabled}}
 
 # Number of Worker processes to spawn
-workers = 1
+workers = 2
 
 # Number of Worker greenthreads to spawn
 threads = 1000
@@ -352,7 +352,7 @@ poll_retry_interval = {{.Values.worker_poll_retry_interval}}
 poll_max_retries = {{.Values.worker_poll_max_retries}}
 
 # The time to wait before sending the first request to a server
-#poll_delay = 5
+poll_delay = 3
 
 # Whether to allow worker to send NOTIFYs. NOTIFY requests to mdns will noop
 notify = {{ .Values.worker_notify }}

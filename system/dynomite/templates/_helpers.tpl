@@ -34,17 +34,22 @@
 {{ (split ":" .)._4 }}
 {{- end -}}
 
-{{- define "dynomite.token_peers" -}}
-{{- $member := index . 0 -}}
-{{- $foreign_member := index . 1 -}}
+{{- define "dynomite.token_peer" -}}
+{{- $warmup_rack := index . 0 -}}
+{{- $member := index . 1 -}}
+{{- $foreign_member := index . 2 -}}
 {{- $token := $member | include "dynomite.token" -}}
-{{- $peers := list -}}
+{{- $found := false }}
 {{- range $foreign_member -}}
   {{- $current_token := . | include "dynomite.token" -}}
+  {{- $current_rack := . | include "dynomite.rack" -}}
   {{- if eq $token $current_token -}}
-    {{- $current_ip := . | include "dynomite.ip" -}}
-    {{- $peers = append $peers $current_ip -}}
+    {{- if not $found -}}
+      {{- if or (not $warmup_rack) (eq $warmup_rack $current_rack) -}}
+        {{- . | include "dynomite.ip" -}}
+        {{- $found = true -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
-{{ first $peers }}
 {{- end -}}

@@ -107,6 +107,26 @@
       regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
       replacement: '$2'
       target_label: peer_id
+    - source_labels: [__name__, type]
+      regex: '^thousandeyes_test_html_.+;(.+)-(.+)'
+      replacement: '$1'
+      target_label: ptype
+    - source_labels: [__name__, type]
+      regex: '^thousandeyes_test_html_.+;(.+)-(.+)'
+      replacement: '$2'
+      target_label: probed_to_type
+    - source_labels: [__name__, test_name]
+      regex: '^thousandeyes_test_html_.+;([0-9A-Z-]*)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*'
+      replacement: '$1'
+      target_label: probed_to
+    - source_labels: [__name__, test_name]
+      regex: '^thousandeyes_test_html_.+;([0-9A-Z-]*)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*'
+      replacement: '$2'
+      target_label: dst
+    - source_labels: [__name__, agent_name, country]
+      regex: '^thousandeyes_test_html_.+;(.+),\s(\w*)\s*(.*);(.+)'
+      replacement: '$4, $1'
+      target_label: probed_from
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #

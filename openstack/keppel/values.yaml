@@ -32,6 +32,12 @@ redis:
 
   redisPassword: DEFINED_IN_VALUES_FILE
 
+  # evict unused keys automatically
+  config:
+    maxmemory: 1gb
+    maxmemory-policy: allkeys-lru
+    maxmemory-samples: 5
+
 pgmetrics:
   db_name: keppel
 
@@ -49,7 +55,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of oldest storage sweep, or 0 if no accounts have ever been sweeped"
     keppel_blobs:
-      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(marked_for_deletion_at)), 0) AS min_marked_for_deletion_at, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs'
+      query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(marked_for_deletion_at)), 0) AS min_marked_for_deletion_at, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs"
       metrics:
         - count:
             usage: "GAUGE"

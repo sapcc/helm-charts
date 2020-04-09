@@ -18,7 +18,7 @@ spec:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/container.init/db-migrate"
+              value: "neutron-db-manage upgrade head"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
@@ -32,15 +32,20 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
           volumeMounts:
-            - mountPath: /neutron-etc
-              name: neutron-etc
-            - mountPath: /container.init
-              name: container-init
+            - mountPath: /etc/neutron
+              name: etc-neutron
+              readOnly: true
       volumes:
-        - name: neutron-etc
-          configMap:
-            name: neutron-etc
-        - name: container-init
-          configMap:
-            name: neutron-bin
-            defaultMode: 0755
+        - name: etc-neutron
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: neutron-lbaas.conf
+                  path: neutron-lbaas.conf
+                - key: ml2-conf.ini
+                  path: plugins/ml2/ml2-conf.ini
+                name: neutron-etc
