@@ -53,7 +53,7 @@
       - '{__name__=~"^up"}'
       - '{__name__=~"^vrops_datastore_stats",vccluster=~".+"}'
       - '{__name__=~"^cablecheck_error_status"}'
-
+      - '{__name__=~"^cablecheck_error_status_vpods"}'
   relabel_configs:
     - action: replace
       source_labels: [__address__]

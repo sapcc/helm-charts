@@ -76,6 +76,7 @@
       - '{__name__=~"^pxcloudprober_.+"}'
       - '{__name__=~"^vrops_datastore_stats",vccluster=~".+",datastore!~"node.*"}'
       - '{__name__=~"^cablecheck_error_status"}'
+      - '{__name__=~"^cablecheck_error_status_vpods"}'
       - '{__name__=~"^thousandeyes_test_html_loss_percentage"}'
       - '{__name__=~"^thousandeyes_test_html_avg_latency_milliseconds"}'
       - '{__name__=~"^thousandeyes_requests_total"}'

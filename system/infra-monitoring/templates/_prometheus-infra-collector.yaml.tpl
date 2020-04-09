@@ -556,6 +556,25 @@
       action: keep
 {{- end }}
 
+#normal scrape intervals are too frequent, that's why we only occasionally want to query here.
+{{- $values := .Values.vpod_cablecheck_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'vpod-cablecheck-exporter'
+  params:
+    job: [vpod-cablecheck-exporter]
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  static_configs:
+    - targets : ['vpod-cablecheck-exporter:9100']
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: vpod-cablecheck-exporter
+      action: keep
+{{- end }}
+
+
+
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
 {{- $values := .Values.vrops_exporter -}}
 {{- if $values.enabled }}
