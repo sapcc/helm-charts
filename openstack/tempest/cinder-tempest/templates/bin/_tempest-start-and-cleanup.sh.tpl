@@ -70,7 +70,7 @@ function cleanup_tempest_leftovers() {
     delete_groups
   done
 
-  for i in $(seq 1 8); do
+  for i in $(seq 1 18); do
     export OS_USERNAME=nova-tempestadmin${i}
     export OS_PROJECT_NAME=nova-tempest-admin${i}
     delete_groups
@@ -84,7 +84,7 @@ function cleanup_tempest_leftovers() {
     delete_volumes
   done
   
-  for i in $(seq 1 8); do
+  for i in $(seq 1 18); do
     export OS_USERNAME=nova-tempestadmin${i}
     export OS_PROJECT_NAME=nova-tempest-admin${i}
     delete_volumes
