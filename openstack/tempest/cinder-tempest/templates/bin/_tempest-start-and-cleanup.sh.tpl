@@ -84,8 +84,6 @@ function cleanup_tempest_leftovers() {
     export OS_USERNAME=nova-tempestuser${i}
     export OS_PROJECT_NAME=nova-tempest${i}
     delete_volumes
-    delete_group_types
-    delete_volume_types
   done
   
   for i in $(seq 1 8); do
