@@ -125,9 +125,9 @@ groups:
           In the latter case, check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
         summary: "`{{ $labels.asset }}` asset scrapes are taking too long"
 
-    - alert: OpenstackCastellumAssetScrapingFailing
-      expr: castellum_asset_scrape_errors_gauge > 0
-      for: 60m # TODO: reduce to 10m if possible
+    - alert: OpenstackCastellumAssetScrapingFailingForFreshAssets
+      expr: castellum_fresh_asset_scrape_errors_gauge > 0
+      for: 4h
         # As of now, setting the trigger delay shorter causes a ton of misfirings because Manila
         # frequently creates shares without all the required labels. Therefore the NetApp exporter
         # does not emit metrics and therefore Castellum cannot scrape the share asset. This gets
@@ -139,12 +139,29 @@ groups:
         tier: os
         dashboard: castellum
         playbook: 'docs/support/playbook/castellum/asset_scraping_failing.html'
-        meta: "Some asset scrapes are failing!"
+        meta: "Some asset scrapes of fresh assets are failing!"
       annotations:
         description: |
-          Some assets failed to scrape.
+          There are some new assets that we could never successfully scrape as of now.
           Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
-        summary: "Asset scrapes are failing!"
+        summary: "Scrapes of fresh assets are failing!"
+
+    - alert: OpenstackCastellumAssetScrapingFailingForExistingAssets
+      expr: castellum_existing_asset_scrape_errors_gauge > 0
+      for: 10m # alert after two consecutive failed scrapes
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: warning
+        tier: os
+        dashboard: castellum
+        playbook: 'docs/support/playbook/castellum/asset_scraping_failing.html'
+        meta: "Some asset scrapes of existing assets are failing!"
+      annotations:
+        description: |
+          There are some assets that we have successfully scraped in the past, but now we can't.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "Scrapes of existing assets are failing!"
 
     ############################################################################
     # alerts concerning asset resizing in castellum-worker

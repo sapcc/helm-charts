@@ -106,15 +106,25 @@ pgmetrics:
             usage: "GAUGE"
             description: "Total number of resources that failed their last scrape"
 
-    castellum_asset_scrape_errors:
+    castellum_existing_asset_scrape_errors:
       query: >
         SELECT COUNT(id) as gauge
           FROM assets
-         WHERE scrape_error_message != ''
+         WHERE scrape_error_message != '' AND scraped_at IS NOT NULL
       metrics:
         - gauge:
             usage: "GAUGE"
-            description: "Total number of assets that failed their last scrape"
+            description: "Total number of assets that failed their last scrape (only counting those assets that had at least one successful scrape ever)"
+
+    castellum_fresh_asset_scrape_errors:
+      query: >
+        SELECT COUNT(id) as gauge
+          FROM assets
+         WHERE scrape_error_message != '' AND scraped_at IS NULL
+      metrics:
+        - gauge:
+            usage: "GAUGE"
+            description: "Total number of assets that failed their last scrape (only counting those assets that never had a successful scrape)"
 
     castellum_asset_resize_errors:
       query: >
