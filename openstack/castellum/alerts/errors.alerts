@@ -32,9 +32,6 @@ groups:
 
     ############################################################################
     # alerts concerning resource scraping in castellum-observer
-    #
-    # Those alerts fire really slow because of the glacial speed of the Manila
-    # API impacting resource scraping speed.
 
     - alert: OpenstackCastellumNoResourceScraping
       expr: absent(rate(castellum_aggregated_successful_resource_scrapes[60m]) > 0)
@@ -73,7 +70,7 @@ groups:
 
     - alert: OpenstackCastellumResourceScrapingFailing
       expr: castellum_resource_scrape_errors_gauge > 0
-      for: 10m # only alert when at least 2 consecutive scrapes failed
+      for: 40m # only alert when at least 2 consecutive scrapes failed
       labels:
         context: resource-scraping
         service: castellum
@@ -193,4 +190,4 @@ groups:
         description: |
           Castellum encountered backend errors while resizing some assets.
           Check https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors
-        summary: Castellum encountered backend errors while resizing `{{$labels.asset}}` assets
+        summary: Castellum encountered backend errors while resizing some assets
