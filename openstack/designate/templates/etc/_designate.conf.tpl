@@ -116,7 +116,7 @@ scheduler_filters = {{ .Values.scheduler_filters }}
 #-----------------------
 [service:api]
 # Number of api worker processes to spawn
-#workers = None
+workers = 2
 
 # Number of api greenthreads to spawn
 #threads = 1000
@@ -260,7 +260,7 @@ service_type = dns
 #-----------------------
 [service:mdns]
 # Number of mdns worker processes to spawn
-workers = 1
+workers = 2
 
 # Number of mdns greenthreads to spawn
 threads = 1000
@@ -352,7 +352,7 @@ poll_retry_interval = {{.Values.worker_poll_retry_interval}}
 poll_max_retries = {{.Values.worker_poll_max_retries}}
 
 # The time to wait before sending the first request to a server
-poll_delay = 3
+poll_delay = 2
 
 # Whether to allow worker to send NOTIFYs. NOTIFY requests to mdns will noop
 notify = {{ .Values.worker_notify }}
