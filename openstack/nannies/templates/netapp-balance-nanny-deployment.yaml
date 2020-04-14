@@ -6,15 +6,18 @@ metadata:
   name: 'vcenter-datacenter-netapp-balance-deployment'
 options:
   scope: 'datacenter'
-template: |{{`
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
   kind: Deployment
-  `}}{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+  {{- if .Capabilities.APIVersions.Has "apps/v1" }}
   apiVersion: apps/v1
   {{- else }}
   apiVersion: extensions/v1beta1
-  {{- end }}{{`
+  {{- end }}
   metadata:
-    name: netapp-balance-nanny-{{ name }}
+    name: netapp-balance-nanny-{= name =}
     namespace: monsoon3
     labels:
       system: openstack
@@ -30,42 +33,41 @@ template: |{{`
     template:
       metadata:
         labels:
-          component: netapp-balance-nanny-{{ name }}
+          component: netapp-balance-nanny-{= name =}
       spec:
         nodeSelector:
           zone: farm
         containers:
           - name: netapp-balance
-            image: `}}{{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/netapp-balance-nanny:{{ .Values.netapp_balance_nanny.image_version }}{{`
+            image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/netapp-balance-nanny:{{ .Values.netapp_balance_nanny.image_version }}
             imagePullPolicy: IfNotPresent
             command:
               - dumb-init
               - kubernetes-entrypoint
             env:
               - name: COMMAND
-                value: "`}}{{ if not .Values.netapp_balance_nanny.debug }}/bin/bash /scripts/netapp-balance.sh{{ else }}sleep inf{{ end }}{{`"
+                value: "{{ if not .Values.netapp_balance_nanny.debug }}/bin/bash /scripts/netapp-balance.sh{{ else }}sleep inf{{ end }}"
               - name: NAMESPACE
                 valueFrom:
                   fieldRef:
                     fieldPath: metadata.namespace
               - name: NETAPP_BALANCE_VCHOST
-                value: {{ host | quote }}
+                value: {= host | quote =}
               - name: NETAPP_BALANCE_VCUSER
-                value: {{ username | quote }}
+                value: {= username | quote =}
               - name: NETAPP_BALANCE_VCPASSWORD
-                value: {{ password | quote }}
+                value: {= password | quote =}
               - name: NETAPP_BALANCE_NETAPPUSER
-                value: `}}{{ .Values.netapp_balance_nanny.netappuser | quote }}{{`
+                value: {{ .Values.netapp_balance_nanny.netappuser | quote }}
               - name: NETAPP_BALANCE_NETAPPPASSWORD
-                value: `}}{{ .Values.netapp_balance_nanny.netapppassword | quote }}{{`
+                value: {{ .Values.netapp_balance_nanny.netapppassword | quote }}
               - name: NETAPP_BALANCE_REGION
-                value: `}}{{ .Values.current_region | quote }}{{`
+                value: {{ .Values.current_region | quote }}
               - name: NETAPP_BALANCE_INTERVAL
-                value: `}}{{ .Values.netapp_balance_nanny.interval | quote }}{{`
+                value: {{ .Values.netapp_balance_nanny.interval | quote }}
               - name: NETAPP_BALANCE_MINTHRESHOLD
-                value: `}}{{ .Values.netapp_balance_nanny.minthreshold | quote }}{{`
+                value: {{ .Values.netapp_balance_nanny.minthreshold | quote }}
               - name: NETAPP_BALANCE_MAXTHRESHOLD
-                value: `}}{{ .Values.netapp_balance_nanny.maxthreshold | quote }}{{`
-`}}
+                value: {{ .Values.netapp_balance_nanny.maxthreshold | quote }}
 {{- end }}
 {{- end }}

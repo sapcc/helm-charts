@@ -6,7 +6,10 @@ metadata:
   name: 'vcenter-datacenter-nanny-consistency-deployment'
 options:
   scope: 'datacenter'
-template: |{{`
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
   kind: Deployment
   {{- if .Capabilities.APIVersions.Has "apps/v1" }}
   apiVersion: apps/v1
@@ -14,7 +17,7 @@ template: |{{`
   apiVersion: extensions/v1beta1
   {{- end }}
   metadata:
-    name: vcenter-nanny-consistency-{{ name }}
+    name: vcenter-nanny-consistency-{= name =}
     namespace: monsoon3
     labels:
       system: openstack
@@ -29,7 +32,7 @@ template: |{{`
     template:
       metadata:
         labels:
-          component: vcenter-nanny-consistency-{{ name }}
+          component: vcenter-nanny-consistency-{= name =}
       spec:
         nodeSelector:
           zone: farm
@@ -42,14 +45,14 @@ template: |{{`
               name: cinder-etc
         containers:
           - name: vcenter-consistency
-            image: `}}{{ .Values.vcenter_nanny.docker_repo }}/vcenter-nanny:{{ .Values.vcenter_nanny_consistency.consistency_image_version | replace "string:" "" }}{{`
+            image: {{ .Values.vcenter_nanny.docker_repo }}/vcenter-nanny:{{ .Values.vcenter_nanny_consistency.consistency_image_version | replace "string:" "" }}
             imagePullPolicy: IfNotPresent
             command:
               - dumb-init
               - kubernetes-entrypoint
             env:
               - name: COMMAND
-                value: "`}}{{ if .Values.vcenter_nanny_consistency.debug }}sleep inf{{ else }}/bin/bash /scripts/vcenter-consistency.sh{{ end }}{{`"
+                value: "{{ if .Values.vcenter_nanny_consistency.debug }}sleep inf{{ else }}/bin/bash /scripts/vcenter-consistency.sh{{ end }}"
               - name: NAMESPACE
                 valueFrom:
                   fieldRef:
@@ -57,31 +60,31 @@ template: |{{`
               - name: DEPENDENCY_SERVICE
                 value: "nova-postgresql,nova-api"
               - name: VCENTER_CONSISTENCY_ENABLED
-                value: "`}}{{ .Values.vcenter_nanny_consistency.enabled }}{{`"
+                value: "{{ .Values.vcenter_nanny_consistency.enabled }}"
               - name: VCENTER_CONSISTENCY_DRY_RUN
-                value: "`}}{{ .Values.vcenter_nanny_consistency.dry_run }}{{`"
+                value: "{{ .Values.vcenter_nanny_consistency.dry_run }}"
               - name: VCENTER_CONSISTENCY_HOST
-                value: {{ host | quote }}
+                value: {= host | quote =}
               - name: VCENTER_CONSISTENCY_USER
-                value: {{ username | quote }}
+                value: {= username | quote =}
               - name: VCENTER_CONSISTENCY_PASSWORD
-                value: {{ password | quote }}
+                value: {= password | quote =}
               - name: VCENTER_CONSISTENCY_ITERATIONS
-                value: "`}}{{ .Values.vcenter_nanny_consistency.iterations }}{{`"
+                value: "{{ .Values.vcenter_nanny_consistency.iterations }}"
               - name: VCENTER_CONSISTENCY_INTERVAL
-                value: "`}}{{ .Values.vcenter_nanny_consistency.interval }}{{`"
+                value: "{{ .Values.vcenter_nanny_consistency.interval }}"
               - name: VCENTER_CONSISTENCY_FIX_LIMIT
-                value: "`}}{{ .Values.vcenter_nanny_consistency.fix_limit }}{{`"
+                value: "{{ .Values.vcenter_nanny_consistency.fix_limit }}"
               - name: CINDER_POSTGRESQL_PW
-                value: "`}}{{ .Values.from_cinder.global.dbPassword }}{{`"
+                value: "{{ .Values.from_cinder.global.dbPassword }}"
               - name: NOVA_POSTGRESQL_PW
-                value: "`}}{{ .Values.from_nova.global.dbPassword }}{{`"
+                value: "{{ .Values.from_nova.global.dbPassword }}"
               - name: REGION
-                value: "`}}{{ .Values.current_region }}{{`"
+                value: "{{ .Values.current_region }}"
               - name: NOVA_CELL2_ENABLED
-                value: "`}}{{ .Values.from_nova.cell2_enabled }}{{`"
+                value: "{{ .Values.from_nova.cell2_enabled }}"
               - name: NOVA_CELL2_VC
-                value: "`}}{{ .Values.vcenter_nanny_consistency.cell2_vc }}{{`"
+                value: "{{ .Values.vcenter_nanny_consistency.cell2_vc }}"
               - name: OS_AUTH_URL
                 value: "https://identity-3.{{ availability_zone[:-1] }}.cloud.sap:443/v3"
               - name: OS_PROJECT_NAME
@@ -99,6 +102,5 @@ template: |{{`
                 name: nova-etc
               - mountPath: /cinder-etc
                 name: cinder-etc
-`}}
 {{- end }}
 {{- end }}

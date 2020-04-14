@@ -6,11 +6,14 @@ metadata:
   name: 'vcenter-datacenter-nanny-consistency-service'
 options:
   scope: 'datacenter'
-template: |{{`
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
   kind: Service
   apiVersion: v1
   metadata:
-    name: vcenter-nanny-consistency-{{ name }}
+    name: vcenter-nanny-consistency-{= name =}
     namespace: monsoon3
     labels:
       system: openstack
@@ -21,10 +24,9 @@ template: |{{`
       prometheus.io/targets: "openstack"
   spec:
     selector:
-      component: vcenter-nanny-consistency-{{ name }}
+      component: vcenter-nanny-consistency-{= name =}
     ports:
       - name: metrics
         port: 9456
-`}}
 {{- end }}
 {{- end }}

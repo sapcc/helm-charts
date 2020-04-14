@@ -6,11 +6,14 @@ metadata:
   name: 'vcenter-datacenter-netapp-balance-deployment'
 options:
   scope: 'datacenter'
-template: |{{`
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
   kind: Service
   apiVersion: v1
   metadata:
-    name: netapp-balance-nanny-{{ name }}
+    name: netapp-balance-nanny-{= name =}
     namespace: monsoon3
     labels:
       system: openstack
@@ -18,13 +21,12 @@ template: |{{`
     annotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9456"
-      prometheus.io/targets: `}}{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}{{`
+      prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
   spec:
     selector:
-      component: netapp-balance-nanny-{{ name }}
+      component: netapp-balance-nanny-{= name =}
     ports:
       - name: metrics
         port: 9456
-`}}
 {{- end }}
 {{- end }}
