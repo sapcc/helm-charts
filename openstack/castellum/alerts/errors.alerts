@@ -127,7 +127,11 @@ groups:
 
     - alert: OpenstackCastellumAssetScrapingFailing
       expr: castellum_asset_scrape_errors_gauge > 0
-      for: 5m
+      for: 60m # TODO: reduce to 10m if possible
+        # As of now, setting the trigger delay shorter causes a ton of misfirings because Manila
+        # frequently creates shares without all the required labels. Therefore the NetApp exporter
+        # does not emit metrics and therefore Castellum cannot scrape the share asset. This gets
+        # fixed by the manila-nanny on the scale of 1-4 hours after share creation.
       labels:
         context: asset-scraping
         service: castellum
