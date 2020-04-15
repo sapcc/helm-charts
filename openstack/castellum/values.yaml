@@ -140,3 +140,25 @@ pgmetrics:
         - gauge:
             usage: "GAUGE"
             description: "Total number of assets that failed their last resize"
+
+    castellum_critical_inactivity:
+      query: >
+        WITH currently_critical_assets AS (
+          SELECT a.uuid AS asset_id, r.asset_type AS asset, COALESCE(EXTRACT(epoch FROM MAX(fo.finished_at)), 0) AS started_at
+            FROM assets a
+            JOIN resources r ON a.resource_id = r.id
+           RIGHT OUTER JOIN finished_operations fo ON fo.asset_id = a.id AND fo.reason = 'critical'
+           WHERE a.usage_percent > r.critical_threshold_percent AND (r.max_size IS NULL OR a.size < r.max_size)
+           GROUP BY a.uuid, r.asset_type
+        )
+        SELECT * FROM currently_critical_assets WHERE started_at < EXTRACT(epoch FROM (NOW() - interval '1 minute'))
+      metrics:
+        - asset:
+            usage: "LABEL"
+            description: "Asset type"
+        - asset_id:
+            usage: "LABEL"
+            description: "ID of affected asset"
+        - started_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of last finished resize operation on this asset (presence of metric indicates that asset usage is critical for at least 1 minute)"

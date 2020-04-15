@@ -163,6 +163,20 @@ groups:
           Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
         summary: "Scrapes of existing assets are failing!"
 
+    - alert: OpenstackCastellumCriticalAssetNotGettingResized
+      expr: time() - castellum_critical_inactivity_started_at > 900
+      for: 3m
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+        meta: '{{ $labels.asset }} `{{ $labels.asset_id }}` is stuck in critical usage levels without getting resized'
+      annotations:
+        description: |
+          The {{ $labels.asset }} asset `{{ $labels.asset_id }}` is at critical usage levels, but has not been resized by Castellum for more than 15 minutes. If asset scraping and resizing is otherwise working fine, this might be an instance of a particularly elusive bug. Use the chance and investigate while it's happening!
+
     ############################################################################
     # alerts concerning asset resizing in castellum-worker
 
