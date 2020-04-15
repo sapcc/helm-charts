@@ -1,0 +1,20 @@
+groups:
+- name: virtual_machine.alerts
+  rules:
+  - alert: InaccessibleShadowVM
+    expr: >
+      vrops_vm_stats{statkey="number_vcpus_total"} == 1
+      and on(virtualmachine) vrops_vm_stats{statkey="vm_memory_kilobytes"} == 131072
+      and on(virtualmachine) vrops_vm_properties{propkey="summary_ethernetCards"} == 0
+      and on(virtualmachine) vrops_vm_properties{propkey="runtime_connectionState: disconnected"} == 1
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      playbook: docs/devops/alert/vcenter/
+    annotations:
+      description: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
