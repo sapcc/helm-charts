@@ -1,0 +1,15 @@
+{{- range $index, $member := .Values.dynomite.member }}
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+
+metadata:
+  name: {{ printf "%s-%d" "dynomite" $index }}.{{- required "$.Values.global.region missing" $.Values.global.region }}.{{- required "$.Values.global.tld missing" $.Values.global.tld }}
+
+spec:
+  type: A
+  record: {{ $member | include "dynomite.ip" }}
+  zoneName: {{ required "$.Values.global.region missing" $.Values.global.region }}.{{- required "$.Values.global.tld missing" $.Values.global.tld }}
+  hosts:
+    - {{ printf "%s-%d" "dynomite" $index }}.{{- required "$.Values.global.region missing" $.Values.global.region }}.{{- required "$.Values.global.tld missing" $.Values.global.tld }}
+---
+{{- end }}
