@@ -1,0 +1,67 @@
+kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+
+metadata:
+  name: image-migration-dashboard
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: image-migration-dashboard
+  template:
+    metadata:
+      labels:
+        name: image-migration-dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: {{include "migration_dashboard_image" $}}
+          imagePullPolicy: IfNotPresent
+          args:
+            - in-cluster
+          env:
+            - name: OS_AUTH_URL
+              value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
+            - name: OS_AUTH_VERSION
+              value: '3'
+            - name: OS_IDENTITY_API_VERSION
+              value: '3'
+            - name: OS_INTERFACE
+              value: 'internal'
+            - name: OS_PASSWORD
+              value: {{ quote .Values.keppel.service_password }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: 'ccadmin'
+            - name: OS_PROJECT_NAME
+              value: 'master'
+            - name: OS_REGION_NAME
+              value: {{ quote .Values.global.region }}
+            - name: OS_USER_DOMAIN_NAME
+              value: 'Default'
+            - name: OS_USERNAME
+              value: 'keppel'
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5

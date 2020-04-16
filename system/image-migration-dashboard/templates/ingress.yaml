@@ -1,0 +1,25 @@
+kind: Ingress
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+
+metadata:
+  name: image-migration-dashboard
+  annotations:
+    vice-president: "true"
+    disco: "true"
+
+spec:
+  tls:
+    - secretName: tls-image-migration-dashboard
+      hosts: [ keppel-migration.{{ .Values.global.region }}.{{ .Values.global.tld }} ]
+  rules:
+    - host: keppel-migration.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: image-migration-dashboard
+              servicePort: 80
