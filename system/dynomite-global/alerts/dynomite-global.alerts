@@ -1,0 +1,17 @@
+groups:
+- name: dynomite-global.alerts
+  rules:
+  - alert: DynomiteDBSizeDeviation
+    # Seen 4.7 when one rack misses 10 keys - 3 racks in total
+    expr: stddev(dynomite_db_size{rack!~"qa.+"}) by (token) > 5
+    for: 5m
+    labels:
+      context: dbsize
+      meta: "{{ $labels.token }}"
+      service: dynomite
+      severity: warning
+      tier: k8s
+      dashboard: dynomite
+    annotations:
+      description: Dynomite DB Sizes deviate for token {{ $labels.token }}. Please check the affected instances with the help of the linked dashboard.
+      summary: Dynomite DB Sizes deviate
