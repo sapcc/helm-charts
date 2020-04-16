@@ -141,6 +141,19 @@ pgmetrics:
             usage: "GAUGE"
             description: "Total number of assets that failed their last resize"
 
+    # There is a lot to unpack in this query. Reading from the inside out:
+    # 1. We want to be alerted when an asset is at a critical usage level, but
+    #    Castellum is not doing anything about it. That's what the WHERE describes.
+    # 2. To quantify the "not doing anything" part, the metric value is the
+    #    time since the last critical upsize was performed on that asset. We
+    #    RIGHT OUTER JOIN instead of a simple JOIN since there may not be a
+    #    finished operation for that asset at all.
+    # 3. The inner SELECT query would be enough to power the alert. But if we
+    #    do just that, we would be creating a ton of useless timeseries that live
+    #    for only a few minutes. The timeseries appears when the asset is scraped
+    #    and usage is critical, and it disappears in the next scrape after the
+    #    size was adjusted. Since scrapes occur every 5 minutes, we only create
+    #    the timeseries at the 6 minute mark, so most of them will be avoided.
     castellum_critical_inactivity:
       query: >
         WITH currently_critical_assets AS (
@@ -151,7 +164,7 @@ pgmetrics:
            WHERE a.usage_percent > r.critical_threshold_percent AND (r.max_size IS NULL OR a.size < r.max_size)
            GROUP BY a.uuid, r.asset_type
         )
-        SELECT * FROM currently_critical_assets WHERE started_at < EXTRACT(epoch FROM (NOW() - interval '1 minute'))
+        SELECT * FROM currently_critical_assets WHERE started_at < EXTRACT(epoch FROM (NOW() - interval '6 minute'))
       metrics:
         - asset:
             usage: "LABEL"
