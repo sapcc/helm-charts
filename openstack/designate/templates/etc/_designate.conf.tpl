@@ -341,7 +341,7 @@ threads = 1000
 threshold_percentage =  {{ .Values.worker_threshold_percentage }}
 
 # The time to wait for a response from a server
-#poll_timeout = 30
+poll_timeout = {{.Values.worker_poll_timeout}} 
 
 # The time between retrying to send a request and waiting for a response from a
 # server
