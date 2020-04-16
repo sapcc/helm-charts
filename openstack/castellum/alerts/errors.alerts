@@ -148,7 +148,22 @@ groups:
 
     - alert: OpenstackCastellumAssetScrapingFailingForExistingAssets
       expr: castellum_existing_asset_scrape_errors_gauge > 0
-      for: 10m # alert after two consecutive failed scrapes
+      for: 35m
+        # TODO: I would like to alert `for: 10m`, i.e. after two consecutive failed scrapes. But
+        # that gives us a ton of false positives when an asset is deleted and it takes some time
+        # until Castellum notices the deletion during the next resource scrape.
+        #
+        # This is an example log that illustrates the issue:
+        #
+        # 2020/04/15 17:44:18 INFO: adding new nfs-shares asset to DB: UUID = bad59745-82f3-4d34-a5fa-059a69d75036, scope UUID = 54b626e1091f44bb84e328126bbed1d9
+        # 2020/04/15 17:49:22 INFO: observed nfs-shares bad59745-82f3-4d34-a5fa-059a69d75036 at size = 300, usage = 15 (5.000%)
+        # 2020/04/15 17:49:22 INFO: moving operation on nfs-shares bad59745-82f3-4d34-a5fa-059a69d75036 from state none to state created
+        # 2020/04/15 17:54:22 ERROR: cannot query status of nfs-shares bad59745-82f3-4d34-a5fa-059a69d75036: Prometheus query returned empty result: max by (share_id) (netapp_volume_total_bytes{project_id="54b626e1091f44bb84e328126bbed1d9",share_id="bad59745-82f3-4d34-a5fa-059a69d75036"})
+        # 2020/04/15 17:59:22 ERROR: cannot query status of nfs-shares bad59745-82f3-4d34-a5fa-059a69d75036: Prometheus query returned empty result: max by (share_id) (netapp_volume_total_bytes{project_id="54b626e1091f44bb84e328126bbed1d9",share_id="bad59745-82f3-4d34-a5fa-059a69d75036"})
+        # 2020/04/15 18:04:22 ERROR: cannot query status of nfs-shares bad59745-82f3-4d34-a5fa-059a69d75036: Prometheus query returned empty result: max by (share_id) (netapp_volume_total_bytes{project_id="54b626e1091f44bb84e328126bbed1d9",share_id="bad59745-82f3-4d34-a5fa-059a69d75036"})
+        # 2020/04/15 18:09:22 ERROR: cannot query status of nfs-shares bad59745-82f3-4d34-a5fa-059a69d75036: Prometheus query returned empty result: max by (share_id) (netapp_volume_total_bytes{project_id="54b626e1091f44bb84e328126bbed1d9",share_id="bad59745-82f3-4d34-a5fa-059a69d75036"})
+        # 2020/04/15 18:14:19 INFO: removing deleted nfs-shares asset from DB: UUID = bad59745-82f3-4d34-a5fa-059a69d75036, scope UUID = 54b626e1091f44bb84e328126bbed1d9
+
       labels:
         context: asset-scraping
         service: castellum
