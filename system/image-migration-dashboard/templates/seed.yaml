@@ -1,0 +1,20 @@
+apiVersion: openstack.stable.sap.cc/v1
+kind: OpenstackSeed
+metadata:
+  name: image-migration-dashboard-seed
+
+spec:
+  requires:
+    - monsoon3/keystone-seed
+    - monsoon3/domain-ccadmin-seed
+    - monsoon3/domain-default-seed
+
+  domains:
+  - name: Default
+    users:
+    - name: keppel
+      description: "Keppel service user"
+      password: {{ required "missing .Values.keppel.service_password" .Values.keppel.service_password | quote }}
+      role_assignments:
+      - project: master@ccadmin
+        role: swiftoperator
