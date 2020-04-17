@@ -39,7 +39,7 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: 'postgres://postgres:{{$.Values.postgresql.postgresPassword}}@{{.Release.Name}}-postgresql/keppel?sslmode=disable'
 - name:  KEPPEL_DRIVER_AUTH
   value: 'keystone'
-- name:  KEPPEL_DRIVER_NAMECLAIM
+- name:  KEPPEL_DRIVER_FEDERATION
   value: 'openstack-basic'
 - name:  KEPPEL_DRIVER_RATELIMIT
   value: 'basic'
