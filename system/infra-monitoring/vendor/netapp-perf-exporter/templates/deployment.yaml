@@ -3,11 +3,16 @@
 {{- $port := .Values.ports.promExporterPort -}}
 {{- $targets := .Values.metrics.targets -}}
 {{- $values := .Values }}
+{{- $capabilities := .Capabilities }}
 {{- $release := .Release }}
 {{- range $name, $app := .Values.apps }}
 {{- if $app.enabled }}
 ---
+{{- if $capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 kind: Deployment
 metadata:
   name: {{ $app.fullname }}
