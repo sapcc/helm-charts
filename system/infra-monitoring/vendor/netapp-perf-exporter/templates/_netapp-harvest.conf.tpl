@@ -3,7 +3,11 @@
 [default]
 graphite_enabled  = 1
 graphite_server   = localhost
-graphite_port     = {{ .Values.harvest.graphitePort }}
+{{- if .dupEnabled }}
+graphite_port     = {{ .Values.ports.harvestOutPort }}
+{{- else }}
+graphite_port     = {{ .Values.ports.graphiteInPort }}
+{{- end }}
 graphite_proto    = tcp
 
 host_type         = FILER

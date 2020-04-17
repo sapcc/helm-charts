@@ -1,6 +1,6 @@
 {{- if .Values.enabled }}
-{{- $template := .Template }}
-{{- $harvestConf := include (print .Template.BasePath "/_netapp-harvest.conf.tpl") . }}
+{{- $values := .Values }}
+{{- $harvestTemplate := print .Template.BasePath "/_netapp-harvest.conf.tpl" }}
 {{- $graphiteConf := include (print .Template.BasePath "/_graphite-mapping.conf.tpl") . }}
 {{- $netappFilerYaml := include (print .Template.BasePath "/_netapp_filers.yaml.tpl") . }}
 {{- range $name, $app := .Values.apps }}
@@ -18,7 +18,7 @@ data:
   netapp-filers.yaml: "TO BE POPULATED BY SIDECAR"
   {{- end }}
   netapp-harvest.conf: |
-    {{- $harvestConf | nindent 4 }}
+    {{- include $harvestTemplate (dict "dupEnabled" $app.dupEnabled "Values" $values) | nindent 4 }}
   graphite-mapping.conf: |
     {{- $graphiteConf | nindent 4 }}
 {{- end }}

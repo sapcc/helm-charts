@@ -1,6 +1,6 @@
 {{- if .Values.enabled }}
 {{- $scrape := .Values.metrics.scrape -}}
-{{- $port := .Values.metrics.port -}}
+{{- $port := .Values.ports.promExporterPort -}}
 {{- $targets := .Values.metrics.targets -}}
 {{- $values := .Values }}
 {{- $release := .Release }}
@@ -26,7 +26,7 @@ spec:
         prometheus.io/port: {{ $port | quote }}
         prometheus.io/targets: {{ $targets | quote }}
     spec:
-      containers: 
+      containers:
       - name: harvest                       # container: harvest
         image: {{ $values.harvest.image }}:{{ $values.harvest.imageTag }}
         resources:
@@ -51,7 +51,7 @@ spec:
         image: {{ $values.exporter.image }}
         args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
         ports:
-        - containerPort: 9108
+        - containerPort: {{ $values.ports.promExporterPort }}
         volumeMounts:
         - name: {{ $app.fullname }}
           subPath: graphite-mapping.conf
@@ -60,6 +60,20 @@ spec:
           requests:
             memory: {{ $values.exporter.memory }}
             cpu: {{ $values.exporter.cpu }}
+
+      {{- if $app.dupEnabled }}
+      - name: dup
+        image: hub.global.cloud.sap/d067954/gotee:v201911113011-9a29981
+        args:
+          - -l
+          - {{ $values.ports.harvestOutPort }}
+          - -1
+          - {{ $values.ports.graphiteInPort }}
+          - -2
+          - 10.216.0.98:9109
+      {{- end }}
+
+
       {{- if eq $name "manila" }}
       {{- /*
         manila filers are predefined in secret files rather than fetched from netbox

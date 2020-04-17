@@ -1,7 +1,7 @@
-mappings: 
+mappings:
 - match: netapp.perf.*.*.node.*.*.*
   name: netapp_perf_node
-  labels: 
+  labels:
     Group: $1
     Cluster: $2
     Node: $3
