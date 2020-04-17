@@ -1,4 +1,3 @@
-{{- define "hermes_conf" }}
 [hermes]
 PolicyFilePath = "/etc/hermes/policy.json"
 
@@ -15,4 +14,3 @@ password = "{{.Values.hermes.password}}"
 user_domain_name = "Default"
 project_domain_name = "Default"
 project_name = "service"
-{{- end }}
