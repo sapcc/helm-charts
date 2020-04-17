@@ -1,30 +1,37 @@
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: vrops-exporter 
+  name: vrops-inventory
   namespace: infra-monitoring
 spec:
   selector:
     matchLabels:
-      app: vrops-exporter 
-      type: exporter
+      app: vrops-inventory
+      type: inventorycollector
   template:
     metadata:
       labels:
-        app: vrops-exporter
-        type: exporter
+        app: vrops-inventory
+        type: inventorycollector
     spec:
       containers:
-         - name: vrops-exporter
+         - name: vrops-inventory
            image: {{ required ".Values.vrops.image.imageRegistry variable missing" .Values.vrops.image.imageRegistry }}/{{ required ".Values.vrops.image.namespace variable missing" .Values.vrops.image.namespace }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" .Values.vrops.image.tag }}
            ports:
              - name: metrics
-               containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
+               containerPort: {{ required ".Values.vrops.inventory_port missing" .Values.vrops.inventory_port_number }}
            command:
-             - ./exporter.py
+             - ./inventory.py
+           args:
+             - -a
+             - /atlas/netbox.json
            env:
+           - name: USER
+             value: {{ required ".Values.vrops.user variable is missing" .Values.vrops.user }}
+           - name: PASSWORD
+             value: {{ required ".Values.vrops.password variable is missing" .Values.vrops.password | quote }}
            - name: PORT
-             value: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
+             value: {{ required ".Values.vrops.port_number missing" .Values.vrops.inventory_port_number | quote }}
            - name: DEBUG
              value: {{ .Values.vrops.debug | quote }}
            #livenessProbe:
@@ -34,3 +41,11 @@ spec:
              #initialDelaySeconds: 30
              #timeoutSeconds: 10
              #periodSeconds: 15
+           volumeMounts:
+             - mountPath: /atlas
+               name: atlas-output
+               readOnly: true
+      volumes:
+        - configMap:
+            name: {{ .Values.vrops.atlas_configmap }}
+          name: atlas-output
