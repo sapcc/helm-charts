@@ -67,15 +67,13 @@ spec:
             cpu: {{ $values.exporter.cpu }}
 
       {{- if $app.dupEnabled }}
-      {{- $listenPort := ":" $values.ports.harvestOutPort }}
-      {{- $firstOutPort := ":" $values.ports.graphiteInPort }}
       - name: dup
         image: hub.global.cloud.sap/d067954/gotee:v201911113011-9a29981
         args:
           - "-l"
-          - {{ $listenPort | quote }}
+          - {{ print ":" $values.ports.harvestOutPort | quote }}
           - "-1"
-          - {{ $firstOutPort | quote }}
+          - {{ print ":" $values.ports.graphiteInPort | quote }}
           - "-2"
           - "10.216.0.98:9109"
       {{- end }}
