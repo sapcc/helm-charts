@@ -87,17 +87,17 @@ mysql_metrics:
     - help: Manila Share servers count
       labels:
       - "manila_host"
-      - "share_network_subnet_id"
+      - "share_network_id"
       - "status"
       name: openstack_manila_share_servers_count_gauge
       query: |
         SELECT
           host AS manila_host,
-          share_network_subnet_id,
+          share_network_id,
           status,
           COUNT(*) AS count_gauge
         FROM share_servers
-        GROUP BY manila_host, share_network_subnet_id, status;
+        GROUP BY manila_host, share_network_id, status;
       values:
       - "count_gauge"
     - help: Manila Shares count
@@ -107,6 +107,7 @@ mysql_metrics:
       - "manila_host"
       - "project_id"
       - "id"
+      - "share_instance_id"
       - "status"
       name: openstack_manila_shares_count_gauge
       query: |
@@ -116,11 +117,13 @@ mysql_metrics:
           share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
+          share_instances.id AS share_instance_id,
           share_instances.status,
           COUNT(*) AS count_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        WHERE share_instances.deleted='False'
         GROUP BY
           share_instances.share_type_id,
           manila_host,
@@ -160,29 +163,6 @@ mysql_metrics:
           availability_zones.id;
       values:
       - "size_gauge"
-    - help: Manila Share Instances
-      labels:
-      - "share_id"
-      - "project_id"
-      - "share_instance_id"
-      - "manila_host"
-      - "status"
-      - "availability_zone"
-      name: openstack_manila_share_instances_gauge
-      query: |
-        SELECT
-          shares.id AS share_id,
-          shares.project_id,
-          share_instances.id AS share_instance_id,
-          share_instances.host AS manila_host,
-          share_instances.status,
-          availability_zones.name AS availability_zone
-        FROM shares
-        JOIN share_instances ON shares.id=share_instances.share_id
-        JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
-        WHERE share_instances.deleted='False';
-      values:
-      - "1"
     - help: Manila Snapshot count
       labels:
       - "project_id"
