@@ -33,9 +33,10 @@ echo "I am the Primary Node"
 init_mysql
 write_password_file
 exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_name=$hostname-$ipaddr \
---wsrep_cluster_address=gcomm:// --wsrep_sst_method=xtrabackup-v2 \
+--wsrep_cluster_address="gcomm://" --wsrep_sst_method=xtrabackup-v2 \
 --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
---wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" $CMDARG
+--wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" $CMDARG \
+--log-bin=$hostname-bin
 
 {{- else }}
 
@@ -47,6 +48,7 @@ write_password_file
 exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_name=$hostname-$ipaddr \
 --wsrep_cluster_address="gcomm://{{ include "helm-toolkit.utils.joinListWithComma" $cluster_ips }}" --wsrep_sst_method=xtrabackup-v2 \
 --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
---wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" $CMDARG
+--wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" $CMDARG \
+--log-bin=$hostname-bin
 
 {{- end }}
