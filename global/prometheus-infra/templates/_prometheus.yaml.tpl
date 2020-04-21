@@ -66,6 +66,7 @@
       - '{__name__=~"^vcenter_overbooked_node_mb"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^ipmi_up"}'
+      - '{__name__=~"^redfish_.+"}'
       - '{__name__=~"^netapp_capacity_aggregate"}'
       - '{__name__=~"^netapp_aggregate_.*"}'
       - '{__name__=~"^netapp_filer_.*"}'
