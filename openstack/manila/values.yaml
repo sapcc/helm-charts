@@ -123,14 +123,7 @@ mysql_metrics:
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
-        WHERE share_instances.deleted='False'
-        GROUP BY
-          share_instances.share_type_id,
-          manila_host,
-          share_instances.status,
-          shares.id,
-          shares.project_id,
-          availability_zones.id;
+        WHERE share_instances.deleted = 'False';
       values:
       - "count_gauge"
     - help: Manila Shares size
@@ -140,6 +133,7 @@ mysql_metrics:
       - "manila_host"
       - "project_id"
       - "id"
+      - "share_instance_id"
       - "status"
       name: openstack_manila_shares_size_gauge
       query: |
@@ -149,18 +143,13 @@ mysql_metrics:
           share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
+          share_instances.id AS share_instance_id,
           share_instances.status,
           SUM(size) size_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
-        GROUP BY
-          share_instances.share_type_id,
-          manila_host,
-          share_instances.status,
-          shares.id,
-          shares.project_id,
-          availability_zones.id;
+        WHERE share_instances.deleted = 'False';
       values:
       - "size_gauge"
     - help: Manila Snapshot count
