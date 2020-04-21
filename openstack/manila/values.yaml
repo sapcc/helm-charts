@@ -123,7 +123,14 @@ mysql_metrics:
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
-        WHERE share_instances.deleted = 'False';
+        WHERE share_instances.deleted = 'False'
+        GROUP BY
+          share_instances.share_type_id,
+          manila_host,
+          share_instances.status,
+          shares.id,
+          shares.project_id,
+          availability_zones.id;
       values:
       - "count_gauge"
     - help: Manila Shares size
@@ -149,7 +156,14 @@ mysql_metrics:
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
         JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
-        WHERE share_instances.deleted = 'False';
+        WHERE share_instances.deleted = 'False'
+        GROUP BY
+          share_instances.share_type_id,
+          manila_host,
+          share_instances.status,
+          shares.id,
+          shares.project_id,
+          availability_zones.id;
       values:
       - "size_gauge"
     - help: Manila Snapshot count
