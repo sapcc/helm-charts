@@ -10,18 +10,20 @@ keppel:
   # name of Keppel account reserved for keppel-health-monitor
   healthcheck_account: healthcheck
 
-  # syntax:
-  #   nameclaim_whitelist:
-  #   - project: project@domain # can be a regex
-  #     account: foobar         # can be a regex
-  nameclaim_whitelist: []
-
   issuer_key.pem: DEFINED_IN_VALUES_FILE
 
   # Set to non-empty values to enable audit logging to Hermes.
   rabbitmq:
     uri: ""
     queue_name: ""
+
+# Dynomite (the interregional distributed Redis cluster) is used for tracking
+# account name claims, using Keppel's "redis" federation driver.
+dynomite:
+  host:     DEFINED_IN_VALUES_FILE
+  password: DEFINED_IN_VALUES_FILE
+  database: 0
+  prefix:   keppel # prepended to all keys in Redis, to disambiguate clusters (e.g. QA vs. Prod)
 
 # Redis is used for caching user's Keystone tokens and for tracking the
 # consumption of rate limits. Both usecases are ephemeral, so we don't need
