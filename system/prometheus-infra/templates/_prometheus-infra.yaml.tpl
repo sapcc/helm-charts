@@ -51,6 +51,7 @@
       - '{__name__=~"^snmp_cucsFcErrStatsSyncLosses"}'
       - '{__name__=~"^snmp_cucsFcErrStatsCrcRx"}'
       - '{__name__=~"^up"}'
+      - '{__name__=~"^redfish_.+"}'
       - '{__name__=~"^vrops_datastore_stats",vccluster=~".+"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_error_status_vpods"}'
