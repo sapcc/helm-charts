@@ -27,6 +27,7 @@
       - '{job="redfish/bb"}'
       - '{job="redfish/bm"}'
       - '{job="redfish/cp"}'
+      - '{job="vrops"}'
       - '{__name__=~"^vcenter_.+",job!~"[a-z0-9-]*-vccustomervmmetrics$"}'
       - '{__name__=~"^network_apic_.+"}'
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
@@ -51,10 +52,8 @@
       - '{__name__=~"^snmp_cucsFcErrStatsCrcRx"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^redfish_.+"}'
-      - '{__name__=~"^vrops_datastore_stats"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_error_status_vpods"}'
-      - '{__name__=~"^scrape_duration_seconds$",job=~"vrops"}'
   relabel_configs:
     - action: replace
       source_labels: [__address__]
