@@ -40,17 +40,19 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
 - name:  KEPPEL_DRIVER_AUTH
   value: 'keystone'
 - name:  KEPPEL_DRIVER_FEDERATION
-  value: 'openstack-basic'
+  value: 'redis'
 - name:  KEPPEL_DRIVER_RATELIMIT
   value: 'basic'
 - name:  KEPPEL_DRIVER_STORAGE
   value: 'swift'
+- name:  KEPPEL_FEDERATION_REDIS_URI
+  value: 'redis://:{{$.Values.dynomite.password}}@{{$.Values.dynomite.host}}/{{$.Values.dynomite.database}}'
+- name:  KEPPEL_FEDERATION_REDIS_PREFIX
+  value: {{ quote $.Values.dynomite.prefix }}
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel/issuer-key.pem'
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
-- name:  KEPPEL_NAMECLAIM_WHITELIST
-  value: "{{ range $.Values.keppel.nameclaim_whitelist }}{{.project}}:{{.account}},{{end}}"
 - name:  KEPPEL_OSLO_POLICY_PATH
   value: '/etc/keppel/policy.json'
 - name:  KEPPEL_PEERS
