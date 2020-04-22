@@ -10,7 +10,11 @@ options:
     variable_end_string: '=}'
 template: |
   {% if nsx_t_enabled is defined and nsx_t_enabled -%}
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+  apiVersion: apps/v1
+{{- else }}
   apiVersion: extensions/v1beta1
+{{- end }}
   kind: Deployment
   metadata:
     name: neutron-nsxv3-agent-{= name =}
