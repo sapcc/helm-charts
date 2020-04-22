@@ -6,7 +6,11 @@
 {{- range $exporter_type_values := $global_values.exporter_types }}
 ---
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 metadata:
   name: vcenter-exporter-{{ $vchostname._0 }}-{{ required ".Values<exporter_type>.name is missing" $exporter_type_values.name }}
   labels:
