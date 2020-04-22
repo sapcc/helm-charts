@@ -2,11 +2,7 @@
 {{- $hypervisor := index . 1 }}
 {{- with index . 0 }}
 kind: Deployment
-{{- if .Capabilities.APIVersions.Has "apps/v1" }}
-apiVersion: apps/v1
-{{- else }}
 apiVersion: extensions/v1beta1
-{{- end }}
 metadata:
   name: nova-compute-{{$hypervisor.name}}
   labels:

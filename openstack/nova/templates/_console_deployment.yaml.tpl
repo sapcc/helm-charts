@@ -3,11 +3,7 @@
 {{- $config := index . 2 }}
 {{- with index . 0 }}
 kind: Deployment
-{{- if .Capabilities.APIVersions.Has "apps/v1" }}
-apiVersion: apps/v1
-{{- else }}
 apiVersion: extensions/v1beta1
-{{- end }}
 
 metadata:
   name: nova-console-{{ $name }}
