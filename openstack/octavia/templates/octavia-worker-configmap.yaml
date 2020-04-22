@@ -7,12 +7,12 @@ metadata:
   labels:
     system: openstack
     type: configuration
-    component: neutron
+    component: octavia
 
 data:
   octavia-worker.conf: |
     [DEFAULT]
-    host = {{$name}}
+    host = {{ $name }}
 
     [f5_agent]
     bigip_urls = {{ $val.bigip_urls | join ", " }}
@@ -33,5 +33,13 @@ data:
     {{- end }}
 
     # Default Server TLS Cipher
-    default_server_ciphers = {{ $.Values.default_ciphers }}
+    [f5_tls_server]
+    default_ciphers = {{ $.Values.default_ciphers }}
+    tls_1_0 = {{ $.Values.default_tls_1_0 }}
+    tls_1_1 = {{ $.Values.default_tls_1_1 }}
+    tls_1_3 = {{ $.Values.default_tls_1_3 }}
+
+    [f5_tls_client]
+    tls_1_3 = {{ $.Values.default_tls_1_3 }}
+
 {{ end }}
