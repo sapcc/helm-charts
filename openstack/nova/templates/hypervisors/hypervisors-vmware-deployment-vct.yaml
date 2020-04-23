@@ -9,7 +9,11 @@ options:
     variable_start_string: '{='
     variable_end_string: '=}'
 template: |
+  {{- if .Capabilities.APIVersions.Has "apps/v1" }}
+  apiVersion: apps/v1
+  {{- else }}
   apiVersion: extensions/v1beta1
+  {{- end }}
   kind: Deployment
   metadata:
     name: nova-compute-{= name =}
