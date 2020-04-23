@@ -1,20 +1,12 @@
-{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
-apiVersion: apps/v1
-{{- else }}
 apiVersion: extensions/v1beta1
-{{- end }}
 kind: Deployment
 metadata:
   name: {{ include "infraMonitoring.fullname" . }}
   labels:
     app: {{ include "infraMonitoring.name" . }}
-    chart: {{ include "infraMonitoring.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
     system: infra_monitoring
 
 spec:
-  revisionHistoryLimit: 5
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -45,20 +37,6 @@ spec:
                value: {{ .Values.user }}
              - name: REMOTEPW
                value: {{ .Values.userpw }}
-             - name: CISCOUSER
-               value: {{ .Values.cisco_user }}
-             - name: CISCOPW
-               value: {{ .Values.cisco_pw }}
-             - name: CISCOALTPWS
-               value: {{ .Values.cisco_alternative_pws }}
-             - name: REGION
-               value: {{ .Values.region }}
-             - name: SUPPORTUSER
-               value: {{ .Values.support_user }}
-             - name: SUPPORTPW
-               value: {{ .Values.support_password }}
-             - name: SUPPORTPWALT
-               value: {{ .Values.support_alt_pw }}
            livenessProbe:
              httpGet:
                path: /
@@ -66,11 +44,4 @@ spec:
              initialDelaySeconds: 5
              timeoutSeconds: 5
              periodSeconds: 10
-           volumeMounts:
-             - mountPath: /atlas
-               name: atlas-output
-               readOnly: true
-      volumes:
-        - configMap:
-            name: {{ .Values.atlas_configmap }}
-          name: atlas-output
+
