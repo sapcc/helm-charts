@@ -76,7 +76,7 @@
       - '{__name__=~"^bios_exporter_up"}'
       - '{__name__=~"^pxcloudprober_.+"}'
       - '{__name__=~"^vrops_datastore_stats",datastore!~"^node.+"}'
-      - '{__name__=~"^vrops_hostsystem_stats",statkey=~"cpu_usage_average|summary_running_VMs_number"}'
+      - '{__name__=~"^vrops_hostsystem_stats",statkey=~"cpu_usage_average_percentage|summary_running_VMs_number"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_error_status_vpods"}'
       - '{__name__=~"^thousandeyes_test_html_loss_percentage"}'
