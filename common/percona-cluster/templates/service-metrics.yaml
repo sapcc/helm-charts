@@ -4,6 +4,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: "{{ template "percona-cluster.fullname" . }}-metrics"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9104"
+    prometheus.io/targets: {{ required ".Values.metricsExporter.prometheus missing" .Values.metricsExporter.prometheus | quote }}
   labels:
     app: {{ template "percona-cluster.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"

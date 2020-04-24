@@ -100,6 +100,13 @@ EOSQL
             echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
         fi
 
+        if [ "$METRICS_EXPORTER_PASSWORD" ]; then
+            echo "CREATE USER 'exporter'@'localhost' IDENTIFIED BY '"$METRICS_EXPORTER_PASSWORD"' ;\
+                  GRANT PROCESS, REPLICATION CLIENT ON *.* TO 'exporter'@'localhost' ;\
+                  GRANT SELECT ON performance_schema.* TO 'exporter'@'localhost' ;" | "${mysql[@]}"
+            echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
+        fi
+
         if [ ! -z "$MYSQL_ONETIME_PASSWORD" ]; then
             "${mysql[@]}" <<-EOSQL
             ALTER USER 'root'@'%' PASSWORD EXPIRE;
