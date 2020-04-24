@@ -12,7 +12,7 @@ to create _snmp-exporter-<module>.yaml.tpl files, execute the following docker c
 
 or simpler:
 
-docker run -v ~/github.com/sapcc/helm-charts:/root/helm-charts -ti hub.global.cloud.sap/monsoon/snmp-exporter-generator:lastest /start.sh all
+docker run -v ~/github.com/sapcc/helm-charts:/root/helm-charts -ti hub.global.cloud.sap/monsoon/snmp-exporter-generator:latest /start.sh all
 
 or
 
