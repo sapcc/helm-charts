@@ -5,6 +5,9 @@ metadata:
   name: keppel
 
 data:
+  # NOTE: `role:admin` is required for account:edit because, when creating an
+  # account, the user's token is used to create a role assignment for the
+  # Keppel service user into the respective project.
   policy.json: |
     {
       "cloud_scope": "project_name:cloud_admin and project_domain_name:ccadmin",
@@ -24,7 +27,7 @@ data:
       "account:pull":   "rule:any_ro and rule:matches_scope",
       "account:push":   "rule:any_rw and rule:matches_scope",
       "account:delete": "rule:any_rw and rule:matches_scope",
-      "account:edit":   "rule:any_rw and rule:matches_scope",
+      "account:edit":   "(rule:any_rw and rule:matches_scope) and role:admin",
 
       "quota:show":     "role:resource_service or (rule:any_ro and rule:matches_scope)",
       "quota:edit":     "role:resource_service"
