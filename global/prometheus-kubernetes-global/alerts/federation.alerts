@@ -91,21 +91,6 @@ groups:
       description: "Prometheus in customer cluster {{ $labels.cluster }} is DOWN. Alerting and dashboards are unavailable."
       summary: Prometheus is DOWN
 
-  - alert: KubernetesAbapCloudPrometheusDown
-    expr: count by(cluster) (up{job="abapcloud-federation"}) unless count by(cluster) (up{job="prometheus-kubernetes", cluster_type="abapcloud"})
-    for: 15m
-    labels:
-      context: availability
-      dashboard: kubernetes-prometheus
-      meta: Prometheus frontend is down
-      service: prometheus
-      severity: critical
-      tier: k8s
-      playbook: docs/support/playbook/prometheus/federation.html
-    annotations:
-      description: "Prometheus in abapcloud cluster {{ $labels.cluster }} is DOWN. Alerting and dashboards are unavailable."
-      summary: Prometheus is DOWN
-
   - alert: KubernetesPrometheusFederationRegions
     expr: absent(up{job="metal-federation"}) or up{job="prometheus-regions-federation", cluster_type=~"metal"} == 0
     for: 15m
