@@ -1,3 +1,8 @@
+## 3.4.0
+
+* Bump Prometheus to `v2.17.2`.
+* Update `Prometheus.Spec.{rule|podMonitor|serviceMonitor}NamespaceSelector` to consider every namespace. (Behaviour didn't change but configuration in Prometheus CRD from `any` to `{}`)
+
 ## 3.3.6
 
 * Standardize labels: Introduce labels `container`, `pod` in cAdvisor metrics.
