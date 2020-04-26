@@ -1,3 +1,7 @@
+## 3.4.1
+
+* Fix `resource.requests.cpu`: It shall be a string.
+
 ## 3.4.0
 
 * Bump Prometheus to `v2.17.2`.
