@@ -332,8 +332,8 @@ receivers:
     - send_resolved: true
       http_config:
         basic_auth:
-          username: {{ required ".Values.awx.basicAuthUser undefined" .Values.awx.user | quote }}
-          password: {{ required ".Values.awx.basicAuthPwd undefined" .Values.awx.pwd | quote }}
+          username: {{ required ".Values.awx.basicAuthUser undefined" .Values.awx.basicAuthUser | quote }}
+          password: {{ required ".Values.awx.basicAuthPwd undefined" .Values.awx.basicAuthPwd | quote }}
       url: {{ required ".Values.awx.listenerURL undefined" .Values.awx.listenerURL | quote }}
 
   - name: slack_metal_info
