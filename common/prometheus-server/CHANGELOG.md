@@ -1,3 +1,7 @@
+## 3.4.2
+
+* Ensure mandatory labels are present on alerts.
+
 ## 3.4.1
 
 * Fix `resource.requests.cpu`: It shall be a string.
