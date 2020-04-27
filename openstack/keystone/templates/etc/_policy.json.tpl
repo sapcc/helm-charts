@@ -86,8 +86,8 @@
     "identity:check_user_in_group": "rule:cloud_admin or rule:admin_and_matching_target_group_domain_id",
     "identity:add_user_to_group": "rule:cloud_admin or rule:admin_and_matching_target_group_domain_id",
 
-    "credential_owner": "user_id:%(target.credential.user_id)s",
-    "matching_target_credential_project": "project_id:%(target.credential.project_id)s",
+    "credential_owner": "user_id:%(target.credential.user_id)s or user_id:%(user_id)s",
+    "matching_target_credential_project": "project_id:%(target.credential.project_id)s or project_id:%(tenant_id)s",
     "identity:get_credential": "rule:credential_owner",
     "identity:list_credentials": "rule:credential_owner",
     "identity:create_credential": "rule:cloud_admin or (rule:credential_owner and rule:matching_target_credential_project)",
