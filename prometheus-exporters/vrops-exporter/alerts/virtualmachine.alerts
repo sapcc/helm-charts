@@ -3,10 +3,10 @@ groups:
   rules:
   - alert: InaccessibleShadowVM
     expr: >
-      vrops_vm_stats{statkey="number_vcpus_total"} == 1
-      and on(virtualmachine) vrops_vm_stats{statkey="vm_memory_kilobytes"} == 131072
-      and on(virtualmachine) vrops_vm_properties{propkey="summary_ethernetCards"} == 0
-      and on(virtualmachine) vrops_vm_properties{propkey="runtime_connectionState: disconnected"} == 0
+      max_over_time(vrops_vm_stats{statkey="number_vcpus_total"}[10m]) == 1
+      and on(virtualmachine) max_over_time(vrops_vm_stats{statkey="vm_memory_kilobytes"}[10m]) == 131072
+      and on(virtualmachine) max_over_time(vrops_vm_properties{propkey="summary_ethernetCards"}[10m]) == 0
+      and on(virtualmachine) max_over_time(vrops_vm_properties{propkey="runtime_connectionState: disconnected"}[10m]) == 0
     for: 20m
     labels:
       severity: info

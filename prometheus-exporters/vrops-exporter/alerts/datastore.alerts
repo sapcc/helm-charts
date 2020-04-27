@@ -2,7 +2,7 @@ groups:
 - name: datastore.alerts
   rules:
   - alert: DataStoreCapacityLeftCritical
-    expr: vrops_datastore_stats{vccluster=~".+",statkey="diskspace_total_usage_gigabytes"} / ignoring (statkey) vrops_datastore_stats{vccluster=~".+",statkey="diskspace_capacity_gigabytes"} > 0.9
+    expr: max_over_time(vrops_datastore_stats{statkey="diskspace_total_usage_gigabytes",vccluster=~".+"}[10m]) / ignoring(statkey) max_over_time(vrops_datastore_stats{statkey="diskspace_capacity_gigabytes",vccluster=~".+"}[10m]) > 0.9
     for: 20m
     labels:
       severity: warning
@@ -15,7 +15,7 @@ groups:
       description: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DataStoreCapacityLeftWarning
-    expr: vrops_datastore_stats{vccluster=~".+",statkey="diskspace_total_usage_gigabytes"} / ignoring (statkey) vrops_datastore_stats{vccluster=~".+",statkey="diskspace_capacity_gigabytes"} > 0.75
+    expr: max_over_time(vrops_datastore_stats{statkey="diskspace_total_usage_gigabytes",vccluster=~".+"}[10m]) / ignoring(statkey) max_over_time(vrops_datastore_stats{statkey="diskspace_capacity_gigabytes",vccluster=~".+"}[10m]) > 0.75
     for: 20m
     labels:
       severity: info
