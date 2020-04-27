@@ -20,7 +20,7 @@ template: |
   data:
     cinder-volume.conf: |
       [DEFAULT]
-      enabled_backends = vmware
+      enabled_backends = vmware,vmware_low_iops
 
       [backend_defaults]
       vmware_host_ip = {= host =}
@@ -39,7 +39,15 @@ template: |
       [vmware]
       volume_driver = cinder.volume.drivers.vmware.vmdk.VMwareVcVmdkDriver
       volume_backend_name = vmware
+      vmware_storage_profile = {{ .Values.backends.vmware.vmware_storage_profile  }}
       extra_capabilities = '{"vcenter-shard": "{= host.split(".")[0] =}"}'
+
+      [vmware_low_iops]
+      volume_driver = cinder.volume.drivers.vmware.vmdk.VMwareVcVmdkDriver
+      volume_backend_name = vmware_low_iops
+      vmware_storage_profile = {{ .Values.backends.vmware_low_iops.vmware_storage_profile }}
+      extra_capabilities = '{"vcenter-shard": "{= host.split(".")[0] =}"}'
+
 
       [vstorageobject]
       volume_driver = cinder.volume.drivers.vmware.fcd.VMwareVStorageObjectDriver
