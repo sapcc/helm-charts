@@ -13,7 +13,8 @@ data:
   config.yaml: |
     namespace: {{ .Release.Namespace }}
     service_name: {{ .Values.name }}
-    backup_service:
+    sidecar: false
+    backup:
       full_backup_cron_schedule: {{ .Values.backup_v2.full_backup_cron_schedule }}
       incremental_backup_in_minutes: {{ .Values.backup_v2.incremental_backup_in_minutes }}
       backup_dir: {{ .Values.backup_v2.backup_dir }}
@@ -22,23 +23,24 @@ data:
         enabled: {{ default true .Values.backup_v2.oauth.enabled}}
         provider_url: "https://auth.mariabackup.{{ .Values.global.region }}.cloud.sap"
         redirect_url: "https://{{ .Values.name }}.mariabackup.{{ .Values.global.region }}.cloud.sap"
-      maria_db:
-        user: root
-        version: {{ .Values.backup_v2.maria_db.version }}
-        password: {{ include "mariadb.root_password" . }}
-        host: {{ include "fullName" . }}
-        port: 3306
-        data_dir: ./db_prod
-        log_bin: mysqld-bin
-        databases:
-        {{- range $db := .Values.backup_v2.databases }}
-          - "{{$db}}"
-        {{- end }}
-        verify_tables:
-        {{- range $tl := .Values.backup_v2.verify_tables }}
-          - "{{$tl}}"
-        {{- end }}
-    storage_services:
+    database:
+      type: "mariadb"
+      user: root
+      version: {{ .Values.backup_v2.maria_db.version }}
+      password: {{ include "mariadb.root_password" . }}
+      host: {{ include "fullName" . }}
+      port: 3306
+      data_dir: /var/lib/mysql
+      log_name_format: mysqld-bin
+      databases:
+      {{- range $db := .Values.backup_v2.databases }}
+        - "{{$db}}"
+      {{- end }}
+      verify_tables:
+      {{- range $tl := .Values.backup_v2.verify_tables }}
+        - "{{$tl}}"
+      {{- end }}
+    storage:
       s3:
         - name: aws-{{ .Values.global.mariadb.backup_v2.aws.region }}
           aws_access_key_id: {{ .Values.global.backup_v2.aws_access_key_id }}
@@ -58,6 +60,6 @@ data:
           password: {{ .Values.backup_v2.swift.password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote }}
           region: {{ .Values.global.region }}
           container_name: "mariadb-backup-{{ .Values.global.region }}"
-    verification_services:
+    verification:
       interval_in_minutes: {{ .Values.backup_v2.verification_interval }}
 {{- end }}
