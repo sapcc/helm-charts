@@ -141,55 +141,23 @@ spec:
           name: db-socket
 {{- end }}
 {{- if .Values.backup_v2.enabled }}
-      - name: mariabackup
-        image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/maria-back-me-up:{{ .Values.backup_v2.image_version }}"
+      - name: readiness
+        image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/pod-readiness:{{ .Values.readiness.image_version }}"
         command:
-          - backup
+          - pod_readiness
         readinessProbe:
           httpGet:
-            path: /health/readiness
-            port: 8082
+            path: /healthy
+            port: 8080
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 3
           failureThreshold: 1
           successThreshold: 1
         ports:
-          - containerPort: 8081
+          - containerPort: 8080
             name: http
             protocol: TCP
-          - containerPort: 8082
-            name: metrics
-            protocol: TCP
-        env:
-{{- if .Values.backup_v2.oauth.enabled }}
-        - name: OAUTH_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-{{.Values.name}}
-              key: OAUTH_CLIENT_ID
-        - name: OAUTH_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-{{.Values.name}}
-              key: OAUTH_CLIENT_SECRET
-        - name: OAUTH_COOKIE_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-{{.Values.name}}
-              key: OAUTH_COOKIE_SECRET
-{{- end }}
-        - name: CONFIG_FILE
-          value: "/etc/config/config.yaml"
-        volumeMounts:
-{{- if .Values.persistence_claim.enabled }}
-        - name: mariadb-persistent-storage
-          mountPath: /var/lib/mysql
-          readOnly: false
-{{- end }}
-        - name: mariadb-backup-etc
-          mountPath: /etc/config
-          readOnly: true
 {{- end }}
 {{- if .Values.metrics.enabled }}
       - name: metrics
@@ -243,11 +211,6 @@ spec:
 {{- if .Values.backup.enabled }}
         - name: db-socket
           emptyDir: {}
-{{- end }}
-{{- if .Values.backup_v2.enabled }}
-        - name: mariadb-backup-etc
-          configMap:
-            name:  mariadb-backup-{{.Values.name}}-etc
 {{- end }}
 {{- if .Values.initdb_configmap }}
         - name: initdb

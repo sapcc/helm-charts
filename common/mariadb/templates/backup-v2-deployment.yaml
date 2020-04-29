@@ -1,0 +1,101 @@
+{{- if .Values.backup_v2.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "fullName" . }}-backup
+  labels:
+    system: openstack
+    type: database
+    component: {{ .Values.name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ include "fullName" . }}-backup
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullName" . }}-backup
+        name: {{ template "fullName" . }}-backup
+      annotations:
+        checksum/etc: {{ include (print $.Template.BasePath  "/backup-etc-configmap.yaml") . | sha256sum }}
+{{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8082"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
+    spec:
+      affinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- else }}
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: "failure-domain.beta.kubernetes.io/zone"
+                  operator: In
+                  values:
+                  - {{.Values.global.region}}a
+{{- end }}
+      containers:
+      - name: backup
+        image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/maria-back-me-up:{{ .Values.backup_v2.image_version }}"
+        command:
+          - backup
+        ports:
+          - containerPort: 8081
+            name: http
+            protocol: TCP
+          - containerPort: 8082
+            name: metrics
+            protocol: TCP
+        env:
+{{- if .Values.backup_v2.oauth.enabled }}
+        - name: OAUTH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: OAUTH_CLIENT_ID
+        - name: OAUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: OAUTH_CLIENT_SECRET
+        - name: OAUTH_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: OAUTH_COOKIE_SECRET
+{{- end }}
+        - name: CONFIG_FILE
+          value: "/etc/config/config.yaml"
+        volumeMounts:
+{{- if .Values.persistence_claim.enabled }}
+        - name: mariadb-persistent-storage
+          mountPath: /var/lib/mysql
+          readOnly: false
+{{- end }}
+        - name: mariadb-backup-etc
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+        - name: mariadb-etc
+          configMap:
+            name: mariadb-{{.Values.name}}-etc
+{{- if .Values.persistence_claim.enabled }}
+        - name: mariadb-persistent-storage
+          persistentVolumeClaim:
+           claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
+{{- end }}
+        - name: mariadb-backup-etc
+          configMap:
+            name:  mariadb-backup-{{.Values.name}}-etc
+{{- end }}
