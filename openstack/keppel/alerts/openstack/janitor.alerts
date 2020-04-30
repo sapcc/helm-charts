@@ -207,3 +207,19 @@ groups:
         When the storage sweep encounters unknown manifests in the backing storage, they should be deleted (or unmarked) in the next storage sweep 6 hours later.
         However, there are some unknown manifests that are marked for deletion for over 12 hours already. This could indicate a problem with storage sweeping.
         Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotAnnouncingAccountsToFederation
+    expr: keppel_accounts_count > 0 and time() - keppel_accounts_min_announced_to_federation_at > 7200
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Accounts are not being announced to Dynomite'
+      description: |
+        Each existing account should be announced to the Dynomite database once every hour.
+        However, some accounts have not been announced for over 2 hours, so it looks like Dynomite is having issues.
+        Check the logs of keppel-janitor for details.

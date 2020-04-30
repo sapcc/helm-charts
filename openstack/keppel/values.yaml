@@ -45,7 +45,7 @@ pgmetrics:
 
   customMetrics:
     keppel_accounts:
-      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(blobs_sweeped_at)), 0) AS min_blobs_sweeped_at, COALESCE(EXTRACT(epoch FROM MIN(storage_sweeped_at)), 0) AS min_storage_sweeped_at FROM accounts'
+      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(blobs_sweeped_at)), 0) AS min_blobs_sweeped_at, COALESCE(EXTRACT(epoch FROM MIN(storage_sweeped_at)), 0) AS min_storage_sweeped_at, COALESCE(EXTRACT(epoch FROM MIN(announced_to_federation_at)), 0) AS min_announced_to_federation_at FROM accounts'
       metrics:
         - count:
             usage: "GAUGE"
@@ -56,6 +56,9 @@ pgmetrics:
         - min_storage_sweeped_at:
             usage: "GAUGE"
             description: "UNIX timestamp of oldest storage sweep, or 0 if no accounts have ever been sweeped"
+        - min_announced_to_federation_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of oldest federation announcement, or 0 if no accounts have ever been announced to federation"
     keppel_blobs:
       query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(marked_for_deletion_at)), 0) AS min_marked_for_deletion_at, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs"
       metrics:
