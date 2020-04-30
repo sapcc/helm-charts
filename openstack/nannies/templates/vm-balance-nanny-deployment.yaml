@@ -1,0 +1,76 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+{{- if .Values.vm_balance_nanny.enabled }}
+kind: VCenterTemplate
+apiVersion: vcenter-operator.stable.sap.cc/v1
+metadata:
+  name: 'vcenter-datacenter-vm-balance-deployment'
+options:
+  scope: 'datacenter'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  kind: Deployment
+  {{- if .Capabilities.APIVersions.Has "apps/v1" }}
+  apiVersion: apps/v1
+  {{- else }}
+  apiVersion: extensions/v1beta1
+  {{- end }}
+  metadata:
+    name: vm-balance-nanny-{= name =}
+    namespace: monsoon3
+    labels:
+      system: openstack
+      service: vm-balance-nanny
+  
+  spec:
+    replicas: 1
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    template:
+      metadata:
+        labels:
+          component: vm-balance-nanny-{= name =}
+      spec:
+        nodeSelector:
+          zone: farm
+        containers:
+          - name: vm-balance
+            image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/vm-balance-nanny:{{ .Values.vm_balance_nanny.image_version }}
+            imagePullPolicy: IfNotPresent
+            command:
+              - dumb-init
+              - kubernetes-entrypoint
+            env:
+              - name: COMMAND
+                value: "{{ if not .Values.vm_balance_nanny.debug }}/bin/bash /scripts/vm-balance.sh{{ else }}sleep inf{{ end }}"
+              - name: NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.namespace
+              - name: VM_BALANCE_VCHOST
+                value: {= host | quote =}
+              - name: VM_BALANCE_VCUSER
+                value: {= username | quote =}
+              - name: VM_BALANCE_VCPASSWORD
+                value: {= password | quote =}
+              - name: REGION
+                value: "{{ .Values.current_region }}"
+              - name: OS_AUTH_URL
+                value: "https://identity-3.{= availability_zone[:-1] =}.cloud.sap:443/v3"
+              - name: OS_PROJECT_NAME
+                value: "cloud_admin"
+              - name: OS_PROJECT_DOMAIN_NAME
+                value: "ccadmin"
+              - name: OS_USERNAME
+                value: "vcenter_nanny"
+              - name: OS_USER_DOMAIN_NAME
+                value: "Default"
+              - name: OS_PASSWORD
+                value: {= "vcenter_nanny" | derive_password("identity-3." + availability_zone[:-1] + ".cloud.sap") | quote =}
+
+{{- end }}
+{{- end }}
