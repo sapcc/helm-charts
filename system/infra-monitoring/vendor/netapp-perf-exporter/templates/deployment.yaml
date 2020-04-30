@@ -1,6 +1,6 @@
 {{- if .Values.enabled }}
 {{- $scrape := .Values.metrics.scrape -}}
-{{- $port := .Values.ports.promExporterPort -}}
+{{- $port := .Values.ports.graphiteExporterOutPort -}}
 {{- $targets := .Values.metrics.targets -}}
 {{- $values := .Values }}
 {{- $capabilities := .Capabilities }}
@@ -55,6 +55,12 @@ spec:
             secretKeyRef:
               name: {{ $values.name }}
               key: netappPassword
+        ports:
+          {{- if $app.dupEnabled }}
+          - containerPort: {{ $values.ports.dupInPort }}
+          {{- else }}
+          - containerPort: {{ $values.ports.graphiteExporterInPort }}
+          {{- end }}
         volumeMounts:
         - name: {{ $app.fullname }}
           mountPath: /opt/netapp-harvest/config
@@ -62,7 +68,8 @@ spec:
         image: {{ $values.exporter.image }}
         args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
         ports:
-        - containerPort: {{ $values.ports.promExporterPort }}
+        - containerPort: {{ $values.ports.graphiteExporterInPort }}
+        - containerPort: {{ $values.ports.graphiteExporterOutPort }}
         volumeMounts:
         - name: {{ $app.fullname }}
           subPath: graphite-mapping.conf
@@ -77,11 +84,15 @@ spec:
         image: hub.global.cloud.sap/d067954/gotee:v201911113011-9a29981
         args:
           - "-l"
-          - {{ print ":" $values.ports.harvestOutPort | quote }}
+          - {{ print ":" $values.ports.dupInPort | quote }}
           - "-1"
-          - {{ print ":" $values.ports.graphiteInPort | quote }}
+          - {{ print ":" $values.ports.graphiteExporterInPort | quote }}
           - "-2"
           - "10.216.0.98:2003"
+        ports:
+          - containerPort: {{ $values.ports.graphiteExporterInPort }}
+          - containerPort: {{ $values.ports.graphiteInPort }}
+          - containerPort: {{ $values.ports.dupInPort }}
       {{- end }}
 
 

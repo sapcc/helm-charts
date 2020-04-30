@@ -4,9 +4,9 @@
 graphite_enabled  = 1
 graphite_server   = localhost
 {{- if .dupEnabled }}
-graphite_port     = {{ .Values.ports.harvestOutPort }}
+graphite_port     = {{ .Values.ports.dupInPort }}
 {{- else }}
-graphite_port     = {{ .Values.ports.graphiteInPort }}
+graphite_port     = {{ .Values.ports.graphiteExporterInPort }}
 {{- end }}
 graphite_proto    = tcp
 
