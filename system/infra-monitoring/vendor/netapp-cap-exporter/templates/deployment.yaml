@@ -5,6 +5,8 @@
 {{- $targets := .Values.metrics.targets -}}
 {{- $port := .Values.listenPort -}}
 {{- $secretName := include "netapp-cap-exporter.fullname" . -}}
+{{- $netappFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
+{{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
 {{- range $name, $app := .Values.apps }}
 {{- $configmapName := $app.fullname -}}
 {{- if $app.enabled }}
@@ -31,6 +33,7 @@ spec:
         prometheus.io/scrape: {{ $scrape | quote }}
         prometheus.io/targets: {{ $targets | quote }}
         prometheus.io/port: {{ $port | quote }}
+        checksum/configmap.yaml: {{ include $configmapTemplate (dict "appName" $name "app" $app "netappFilerYaml" $netappFilerYaml) | sha256sum }}
     spec:
       volumes:
         - name: etc

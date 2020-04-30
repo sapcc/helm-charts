@@ -5,7 +5,12 @@
 {{- $values := .Values }}
 {{- $capabilities := .Capabilities }}
 {{- $release := .Release }}
+{{- $harvestTemplate := print .Template.BasePath "/etc/_netapp-harvest.conf.tpl" }}
+{{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
+{{- $graphiteConf := include (print .Template.BasePath "/etc/_graphite-mapping.conf.tpl") . }}
+{{- $netappFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
 {{- range $name, $app := .Values.apps }}
+{{- $netappHarvestConf := include $harvestTemplate (dict "dupEnabled" $app.dupEnabled "Values" $values) }}
 {{- if $app.enabled }}
 ---
 {{- if $capabilities.APIVersions.Has "apps/v1" }}
@@ -30,6 +35,7 @@ spec:
         prometheus.io/scrape: {{ $scrape | quote }}
         prometheus.io/port: {{ $port | quote }}
         prometheus.io/targets: {{ $targets | quote }}
+        checksum/configmap.yaml: {{ include $configmapTemplate (dict "appName" $name "app" $app "netappHarvestConf" $netappHarvestConf "graphiteConf" $graphiteConf "netappFilerYaml" $netappFilerYaml) | sha256sum }}
     spec:
       containers:
       - name: harvest                       # container: harvest
