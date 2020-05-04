@@ -26,6 +26,7 @@ netapp_transport_type={{ $share.protocol | default "https" }}
 netapp_login={{$share.username}}
 netapp_password={{$share.password}}
 netapp_mtu={{$share.mtu | default 9000 }}
+netapp_enabled_share_protocols={{$share.enabled_protocols | default "nfs3, nfs4.0" }}
 
 netapp_root_volume_aggregate={{$share.root_volume_aggregate}}
 netapp_aggregate_name_search_pattern={{$share.aggregate_search_pattern}}
