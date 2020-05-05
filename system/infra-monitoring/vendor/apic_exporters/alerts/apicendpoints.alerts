@@ -1,0 +1,39 @@
+groups:
+- name: apicendpoints.alerts
+  rules:
+  - alert: ApicEndPointNotReachable
+    expr: (count (increase(network_apic_status_total{code="200"}[30h]) ) by (hostname) or (0 * count(network_apic_status_total) by (hostname)) ) / count( increase(network_apic_status_total[30h])) by (hostname) == 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: net
+      service: apic
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci.html#APIC_endpoints_check
+    annotations:
+      description: "{{ $hostname }} doesn't deliver HTTP success anymore."
+      summary: "APIC http endpoint doesn't deliver HTTP success anymore."
+  - alert: NoneApicEndPointReachable
+    expr: (count (increase(network_apic_status_total{code="200"}[30h]) ) or (0 * count(network_apic_status_total)) ) / count( increase(network_apic_status_total[30h])) == 0
+    for: 15m
+    labels:
+      severity: warning
+      tier: net
+      service: apic
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci.html#APIC_endpoints_check
+    annotations:
+      description: "All APICs http endpoints are down or do not deliver 200 more than 15 minutes"
+      summary: "All APICs http endpoints are down more than 15 minutes"
+- alert: ApicEndPointMissingMetric
+    expr: absent(network_apic_status_total) == 1
+    for: 30m
+    labels:
+      severity: critical
+      tier: moni
+      service: apic
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci.html#APIC_endpoints_check
+    annotations:
+      description: "APICs http endpoints metric is missing"
+      summary: "APICs http endpoints metric is missing - alerting is broken"
