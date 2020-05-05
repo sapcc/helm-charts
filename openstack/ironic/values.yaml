@@ -165,7 +165,7 @@ neutron_port_setup_delay: 0
 #swift_tempurl: null
 
 mysql_metrics:
-  enabled: false
+  enabled: true
   db_name: ironic
   db_user: ironic
   customMetrics:
@@ -191,7 +191,6 @@ mysql_metrics:
         FROM nodes
         GROUP BY uuid, name, instance_uuid, power_state, provision_state, last_error;
       values:
-      - "last_error"
       - "gauge"
     - name: openstack_ironic_nodes_updated
       help: Ironic updated nodes
@@ -229,6 +228,23 @@ mysql_metrics:
           uuid,
           name
         FROM nodes
+    - name: openstack_ironic_nodes_conductor
+      help: Ironic updated nodes
+      labels:
+      - "uuid"
+      - "name"
+      - "provision_state"
+      query: |
+        SELECT 
+          uuid, 
+          name, 
+          provision_state,
+          COUNT(*) AS in_24hrs_gauge
+        FROM nodes 
+        WHERE (updated_at >= now() - interval '24 hours') 
+        GROUP BY uuid, provision_state, name;
+      values:
+      - "in_24hrs_gauge"
 
 pgmetrics:
   name: ironic
