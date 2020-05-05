@@ -185,8 +185,7 @@ mysql_metrics:
           name,
           instance_uuid,
           power_state,
-          provision_state
-          AS last_error
+          provision_state AS last_error,
           COUNT(*) AS gauge
         FROM nodes
         GROUP BY uuid, name, instance_uuid, power_state, provision_state, last_error;
@@ -205,7 +204,7 @@ mysql_metrics:
           provision_state,
           COUNT(*) AS in_24hrs_gauge
         FROM nodes 
-        WHERE (updated_at >= now() - interval '24 hours') 
+        WHERE updated_at >= NOW() - INTERVAL 1 DAY 
         GROUP BY uuid, provision_state, name;
       values:
       - "in_24hrs_gauge"
@@ -215,36 +214,39 @@ mysql_metrics:
       - "maintenance_reason"
       values:
       - "node_not_in_maint"
-      - "maintenance_reason"
+      - "node_in_maint"
       query: |
         SELECT 
           COUNT(case when not maintenance then 1 end) AS node_not_in_maint, 
-          COUNT(case when maintenance then 1 end) AS node_not_in_maint, 
+          COUNT(case when maintenance then 1 end) AS node_in_maint, 
           uuid, 
           name, 
           COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
+        FROM nodes
         GROUP BY
           maintenance_reason,
           uuid,
-          name
-        FROM nodes
+          name;
     - name: openstack_ironic_nodes_conductor
       help: Ironic updated nodes
       labels:
       - "uuid"
       - "name"
-      - "provision_state"
+      - "conductor_group"
       query: |
         SELECT 
           uuid, 
           name, 
-          provision_state,
-          COUNT(*) AS in_24hrs_gauge
-        FROM nodes 
-        WHERE (updated_at >= now() - interval '24 hours') 
-        GROUP BY uuid, provision_state, name;
+          conductor_group,
+          COUNT(conductor_group) AS groups
+        FROM nodes
+        WHERE conductor_group NOT LIKE 'bm%' 
+        GROUP BY 
+          name, 
+          uuid, 
+          conductor_group;
       values:
-      - "in_24hrs_gauge"
+      - "groups"
 
 pgmetrics:
   name: ironic
