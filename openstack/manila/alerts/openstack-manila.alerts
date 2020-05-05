@@ -294,3 +294,19 @@ groups:
     annotations:
       description: Certificate {{ $labels.check }} expires in less than 7 days. See Sentry for details
       summary: Certificates
+
+# row locks 
+  - alert: OpenstackManilaMariadbRowLocks
+    expr: mysql_global_status_innodb_row_lock_current_waits > 0
+	for: 5m
+	labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: '{{ $labels.service }} db row locks'
+    annotations:
+      description: '{{ $labels.service }} db row locks'
+      summary: '{{ $labels.service }} db row locks'
+
+
