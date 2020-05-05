@@ -169,7 +169,7 @@ mysql_metrics:
   db_name: ironic
   db_user: ironic
   customMetrics:
-    - name: openstack_ironic_nodes_list
+    - name: openstack_ironic_nodes_list_gauge
       help: Ironic Node list
       labels:
       - "uuid"
@@ -178,19 +178,21 @@ mysql_metrics:
       - "power_state"
       - "provision_state"
       - "last_error"
+      "SELECT uuid, name, instance_uuid, power_state, provision_state, coalesce(last_error,'error unknown') AS last_error, count(*) as gauge from nodes group by uuid, name, instance_uuid, power_state, provision_state, last_error"
       query: |
         SELECT
           uuid,
           name,
           COALESCE(instance_uuid, "") AS instance_uuid,
           power_state,
-          provision_state AS last_error,
+          provision_state,
+          COALESCE(last_error, "no error") AS last_error,
           COUNT(*) AS gauge
         FROM nodes
         GROUP BY uuid, name, instance_uuid, power_state, provision_state, last_error;
       values:
       - "gauge"
-    - name: openstack_ironic_nodes_updated
+    - name: openstack_ironic_nodes_updated_in_24hrs_gauge
       help: Ironic updated nodes
       labels:
       - "uuid"
@@ -207,17 +209,17 @@ mysql_metrics:
         GROUP BY uuid, provision_state, name;
       values:
       - "in_24hrs_gauge"
-    - name: openstack_ironic_nodes
-      help: Ironic nodes in maintenance
+    - name: openstack_ironic_nodes_nodenotinmaint
+      help: Ironic nodes not in maintenance
       labels:
       - "maintenance_reason"
+      - "uuid"
+      - "name"
       values:
       - "node_not_in_maint"
-      - "node_in_maint"
       query: |
         SELECT 
-          COUNT(case when not maintenance then 1 end) AS node_not_in_maint, 
-          COUNT(case when maintenance then 1 end) AS node_in_maint, 
+          COUNT(case when maintenance = 0 then 1 else 0 end) AS node_not_in_maint, 
           uuid, 
           name, 
           COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
@@ -226,7 +228,26 @@ mysql_metrics:
           maintenance_reason,
           uuid,
           name;
-    - name: openstack_ironic_nodes_conductor
+    - name: openstack_ironic_nodes_nodeinmaint
+      help: Ironic nodes in maintenance
+      labels:
+      - "maintenance_reason"
+      - "uuid"
+      - "name"
+      values:
+      - "node_in_maint"
+      query: |
+        SELECT 
+          COUNT(case when maintenance = 1 then 1 else 0 end) AS node_in_maint, 
+          uuid, 
+          name, 
+          COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
+        FROM nodes
+        GROUP BY
+          maintenance_reason,
+          uuid,
+          name;
+    - name: openstack_ironic_nodes_conductor_group
       help: Ironic updated nodes
       labels:
       - "uuid"
@@ -239,7 +260,6 @@ mysql_metrics:
           conductor_group,
           COUNT(conductor_group) AS groups
         FROM nodes
-        WHERE conductor_group NOT LIKE 'bm%' 
         GROUP BY 
           name, 
           uuid, 
