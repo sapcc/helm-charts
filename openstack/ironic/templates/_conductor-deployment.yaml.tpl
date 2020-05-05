@@ -35,11 +35,7 @@ spec:
     spec:
       containers:
       - name: ironic-conductor
-        {{- if .Values.loci.enabled }}
-        image: {{ .Values.global.imageRegistry }}/{{ .Values.loci.imageNamespace }}/loci-ironic:{{ .Values.loci.imageVersion }}
-        {{- else }}
-        image: {{ .Values.global.imageRegistry }}/{{ .Values.global.image_namespace }}/ubuntu-source-ironic-conductor:{{.Values.imageVersionIronicConductor | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
-        {{- end }}
+        image: {{ .Values.global.imageRegistry }}/{{ .Values.global.image_namespace }}/loci-ironic:{{ .Values.imageVersion }}
         imagePullPolicy: IfNotPresent
         {{- if $conductor.debug }}
         securityContext:
