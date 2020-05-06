@@ -341,21 +341,24 @@ threads = 1000
 threshold_percentage =  {{ .Values.worker_threshold_percentage }}
 
 # The time to wait for a response from a server
-poll_timeout = {{.Values.worker_poll_timeout}} 
+poll_timeout = {{ .Values.worker_poll_timeout }}
 
 # The time between retrying to send a request and waiting for a response from a
 # server
-poll_retry_interval = {{.Values.worker_poll_retry_interval}}
+poll_retry_interval = {{ .Values.worker_poll_retry_interval }}
 
 # The maximum number of times to retry sending a request and wait for a
 # response from a server
-poll_max_retries = {{.Values.worker_poll_max_retries}}
+poll_max_retries = {{ .Values.worker_poll_max_retries }}
 
 # The time to wait before sending the first request to a server
 poll_delay = 2
 
 # Whether to allow worker to send NOTIFYs. NOTIFY requests to mdns will noop
 notify = {{ .Values.worker_notify }}
+
+# Whether to enforce worker to send messages over TCP
+all_tcp = {{ .Values.worker_all_tcp }}
 
 ##############
 ## Network API
