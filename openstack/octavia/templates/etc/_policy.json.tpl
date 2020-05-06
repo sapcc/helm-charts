@@ -5,10 +5,10 @@
     "member": "role:member and rule:owner",
     "viewer": "(role:loadbalancer_viewer or role:network_viewer)  and rule:owner",
     "admin": "(role:loadbalancer_admin or role:network_admin) and rule:owner",
-    "memberadmin": "role:loadbalancer_pooladmin and rule:owner",
+    "poolmemberadmin": "role:loadbalancer_poolmemberadmin and rule:owner",
     "context_is_loadbalancer_admin": "rule:context_is_admin or rule:admin",
     "context_is_editor": "rule:context_is_loadbalancer_admin or rule:member",
-    "context_is_viewer": "rule:context_is_editor or rule:viewer or rule:memberadmin",
+    "context_is_viewer": "rule:context_is_editor or rule:viewer or rule:poolmemberadmin",
     "default": "rule:context_is_admin",
 
     "os_load-balancer_api:flavor:get_all": "rule:context_is_viewer",
@@ -60,17 +60,17 @@
     "os_load-balancer_api:loadbalancer:put_failover": "rule:context_is_loadbalancer_admin",
 
     "os_load-balancer_api:member:get_all": "rule:context_is_viewer",
-    "os_load-balancer_api:member:post": "rule:context_is_editor or rule:memberadmin",
+    "os_load-balancer_api:member:post": "rule:context_is_editor or rule:poolmemberadmin",
     "os_load-balancer_api:member:get_one": "rule:context_is_viewer",
-    "os_load-balancer_api:member:put": "rule:context_is_editor or rule:memberadmin",
-    "os_load-balancer_api:member:delete": "rule:context_is_editor or rule:memberadmin",
+    "os_load-balancer_api:member:put": "rule:context_is_editor or rule:poolmemberadmin",
+    "os_load-balancer_api:member:delete": "rule:context_is_editor or rule:poolmemberadmin",
 
     "os_load-balancer_api:pool:get_all": "rule:context_is_viewer",
-    "os_load-balancer_api:pool:get_all-global": "rule:context_is_editor or rule:memberadmin",
-    "os_load-balancer_api:pool:post": "rule:context_is_editor or rule:memberadmin",
+    "os_load-balancer_api:pool:get_all-global": "rule:context_is_editor or rule:poolmemberadmin",
+    "os_load-balancer_api:pool:post": "rule:context_is_editor",
     "os_load-balancer_api:pool:get_one": "rule:context_is_viewer",
-    "os_load-balancer_api:pool:put": "rule:context_is_editor or rule:memberadmin",
-    "os_load-balancer_api:pool:delete": "rule:context_is_editor or rule:memberadmin",
+    "os_load-balancer_api:pool:put": "rule:context_is_editor",
+    "os_load-balancer_api:pool:delete": "rule:context_is_editor",
 
     "os_load-balancer_api:provider:get_all": "rule:context_is_viewer",
 
