@@ -23,6 +23,12 @@ elasticsearch:
     limits:
       memory: "6G"
 
+elasticsearch-exporter:
+  es:
+    uri: http://elasticsearch-master:9200
+  securityContext:
+    enabled: true
+  
 logstash:
   image: "robcowart/elastiflow-logstash-oss"
   imageTag: "3.5.1"
@@ -85,6 +91,16 @@ logstash:
     failureThreshold: 5
     successThreshold: 1
 
+logstash-exporter:
+  ls:
+    uri: http://elastiflow-logstash:9600
+
 kibana:
   image: "docker.elastic.co/kibana/kibana-oss"
   elasticsearchHosts: "http://elasticsearch-master:9200"
+
+# Deploy Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
