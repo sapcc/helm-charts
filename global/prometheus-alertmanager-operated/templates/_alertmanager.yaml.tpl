@@ -784,28 +784,28 @@ receivers:
 
   - name: pagerduty_ccloud_ccloud_api
     pagerduty_ccloud_configs:
-      - service_key: {{ required ".Values.pagerduty_ccloud.ccloud.api.serviceKey undefined" .Values.pagerduty_ccloud.ccloud.api.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty_ccloud.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty.ccloud.api.serviceKey undefined" .Values.pagerduty.ccloud.api.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
         details:
-          Details: {{"'{{template \"pagerduty_ccloud.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty_ccloud.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty_ccloud.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty_ccloud.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty_ccloud.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty_ccloud.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty_ccloud.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty_ccloud.sapcc.firing\" . }}'"}}
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   - name: pagerduty_ccloud_ccloud_metal
     pagerduty_ccloud_configs:
-      - service_key: {{ required ".Values.pagerduty_ccloud.ccloud.metal.serviceKey undefined" .Values.pagerduty_ccloud.ccloud.metal.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty_ccloud.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty.ccloud.metal.serviceKey undefined" .Values.pagerduty.ccloud.metal.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
         details:
           Details: {{"'{{template \"pagerduty_ccloud.sapcc.details\" . }}'"}}
           Region: {{"'{{template \"pagerduty_ccloud.sapcc.region\" . }}'"}}
@@ -820,119 +820,119 @@ receivers:
   
   - name: pagerduty_ccloud_ccloud_network
     pagerduty_ccloud_configs:
-      - service_key: {{ required ".Values.pagerduty_ccloud.ccloud.network.serviceKey undefined" .Values.pagerduty_ccloud.ccloud.network.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty_ccloud.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty.ccloud.network.serviceKey undefined" .Values.pagerduty.ccloud.network.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
         details:
-          Details: {{"'{{template \"pagerduty_ccloud.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty_ccloud.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty_ccloud.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty_ccloud.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty_ccloud.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty_ccloud.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty_ccloud.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty_ccloud.sapcc.firing\" . }}'"}}
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   - name: pagerduty_ccloud_ccloud_vmware
     pagerduty_ccloud_configs:
-      - service_key: {{ required ".Values.pagerduty_ccloud.ccloud.vmware.serviceKey undefined" .Values.pagerduty_ccloud.ccloud.vmware.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty_ccloud.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty.ccloud.vmware.serviceKey undefined" .Values.pagerduty.ccloud.vmware.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
         details:
-          Details: {{"'{{template \"pagerduty_ccloud.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty_ccloud.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty_ccloud.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty_ccloud.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty_ccloud.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty_ccloud.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty_ccloud.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty_ccloud.sapcc.firing\" . }}'"}}
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   - name: pagerduty_ccloud_ccloud_alertchain_test
     pagerduty_ccloud_configs:
-      - service_key: {{ required ".Values.pagerduty_ccloud.ccloud.alertTest.serviceKey undefined" .Values.pagerduty_ccloud.ccloud.alertTest.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty_ccloud.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty.ccloud.alertTest.serviceKey undefined" .Values.pagerduty.ccloud.alertTest.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
         details:
-          Details: {{"'{{template \"pagerduty_ccloud.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty_ccloud.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty_ccloud.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty_ccloud.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty_ccloud.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty_ccloud.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty_ccloud.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty_ccloud.sapcc.firing\" . }}'"}}
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   - name: pagerduty_ccloud_sap_api
     pagerduty_ccloud_configs:
-      - service_key: {{ required ".Values.pagerduty_ccloud.sap.api.serviceKey undefined" .Values.pagerduty_ccloud.sap.api.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty_ccloud.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty.sap.api.serviceKey undefined" .Values.pagerduty.sap.api.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
         details:
-          Details: {{"'{{template \"pagerduty_ccloud.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty_ccloud.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty_ccloud.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty_ccloud.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty_ccloud.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty_ccloud.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty_ccloud.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty_ccloud.sapcc.firing\" . }}'"}}
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   - name: pagerduty_ccloud_sap_metal
     pagerduty_ccloud_configs:
-      - service_key: {{ required ".Values.pagerduty_ccloud.sap.metal.serviceKey undefined" .Values.pagerduty_ccloud.sap.metal.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty_ccloud.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty.sap.metal.serviceKey undefined" .Values.pagerduty.sap.metal.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
         details:
-          Details: {{"'{{template \"pagerduty_ccloud.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty_ccloud.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty_ccloud.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty_ccloud.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty_ccloud.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty_ccloud.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty_ccloud.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty_ccloud.sapcc.firing\" . }}'"}}
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
   
 
   - name: pagerduty_ccloud_sap_network
     pagerduty_ccloud_configs:
-      - service_key: {{ required ".Values.pagerduty_ccloud.sap.network.serviceKey undefined" .Values.pagerduty_ccloud.sap.network.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty_ccloud.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty.sap.network.serviceKey undefined" .Values.pagerduty.sap.network.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
         details:
-          Details: {{"'{{template \"pagerduty_ccloud.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty_ccloud.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty_ccloud.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty_ccloud.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty_ccloud.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty_ccloud.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty_ccloud.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty_ccloud.sapcc.firing\" . }}'"}}
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   - name: pagerduty_ccloud_sap_vmware
     pagerduty_ccloud_configs:
-      - service_key: {{ required ".Values.pagerduty_ccloud.sap.vmware.serviceKey undefined" .Values.pagerduty_ccloud.sap.vmware.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty_ccloud.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty_ccloud.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty_ccloud.sapcc.service\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty.sap.vmware.serviceKey undefined" .Values.pagerduty.sap.vmware.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
         details:
           Details: {{"'{{template \"pagerduty_ccloud.sapcc.details\" . }}'"}}
           Region: {{"'{{template \"pagerduty_ccloud.sapcc.region\" . }}'"}}
