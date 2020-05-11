@@ -609,3 +609,16 @@
     - target_label: __address__
       replacement: esxi-exporter:9203
 {{- end }}
+
+# netbox metrics scraping
+{{- if .Values.netbox_exporter.enabled }}
+- job_name: 'netbox_exporter'
+  scrape_interval: {{ .Values.netbox_exporter.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporter.scrapeTimeout }}
+  static_configs:
+    - targets:
+      {{- range $.Values.netbox_exporter.targets }}
+      - {{ . }}
+      {{- end }}
+  scheme: https
+{{- end }}
