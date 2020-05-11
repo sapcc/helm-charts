@@ -1,0 +1,40 @@
+{{- if .Values.logstash_exporter.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ls-exporter-{{ .Values.logstash_exporter.name }}
+  namespace: elastiflow
+  labels:
+    system: openstack
+    service: audit
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: ls-exporter-{{ .Values.logstash_exporter.name }}
+    spec:
+      nodeSelector:
+        zone: farm
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: logstash-exporter
+          image: "{{ .Values.logstash_exporter.image.repo }}:{{ .Values.logstash_exporter.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          command: [
+            "--logstash.endpoint={{ .Values.ls.uri }}",
+            "--web.listen-address={{ .Values.logstash_exporter.listen_port }}"
+            ]
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.logstash_exporter.listen_port }}
+{{ end -}}

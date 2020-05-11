@@ -1,0 +1,22 @@
+{{- if .Values.logstash_exporter.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: ls-exporter-{{ .Values.logstash_exporter.name }}
+  namespace: elastiflow
+  labels:
+    system: openstack
+    service: audit
+    component: ls-exporter-{{ .Values.logstash_exporter.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.logstash_exporter.listen_port }}"
+    prometheus.io/targets: "{{ .Values.logstash_exporter.targets }}"
+
+spec:
+  selector:
+    component: ls-exporter-{{ .Values.logstash_exporter.name }}
+  ports:
+    - name: metrics
+      port: {{$.Values.logstash_exporter.listen_port}}
+{{ end -}}

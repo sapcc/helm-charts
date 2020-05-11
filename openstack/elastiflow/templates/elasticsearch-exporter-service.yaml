@@ -1,0 +1,22 @@
+{{- if .Values.elasticsearch_exporter.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: es-exporter-{{ .Values.elasticsearch_exporter.name }}
+  namespace: elastiflow
+  labels:
+    system: openstack
+    service: audit
+    component: es-exporter-{{ .Values.elasticsearch_exporter.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.elasticsearch_exporter.listen_port }}"
+    prometheus.io/targets: "{{ .Values.elasticsearch_exporter.targets }}"
+
+spec:
+  selector:
+    component: es-exporter-{{ .Values.elasticsearch_exporter.name }}
+  ports:
+    - name: metrics
+      port: {{$.Values.elasticsearch_exporter.listen_port}}
+{{ end -}}

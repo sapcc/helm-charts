@@ -23,11 +23,15 @@ elasticsearch:
     limits:
       memory: "6G"
 
-elasticsearch-exporter:
+elasticsearch_exporter:
+  enabled: true
+  image: 
+    repo: justwatch/elasticsearch_exporter
+    tag: 1.1.0
   es:
     uri: http://elasticsearch-master:9200
-  securityContext:
-    enabled: true
+  listen_port: 9102
+  targets: prometheus-openstack
   
 logstash:
   image: "robcowart/elastiflow-logstash-oss"
@@ -94,6 +98,14 @@ logstash:
 logstash-exporter:
   ls:
     uri: http://elastiflow-logstash:9600
+  enabled: true
+  image: 
+    repo: justwatch/elasticsearch_exporter
+    tag: 1.1.0
+  es:
+    uri: http://elastiflow-logstash:9600
+  listen_port: 9102
+  targets: prometheus-openstack
 
 kibana:
   image: "docker.elastic.co/kibana/kibana-oss"
