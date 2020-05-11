@@ -539,6 +539,18 @@
   scheme: https
 {{- end }}
 
+{{- if .Values.netbox_exporter.enabled }}
+- job_name: 'netbox'
+  scrape_interval: {{ .Values.netbox_exporter.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporter.scrapeTimeout }}
+  static_configs:
+    - targets:
+      {{- range $.Values.netbox_exporter.targets }}
+      - {{ . }}
+      {{- end }}
+  scheme: https
+{{- end }}
+
 #normal scrape intervals are too frequent, that's why we only occasionally want to query here.
 {{- $values := .Values.bm_cablecheck_exporter -}}
 {{- if $values.enabled }}
@@ -572,8 +584,6 @@
       regex: vpod-cablecheck-exporter
       action: keep
 {{- end }}
-
-
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
 {{- $values := .Values.vrops_exporter -}}
