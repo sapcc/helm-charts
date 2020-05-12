@@ -89,6 +89,9 @@ spec:
 {{- end }}
           - mountPath: /etc/mysql/mariadb.conf.d/
             name: mariadb-etc
+          - mountPath: /root/.my.cnf
+            subPath: ".my.cnf"
+            name: mariadb-client
 {{- if .Values.initdb_configmap }}
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
@@ -203,6 +206,9 @@ spec:
         - name: mariadb-etc
           configMap:
             name: mariadb-{{.Values.name}}-etc
+        - name: mariadb-client
+          configMap:
+            name: mariadb-{{.Values.name}}-client
 {{- if .Values.persistence_claim.enabled }}
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
