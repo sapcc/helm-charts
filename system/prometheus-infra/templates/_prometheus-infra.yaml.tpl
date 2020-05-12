@@ -32,6 +32,7 @@
       - '{__name__=~"^vcenter_.+",job!~"[a-z0-9-]*-vccustomervmmetrics$"}'
       - '{__name__=~"^network_apic_.+"}'
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
+      - '{__name__=~"^ipmi_memory_state$"}'
       - '{__name__=~"^ipmi_memory_errors$"}'
       - '{__name__=~"^ipmi_up"}'
       - '{__name__=~"^snmp_(ipn|acispine|acileaf)_ifLastChange"}'
