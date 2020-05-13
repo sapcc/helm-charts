@@ -8,6 +8,7 @@
       service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: 'docs/devops/alert/sop_alerting.html#b1-no-action-required'
     annotations:
       description: {{ include "fullName" . }} has too many connections open. Please check the service containers.
       summary: {{ include "fullName" . }} has too many connections open.
