@@ -14,13 +14,20 @@ spec:
   groups:
   - name: openstack-sre.aggregations
     rules:
-{{- range $api, $slo := $values.slo.api_error_ratio_percent }}
-    - record: global:api_errors_per_request_slo:percent
+{{- range $api, $slo := $values.slo.api_availability_percent }}
+    - record: global:api_availability_warning_slo:percent
       labels:
           ingress: {{ $api | quote }}
           region: {{required ".Values.global.region missing" $values.global.region}}
-      expr: {{ $slo | quote }}
+      expr: {{ $slo.warning | default $values.slo.default_warning  | quote }}
+{{- end }}
 
+{{- range $api, $slo := $values.slo.api_availability_percent }}
+    - record: global:api_availability_critical_slo:percent
+      labels:
+          ingress: {{ $api | quote }}
+          region: {{required ".Values.global.region missing" $values.global.region}}
+      expr: {{ $slo.critical | default $values.slo.default_critical | quote }}
 {{- end }}
 
 {{- range $period := $values.periods }}
