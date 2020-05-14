@@ -96,8 +96,7 @@ spec:
           readinessProbe:
             exec:
               command:
-              - grep
-              - 'ready'
+              - cat
               - /etc/manila/probe
             timeoutSeconds: 3
             periodSeconds: 5

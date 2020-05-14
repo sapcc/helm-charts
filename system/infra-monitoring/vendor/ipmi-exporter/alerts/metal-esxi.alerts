@@ -15,7 +15,21 @@ groups:
       description: "ESXi Host {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
-  - alert: MetalESXiMemoryWarn
+  - alert: MetalESXiMemWarn
+    expr: count(ipmi_memory_state{job="vmware-esxi"} == 2) by (server_name, exported_name, manufacturer, model, server_id)
+    for: 10m
+    labels:
+      severity: warning
+      tier: vpod
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} / server_id: {{ $labels.server_id }}"
+      playbook: docs/devops/alert/baremetal/vpod.html
+    annotations:
+      description: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} / server_id: {{ $labels.server_id }}"
+      summary: "Dimm error for server: {{ $labels.server_name }}"
+      
+  - alert: MetalESXiECCMemWarn
     expr: sum(ipmi_memory_errors{job="vmware-esxi"} > 16000) by (server_name, exported_name, manufacturer, model, server_id, serial)
     for: 30m
     labels:
@@ -23,10 +37,10 @@ groups:
       tier: vpod
       service: baremetal
       context: "{{ $labels.server_name }}"
-      meta: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} has {{ $value }} correctable ECC errors. Serial: {{ $labels.serial }}"
+      meta: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}"
       playbook: docs/devops/alert/baremetal/vpod.html#MetalESXiMemoryWarn
     annotations:
-      description: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} has {{ $value }} correctable ECC errors. Serial: {{ $labels.serial }}"
+      description: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}"
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalESXiSensorInfo

@@ -1,0 +1,90 @@
+elasticsearch:
+  enabled: true
+  image: "docker.elastic.co/elasticsearch/elasticsearch"
+
+  replicas: 1
+  minimumMasterNodes: 1
+
+  esJavaOpts: "-Xmx4G -Xms4G"
+  esConfig:
+    elasticsearch.yml: |
+      indices.query.bool.max_clause_count: 8192
+      search.max_buckets: 100000
+
+  volumeClaimTemplate:
+    accessModes: [ "ReadWriteMany" ]
+    resources:
+      requests:
+        storage: 100G
+
+  resources:
+    requests:
+      memory: "4G"
+    limits:
+      memory: "6G"
+
+logstash:
+  image: "robcowart/elastiflow-logstash-oss"
+  imageTag: "4.0.0-beta"
+  logstashJavaOpts: "-Xmx4G -Xms4G"
+
+  persistence:
+    enabled: false
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 4G
+    limits:
+      cpu: 4000m
+      memory: 6G
+
+  extraEnvs:
+    - name: ELASTIFLOW_ES_HOST
+      value: "elasticsearch-master:9200"
+  service:
+    type: NodePort
+    ports:
+      - name: netflow-udp
+        port: 2055
+        targetPort: 2055
+        nodePort: 30055
+        protocol: UDP
+      - name: sflow-udp
+        port: 6343
+        targetPort: 6343
+        nodePort: 30343
+        protocol: UDP
+      - name: ipfix-udp
+        port: 4739
+        targetPort: 4739
+        nodePort: 30739
+        protocol: UDP
+      - name: ipfix-tcp
+        port: 4739
+        targetPort: 4739
+        nodePort: 30740
+        protocol: TCP
+
+  readinessProbe:
+    # use ipfix-tcp port instead of http API to better check elastiflow specific status
+    httpGet: null
+    tcpSocket:
+      port: 4739
+    initialDelaySeconds: 300
+    periodSeconds: 30
+    failureThreshold: 20
+    successThreshold: 1
+
+  livenessProbe:
+    httpGet: null
+    tcpSocket:
+      port: 4739
+    initialDelaySeconds: 600
+    periodSeconds: 20
+    failureThreshold: 5
+    successThreshold: 1
+
+kibana:
+  image: "docker.elastic.co/kibana/kibana"
+  elasticsearchHosts: "http://elasticsearch-master:9200"
