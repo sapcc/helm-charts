@@ -25,11 +25,11 @@ spec:
         description: "{{`{{$labels.ingress}}`}} fell below availability warning SLO in the last hour."
 
     - alert: ApiAvailabilityCritical
-      expr: global:api_errors_per_request_sli:ratio_rate1h <= on (ingress,region) global:api_availability_critical_slo:percent
+      expr: (1 - global:api_errors_per_request_sli:ratio_rate1h) *100 <= on (ingress,region) global:api_availability_critical_slo:percent
       labels:
         context: availability
         service: "{{`{{$labels.ingress}}`}}"
-        severity: warning
+        severity: critical
         tier: sre
       annotations:
         summary: "An api fell below availability critical SLO in the last hour"

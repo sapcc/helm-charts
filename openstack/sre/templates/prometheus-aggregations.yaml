@@ -19,7 +19,7 @@ spec:
       labels:
           ingress: {{ $api | quote }}
           region: {{required ".Values.global.region missing" $values.global.region}}
-      expr: {{ $slo.warning | default $values.slo.default_warning  | quote }}
+      expr: {{ $slo.warning | default $values.slo.defaults.api_availability_percent.warning | quote }}
 {{- end }}
 
 {{- range $api, $slo := $values.slo.api_availability_percent }}
@@ -27,7 +27,7 @@ spec:
       labels:
           ingress: {{ $api | quote }}
           region: {{required ".Values.global.region missing" $values.global.region}}
-      expr: {{ $slo.critical | default $values.slo.default_critical | quote }}
+      expr: {{ $slo.critical | default $values.slo.defaults.api_availability_percent.critical | quote }}
 {{- end }}
 
 {{- range $period := $values.periods }}
