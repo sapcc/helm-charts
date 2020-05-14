@@ -9,6 +9,9 @@ log_config_append = /etc/glance/logging.ini
 
 show_image_direct_url= True
 
+property_protection_file = /etc/glance/glance-protection.pp
+property_protection_rule_format = policies
+
 #disable default admin rights for role 'admin'
 admin_role = ''
 
