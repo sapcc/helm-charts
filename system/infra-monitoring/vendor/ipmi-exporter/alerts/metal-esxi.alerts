@@ -1,60 +1,107 @@
+
+# The metric vrops_hostsystem_properties indicates in the propkey label if a hypervisor is in maintenance.
+# It can be used in two ways:
+# 1.) use the value and a regex
+#   vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"} == 0 indicates in maintenance
+#   vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"} == 1 indicates not in maintenance
+# 2.) use the label name:
+#   vrops_hostsystem_properties{propkey=~"runtime_maintenanceState: inMaintenance"} indicates in maintenance
+#   vrops_hostsystem_properties{propkey=~"runtime_maintenanceState: notinMaintenace"} indicates not in maintenance
+# Since this metric is not providing constantly a value we have to use max_over_time
+
+# Combining the ipmi metrics with the vrops_hostsystem_properties metric needs a label_replace because the server_name label is not existing in vrops_hostsystem_properties metric but the hostsystem label.
+# hostsystem label has the FQDN. So we only use the host part for the server_name label (node)
+# label_replace(vrops_hostsystem_properties, "server_name", "$1", "hostsystem", "(.*).cc.*")
+
+# Afterwards we can match using on(server_name) both metrics using the server_name label.
+
+# To get all the labels needed for the alert we use group_left to use the ones from the left side which is the ipmi metric.
+
 groups:
 - name: metal-esxi.alerts
   rules:      
   - alert: MetalESXiSensorWarn
-    expr: count(ipmi_sensor_state{job="vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot)"} == 2) by (server_name, type, exported_name, manufacturer, model, server_id)
+    expr: count(ipmi_sensor_state{job="vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot)"} == 2) by (server_name, type, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[5m]) == 1, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
     for: 10m
     labels:
       severity: warning
       tier: vpod
       service: baremetal
       context: "{{ $labels.server_name }}"
-      meta: "ESXi Host {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.exported_name }} / server_id: {{ $labels.server_id }}"
+      meta: "ESXi Host {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host not in maintenance""
       playbook: docs/devops/alert/baremetal/vpod.html
     annotations:
-      description: "ESXi Host {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} / Server ID: {{ $labels.server_id }}"
-      summary: "Hardware error for server: {{ $labels.server_name }}"
-      
-  - alert: MetalESXiMemWarn
-    expr: count(ipmi_memory_state{job="vmware-esxi"} == 2) by (server_name, exported_name, manufacturer, model, server_id)
-    for: 10m
-    labels:
-      severity: warning
-      tier: vpod
-      service: baremetal
-      context: "{{ $labels.server_name }}"
-      meta: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} / server_id: {{ $labels.server_id }}"
-      playbook: docs/devops/alert/baremetal/vpod.html
-    annotations:
-      description: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} / server_id: {{ $labels.server_id }}"
-      summary: "Dimm error for server: {{ $labels.server_name }}"
-      
-  - alert: MetalESXiECCMemWarn
-    expr: sum(ipmi_memory_errors{job="vmware-esxi"} > 16000) by (server_name, exported_name, manufacturer, model, server_id, serial)
-    for: 30m
-    labels:
-      severity: warning
-      tier: vpod
-      service: baremetal
-      context: "{{ $labels.server_name }}"
-      meta: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}"
-      playbook: docs/devops/alert/baremetal/vpod.html#MetalESXiMemoryWarn
-    annotations:
-      description: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}"
+      description: "ESXi Host {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host not in maintenance""
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalESXiSensorInfo
-    expr: count(ipmi_sensor_state{job="vmware-esxi", type=~"(Power Supply|Cable/Interconnect|Version Change)"} == 2) by (server_name, type, exported_name, manufacturer, model, server_id)
+    expr: count(ipmi_sensor_state{job="vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot|Power Supply|Cable/Interconnect|Version Change)"} == 2) by (server_name, type, exported_name, serial)
     for: 10m
     labels:
       severity: info
       tier: vpod
       service: baremetal
       context: "{{ $labels.server_name }}"
-      meta: "ESXi Host {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.exported_name }} / server_id: {{ $labels.server_id }}"
+      meta: "ESXi Host {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}"
       playbook: docs/devops/alert/baremetal/vpod.html
     annotations:
-      description: "ESXi Host {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} / Server ID: {{ $labels.server_id }}"
+      description: "ESXi Host {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
+      
+  - alert: MetalESXiMemWarn
+    expr: count(ipmi_memory_state{job="vmware-esxi"} == 2) by (server_name, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[5m]) == 1, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
+    for: 10m
+    labels:
+      severity: warning
+      tier: vpod
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host not in maintenance""
+      playbook: docs/devops/alert/baremetal/vpod.html
+    annotations:
+      description: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host not in maintenance""
+      summary: "Dimm error for server: {{ $labels.server_name }}"
+      
+  - alert: MetalESXiMemInfo
+    expr: count(ipmi_memory_state{job="vmware-esxi"} == 2) by (server_name, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[5m]) == 0, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
+    for: 10m
+    labels:
+      severity: info
+      tier: vpod
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host in maintenance"
+      playbook: docs/devops/alert/baremetal/vpod.html
+    annotations:
+      description: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host in maintenance"
+      summary: "Dimm error for server: {{ $labels.server_name }}"
+      
+  - alert: MetalESXiECCMemWarn
+    expr: sum(ipmi_memory_errors{job="vmware-esxi"} > 16000) by (server_name, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[5m]) == 1, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
+    for: 30m
+    labels:
+      severity: warning
+      tier: vpod
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}, Host not in maintenance"
+      playbook: docs/devops/alert/baremetal/vpod.html#MetalESXiMemoryWarn
+    annotations:
+      description: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}, Host not in maintenance"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
+      
+  - alert: MetalESXiECCMemInfo
+    expr: sum(ipmi_memory_errors{job="vmware-esxi"} > 16000) by (server_name, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[5m]) == 0, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
+    for: 30m
+    labels:
+      severity: info
+      tier: vpod
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}, Host in maintenance"
+      playbook: docs/devops/alert/baremetal/vpod.html#MetalESXiMemoryWarn
+    annotations:
+      description: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}, Host in maintenance"
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalESXiMetricsDownInfo
