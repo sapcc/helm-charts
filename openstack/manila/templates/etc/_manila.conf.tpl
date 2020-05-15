@@ -37,15 +37,6 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 
 delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_share | default false }}
 
-# Float representation of the over subscription ratio when thin
-# provisioning is involved. Default ratio is 20.0, meaning provisioned
-# capacity can be 20 times the total physical capacity. If the ratio
-# is 10.5, it means provisioned capacity can be 10.5 times the total
-# physical capacity. A ratio of 1.0 means provisioned capacity cannot
-# exceed the total physical capacity. A ratio lower than 1.0 is
-# invalid. (floating point value)
-max_over_subscription_ratio = {{ .Values.max_over_subscription_ratio | default 3.0 }}
-
 scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
 

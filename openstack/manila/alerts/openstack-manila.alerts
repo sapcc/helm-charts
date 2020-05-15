@@ -2,7 +2,7 @@ groups:
 - name: openstack-manila.alerts
   rules:
   - alert: OpenstackManilaSharesStuck
-    expr: (sum(openstack_manila_shares_stuck_count_gauge) BY (host, status)) > 0
+    expr: (sum(openstack_manila_shares_stuck_count_gauge) BY (manila_host, status)) > 0
     for: 5m
     labels:
       dashboard: manila
@@ -17,7 +17,7 @@ groups:
 
   - alert: OpenstackManilaSharesStuckCreate
     expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="creating"})
-      BY (host) > 120
+      BY (manila_host) > 120
     for: 5m
     labels:
       dashboard: manila
@@ -26,12 +26,12 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Manila Shares taking more than 2 minutes to create in {{ $labels.host }}
+      description: Manila Shares taking more than 2 minutes to create in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to create
 
   - alert: OpenstackManilaSharesStuckDelete
     expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="deleting"})
-      BY (host) > 120
+      BY (manila_host) > 120
     for: 5m
     labels:
       dashboard: manila
@@ -40,12 +40,12 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Manila Shares taking more than 2 minutes to delete in {{ $labels.host }}
+      description: Manila Shares taking more than 2 minutes to delete in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to delete
 
   - alert: OpenstackManilaSharesStuckResize
     expr: max(openstack_manila_shares_stuck_max_duration_gauge{status=~"shrinking|extending"})
-      BY (host) > 120
+      BY (manila_host) > 120
     for: 5m
     labels:
       dashboard: manila
@@ -54,7 +54,7 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Manila Shares taking more than 2 minutes to resize in {{ $labels.host }}
+      description: Manila Shares taking more than 2 minutes to resize in {{ $labels.manila_host }}
       summary: Manila Shares taking more than 2 minutes to resize
 
   - alert: OpenstackManilaShareServerHigh

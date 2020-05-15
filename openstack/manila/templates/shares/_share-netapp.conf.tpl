@@ -1,12 +1,14 @@
 {{- define "share_netapp_conf" -}}
 {{- $context := index . 0 -}}
 {{- $share := index . 1 -}}
+{{- $az := $share.availability_zone | default $context.Values.default_availability_zone | default $context.Values.global.default_availability_zone -}}
 [DEFAULT]
-storage_availability_zone = {{ $share.availability_zone | default $context.Values.default_availability_zone | default $context.Values.global.default_availability_zone }}
+storage_availability_zone = {{ $az }}
 host = manila-share-netapp-{{$share.name}}
 
 [netapp-multi]
 share_backend_name={{$share.backend_name | default $share.vserver | default "netapp-multi"}}
+replication_domain={{ $share.replication_domain | default $az }}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
 {{- if $share.vserver }}
 driver_handles_share_servers = false
@@ -43,5 +45,15 @@ netapp_trace_flags=api,method
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
 reserved_share_percentage = {{ $share.reserved_share_percentage | default 25 }}
+
+# Float representation of the over subscription ratio when thin
+# provisioning is involved. Default ratio is 20.0, meaning provisioned
+# capacity can be 20 times the total physical capacity. If the ratio
+# is 10.5, it means provisioned capacity can be 10.5 times the total
+# physical capacity. A ratio of 1.0 means provisioned capacity cannot
+# exceed the total physical capacity. A ratio lower than 1.0 is
+# invalid. (floating point value)
+max_over_subscription_ratio = {{ $share.max_over_subscription_ratio | default $context.Values.max_over_subscription_ratio | default 3.0 }}
+
 filter_function = {{ $share.filter_function | default "stats.provisioned_capacity_gb / stats.total_capacity_gb <= 0.7" }}
 {{- end -}}
