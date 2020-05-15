@@ -10,7 +10,9 @@ metadata:
 spec:
   requires:
     #- monsoon3/keystone-seed
+    {{- if .Values.cc3testBilling }}
     - monsoon3/domain-cc3test-seed
+    {{- end }}
     - swift/swift-seed
     - limes/limes-seed
 
@@ -39,6 +41,7 @@ spec:
       - project: service
         role: service
 
+  {{- if .Values.cc3testBilling }}
   - name: cc3test
     role_assignments:
     - user: {{ .Values.cc3testBillingDomainAdmUser | quote }}
@@ -62,6 +65,7 @@ spec:
       role_assignments:
       - project: billing_test
         role: admin
+  {{- end }}
 
   - name: ccadmin
     projects:
