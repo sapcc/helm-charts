@@ -1,22 +1,14 @@
 # neutron.conf
 [DEFAULT]
 debug = {{.Values.debug}}
-verbose=True
+verbose = True
 
 log_config_append = /etc/neutron/logging.conf
-
-#lock_path = /var/lock/neutron
 api_paste_config = /etc/neutron/api-paste.ini
+{{ include "ini_sections.default_transport_url" . }}
 
-allow_pagination = true
-allow_sorting = true
 pagination_max_limit = 500
-
-# DEPRECATED
-max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 50}}
-# is often used together with multiple fixed IPs per port, keep the values similar
 max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
-# Maximum number of routes per router (integer value)
 max_routes = {{.Values.max_routes | default 256}}
 
 allow_overlapping_ips = true
@@ -29,15 +21,10 @@ router_scheduler_driver = {{required "A valid .Values.router_scheduler_driver re
 router_auto_schedule = {{ .Values.router_auto_schedule | default "false" }}
 allow_automatic_l3agent_failover = {{ .Values.allow_automatic_l3agent_failover | default "false" }}
 
-# New DHCP Agent
-{{- if .Values.agent.multus }}
 network_scheduler_driver = neutron.scheduler.dhcp_agent_scheduler.AZAwareWeightScheduler
-{{- end }}
 allow_automatic_dhcp_failover = {{ .Values.allow_automatic_dhcp_failover | default "false" }}
 dhcp_agents_per_network = 2
 dhcp_lease_duration = {{ .Values.dhcp_lease_duration | default 86400 }}
-
-enable_new_agents = false
 
 # Designate configuration
 dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
@@ -97,7 +84,7 @@ ipv4_ptr_zone_prefix_size = 24
 [oslo_concurrency]
 lock_path = /var/lib/neutron/tmp
 
-{{include "oslo_messaging_rabbit" .}}
+{{include "ini_sections.oslo_messaging_rabbit" .}}
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true
