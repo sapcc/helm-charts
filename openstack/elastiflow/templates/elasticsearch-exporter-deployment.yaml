@@ -1,8 +1,8 @@
-{{- if .Values.elasticsearch_exporter.enabled }}
+{{- if .Values.elasticsearchExporter.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: es-exporter-{{ .Values.elasticsearch_exporter.name }}
+  name: es-exporter-{{ .Values.elasticsearchExporter.name }}
   namespace: elastiflow
   labels:
     system: openstack
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        component: es-exporter-{{ .Values.elasticsearch_exporter.name }}
+        component: es-exporter-{{ .Values.elasticsearchExporter.name }}
     spec:
       nodeSelector:
         zone: farm
@@ -28,15 +28,15 @@ spec:
         runAsUser: 1000
       containers:
         - name: elasticsearch-exporter
-          image: "{{ .Values.elasticsearch_exporter.image.repo }}:{{ .Values.elasticsearch_exporter.image.tag }}"
+          image: "{{ .Values.elasticsearchExporter.image.repo }}:{{ .Values.elasticsearchExporter.image.tag }}"
           imagePullPolicy: IfNotPresent
-          command: [ "/bin/elasticsearch_exporter", "--es.all", "--web.listen-address", ":{{ .Values.elasticsearch_exporter.listen_port }}", "--es.cluster_settings" ]
+          command: [ "/bin/elasticsearchExporter", "--es.all", "--web.listen-address", ":{{ .Values.elasticsearchExporter.listen_port }}", "--es.cluster_settings" ]
           ports:
             - name: metrics
-              containerPort: {{ .Values.elasticsearch_exporter.listen_port }}
+              containerPort: {{ .Values.elasticsearchExporter.listen_port }}
           env:
             - name: ES_URI
-              value: {{ .Values.elasticsearch_exporter.es.uri }}
+              value: {{ .Values.elasticsearchExporter.es.uri }}
           securityContext:
             capabilities:
               drop:

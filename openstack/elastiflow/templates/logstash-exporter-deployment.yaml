@@ -1,8 +1,8 @@
-{{- if .Values.logstash_exporter.enabled }}
+{{- if .Values.logstashExporter.enabled }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: ls-exporter-{{ .Values.logstash_exporter.name }}
+  name: ls-exporter-{{ .Values.logstashExporter.name }}
   namespace: elastiflow
   labels:
     system: openstack
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        component: ls-exporter-{{ .Values.logstash_exporter.name }}
+        component: ls-exporter-{{ .Values.logstashExporter.name }}
     spec:
       nodeSelector:
         zone: farm
@@ -28,13 +28,13 @@ spec:
         runAsUser: 1000
       containers:
         - name: logstash-exporter
-          image: "{{ .Values.logstash_exporter.image.repo }}:{{ .Values.logstash_exporter.image.tag }}"
+          image: "{{ .Values.logstashExporter.image.repo }}:{{ .Values.logstashExporter.image.tag }}"
           imagePullPolicy: IfNotPresent
           command: [
-            "--logstash.endpoint={{ .Values.ls.uri }}",
-            "--web.listen-address={{ .Values.logstash_exporter.listen_port }}"
+            "--logstash.endpoint={{ .Values.logstashExporter.ls.uri }}",
+            "--web.listen-address={{ .Values.logstashExporter.listen_port }}"
             ]
           ports:
             - name: metrics
-              containerPort: {{ .Values.logstash_exporter.listen_port }}
+              containerPort: {{ .Values.logstashExporter.listen_port }}
 {{ end -}}
