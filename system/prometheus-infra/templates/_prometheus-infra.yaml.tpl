@@ -56,6 +56,7 @@
       - '{__name__=~"^redfish_.+"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_error_status_vpods"}'
+      - '{__name__=~"^cablecheck_health_status_total"}'
   relabel_configs:
     - action: replace
       source_labels: [__address__]
