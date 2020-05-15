@@ -1,12 +1,14 @@
 {{- define "share_netapp_conf" -}}
 {{- $context := index . 0 -}}
 {{- $share := index . 1 -}}
+{{- $az := $share.availability_zone | default $context.Values.default_availability_zone | default $context.Values.global.default_availability_zone -}}
 [DEFAULT]
-storage_availability_zone = {{ $share.availability_zone | default $context.Values.default_availability_zone | default $context.Values.global.default_availability_zone }}
+storage_availability_zone = {{ $az }}
 host = manila-share-netapp-{{$share.name}}
 
 [netapp-multi]
 share_backend_name={{$share.backend_name | default $share.vserver | default "netapp-multi"}}
+replication_domain={{ $share.replication_domain | default $az }}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
 {{- if $share.vserver }}
 driver_handles_share_servers = false
