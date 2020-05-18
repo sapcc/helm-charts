@@ -44,7 +44,7 @@ netapp_trace_flags=api,method
 {{- end }}
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
-reserved_share_percentage = {{ $share.reserved_share_percentage | default 25 }}
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 33 }}
 
 # Float representation of the over subscription ratio when thin
 # provisioning is involved. Default ratio is 20.0, meaning provisioned
