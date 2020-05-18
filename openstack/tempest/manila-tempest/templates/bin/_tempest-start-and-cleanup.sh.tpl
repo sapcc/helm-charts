@@ -8,9 +8,9 @@ function cleanup_tempest_leftovers() {
 
   echo "Run cleanup"
 
-  export OS_USERNAME='tempestuser2'
-  export OS_TENANT_NAME='tempest2'
-  export OS_PROJECT_NAME='tempest2'
+  export OS_USERNAME='tempestuser1'
+  export OS_TENANT_NAME='tempest1'
+  export OS_PROJECT_NAME='tempest1'
 
   share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
   alt_share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}

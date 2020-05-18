@@ -34,13 +34,6 @@ spec:
              value: {{ required ".Values.vrops.inventory_port_number missing" .Values.vrops.inventory_port_number | quote }}
            - name: DEBUG
              value: {{ .Values.vrops.debug | quote }}
-           #livenessProbe:
-             #httpGet:
-               #path: /metrics
-               #port: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number }}
-             #initialDelaySeconds: 30
-             #timeoutSeconds: 10
-             #periodSeconds: 15
            resources:
              limits:
                memory: 240Mi
@@ -52,6 +45,19 @@ spec:
              - mountPath: /atlas
                name: atlas-output
                readOnly: true
+           livenessProbe:
+             httpGet:
+               path: /vrops_list
+               port: {{ required ".Values.vrops.inventory_port_number missing" .Values.vrops.inventory_port_number }}
+             initialDelaySeconds: 5
+             timeoutSeconds: 10
+             periodSeconds: 15
+           startupProbe:
+             httpGet:
+               path: /iteration
+               port: {{ required ".Values.vrops.inventory_port_number missing" .Values.vrops.inventory_port_number }}
+             failureThreshold: 30
+             periodSeconds: 10
       volumes:
         - configMap:
             name: {{ .Values.vrops.atlas_configmap }}

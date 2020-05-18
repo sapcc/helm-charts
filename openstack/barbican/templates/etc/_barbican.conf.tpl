@@ -30,7 +30,7 @@ backlog = 4096
 #tcp_keepidle = 600
 
 # Maximum allowed http request size against the barbican-api
-max_allowed_secret_in_bytes = 10000
+max_allowed_secret_in_bytes = 20000
 max_allowed_request_size_in_bytes = 1000000
 
 {{ if eq .Values.postgresql.enabled false }}
