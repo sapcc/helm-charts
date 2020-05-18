@@ -1,5 +1,6 @@
 {
     "context_is_cloud_admin":  "role:cloud_network_admin",
+    "context_is_quota_admin":  "role:resource_service",
     "context_is_admin":  "rule:context_is_cloud_admin",
     "owner": "tenant_id:%(tenant_id)s",
     "member": "role:member and rule:owner",
@@ -34,6 +35,11 @@
     "default": "rule:context_is_editor or rule:shared",
     "default_viewer": "rule:context_is_viewer or rule:shared",
     "default_network_viewer": "rule:context_is_network_viewer or rule:shared",
+
+    "get_quota": "rule:context_is_viewer or rule:context_is_quota_admin",
+    "create_quota": "rule:context_is_quota_admin",
+    "update_quota": "rule:context_is_quota_admin",
+    "delete_quota": "rule:context_is_quota_admin",
 
     "create_subnet": "rule:context_is_admin or (rule:network_admin and rule:network_owner and rule:dhcp_enabled)",
     "create_subnet:segment_id": "rule:context_is_admin",
