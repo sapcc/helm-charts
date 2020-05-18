@@ -36,13 +36,13 @@ spec:
           value: "{{ .Values.listen_port }}"
         - name: TIMEOUT
           value: "40"
-        {{- if .Values.ironic.enabled }}
+        {{- if .Values.global.redfish_bm_username }}
         - name: REDFISH_BM_USERNAME
-          value: "{{ .Values.global.redfish_bm_username | default .Values.redfish_bm_username }}"
+          value: {{ required "redfish_bm_username needs to be defined in global values" .Values.global.redfish_bm_username }}
         - name: REDFISH_BM_PASSWORD
-          value: "{{ .Values.global.redfish_bm_password | default .Values.redfish_bm_password }}"
+          value: {{ required "redfish_bm_username needs to be defined in global values" .Values.global.redfish_bm_username }}
         {{- end }}
-        {{- if .Values.netbox.enabled }}
+        {{- if .Values.global.redfish_cp_username }}
         - name: REDFISH_CP_USERNAME
           value: {{ required "redfish_cp_username needs to be defined in global values" .Values.global.redfish_cp_username }}
         - name: REDFISH_CP_PASSWORD

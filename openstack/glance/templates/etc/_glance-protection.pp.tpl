@@ -1,0 +1,5 @@
+[.*]
+create = @
+read = @
+update = @
+delete = @

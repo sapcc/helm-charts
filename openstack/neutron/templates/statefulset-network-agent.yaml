@@ -1,3 +1,4 @@
+{{- $train := hasPrefix "train" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
 {{- if .Values.agent.multus | default false }}
 {{- $az_count := len .Values.global.availability_zones -}}
 {{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
@@ -197,6 +198,12 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
+{{- if $train }}
+                - SYS_ADMIN
+                - DAC_OVERRIDE
+                - DAC_READ_SEARCH
+                - SYS_PTRACE
+{{ end }}
           resources:
 {{ toYaml $.Values.pod.resources.linuxbridge_agent | indent 12 }}
           volumeMounts:

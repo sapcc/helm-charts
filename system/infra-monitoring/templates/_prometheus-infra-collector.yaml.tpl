@@ -181,7 +181,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /arista
   relabel_configs:
     - source_labels: [job]
@@ -202,7 +202,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
@@ -314,7 +314,7 @@
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/ironic.json
+        - /etc/prometheus/configmaps/atlas-ironic-sd/ironic.json
   metrics_path: /
   relabel_configs:
     - source_labels: [__address__]
@@ -334,7 +334,7 @@
   scrape_timeout: {{$values.vpod_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -359,7 +359,7 @@
   scrape_timeout: {{$values.cisco_cp_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -390,7 +390,7 @@
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/ironic.json
+        - /etc/prometheus/configmaps/atlas-ironic-sd/ironic.json
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [__address__]
@@ -407,7 +407,7 @@
   scrape_timeout: {{$values.cp_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -429,7 +429,7 @@
   scrape_timeout: {{$values.esxi_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -452,7 +452,7 @@
   scrape_timeout: {{$values.bm_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -472,7 +472,7 @@
   scrape_timeout: {{$values.cp_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -494,7 +494,7 @@
   scrape_timeout: {{$values.bb_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -515,7 +515,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -534,6 +534,18 @@
   static_configs:
     - targets:
       {{- range $.Values.alertmanager_exporter.targets }}
+      - {{ . }}
+      {{- end }}
+  scheme: https
+{{- end }}
+
+{{- if .Values.netbox_exporter.enabled }}
+- job_name: 'netbox'
+  scrape_interval: {{ .Values.netbox_exporter.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporter.scrapeTimeout }}
+  static_configs:
+    - targets:
+      {{- range $.Values.netbox_exporter.targets }}
       - {{ . }}
       {{- end }}
   scheme: https
@@ -573,8 +585,6 @@
       action: keep
 {{- end }}
 
-
-
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
 {{- $values := .Values.vrops_exporter -}}
 {{- if $values.enabled }}
@@ -598,7 +608,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
