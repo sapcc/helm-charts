@@ -49,6 +49,8 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: 'redis://:{{$.Values.dynomite.password}}@{{$.Values.dynomite.host}}/{{$.Values.dynomite.database}}'
 - name:  KEPPEL_FEDERATION_REDIS_PREFIX
   value: {{ quote $.Values.dynomite.prefix }}
+- name:  KEPPEL_GUI_URI
+  value: {{ quote $.Values.keppel.dashboard_url_pattern }}
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel/issuer-key.pem'
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
