@@ -7,10 +7,6 @@ use_forwarded_for = true
 # rate limiting is handled outside
 api_rate_limit = false
 
-# Following opt is used for definition of share backends that should be enabled.
-# Values are conf groupnames that contain per manila-share service opts.
-enabled_share_backends = netapp-multi
-
 # Manila requires 'share-type' for share creation.
 # So, set here name of some share-type that will be used by default.
 default_share_type = default
