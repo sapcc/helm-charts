@@ -2,12 +2,13 @@ groups:
 - name: vpod-cablecheck.alerts
   rules:
   - alert: VpodCablecheckError
-    expr: max_over_time(cablecheck_error_status_vpods[60m]) == 1 
-    for: 30m
+    expr: (cablecheck_error_status{job="vpod-cablecheck-exporter", target="cabling"} ==1 )
+    for: 60m
     labels:
       severity: info
       tier: vmware
       service: compute
+      playbook: docs/devops/alert/cablechecker/
       summary: "Found Cabling Issue for: {{ $labels.target_name }}"
     annotations:
       description: "Cable issue found for: > 60min: {{ $labels.target_name }}"
