@@ -44,10 +44,16 @@ spec:
       role_assignments:
       - project: service
         role: service
+    - name: masterdata_scanner
+      description: 'Masterdata Scanner (Data Quality Validation)'
+      password: {{ .Values.masterdataScannerServicePassword | quote }}
 
-  {{- if .Values.cc3testBilling }}
   - name: cc3test
     role_assignments:
+    - user: masterdata_scanner@Default
+      role: masterdata_viewer
+      inherited: true
+  {{- if .Values.cc3testBilling }}
     - user: {{ .Values.cc3testBillingDomainAdmUser | quote }}
       role: admin
     - user: {{ .Values.cc3testBillingDomainUsrUser | quote }}
@@ -73,6 +79,10 @@ spec:
 
   {{- range $domains }}
   - name: {{ . | lower }}
+    role_assignments:
+    - user: masterdata_scanner@Default
+      role: masterdata_viewer
+      inherited: true
     {{- if eq . "ccadmin" }}
     projects:
     - name: billing
@@ -84,6 +94,10 @@ spec:
         role: cloud_resource_viewer
       swift:
         enabled: true
+    - name: cloud_admin
+      role_assignments:
+        - user: masterdata_scanner@Default
+          role: cloud_identity_viewer
     {{- end }}
     groups:
     {{- if eq . "monsoon3" }}
