@@ -41,14 +41,14 @@ spec:
             - kubernetes-entrypoint
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
           env:
             - name: COMMAND
 {{- if not .Values.pod.debug.cisco_ml2_ucsm_bm }}
-              value: "neutron-cisco-ml2-ucsm-bm-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2//cisco-ucs-bm-ml2-agent.ini"
+              value: "neutron-cisco-ml2-ucsm-bm-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/cisco-ucs-bm-ml2-agent.ini"
 {{- else }}
               value: "sleep inf"
 {{- end }}
@@ -62,31 +62,26 @@ spec:
           resources:
 {{ toYaml .Values.pod.resources.cisco_ml2_ucsm_bm | indent 12 }}
           volumeMounts:
-            - name: etcneutron
+            - name: etc-neutron
               mountPath: /etc/neutron
-            - name: neutron-etc
-              mountPath: /etc/neutron/neutron.conf
-              subPath: neutron.conf
-              readOnly: {{ not .Values.pod.debug.cisco_ml2_ucsm_bm }}
-            - name: neutron-etc
-              mountPath: /etc/neutron/plugins/ml2/ml2_conf.ini
-              subPath: ml2-conf.ini
-              readOnly: {{ not .Values.pod.debug.cisco_ml2_ucsm_bm }}
-            - name: neutron-etc
-              mountPath: /etc/neutron/logging.conf
-              subPath: logging.conf
-              readOnly: {{ not .Values.pod.debug.cisco_ml2_ucsm_bm }}
-            - name: neutron-etc-vendor
-              mountPath: /etc/neutron/plugins/ml2/cisco-ucs-bm-ml2-agent.ini
-              subPath: cisco-ucs-bm-ml2-agent.ini
-              readOnly: {{ not .Values.pod.debug.cisco_ml2_ucsm_bm }}
+              readOnly: true
       volumes:
-        - name: etcneutron
-          emptyDir: {}
-        - name: neutron-etc
-          configMap:
-            name: neutron-etc
-        - name: neutron-etc-vendor
-          configMap:
-            name: neutron-etc-vendor
+        - name: etc-neutron
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                name: neutron-etc
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: logging.conf
+                  path: logging.conf
+                - key: ml2-conf.ini
+                  path: plugins/ml2/ml2-conf.ini
+            - configMap:
+                name: neutron-etc-vendor
+                items:
+                - key: cisco-ucs-bm-ml2-agent.ini
+                  path: plugins/ml2/cisco-ucs-bm-ml2-agent.ini
 {{- end -}}

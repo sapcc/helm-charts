@@ -71,8 +71,8 @@ template: |
           resources:
 {{ toYaml .Values.pod.resources.nsxv3_agent | indent 12 }}
           volumeMounts:
-          - mountPath: /etc/neutron
-            name: etc-neutron
+          - name: etc-neutron
+            mountPath: /etc/neutron
             readOnly: true
         - name: exporter
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/nsx-t-exporter:{{.Values.imageVersionNSXTExporter | required "Please set neutron.imageVersionNSXTExporter"}}
@@ -105,6 +105,7 @@ template: |
             defaultMode: 420
             sources:
             - configMap:
+                name: neutron-etc
                 items:
                 - key: neutron.conf
                   path: neutron.conf
@@ -116,11 +117,10 @@ template: |
                   path: logging.conf
                 - key: ml2-conf.ini
                   path: plugins/ml2/ml2-conf.ini
-                name: neutron-etc
             - configMap:
+                name: neutron-ml2-nsxv3-{= name =}
                 items:
                 - key: ml2-nsxv3.ini
                   path: plugins/ml2/ml2-nsxv3.ini
-                name: neutron-ml2-nsxv3-{= name =}
   {% endif %}
 {{- end }}

@@ -40,7 +40,7 @@ spec:
         - name: neutron-f5-agent
           image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{ $.Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-f5-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/f5-agent.conf.ini"]
+          command: ["dumb-init", "neutron-f5-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/f5-agent.conf.ini"]
           env:
             - name: DEBUG_CONTAINER
               value: "false"
@@ -50,24 +50,25 @@ spec:
                   name: sentry
                   key: neutron.DSN.python
           volumeMounts:
-            - name: neutron-etc
-              mountPath: /etc/neutron/neutron.conf
-              subPath: neutron.conf
-              readOnly: true
-            - name: neutron-etc
-              mountPath: /etc/neutron/logging.conf
-              subPath: logging.conf
-              readOnly: true
-            - name: f5-etc
-              mountPath: /etc/neutron/f5-agent.conf.ini
-              subPath: f5-agent.conf.ini
+            - name: etc-neutron
+              mountPath: /etc/neutron
               readOnly: true
       volumes:
-        - name: neutron-etc
-          configMap:
-            name: neutron-etc
-        - name: f5-etc
-          configMap:
-            name: neutron-f5-{{ $lb.name }}
+        - name: etc-neutron
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                name: neutron-etc
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: logging.conf
+                  path: logging.conf
+            - configMap:
+                name: neutron-f5-{{ $lb.name }}
+                items:
+                - key: f5-agent.conf.ini
+                  path: plugins/ml2/f5-agent.conf.ini
 {{- end }}
 {{- end -}}

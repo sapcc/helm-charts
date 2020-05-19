@@ -60,23 +60,24 @@ spec:
           volumeMounts:
             - name: metadata-proxy
               mountPath: /run/metadata_proxy
-            - name: neutron-etc
-              mountPath: /etc/neutron/neutron.conf
-              subPath: neutron.conf
-              readOnly: true
-            - name: neutron-etc
-              mountPath: /etc/neutron/metadata-agent.ini
-              subPath: metadata-agent.ini
-              readOnly: true
-            - name: neutron-etc
-              mountPath: /etc/neutron/logging.conf
-              subPath: logging.conf
+            - name: etc-neutron
+              mountPath: /etc/neutron
               readOnly: true
       volumes:
         - name: metadata-proxy
           hostPath:
             path: /run/metadata-proxy
-        - name: neutron-etc
-          configMap:
-            name: neutron-etc
+        - name: etc-neutron
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                name: neutron-etc
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: logging.conf
+                  path: logging.conf
+                - key: metadata-agent.ini
+                  path: metadata-agent.ini
   {{- end }}
