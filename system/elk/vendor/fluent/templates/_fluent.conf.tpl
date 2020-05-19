@@ -437,6 +437,10 @@
   @type null
 </match>
 
+<match kubernetes.var.log.containers.logstash**>
+  @type null
+</match>
+
 {{- if .Values.forwarding.keystone.enabled }}
 <match kubernetes.var.log.containers.keystone-api**>
   @type copy
