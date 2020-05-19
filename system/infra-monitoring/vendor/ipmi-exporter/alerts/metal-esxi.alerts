@@ -76,7 +76,7 @@ groups:
       summary: "Dimm error for server: {{ $labels.server_name }}"
       
   - alert: MetalESXiECCMemWarn
-    expr: (sum(ipmi_memory_errors{job="vmware-esxi"}) by (server_name, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[5m]) == 1, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)) > 16000
+    expr: (sum(ipmi_memory_errors{job="vmware-esxi"}) by (server_name, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[10m]) == 1, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)) > 16000
     for: 30m
     labels:
       severity: warning
@@ -90,7 +90,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalESXiECCMemInfo
-    expr: (sum(ipmi_memory_errors{job="vmware-esxi"}) by (server_name, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[5m]) == 0, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)) > 16000
+    expr: (sum(ipmi_memory_errors{job="vmware-esxi"}) by (server_name, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[10m]) == 0, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)) > 16000
     for: 30m
     labels:
       severity: info
