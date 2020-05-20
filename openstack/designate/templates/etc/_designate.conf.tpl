@@ -179,7 +179,7 @@ enabled_extensions_v2 = quotas, reports
 # Keystone Middleware
 #-----------------------
 [keystone_authtoken]
-auth_plugin = v3password
+auth_type = v3password
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
