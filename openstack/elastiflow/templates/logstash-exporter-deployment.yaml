@@ -30,10 +30,14 @@ spec:
         - name: logstash-exporter
           image: "{{ .Values.logstashExporter.image.repo }}:{{ .Values.logstashExporter.image.tag }}"
           imagePullPolicy: IfNotPresent
-          command: [
-            "--logstash.endpoint={{ .Values.logstashExporter.ls.uri }}",
-            "--web.listen-address={{ .Values.logstashExporter.listen_port }}"
-            ]
+          command: ["/bin/sh", "-c"]
+          ## Delay start of logstash-exporter to give logstash more time to come online.
+          args:
+            - >-
+              sleep 120;
+              exec /logstash_exporter
+                --logstash.endpoint={{ .Values.logstashExporter.ls.uri }}
+                --web.listen-address=:{{ .Values.logstashExporter.listen_port }}
           ports:
             - name: metrics
               containerPort: {{ .Values.logstashExporter.listen_port }}
