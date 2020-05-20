@@ -23,7 +23,6 @@ log_config_append = /etc/designate/logging.conf
 # path to api-paste configuration
 api_paste_config = /etc/designate/api-paste.ini
 
-
 # Use "sudo designate-rootwrap /etc/designate/rootwrap.conf" to use the real
 # root filter facility.
 # Change to "sudo" to skip the filtering and just run the command directly
@@ -58,21 +57,13 @@ min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size 
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
-#transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{ .Values.rabbitmq.port | default 5672 }}/{{ .Values.rabbitmq.virtual_host | default "/" }}
+{{ include "ini_sections.default_transport_url" . }
 
 [oslo_policy]
 policy_file = policy.json
 
 [oslo_messaging_notifications]
 driver = noop
-
-[oslo_messaging_rabbit]
-rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
-rabbit_password = {{ .Values.rabbitmq.users.default.password }}
-rabbit_host = {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-rabbit_port = {{ .Values.rabbitmq.port | default 5672 }}
-rabbit_virtual_host = {{ .Values.rabbitmq.virtual_host | default "/" }}
-rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 
 ########################
 ## Service Configuration
