@@ -57,7 +57,7 @@ min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size 
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
-{{ include "ini_sections.default_transport_url" . }
+{{ include "ini_sections.default_transport_url" . }}
 
 [oslo_policy]
 policy_file = policy.json
