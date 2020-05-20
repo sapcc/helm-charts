@@ -303,15 +303,23 @@ query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 #------------------------
 # Deleted domains purging
 #------------------------
-[zone_manager_task:domain_purge]
-# How frequently to purge deleted domains, in seconds
-#interval = 3600  # 1h
+[producer_task:zone_purge]
+#
+# From designate.producer
+#
 
-# How many records to be deleted on each run
-#batch_size = 100
+# Run interval in seconds (integer value)
+interval = 3600
 
-# How old deleted records should be (deleted_at) to be purged, in seconds
-#time_threshold = 604800  # 7 days
+# Default amount of results returned per page (integer value)
+per_page = 100
+
+# How old deleted zones should be (deleted_at) to be purged, in seconds (integer
+# value)
+time_threshold = 604800
+
+# How many zones to be purged on each run (integer value)
+batch_size = 100
 
 #------------------------
 # Delayed zones NOTIFY
