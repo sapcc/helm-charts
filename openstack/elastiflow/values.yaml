@@ -1,10 +1,13 @@
+# master node configs
 elasticsearch:
   enabled: true
   image: "docker.elastic.co/elasticsearch/elasticsearch"
 
-  replicas: 1
-  minimumMasterNodes: 1
-
+  roles:
+    master: "true"
+    ingest: "false"
+    data: "false"
+    
   esJavaOpts: "-Xmx4G -Xms4G"
   esConfig:
     elasticsearch.yml: |
@@ -17,6 +20,29 @@ elasticsearch:
       requests:
         storage: 100G
 
+  resources:
+    requests:
+      memory: "4G"
+    limits:
+      memory: "6G"
+
+elasticsearch-data:
+  nodeGroup: data
+  masterService: elasticsearch-master
+  roles:
+    master: "false"
+    ingest: "true"
+    data: "true"
+  esJavaOpts: "-Xmx4G -Xms4G"
+  esConfig:
+    elasticsearch.yml: |
+      indices.query.bool.max_clause_count: 8192
+      search.max_buckets: 100000
+  volumeClaimTemplate:
+    accessModes: [ "ReadWriteMany" ]
+    resources:
+      requests:
+        storage: 100G
   resources:
     requests:
       memory: "4G"
