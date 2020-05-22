@@ -48,7 +48,18 @@ spec:
         name: neutron-network-agent-{{ $az }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
-{{ tuple $ "neutron" "agent" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - agent
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       nodeSelector:
         multus: bond1
         failure-domain.beta.kubernetes.io/zone: {{ $az_long }}
