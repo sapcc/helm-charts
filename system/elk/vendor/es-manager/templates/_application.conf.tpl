@@ -39,11 +39,14 @@ auth = {
   type: ldap
   settings: {
     url = "ldaps://{{.Values.global.ldap.host}}:{{.Values.global.ldap.port}}"
+    method = "simple"
     base-dn = "{{.Values.global.ldap.search_base_dbs}},{{.Values.global.ldap.suffix}}"
     bind-dn = "{{.Values.global.ldap.bind_dn}},{{.Values.global.ldap.suffix}}"
     bind-pw = "{{.Values.global.ldap.password}}"
-    user-domain = "{{.Values.global.ldap.userdomain}}"
-    userAttr = "sAMAccountName"
-    userGroup = "{{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
+    user-template = "%s"
+    group-search {
+      user-attr = "sAMAccountName"
+      group = "memberOf={{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
+    }
   }
 }
