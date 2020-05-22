@@ -24,7 +24,7 @@
     <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
 
-    <root level="ERROR">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
     </root>
 
