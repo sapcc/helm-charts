@@ -80,7 +80,7 @@
       - '{__name__=~"^vrops_hostsystem_properties",propkey=~"runtime_maintenanceState: inMaintenance"}'
       - '{__name__=~"^vrops_cluster_stats",statkey=~"cluster_running_hosts|memory_usage_percentage|cpu_capacity_usage_percentage"}'
       - '{__name__=~"^vrops_vms_stats",statkey=~"vm_memory_kilobytes"}'
-      - '{__name__=~"^vrops_vms_properties, statkey=~"runtime_powerState: Powered On"}'
+      - '{__name__=~"^vrops_vms_properties, propkey=~"runtime_powerState: Powered On"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_error_status_vpods"}'
       - '{__name__=~"^thousandeyes_test_html_loss_percentage"}'
