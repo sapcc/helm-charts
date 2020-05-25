@@ -1,0 +1,47 @@
+{{- if .Values.queryExporter.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: query-exporter-{{ .Values.queryExporter.name }}
+  namespace: elastiflow
+  labels:
+    system: openstack
+    service: audit
+
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: query-exporter-{{ .Values.queryExporter.name }}
+    spec:
+      nodeSelector:
+        zone: farm
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: elasticsearch-exporter
+          image: "{{ .Values.queryExporter.image.repo }}:{{ .Values.queryExporter.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          command: [ "-e", "{{ .Values.queryExporter.es.uri }}", ]
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.queryExporter.listen_port }}
+          volumeMounts:
+            - name: exporter.cfg
+              mountPath: /usr/src/app
+      volumes:
+        - name: exporter.cfg
+          configMap:
+            name: query-exporter-{{ .Values.queryExporter.name }}-config
+            items:
+              - key: exporter.cfg
+                path: exporter.cfg
+{{ end -}}
