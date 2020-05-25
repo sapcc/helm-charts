@@ -82,7 +82,7 @@
       - '{__name__=~"^vrops_vm_stats",statkey=~"vm_memory_kilobytes"}'
       - '{__name__=~"^vrops_vm_properties", propkey=~"runtime_powerState: Powered On"}'
       - '{__name__=~"^cablecheck_error_status"}'
-      - '{__name__=~"^cablecheck_health_status_total"}'
+      - '{__name__=~"^cablecheck_runs_counter_total"}'
       - '{__name__=~"^thousandeyes_test_html_loss_percentage"}'
       - '{__name__=~"^thousandeyes_test_html_avg_latency_milliseconds"}'
       - '{__name__=~"^thousandeyes_requests_total"}'
