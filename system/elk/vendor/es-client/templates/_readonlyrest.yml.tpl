@@ -23,6 +23,12 @@ readonlyrest:
         indices: ["jaeger-*"]
         auth_key: {{.Values.global.jaeger_user}}:{{.Values.global.jaeger_password}}
 
+      # access for winbeat
+      - name: winbeat
+        actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+        indices: ["winbeat-*"]
+        auth_key: {{.Values.global.winbeat_user}}:{{.Values.global.winbeat_password}}
+
       - name: Monsoon (read only, but can create dashboards)
         kibana_access: ro
         auth_key: {{.Values.global.monsoon_user}}:{{.Values.global.monsoon_password}}
