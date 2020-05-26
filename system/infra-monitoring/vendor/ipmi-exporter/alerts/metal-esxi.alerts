@@ -103,11 +103,11 @@ groups:
       description: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 16000 correctable ECC errors. Serial: {{ $labels.serial }}, Host in maintenance"
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
-  - alert: MetalESXiMetricsDownCritical
+  - alert: MetalESXiMetricsDownWarn
     expr: (count(ipmi_up{job="vmware-esxi"} == 0 or up{job="vmware-esxi"} == 0) by (server_name, maintenance, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[8m]) == 1, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name))
     for: 10m
     labels:
-      severity: critical
+      severity: warning
       tier: vpod
       service: baremetal
       context: "{{ $labels.server_name }}"
@@ -117,11 +117,11 @@ groups:
       description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, serial {{ $labels.serial }}"
       summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, serial {{ $labels.serial }}"
 
-  - alert: MetalESXiMetricsDownWarn
+  - alert: MetalESXiMetricsDownInfo
     expr: (count(ipmi_up{job="vmware-esxi"} == 0 or up{job="vmware-esxi"} == 0) by (server_name, maintenance, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_properties{propkey=~"runtime_maintenanceState.+"}[8m]) == 0, "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name))
     for: 10m
     labels:
-      severity: warning
+      severity: info
       tier: vpod
       service: baremetal
       context: "{{ $labels.server_name }}"
