@@ -219,6 +219,35 @@ spec:
             {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
+{{- if .Values.manila_nanny.share_server.enabled }}
+        - name: share-server
+          image: {{.Values.global.imageRegistry}}/monsoon/manila-nanny:{{.Values.manila_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.manila_nanny.debug }}/bin/bash /scripts/manila-share-server.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEPENDENCY_SERVICE
+              value: "manila-mariadb,manila-api"
+            - name: MANILA_NANNY_SHARE_SERVER_PORT
+              value: {{ .Values.manila_nanny.share_server.listen_port }}
+          volumeMounts:
+            - mountPath: /manila-etc
+              name: manila-etc
+          {{- if .Values.manila_nanny.share_server.resources }}
+          resources:
+            {{ toYaml .Values.manila_nanny.share_server.resources | nindent 13 }}
+          {{- else if .Values.manila_nanny.resources }}
+          resources:
+            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
+          {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
