@@ -43,10 +43,10 @@ auth = {
     base-dn = "{{.Values.global.ldap.search_base_dbs}},{{.Values.global.ldap.suffix}}"
     bind-dn = "{{.Values.global.ldap.bind_dn}},{{.Values.global.ldap.suffix}}"
     bind-pw = "{{.Values.global.ldap.password}}"
-    user-template = "%s"
+    user-template = "%s@{{.Values.global.ldap.userdomain}}"
     group-search {
       user-attr = "sAMAccountName"
-      group = "memberOf={{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
+      group = "{{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
     }
   }
 }

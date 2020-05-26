@@ -8,16 +8,16 @@
         </encoder>
     </appender>
 
-    <logger name="play" level="DEBUG"/>
-    <logger name="application" level="DEBUG"/>
+    <logger name="play" level="INFO"/>
+    <logger name="application" level="INFO"/>
 
     <!-- Off these ones as they are annoying, and anyway we manage configuration ourself -->
-    <logger name="com.avaje.ebean.config.PropertyMapLoader" level="DEBUG"/>
-    <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="DEBUG"/>
-    <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="DEBUG"/>
+    <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF"/>
+    <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF"/>
+    <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="DEBUG"/>
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
 
