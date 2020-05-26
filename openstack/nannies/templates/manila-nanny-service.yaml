@@ -42,4 +42,26 @@ spec:
     - name: metrics
       port: 9457
 {{- end }}
+---
+{{- if .Values.manila_nanny.share_server.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: manila-nanny-share-server
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: manila-nanny
+    nanny: share-server
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.manila_nanny.share_server.prom_port | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  selector:
+    component: manila-nanny
+  ports:
+    - name: metrics
+      port: {{ .Values.manila_nanny.share_server.prom_port }}
+{{- end }}
 {{- end }}
