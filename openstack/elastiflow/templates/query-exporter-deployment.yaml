@@ -30,17 +30,23 @@ spec:
         - name: elasticsearch-exporter
           image: "{{ .Values.queryExporter.image.repo }}:{{ .Values.queryExporter.image.tag }}"
           imagePullPolicy: IfNotPresent
-          command: [ "-e", "{{ .Values.queryExporter.es.uri }}", ]
+          #command: [ "--es-cluster", "{{ .Values.queryExporter.es.uri }}", "--config-file", "/tmp/exporter/exporter.cfg" ]
+          command: ["/bin/sh", "-c"]
+          args:
+            - >-
+              exec /usr/local/bin/prometheus-es-exporter
+              --es-cluster {{ .Values.queryExporter.es.uri }}
+              --config-file /tmp/exporter/exporter.cfg
           ports:
             - name: metrics
               containerPort: {{ .Values.queryExporter.listen_port }}
           volumeMounts:
-            - name: exporter.cfg
-              mountPath: /usr/src/app
+            - name: exporter-config
+              mountPath: /tmp/exporter
       volumes:
-        - name: exporter.cfg
+        - name: exporter-config
           configMap:
-            name: query-exporter-{{ .Values.queryExporter.name }}-config
+            name: query-exporter-config
             items:
               - key: exporter.cfg
                 path: exporter.cfg
