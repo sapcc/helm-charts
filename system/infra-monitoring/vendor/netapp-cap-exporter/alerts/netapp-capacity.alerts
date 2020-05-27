@@ -79,3 +79,17 @@ groups:
         annotations:
           description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
+
+      - alert: CinderVolumeBigSize
+        expr: netapp_volume_used_bytes{app="netapp-capacity-exporter-cinder"} > 5497558138880
+        for: 10m
+        labels:
+          severity: info
+          tier: os
+          service: cinder
+          context: netapp-usage
+          meta: 'Cinder volume size {{ $value }}'
+        annotations:
+          description: 'Size of Cinder volume {{$labels.volume}} on filer {{$labels.filer}} is {{ $value }}'
+          summary: 'Cinder Volume larger than 5TB {{$labels.volume}}'
+
