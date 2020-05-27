@@ -81,12 +81,13 @@ groups:
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
 
   - alert: OpenstackIronicNodeInErrorState
-    expr: count(openstack_ironic_nodes_list_gauge{provision_state='error'})by(name,last_error) > 0
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='error'}) by (exported_name, last_error) > 0
     for: 5m
     labels:
       severity: warning
       tier: os
       service: ironic
+      context: '{{ $labels.exported_name }}'
       dashboard: ironic-node-overview
       meta: 'Node {{ $labels.exported_name }} is in error due to {{ $labels.last_error }}'
       playbook: 'docs/support/playbook/baremetal/bm_node_error_state.html'
@@ -95,12 +96,13 @@ groups:
       summary: 'Openstack Ironic Node In Error State'
 
   - alert: OpenstackIronicNodeInDeployFailedState
-    expr: count(openstack_ironic_nodes_list_gauge{provision_state='deploy failed'})by(name,last_error) > 0
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='deploy failed'}) by (exported_name, last_error) > 0
     for: 15m
     labels:
       severity: warning
       tier: os
       service: ironic
+      context: '{{ $labels.exported_name }}'
       dashboard: ironic-node-overview
       meta: 'Node {{ $labels.exported_name }} is in deploy failed state due to {{ $labels.last_error }}'
       playbook: 'docs/support/playbook/baremetal/bm_node_error_state.html'
@@ -109,12 +111,13 @@ groups:
       summary: 'Openstack Ironic Node In Deploy Failed State'
 
   - alert: OpenstackIronicNodeInCleanFailedState
-    expr: count(openstack_ironic_nodes_list_gauge{provision_state='clean failed'})by(name,last_error) > 0
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='clean failed'}) by (exported_name, last_error) > 0
     for: 15m
     labels:
       severity: warning
       tier: os
       service: ironic
+      context: '{{ $labels.exported_name }}'
       dashboard: ironic-node-overview
       meta: 'Node {{ $labels.exported_name }} is in clean failed state due to {{ $labels.last_error }}'
     annotations:
