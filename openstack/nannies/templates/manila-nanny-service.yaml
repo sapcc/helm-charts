@@ -64,4 +64,25 @@ spec:
     - name: metrics
       port: {{ .Values.manila_nanny.share_server.prometheus_port }}
 {{- end }}
+{{- if .Values.manila_nanny.snapshot.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: manila-nanny-snapshot
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: manila-nanny
+    nanny: snapshot
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.manila_nanny.snapshot.prometheus_port | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  selector:
+    component: manila-nanny
+  ports:
+    - name: metrics
+      port: {{ .Values.manila_nanny.snapshot.prometheus_port }}
+{{- end }}
 {{- end }}
