@@ -189,19 +189,25 @@ cross_az_attach: 'False'
 
 api:
   DEFAULT:
-    api_paste_config: /etc/nova/api-paste.ini
     # adding metadata here will disable spawning of separate api-metadata pods
     enabled_apis: osapi_compute
-    use_forwarded_for: true
 
   api:
     list_records_by_skipping_down_cells: false
+    use_forwarded_for: true
+
+  wsgi:
+    api_paste_config: /etc/nova/api-paste.ini
 
 api_metadata:
   DEFAULT:
-    api_paste_config: /etc/nova/api-paste.ini
     enabled_apis: metadata
+
+  api:
     use_forwarded_for: true
+
+  wsgi:
+    api_paste_config: /etc/nova/api-paste.ini
 
 consoles:
   novnc:
@@ -252,11 +258,7 @@ quota:
   cores: 0
   instances: 0
   ram: 0
-  fixed_ips: 0
-  floating_ips: 0
   networks: 0
-  security_group_rules: 0
-  security_groups: 0
 
   server_group_members: 40
   # we don't want to set unlimited because that has too much potential to break things
