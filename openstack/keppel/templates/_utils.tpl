@@ -27,14 +27,14 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: "{{ $.Values.keppel.rabbitmq.queue_name }}"
 - name:  KEPPEL_AUTH_LOCAL_ROLE
   value: 'swiftoperator'
-- name:  KEPPEL_BURST_BLOB_PULLS # burst budgets are all ~10% of the rate limit per minute
-  value: '100' # per account
+- name:  KEPPEL_BURST_BLOB_PULLS # burst budgets are all ~30% of the rate limit per minute
+  value: '300' # per account
 - name:  KEPPEL_BURST_BLOB_PUSHES
-  value: '10'  # per account
+  value: '30'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PULLS
-  value: '10'  # per account
+  value: '30'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
-  value: '5'   # per account
+  value: '15'   # per account
 - name:  KEPPEL_DB_URI
   value: 'postgres://postgres:{{$.Values.postgresql.postgresPassword}}@{{.Release.Name}}-postgresql/keppel?sslmode=disable'
 - name:  KEPPEL_DRIVER_AUTH
