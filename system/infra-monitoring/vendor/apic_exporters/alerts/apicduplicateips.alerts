@@ -1,20 +1,9 @@
 groups:
 - name: apicduplicateips.alerts
   rules:
-  - alert: ApicDuplicateIps
-    expr: count(network_apic_duplicate_ip) > 0
-    for: 5m
-    labels:
-      severity: warning
-      tier: net
-      service: apic
-      dashboard: apic-health
-      playbook: /docs/devops/alert/network/aci.html#Duplicate_IP_Alert
-    annotations:
-      description: "{{ $value }} duplicate ips for more than 5 minutes"
-      summary: "{{ $value }} duplicate ips for more than 5 minutes"
   - alert: NetworkApicDuplicateIps
-    expr: rate(network_apic_duplicate_ip[5m]) > 0
+    expr: sum(rate(network_apic_duplicate_ip_total[10m])) by (ip, mac, node_id) > 0.01
+    for: 5m
     labels:
       severity: info
       tier: net
