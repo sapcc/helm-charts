@@ -1,6 +1,6 @@
 {
     "context_is_cloud_admin":  "role:cloud_image_admin",
-    "context_is_admin":  "rule:context_is_cloud_admin",
+    "context_is_admin":  "rule:context_is_cloud_admin or role:admin or role:image_admin",
     "default": "rule:context_is_admin",
 
     "add_image": "",
@@ -9,6 +9,7 @@
     "get_images": "",
     "modify_image": "",
     "publicize_image": "rule:context_is_cloud_admin",
+    "communitize_image": "context_is_admin or role:image_community_admin",
     "copy_from": "",
     "download_image": "",
     "upload_image": "",
