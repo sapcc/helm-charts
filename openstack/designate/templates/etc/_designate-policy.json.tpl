@@ -7,6 +7,7 @@
     "shared": "'True':%(zone_shared)s",
     "owner_or_target": "rule:target or rule:owner",
     "owner_or_zone_shared": "rule:target or rule:shared",
+    "admin_or_owner_or_zone_shared": "rule:owner_or_zone_shared or rule:admin",
     "dns_admin": "role:dns_admin and rule:owner",
     "member": "role:member and rule:owner",
     "member_and_shared": "role:member and rule:owner_or_zone_shared",
