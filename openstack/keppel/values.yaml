@@ -61,11 +61,11 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled federation announcement, or 0 if no accounts have ever been announced to federation"
     keppel_blobs:
-      query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs"
+      query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs WHERE storage_id != ''"
       metrics:
         - count:
             usage: "GAUGE"
-            description: "Total number of blobs stored in Keppel"
+            description: "Total number of blobs stored in Keppel (except for unbacked blobs)"
         - min_can_be_deleted_at:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled blob deletion, or 0 if no blobs are currently marked for deletion"
