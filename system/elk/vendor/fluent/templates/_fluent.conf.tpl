@@ -15,6 +15,12 @@
   log_level warn
 </system>
 
+<label @FLUENT_LOG>
+  <match fluent.*>
+    @type stdout
+  </match>
+</label>
+
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
@@ -226,11 +232,11 @@
   @type parser
   key_name log
   reserve_data true
-  grok_failure_key grok_failure
   <parse>
     @type grok
     grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{GREEDYDATA:action} %{METHOD:method} %{URIPATH:pri_path} %{LOWER:action} %{NOTSPACE:user} %{WORD:domain} %{GREEDYDATA:action}
     custom_pattern_path /fluent-bin/pattern
+    grok_failure_key grok_failure
   </parse>
 </filter>
 
