@@ -6,6 +6,12 @@
   log_level warn
 </system>
 
+<label @FLUENT_LOG>
+  <match fluent.*>
+    @type stdout
+  </match>
+</label>
+
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type systemd
@@ -26,10 +32,6 @@
   fields_lowercase true
   fields_strip_underscores true
 </filter>
-
-#<match **>
-#  @type stdout
-#</match>
 
 <match **>
    @type elasticsearch_dynamic
