@@ -52,6 +52,11 @@ spec:
               role:    admin          # for keppel-health-monitor (creating a Keppel account includes creating role assignments)
             - project: service
               role:    registry_admin # for keppel-health-monitor
+        {{- if .Values.keppel.e2e_test_password }}
+        - name: keppel_e2e
+          description: Keppel End-to-End Test User
+          password: '{{.Values.keppel.e2e_test_password}}'
+        {{- end }}
 
     - name: ccadmin
       groups:
@@ -65,6 +70,15 @@ spec:
           role_assignments:
             - domain: ccadmin
               role: registry_admin
+      {{- if .Values.keppel.e2e_test_password }}
+      projects:
+        - name: master
+          role_assignments:
+            - user: keppel_e2e@Default
+              role: admin # to create Keppel accounts
+            - user: keppel_e2e@Default
+              role: registry_admin # to pull/push images
+      {{- end }}
 
     {{- range $domains }}
     - name: {{.}}
