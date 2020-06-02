@@ -87,6 +87,7 @@
       - '{__name__=~"^thousandeyes_test_html_avg_latency_milliseconds"}'
       - '{__name__=~"^thousandeyes_requests_total"}'
       - '{__name__=~"^thousandeyes_requests_fails"}'
+      - '{__name__=~"^fluentd_.+"}'
 
   relabel_configs:
     - action: replace
