@@ -37,7 +37,7 @@
       - '{__name__=~"^ipmi_up"}'
       - '{__name__=~"^snmp_(ipn|acispine|acileaf)_ifLastChange"}'
       - '{__name__=~"^snmp_(ipn|acispine|acileaf)_sysUpTime"}'
-      - '{__name__=~"^fluentd_input_status_num_records_total"}'
+      - '{__name__=~"^fluentd_.+"}'
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^pxcloudprober_.+"}'
       - '{__name__=~"^vasa_.+"}'
