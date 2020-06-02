@@ -268,7 +268,7 @@ groups:
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
+      dashboard: blackbox-test-building-block-health
       meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 3 hour. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
@@ -284,16 +284,13 @@ groups:
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
+      dashboard: blackbox-test-building-block-health
       meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 3 hour. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
       playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 3 hour. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
-
-
-
 
   - alert: OpenstackNovaCanaryDown
     expr: blackbox_canary_status_gauge{service=~"nova", check!~"create_server-.+"} == 1
