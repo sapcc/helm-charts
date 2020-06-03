@@ -1,0 +1,49 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: vrops-exporter-vm 
+  namespace: infra-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: vrops-exporter-vm 
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: vrops-exporter-vm
+        type: exporter
+    spec:
+      containers:
+         - name: vrops-exporter-vm
+           image: {{ required ".Values.vrops.image.imageRegistry variable missing" .Values.vrops.image.imageRegistry }}/{{ required ".Values.vrops.image.namespace variable missing" .Values.vrops.image.namespace }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" .Values.vrops.image.tag }}
+           ports:
+             - name: metrics
+               containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
+           command:
+             - ./exporter.py
+           args:
+             - -c
+             - VMStatsCollector
+             - -c
+             - VMPropertiesCollector
+           env:
+           - name: PORT
+             value: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
+           - name: DEBUG
+             value: {{ .Values.vrops.debug | quote }}
+           - name: INVENTORY
+             value: vrops-inventory
+           resources:
+             limits:
+               memory: 500Mi
+               cpu: 300m
+             requests:
+               memory: 300Mi
+               cpu: 150m
+           #livenessProbe:
+             #tcpSocket:
+               #port: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number }}
+             #initialDelaySeconds: 60
+             #periodSeconds: 15
+             #timeoutSeconds: 10
