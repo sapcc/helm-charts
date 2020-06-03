@@ -34,6 +34,8 @@ dyn_o_mite:
   auto_eject_hosts: true
   server_retry_timeout: 30000
   server_failure_limit: 3
+  read_consistency: dc_quorum
+  write_consistency: dc_quorum
   {{- if $context.Values.redis.password }}
   requirepass: {{ $context.Values.redis.password }}
   {{- end }}
