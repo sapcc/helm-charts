@@ -21,7 +21,6 @@
     @type prometheus_output_monitor
     <labels>
         host ${hostname}
-        target: ${host}
         nodename "#{ENV['K8S_NODE_NAME']}"
         source containerlogs
     </labels>
@@ -39,8 +38,6 @@
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
-      container $.kubernetes.container_name
-      source containerlogs
     </labels>
   </metric>
 </filter>

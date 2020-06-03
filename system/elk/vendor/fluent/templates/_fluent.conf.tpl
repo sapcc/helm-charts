@@ -497,7 +497,7 @@
 <match kubernetes.**>
   @type copy
   <store>
-    @type elasticsearch_dynamic
+    @type elasticsearch
     host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
     port {{.Values.global.elk_elasticsearch_ssl_port}}
     user {{.Values.global.elk_elasticsearch_data_user}}
