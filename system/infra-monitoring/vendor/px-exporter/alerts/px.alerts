@@ -87,7 +87,7 @@ groups:
 
   - alert: PXTransportRouterPrefixImportCountZero
     expr: (sum(bird_protocol_up{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) > 0 ) + on (app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() bird_protocol_prefix_import_count{name!~"kernel.", peer_type="TRANS"} <= 0 
-    for: 0s
+    for: 3m
     labels:
       severity: critical
       tier: net
@@ -101,7 +101,7 @@ groups:
 
   - alert: PXTransportRouterPrefixExportCountZero
     expr: (sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) <= 0)  + on  (app, ip_version, proto, pxdomain, pxinstance, pxservice)  group_right() (bird_protocol_prefix_export_count{name!~"kernel.", peer_type="TRANS"} <= 0)
-    for: 0s
+    for: 3m
     labels:
       severity: critical
       tier: k8s
