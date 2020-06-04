@@ -2,47 +2,47 @@ groups:
 - name: metal-ironic.alerts
   rules:      
   - alert: MetalIronicSensorCritical
-    expr: count(ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt)", maintenance="false", provision_state=~"(deploy|active)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    expr: count(ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt)", maintenance="false", provision_state=~"(deploy|active)"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 1s
     labels:
       severity: critical
       tier: metal
       service: baremetal
-      context: "{{ $labels.instance }}"
-      meta: "ironic node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      context: "{{ $labels.server_name }}"
+      meta: "ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
       cloudops: "?searchTerm={{ $labels.server_id }}"
     annotations:
-      description: "ironic node {{ $labels.instance }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
-      summary: "Hardware error for instance: {{ $labels.instance }}"
+      description: "ironic node {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalIronicSensorWarning
-    expr: count((ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt|Version Change)", maintenance="false", provision_state=~"(manageable|available)"} == 2) or (ipmi_sensor_state{job="ipmi/ironic", type=~"(Drive Slot|Version Change|Cable/Interconnect)", maintenance="false"} == 2)) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    expr: count((ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt|Version Change)", maintenance="false", provision_state=~"(manageable|available)"} == 2) or (ipmi_sensor_state{job="ipmi/ironic", type=~"(Drive Slot|Version Change|Cable/Interconnect)", maintenance="false"} == 2)) by (server_name, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 10m
     labels:
       severity: warning
       tier: metal
       service: baremetal
-      context: "{{ $labels.instance }}"
-      meta: "ironic node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      context: "{{ $labels.server_name }}"
+      meta: "ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ironic node {{ $labels.instance }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
-      summary: "Hardware error for instance: {{ $labels.instance }}"
+      description: "ironic node {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalIronicSensorInfo
-    expr: count(ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt|Version Change|Drive Slot|Power Supply|Cable/Interconnect)"} == 2) by (instance, type, name, manufacturer, model, provision_state, server_id, project_id)
+    expr: count(ipmi_sensor_state{job="ipmi/ironic", type=~"(Memory|Processor|Critical Interrupt|Version Change|Drive Slot|Power Supply|Cable/Interconnect)"} == 2) by (server_name, type, name, manufacturer, model, provision_state, server_id, project_id)
     for: 10m
     labels:
       severity: info
       tier: metal
       service: baremetal
-      context: "{{ $labels.instance }}"
-      meta: "ironic node {{ $labels.instance }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      context: "{{ $labels.server_name }}"
+      meta: "ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ironic node {{ $labels.instance }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
-      summary: "Hardware error for instance: {{ $labels.instance }}"
+      description: "ironic node {{ $labels.server_name }} hardware error for 10 min. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalIronicMetricsDownCritical
     expr: count(up{job="ipmi/ironic", provision_state="active", maintenance="false"} == 0) by (server_name, maintenance, provision_state, serial) 
@@ -112,7 +112,7 @@ groups:
       playbook: docs/devops/alert/baremetal
     annotations:
       description: "control plane node {{ $labels.server_name }} hardware error. Module {{ $labels.name }} more than 16000 correctable ECC errors. / Serial: {{ $labels.serial }}"
-      summary: "Hardware error for instance: {{ $labels.server_name }}"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
 
   - alert: MetalIPMIExpCritical
     expr: sum(ipmi_up) by (region) == 0
