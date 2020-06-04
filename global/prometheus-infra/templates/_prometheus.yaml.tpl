@@ -81,6 +81,7 @@
       - '{__name__=~"^vrops_cluster_stats",statkey=~"cluster_running_hosts|memory_usage_percentage|cpu_capacity_usage_percentage"}'
       - '{__name__=~"^vrops_vm_stats",statkey=~"vm_memory_kilobytes"}'
       - '{__name__=~"^vrops_vm_properties", propkey=~"runtime_powerState: Powered On"}'
+      - '{__name__=~"^vrops_vcenter_stats", statkey=~"vcsa_certificate_remaining_days"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_runs_counter_total"}'
       - '{__name__=~"^thousandeyes_test_html_loss_percentage"}'
