@@ -592,17 +592,9 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   static_configs:
-    - targets: ['vrops-exporter:9160']
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: vrops
-      action: keep
-- job_name: 'vrops-vms'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  static_configs:
-    - targets: ['vrops-exporter-vm:9160']
+    - targets: 
+      - 'vrops-exporter:9160'
+      - 'vrops-exporter-vms:9160'
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
