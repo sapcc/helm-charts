@@ -594,7 +594,7 @@
   static_configs:
     - targets: 
       - 'vrops-exporter:9160'
-      - 'vrops-exporter-vms:9160'
+      - 'vrops-exporter-vm:9160'
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
