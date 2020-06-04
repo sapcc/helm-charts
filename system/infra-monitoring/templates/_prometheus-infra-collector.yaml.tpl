@@ -609,3 +609,22 @@
     - target_label: __address__
       replacement: esxi-exporter:9203
 {{- end }}
+
+{{- $values := .Values.firmware-exporter -}}
+{{- if $values.enabled }}
+- job_name: 'firmware-exporter'
+  params:
+    job: [firmware-exporter]
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-sd/netbox.json  
+  static_configs:
+    - targets : ['firmware-exporter:9100']
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: firmware-exporter
+      action: keep
+{{- end }}
