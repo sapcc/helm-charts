@@ -89,6 +89,7 @@
       - '{__name__=~"^thousandeyes_requests_total"}'
       - '{__name__=~"^thousandeyes_requests_fails"}'
       - '{__name__=~"^fluentd_.+"}'
+      - '{__name__=~"^elasticsearch_cluster_health_status"}'
 
   relabel_configs:
     - action: replace
