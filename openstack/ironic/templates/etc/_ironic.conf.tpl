@@ -1,7 +1,6 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
-#TODO: needs to be changed for python3
-pybasedir = /var/lib/openstack/lib/python2.7/site-packages/ironic
+pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
 
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
