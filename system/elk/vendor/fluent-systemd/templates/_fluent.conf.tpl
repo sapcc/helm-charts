@@ -83,5 +83,5 @@
         source systemdlogs
       </labels>
     </metric>
-  </store
+  </store>
 </match>
