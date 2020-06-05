@@ -11,7 +11,7 @@
     @type prometheus_monitor
     <labels>
         host ${hostname}
-        nodename "#{ENV['K8S_NODE_NAME']}"
+        nodename "#{ENV['NODENAME']}"
         source systemdlogs
     </labels>
     interval 10
@@ -21,7 +21,7 @@
     @type prometheus_output_monitor
     <labels>
         host ${hostname}
-        nodename "#{ENV['K8S_NODE_NAME']}"
+        nodename "#{ENV['NODENAME']}"
         source systemdlogs
     </labels>
     interval 10
@@ -37,7 +37,7 @@
     desc The total number of incoming records
     <labels>
       hostname ${hostname}
-      nodename "#{ENV['K8S_NODE_NAME']}"
+      nodename "#{ENV['NODENAME']}"
       source systemdlogs
     </labels>
   </metric>

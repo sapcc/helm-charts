@@ -79,7 +79,7 @@
       type counter
       desc The total number of outgoing records
       <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
+        nodename "#{ENV['NODENAME']}"
         source systemdlogs
       </labels>
     </metric>
