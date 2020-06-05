@@ -2,7 +2,7 @@
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDBTooManyConnections
     expr: (mysql_global_variables_max_connections{app=~"{{ include "fullName" . }}"} - mysql_global_status_threads_connected{app=~"{{ include "fullName" . }}"} < 200)
-    for: 30m
+    for: 10m
     labels:
       context: datbase
       service: {{ include "alerts.service" . }}
