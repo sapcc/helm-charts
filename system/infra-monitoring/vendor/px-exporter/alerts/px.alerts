@@ -100,7 +100,7 @@ groups:
       summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is resulting in 0 imported routes. Transport routes via this peer are not received, hence redundancy is degraded.
 
   - alert: PXTransportRouterPrefixExportCountZero
-    expr: (sum(bird_protocol_prefix_import_count{peer_type="PLATF"}) by (app, ip_version, proto, pxdomain, pxinstance, pxservice) <= 0)  + on  (app, ip_version, proto, pxdomain, pxinstance, pxservice)  group_right() (bird_protocol_prefix_export_count{name!~"kernel.", peer_type="TRANS"} <= 0)
+    expr: (sum by(app, ip_version, proto, pxdomain, pxinstance, pxservice) (bird_protocol_prefix_import_count{peer_type="PLATF"}) > 0) + on(app, ip_version, proto, pxdomain, pxinstance, pxservice) group_right() (bird_protocol_prefix_export_count{name!~"kernel.",peer_type="TRANS"} == 0)
     for: 3m
     labels:
       severity: critical
