@@ -45,6 +45,19 @@ spec:
     - interface: public
       region: {{ .Values.global.region }}
       url: https://{{ include "ironic_api_endpoint_host_public" .}}
+  - name: ironic-inspector
+    type: baremetal
+    description: Openstack baremetal inspector service
+    endpoints:
+    - interface: admin
+      region: {{ .Values.global.region }}
+      url: http://ironic-inspector.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.inspector.port_internal }}
+    - interface: internal
+      region: {{ .Values.global.region }}
+      url: http://ironic-inspector.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.inspector.port_internal }}
+    - interface: public
+      region: {{ .Values.global.region }}
+      url: https://{{ include "ironic_inspector_endpoint_host_public" .}}
 
   quota_class_sets:
     flavors:

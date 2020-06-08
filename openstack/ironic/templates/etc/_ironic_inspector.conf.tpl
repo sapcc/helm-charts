@@ -13,7 +13,8 @@ project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 
 [api]
-host_ip = 0.0.0.0
+listen_address = 0.0.0.0
+host = https://{{ include "ironic_inspector_endpoint_host_public" .}}
 
 [firewall]
 manage_firewall = False
