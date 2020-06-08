@@ -64,8 +64,7 @@ service_token_roles_required = True
 insecure = True
 token_cache_time = 600
 include_service_catalog = true
-service_name = ironic-inspector
-service_type = baremetal
+service_type = baremetal-introspection
 
 [oslo_middleware]
 enable_proxy_headers_parsing = True
