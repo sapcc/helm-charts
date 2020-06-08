@@ -80,7 +80,6 @@
       desc The total number of outgoing records
       <labels>
         nodename "#{ENV['NODENAME']}"
-        source systemdlogs
       </labels>
     </metric>
   </store>

@@ -12,7 +12,6 @@
     <labels>
         host ${hostname}
         nodename "#{ENV['K8S_NODE_NAME']}"
-        source containerlogs
     </labels>
     interval 10
 </source>
@@ -22,7 +21,6 @@
     <labels>
         host ${hostname}
         nodename "#{ENV['K8S_NODE_NAME']}"
-        source containerlogs
     </labels>
     interval 10
 </source>

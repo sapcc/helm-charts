@@ -12,7 +12,6 @@
     <labels>
         host ${hostname}
         nodename "#{ENV['NODENAME']}"
-        source systemdlogs
     </labels>
     interval 10
 </source>
@@ -22,7 +21,6 @@
     <labels>
         host ${hostname}
         nodename "#{ENV['NODENAME']}"
-        source systemdlogs
     </labels>
     interval 10
 </source>
@@ -38,7 +36,6 @@
     <labels>
       hostname ${hostname}
       nodename "#{ENV['NODENAME']}"
-      source systemdlogs
     </labels>
   </metric>
 </filter>
