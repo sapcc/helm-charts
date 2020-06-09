@@ -1,0 +1,70 @@
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Deployment
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: firmware
+    spec:
+      containers:
+         - name: {{ include "infraMonitoring.name" . }}
+           image: {{ .Values.global.imageRegistry }}
+           imagePullPolicy: IfNotPresent
+           ports:
+             - name: metrics
+               containerPort: {{ .Values.listen_port }}
+               protocol: TCP
+           command:
+             - ./exporter.py
+           args:
+             - -o {{ .Values.listen_port }}
+           env:
+             - name: CISCOUSER
+               value: {{ .Values.cisco_user }}
+             - name: CISCOPW
+               value: {{ .Values.cisco_pw }}
+             - name: CISCOALTPWS
+               value: {{ .Values.cisco_alternative_pws }}
+             - name: REGION
+               value: {{ .Values.region }}
+             - name: USER
+               value: {{ .Values.user }}
+             - name: PASSWORD
+               value: {{ .Values.password }}
+           livenessProbe:
+             httpGet:
+               path: /
+               port: {{ .Values.listen_port }}
+             initialDelaySeconds: 5
+             timeoutSeconds: 5
+             periodSeconds: 10
+           volumeMounts:
+             - mountPath: /atlas
+               name: atlas-output
+               readOnly: true
+      volumes:
+        - configMap:
+            name: {{ .Values.atlas_configmap }}
+          name: atlas-output
