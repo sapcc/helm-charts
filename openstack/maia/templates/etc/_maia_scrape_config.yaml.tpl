@@ -127,7 +127,7 @@
       target_label: volume
       regex: vol;(.*)
     - action: labeldrop
-      regex: LabelName|LabelValue|Metric|Group
+      regex: LabelName|LabelValue|Metric|Group|VServer|Cluster
 
   metrics_path: '/federate'
   params:
