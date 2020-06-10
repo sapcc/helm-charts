@@ -126,6 +126,8 @@
     - source_labels: [LabelName, LabelValue]
       target_label: share_id
       regex: vol;(.*)
+    - action: labeldrop
+      regex: LabelName|LabelValue
 
   metrics_path: '/federate'
   params:
