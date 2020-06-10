@@ -2,7 +2,7 @@ kind: Deployment
 apiVersion: extensions/v1beta1
 
 metadata:
-  name: ironic-inspector
+  name: ironic-inspector-conductor
   labels:
     system: openstack
     type: backend
@@ -19,11 +19,11 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: ironic-inspector
+      name: ironic-inspector-conductor
   template:
     metadata:
       labels:
-        name: ironic-inspector
+        name: ironic-inspector-conductor
 {{ tuple . "ironic" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
@@ -31,7 +31,7 @@ spec:
     spec:
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
-      - name: ironic-inspector
+      - name: ironic-inspector-conductor
         image: {{ .Values.global.imageRegistry }}/{{ .Values.global.image_namespace }}/loci-ironic:{{ .Values.imageVersion }}
         imagePullPolicy: IfNotPresent
         command:
@@ -39,7 +39,7 @@ spec:
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "ironic-inspector --config-file /etc/ironic-inspector/inspector.conf"
+          value: "ironic-inspector-conductor --config-file /etc/ironic-inspector/inspector.conf"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
@@ -80,31 +80,6 @@ spec:
           name: ironic-etc
           subPath: policy.json
           readOnly: true
-      {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
-      - name: dhcp
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-staticdhcpd:{{.Values.imageVersionStaticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
-        imagePullPolicy: IfNotPresent
-        resources:
-{{ toYaml .Values.pod.resources.dhcp | indent 10 }}
-        command:
-        - dumb-init
-        - staticDHCPd
-        env:
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        ports:
-        - name: dhcp
-          protocol: UDP
-          containerPort: {{.Values.inspector.dhcp.port}}
-        - name: dhcp-proxy
-          protocol: UDP
-          containerPort: {{.Values.inspector.dhcp.proxy_port}}
-        volumeMounts:
-        - mountPath: /conf
-          name: dhcp-config
-        {{- end }}
       volumes:
       - name: etcironic
         emptyDir: {}
@@ -120,9 +95,3 @@ spec:
         configMap:
           name: ironic-inspector-rootwrap
           defaultMode: 0444
-      {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
-      - name: dhcp-config
-        configMap:
-          name: ironic-inspector-dhcp
-          defaultMode: 0444
-      {{- end }}
