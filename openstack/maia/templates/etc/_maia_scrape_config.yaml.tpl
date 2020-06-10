@@ -124,7 +124,7 @@
       regex: netapp_perf_svm;(.*)
       replacement: openstack_manila_share_${1}
     - source_labels: [LabelName, LabelValue]
-      target_label: share_id
+      target_label: volume
       regex: vol;(.*)
     - action: labeldrop
       regex: LabelName|LabelValue|Metric|Group
