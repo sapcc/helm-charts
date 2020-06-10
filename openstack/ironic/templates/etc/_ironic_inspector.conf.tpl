@@ -1,6 +1,11 @@
 [DEFAULT]
 log_config_append = /etc/ironic-inspector/logging.ini
 {{- include "ini_sections.default_transport_url" . }}
+clean_up_period = 60
+# Timeout after which introspection is considered failed, set to 0 to
+# disable. (integer value)
+timeout = 3600
+debug = true
 
 [ironic]
 region_name = {{.Values.global.region}}
@@ -22,7 +27,7 @@ manage_firewall = False
 [processing]
 store_data = swift
 always_store_ramdisk_logs = true
-ramdisk_logs_dir = /var/log/kolla/ironic/
+ramdisk_logs_dir = /var/log/ironic-inspector/ramdisk
 add_ports = all
 keep_ports = all
 ipmi_address_fields = ilo_address
@@ -30,6 +35,7 @@ log_bmc_address = true
 node_not_found_hook = enroll
 default_processing_hooks = ramdisk_error,root_disk_selection,scheduler,validate_interfaces,capabilities,pci_devices,extra_hardware
 processing_hooks = $default_processing_hooks,local_link_connection
+#default_processing_hooks = ramdisk_error,root_disk_selection,scheduler,validate_interfaces,capabilities,pci_devices
 
 [discovery]
 enroll_node_driver = agent_ipmitool
