@@ -119,6 +119,13 @@
       target_label: __name__
       regex: netapp_volume_(.*)
       replacement: openstack_manila_share_${1}
+    - source_labels: [__name__, Metric]
+      target_label: __name__
+      regex: netapp_perf_svm;(.*)
+      replacement: openstack_manila_share_${1}
+    - source_labels: [LabelName, LabelValue]
+      target_label: share_id
+      regex: vol;(.*)
 
   metrics_path: '/federate'
   params:
@@ -132,3 +139,4 @@
       - '{__name__=~"^vcenter_virtualDisk_.+"}'
       - '{__name__=~"^netapp_capacity_.+"}'
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
+      - '{__name__="netapp_perf_svm", app="netapp-perf-exporter-manila", Metric="total_ops", LabelName="vol", LabelValue=~"share.*"}'
