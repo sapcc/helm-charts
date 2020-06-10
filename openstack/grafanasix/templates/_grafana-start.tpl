@@ -40,8 +40,7 @@ function start_application {
   #  (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
   # no curl commnd in the new grafana container, so lets just wait 5 seconds for now - TODO: maybe find a better way
   #  (while [ `curl -s http://localhost:3000 > /dev/null ; echo $?` != "0" ]; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
-    sleep 5
-    bash /grafana-bin/grafana-initial-setup 2>&1 | tee /var/log/grafana/initial-setup.log
+    (while ! wget -q -O /dev/null http://localhost:3000; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
   fi
   while [ ! -d /git/grafana-content/datasources-config ]; do
     echo "waiting 5 more seconds for the grafana-content to be mounted and synced via git-sync ..."
