@@ -25,4 +25,8 @@ fi
 echo ""
 echo "creating the local user $GRAFANA_LOCAL_USER - this might fail if rerun with persistent storage"
 echo -n "==> "
-curl -s http://$GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD@localhost:3000/api/admin/users -X POST -H 'Content-Type: application/json;charset=utf-8' --data-binary "{\"name\":\"Local User\",\"email\":\"\",\"login\":\"$GRAFANA_LOCAL_USER\",\"password\":\"$GRAFANA_LOCAL_PASSWORD\"}"
+#curl -s http://$GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD@localhost:3000/api/admin/users -X POST -H 'Content-Type: application/json;charset=utf-8' --data-binary "{\"name\":\"Local User\",\"email\":\"\",\"login\":\"$GRAFANA_LOCAL_USER\",\"password\":\"$GRAFANA_LOCAL_PASSWORD\"}"
+myauth=$(echo -n $GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD | base64)
+mycontent="{\"name\":\"Local User\",\"email\":\"\",\"login\":\"$GRAFANA_LOCAL_USER\",\"password\":\"$GRAFANA_LOCAL_PASSWORD\"}"
+myhead="POST /api/admin/users HTTP/1.1\r\nHost: localhost\r\nAuthorization: Basic $myauth\r\nContent-type: application/json;charset=utf-8\r\nContent-length: $(echo -n $mycontent | wc -c)\r\nConnection: Close\r\n\r\n$mycontent"
+echo -ne "$myhead" | nc localhost 3000
