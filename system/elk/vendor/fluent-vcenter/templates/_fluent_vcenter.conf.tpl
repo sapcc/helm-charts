@@ -64,14 +64,9 @@
     tag "TRIMEXCEPTION.${tag}"
   </rule>
   <rule>
-    key message
-    pattern /nsx/
-    tag "nsx.${tag}"
-  </rule>
-  <rule>
-    key message
+    key ident
     pattern /NSX/
-    tag "nsx.${tag}"
+    tag "NSX.${tag}"
   </rule>
 </match>
 
@@ -219,7 +214,7 @@
 <match unknown.**>
   @type null
 </match>
-<match nsx.**>
+<match NSX.**>
   @type elasticsearch_dynamic
   host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
   port {{.Values.global.elk_elasticsearch_ssl_port}}
