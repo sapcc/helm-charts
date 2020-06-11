@@ -11,7 +11,7 @@ readonlyrest:
         indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", ".kibana*", "kubernikus-*", "scaleout-*", "virtual-*", "bigiplogs-*", "alerts-*", "deployments-*","nsxt-*"]
         auth_key: {{.Values.global.data_user}}:{{.Values.global.data_password}}
 
-{{- if $values.qalogs.enabled }}
+{{- if .Values.qalogs.enabled }}
       - name: qade2
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
         indices: ["qade2-logstash-*"]
