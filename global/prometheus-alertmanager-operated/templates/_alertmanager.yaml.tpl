@@ -756,7 +756,7 @@ receivers:
 
   - name: pagerduty_api
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.api.service_key undefined" .Values.pagerduty.api.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.api.serviceKey undefined" .Values.pagerduty.api.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -771,7 +771,7 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-      - service_key: {{ required ".Values.pagerduty_sap.api.service_key undefined" .Values.pagerduty_sap.api.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.api.serviceKey undefined" .Values.pagerduty_sap.api.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -789,7 +789,7 @@ receivers:
 
   - name: pagerduty_metal
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.metal.service_key undefined" .Values.pagerduty.metal.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.metal.serviceKey undefined" .Values.pagerduty.metal.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -804,7 +804,7 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-      - service_key: {{ required ".Values.pagerduty_sap.metal.service_key undefined" .Values.pagerduty_sap.metal.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.metal.serviceKey undefined" .Values.pagerduty_sap.metal.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -822,7 +822,7 @@ receivers:
 
   - name: pagerduty_network
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.network.service_key undefined" .Values.pagerduty.network.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.network.serviceKey undefined" .Values.pagerduty.network.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -837,7 +837,7 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-      - service_key: {{ required ".Values.pagerduty_sap.network.service_key undefined" .Values.pagerduty_sap.network.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.network.serviceKey undefined" .Values.pagerduty_sap.network.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -855,7 +855,7 @@ receivers:
 
   - name: pagerduty_vmware
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.vmware.service_key undefined" .Values.pagerduty.vmware.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.vmware.serviceKey undefined" .Values.pagerduty.vmware.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -870,7 +870,7 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-      - service_key: {{ required ".Values.pagerduty_sap.vmware.service_key undefined" .Values.pagerduty_sap.vmware.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.vmware.serviceKey undefined" .Values.pagerduty_sap.vmware.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -888,7 +888,7 @@ receivers:
 
   - name: pagerduty_alertchain_test
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.alertTest.service_key undefined" .Values.pagerduty.alertTest.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty.alertTest.serviceKey undefined" .Values.pagerduty.alertTest.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -903,7 +903,7 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-      - service_key: {{ required ".Values.pagerduty_sap.alertTest.service_key undefined" .Values.pagerduty.alertTest.service_key | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.alertTest.serviceKey undefined" .Values.pagerduty.alertTest.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
