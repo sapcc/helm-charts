@@ -209,7 +209,7 @@
 <match unknown.**>
   @type null
 </match>
-<match match nsxt.**>
+<match nsxt.**>
   @type elasticsearch_dynamic
   host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
   port {{.Values.global.elk_elasticsearch_ssl_port}}
