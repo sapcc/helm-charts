@@ -53,6 +53,7 @@ scheduler_default_filters = {{ .Values.scheduler_default_filters }}
 
 {{- include "osprofiler" . }}
 
+allow_migration_on_attach = {{ .Values.cinder_api_allow_migration_on_attach }}
 
 [keystone_authtoken]
 auth_plugin = v3password
