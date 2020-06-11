@@ -38,7 +38,7 @@ function start_application {
   if [ -f /grafana-bin/grafana-initial-setup ]; then
   # no ss commnd in the new grafana container, so we have to use curl to check ...
   #  (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
-  # no curl commnd in the new grafana container, so lets just wait 5 seconds for now - TODO: maybe find a better way
+  # no curl commnd in the new grafana container, so we have to use wget to check ...
   #  (while [ `curl -s http://localhost:3000 > /dev/null ; echo $?` != "0" ]; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
     (while ! wget -q -O /dev/null http://localhost:3000; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
   fi
