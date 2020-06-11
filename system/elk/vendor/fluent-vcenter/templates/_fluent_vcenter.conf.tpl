@@ -1,5 +1,5 @@
 <system>
-  log_level warn
+  log_level error
 </system>
 
 <label @FLUENT_LOG>
@@ -62,6 +62,16 @@
     key message
     pattern /Trim Exception/
     tag "TRIMEXCEPTION.${tag}"
+  </rule>
+  <rule>
+    key message
+    pattern /nsx/
+    tag "nsxt.${tag}"
+  </rule>
+  <rule>
+    key message
+    pattern /NSX/
+    tag "nsxt.${tag}"
   </rule>
 </match>
 
