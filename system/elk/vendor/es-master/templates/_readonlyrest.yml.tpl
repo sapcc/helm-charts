@@ -14,17 +14,17 @@ readonlyrest:
 {{- if $values.qalogs.enabled }}
       - name: qade2
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
-        indices: ["logstash-qade2-*"]
+        indices: ["qade2-logstash-*"]
         auth_key: {{.Values.global.qade2_user}}:{{.Values.global.qade2_password}}
 
       - name: qade3
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
-        indices: ["logstash-qade3-*"]
+        indices: ["qade3-logstash-*"]
         auth_key: {{.Values.global.qade3_user}}:{{.Values.global.qade3_password}}
 
       - name: qade5
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
-        indices: ["logstash-qade5-*"]
+        indices: ["qade5-logstash-*"]
         auth_key: {{.Values.global.qade5_user}}:{{.Values.global.qade5_password}}
 
 {{- end }}
