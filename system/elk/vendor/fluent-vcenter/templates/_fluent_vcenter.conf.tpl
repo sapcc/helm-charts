@@ -66,12 +66,12 @@
   <rule>
     key message
     pattern /nsx/
-    tag "nsxt.${tag}"
+    tag "nsx.${tag}"
   </rule>
   <rule>
     key message
     pattern /NSX/
-    tag "nsxt.${tag}"
+    tag "nsx.${tag}"
   </rule>
 </match>
 
@@ -219,7 +219,7 @@
 <match unknown.**>
   @type null
 </match>
-<match nsxt.**>
+<match nsx.**>
   @type elasticsearch_dynamic
   host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
   port {{.Values.global.elk_elasticsearch_ssl_port}}
