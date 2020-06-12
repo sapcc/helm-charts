@@ -467,7 +467,7 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
-    logstash_format true
+    index_name {{.Values.indexname}}-%Y.%m.%d
     template_name {{.Values.indexname}}
     template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
@@ -505,7 +505,7 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
-    logstash_format true
+    index_name {{.Values.indexname}}-%Y.%m.%d
     template_name {{.Values.indexname}}
     template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
