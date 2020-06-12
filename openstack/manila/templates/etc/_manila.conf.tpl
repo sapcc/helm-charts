@@ -36,6 +36,8 @@ delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_s
 scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
 
+migration_ignore_scheduler = True
+
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_shares = 0
 quota_gigabytes = 0
