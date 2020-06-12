@@ -1,6 +1,6 @@
 {
   "order": 0,
-  "template": "qa-de-5-logstash-*",
+  "template": "qade2-logstash-*",
   "settings": {
     "index": {
       "refresh_interval": "10s",
