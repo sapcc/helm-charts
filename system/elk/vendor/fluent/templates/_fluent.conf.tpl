@@ -468,8 +468,7 @@
     ssl_verify false
     ssl_version TLSv1_2
     logstash_prefix {{.Values.indexname}}
-    logstash_prefix_separator "-"
-    logstash_dateformat "%Y.%m.%d"
+    logstash_format true
     template_name {{.Values.indexname}}
     template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
@@ -508,8 +507,7 @@
     ssl_verify false
     ssl_version TLSv1_2
     logstash_prefix {{.Values.indexname}}
-    logstash_prefix_separator "-"
-    logstash_dateformat "%Y.%m.%d"
+    logstash_format true
     template_name {{.Values.indexname}}
     template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
