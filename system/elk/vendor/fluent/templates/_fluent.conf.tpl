@@ -467,7 +467,9 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
-    index_name {{.Values.indexname}}-%Y.%m.%d
+    logstash_prefix {{.Values.indexname}}
+    logstash_prefix_separator "-"
+    logstash_dateformat "%Y.%m.%d"
     template_name {{.Values.indexname}}
     template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
@@ -505,7 +507,9 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
-    index_name {{.Values.indexname}}-%Y.%m.%d
+    logstash_prefix {{.Values.indexname}}
+    logstash_prefix_separator "-"
+    logstash_dateformat "%Y.%m.%d"
     template_name {{.Values.indexname}}
     template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
