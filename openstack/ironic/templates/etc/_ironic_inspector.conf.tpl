@@ -6,7 +6,7 @@ clean_up_period = 60
 # disable. (integer value)
 timeout = 3600
 debug = true
-standalone {{ .Values.inspector.standalone }}
+standalone = {{ .Values.inspector.standalone }}
 
 [ironic]
 region_name = {{.Values.global.region}}
