@@ -6,6 +6,7 @@ clean_up_period = 60
 # disable. (integer value)
 timeout = 3600
 debug = true
+standalone {{ .Values.inspector.standalone }}
 
 [ironic]
 region_name = {{.Values.global.region}}
@@ -23,6 +24,9 @@ host = https://{{ include "ironic_inspector_endpoint_host_public" .}}
 
 [firewall]
 manage_firewall = False
+
+[coordination]
+backend_url = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
 [processing]
 store_data = swift
