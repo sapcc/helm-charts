@@ -47,6 +47,7 @@
       - '{__name__=~"snmp_f5_sysGlobalTmmStatMemoryTotalKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostSwapUsedKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostSwapTotalKb"}'
+      - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio1m"}'
       - '{__name__=~"snmp_f5_ltmVirtualAddrNumber"}'
       - '{__name__=~"snmp_f5_ltmVirtualServNumber"}'
       - '{__name__=~"snmp_f5_ltmPoolNumber"}'
