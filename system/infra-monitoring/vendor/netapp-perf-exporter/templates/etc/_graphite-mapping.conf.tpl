@@ -16,12 +16,12 @@ mappings:
     Tag: $4
     Metric: $5
 - match: netapp.perf.*.*.svm.*.vol.*.*
-  name: 'netapp_perf_volume_${6}'
+  name: "netapp_volume_${5}"
   labels:
     group: $1
     filer: $2
     vserver: $3
-    volume: $5
+    volume: $4
 - match: netapp.perf.*.*.svm.*.*.*.*
   name: netapp_perf_svm
   labels:
