@@ -4,7 +4,7 @@
 [DEFAULT]
 # List of directories to load filter definitions from (separated by ',').
 # These directories MUST all be only writeable by root !
-filters_path=/etc/ironic/rootwrap.d,/usr/share/ironic/rootwrap, /etc/ironic-inspector/rootwrap.d
+filters_path=/etc/ironic/rootwrap.d,/usr/share/ironic/rootwrap,/etc/ironic-inspector/rootwrap.d
 
 # List of directories to search executables in, in case filters do not
 # explicitely specify a full path (separated by ',')
