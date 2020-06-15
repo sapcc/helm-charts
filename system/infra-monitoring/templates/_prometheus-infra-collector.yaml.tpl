@@ -637,3 +637,17 @@
       regex: firmware-exporter
       action: keep
 {{- end }}
+
+{{- $values := .Values.netapp_perf_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'netapp_perf_exporter'
+  metrics_path: /
+  relabel_configs:
+  - source_labels: [__name__, LabelName, Metric]
+    target_label: __name__
+    regex: netapp_perf_svm;vol;(.*)
+    replacement: netapp_volume_${1}
+  - source_labels: [__name__, LabelValue]
+    target_label: volume
+    regex: netapp_volume_.*;(.*)
+{{- end }}
