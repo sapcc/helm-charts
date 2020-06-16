@@ -9,11 +9,11 @@ groups:
       tier: metal
       service: baremetal
       context: "{{ $labels.server_name }}"
-      meta: "ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      meta: "Ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
       cloudops: "?searchTerm={{ $labels.server_id }}"
     annotations:
-      description: "ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      description: "Ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalIronicSensorWarning
@@ -24,10 +24,10 @@ groups:
       tier: metal
       service: baremetal
       context: "{{ $labels.server_name }}"
-      meta: "ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      meta: "Ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      description: "Ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalIronicSensorInfo
@@ -38,12 +38,54 @@ groups:
       tier: metal
       service: baremetal
       context: "{{ $labels.server_name }}"
-      meta: "ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      meta: "Ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
+      description: "Ironic node {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.name }} / Project ID: {{ $labels.project_id }} / Server ID: {{ $labels.server_id }}"
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
+  - alert: MetalIronicMemCritical
+    expr: count(ipmi_memory_state{job="ipmi/ironic", provision_state="active", maintenance="false"} == 2) by (server_name, name, provision_state, server_id, project_id)
+    for: 10m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      playbook: docs/devops/alert/baremetal/vpod.html
+    annotations:
+      description: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      summary: "Dimm error for server: {{ $labels.server_name }}"
+      
+  - alert: MetalIronicMemWarn
+    expr: count(ipmi_memory_state{job="ipmi/ironic", provision_state!="active"} == 2 or ipmi_memory_state{job="ipmi/ironic", provision_state="active", maintenance="true"} == 2) by (server_name, name, provision_state, server_id, project_id)
+    for: 10m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      playbook: docs/devops/alert/baremetal/vpod.html
+    annotations:
+      description: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      summary: "Dimm error for server: {{ $labels.server_name }}"
+
+  - alert: MetalIronicMemInfo
+    expr: sum(ipmi_memory_errors{job="ipmi/ironic"} > 16000) by (server_name, name, manufacturer, model, provision_state, server_id, serial)
+    for: 30m
+    labels:
+      severity: info
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "Ironic node {{ $labels.server_name }} hardware error. Module {{ $labels.name }} more than 16000 correctable ECC errors. / Serial: {{ $labels.serial }}"
+      playbook: docs/devops/alert/baremetal
+    annotations:
+      description: "Ironic node {{ $labels.server_name }} hardware error. Module {{ $labels.name }} more than 16000 correctable ECC errors. / Serial: {{ $labels.serial }}"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
+
   - alert: MetalIronicMetricsDownCritical
     expr: count(up{job="ipmi/ironic", provision_state="active", maintenance="false"} == 0) by (server_name, maintenance, provision_state, serial) 
     for: 30m
@@ -99,20 +141,6 @@ groups:
     annotations:
       description: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
       summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}"
-
-  - alert: MetalIronicMemoryInfo
-    expr: sum(ipmi_memory_errors{job="ipmi/ironic"} > 16000) by (server_name, name, manufacturer, model, provision_state, server_id, serial)
-    for: 30m
-    labels:
-      severity: info
-      tier: metal
-      service: baremetal
-      context: "{{ $labels.server_name }}"
-      meta: "control plane node {{ $labels.server_name }} hardware error. Module {{ $labels.name }} more than 16000 correctable ECC errors. / Serial: {{ $labels.serial }}"
-      playbook: docs/devops/alert/baremetal
-    annotations:
-      description: "control plane node {{ $labels.server_name }} hardware error. Module {{ $labels.name }} more than 16000 correctable ECC errors. / Serial: {{ $labels.serial }}"
-      summary: "Hardware error for server: {{ $labels.server_name }}"
 
   - alert: MetalIPMIExpCritical
     expr: sum(ipmi_up) by (region) == 0

@@ -21,7 +21,7 @@ spec:
       annotations:
         checksum/fluent-vcenter-configmap.yaml: {{ include  (print .Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/fluent.conf.tpl: {{ include  (print $.Template.BasePath "/_fluent_vcenter.conf.tpl") . | sha256sum }}
-        checksum/fluent-start.tpl: {{ include  (print $.Template.BasePath "/_fluent-start.tpl") . | sha256sum }}
+        checksum/prometheus.conf.tpl: {{ include  (print $.Template.BasePath "/_prometheus.conf.tpl") . | sha256sum }}
     spec:
       nodeSelector:
         zone: farm
@@ -33,7 +33,7 @@ spec:
         - name: fluent-vcenter
           image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
-          command: ["/usr/local/bin/dumb-init", "/bin/bash", "/fluent-bin/fluent-start"]
+          command: ["/usr/local/bin/dumb-init", "/usr/local/bin/fluentd", "-c", "/fluent-bin/fluent.conf", "--use-v1-config", "--suppress-repeated-stacktrace"]
           ports:
             - name: vclogs
               containerPort: {{.Values.vcenter_logs_in_port}}
@@ -52,6 +52,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: NODENAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           volumeMounts:
             - name: fluent-bin
               mountPath: /fluent-bin

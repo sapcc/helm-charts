@@ -1,3 +1,4 @@
+{{- if not .Values.inspector.standalone }}
 kind: Deployment
 apiVersion: extensions/v1beta1
 
@@ -39,7 +40,7 @@ spec:
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "ironic-inspector-conductor --config-file /etc/ironic-inspector/inspector.conf"
+          value: "ironic-inspector-conductor --config-file /etc/ironic-inspector/ironic-inspector.conf"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
@@ -95,3 +96,4 @@ spec:
         configMap:
           name: ironic-inspector-rootwrap
           defaultMode: 0444
+{{- end }}

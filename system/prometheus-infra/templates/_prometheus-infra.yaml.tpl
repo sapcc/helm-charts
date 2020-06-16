@@ -57,6 +57,7 @@
       - '{__name__=~"^redfish_.+"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_runs_counter_total"}'
+      - '{__name__=~"^nsxt_trim_exception"}'
   relabel_configs:
     - action: replace
       source_labels: [__address__]

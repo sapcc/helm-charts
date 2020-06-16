@@ -467,9 +467,10 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
+    logstash_prefix {{.Values.indexname}}
     logstash_format true
-    template_name logstash
-    template_file /fluent-bin/logstash.json
+    template_name {{.Values.indexname}}
+    template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
     time_as_integer false
     type_name _doc
@@ -505,9 +506,10 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
+    logstash_prefix {{.Values.indexname}}
     logstash_format true
-    template_name logstash
-    template_file /fluent-bin/logstash.json
+    template_name {{.Values.indexname}}
+    template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
     time_as_integer false
     type_name _doc
