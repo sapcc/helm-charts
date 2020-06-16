@@ -10,6 +10,14 @@ metadata:
 spec:
   requires:
   - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+  - monsoon3/domain-monsoon3-seed
+
+  roles:
+  - name: loadbalancer_admin
+  - name: loadbalancer_viewer
+  - name: loadbalancer_poolmemberadmin
+  - name: cloud_network_admin
+  - name: cloud_keymanager_admin
 
   services:
   - name: octavia
@@ -39,3 +47,73 @@ spec:
         role: cloud_network_admin
       - project: service
         role: cloud_keymanager_admin
+    - name: admin
+      role_assignments:
+      - domain: Default
+        role: cloud_network_admin
+      - project: admin
+        role: cloud_network_admin
+    groups:
+    - name: administrators
+      role_assignments:
+      - domain: Default
+        role: cloud_network_admin
+      - project: admin
+        role: cloud_network_admin
+
+  - name: monsoon3
+    groups:
+    - name: MONSOON3_DOMAIN_ADMINS
+      role_assignments:
+      - project: cc-demo
+        role: loadbalancer_admin
+    - name: MONSOON3_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: loadbalancer_admin
+      - domain: monsoon3
+        role: loadbalancer_admin
+        inherited: true
+      - domain: monsoon3
+        role: loadbalancer_pooladmin
+        inherited: true
+    - name: MONSOON3_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: loadbalancer_admin
+      - domain: monsoon3
+        role: sharedfilesystem_viewer
+        inherited: true
+      - domain: monsoon3
+        role: loadbalancer_pooladmin
+        inherited: true
+    - name: MONSOON3_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: loadbalancer_admin
+      - domain: monsoon3
+        role: sharedfilesystem_viewer
+        inherited: true
+      - domain: monsoon3
+        role: loadbalancer_pooladmin
+        inherited: true
+    - name: MONSOON3_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: loadbalancer_admin
+      - domain: monsoon3
+        role: loadbalancer_admin
+        inherited: true
+      - domain: monsoon3
+        role: loadbalancer_pooladmin
+        inherited: true
+    - name: MONSOON3_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: loadbalancer_admin
+      - domain: monsoon3
+        role: sharedfilesystem_viewer
+        inherited: true
+      - domain: monsoon3
+        role: loadbalancer_pooladmin
+        inherited: true        
