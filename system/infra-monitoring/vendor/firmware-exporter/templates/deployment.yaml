@@ -14,6 +14,9 @@ metadata:
     system: infra_monitoring
 
 spec:
+  selector:
+    matchLabels:
+      app: {{ include "infraMonitoring.name" . }}
   revisionHistoryLimit: 5
   replicas: 1
   strategy:
@@ -30,7 +33,7 @@ spec:
     spec:
       containers:
          - name: {{ include "infraMonitoring.name" . }}
-           image: {{ .Values.global.imageRegistry }}
+           image: {{ .Values.global.registry }}/{{ .Values.docker_repo }}
            imagePullPolicy: IfNotPresent
            ports:
              - name: metrics

@@ -1,5 +1,9 @@
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 metadata:
   name: vrops-exporter 
   namespace: infra-monitoring
@@ -41,7 +45,7 @@ spec:
                cpu: 150m
            volumeMounts:
              - mountPath: /config
-               name: collector-config
+               name: vrops-config
                readOnly: true
 
            #livenessProbe:
@@ -52,4 +56,5 @@ spec:
              #timeoutSeconds: 10
       volumes:
         - configMap:
-          name: collector-config
+            name: vrops-exporter-collector-config
+          name: vrops-config
