@@ -27,6 +27,8 @@ spec:
              - VMStatsCollector
              - -c
              - VMPropertiesCollector
+             - m
+             - /config/collector_config.yaml
            env:
            - name: PORT
              value: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
@@ -41,9 +43,17 @@ spec:
              requests:
                memory: 300Mi
                cpu: 150m
+           volumeMounts:
+             - mountPath: /config
+               name: collector-config
+               readOnly: true
            #livenessProbe:
              #tcpSocket:
                #port: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number }}
              #initialDelaySeconds: 60
              #periodSeconds: 15
              #timeoutSeconds: 10
+      volumes:
+        configMap:
+        name: collector-config
+
