@@ -45,18 +45,18 @@ groups:
       summary: "Hardware error for server: {{ $labels.server_name }}"
       
   - alert: MetalIronicMemCritical
-      expr: count(ipmi_memory_state{job="ipmi/ironic", provision_state="active", maintenance="false"} == 2) by (server_name, name, provision_state, server_id, project_id)
-      for: 10m
-      labels:
-        severity: critical
-        tier: metal
-        service: baremetal
-        context: "{{ $labels.server_name }}"
-        meta: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
-        playbook: docs/devops/alert/baremetal/vpod.html
-      annotations:
-        description: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
-        summary: "Dimm error for server: {{ $labels.server_name }}"
+    expr: count(ipmi_memory_state{job="ipmi/ironic", provision_state="active", maintenance="false"} == 2) by (server_name, name, provision_state, server_id, project_id)
+    for: 10m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      playbook: docs/devops/alert/baremetal/vpod.html
+    annotations:
+      description: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / provision_state: {{ $labels.provision_state }} / project_id: {{ $labels.project_id }} / server_id: {{ $labels.server_id }}"
+      summary: "Dimm error for server: {{ $labels.server_name }}"
       
   - alert: MetalIronicMemWarn
     expr: count(ipmi_memory_state{job="ipmi/ironic", provision_state!="active"} == 2 or ipmi_memory_state{job="ipmi/ironic", provision_state="active", maintenance="true"} == 2) by (server_name, name, provision_state, server_id, project_id)
