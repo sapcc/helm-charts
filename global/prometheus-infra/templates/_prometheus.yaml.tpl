@@ -60,7 +60,7 @@
       - '{__name__=~"^ping_.+"}'
       - '{__name__=~"^cloudprober_.+"}'
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
-      - '{__name__=~"^ipmi_memory_errors$"}'
+      - '{__name__=~"^ipmi_memory_.+"}'
       - '{__name__=~"^vcenter_prod_cluster"}'
       - '{__name__=~"^vcenter_failover_host"}'
       - '{__name__=~"^vcenter_vms_on_failover_hosts"}'
