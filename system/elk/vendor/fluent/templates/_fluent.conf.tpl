@@ -457,6 +457,15 @@
     http_method post
     serializer json
     raise_on_error true
+    <buffer>
+      total_limit_size 256MB
+      flush_at_shutdown true
+      overflow_action block
+      retry_forever true
+      retry_type periodic
+      retry_wait 2s
+      flush_interval 1s
+    </buffer>
   </store>
   <store>
     @type elasticsearch_dynamic
