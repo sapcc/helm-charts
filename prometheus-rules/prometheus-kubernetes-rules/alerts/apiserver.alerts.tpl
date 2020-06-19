@@ -12,6 +12,7 @@ groups:
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
       dashboard: kubernetes-health
+      playbook: docs/support/playbook/kubernetes/k8s_apiserver_down.html
     annotations:
       description: Kubernetes API is unavailable!
       summary: All apiservers are down. Kubernetes API is unavailable!
@@ -26,6 +27,7 @@ groups:
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
       dashboard: nodes?var-server={{`{{$labels.instance}}`}}
+      playbook: docs/support/playbook/kubernetes/k8s_apiserver_down.html
     annotations:
       description: ApiServer on {{`{{ $labels.instance }}`}} is DOWN.
       summary: An ApiServer is DOWN
