@@ -97,7 +97,7 @@ mysql_metrics:
       name: openstack_stuck_volumes_count_gauge
       query: |
         SELECT
-          host as cinder_host,
+          COALESCE(host, "No host") AS cinder_host,
           project_id,
           id,
           display_name,
@@ -127,7 +127,7 @@ mysql_metrics:
       name: openstack_stuck_volumes_max_duration_gauge
       query: |
         SELECT
-          host as cinder_host,
+          COALESCE(host, "No host") AS cinder_host,
           project_id,
           id,
           display_name,
@@ -157,7 +157,7 @@ mysql_metrics:
       name: openstack_volumes_count_gauge
       query: |
         SELECT
-          host as cinder_host,
+          COALESCE(host, "No host") AS cinder_host,
           availability_zone,
           volume_type_id,
           project_id,
@@ -185,7 +185,7 @@ mysql_metrics:
       name: openstack_volumes_size_gauge
       query: |
         SELECT
-          host as cinder_host,
+          COALESCE(host, "No host") AS cinder_host,
           availability_zone,
           volume_type_id,
           project_id,
@@ -212,7 +212,7 @@ mysql_metrics:
         SELECT
           snapshots.status,
           snapshots.project_id,
-          volumes.host as cinder_host,
+          COALESCE(volumes.host, "No host") AS cinder_host,
           COUNT(*) AS count_gauge
         from snapshots
         join volumes on snapshots.volume_id=volumes.id
@@ -231,7 +231,7 @@ mysql_metrics:
       query: |
         SELECT
           snapshots.project_id,
-          volumes.host as cinder_host,
+          COALESCE(volumes.host, "No host") AS cinder_host,
           snapshots.status,
           SUM(volume_size) size_gauge
         from snapshots
