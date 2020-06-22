@@ -79,12 +79,31 @@ spec:
               mountPath: /etc/octavia/logging.ini
               subPath: logging.ini
               readOnly: true
+            {{- if .Values.watcher.enabled }}
+            - name: octavia-etc
+              mountPath: /etc/octavia/watcher.yaml
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
             {{- if not .Values.api_backdoor }}
             - name: octavia-etc
               mountPath: /etc/apache2/conf-enabled/octavia-api.conf
               subPath: octavia-api.conf
               readOnly: true
             {{- end }}
+{{- if .Values.watcher.enabled }}
+        - name: statsd
+          image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+          imagePullPolicy: IfNotPresent
+          resources:
+{{ toYaml .Values.pod.resources.statsd | indent 12 }}
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.statsd.port }}
+{{- end }}
       volumes:
         - name: octavia-etc
           configMap:

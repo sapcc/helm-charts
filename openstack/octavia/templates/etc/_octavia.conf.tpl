@@ -83,3 +83,10 @@ include_service_catalog = true
 service_type = load-balancer
 
 {{- include "ini_sections.cache" . }}
+
+{{ if .Values.watcher.enabled }}
+[watcher]
+enabled = true
+service_type = loadbalancer
+config_file = /etc/octavia/watcher.yaml
+{{ end }}
