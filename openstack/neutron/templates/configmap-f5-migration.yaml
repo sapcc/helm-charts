@@ -1,0 +1,14 @@
+{{- if .Values.new_f5.migration }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: f5-migration
+  labels:
+    system: openstack
+    type: migration
+    component: neutron
+
+data:
+  nlbaas2octavia.conf: |
+{{ include (print .Template.BasePath "/etc/_nlbaas2octavia.conf.tpl") . | indent 4 }}
+{{- end }}
