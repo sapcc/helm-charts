@@ -33,8 +33,10 @@ controller_ip_port_list = 127.0.0.1:5555
 heartbeat_key = unused
 health_check_interval = 30
 
+{{ if .Values.network_segment_physical_network }}
 [networking]
-f5_network_segment_physical_network = {{ required "A valid .Values.network_segment_physical_network required!" .Values.network_segment_physical_network }}
+f5_network_segment_physical_network = {{ .Values.network_segment_physical_network }}
+{{- end }}
 
 [database]
 connection = {{ include "db_url_mysql" . }}
