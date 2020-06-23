@@ -1,0 +1,34 @@
+groups:
+- name: vccluster.alerts
+  rules:
+  - alert: DRS_DisabledWithRegisteredVMs
+    expr: >
+      max_over_time(vrops_cluster_properties{propkey="configuration_drsconfig_enabled: false"}[10m]) 
+      and on (vccluster) max_over_time(vrops_cluster_stats{statkey="summary_total_number_vms"}[10m]) > 0
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "Cluster Compute Resource {{ $labels.vccluster }} has disabled DRS with registered VMs  ({{ $labels.datacenter }})"
+      playbook: 
+    annotations:
+      description: "Cluster Compute Resource {{ $labels.vccluster }} has disabled DRS with registered VMs ({{ $labels.datacenter }})"
+      summary: "Cluster Compute Resource {{ $labels.vccluster }} has disabled DRS with registered VMs ({{ $labels.datacenter }})"
+  - alert: DRS_fullyAutomated_DisabledWithRegisteredVMs
+    expr: >
+      max_over_time(vrops_cluster_properties{propkey="configuration_drsconfig_enabled: false"}[10m])
+      and on (vccluster) max_over_time(vrops_cluster_properties{propkey="configuration_drsconfig_defaultVmBehavior: fullyAutomated"}[10m]) 
+      and on (vccluster) max_over_time(vrops_cluster_stats{statkey="summary_total_number_vms"}[10m]) > 0
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "Cluster Compute Resource {{ $labels.vccluster }} has disabled DRS fullyAutomated with registered VMs  ({{ $labels.datacenter }})"
+      playbook: 
+    annotations:
+      description: "Cluster Compute Resource {{ $labels.vccluster }} has disabled DRS fullyAutomated with registered VMs ({{ $labels.datacenter }})"
+      summary: "Cluster Compute Resource {{ $labels.vccluster }} has disabled DRS fullyAutomated with registered VMs ({{ $labels.datacenter }})"
