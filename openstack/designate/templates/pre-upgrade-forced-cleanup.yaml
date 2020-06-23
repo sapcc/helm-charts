@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: designate-tempest-cleanup
-        image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-rally:{{required ".Values.global.image_version_designate_rally is missing" .Values.image_version_designate_tempest}}
+        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/rally-openstack:{{.Values.imageVersionTempest | required "Please set designate.imageVersionTempest or similar"}}
         imagePullPolicy: IfNotPresent
         command: ["bash", "-c", "for zone in $(openstack zone list | grep 'testdomain' | awk '{ print $2 }'); do openstack zone delete ${zone}; done; for tld in $(openstack tld list | grep 'tempest' | awk '{ print $2 }'); do openstack tld delete ${tld}; done"]
         env:
