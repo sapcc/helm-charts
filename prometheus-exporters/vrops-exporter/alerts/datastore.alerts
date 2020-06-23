@@ -16,8 +16,8 @@ groups:
       summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DatastoreDisconnectedWithVmsOnIt
      expr: >
-       max_over_time(vrops_datastore_stats{statkey="summary_total_number_vms"[10m]) > 0 
-       and on (datastore) max_over_time(vrops_datastore_properties{propkey="propkey="summary_datastore_accessible: PoweredOff"}[10m])
+       max_over_time(vrops_datastore_stats{statkey="summary_total_number_vms"}[10m]) > 0 
+       and on (datastore) max_over_time(vrops_datastore_properties{propkey="summary_datastore_accessible: PoweredOn"}[10m])
     for: 20m
     labels:
       severity: info
@@ -31,9 +31,9 @@ groups:
       summary: "Datastore {{ $labels.datastore }} is disconnected and has virtualmachines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DatastoreDisconnectedWithoutVmsOnIt
      expr: >
-       max_over_time(vrops_datastore_stats{statkey="summary_total_number_vms"[10m]) == 0
-       and on (datastore) max_over_time(vrops_datastore_properties{propkey="propkey="summary_datastore_accessible: PoweredOff"}[10m])
-    for: 20m
+       max_over_time(vrops_datastore_stats{statkey="summary_total_number_vms"}[10m]) == 0 
+       and on (datastore) max_over_time(vrops_datastore_properties{propkey="summary_datastore_accessible: PoweredOn"}[10m])
+      for: 20m
     labels:
       severity: info
       tier: vmware
@@ -43,4 +43,4 @@ groups:
       playbook:
     annotations:
       description: "Datastore {{ $labels.datastore }} is disconnected without virtualmachines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "Datastore {{ $labels.datastore }} is disconnected and has virtualmachines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} is disconnected without virtualmachines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
