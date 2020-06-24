@@ -45,7 +45,7 @@ groups:
       summary: Node {{`{{ $labels.node }}`}} under pressure due to insufficient available disk space
 
   - alert: KubernetesNodeDiskUsagePercentage
-    expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"}) BY (instance,device)) > 85
+    expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext|ext4"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext|ext4"}) BY (instance,device)) > 85
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -116,32 +116,18 @@ groups:
   ### Bonding health ###
 
   - alert: KubernetesNodeBondDegradedNetwork
-    expr: sum(node_bonding_active{master="bond1",instance=~"[^storage].*cloud.sap"}) by (master, instance) < 2
+    expr: sum(node_bonding_active{master="bond1",node=~"[^storage].*cloud.sap"}) by (master, node) < 2
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: node
-      severity: info 
+      severity: warning
       context: bond 
-      meta: "{{`{{ $labels.instance }}`}}"
+      meta: "{{`{{ $labels.node }}`}}"
       playbook: "docs/support/playbook/kubernetes/k8s_bond_degraded.html"
     annotations:
-      description: Bond {{`{{ $labels.master }}`}} on {{`{{ $labels.instance }}`}} is degraded.
+      description: Bond {{`{{ $labels.master }}`}} on {{`{{ $labels.node }}`}} is degraded.
       summary: Bond {{`{{ $labels.master }}`}} is degraded. This bond isn't used but this situation could cause problems on reboot.
-
-  - alert: KubernetesNodeBondDegradedNetwork
-    expr: sum(node_bonding_active{master="bond1",instance=~"network.*cloud.sap"}) by (master, instance) == 1
-    for: 15m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      severity: critical 
-      context: bond 
-      meta: "{{`{{ $labels.instance }}`}}"
-      playbook: "docs/support/playbook/kubernetes/k8s_bond_degraded.html"
-    annotations:
-      description: Bond {{`{{ $labels.master }}`}} on {{`{{ $labels.instance }}`}} is degraded. Network datapath threatened!
-      summary: Bond {{`{{ $labels.master }}`}} is degraded. Switch failover will cause this node to be disconneted. Network datapath is not HA! Incidents on the other network node will take out the whole region!
 
   - alert: KubernetesNodeBondDegradedMain
     expr: sum(node_bonding_active{master="bond2",instance=~".*cloud.sap"}) by (master, instance) < 2

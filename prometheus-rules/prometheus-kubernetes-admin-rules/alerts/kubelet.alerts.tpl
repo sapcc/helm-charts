@@ -86,21 +86,6 @@ groups:
       description: Kubelet is full
       summary: Kubelet {{`{{ $labels.node }}`}} is running {{`{{ $value }}`}} pods. That's too much!
 
-  - alert: KubernetesKubeletDockerHangs
-    expr: rate(kubelet_docker_operations_timeout[5m])> 0
-    for: 15m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      severity: warning
-      context: docker
-      meta: "{{`{{ $labels.node }}`}}"
-      dashboard: nodes?var-server={{`{{$labels.node}}`}}
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
-    annotations:
-      description: Docker hangs!
-      summary: Docker on {{`{{$labels.node}}`}} is hanging
-
   - alert: KubernetesHighNumberOfGoRoutines
     expr: go_goroutines{job="kubernetes-kubelet"} > 5000
     for: 5m
