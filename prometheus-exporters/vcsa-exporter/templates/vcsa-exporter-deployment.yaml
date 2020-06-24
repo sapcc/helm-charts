@@ -1,0 +1,63 @@
+kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+metadata:
+  name: vcsa-exporter 
+  namespace: infra-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: vcsa-exporter 
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: vcsa-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.vcsa.port missing" .Values.vcsa.port | quote}}
+        prometheus.io/targets: {{ required ".Values.vcsa.alerts.prometheus missing" .Values.vcsa.alerts.prometheus | quote }}
+    spec:
+      containers:
+         - name: vcsa-exporter
+           image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.vcsa.image.name missing" .Values.vcsa.image.name }}:{{ required ".Values.vcsa.image.tag missing" .Values.vcsa.image.tag  }}
+           ports:
+             - name: metrics
+               containerPort: {{ required ".Values.vcsa.port missing" .Values.vcsa.port_number }}
+           command:
+             - ./exporter.py
+           args:
+             - -u
+             - {{ required ".Values.vcsa.user missing" .Values.vcsa.user }}
+             - -m
+             - {{ required ".Values.vcsa.master_password missing" .Values.vcsa.master_password }}
+             - o
+             - {{ required ".Values.vcsa.port missing" .Values.vcsa.port }}
+             - a
+             - /atlas/netbox.json 
+           env:
+           - name: PORT
+             value: {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number | quote }}
+           - name: DEBUG
+             value: {{ .Values.vcsa.debug | quote }}
+           - name: INVENTORY
+             value: vcsa-inventory
+           #resources:
+             #limits:
+               #memory: 150Mi
+               #cpu: 100m
+             #requests:
+               #memory: 75Mi
+               #cpu: 50m
+           volumeMounts:
+             - mountPath: /atlas
+               name: atlas-output
+               readOnly: true
+      volumes:
+        - configMap:
+            name: {{ .Values.vcsa.atlas_configmap }}
+          name: atlas-output
