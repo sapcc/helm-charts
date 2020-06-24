@@ -19,7 +19,7 @@ spec:
         type: exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.vcsa.port missing" .Values.vcsa.port | quote}}
+        prometheus.io/port: {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number | quote}}
         prometheus.io/targets: {{ required ".Values.vcsa.alerts.prometheus missing" .Values.vcsa.alerts.prometheus | quote }}
     spec:
       containers:
@@ -27,7 +27,7 @@ spec:
            image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.vcsa.image.name missing" .Values.vcsa.image.name }}:{{ required ".Values.vcsa.image.tag missing" .Values.vcsa.image.tag  }}
            ports:
              - name: metrics
-               containerPort: {{ required ".Values.vcsa.port missing" .Values.vcsa.port_number }}
+               containerPort: {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number }}
            command:
              - ./exporter.py
            args:
