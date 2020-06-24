@@ -57,16 +57,3 @@ groups:
     annotations:
       description: ApiServerLatency for {{`{{ $labels.resource }}`}} is higher then usual for the past 15 minutes. Inspect apiserver logs for the root cause.
       summary: ApiServerLatency is unusally high
-
-  - alert: KubernetesApiServerEtcdAccessLatency
-    expr: etcd_request_latencies_summary{quantile="0.99"} / 1e6 > 1.0
-    for: 1h
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: etcd
-      severity: info
-      context: apiserver
-      dashboard: kubernetes-apiserver
-    annotations:
-      description: Latency for apiserver to access etcd is higher than 1s
-      summary: Access to etcd is slow
