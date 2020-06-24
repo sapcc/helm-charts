@@ -132,4 +132,4 @@
       - '{__name__=~"^vcenter_virtualDisk_.+"}'
       - '{__name__=~"^netapp_capacity_.+"}'
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
-      - '{__name__=~"^netapp_volume_.+", app="netapp-perf-exporter-manila", project_id!=""}'
+      - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
