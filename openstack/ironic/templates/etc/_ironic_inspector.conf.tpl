@@ -42,7 +42,7 @@ processing_hooks = $default_processing_hooks,local_link_connection
 #default_processing_hooks = ramdisk_error,root_disk_selection,scheduler,validate_interfaces,capabilities,pci_devices
 
 [discovery]
-enroll_node_driver = agent_ipmitool
+enroll_node_driver = ipmitool
 
 [pxe_filter]
 driver = noop
