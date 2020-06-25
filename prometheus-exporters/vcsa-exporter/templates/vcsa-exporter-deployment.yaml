@@ -46,17 +46,23 @@ spec:
              value: {{ .Values.vcsa.debug | quote }}
            - name: INVENTORY
              value: vcsa-inventory
-           #resources:
-             #limits:
-               #memory: 150Mi
-               #cpu: 100m
-             #requests:
-               #memory: 75Mi
-               #cpu: 50m
+           resources:
+             limits:
+               memory: 100Mi
+               cpu: 20m
+             requests:
+               memory: 50Mi
+               cpu: 10m
            volumeMounts:
              - mountPath: /atlas
                name: atlas-output
                readOnly: true
+           livenessProbe:
+              httpGet:
+                 path: /metrics
+                 port: {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number | quote }}
+              initialDelaySeconds: 3
+              periodSeconds: 300
       volumes:
         - configMap:
             name: {{ .Values.vcsa.atlas_configmap }}
