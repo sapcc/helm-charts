@@ -13,11 +13,11 @@ mysql -h 127.0.0.1 -e "SELECT 1" || exit 1
 # The readiness check should exit 0 for the first 10 min when SST might be in progress:
 
 start_time=$(stat /proc/1/ | grep ^Change: | cut -f 2-3 -d$' ')
-grace_time=$(date -d "$start_time 10 minutes")
+grace_time=$(date -d "$start_time 5 minutes")
 now_time=$(date)
 
 if [[ "$now_time" < "$grace_time" ]]; then
-  # 10 minutes SST grace period, return 0
+  # 5 minutes SST grace period, return 0
   exit 0
 fi
 

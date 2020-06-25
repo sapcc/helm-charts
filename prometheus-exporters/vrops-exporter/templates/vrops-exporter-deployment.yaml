@@ -1,5 +1,9 @@
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 metadata:
   name: vrops-exporter 
   namespace: infra-monitoring
@@ -22,6 +26,9 @@ spec:
                containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
            command:
              - ./exporter.py
+           args:
+             - -m
+             - /config/collector_config.yaml
            env:
            - name: PORT
              value: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
@@ -36,9 +43,18 @@ spec:
              requests:
                memory: 300Mi
                cpu: 150m
+           volumeMounts:
+             - mountPath: /config
+               name: vrops-config
+               readOnly: true
+
            #livenessProbe:
              #tcpSocket:
                #port: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number }}
              #initialDelaySeconds: 60
              #periodSeconds: 15
              #timeoutSeconds: 10
+      volumes:
+        - configMap:
+            name: vrops-exporter-collector-config
+          name: vrops-config

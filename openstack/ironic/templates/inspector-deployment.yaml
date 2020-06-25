@@ -37,9 +37,13 @@ spec:
         command:
         - dumb-init
         - kubernetes-entrypoint
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
         env:
         - name: COMMAND
-          value: "ironic-inspector"
+          value: "ironic-inspector --config-file /etc/ironic-inspector/ironic-inspector.conf"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
@@ -75,6 +79,14 @@ spec:
         - mountPath: /etc/ironic-inspector/logging.ini
           name: ironic-etc
           subPath: logging.ini
+          readOnly: true
+        - mountPath: /etc/ironic-inspector/policy.json
+          name: ironic-etc
+          subPath: policy.json
+          readOnly: true
+        - mountPath: /etc/ironic-inspector/rootwrap.d/ironic-inspector.filters
+          name: ironic-etc
+          subPath: ironic-inspector.filters
           readOnly: true
       {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
       - name: dhcp

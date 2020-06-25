@@ -47,6 +47,7 @@
       - '{__name__=~"snmp_f5_sysGlobalTmmStatMemoryTotalKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostSwapUsedKb"}'
       - '{__name__=~"snmp_f5_sysGlobalHostSwapTotalKb"}'
+      - '{__name__=~"snmp_f5_sysMultiHostCpuUsageRatio1m"}'
       - '{__name__=~"snmp_f5_ltmVirtualAddrNumber"}'
       - '{__name__=~"snmp_f5_ltmVirtualServNumber"}'
       - '{__name__=~"snmp_f5_ltmPoolNumber"}'
@@ -59,7 +60,7 @@
       - '{__name__=~"^ping_.+"}'
       - '{__name__=~"^cloudprober_.+"}'
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
-      - '{__name__=~"^ipmi_memory_errors$"}'
+      - '{__name__=~"^ipmi_memory_.+"}'
       - '{__name__=~"^vcenter_prod_cluster"}'
       - '{__name__=~"^vcenter_failover_host"}'
       - '{__name__=~"^vcenter_vms_on_failover_hosts"}'
@@ -90,6 +91,8 @@
       - '{__name__=~"^thousandeyes_requests_fails"}'
       - '{__name__=~"^fluentd_.+"}'
       - '{__name__=~"^elasticsearch_cluster_health_status"}'
+      - '{__name__=~"^vcsa_service_status"}'
+
 
   relabel_configs:
     - action: replace

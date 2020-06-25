@@ -33,8 +33,10 @@ controller_ip_port_list = 127.0.0.1:5555
 heartbeat_key = unused
 health_check_interval = 30
 
+{{ if .Values.network_segment_physical_network }}
 [networking]
-f5_network_segment_physical_network = {{ required "A valid .Values.network_segment_physical_network required!" .Values.network_segment_physical_network }}
+f5_network_segment_physical_network = {{ .Values.network_segment_physical_network }}
+{{- end }}
 
 [database]
 connection = {{ include "db_url_mysql" . }}
@@ -81,3 +83,10 @@ include_service_catalog = true
 service_type = load-balancer
 
 {{- include "ini_sections.cache" . }}
+
+{{ if .Values.watcher.enabled }}
+[watcher]
+enabled = true
+service_type = loadbalancer
+config_file = /etc/octavia/watcher.yaml
+{{ end }}

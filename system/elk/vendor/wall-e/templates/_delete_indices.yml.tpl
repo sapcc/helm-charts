@@ -38,6 +38,10 @@ actions:
       kind: prefix
       value: alerts
       exclude: True
+    - filtertype: pattern
+      kind: prefix
+      value: deployments
+      exclude: True
   2:
     action: delete_indices
     description: >-
@@ -70,4 +74,8 @@ actions:
     - filtertype: pattern
       kind: prefix
       value: alerts
+      exclude: True
+    - filtertype: pattern
+      kind: prefix
+      value: deployments
       exclude: True

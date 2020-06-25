@@ -2,7 +2,7 @@
 {{- $context := index . 0 -}}
 {{- $loadbalancer := index . 1 -}}
 kind: Deployment
-{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
+{{- if $context.Capabilities.APIVersions.Has "apps/v1" }}
 apiVersion: apps/v1
 {{- else }}
 apiVersion: extensions/v1beta1

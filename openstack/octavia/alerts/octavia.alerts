@@ -7,8 +7,8 @@ groups:
     labels:
       context: Agent Heartbeat
       dashboard: octavia
-      service: Octavia
-      severity: warning
+      service: octavia
+      severity: info
       tier: os
       meta: 'Agent Heartbeat is above 75secs in {{ $labels.octavia_host }}'
       playbook: docs/support/playbook/octavia/agent_heartbeat.html
@@ -16,13 +16,13 @@ groups:
       description: Agent Heartbeat is above 75secs in {{ $labels.octavia_host }}
       summary: Openstack Octavia Metric to monitor Agents Heartbeat
   - alert: OpenstackOctaviaFailoverEvent
-    expr: rate(octavia_as3_failover_total{job="pods"}[5m])
+    expr: rate(octavia_as3_failover_total{job="pods"}[5m]) > 0
     for: 10m
     labels:
       context: F5 Failover
       dashboard: octavia
-      service: Octavia
-      severity: warning
+      service: octavia
+      severity: info
       tier: os
       meta: 'Agent detected failover in {{ $labels.app_kubernetes_io_name }}'
     annotations:
@@ -34,8 +34,8 @@ groups:
     labels:
       context: Loadbalancer go to ERROR
       dashboard: octavia
-      service: Octavia
-      severity: warning
+      service: octavia
+      severity: info
       tier: os
       meta: 'Load Balancers in {{ $labels.octavia_host }} gone to ERROR state'
     annotations:
@@ -47,10 +47,23 @@ groups:
     labels:
       context: Loadbalancer stuck in PENDING state
       dashboard: octavia
-      service: Octavia
-      severity: warning
+      service: octavia
+      severity: info
       tier: os
       meta: 'Load Balancers in {{ $labels.octavia_host }} stuck in {{ $labels.status }} state'
     annotations:
       description: Load Balancers in {{ $labels.octavia_host }} stuck in {{ $labels.status }} state
       summary: Openstack Octavia Metric to monitor pending loadbalancers
+  - alert: OpenstackOctaviaMonitorStuck
+    expr: increase(octavia_as3_stuck_monitor_total[5m]) > 3
+    for: 5m
+    labels:
+      context: Stuck Monitor discovered
+      dashboard: octavia
+      service: octavia
+      severity: info
+      tier: os
+      meta: ''
+    annotations:
+      description: Stuck Monitor workaround applied for {{ $labels.app_kubernetes_io_name }}, please consider device reload
+      summary: Stuck Monitor workaround in action

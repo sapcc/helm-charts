@@ -10,6 +10,8 @@ fi
 
 if [ -n "${DEBUG}" ]; then
   VERBOSE_LEVEL="-v11"
+else
+  VERBOSE_LEVEL="-v2"
 fi
 
 exec /usr/bin/dynomite --conf-file=/config/dynomite.yaml ${VERBOSE_LEVEL}

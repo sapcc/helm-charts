@@ -91,7 +91,6 @@ port_metrics: '9102'
 l2_port_metrics: '9102'
 l3_port_metrics: '9103'
 
-octavia: false
 new_f5:
   periodic_interval: 120
   loadbalancers: []
@@ -364,21 +363,6 @@ mysql_metrics:
         GROUP BY ipallocations.subnet_id, ipallocations.network_id;
       values:
       - "count_gauge"
-    - help: Neutron estimate on number of filter rules
-      labels:
-      - "security_group_id"
-      name: openstack_neutron_monitor_sec_grp_count
-      query: |
-        SELECT
-          securitygroupportbindings.security_group_id AS security_group_id,
-          COUNT(*) as count_gauge
-        FROM securitygroupportbindings
-        JOIN securitygrouprules
-        ON securitygroupportbindings.security_group_id = securitygrouprules.security_group_id
-        GROUP BY securitygroupportbindings.security_group_id
-        ORDER BY count_gauge desc limit 10;
-      values:
-      - "count_gauge"
     - help: Neutron Security Group total count
       labels: []
       name: openstack_neutron_sg_count_count
@@ -417,8 +401,8 @@ mysql_metrics:
       values:
       - "load"
 
-postgresql:
-  enabled: false
+max_pool_size: 20
+max_overflow: 5
 
 sentry:
   enabled: true

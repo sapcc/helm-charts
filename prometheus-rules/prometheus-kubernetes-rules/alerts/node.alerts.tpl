@@ -60,7 +60,7 @@ groups:
       summary: Node {{`{{ $labels.node }}`}} under pressure due to insufficient available memory
 
   - alert: NodeDiskUsagePercentage
-    expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"}) BY (node,device)) > 85
+    expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext|ext4"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext|ext4"}) BY (node,device)) > 85
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
