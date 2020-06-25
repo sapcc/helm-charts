@@ -47,7 +47,7 @@ periodic_fuzzy_delay = 10
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
 
-{{- if .Values.octavia }}
+{{- if contains ",f5" .Values.ml2_mechanismdrivers }}
 [octavia]
 base_url = http://{{include "octavia_api_endpoint_host_internal" .}}:9876
 {{- end }}
@@ -98,19 +98,8 @@ root_helper = neutron-rootwrap /etc/neutron/rootwrap.conf
 {{ end }}
 
 [database]
-{{- if eq .Values.postgresql.enabled true }}
-connection = postgresql+psycopg2://{{ default .Release.Name .Values.global.dbUser }}:{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}@neutron-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.postgres_port_public | default 5432}}/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 5 }}
-{{- if or .Values.postgresql.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default -1 }}
-{{- else }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 10 }}
-{{- end }}
-{{- else }}
 connection = {{ include "db_url_mysql" . }}
 {{- include "ini_sections.database_options_mysql" . }}
-{{- end }}
-
 
 [keystone_authtoken]
 auth_plugin = v3password

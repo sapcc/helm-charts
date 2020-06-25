@@ -10,6 +10,12 @@ metadata:
     system: openstack
     type: api
     component: octavia
+{{- if .Values.watcher.enabled }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{.Values.statsd.port | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
 spec:
   ports:
     - port: {{.Values.api_port_internal}}

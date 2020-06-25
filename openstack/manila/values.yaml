@@ -300,6 +300,28 @@ mysql_metrics:
           share_snapshot_instances.status;
       values:
       - "max_duration_gauge"
+    - help: Manila Share servers
+      labels:
+      - "project_id"
+      - "share_network_id"
+      - "share_network_subnet_id"
+      - "share_server_id"
+      name: openstack_manila_share_servers_gauge
+      query: |
+        SELECT
+          a.project_id AS project_id,
+          a.id AS share_network_id,
+          b.id AS share_network_subnet_id,
+          c.id AS share_server_id,
+          COUNT(*) AS count_gauge
+        FROM share_network_subnets as b
+        JOIN share_networks AS a ON a.id = b.share_network_id
+        JOIN share_servers AS c ON b.id = c.share_network_subnet_id
+        WHERE c.deleted = 'False'
+        GROUP BY
+          project_id, share_network_id, share_network_subnet_id, share_server_id;
+      values:
+      - "count_gauge"
 
 pod:
   replicas:

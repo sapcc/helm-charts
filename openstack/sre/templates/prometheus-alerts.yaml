@@ -13,24 +13,65 @@ spec:
   groups:
   - name: openstack-sre.alerts
     rules:
-    - alert: ApiAvailabilityWarning
-      expr: (1 - global:api_errors_per_request_sli:ratio_rate1h) *100 <= on (ingress,region) global:api_availability_warning_slo:percent
+    # quick availability check - target updates
+    - alert: ApiAvailabilityWarning2Hour
+      expr: (1 - global:api_errors_per_request_sli:ratio_rate2h) *100 <= on (ingress,region) global:api_availability_warning_slo:percent
       labels:
         context: availability
         service: "{{`{{$labels.ingress}}`}}"
-        severity: warning
+        severity: info
         tier: sre
+        playbook: 'docs/devops/alert/sre-alerts.html'
       annotations:
-        summary: "An API fell below availability warning SLO in the last hour"
-        description: "{{`{{$labels.ingress}}`}} fell below availability warning SLO in the last hour."
+        summary: "API availability warning SLO hit: 2h"
+        description: "{{`{{$labels.ingress}}`}} fell below availability warning SLO in the last 2 hours (default:  *99.8%*)."
 
-    - alert: ApiAvailabilityCritical
-      expr: (1 - global:api_errors_per_request_sli:ratio_rate1h) *100 <= on (ingress,region) global:api_availability_critical_slo:percent
+    - alert: ApiAvailabilityCritical2Hour
+      expr: (1 - global:api_errors_per_request_sli:ratio_rate2h) *100 <= on (ingress,region) global:api_availability_critical_slo:percent
+      labels:
+        context: availability
+        service: "{{`{{$labels.ingress}}`}}"
+        severity: info
+        tier: sre
+        playbook: 'docs/devops/alert/sre-alerts.html'
+      annotations:
+        summary: "API availability critical SLO hit: 2h"
+        description: "{{`{{$labels.ingress}}`}} fell below availability critical SLO in the last 2 hours (default:  *99.6%*)."
+
+    # rolling 7 days
+    - alert: ApiAvailabilityWarningLast7days
+      expr: (1 - global:api_errors_per_request_sli:ratio_rate7d) *100 <= on (ingress,region) global:api_availability_critical_slo:percent
+      labels:
+        context: availability
+        service: "{{`{{$labels.ingress}}`}}"
+        severity: info
+        tier: os
+        playbook: 'docs/devops/alert/sre-alerts.html'
+      annotations:
+        summary: "API availability warning SLO hit: 7d"
+        description: "{{`{{$labels.ingress}}`}} fell below weekly availability warning SLO (default:  *99.8%*)."
+
+    - alert: ApiAvailabilityCriticalLast7days
+      expr: (1 - global:api_errors_per_request_sli:ratio_rate7d) *100 <= on (ingress,region) global:api_availability_critical_slo:percent
+      labels:
+        context: availability
+        service: "{{`{{$labels.ingress}}`}}"
+        severity: info
+        tier: os
+        playbook: 'docs/devops/alert/sre-alerts.html'
+      annotations:
+        summary: "API availability critical SLO hit: 7d"
+        description: "{{`{{$labels.ingress}}`}} ffell below weekly availability warning SLO (default:  *99.6%*)."
+
+    # meta alert
+    - alert: SRE-MetricAbesent
+      expr: absent(global:api_errors_per_request_sli:ratio_rate1h) or absent(global:api_availability_critical_slo:percent)
       labels:
         context: availability
         service: "{{`{{$labels.ingress}}`}}"
         severity: warning
         tier: sre
+        playbook: 'docs/devops/alert/sre-alerts.html'
       annotations:
-        summary: "An api fell below availability critical SLO in the last hour"
-        description: "{{`{{$labels.ingress}}`}} fell below availability critical SLO in the last hour."
+        summary: ""
+        description: ""

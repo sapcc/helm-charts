@@ -17,7 +17,7 @@ groups:
         expr: netapp_aggregate_used_percentage{app=~".*manila", filer!~"ma01-md007"} > 75
         for: 10m
         labels:
-          severity: warning
+          severity: info
           tier: os
           service: manila
           context: netapp-usage
@@ -30,7 +30,7 @@ groups:
       - alert: ManilaStorageAggregateHighUsage
         expr: netapp_aggregate_used_percentage{app=~".*manila", filer=~"ma01-md007"} > 85
         labels:
-          severity: warning
+          severity: info
           tier: os
           service: manila
           context: netapp-usage
@@ -43,7 +43,7 @@ groups:
       - alert: ManilaStorageAggregateFull
         expr: netapp_aggregate_used_percentage{app=~".*manila"} > 90
         labels:
-          severity: critical
+          severity: warning
           tier: os
           service: manila
           context: netapp-usage
@@ -55,7 +55,7 @@ groups:
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
       - alert: CinderStorageAggregateHighUsage
-        expr: netapp_aggregate_used_percentage{app=~".*cinder",availability_zone!="eu-de-1a"} > 70 or netapp_aggregate_used_percentage{app=~".*cinder",availability_zone="eu-de-1a"} > 83
+        expr: netapp_aggregate_used_percentage{app=~".*cinder",availability_zone!="eu-de-1a"} > 70 or netapp_aggregate_used_percentage{app=~".*cinder",availability_zone="eu-de-1a"} > 88
         labels:
           severity: warning
           tier: os
@@ -79,3 +79,17 @@ groups:
         annotations:
           description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
+
+      - alert: CinderVolumeBigSize
+        expr: netapp_volume_used_bytes{app="netapp-capacity-exporter-cinder"} > 5497558138880
+        for: 10m
+        labels:
+          severity: info
+          tier: os
+          service: nanny
+          context: nanny
+          meta: 'Cinder volume size {{ $value }}'
+        annotations:
+          description: 'Size of Cinder volume {{$labels.volume}} on filer {{$labels.filer}} is {{ $value }}'
+          summary: 'Cinder Volume larger than 5TB {{$labels.volume}}'
+

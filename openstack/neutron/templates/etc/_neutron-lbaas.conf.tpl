@@ -6,7 +6,7 @@ rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | defa
 rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
 
 [service_providers]
-{{- if .Values.octavia }}
+{{- if contains ",f5" .Values.ml2_mechanismdrivers }}
 service_provider = LOADBALANCERV2:Octavia:neutron_lbaas.drivers.octavia.driver.OctaviaDriver:default
 {{- else }}
 service_provider = LOADBALANCERV2:F5Networks:neutron_lbaas.drivers.f5.driver_v2.F5LBaaSV2Driver:default

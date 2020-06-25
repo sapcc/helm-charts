@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vrops-exporter-collector-config
+data:
+  collector_config.yaml: |
+    default_collectors:
+      - 'ClusterStatsCollector'
+      - 'ClusterPropertiesCollector'
+      - 'HostSystemStatsCollector'
+      - 'HostSystemPropertiesCollector'
+      - 'DatastoreStatsCollector'
+      - 'DatastorePropertiesCollector'
+      # seperated to ensure faster runtime
+      # - 'VMStatsCollector'
+      # - 'VMPropertiesCollector'
+      - 'VCenterStatsCollector'
+      - 'VCenterPropertiesCollector'
+    statkeys:
+      HostSystemStatsCollector:
+        - label: "configuration_dasConfig_admissionControlPolicy_failoverHost"
+          statkey: "configuration|dasConfig|admissionControlPolicy|failoverHost"
+        - label: "configuration_dasConfig_admissionControlPolicy_failoverHost"
+          statkey: "configuration|dasConfig|admissionControlPolicy|failoverHost"
+        - label: "cpu_sockets_number"
+          statkey: "cpu|numpackages"
+        - label: "hardware_number_of_cpu_cores_info"
+          statkey: "hardware|cpuinfo|num_CpuCores"
+        - label:  "cpu_usage_megahertz"
+          statkey: "cpu|usagemhz_average"
+        - label: "cpu_demand_percentage"
+          statkey: "cpu|demandPct"
+        - label: "cpu_usage_average_percentage"
+          statkey: "cpu|usage_average"
+        - label: "memory_host_usage_kilobytes"
+          statkey: "mem|host_usage"
+        - label: "memory_useable_kilobytes"
+          statkey: "mem|host_usable"
+        - label: "memory_usage_percentage"
+          statkey: "mem|usage_average"
+        - label: "memory_utilization"
+          statkey: "mem|total_need"
+        - label: "memory_contention_percentage"
+          statkey: "mem|host_contentionPct"
+        - label: "memory_ballooning_kilobytes"
+          statkey: "mem|vmmemctl_average"
+        - label: "memory_compressed_kilobytes"
+          statkey: "mem|compressed_average"
+        - label: "memory_activly_used_by_vms_kilobytes"
+          statkey: "mem|active_average"
+        - label: "memory_consumed_by_vms_kilobytes"
+          statkey: "mem|consumed_average"
+        - label: "memory_capacity_available_to_vms_kilobytes"
+          statkey: "mem|host_provisioned"
+        - label: "summary_number_VMs_total"
+          statkey: "summary|total_number_vms"
+        - label: "summary_running_VMs_number"
+          statkey: "summary|number_running_vms"
+        - label: "network_packets_dropped_rx_number"
+          statkey: "net|droppedRx_summation"
+        - label: "network_packets_dropped_tx_number"
+          statkey: "net|droppedTx_summation"
+        - label: "network_packets_dropped_percentage"
+          statkey: "net|droppedPct"
+        - label: "system_uptime_seconds"
+          statkey: "sys|uptime_latest"
+      DatastoreStatsCollector:
+        - label: "diskspace_total_usage_gigabytes"
+          statkey: "diskspace|disktotal"
+        - label: "diskspace_freespace_gigabytes"
+          statkey: "diskspace|freespace"
+        - label: "diskspace_capacity_gigabytes"
+          statkey: "diskspace|capacity"
+        - label: "summary_total_number_vms"
+          statkey: "summary|total_number_vms"
+      VMStatsCollector:
+        - label: "number_vcpus_total"
+          statkey: "config|hardware|num_Cpu"
+        - label: "cpu_demand_ratio"
+          statkey: "cpu|demandPct"
+        - label: "cpu_usage_ratio"
+          statkey: "cpu|usage_average"
+        - label: "cpu_contention_ratio"
+          statkey: "cpu|capacity_contentionPct"
+        - label: "cpu_ready_ratio"
+          statkey: "cpu|readyPct"
+        - label: "vm_memory_kilobytes"
+          statkey: "mem|guest_provisioned"
+        - label: "memory_consumed_kilobytes"
+          statkey: "mem|consumed_average"
+        - label: "memory_activewrite_kilobytes"
+          statkey: "mem|activewrite_average"
+        - label: "memory_active_ratio"
+          statkey: "mem|guest_activePct"
+        - label: "memory_ballooning_ratio"
+          statkey: "mem|balloonPct"
+        - label: "memory_contention_ratio"
+          statkey: "mem|host_contentionPct"
+        - label: "swapped_memory_kilobytes"
+          statkey: "mem|swapped_average"
+        - label: "swapin_memory_kilobytes"
+          statkey: "mem|swapinRate_average"
+        - label: "vm_diskspace_gigabytes"
+          statkey: "config|hardware|disk_Space"
+        - label: "datastore_total"
+          statkey: "summary|number_datastore"
+        - label: "virtualdisk_outstanding_io"
+          statkey: "virtualDisk|vDiskOIO"
+        - label: "diskspace_virtual_machine_used_gigabytes"
+          statkey: "diskspace|perDsUsed"
+        - label: "datastore_outstanding_io_requests"
+          statkey: "datastore|demand_oio"
+      ClusterStatsCollector:
+        - label: "cluster_running_hosts"
+          statkey: "summary|number_running_hosts"
+        - label: "cpu_capacity_usage_percentage"
+          statkey: "cpu|capacity_usagepct_average"
+        - label: "cpu_usage_mhz"
+          statkey: "cpu|usagemhz_average"
+        - label: "cpu_capacity_mhz"
+          statkey: "cpu|haTotalCapacity_average"
+        - label: "memory_usage_percentage"
+          statkey: "mem|host_usagePct"
+        - label: "memory_usage_kilobytes"
+          statkey: "mem|host_usage"
+        - label: "memory_capacity_kilobytes"
+          statkey: "mem|totalCapacity_average"
+        - label: "summary_total_number_vms"
+          statkey: "summary|total_number_vms"
+      VCenterStatsCollector:
+        - label: "cpu_used_percent"
+          statkey: "cpu|capacity_usagepct_average"
+        - label: "memory_used_percent"
+          statkey: "mem|host_usagePct"
+        - label: "diskspace_total_gigabytes"
+          statkey: "diskspace|total_capacity"
+        - label: "diskspace_usage_gigabytes"
+          statkey: "diskspace|total_usage"
+        - label: "vcsa_certificate_remaining_days"
+          statkey: "summary|CPO vCSA Certificate Remaining Days"
+    properties:
+      HostSystemPropertiesCollector:
+        enum_metrics:
+          - label: "runtime_powerState"
+            expected: "Powered On"
+            property: "runtime|powerState"
+          - label: "runtime_connectionState"
+            expected: "connected"
+            property: "runtime|connectionState"
+          - label: "runtime_maintenanceState"
+            expected: "notInMaintenance"
+            property: "runtime|maintenanceState"
+        info_metrics:
+          - label: "summary_version"
+            property: "summary|version"
+          - label: "sys_build"
+            property: "sys|build"
+        number_metrics:
+          - label: "config_diskSpace_bytes"
+            property: "config|diskSpace"
+          - label: "runtime_memory_capacity_kilobytes"
+            property: "runtime|memoryCap"
+      ClusterPropertiesCollector:
+        enum_metrics:
+          - label: "configuration_dasConfig_admissionControlEnabled"
+            expected: "true"
+            property: "configuration|dasConfig|admissionControlEnabled"
+          - label: "configuration_dasConfig_enabled"
+            expected: "true"
+            property: "configuration|dasConfig|enabled"
+          - label: "configuration_drsconfig_enabled"
+            expected: "true"
+            property: "configuration|drsconfig|enabled"
+          - label: "configuration_drsconfig_defaultVmBehavior"
+            expected: "fullyAutomated"
+            property: "configuration|drsconfig|defaultVmBehavior"
+        number_metrics:
+          - label: "configuration_dasConfig_admissionControlPolicyId"
+            property: "configuration|dasConfig|admissionControlPolicyId"
+      DatastorePropertiesCollector:
+        enum_metrics:
+          - label: "summary_datastore_accessible"
+            expected: "PoweredOn"
+            property: "summary|accessible"
+      VMPropertiesCollector:
+        enum_metrics:
+          - label: "runtime_powerState"
+            expected: "Powered On"
+            property: "summary|runtime|powerState"
+          - label: "runtime_connectionState"
+            expected: "connected"
+            property: "summary|runtime|connectionState"
+        info_metrics:
+          - label: "virtualdisk_scsi0_0_datastore"
+            property: "virtualDisk:scsi0:0|datastore"
+          - label: "virtualdisk_scsi0_1_datastore"
+            property: "virtualDisk:scsi0:1|datastore"
+        number_metrics:
+          - label: "summary_ethernetCards"
+            property: "summary|config|numEthernetCards"
+          - label: "config_hardware_memory_kilobytes"
+            property: "config|hardware|memoryKB"
+      VCenterPropertiesCollector:
+        info_metrics:
+          - label: "summary_version"
+            property: "summary|version"
+          - label: "vc_fullname"
+            property: "summary|vcfullname"

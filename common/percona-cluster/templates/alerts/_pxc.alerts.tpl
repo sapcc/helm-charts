@@ -49,3 +49,16 @@
     annotations:
       description: {{ include "fullName" . }} has more than 20 running threads.
       summary: {{ include "fullName" . }} running threads high.
+
+  - alert: {{ include "alerts.service" . | title }}PerconaClusterSizeTooSmall
+    expr: (mysql_global_status_wsrep_cluster_size{app=~"{{ include "fullName" . }}"} < 3)
+    for: 15m
+    labels:
+      context: database
+      service: {{ include "alerts.service" . }}
+      severity: info
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: ''
+    annotations:
+      description: {{ include "fullName" . }} reports cluster size of less than 3 nodes.
+      summary: {{ include "fullName" . }} cluster incomplete.

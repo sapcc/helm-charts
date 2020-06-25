@@ -29,6 +29,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9102"
     spec:
+      {{- if $.Values.use_taints }}
       tolerations:
       - key: "species"
         operator: "Equal"
@@ -40,10 +41,13 @@ spec:
         value: "{{$.Values.species}}-multipath"
         effect: "NoSchedule"
       {{- end }}
+      {{- end }}
       nodeSelector:
         species: {{quote $.Values.species}}
         {{- if eq $suffix "-multipath" }}
         multipath-disks: "true"
+        {{- else if not $.Values.use_taints }}
+        multipath-disks: "false"
         {{- end }}
       volumes:
         - name: config

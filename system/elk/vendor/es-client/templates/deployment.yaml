@@ -29,6 +29,8 @@ spec:
         role: client
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/elasticsearch.yml: {{ include  (print $.Template.BasePath "/_elasticsearch.yml.tpl") . | sha256sum }}
+        checksum/readonlyrest.yml: {{ include  (print $.Template.BasePath "/_readonlyrest.yml.tpl") . | sha256sum }}
     spec:
       nodeSelector:
         ccloud.sap.com/nodepool: payload
@@ -76,7 +78,7 @@ spec:
             - name: HTTP_ENABLE
               value: "true"
             - name: ES_JAVA_OPTS
-              value: "-XX:MaxRAM=5g -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+              value: "-XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
             - name: READONLYREST_ENABLE
               value: "true"
           volumeMounts:

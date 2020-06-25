@@ -208,6 +208,10 @@ spec:
               value: {{ .Values.manila_nanny.share_sync.task_orphan_volume | quote }}
             - name: TASK_ORPHAN_VOLUME_DRY_RUN
               value: {{ .Values.manila_nanny.share_sync.task_orphan_volume_dry_run | quote }}
+            - name: MANILA_NANNY_HTTP_PORT
+              value: {{ .Values.manila_nanny.share_sync.http_port | quote }}
+            - name: MANILA_NANNY_PROMETHEUS_PORT
+              value: {{ .Values.manila_nanny.share_sync.prometheus_port | quote }}
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
@@ -233,6 +237,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: PYTHONUNBUFFERED
+              value: "1"
             - name: DEPENDENCY_SERVICE
               value: "manila-mariadb,manila-api"
             - name: MANILA_NANNY_INTERVAL
@@ -266,6 +272,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: PYTHONUNBUFFERED
+              value: "1"
             - name: DEPENDENCY_SERVICE
               value: "manila-mariadb,manila-api"
             - name: MANILA_NANNY_INTERVAL

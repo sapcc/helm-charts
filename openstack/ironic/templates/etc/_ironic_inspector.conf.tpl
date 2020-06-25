@@ -1,6 +1,12 @@
 [DEFAULT]
 log_config_append = /etc/ironic-inspector/logging.ini
 {{- include "ini_sections.default_transport_url" . }}
+clean_up_period = 60
+# Timeout after which introspection is considered failed, set to 0 to
+# disable. (integer value)
+timeout = 3600
+debug = true
+standalone = {{ .Values.inspector.standalone }}
 
 [ironic]
 region_name = {{.Values.global.region}}
@@ -13,15 +19,19 @@ project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 
 [api]
-host_ip = 0.0.0.0
+listen_address = 0.0.0.0
+host = https://{{ include "ironic_inspector_endpoint_host_public" .}}
 
 [firewall]
 manage_firewall = False
 
+[coordination]
+backend_url = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+
 [processing]
 store_data = swift
 always_store_ramdisk_logs = true
-ramdisk_logs_dir = /var/log/kolla/ironic/
+ramdisk_logs_dir = /var/log/ironic-inspector/ramdisk
 add_ports = all
 keep_ports = all
 ipmi_address_fields = ilo_address
@@ -29,9 +39,10 @@ log_bmc_address = true
 node_not_found_hook = enroll
 default_processing_hooks = ramdisk_error,root_disk_selection,scheduler,validate_interfaces,capabilities,pci_devices,extra_hardware
 processing_hooks = $default_processing_hooks,local_link_connection
+#default_processing_hooks = ramdisk_error,root_disk_selection,scheduler,validate_interfaces,capabilities,pci_devices
 
 [discovery]
-enroll_node_driver = agent_ipmitool
+enroll_node_driver = ipmitool
 
 [pxe_filter]
 driver = noop
@@ -63,7 +74,7 @@ service_token_roles_required = True
 insecure = True
 token_cache_time = 600
 include_service_catalog = true
-service_type = baremetal
+service_type = baremetal-introspection
 
 [oslo_middleware]
 enable_proxy_headers_parsing = True

@@ -4,13 +4,13 @@
 [DEFAULT]
 # List of directories to load filter definitions from (separated by ',').
 # These directories MUST all be only writeable by root !
-filters_path=/etc/ironic/rootwrap.d,/usr/share/ironic/rootwrap
+filters_path=/etc/ironic/rootwrap.d,/usr/share/ironic/rootwrap,/etc/ironic-inspector/rootwrap.d
 
 # List of directories to search executables in, in case filters do not
 # explicitely specify a full path (separated by ',')
 # If not specified, defaults to system PATH environment variable.
 # These directories MUST all be only writeable by root !
-exec_dirs=/var/lib/kolla/venv/bin,/bin,/sbin,/usr/sbin,/bin,/usr/bin
+exec_dirs=/sbin,/usr/sbin,/bin,/usr/bin,/usr/local/bin,/usr/local/sbin,/var/lib/openstack/bin
 
 # Enable logging to syslog
 # Default value is False

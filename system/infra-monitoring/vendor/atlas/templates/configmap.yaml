@@ -23,7 +23,11 @@ data:
         metrics_label: "ironic"
         configmap_name: {{ .Values.configmap.ironic }}
         mgmt_interface_ips: true
+        {{- if eq .Values.global.region "qa-de-2" }}
+        netbox_host: "{{ .Values.global.netbox_host_staging }}"
+        {{- else }}
         netbox_host: "{{ .Values.global.netbox_host }}"
+        {{- end }}
         netbox_api_token: {{ required "netbox_api_token needs to be defined in global values" .Values.global.netbox_api_token }}
         os_auth:
           auth_url: {{ printf "https://identity-3.%s.cloud.sap/v3" .Values.global.region | quote }}
@@ -36,7 +40,11 @@ data:
         refresh_interval: 3600
         targets_file_name: "netbox.json"
         configmap_name: {{ .Values.configmap.netbox }}
+        {{- if eq .Values.global.region "qa-de-2" }}
+        netbox_host: "{{ .Values.global.netbox_host_staging }}"
+        {{- else }}
         netbox_host: "{{ .Values.global.netbox_host }}"
+        {{- end }}
         netbox_api_token: {{ required "netbox_api_token needs to be defined in global values" .Values.global.netbox_api_token }}
         dcim:
           devices:

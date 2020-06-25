@@ -49,10 +49,11 @@ use_default_quota_class=false
 
 scheduler_default_filters = {{ .Values.scheduler_default_filters }}
 
+allow_migration_on_attach = {{ .Values.cinder_api_allow_migration_on_attach }}
+
 {{- include "ini_sections.database" . }}
 
 {{- include "osprofiler" . }}
-
 
 [keystone_authtoken]
 auth_plugin = v3password

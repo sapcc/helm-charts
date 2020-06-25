@@ -457,6 +457,15 @@
     http_method post
     serializer json
     raise_on_error true
+    <buffer>
+      total_limit_size 256MB
+      flush_at_shutdown true
+      overflow_action block
+      retry_forever true
+      retry_type periodic
+      retry_wait 2s
+      flush_interval 1s
+    </buffer>
   </store>
   <store>
     @type elasticsearch_dynamic
@@ -467,9 +476,10 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
+    logstash_prefix {{.Values.indexname}}
     logstash_format true
-    template_name logstash
-    template_file /fluent-bin/logstash.json
+    template_name {{.Values.indexname}}
+    template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
     time_as_integer false
     type_name _doc
@@ -505,9 +515,10 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
+    logstash_prefix {{.Values.indexname}}
     logstash_format true
-    template_name logstash
-    template_file /fluent-bin/logstash.json
+    template_name {{.Values.indexname}}
+    template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
     time_as_integer false
     type_name _doc
