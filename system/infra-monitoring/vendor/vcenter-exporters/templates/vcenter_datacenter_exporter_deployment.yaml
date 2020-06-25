@@ -4,6 +4,7 @@
 {{- range $vcenter := .Values.vcenters }}
 {{- $vchostname := split "." $vcenter.hostname }}
 {{- range $exporter_type_values := $global_values.exporter_types }}
+{{- $exporter_type_values.enabled }}
 ---
 kind: Deployment
 {{- if $.Capabilities.APIVersions.Has "apps/v1" }}
@@ -64,6 +65,7 @@ spec:
           ports:
             - name: metrics
               containerPort: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
