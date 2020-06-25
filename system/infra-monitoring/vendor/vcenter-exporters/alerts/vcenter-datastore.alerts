@@ -1,0 +1,40 @@
+groups:
+- name: vcenter-datastore.alerts
+  rules:
+  - alert: VVOLDatastoreNotAccessible
+    expr: |
+      vcenter_datastore_accessible{component=~".+vcdatastoremetrics$", type="VVOL"} == 1 AND
+      vcenter_datastore_maintenance{component=~".+vcdatastoremetrics$", type="VVOL"} == 0
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: 'Datastore {{ $labels.name }} is not accessible'
+    annotations:
+      description: 'Datastore {{ $labels.name }} is not accessible for 20 min'
+      summary: 'vVOL Datastore not accessible'
+
+  - alert: VVOLDatastore90PercentFull
+    expr: VcenterDatastoreVvolUtilization > 0.9
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: 'Datastore {{ $labels.name }} is 90 percent full'
+    annotations:
+      description: 'Datastore {{ $labels.name }} is 90 percent full for 20 min'
+      summary: 'vVOL Datastore 90 percent full'
+
+  - alert: VVOLDatastore80PercentFull
+    expr: VcenterDatastoreVvolUtilization > 0.8
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: 'Datastore {{ $labels.name }} is 80 percent full'
+    annotations:
+      description: 'Datastore {{ $labels.name }} is 80 percent full for 20 min'
+      summary: 'vVOL Datastore 80 percent full'
