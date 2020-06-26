@@ -12,8 +12,21 @@ groups:
       service: compute
       meta: 'Datastore {{ $labels.name }} is not accessible'
     annotations:
-      description: 'Datastore {{ $labels.name }} is not accessible for 20 min'
+      description: 'Datastore {{ $labels.name }} is not accessible'
       summary: 'vVOL Datastore not accessible'
+
+  - alert: VVOLDatastoreNotAccessibleFromHost
+    expr: vcenter_datastore_accessible_from_host{type="VVOL"} == 1
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute'
+      meta: 'Datastore is not accessible from host'
+      awx: #/templates/job_template/114
+    annotations:
+      description: 'Datastore {{ $labels.name }} is not accessible from host {{ $labels.host }}'
+      summary: 'vVOL Datastore not accessible from host'
 
   - alert: VVOLDatastore90PercentFull
     expr: VcenterDatastoreVvolUtilization > 0.9
