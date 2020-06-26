@@ -1,10 +1,46 @@
+curator:
+  configMaps:
+    config_yml: |-
+      ---
+      client:
+        hosts:
+          - elasticsearch-master
+          - elasticsearch-data
+        port: 9200
+    # Delete indices older than 3 months
+    action_file_yml: |-
+      ---
+      actions:
+        1:
+          action: delete_indices
+          description: "Clean up ES by deleting old indices"
+          options:
+            timeout_override:
+            continue_if_exception: False
+            disable_action: False
+            ignore_empty_list: True
+          filters:
+          - filtertype: age
+            source: name
+            direction: older
+            timestring: '%Y.%m.%d'
+            unit: months
+            unit_count: 3
+            field:
+            stats_result:
+            epoch:
+            exclude: False
+
+# master node configs
 elasticsearch:
   enabled: true
   image: "docker.elastic.co/elasticsearch/elasticsearch"
 
-  replicas: 1
-  minimumMasterNodes: 1
-
+  roles:
+    master: "true"
+    ingest: "false"
+    data: "false"
+    
   esJavaOpts: "-Xmx4G -Xms4G"
   esConfig:
     elasticsearch.yml: |
@@ -17,6 +53,30 @@ elasticsearch:
       requests:
         storage: 100G
 
+  resources:
+    requests:
+      memory: "4G"
+    limits:
+      memory: "6G"
+
+elasticsearch-data:
+  nodeGroup: data
+  masterService: elasticsearch-master
+  roles:
+    master: "false"
+    ingest: "true"
+    data: "true"
+  replicas: 2
+  esJavaOpts: "-Xmx4G -Xms4G"
+  esConfig:
+    elasticsearch.yml: |
+      indices.query.bool.max_clause_count: 8192
+      search.max_buckets: 100000
+  volumeClaimTemplate:
+    accessModes: [ "ReadWriteMany" ]
+    resources:
+      requests:
+        storage: 100G
   resources:
     requests:
       memory: "4G"
@@ -116,3 +176,25 @@ alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+
+queryExporter:
+  name: elastiflow
+  enabled: true
+  image:
+    repo: braedon/prometheus-es-exporter
+    tag: 0.9.0
+  es:
+    uri: "http://elasticsearch-master:9200"
+  listen_port: 9206
+  targets: prometheus-openstack
+  config:
+    exporter.cfg: |
+      [DEFAULT]
+      QueryIntervalSecs = 15
+      QueryTimeoutSecs = 10
+      QueryIndices = _all
+      QueryOnError = drop
+      QueryOnMissing = drop
+
+      [query_all]
+      QueryJson = {"size": 0, "query": {"match_all": {}}}
