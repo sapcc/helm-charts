@@ -1,0 +1,25 @@
+{{- $values := .Values }}
+{{- if $values.alerts.enabled }}
+
+# manila aggregation
+{{- if $values.manila_nanny.enabled}}
+{{- range $path, $bytes := .Files.Glob "aggregations/manila.rules" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    app: manila-nanny
+    tier: os
+    type: aggregation-rules
+    prometheus: {{ required "$values.alerts.prometheus missing" $values.alerts.prometheus }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+
+{{- end }}
