@@ -1,0 +1,22 @@
+{{- if .Values.queryExporter.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: query-exporter-{{ .Values.queryExporter.name }}
+  namespace: elastiflow
+  labels:
+    system: openstack
+    service: audit
+    component: query-exporter-{{ .Values.queryExporter.name }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.queryExporter.listen_port }}"
+    prometheus.io/targets: "{{ .Values.queryExporter.targets }}"
+
+spec:
+  selector:
+    component: query-exporter-{{ .Values.queryExporter.name }}
+  ports:
+    - name: metrics
+      port: {{$.Values.queryExporter.listen_port}}
+{{ end -}}

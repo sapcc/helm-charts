@@ -1,0 +1,16 @@
+{{- if .Values.queryExporter.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: query-exporter-config
+  labels:
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    chart: "{{ .Chart.Name }}"
+    app: query-exporter-{{ .Values.queryExporter.name }}
+data:
+{{- range $path, $config := .Values.queryExporter.config }}
+  {{ $path }}: |
+{{ $config | indent 4 -}}
+{{- end -}}
+{{- end -}}
