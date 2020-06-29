@@ -55,7 +55,7 @@ groups:
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
       - alert: CinderStorageAggregateHighUsage
-        expr: netapp_aggregate_used_percentage{app=~".*cinder",availability_zone!="eu-de-1a"} > 70 or netapp_aggregate_used_percentage{app=~".*cinder",availability_zone="eu-de-1a"} > 83
+        expr: netapp_aggregate_used_percentage{app=~".*cinder",availability_zone!="eu-de-1a"} > 70 or netapp_aggregate_used_percentage{app=~".*cinder",availability_zone="eu-de-1a"} > 88
         labels:
           severity: warning
           tier: os
@@ -80,16 +80,16 @@ groups:
           description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
-      - alert: CinderVolumeBigSize
-        expr: netapp_volume_used_bytes{app="netapp-capacity-exporter-cinder"} > 5497558138880
-        for: 10m
+      - alert: VVolDatastoreFlexvolHighUsage
+        expr: netapp_volume_used_bytes{app="netapp-capacity-exporter-cinder", volume=~"vv.*"} / 1024/1024/1024/1024 > 5.5
+        for: 2h
         labels:
           severity: info
           tier: os
           service: nanny
           context: nanny
-          meta: 'Cinder volume size {{ $value }}'
+          meta: 'VVol flex-volume size {{ $value }} TB'
         annotations:
-          description: 'Size of Cinder volume {{$labels.volume}} on filer {{$labels.filer}} is {{ $value }}'
-          summary: 'Cinder Volume larger than 5TB {{$labels.volume}}'
+          description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} is {{ $value }} TB'
+          summary: 'Flex-volume {{$labels.filer}}/{{$labels.volume}} usage larger than 5.5TB'
 

@@ -1,0 +1,73 @@
+kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+metadata:
+  name: vcsa-exporter 
+  namespace: infra-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: vcsa-exporter 
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: vcsa-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number | quote}}
+        prometheus.io/targets: {{ required ".Values.vcsa.alerts.prometheus missing" .Values.vcsa.alerts.prometheus | quote }}
+    spec:
+      containers:
+         - name: vcsa-exporter
+           image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.vcsa.image.name missing" .Values.vcsa.image.name }}:{{ required ".Values.vcsa.image.tag missing" .Values.vcsa.image.tag  }}
+           ports:
+             - name: metrics
+               containerPort: {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number }}
+           command:
+             - ./exporter.py
+           args:
+             - -u
+             - {{ required ".Values.vcsa.user missing" .Values.vcsa.user }}
+             - -m
+             - {{ required ".Values.vcsa.master_password missing" .Values.vcsa.master_password }}
+             - -o
+             - {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number | quote }}
+             - -a
+             - /atlas/netbox.json 
+             {{- if .Values.vcsa.password }}
+             - -p
+             - {{ .Values.vcsa.password }}
+             {{- end }}
+           env:
+           - name: PORT
+             value: {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number | quote }}
+           - name: DEBUG
+             value: {{ .Values.vcsa.debug | quote }}
+           - name: INVENTORY
+             value: vcsa-inventory
+           resources:
+             limits:
+                memory: {{ required ".Values.vcsa.limits.memory missing" .Values.vcsa.limits.memory }}
+                cpu: {{ required ".Values.vcsa.limits.cpu missing" .Values.vcsa.limits.cpu }}
+             requests:
+                memory: {{ required ".Values.vcsa.resources.memory missing" .Values.vcsa.resources.memory }}
+                cpu: {{ required ".Values.vcsa.resources.cpu missing" .Values.vcsa.resources.cpu }}
+           volumeMounts:
+             - mountPath: /atlas
+               name: atlas-output
+               readOnly: true
+           livenessProbe:
+              httpGet:
+                 path: /metrics
+                 port: {{ required ".Values.vcsa.port_number missing" .Values.vcsa.port_number }}
+              initialDelaySeconds: 30
+              periodSeconds: 300
+      volumes:
+        - configMap:
+            name: {{ .Values.vcsa.atlas_configmap }}
+          name: atlas-output

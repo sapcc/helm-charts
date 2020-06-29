@@ -138,7 +138,7 @@
     "get_blacklist": "rule:context_is_dns_support",
     "update_blacklist": "rule:context_is_dns_ops",
     "delete_blacklist": "rule:context_is_dns_ops",
-    "use_blacklisted_zone": "rule:context_is_dns_ops",
+    "use_blacklisted_zone": "rule:context_is_cloud_admin",
 
     "create_pool": "rule:admin",
     "find_pools": "rule:admin or rule:context_is_dns_ops",
