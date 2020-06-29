@@ -1,3 +1,11 @@
+## 3.5.1
+
+* Allow scraping pods via https. Use `prometheus.io/scheme: "https"` annotation.
+
+## 3.5.0
+
+* Update prometheus-server to `v2.19.0`.
+
 ## 3.4.2
 
 * Ensure mandatory labels are present on alerts.
