@@ -90,3 +90,11 @@ enabled = true
 service_type = loadbalancer
 config_file = /etc/octavia/watcher.yaml
 {{ end }}
+
+{{ if .Values.audit.enabled }}
+[audit]
+enabled = True
+audit_map_file = /etc/octavia/octavia_api_audit_map.yaml
+
+{{- include "ini_sections.audit_middleware_notifications" . }}
+{{- end }}
