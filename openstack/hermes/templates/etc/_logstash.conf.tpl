@@ -1,11 +1,13 @@
 input {
 
 {{ range $key, $value := .Values.hermes.rabbitmq.targets }}
+{{- $user := $value.user | default $.Values.hermes.rabbitmq.user }}
+{{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $key $.Values.global.region $.Values.global.tld}}
 rabbitmq {
     id => {{ printf "logstash_hermes_%s" $key | quote }}
     host => {{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) | quote }}
-    user => {{ $value.user | default $.Values.hermes.rabbitmq.user | quote }}
-    password => {{ $value.password | quote }}
+    user => {{ $user | quote }}
+    password => {{ $value.password | default (tuple $ $user $host | include "rabbitmq.password_for_fixed_user_and_host") | quote }}
     port => {{ $.Values.hermes.rabbitmq.port }}
     queue => {{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name | quote }}
     subscription_retry_interval_seconds => 60
