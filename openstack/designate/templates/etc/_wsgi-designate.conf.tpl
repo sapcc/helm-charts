@@ -1,4 +1,4 @@
-Listen 0.0.0.0:{{.Values.designate_api_port_internal}}
+Listen 0.0.0.0:{{.Values.global.designate_api_port_internal}}
 
 ErrorLog /dev/stdout
 
@@ -9,7 +9,7 @@ SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
 CustomLog /dev/stdout combined env=!forwarded
 CustomLog /dev/stdout proxy env=forwarded
 
-<VirtualHost *:{{.Values.designate_api_port_internal}}>
+<VirtualHost *:{{.Values.global.designate_api_port_internal}}>
     WSGIDaemonProcess designate-api-wsgi processes=4 threads=1 user=designate display-name=%{GROUP}
     WSGIProcessGroup designate-api-wsgi
     WSGIScriptAlias / /var/www/cgi-bin/designate/designate-api-wsgi
