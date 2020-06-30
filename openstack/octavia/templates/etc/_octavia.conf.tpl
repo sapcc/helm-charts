@@ -95,6 +95,9 @@ config_file = /etc/octavia/watcher.yaml
 [audit]
 enabled = True
 audit_map_file = /etc/octavia/octavia_api_audit_map.yaml
+ignore_req_list = GET, HEAD
+record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
+metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 {{- end }}
