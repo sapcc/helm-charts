@@ -17,4 +17,4 @@
     relabel_configs:
       - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
         action: keep
-        regex: default;kubernetes;https
+        regex: kubernikus;kubernetes;https
