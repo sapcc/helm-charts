@@ -55,13 +55,6 @@
     - source_labels: [ltmVirtualServStatName]
       target_label: lb_id
       regex: /Project_.*/Project_(.*)
-    - source_labels: [ltmVirtualServStatName]
-      target_label: network_id
-      regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
-      replacement: $1-$2-$3-$4-$5
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
-      regex: /net_.*/lb_(.*)/listener_.*
 
 # expose tenant-specific metrics collected by kube-system monitoring
 #
@@ -122,13 +115,6 @@
     - source_labels: [ltmVirtualServStatName]
       target_label: lb_id
       regex: /Project_.*/Project_(.*)
-    - source_labels: [ltmVirtualServStatName]
-      target_label: network_id
-      regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
-      replacement: $1-$2-$3-$4-$5
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
-      regex: /net_.*/lb_(.*)/listener_.*
     - source_labels: [__name__]
       target_label: __name__
       regex: netapp_volume_(.*)
