@@ -24,9 +24,7 @@ log_level = INFO
 log_custom_handlers = swift_sentry.sentry_logger
 {{- end }}
 
-# This option is broken on py3.
-# Reference: https://bugs.launchpad.net/swift/+bug/1872553
-# fallocate_reserve = {{ .Values.fallocate_reserve }}
+fallocate_reserve = {{ .Values.fallocate_reserve }}
 
 [pipeline:main]
 pipeline = healthcheck recon container-server
