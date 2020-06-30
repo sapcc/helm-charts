@@ -2,7 +2,7 @@ groups:
 - name: pg-database.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}PostgresDatabaseTooLarge
-    expr: max(pg_database_size_bytes{datname="{{ default .Release.Name .Values.db_name }}"}) by (app,datname) >= 8.589934592e+09
+    expr: max(pg_database_size_bytes{datname="{{ default .Release.Name .Values.db_name }}",app!~"sentry-postgresql"}) by (app,datname) >= 8.589934592e+09
     for: 5m
     labels:
       context: database
