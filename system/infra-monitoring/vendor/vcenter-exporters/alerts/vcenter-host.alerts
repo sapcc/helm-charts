@@ -8,11 +8,11 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      meta: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
+      meta: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.vccluster }}."
       playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
     annotations:
-      description: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
-      summary: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
+      description: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.vccluster }}."
+      summary: "Missing failover host for in {{ $labels.hostname }} cluster {{ $labels.vccluster }}."
   - alert: VCenterRedundancyLostFailoverHostOccupied
     expr: vcenter_vms_on_failover_hosts > 0 
     for: 30m
@@ -20,11 +20,11 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      meta: "Failover host {{ $labels.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
+      meta: "Failover host {{ $labels.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.vccluster }}."
       playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
     annotations:
-      description: "Failover host {{ $labels.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
-      summary: "Failover host {{ $labels.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.cluster }}."
+      description: "Failover host {{ $labels.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.vccluster }}."
+      summary: "Failover host {{ $labels.failover_host }} is hosting VMs and may not be ready for failover in {{ $labels.hostname }} cluster {{ $labels.vccluster }}."
   - alert: VCenterRedundancyLostHAPolicyFaulty
     expr: sum(vcenter_cluster_ha_configured) by(cluster, hostname) unless sum(vcenter_failover_host) by(cluster, hostname) != 0
     for: 30m
@@ -32,11 +32,11 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      meta: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for cluster {{ $labels.cluster }}, failover will not work."
+      meta: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
       playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
     annotations:
-      description: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for cluster {{ $labels.cluster }}, failover will not work."
-      summary: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for cluster {{ $labels.cluster }}, failover will not work."
+      description: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
+      summary: "VC {{ $labels.hostname }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
   - alert: VCenterRedundancyLostHAPolicyNotConfigured
     expr: vcenter_cluster_ha_configured == 0
     for: 30m
@@ -44,11 +44,11 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      meta: "VC {{ $labels.hostname }} {{ $labels.cluster }} has a faulty AdmissionControlPolicy. Failover will not work."
+      meta: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
       playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
     annotations:
-      description: "VC {{ $labels.hostname }} {{ $labels.cluster }} has a faulty AdmissionControlPolicy. Failover will not work."
-      summary: "VC {{ $labels.hostname }} {{ $labels.cluster }} has a faulty AdmissionControlPolicy. Failover will not work."
+      description: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
+      summary: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
   - alert: VCenterWrongHALevelConfiguration
     expr: vcenter_failover_nodes_set > 1
     for: 30m
@@ -56,11 +56,11 @@ groups:
       severity: warning
       tier: vmware
       service: compute
-      meta: "VC {{ $labels.hostname }} {{ $labels.cluster }} has more than one failover host configured, it should be 1"
+      meta: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has more than one failover host configured, it should be 1"
       playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
     annotations:
-      description: "VC {{ $labels.hostname }} {{ $labels.cluster }} has more than one failover host configured, it should be 1"
-      summary: "VC {{ $labels.hostname }} {{ $labels.cluster }} has more than one failover host configured, it should be 1"
+      description: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has more than one failover host configured, it should be 1"
+      summary: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has more than one failover host configured, it should be 1"
   - alert: VCenterRedundancyLostHALevelNotSet
     expr: vcenter_failover_nodes_set == 0
     for: 30m
@@ -68,11 +68,11 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      meta: "VC {{ $labels.hostname }} {{ $labels.cluster }} has NO failover host amount configured, this should be 1"
+      meta: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has NO failover host amount configured, this should be 1"
       playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
     annotations:
-      description: "VC {{ $labels.hostname }} {{ $labels.cluster }} has NO failover host amount configured, this should be 1"
-      summary: "VC {{ $labels.hostname }} {{ $labels.cluster }} has NO failover host amount configured, this should be 1"
+      description: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has NO failover host amount configured, this should be 1"
+      summary: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has NO failover host amount configured, this should be 1"
   - alert: ESXiHostOverbooked
     expr: vcenter_overbooked_node_mb > 0
     for: 20m
