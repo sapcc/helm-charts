@@ -33,7 +33,7 @@ groups:
       summary: '{{ $labels.check }} API flapping'
 
   - alert: OpenstackGlanceImageInQueuedState
-    expr: count(openstack_glance_image_gauge{status="queued"})by(id,exported_name,owner) > 0
+    expr: count(openstack_glance_image_gauge{status="queued"})by(id,exported_name,project_id) > 0
     for: 30m
     labels:
       severity: info
@@ -43,11 +43,11 @@ groups:
       dashboard: glance
       meta: 'Image {{ $labels.exported_name }} is in Queued State'
     annotations:
-      description: 'Image {{ $labels.exported_name }} with id {{ $labels.id }} in project_id {{ $labels.owner }} is Queued'
+      description: 'Image {{ $labels.exported_name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Queued'
       summary: 'Image is in Queued State'
 
   - alert: OpenstackGlanceImageInKilledState
-    expr: count(openstack_glance_image_gauge{status="killed"})by(id,exported_name,owner) > 0
+    expr: count(openstack_glance_image_gauge{status="killed"})by(id,exported_name,project_id) > 0
     for: 30m
     labels:
       severity: info
@@ -57,7 +57,7 @@ groups:
       dashboard: glance
       meta: 'Image {{ $labels.exported_name }} is in Killed State'
     annotations:
-      description: 'Image {{ $labels.exported_name }} with id {{ $labels.id }} in project_id {{ $labels.owner }} is Killed'
+      description: 'Image {{ $labels.exported_name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Killed'
       summary: 'Image is in Killed State'
 
   - alert: OpenstackGlanceUnresolvedSentryIssues
