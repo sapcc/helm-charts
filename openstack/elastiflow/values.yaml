@@ -94,6 +94,18 @@ elasticsearch-data:
       memory: "4G"
     limits:
       memory: "6G"
+    
+  extraInitContainers: |
+    - name: configure-ownership
+      securityContext:
+        runAsUser: 0
+        privileged: true
+      image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+      imagePullPolicy: "{{ .Values.imagePullPolicy }}"
+      command: ["sh", "-c", "mkdir -p /usr/share/elasticsearch/data && chown -R 1000:1000 /usr/share/elasticsearch/data"]
+      volumeMounts:
+        - name: "{{ template "elasticsearch.uname" . }}"
+          mountPath: /usr/share/elasticsearch/data
 
 elasticsearchExporter:
   name: elastiflow
