@@ -110,6 +110,9 @@
       source_labels: [__name__]
       regex: netapp_volume_saved_.*
     - source_labels: [ltmVirtualServStatName]
+      regex: /Common.*
+      action: drop
+    - source_labels: [ltmVirtualServStatName]
       target_label: project_id
       regex: /Project_(.*)/Project_.*
     - source_labels: [ltmVirtualServStatName]
