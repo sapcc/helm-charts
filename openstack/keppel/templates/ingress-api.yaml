@@ -14,8 +14,7 @@ metadata:
 spec:
   tls:
     - secretName: tls-keppel-api
-      hosts: [ keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}
-      {{- range $index, $san := .Values.keppel.sans }}, {{ $san }}{{ end }} ]
+      hosts: [ keppel.{{ .Values.global.region }}.{{ .Values.global.tld }} ]
   rules:
     - host: keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
@@ -24,6 +23,26 @@ spec:
             backend:
               serviceName: keppel-api
               servicePort: 80
+{{- if .Values.keppel.sans }}
+---
+kind: Ingress
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+
+metadata:
+  name: keppel-api-san
+  annotations:
+    vice-president: "true"
+    disco: "false"
+
+spec:
+  tls:
+    - secretName: tls-keppel-api-san
+      hosts: [ {{ join ", " .Values.keppel.sans }} ]
+  rules:
 {{- range $index, $san := .Values.keppel.sans }}
     - host: {{ $san }}
       http:
@@ -32,4 +51,5 @@ spec:
             backend:
               serviceName: keppel-api
               servicePort: 80
+{{ end }}
 {{ end }}
