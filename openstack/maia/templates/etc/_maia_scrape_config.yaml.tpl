@@ -122,6 +122,9 @@
     - source_labels: [ltmVirtualServStatName]
       target_label: lb_id
       regex: /net_.*/lb_(.*)/listener_.*
+    - source_labels: [ltmVirtualServStatName]
+      target_label: listener_id
+      regex: /net_.*/lb_.*/listener_(.*)
     - source_labels: [__name__]
       target_label: __name__
       regex: netapp_volume_(.*)
