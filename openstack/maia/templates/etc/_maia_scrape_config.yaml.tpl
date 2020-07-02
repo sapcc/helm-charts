@@ -117,8 +117,8 @@
       regex: /Project_.*/Project_(.*)
     - source_labels: [ltmVirtualServStatName]
       target_label: network_id
-      regex: /net_(.*)/lb_.*
-      replacement: $1
+      regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
+      replacement: $1-$2-$3-$4-$5
     - source_labels: [ltmVirtualServStatName]
       target_label: lb_id
       regex: /net_.*/lb_(.*)/listener_.*
