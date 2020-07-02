@@ -1,7 +1,7 @@
 groups:
 - name: apicendpoints.alerts
   rules:
-  - alert: NetworkApicEndPointNotReachable
+  - alert: NetworkSomeApicWebServiceFail
     expr: (count (increase(network_apic_status_total{code="200"}[30h]) ) by (hostname) or (0 * count(network_apic_status_total) by (hostname)) ) / count( increase(network_apic_status_total[30h])) by (hostname) == 0
     for: 5m
     labels:
@@ -13,11 +13,11 @@ groups:
     annotations:
       description: "{{ $labels.hostname }} doesn't deliver HTTP success anymore."
       summary: "APIC http endpoint doesn't deliver HTTP success anymore."
-  - alert: NetworkNoneApicEndPointReachable
+  - alert: NetworkAllApicWebServiceFail
     expr: (count (increase(network_apic_status_total{code="200"}[30h]) ) or (0 * count(network_apic_status_total)) ) / count( increase(network_apic_status_total[30h])) == 0
     for: 15m
     labels:
-      severity: warning
+      severity: warning # will be critical later
       tier: net
       service: apic
       dashboard: apic-health
@@ -25,8 +25,32 @@ groups:
     annotations:
       description: "All APICs http endpoints are down or do not deliver 200 more than 15 minutes"
       summary: "All APICs http endpoints are down more than 15 minutes"
+  - alert: NetworkSomeApicNotAccessible
+    expr: network_apic_accessible == 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: net
+      service: apic
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci.html#APIC_endpoints_check
+    annotations:
+      description: "{{ $labels.hostname }} isn't accessible anymore"
+      summary: "APIC isn't accessible."
+  - alert: NetworkNoneApicRAccessible
+    expr: count( network_apic_accessible == 1) == count(network_apic_accessible)
+    for: 5m
+    labels:
+      severity: warning # will be critical later
+      tier: net
+      service: apic
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci.html#APIC_endpoints_check
+    annotations:
+      description: "All APICs are down for more than 5 minutes"
+      summary: "All APICs are down for more than 5 minutes"
   - alert: NetworkApicEndPointMissingMetric
-    expr: absent(network_apic_status_total) == 1
+    expr: absent(network_apic_status_total) or absent(network_apic_accessible) == 1
     for: 30m
     labels:
       severity: critical
