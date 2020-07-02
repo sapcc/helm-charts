@@ -2,7 +2,9 @@ groups:
 - name: service.alerts
   rules:
   - alert: VCenterCriticalServiceNotHealthy
-    expr: vcsa_service_status{health !~ "HEALTHY", health != "None", service=~"vpxd|vapi-endpoint|vmware-vpostgres|eam|vsphere-ui|vpxd-svcs"} 
+    expr: >
+      vcsa_service_status{service=~"vpxd|vapi-endpoint|vmware-vpostgres|eam|vsphere-ui|vpxd-svcs"} == 1
+      and vcsa_service_status{service=~"vpxd|vapi-endpoint|vmware-vpostgres|eam|vsphere-ui|vpxd-svcs"} == 2
     for: 5m
     labels:
       severity: info
@@ -28,7 +30,9 @@ groups:
       description: "VCenter critical internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
       summary: "VCenter critical internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
   - alert: VCenterWarningServiceNotHealthy
-    expr: vcsa_service_status{health !~ "HEALTHY", health != "None", service=~"cm|applmgmt|vsm|sca"}
+    expr: >
+      vcsa_service_status{service=~"cm|applmgmt|vsm|sca"} == 1
+      and vcsa_service_status{service=~"cm|applmgmt|vsm|sca"} == 2
     for: 5m
     labels:
       severity: info
