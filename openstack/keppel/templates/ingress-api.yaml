@@ -41,7 +41,8 @@ metadata:
 spec:
   tls:
     - secretName: tls-keppel-api-san
-      hosts: [ {{ join ", " .Values.keppel.sans }} ]
+      hosts: [ keppel-san.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      {{- range $index, $san := .Values.keppel.sans }}, {{ $san }}{{ end }} ]
   rules:
 {{- range $index, $san := .Values.keppel.sans }}
     - host: {{ $san }}
