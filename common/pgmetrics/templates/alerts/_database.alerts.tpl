@@ -1,6 +1,7 @@
 groups:
 - name: pg-database.alerts
   rules:
+  {{- if .Values.alerts.large_database_size_enabled }}
   - alert: {{ include "alerts.service" . | title }}PostgresDatabaseTooLarge
     expr: max(pg_database_size_bytes{datname="{{ default .Release.Name .Values.db_name }}"}) by (app,datname) >= 8.589934592e+09
     for: 5m
@@ -12,6 +13,7 @@ groups:
     annotations:
       description: 'The size of the database {{`{{ $labels.datname }}`}} exceeds 8 GiB : {{`{{ $value }}`}} bytes.'
       summary: Postgres database too large.
+  {{- end }}
 
   - alert: {{ include "alerts.service" . | title }}PredictHighNumberOfDatabaseConnections
     expr: predict_linear(pg_stat_activity_count{datname="{{ default .Release.Name .Values.db_name }}"}[1h], 3*3600) >= 2000
