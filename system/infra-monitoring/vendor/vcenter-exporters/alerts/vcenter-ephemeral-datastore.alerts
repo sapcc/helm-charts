@@ -1,0 +1,53 @@
+groups:
+- name: ephemeral-datastore.alerts
+  rules:
+  - alert: EphemeralDatastoreNotAccessible
+    expr: |
+      vcenter_datastore_accessible{component=~".+vcdatastoremetrics$", name=~"eph-.+"} == 0 AND
+      vcenter_datastore_maintenance{component=~".+vcdatastoremetrics$", name=~"eph-.+"} == 1
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: 'Datastore {{ $labels.name }} is not accessible'
+    annotations:
+      description: 'Datastore {{ $labels.name }} is not accessible'
+      summary: 'Ephemeral Datastore not accessible'
+
+  - alert: EphemeralDatastoreNotAccessibleFromHost
+    expr: vcenter_datastore_accessible_from_host{name=~"eph-.+"} == 0
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute'
+      meta: 'Datastore is not accessible from host'
+      awx: #/templates/job_template/114
+    annotations:
+      description: 'Datastore {{ $labels.name }} is not accessible from host {{ $labels.host }}'
+      summary: 'Ephemeral Datastore not accessible from host'
+
+  - alert: EphemeralDatastore90PercentFull
+    expr: VcenterDatastoreEphemeralUtilization > 0.9
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: 'Datastore {{ $labels.name }} is 90 percent full'
+    annotations:
+      description: 'Datastore {{ $labels.name }} is 90 percent full for 20 min'
+      summary: 'Ephemeral Datastore 90 percent full'
+
+  - alert: EphemeralDatastore80PercentFull
+    expr: VcenterDatastoreEphemeralUtilization > 0.8
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: 'Datastore {{ $labels.name }} is 80 percent full'
+    annotations:
+      description: 'Datastore {{ $labels.name }} is 80 percent full for 20 min'
+      summary: 'Ephemeral Datastore 80 percent full'
