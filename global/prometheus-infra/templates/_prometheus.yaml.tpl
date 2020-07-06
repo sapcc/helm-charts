@@ -92,7 +92,7 @@
       - '{__name__=~"^fluentd_.+"}'
       - '{__name__=~"^elasticsearch_cluster_health_status"}'
       - '{__name__=~"^vcsa_service_status"}'
-
+      - '{__name__=~"^bios_exporter",setting_name=~"power_restore_policy|power_delay_policy|BootOrder.BootOrder|BootModes.SystemBootMode|BIOS.BiosBootSettings.BootSeq|BIOS.BiosBootSettings.Bootmode|BIOS.SysSecurity.AcPwrRcvry|Bios.syssecurity.AcPwrRcvryDelay"}'
 
   relabel_configs:
     - action: replace
