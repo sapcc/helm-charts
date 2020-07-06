@@ -32,31 +32,31 @@ groups:
           summary: "F5 health check monitor of Unbound pool member unbound2 failed."
 
       - alert: NetworkF5DirSharedUtil
-        expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/shared"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/shared"})) > 85
+        expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/shared"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/shared"})) >= 85
         for: 5m
         labels:
           severity: critical
           tier: net
           service: f5
           context: f5
-          meta: "Shared Dir Util of {{ $labels.devicename }} is more than 85% and proceed with playbook instructions."
+          meta: "Utilization of the \"shared\" directory on {{ $labels.devicename }} is at or above 85%. Verify the status on the actual device and proceed with playbook instructions."
           playbook: 'docs/devops/alert/network/f5.html#f5_disc_util'
           dashboard: f5-dns-resolver-cache-for-unbounds
         annotations:
-          description: "Shared Dir Util of {{ $labels.devicename }} is >85%. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
-          summary: "F5 health check monitor of Dir shared Utlization."
+          description: "Utilization of the \"shared\" directory on {{ $labels.devicename }} is at or above 85%. Verify the status on the actual device and proceed with playbook instructions."
+          summary: "F5 - high utilization of the \"shared\" directory."
 
       - alert: NetworkF5DirVarUtil
-        expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/var"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/var"})) > 85
+        expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/var"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/var"})) >= 85
         for: 5m
         labels:
           severity: critical
           tier: net
           service: f5
           context: f5
-          meta: "Var Dir Util of {{ $labels.devicename }} is more than 85% and proceed with playbook instructions."
+          meta: "Utilization of the \"var\" directory on {{ $labels.devicename }} is at or above 85%. Verify the status on the actual device and proceed with playbook instructions."
           playbook: 'docs/devops/alert/network/f5.html#f5_disc_util'
           dashboard: f5-dns-resolver-cache-for-unbounds
         annotations:
-          description: "Shared Dir Util of {{ $labels.devicename }} is >85%. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
-          summary: "F5 health check monitor of Dir var Utlization."	  
+          description: "Utilization of the \"var\" directory on {{ $labels.devicename }} is at or above 85%. Verify the status on the actual device and proceed with playbook instructions."
+          summary: "F5 - high utilization of the \"var\" directory."
