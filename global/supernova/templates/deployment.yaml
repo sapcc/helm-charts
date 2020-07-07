@@ -28,6 +28,9 @@ spec:
         - name: alertmanager-certs
           secret:
             secretName: alertmanager-sso-cert
+        - name: incident-contact-list
+          configMap:
+            name: incident_contact_list    
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
       containers:
@@ -44,7 +47,10 @@ spec:
               readOnly: true
             - name: alertmanager-certs
               mountPath: '/home/app/webapp/config/certs'
-              readOnly: true   
+              readOnly: true  
+            - name: incident-contact-list
+              mountPath: '/home/app/webapp/config/support'
+              readOnly: true     
           env:
             - name: REGION
               value: {{ .Values.region }}
