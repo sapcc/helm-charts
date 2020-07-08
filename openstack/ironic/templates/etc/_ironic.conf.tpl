@@ -128,7 +128,7 @@ config_file = /etc/ironic/watcher.yaml
 {{ if .Values.audit.enabled }}
 [audit]
 enabled = True
-#audit_map_file = /etc/ironic/api_audit_map.yaml
+audit_map_file = /etc/ironic/api_audit_map.yaml
 ignore_req_list = GET, HEAD
 record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
