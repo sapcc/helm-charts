@@ -1,0 +1,48 @@
+{{- if .Values.external_as3 }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: octavia-f5-as3
+  labels:
+    app.kubernetes.io/name: octavia-f5-as3
+    helm.sh/chart: {{ include "octavia.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: octavia-f5-as3
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: octavia-f5-as3
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: f5-as3-container
+          image: f5devcentral/f5-as3-container:{{.Values.imageVersionAS3 | default "latest"}}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AUTH
+              value: DISABLE
+          ports:
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              scheme: HTTPS
+              port: https
+            initialDelaySeconds: 30
+            timeoutSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /mgmt/shared/appsvcs/info
+              scheme: HTTPS
+              port: https
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+{{- end }}
