@@ -1,7 +1,7 @@
 groups:
 - name: vvol-datastore.alerts
   rules:
-  - alert: VVOLDatastoreNotAccessible
+  - alert: VVolDatastoreNotAccessible
     expr: |
       vcenter_datastore_accessible{component=~".+vcdatastoremetrics$", type="VVOL"} == 0
     for: 10m
@@ -10,43 +10,73 @@ groups:
       tier: vmware
       service: compute
       meta: 'Datastore {{ $labels.name }} is not accessible'
+      playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_1
     annotations:
       description: 'Datastore {{ $labels.name }} is not accessible'
       summary: 'vVOL Datastore not accessible'
 
-  - alert: VVOLDatastoreNotAccessibleFromHost
+  - alert: VVolDatastoreNotAccessibleFromHost
     expr: vcenter_datastore_accessible_from_host{type="VVOL"} == 0
     for: 10m
     labels:
       severity: info
       tier: vmware
-      service: compute'
+      service: compute
       meta: 'Datastore is not accessible from host'
       awx: #/templates/job_template/114
+      playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_2
     annotations:
       description: 'Datastore {{ $labels.name }} is not accessible from host {{ $labels.host }}'
       summary: 'vVOL Datastore not accessible from host'
 
-  - alert: VVOLDatastore90PercentFull
+  - alert: VVolDatastoreZeroCapacity
+    expr: vcenter_datastore_capacity_bytes{component=~".+vcdatastoremetrics$", type="VVOL"}
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: 'Datastore {{ $labels.name }} has zero capacity'
+      playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_3
+    annotations:
+      description: 'Datastore {{ $labels.name }} has zero capacity'
+      summary: 'vVOL Datastore has zero capacity'
+
+  - alert: VVolDatastoreZeroFreeSpace
+    expr: vcenter_datastore_free_space_bytes{component=~".+vcdatastoremetrics$", type="VVOL"} == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      meta: 'Datastore {{ $labels.name }} has no free space'
+      playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_4
+    annotations:
+      description: 'Datastore Datastore {{ $labels.name }} has no free space'
+      summary: 'vVOL Datastore has no free space'
+
+  - alert: VVolDatastore90PercentFull
     expr: VcenterDatastoreVvolUtilization > 0.9
-    for: 20m
+    for: 10m
     labels:
       severity: info
       tier: vmware
       service: compute
       meta: 'Datastore {{ $labels.name }} is 90 percent full'
+      playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_5
     annotations:
       description: 'Datastore {{ $labels.name }} is 90 percent full for 20 min'
       summary: 'vVOL Datastore 90 percent full'
 
-  - alert: VVOLDatastore80PercentFull
+  - alert: VVolDatastore80PercentFull
     expr: VcenterDatastoreVvolUtilization > 0.8
-    for: 20m
+    for: 10m
     labels:
       severity: info
       tier: vmware
       service: compute
       meta: 'Datastore {{ $labels.name }} is 80 percent full'
+      playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_5
     annotations:
       description: 'Datastore {{ $labels.name }} is 80 percent full for 20 min'
       summary: 'vVOL Datastore 80 percent full'
