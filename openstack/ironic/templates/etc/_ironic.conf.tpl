@@ -70,8 +70,6 @@ token_cache_time = 600
 include_service_catalog = true
 service_type = baremetal
 
-{{- include "ini_sections.audit_middleware_notifications" . }}
-
 [service_catalog]
 auth_section = service_catalog
 valid_interfaces = public {{- /* Public, so that the ironic-python-agent doesn't get a private url */}}
@@ -126,6 +124,17 @@ enabled = true
 service_type = baremetal
 config_file = /etc/ironic/watcher.yaml
 {{ end }}
+
+{{ if .Values.audit.enabled }}
+[audit]
+enabled = True
+#audit_map_file = /etc/ironic/api_audit_map.yaml
+ignore_req_list = GET, HEAD
+record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
+metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
+
+{{- include "ini_sections.audit_middleware_notifications" . }}
+{{- end }}
 
 {{- include "osprofiler" . }}
 
