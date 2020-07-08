@@ -1,5 +1,5 @@
-service_type: baremetal
-service_name: ironic
+service_type: 'compute/baremetal'
+service_name: 'ironic'
 prefix: '/v1'
 
 resources:
