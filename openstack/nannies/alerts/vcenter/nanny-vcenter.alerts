@@ -249,3 +249,15 @@ groups:
     annotations:
       description: "The {{ $labels.kubernetes_name }} discovered that not all vc hosts are properly configured in the vc-* aggregates - should be investigated ..."
       summary: "The {{ $labels.kubernetes_name }} discovered that not all vc hosts are properly configured in the vc-* aggregates - should be investigated ..."
+
+  - alert: OpenstackVcenterNannyESXiHostOverbooked
+    expr: vm_balance_nanny_suggestion_bytes > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
+      summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"

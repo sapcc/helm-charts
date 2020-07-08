@@ -28,10 +28,8 @@ amphora_driver = {{ .Values.amphora_driver  | default "amphora_noop_driver" }}
 compute_driver = {{ .Values.compute_driver  | default "compute_noop_driver" }}
 network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 
-[health_manager]
-controller_ip_port_list = 127.0.0.1:5555
-heartbeat_key = unused
-health_check_interval = 30
+[status_manager]
+health_check_interval = 60
 
 {{ if .Values.network_segment_physical_network }}
 [networking]
