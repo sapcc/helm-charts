@@ -36,7 +36,7 @@ default_ciphers = {{ $values.default_ciphers }}
 tls_1_0 = {{ $values.default_tls_1_0 }}
 tls_1_1 = {{ $values.default_tls_1_1 }}
 
-{{- if .Values.external_as3 }}
+{{- if $values.external_as3 }}
 # External AS3 Endpoint
 as3_endpoint = octavia-f5-as3.{{ include "svc_fqdn" . }}
 {{- end }}
