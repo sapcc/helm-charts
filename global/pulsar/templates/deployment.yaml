@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: {{ include "pulsar.fullname" . }}
+  labels:
+    {{- include "pulsar.labels" . | nindent 4 }}
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pulsar.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pulsar.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ required ".Values.service.port missing" .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: DEBUG
+              value: {{ default false .Values.isDebug | quote }}
+            - name: API_PORT
+              value: {{ required ".Values.service.port missing" .Values.service.port | quote }}
+            - name: SLACK_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "pulsar.fullname" . }}-secret
+                  key: slack-bot-token
+            - name: SLACK_BOT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "pulsar.fullname" . }}-secret
+                  key: slack-bot-id
+            - name: SLACK_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "pulsar.fullname" . }}-secret
+                  key: slack-access-token
+            - name: SLACK_VERIFICATION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "pulsar.fullname" . }}-secret
+                  key: slack-verification-token
+            - name: SLACK_AUTHORIZED_USER_GROUP_NAMES
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "pulsar.fullname" . }}-secret
+                  key: slack-authorized-user-group-names
+            - name: PAGERDUTY_DEFAULT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "pulsar.fullname" . }}-secret
+                  key: pagerduty-default-email
+            - name: PAGERDUTY_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "pulsar.fullname" . }}-secret
+                  key: pagerduty-auth-token
