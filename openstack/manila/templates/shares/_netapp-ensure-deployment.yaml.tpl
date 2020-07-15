@@ -1,4 +1,4 @@
-{{- define "share_netapp_nanny" -}}
+{{- define "share_netapp_ensure" -}}
 {{$share := index . 1 -}}
 {{with index . 0}}
 kind: Deployment
@@ -8,10 +8,9 @@ apiVersion: apps/v1
 apiVersion: extensions/v1beta1
 {{- end }}
 metadata:
-  name: manila-share-netapp-{{$share.name}}-nanny
+  name: manila-share-netapp-{{$share.name}}-ensure
   labels:
     system: openstack
-    type: nanny
     component: manila
 spec:
   replicas: 1
@@ -23,37 +22,33 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-        name: manila-share-netapp-{{$share.name}}-nanny
+        name: manila-share-netapp-{{$share.name}}-ensure
   template:
     metadata:
       labels:
-        name: manila-share-netapp-{{$share.name}}-nanny
-{{/*      annotations:*/}}
-{{/*        configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}*/}}
-{{/*        configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}*/}}
+        name: manila-share-netapp-{{$share.name}}-ensure
+      annotations:
+        configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
     spec:
       containers:
         - name: reexport
-          image: "{{.Values.global.imageRegistry}}/monsoon/netapp-manila-nanny:{{.Values.manila_nanny.image_netapp_version}}"
+          image: "{{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/netapp-manila-nanny:{{.Values.loci.imageVersionEnsure}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "{{ if not .Values.manila_nanny.debug }}/bin/bash /scripts/netapp-manila-reexport.sh{{ else }}sleep inf{{ end }}"
+              value: "/bin/bash /scripts/netapp-manila-reexport.sh"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-              {{- if .Values.manila_nanny.mariadb.enabled }}
-              value: "manila-mariadb,manila-api"
-              {{- else }}
-              value: "manila-postgresql,manila-api"
-              {{- end }}
+              value: "{{ .Release.Name }}-mariadb"
             - name: MANILA_NETAPP_NANNY_INTERVAL
-              value: {{ .Values.manila_nanny.netapp.interval | quote }}
+              value: "240"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
@@ -78,12 +73,9 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
-          {{- if .Values.manila_nanny.netapp.resources }}
+          {{- if .Values.pod.resources.share_ensure }}
           resources:
-            {{ toYaml .Values.manila_nanny.netapp.resources | nindent 13 }}
-          {{- else if .Values.manila_nanny.resources }}
-          resources:
-            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
+            {{ toYaml .Values.pod.resources.share_ensure | nindent 13 }}
           {{- end }}
           livenessProbe:
             exec:
