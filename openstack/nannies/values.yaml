@@ -178,14 +178,34 @@ vm_balance_nanny:
 netapp_balance_nanny:
   enabled: true
   debug: false
-  image_version: '0014'
+  # dry run mode - do not do anything potentially harmful
+  dry_run: true
+  image_version: '20200714121658'
+  # how many minutes to wait until the next nanny run
   interval: 180
+  # max usage of an aggregate in percent to still move volumes to it
   minthreshold: 64
+  # min usage of an aggregate in percent to still move volumes away from it
   maxthreshold: 68
+  # how many percent to go below maxthreshold by balancing volumes away
   maxthresholdhysteresis: 2
+  # legacy - will go soon
   volumeminsize: 250000
   volumemaxsize: 2000000
+  # maximum number of volumes to move for flexvol and aggr balancing (separately for both)
   maxmovevms: 50
+  # min usage of a flexvol in gb to move volumes away from it
+  # about 90% of the typical flexvol size of 5tb to avoid it autoextending early on
+  flexvolsizelimit: 4600
+  # min (>=) size of a volume in gb to move away from a flexvol for balancing
+  lunminsizeflexvol: 25
+  # max (<) size of a volume in gb to move away from a flexvol for balancing
+  lunmaxsizeflexvol: 1000
+  # min (>=) size of a volume in gb to move away from an aggregate for balancing
+  # best = lunmaxsizeflexvol to avoid overlapping balancing between flexvol and aggr
+  lunminsizeaggr: 1000
+  # max (<=) size of a volume in gb to move away from an aggregate for balancing
+  lunmaxsizeaggr: 2500
 
 # manila nanny
 manila_nanny:
