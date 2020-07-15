@@ -7,6 +7,7 @@ enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
 {{- if .Values.notification_level }}
 notification_level = {{ .Values.notification_level }}
+versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | default "ironic_versioned_notifications" | quote }}
 {{- end }}
 
 {{- include "ini_sections.default_transport_url" . }}
