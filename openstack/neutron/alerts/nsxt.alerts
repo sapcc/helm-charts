@@ -128,3 +128,15 @@ groups:
       description: "NSX-T Node {{ $labels.nsxv3_node_ip }} of cluster {{ $labels.nsxv3_manager_hostname }} has memory usage of over 95%"
       summary: "NSX-T Node memory critical"
 
+  - alert: NSXTFirewallSectionCountDiffersBetweenNodes
+    expr: abs(avg without (nsxv3_node_ip)(nsxv3_management_node_firewall_section_count) - ignoring(nsxv3_node_ip) group_right nsxv3_management_node_firewall_section_count) > 0
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      meta: 'NSX-T Node {{ $labels.nsxv3_node_ip }} of cluster {{ $labels.nsxv3_manager_hostname }} has a divergent section count'
+    annotations:
+      description: "NSX-T Node {{ $labels.nsxv3_node_ip }} of cluster {{ $labels.nsxv3_manager_hostname }} has a divergent section count"
+      summary: "NSX-T section count differs between nodes"
+
+
