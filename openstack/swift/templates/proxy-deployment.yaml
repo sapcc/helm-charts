@@ -142,6 +142,17 @@ spec:
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{$cluster.proxy_public_port}}
+              scheme: HTTPS
+              httpHeaders:
+                - name: Host
+                  value: {{tuple $cluster $.Values | include "swift_endpoint_host"}}
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
         {{- if $.Values.health_exporter }}
         - name: collector
           image: {{ include "swift_image" $ }}
