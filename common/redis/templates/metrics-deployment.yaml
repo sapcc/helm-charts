@@ -20,14 +20,17 @@ spec:
       app: {{ template "redis.fullname" . }}
       chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
       release: "{{ .Release.Name }}"
-      heritage: "{{ .Release.Service }}"
+      heritage: "Tiller"
+      # ^ this is not true when deploying with Helm 3, but existing matchLabels
+      # may not be changed by a Helm upgrade, so we have to stick with this
+      # legacy value (TODO: figure out a way to remove this label entirely)
   template:
     metadata:
       labels:
         app: {{ template "redis.fullname" . }}
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         release: "{{ .Release.Name }}"
-        heritage: "{{ .Release.Service }}"
+        heritage: "Tiller"
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
