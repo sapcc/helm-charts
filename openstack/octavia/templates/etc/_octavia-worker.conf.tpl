@@ -30,15 +30,15 @@ snat_virtual = true
 # Migration Mode ?
 migration = {{ $loadbalancer.migration | default "false" }}
 
+{{- if $envAll.Values.external_as3 }}
+# External AS3 Endpoint
+as3_endpoint = octavia-f5-as3.{{ include "svc_fqdn" $envAll }}
+{{- end }}
+
 # Default Server TLS Cipher
 [f5_tls_server]
 default_ciphers = {{ $envAll.Values.default_ciphers }}
 tls_1_0 = {{ $envAll.Values.default_tls_1_0 }}
 tls_1_1 = {{ $envAll.Values.default_tls_1_1 }}
-
-{{- if $envAll.Values.external_as3 }}
-# External AS3 Endpoint
-as3_endpoint = octavia-f5-as3.{{ include "svc_fqdn" $envAll }}
-{{- end }}
 
 {{- end }}
