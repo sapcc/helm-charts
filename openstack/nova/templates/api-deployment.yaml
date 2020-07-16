@@ -47,7 +47,7 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "nova-api"
+              value: "{{ if .Values.api.use_uwsgi }}uwsgi --ini /etc/nova/api_uwsgi.ini{{ else }}nova-api{{ end }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
@@ -105,6 +105,12 @@ spec:
               name: nova-etc
               subPath: api-paste.ini
               readOnly: true
+           {{- if .Values.api.use_uwsgi }}
+            - mountPath: /etc/nova/api_uwsgi.ini
+              name: nova-etc
+              subPath: api_uwsgi.ini
+              readOnly: true
+           {{- end }}
 {{- if .Values.audit.enabled }}
             - mountPath: /etc/nova/nova_audit_map.yaml
               name: nova-etc

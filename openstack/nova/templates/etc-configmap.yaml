@@ -12,6 +12,10 @@ data:
 {{ include (print .Template.BasePath "/etc/_nova.conf.tpl") . | indent 4 }}
   nova-api.conf: |
 {{ include "util.helpers.valuesToIni" .Values.api.config_file | indent 4 }}
+{{- if .Values.api.use_uwsgi }}
+  api_uwsgi.ini: |
+{{ include (print .Template.BasePath "/etc/_api_uwsgi.ini.tpl") . | indent 4 }}
+{{- end }}
   nova-api-metadata.conf: |
 {{ include "util.helpers.valuesToIni" .Values.api_metadata.config_file | indent 4 }}
   nova-conductor.conf: |
