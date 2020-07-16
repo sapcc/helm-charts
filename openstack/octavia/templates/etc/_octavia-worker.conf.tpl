@@ -32,7 +32,7 @@ migration = {{ $loadbalancer.migration | default "false" }}
 
 {{- if $envAll.Values.external_as3 }}
 # External AS3 Endpoint
-as3_endpoint = octavia-f5-as3.{{ include "svc_fqdn" $envAll }}
+as3_endpoint = https://octavia-f5-as3.{{ include "svc_fqdn" $envAll }}
 {{- end }}
 
 # Default Server TLS Cipher
