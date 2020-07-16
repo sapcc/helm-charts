@@ -1,5 +1,5 @@
 {{- define "octavia_worker_conf" -}}
-{{- $values := index . 0 -}}
+{{- $envAll := index . 0 -}}
 {{- $lb_name := index . 1 -}}
 {{- $loadbalancer := index . 2 -}}
 [DEFAULT]
@@ -23,7 +23,7 @@ snat_virtual = true
 # service_address_icmp_echo = selective
 
 # Default profiles
-{{- range $key, $value := $values.default_profiles }}
+{{- range $key, $value := $envAll.Values.default_profiles }}
 {{ $key }} = {{ $value }}
 {{- end }}
 
@@ -32,13 +32,13 @@ migration = {{ $loadbalancer.migration | default "false" }}
 
 # Default Server TLS Cipher
 [f5_tls_server]
-default_ciphers = {{ $values.default_ciphers }}
-tls_1_0 = {{ $values.default_tls_1_0 }}
-tls_1_1 = {{ $values.default_tls_1_1 }}
+default_ciphers = {{ $envAll.Values.default_ciphers }}
+tls_1_0 = {{ $envAll.Values.default_tls_1_0 }}
+tls_1_1 = {{ $envAll.Values.default_tls_1_1 }}
 
-{{- if $values.external_as3 }}
+{{- if $envAll.Values.external_as3 }}
 # External AS3 Endpoint
-as3_endpoint = octavia-f5-as3.{{ include "svc_fqdn" . }}
+as3_endpoint = octavia-f5-as3.{{ include "svc_fqdn" $envAll }}
 {{- end }}
 
 {{- end }}
