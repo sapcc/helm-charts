@@ -2,7 +2,9 @@ groups:
 - name: blackbox.alerts
   rules:
   - alert: OpenstackMaiaDatapathDown
-    expr: blackbox_datapath_status_gauge{service=~"maia"} == 1
+    expr: |
+      blackbox_datapath_status_gauge{service=~"maia"} == 1 AND
+      (sum(blackbox_api_status_gauge{check=~"vcenter-vc.+"})/count(blackbox_api_status_gauge{check=~"vcenter-vc.+"})) <= 0.6
     for: 15m
     labels:
       severity: critical
@@ -18,7 +20,9 @@ groups:
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is down'
 
   - alert: OpenstackMaiaDatapathHalfDown
-    expr: blackbox_datapath_status_gauge{service=~"maia"} == 0.5
+    expr: |
+      blackbox_datapath_status_gauge{service=~"maia"} == 0.5 AND
+      (sum(blackbox_api_status_gauge{check=~"vcenter-vc.+"})/count(blackbox_api_status_gauge{check=~"vcenter-vc.+"})) <= 0.6
     for: 15m
     labels:
       severity: critical
@@ -34,7 +38,9 @@ groups:
       summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
 
   - alert: OpenstackMaiaDatapathFlapping
-    expr: changes(blackbox_datapath_status_gauge{service=~"maia"}[30m]) > 8
+    expr: |
+      changes(blackbox_datapath_status_gauge{service=~"maia"}[30m]) > 8 AND
+      (sum(blackbox_api_status_gauge{check=~"vcenter-vc.+"})/count(blackbox_api_status_gauge{check=~"vcenter-vc.+"})) <= 0.6
     labels:
       severity: warning
       tier: os
