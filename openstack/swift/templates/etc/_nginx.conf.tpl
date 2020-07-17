@@ -87,5 +87,15 @@ http {
         {{ tuple $context | include "swift_nginx_location" | indent 8 }}
     }
     {{- end }}
+
+    # Healthcheck for Nginx, nothing else
+    server {
+        listen 1080 default_server;
+
+        location /nginx-health {
+            access_log off;
+            return 200 "healthy\n";
+        }
+    }
 }
 {{end}}
