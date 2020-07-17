@@ -105,6 +105,14 @@ spec:
               name: swift-container-ring
             - mountPath: /swift-rings/object
               name: swift-object-ring
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
         - name: nginx
           image: {{$.Values.global.imageRegistry}}/monsoon/swift-nginx:{{$.Values.image_version_nginx}}
           command:
@@ -133,12 +141,9 @@ spec:
               name: tls-secret
           livenessProbe:
             httpGet:
-              path: /healthcheck
-              port: {{$cluster.proxy_public_port}}
-              scheme: HTTPS
-              httpHeaders:
-                - name: Host
-                  value: {{tuple $cluster $.Values | include "swift_endpoint_host"}}
+              path: /nginx-health
+              port: 1080
+              scheme: HTTP
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 10
