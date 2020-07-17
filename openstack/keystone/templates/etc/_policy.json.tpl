@@ -88,14 +88,14 @@
 
     "credential_owner": "user_id:%(target.credential.user_id)s or user_id:%(user_id)s",
     "matching_target_credential_project": "project_id:%(target.credential.project_id)s or project_id:%(tenant_id)s",
-    "identity:get_credential": "rule:credential_owner",
-    "identity:list_credentials": "rule:credential_owner",
+    "identity:get_credential": "rule:cloud_admin or rule:credential_owner",
+    "identity:list_credentials": "rule:cloud_admin or rule:credential_owner",
     "identity:create_credential": "rule:cloud_admin or (rule:credential_owner and rule:matching_target_credential_project)",
     "identity:update_credential": "rule:cloud_admin",
     "identity:delete_credential": "rule:cloud_admin or rule:credential_owner",
 
-    "identity:ec2_get_credential": "rule:credential_owner",
-    "identity:ec2_list_credentials": "rule:credential_owner",
+    "identity:ec2_get_credential": "rule:cloud_admin or rule:credential_owner",
+    "identity:ec2_list_credentials": "rule:cloud_admin or rule:credential_owner",
     "identity:ec2_create_credential": "rule:cloud_admin or (rule:credential_owner and rule:matching_target_credential_project)",
     "identity:ec2_delete_credential": "rule:cloud_admin or rule:credential_owner",
 
