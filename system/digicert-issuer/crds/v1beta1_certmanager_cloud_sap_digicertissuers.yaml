@@ -1,148 +1,156 @@
-apiVersion: apiextensions.k8s.io/v1
+apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
-  labels:
-    app.kubernetes.io/name: digicert-issuer
+  creationTimestamp: null
   name: digicertissuers.certmanager.cloud.sap
 spec:
-  conversion:
-    strategy: None
   group: certmanager.cloud.sap
   names:
     kind: DigicertIssuer
     listKind: DigicertIssuerList
     plural: digicertissuers
     singular: digicertissuer
-  preserveUnknownFields: true
   scope: Namespaced
-  versions:
-  - name: v1beta1
-    schema:
-      openAPIV3Schema:
-        description: DigicertIssuer is the Schema for the digicertissuers API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: DigicertIssuerSpec defines the desired state of DigicertIssuer
-            properties:
-              provisioner:
-                description: Provisioner contains the DigiCert provisioner configuration.
-                properties:
-                  apiTokenReference:
-                    description: APITokenReference references a secret in the same
-                      namespace containing the DigiCert API token.
-                    properties:
-                      key:
-                        description: The key in the secret.
-                        type: string
-                      name:
-                        description: The name of the secret.
-                        type: string
-                    required:
-                    - key
-                    - name
-                    type: object
-                  caCertID:
-                    description: CACertID ...
-                    type: string
-                  disableRenewalNotifications:
-                    description: DisableRenewalNotifications ...
-                    type: boolean
-                  orderType:
-                    description: OrderType ...
-                    type: string
-                  organizationID:
-                    description: OrganizationID is the ID of the organization in Digicert.
-                    type: integer
-                  organizationName:
-                    description: OrganizationName is the name of the organization
-                      in Digicert. If specified takes precedence over OrganizationID.
-                    type: string
-                  organizationUnits:
-                    description: OrganizationUnits ...
-                    items:
-                      type: string
-                    type: array
-                  paymentMethod:
-                    description: PaymentMethod ...
-                    type: string
-                  skipApproval:
-                    description: SkipApproval ...
-                    type: boolean
-                  validityYears:
-                    description: ValidityYears ...
-                    type: integer
-                required:
-                - apiTokenReference
-                type: object
-              url:
-                description: URL is the DigiCert cert-central API.
-                type: string
-            required:
-            - provisioner
-            type: object
-          status:
-            description: DigicertIssuerStatus defines the observed state of DigicertIssuer
-            properties:
-              conditions:
-                description: Conditions ...
-                items:
-                  description: DigicertIssuerCondition  ...
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: DigicertIssuer is the Schema for the digicertissuers API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: DigicertIssuerSpec defines the desired state of DigicertIssuer
+          properties:
+            provisioner:
+              description: Provisioner contains the DigiCert provisioner configuration.
+              properties:
+                apiTokenReference:
+                  description: APITokenReference references a secret in the same namespace
+                    containing the DigiCert API token.
                   properties:
-                    lastTransitionTime:
-                      description: LastTransitionTime is the timestamp corresponding
-                        to the last status change of this condition.
-                      format: date-time
+                    key:
+                      description: The key in the secret.
                       type: string
-                    message:
-                      description: Message is a human readable description of the
-                        details of the last transition, complementing reason.
-                      type: string
-                    reason:
-                      description: Reason is a brief machine readable explanation
-                        for the condition's last transition.
-                      type: string
-                    status:
-                      allOf:
-                      - enum:
-                        - "True"
-                        - "False"
-                        - Unknown
-                      - enum:
-                        - "True"
-                        - "False"
-                        - Unknown
-                      description: Status of the condition, one of ('True', 'False',
-                        'Unknown').
-                      type: string
-                    type:
-                      description: Type of the condition, currently ('Ready').
-                      enum:
-                      - Ready
+                    name:
+                      description: The name of the secret.
                       type: string
                   required:
+                    - key
+                    - name
+                  type: object
+                caCertID:
+                  description: CACertID is the ID of the CA if multiple CA certificates
+                    are configured in the (sub-)account.
+                  type: string
+                disableRenewalNotifications:
+                  description: DisableRenewalNotifications disables email renewal
+                    notifications for expiring certificates.
+                  type: boolean
+                orderType:
+                  description: OrderType is the certificate order type.
+                  type: string
+                organizationID:
+                  description: OrganizationID is the ID of the organization in Digicert.
+                  type: integer
+                organizationName:
+                  description: OrganizationName is the name of the organization in
+                    Digicert. If specified takes precedence over OrganizationID.
+                  type: string
+                organizationUnits:
+                  description: OrganizationUnits is the list of organizational units.
+                  items:
+                    type: string
+                  type: array
+                paymentMethod:
+                  description: PaymentMethod is the configured payment method in the
+                    Digicert account.
+                  type: string
+                skipApproval:
+                  description: SkipApproval skips the approval of the certificate.
+                  type: boolean
+                validityYears:
+                  description: ValidityYears is the validity of the certificate in
+                    years.
+                  type: integer
+              required:
+                - apiTokenReference
+              type: object
+            url:
+              description: Optional URL is the DigiCert cert-central API.
+              type: string
+          required:
+            - provisioner
+          type: object
+        status:
+          description: DigicertIssuerStatus defines the observed state of DigicertIssuer
+          properties:
+            conditions:
+              description: Conditions is a list of DigicertIssuerConditions describing
+                the current status.
+              items:
+                description: DigicertIssuerCondition  ...
+                properties:
+                  lastTransitionTime:
+                    description: LastTransitionTime is the timestamp corresponding
+                      to the last status change of this condition.
+                    format: date-time
+                    type: string
+                  message:
+                    description: Message is a human readable description of the details
+                      of the last transition, complementing reason.
+                    type: string
+                  reason:
+                    description: Reason is a brief machine readable explanation for
+                      the condition's last transition.
+                    type: string
+                  status:
+                    allOf:
+                      - enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                      - enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                    description: Status of the condition, one of ('True', 'False',
+                      'Unknown').
+                    type: string
+                  type:
+                    description: Type of the condition, currently ('Ready').
+                    enum:
+                      - Ready
+                    type: string
+                required:
                   - status
                   - type
-                  type: object
-                type: array
-            type: object
-        required:
+                type: object
+              type: array
+          type: object
+      required:
         - spec
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+      type: object
+  version: v1beta1
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
