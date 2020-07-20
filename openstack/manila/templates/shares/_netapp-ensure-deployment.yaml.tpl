@@ -1,4 +1,3 @@
-{{- if .Values.share_ensure.enabled }}
 {{- define "share_netapp_ensure" -}}
 {{$share := index . 1 -}}
 {{with index . 0}}
@@ -104,5 +103,4 @@ spec:
           configMap:
             name: share-netapp-{{$share.name}}
 {{ end }}
-{{- end -}}
 {{- end -}}
