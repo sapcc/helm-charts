@@ -1,4 +1,4 @@
-{{- if .Values.share_ensure.enabled }
+{{- if .Values.share_ensure.enabled }}
 {{- define "share_netapp_ensure" -}}
 {{$share := index . 1 -}}
 {{with index . 0}}
