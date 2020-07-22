@@ -295,9 +295,6 @@
       replacement: '$2'
       target_label: device
     - source_labels: [__name__, cucsEtherErrStatsDn]
-      regex: 'snmp_ucs_cucsEtherErrStats.+;.+(port)-([0-4]|[7-9]|\d{2}).+'
-      action: drop
-    - source_labels: [__name__, cucsEtherErrStatsDn]
       regex: 'snmp_ucs_cucsEtherErrStats.+;.+(lan).+'
       action: drop
     - source_labels: [__name__, cucsFcErrStatsDn]
