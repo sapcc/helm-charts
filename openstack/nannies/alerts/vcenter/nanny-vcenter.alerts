@@ -261,3 +261,15 @@ groups:
     annotations:
       description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host => suggestion: VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} "
       summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
+
+  - alert: ESXiHostOverbookedAutomation
+    expr: vm_balance_error_count > 0
+    for: 5m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The vcenter {{ $labels.kubernetes_name }} with Overbooked node Automation found error {{ $labels.error_type }} should be investigated"
+      summary: "The vcenter {{ $labels.kubernetes_name }} with Overbooked node Automation found error {{ $labels.error_type }} should be investigated"
