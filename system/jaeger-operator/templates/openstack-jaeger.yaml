@@ -5,10 +5,17 @@ metadata:
 spec:
   ingress:
     enabled: true
+    annotations:
+      vice-president: "true"
     hosts:
-    - tracing.{{ .Values.global.region }}.cloud.sap
+      - tracing.{{ .Values.global.region }}.cloud.sap
+    tls:
+      - hosts:
+        - tracing.{{ .Values.global.region }}.cloud.sap
+        secretName: tls-tracing-{{ .Values.global.region }}-cloud-sap
+
   storage:
     type: elasticsearch
     options:
       es:
-        service_urls: elasticsearch.hermes.svc:9200
+        server-urls: http://elasticsearch.hermes.svc:9200
