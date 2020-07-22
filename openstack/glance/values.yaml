@@ -121,6 +121,8 @@ mysql_metrics:
       - "size"
       - "project_id"
       - "visibility"
+      - "created_at"
+      - "updated_at"
       name: openstack_glance_image_gauge
       query: |
         SELECT
@@ -129,11 +131,71 @@ mysql_metrics:
           status,
           COALESCE(size, "No Size") AS size,
           owner AS project_id,
+          created_at, 
+          updated_at,
           visibility,
           COUNT(*) AS gauge
         from images
         where
           deleted='false'
+        GROUP BY
+          id;
+      values:
+      - "gauge"
+
+    - help: Glance Image created in last 24hrs
+      labels:
+      - "id"
+      - "name"
+      - "status"
+      - "size"
+      - "project_id"
+      - "visibility"
+      - "created_at"
+      - "updated_at"
+      name: openstack_glance_image_created_gauge
+      query: |
+        SELECT
+          id,
+          name,
+          status,
+          COALESCE(size, "No Size") AS size,
+          owner AS project_id,
+          created_at, 
+          visibility,
+          COUNT(*) AS in_24hrs_gauge
+        from images
+        where
+          created_at >= now() - INTERVAL 1 DAY
+        GROUP BY
+          id;
+      values:
+      - "gauge"
+
+    - help: Glance Image deleted in last 24hrs
+      labels:
+      - "id"
+      - "name"
+      - "status"
+      - "size"
+      - "project_id"
+      - "visibility"
+      - "created_at"
+      - "updated_at"
+      name: openstack_glance_image_deleted_gauge
+      query: |
+        SELECT
+          id,
+          name,
+          status,
+          COALESCE(size, "No Size") AS size,
+          owner AS project_id,
+          created_at, 
+          visibility,
+          COUNT(*) AS in_24hrs_gauge
+        from images
+        where
+          deleted_at >= now() - INTERVAL 1 DAY
         GROUP BY
           id;
       values:
