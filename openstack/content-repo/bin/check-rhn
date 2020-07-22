@@ -1,22 +1,33 @@
 #!/bin/sh
 
+RELEASE="$1"
+if [ -z "${RELEASE}" ]; then
+    echo "$0: missing release" >&2
+    exit 1
+fi
+CHECK_URL="$2"
+if [ -z "${CHECK_URL}" ]; then
+    echo "$0: missing check url" >&2
+    exit 1
+fi
+
 apk add --update curl || exit 1
 
-echo "Starting RedHat CDN entitlement check"
+echo "Starting RedHat CDN entitlement check for ${RELEASE}"
 while true; do
   SUCCESS=0
   # curl rhn
-  STATUS=$(curl --head --silent --write-out '%{http_code}' --output /dev/null --cacert /secret-check/rhel-ca.pem --cert /secret-check/rhel-entitlement.pem --key /secret-check/rhel-entitlement-key.pem https://cdn.redhat.com/content/dist/rhel/server/7/7Server/x86_64/os)
+  STATUS=$(curl --head --silent --write-out '%{http_code}' --output /dev/null --cacert /secret-check/${RELEASE}-ca.pem --cert /secret-check/${RELEASE}-entitlement.pem --key /secret-check/${RELEASE}-entitlement-key.pem ${CHECK_URL})
   if [ ${STATUS} -eq 200 ]; then
     SUCCESS=1
   elif [ ${STATUS} -eq 403 ]; then
-    echo "RHN entitlement check: ${STATUS} - Forbidden. Entitlement might need to be renewed"
+    echo "RHN entitlement check for ${RELEASE}: ${STATUS} - Forbidden. Entitlement might need to be renewed"
   else
-    echo "RHN entitlement check: ${STATUS}"
+    echo "RHN entitlement check for ${RELEASE}: ${STATUS}"
   fi
 
-  echo "repo.rhel.check.success:${SUCCESS}|g" | nc -w 1 -u ${STATSD_HOSTNAME} 9125
-  echo "repo.rhel.check.httpcode:${STATUS}|g" | nc -w 1 -u ${STATSD_HOSTNAME} 9125
+  echo "repo.${RELEASE}.check.success:${SUCCESS}|g" | nc -w 1 -u ${STATSD_HOSTNAME} 9125
+  echo "repo.${RELEASE}.check.httpcode:${STATUS}|g" | nc -w 1 -u ${STATSD_HOSTNAME} 9125
 
   sleep ${CHECK_INTERVAL}
 done

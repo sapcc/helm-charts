@@ -1,3 +1,4 @@
+{{- if .Values.rhn_entitlement_checks }}
 kind: Deployment
 {{- if .Capabilities.APIVersions.Has "apps/v1" }}
 apiVersion: apps/v1
@@ -37,11 +38,14 @@ spec:
         secret:
           secretName: swift-http-import
       containers:
-      - name: check
-        image: alpine:{{.Values.image_version_auxiliary_alpine}}
+      {{- range $release, $config := .Values.rhn_entitlement_checks }}
+      - name: check-{{ $release }}
+        image: alpine:{{$.Values.image_version_auxiliary_alpine}}
         args:
           - /bin/sh
           - /bin-check/check-rhn
+          - {{ $release }}
+          - {{ $config.check_url }}
         env:
           - name: STATSD_HOSTNAME
             value: {{ $.Values.statsd_hostname | quote }}
@@ -52,3 +56,5 @@ spec:
             name: secret
           - mountPath: /bin-check
             name: bin
+       {{- end}}
+{{- end }}
