@@ -379,7 +379,7 @@ insecure = True
 # Database connection string - to configure options for a given implementation
 # like sqlalchemy or other see below
 #connection = sqlite:///$state_path/designate.sqlite
-{{ if .Values.percona_cluster.enabled -}}
+{{- if .Values.percona_cluster.enabled -}}
 connection = {{ include "db_url_pxc" . }}
 {{- else }}
 connection = {{ include "db_url_mysql" . }}
