@@ -3,11 +3,11 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   labels:
-    app: {{ template "percona-cluster.fullname" . }}
+    app: {{ include "fullName" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
-  name: {{ template "percona-cluster.fullname" . }}-pdb
+  name: {{ include "fullName" . }}-pdb
 spec:
 {{- if .Values.podDisruptionBudget.minAvailable }}
   minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
@@ -17,6 +17,6 @@ spec:
 {{- end }}
   selector:
     matchLabels:
-      app: {{ template "percona-cluster.fullname" . }}
+      app: {{ include "fullName" . }}
       release: {{ .Release.Name }}
 {{- end }}

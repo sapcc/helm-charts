@@ -25,9 +25,9 @@ $ helm install --name my-release stable/percona-xtradb-cluster
 
 The command deploys a Percona XtraDB Cluster on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
-The root password can only be used inside each `pod`.  You should set a default `mysqlDatabase`, `mysqlUser` and `mysqlPassword` in the values.yaml file.
+The root password can only be used inside each `pod`.  You should set a default `db_name`, `db_user` and `dbPassword` in the values.yaml file.
 
-By default an **insecure** password will be generated for the root and replication users. If you'd like to set your own password change the `mysqlRootPassword` or `xtraBackupPassword` respectively
+By default an **insecure** password will be generated for the root and replication users. If you'd like to set your own password change the `root_password` or `xtraBackupPassword` respectively
 in the values.yaml.
 
 You can retrieve your root password (usable only via localhost in each pod) by running the following command. Make sure to replace [YOUR_RELEASE_NAME]:
@@ -53,16 +53,16 @@ The following table lists the configurable parameters of the Percona chart and t
 | Parameter                  | Description                        | Default                                                    |
 | -----------------------    | ---------------------------------- | ---------------------------------------------------------- |
 | `image.repository`         | `percona-xtradb-cluster` image Repo.                 | 5.7.19 release                                        |
-| `image.tag`                 | `percona-xtradb-cluster` image tag.                 | `percona/percona-xtradb-cluster` |
-| `image.pullPolicy`          | Image pull policy                  | `IfNotPresent` |
+| `image.tag`                | `percona-xtradb-cluster` image tag.                 | `percona/percona-xtradb-cluster` |
+| `image.pullPolicy`         | Image pull policy                  | `IfNotPresent` |
 | `replicas`                 | Number of pods to join the Percona XtraDB Cluster   | 3                                         |
 | `allowRootFrom`            | Remote hosts to allow root access, set to `127.0.0.1` to disable remote root  | `%` |
-| `mysqlRootPassword`        | Password for the `root` user.      | `not-a-secure-password`                                                      |
+| `root_password`            | Password for the `root` user.      | `not-a-secure-password`                                                      |
 | `xtraBackupPassword`       | Password for the `xtrabackup` user. | `replicate-my-data` |
 | `pxc_strict_mode`          | Setting for `pxc_strict_mode`.     | ENFORCING                                                  |
-| `mysqlUser`                | Username of new user to create.    | `nil`                                                      |
-| `mysqlPassword`            | Password for the new user.         | `nil`                                                      |
-| `mysqlDatabase`            | Name for new database to create.   | `nil`                                                      |
+| `db_user`                  | Username of new user to create.    | `nil`                                                      |
+| `dbPassword`               | Password for the new user.         | `nil`                                                      |
+| `db_name`                  | Name for new database to create.   | `nil`                                                      |
 | `persistence.enabled`      | Create a volume to store data      | false                                                       |
 | `persistence.size`         | Size of persistent volume claim    | 8Gi RW                                                     |
 | `persistence.storageClass` | Type of persistent volume claim    | nil  (uses alpha storage class annotation)                 |
@@ -101,7 +101,7 @@ Specify each parameter using the `--set key=value[,key=value]` argument to `helm
 
 ```bash
 $ helm install --name my-release \
-  --set mysqlRootPassword=secretpassword,mysqlUser=my-user,mysqlPassword=my-password,mysqlDatabase=my-database \
+  --set root_password=secretpassword,db_user=my-user,dbPassword=my-password,db_name=my-database \
     stable/percona-xtradb-cluster
 ```
 

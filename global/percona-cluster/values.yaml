@@ -7,31 +7,28 @@ image:
   tag: "5.7.19"
   pullPolicy: IfNotPresent
 
-# Desired number of members (per region)
+# Desired number of members (Per region)
 replicas: 1
 
-# mysqlRootPassword: not-a-secure-password
-# xtraBackupPassword: replicate-my-data
-
-mysqlUser: test
-mysqlPassword: test
-mysqlAllowEmptyPassword: false
-
-mysqlDatabase: test
+db_name: test
 pxc_strict_mode: ENFORCING
 allowRootFrom: "%"
+
+root_password: notasecurepassword
+db_user: test
+dbPassword: test
+mysqlAllowEmptyPassword: false
+xtraBackupPassword: test
 
 persistence:
   enabled: true
   accessMode: ReadWriteMany
-  claimName: PerconaClaim  
-  size: 10Gi
+  claimName: percona-test-claim
+  size: 100Gi
   # storageClass: "-"
 
 podAnnotations: {}
-
 nodeAffinity: {}
-
 tolerations: []
 
 resources:
@@ -45,24 +42,43 @@ configFiles:
     datadir                         = /var/lib/mysql
     default_storage_engine          = InnoDB
     binlog_format                   = ROW
+    max_connections                 = 1024
     innodb_flush_log_at_trx_commit  = 0
     innodb_flush_method             = O_DIRECT
     innodb_file_per_table           = 1
     innodb_autoinc_lock_mode        = 2
+    innodb_buffer_pool_size         = 1024M
+    innodb_log_file_size            = 512M
+    innodb_open_files               = 4000
+    innodb_stats_on_metadata        = 0
+    innodb_thread_concurrency       = 0
+    innodb_read_io_threads          = 8
+    innodb_write_io_threads         = 8
+    innodb_print_all_deadlocks      = 1
     bind_address                    = 0.0.0.0
-    wsrep_slave_threads             = 2
+    slow_query_log                  = 1
+    long_query_time                 = 5
+    wsrep_slave_threads             = 8
+    wsrep_log_conflicts             = ON
     wsrep_cluster_address           = gcomm://
     wsrep_provider                  = /usr/lib/galera3/libgalera_smm.so
     wsrep_cluster_name              = galera
     wsrep_sst_method                = xtrabackup-v2
+    wsrep_debug                     = 1
+    [sst]
+    sst-initial-timeout             = 300
 
 metricsExporter:
   enabled: true
   commandOverrides: []
   argsOverrides: []
+  ## Password for exporter user (replaces auto-generated password)
+  exporterPassword: longpassword
+
+alerts:
+  prometheus: openstack
 
 prometheus:
-  ## Are you using [Prometheus Operator](https://coreos.com/operators/prometheus/docs/latest/user-guides/getting-started.html)?
   operator:
     ## Setting to true will create Prometheus-Operator specific resources like ServiceMonitors
     enabled: false
@@ -70,13 +86,10 @@ prometheus:
     ## Configures alerts for Prometheus to pick up
     prometheusRule:
       enabled: true
-
       ## Labels to add to alerts
       labels: {}
-
       ## Namespace which Prometheus is installed in
       # namespace: monitoring
-
       ## Label Selector for Prometheus to find alert rules
       # selector:
       #   prometheus: kube-prometheus
@@ -85,10 +98,8 @@ prometheus:
     serviceMonitor:
       ## Interval at which Prometheus will scrape metrics exporter
       interval: 10s
-
       ## Namespace which Prometheus is installed in
       # namespace: monitoring
-
       ## Label Selector for Prometheus to find ServiceMonitors
       # selector:
       #   prometheus: kube-prometheus
@@ -122,11 +133,14 @@ podDisruptionBudget:
 tests:
   enabled: false
 
+# segment to be set different for far locations
+gmcast_segment: 1
+
+# Set 'primary' to true for initiating a bootstrap below:
 service:
-  percona:
-    primary: false
-    headless: false
-    regions:
-      eu-de-1: null
-      eu-de-2: null
-      eu-nl-1: null
+  primary: false
+  headless: false
+  regions:
+    eu-de-1: ""
+    eu-de-2: ""
+    eu-nl-1: ""

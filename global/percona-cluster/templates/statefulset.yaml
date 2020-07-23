@@ -1,9 +1,9 @@
 apiVersion: apps/v1beta2
 kind: StatefulSet
 metadata:
-  name: {{ template "percona-cluster.fullname" . }}
+  name: {{ include "fullName" . }}
   labels:
-    app: {{ template "percona-cluster.fullname" . }}
+    app: {{ include "fullName" . }}
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
@@ -11,13 +11,13 @@ spec:
   replicas: {{ .Values.replicas | default 1 }}
   selector:
     matchLabels:
-      app: {{ template "percona-cluster.fullname" . }}
+      app: {{ include "fullName" . }}
       release: "{{ .Release.Name }}"
-  serviceName: {{ template "percona-cluster.fullname" . }}
+  serviceName: {{ include "fullName" . }}
   template:
     metadata:
       labels:
-        app: {{ template "percona-cluster.fullname" . }}
+        app: {{ include "fullName" . }}
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
@@ -41,7 +41,7 @@ spec:
                 - key: "failure-domain.beta.kubernetes.io/zone"
                   operator: In
                   values:
-                  - {{.Values.global.region}}a
+                  - {{.Values.global.db_region}}a
 {{- end }}
       initContainers:
       - name: "remove-lost-found"
@@ -71,38 +71,38 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "percona-cluster.fullname" . }}
+              name: {{ include "fullName" . }}
               key: mysql-root-password
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "percona-cluster.fullname" . }}
+              name: {{ include "fullName" . }}
               key: mysql-password
         {{- end }}
         - name: XTRABACKUP_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "percona-cluster.fullname" . }}
+              name: {{ include "fullName" . }}
               key: xtrabackup-password
         {{- if .Values.metricsExporter.enabled }}
         - name: METRICS_EXPORTER_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "percona-cluster.fullname" . }}
+              name: {{ include "fullName" . }}
               key: exporter-password
         {{- end }}
         - name: MYSQL_USER
-          value: {{ default "" .Values.mysqlUser | quote }}
+          value: {{ default "" .Values.db_user | quote }}
         - name: MYSQL_DATABASE
-          value: {{ default "" .Values.mysqlDatabase | quote }}
+          value: {{ default "" .Values.db_name | quote }}
         - name: ALLOW_ROOT_FROM
           value: {{ .Values.allowRootFrom | quote }}
         - name: CLUSTER_NAME
-          value: {{ template "percona-cluster.fullname" . }}
+          value: {{ include "fullName" . }}
         - name: SHORT_CLUSTER_NAME
           value: {{ template "percona-cluster.shortname" . }}
         - name: K8S_SERVICE_NAME
-          value: {{ template "percona-cluster.fullname" . }}-repl
+          value: {{ include "fullName" . }}-repl
         - name: PXC_STRICT_MODE
           value: {{ default "ENFORCING" .Values.pxc_strict_mode | quote }}
         - name: DEBUG
@@ -176,7 +176,7 @@ spec:
         - name: METRICS_EXPORTER_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "percona-cluster.fullname" . }}
+              name: {{ include "fullName" . }}
               key: exporter-password
         - name: DATA_SOURCE_NAME
           value: "exporter:$(METRICS_EXPORTER_PASSWORD)@(localhost:3306)/"
@@ -204,10 +204,10 @@ spec:
         emptyDir: {}
       - name: mysql-config-files
         configMap:
-          name: {{ template "percona-cluster.fullname" . }}-config-files
+          name: {{ include "fullName" . }}-config-files
       - name: mysql-startup-scripts
         configMap:
-          name: {{ template "percona-cluster.fullname" . }}-startup-scripts
+          name: {{ include "fullName" . }}-startup-scripts
       {{- if not .Values.persistence.enabled }}
       - name: "{{ .Values.persistence.claimName }}"
         emptyDir: {}

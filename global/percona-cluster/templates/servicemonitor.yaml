@@ -2,12 +2,12 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ template "percona-cluster.fullname" . }}
+  name: {{ include "fullName" . }}
 {{- if .Values.prometheus.operator.serviceMonitor.namespace }}
   namespace: {{ .Values.prometheus.operator.serviceMonitor.namespace }}
 {{- end }}
   labels:
-    app: {{ template "percona-cluster.fullname" . }}
+    app: {{ include "fullName" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
@@ -17,7 +17,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ template "percona-cluster.fullname" . }}
+      app: {{ include "fullName" . }}
       release: {{ .Release.Name }}
   endpoints:
   - port: metrics
