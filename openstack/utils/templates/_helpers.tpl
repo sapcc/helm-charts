@@ -80,5 +80,5 @@ enabled = false
     - containerPort: 14271
       name: admin-http
       protocol: TCP
-  args: ["--collector.host-port=openstack-jaeger-collector.jaeger-infra.svc:14267"]
+  args: ["--collector.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14267"]
 {{- end }}
