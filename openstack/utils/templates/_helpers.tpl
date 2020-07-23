@@ -62,6 +62,9 @@ enabled = false
 {{- end }}
 
 {{- define "jaeger_agent_sidecar" }}
+{{- if hasKey .Values.osprofiler "jaeger" }}
+{{- if hasKey .Values.osprofiler.jaeger "enabled" }}
+{{- if .Values.osprofiler.jaeger.enabled }}
 - image: jaegertracing/jaeger-agent:{{ .Values.osprofiler.jaeger.version }}
   name: jaeger-agent
   ports:
@@ -81,4 +84,7 @@ enabled = false
       name: admin-http
       protocol: TCP
   args: ["--collector.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14267"]
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
