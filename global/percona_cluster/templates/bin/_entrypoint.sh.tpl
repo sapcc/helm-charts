@@ -18,7 +18,8 @@ ipaddr={{ $ip }}
 {{- end }}
 
 # define group segment for geographical awareness
-gmcast_segment={{ .Values.gmcast_segment -}}
+gmcast_segment={{ .Values.gmcast_segment }}
+
 
 # Cluster IPs are all K8s service IPs
 cluster_ips="{{ include "helm-toolkit.utils.joinListWithComma" $cluster_ips }}"
