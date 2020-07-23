@@ -2,13 +2,66 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: nova-psql-db-init
+  labels:
+    system: openstack
+    type: configuration
+    component: database
+data:
+  db-init.sql: |
+    SELECT 1;
+{{- end }}
+
+{{- if .Values.mariadb.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: nova-db-init
   labels:
     system: openstack
     type: configuration
     component: database
-
 data:
-  db-init.sql: |
-    SELECT 1;
+  init.sql: |
+    CREATE DATABASE {{ .Values.dbName }} CHARACTER SET utf8 COLLATE utf8_general_ci;
+    GRANT ALL PRIVILEGES ON {{ .Values.dbName }}.* TO {{ .Values.dbUser }}@localhost IDENTIFIED BY '{{ default .Values.dbPassword .Values.global.dbPassword }}';
+    GRANT ALL PRIVILEGES ON {{ .Values.dbName }}.* TO {{ .Values.dbUser }}@'%' IDENTIFIED BY '{{ default .Values.dbPassword .Values.global.dbPassword }}';
+    CREATE DATABASE {{ .Values.cell0dbName }} CHARACTER SET utf8 COLLATE utf8_general_ci;
+    GRANT ALL PRIVILEGES ON {{ .Values.cell0dbName }}.* TO {{ .Values.cell0dbUser }}@localhost IDENTIFIED BY '{{ .Values.cell0dbPassword }}';
+    GRANT ALL PRIVILEGES ON {{ .Values.cell0dbName }}.* TO {{ .Values.cell0dbUser }}@'%' IDENTIFIED BY '{{ .Values.cell0dbPassword }}';
+
+{{- end }}
+
+{{- if .Values.mariadb_api.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nova-api-db-init
+  labels:
+    system: openstack
+    type: configuration
+    component: database
+data:
+  init.sql: |
+    CREATE DATABASE {{ .Values.apidbName }} CHARACTER SET utf8 COLLATE utf8_general_ci;
+    GRANT ALL PRIVILEGES ON {{ .Values.apidbName }}.* TO {{ .Values.apidbUser }}@localhost IDENTIFIED BY '{{ .Values.apidbPassword }}';
+    GRANT ALL PRIVILEGES ON {{ .Values.apidbName }}.* TO {{ .Values.apidbUser }}@'%' IDENTIFIED BY '{{ .Values.apidbPassword }}';
+
+{{- end }}
+
+{{- if .Values.mariadb_cell2.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nova-cell2-db-init
+  labels:
+    system: openstack
+    type: configuration
+    component: database
+data:
+  init.sql: |
+    CREATE DATABASE {{ .Values.cell2dbName }} CHARACTER SET utf8 COLLATE utf8_general_ci;
+    GRANT ALL PRIVILEGES ON {{ .Values.cell2dbName }}.* TO {{ .Values.cell2dbUser }}@localhost IDENTIFIED BY '{{ .Values.cell2dbPassword }}';
+    GRANT ALL PRIVILEGES ON {{ .Values.cell2dbName }}.* TO {{ .Values.cell2dbUser }}@'%' IDENTIFIED BY '{{ .Values.cell2dbPassword }}';
+
 {{- end }}
