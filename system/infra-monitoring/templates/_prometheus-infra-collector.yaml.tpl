@@ -247,6 +247,10 @@
       regex: 'snmp_arista_entPhysicalSoftwareRev;(.*)'
       replacement: '$1'
       target_label: image_version
+    - source_labels: [__name__, etherStatsIndex]
+      regex: 'snmp_arista_etherStatsCRCAlignErrors;(1\.3\.6\.1\.2\.1\.2\.2\.1\.1\.)([0-9]*)'
+      replacement: '$2'
+      target_label: ifIndex
     - source_labels: [__name__, snmp_asa_sysDescr]
       regex: 'snmp_asa_sysDescr;([a-zA-Z ]*)([0-9().]*)'
       replacement: '$2'
