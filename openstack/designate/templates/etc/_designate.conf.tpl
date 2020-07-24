@@ -184,10 +184,14 @@ auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "h
 username = {{ .Values.global.designate_service_user }}
 password = {{ .Values.global.designate_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-project_name = {{.Values.global.keystone_service_project |  default "service"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
+{{- if .Values.global_region }}
+memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+{{- else }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+{{- end }}
 insecure = True
 token_cache_time = 600
 include_service_catalog = true
@@ -376,9 +380,8 @@ insecure = True
 # SQLAlchemy Storage
 #-----------------------
 [storage:sqlalchemy]
-# Database connection string - to configure options for a given implementation
-# like sqlalchemy or other see below
-#connection = sqlite:///$state_path/designate.sqlite
+# Database connection string - MariaDB for regional setup
+# and Percona Cluster for inter-regional setup:
 {{- if .Values.percona_cluster.enabled -}}
 connection = {{ include "db_url_pxc" . }}
 {{- else }}
