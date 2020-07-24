@@ -1,0 +1,13 @@
+groups:
+- name: vcenter-vccustomermetrics.alerts
+  rules:
+  - alert: VCenterCustomerVmMetricsMissing
+    expr: sum(scrape_samples_scraped{component=~".+vccustomervmmetrics$"}) by (component) == 0
+    for: 10m
+    labels:
+      severity: info
+      tier: monitor
+      meta: "Missing customer vm metrics from {{ $labels.component }}"
+    annotations:
+      description: "Missing customer vm metrics from {{ $labels.component }} for 10 min"
+      summary: "Missing customer vm metrics from {{ $labels.component }}"
