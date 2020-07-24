@@ -62,3 +62,42 @@
     annotations:
       description: {{ include "fullName" . }} reports cluster size of less than 3 nodes.
       summary: {{ include "fullName" . }} cluster incomplete.
+
+  - alert: {{ include "alerts.service" . | title }}PerconaInnoDBLogWaits
+    expr: (rate(mysql_global_status_innodb_log_waits{service="{{ include "fullName" . }}-metrics"}[10m]) > 10)
+    for: 10m
+    labels:
+      context: database
+      service: {{ include "alerts.service" . }}
+      severity: info
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: ''
+    annotations:
+      description: {{ include "fullName" . }} InnoDB log writes stalling.
+      summary: {{ include "fullName" . }} has problem writing to disk.
+
+  - alert: {{ include "alerts.service" . | title }}PerconaNodeNotReady
+    expr: (mysql_global_status_wsrep_ready{service="{{ include "fullName" . }}-metrics"} != 1)
+    for: 10m
+    labels:
+      context: database
+      service: {{ include "alerts.service" . }}
+      severity: info
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: ''
+    annotations:
+      description: {{ include "fullName" . }} Cluster node not ready.
+      summary: {{ include "fullName" . }} reports as not ready.
+
+  - alert: {{ include "alerts.service" . | title }}PerconaNodeNotSynced
+    expr: (mysql_global_variables_wsrep_desync{service="{{ include "fullName" . }}-metrics"} != 0)
+    for: 10m
+    labels:
+      context: database
+      service: {{ include "alerts.service" . }}
+      severity: info
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: ''
+    annotations:
+      description: {{ include "fullName" . }} Cluster node out of sync.
+      summary: {{ include "fullName" . }} reports as not synced.
