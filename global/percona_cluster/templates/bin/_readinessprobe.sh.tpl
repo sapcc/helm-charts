@@ -3,25 +3,28 @@ set -e
 
 {{- if eq .Values.service.primary true }}
 
-# A Primary Node
-# The readiness check should work as default:
+# A Primary/Bootstraping Node:
+# The readiness check should always work:
 mysql -h 127.0.0.1 -e "SELECT 1" || exit 1
 
 {{- else }}
 
 # Not a Primary Node...
-# The readiness check should exit 0 for the first 5 min when SST might be in progress:
-# TODO: check if SST is in progress and handle correctly!
+# The readiness check should exit 0 when SST is in progress or just starting.
+# That is becuase nodes are running on separate k8s clusters without a common service!
+# (otherwise SST won't work).
 
-start_time=$(stat /proc/1/ | grep ^Change: | cut -f 2-3 -d$' ')
-grace_time=$(date -d "$start_time 5 minutes")
-now_time=$(date)
-
-if [[ "$now_time" < "$grace_time" ]]; then
-  # 5 minutes SST grace period, return 0
-  exit 0
+if [[ -f /var/lib/mysql//.sst ]] ; then
+    echo 'SST is in progress. File "/var/lib/mysql//.sst" exists.'
+    exit 0
 fi
 
+if [[ ! -f /var/lib/mysql//grastate.dat ]] ; then
+    echo 'File "/var/lib/mysql//grastate.dat" does not exist, node has just started.'
+    exit 0
+fi
+
+# if no SST is running and the node has not just started, do a regular check:
 mysql -h 127.0.0.1 -e "SELECT 1" || exit 1
 
 {{- end }}
