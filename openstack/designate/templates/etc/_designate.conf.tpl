@@ -479,5 +479,5 @@ retry_interval = 1
 [audit_middleware_notifications]
 topics = notifications
 driver = messagingv2
-transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@designate-rabbitmq-notifications:5672/
+transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@{{.Release.Name}}-rabbitmq-notifications:5672/
 mem_queue_size = 1000
