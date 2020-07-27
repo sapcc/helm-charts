@@ -362,10 +362,12 @@ all_tcp = {{ .Values.worker_all_tcp }}
 ##############
 [network_api:neutron]
 # Comma separated list of values, formatted "<name>|<neutron_uri>"
+{{- if eq .Values.global_setup false }}
 endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
 endpoint_type = publicURL
 timeout = 20
 insecure = True
+{{- end }}
 #admin_username = designate
 #admin_password = designate
 #admin_tenant_name = designate

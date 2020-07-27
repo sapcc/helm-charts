@@ -49,10 +49,18 @@ spec:
       url: https://dns-3.{{.Values.global.region}}.{{.Values.global.tld}}
     - interface: internal
       region: {{ .Values.global.region }}
+{{- if .Values.global_setup }}
+      url: http://{{ .Values.global.designate_internal_ip }}:9001
+{{- else }}
       url: http://designate-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9001
+{{- end }}
     - interface: admin
       region: {{ .Values.global.region }}
+{{- if .Values.global_setup }}
+      url: http://{{ .Values.global.designate_admin_ip }}:9001
+{{- else }}
       url: http://designate-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9001
+{{- end }}
 
   domains:
   - name: Default
