@@ -2,7 +2,8 @@ groups:
 - name: openstack-content-repo.alerts
   rules:
   - alert: OpenstackRepo
-    expr: floor((time()-repo_sync_last_run{kind="success_timestamp",repo!~"cbr|bame-monitoring|ironic-tftp|hw-firmware|quay-mirror"})/60/60) > 48
+    # TODO Remove repo!~"rhel" when metrics are aged out of the system
+    expr: floor((time()-repo_sync_last_run{kind="success_timestamp",repo!~"rhel"})/60/60) > 48
     for: 10m
     labels:
       tier: os
