@@ -1,0 +1,29 @@
+groups:
+- name: vcenter.alerts
+  rules:
+  - alert: VcsaSslCertificateExpiryWarning
+    expr: vrops_vcenter_stats{statkey="vcsa_certificate_remaining_days"} < 31
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.cluster }}, {{ $labels.vcenter }})"
+      playbook: docs/devops/alert/vcenter/#vcenter_appliance_certificate_expiry
+    annotations:
+      description: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.cluster }}, {{ $labels.vcenter }})"
+      summary: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.cluster }}, {{ $labels.vcenter }})"
+  - alert: VcsaSslCertificateExpiryCritical
+    expr: vrops_vcenter_stats{statkey="vcsa_certificate_remaining_days"} < 16
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.cluster }}, {{ $labels.vcenter }})"
+      playbook: docs/devops/alert/vcenter/#vcenter_appliance_certificate_expiry
+    annotations:
+      description: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.cluster }}, {{ $labels.vcenter }})"
+      summary: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.cluster }}, {{ $labels.vcenter }})"
