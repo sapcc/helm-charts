@@ -128,3 +128,19 @@ groups:
     annotations:
       description: "Arista switch {{ $labels.instance }} responding slower than 5 seconds."
       summary: "Arista switch {{ $labels.instance }} responding slower than 5 seconds."
+      
+  - alert: AristaSwitchCRCErrorCritical
+    # Observation of CRC erros on Arista switch interface
+    expr: snmp_arista_etherStatsCRCAlignErrors * on (serial,ifIndex) group_right snmp_arista_ifAlias > 30
+    for: 0m
+    labels:
+      severity: info
+      tier: net
+      service: arista
+      context: arista
+      meta: "Interface CRC Error on {{ $labels.devicename }}"
+      playbook: 
+      dashboard: 
+    annotations:
+      description: "CRC errors on interface {{ $labels.ifDescr }} on {{ $labels.devicename }}"
+      summary: "CRC errors on interface {{ $labels.ifDescr }} on {{ $labels.devicename }}"
