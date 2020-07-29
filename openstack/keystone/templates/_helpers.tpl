@@ -15,7 +15,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "db_host" }}
+{{- define "db_host" -}}
 {{- if .Values.global.clusterDomain }}
 {{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
 {{- else }}
@@ -23,24 +23,24 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end }}
 
-{{ define "memcached_host" }}
+{{- define "memcached_host" -}}
 {{- if .Values.global.clusterDomain }}
 {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
 {{- else if .Values.global_setup }}
 {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
 {{- else }}
 {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- end }}
+{{- end -}}
 {{- end }}
 
-{{ define "rabbitmq_host" }}
+{{- define "rabbitmq_host" -}}
 {{- if .Values.global.clusterDomain }}
 {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
 {{- else if .Values.global_setup }}
 {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
 {{- else }}
 {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- end }}
+{{- end -}}
 {{- end }}
 
 {{/*
