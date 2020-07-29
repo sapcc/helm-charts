@@ -1,0 +1,33 @@
+groups:
+- name: host.alerts
+  rules:
+  - alert: HostWithRunningVMsNotResponding
+    expr: |
+    vrops_hostsystem_stats{statkey="summary_running_VMs_number"} > 0 and 
+    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} and 
+    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_maintenanceState: notInMaintenance"} and 
+    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: PoweredOn"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "Host {{ $labels.hostsystem }} with running vm's not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+    annotations:
+      description: "Host {{ $labels.hostsystem }} with {{ $labels.value }} running vm's not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+      summary: "Host {{ $labels.hostsystem }} with {{ $labels.value }} running vm's not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+  - alert: HostNotResponding
+    expr: |
+    vrops_hostsystem_stats{statkey="summary_running_VMs_number"} == 0 and 
+    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} and 
+    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_maintenanceState: notInMaintenance"} and 
+    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: PoweredOn"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "Host {{ $labels.hostsystem }} not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+    annotations:
+      description: "Host {{ $labels.hostsystem }} not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+      summary: "Host {{ $labels.hostsystem }} not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"      
