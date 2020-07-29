@@ -47,9 +47,5 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 To satisfy common/mysql_metrics :(
 */}}
 
+{{define "keystone_db_host"}}{{- if .Values.global.clusterDomain }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}{{end}}
 
-{{- if .Values.global.clusterDomain }}
-{{ define "keystone_db_host" }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ end }}
-{{- else }}
-{{ define "keystone_db_host" }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{ end }}
-{{- end -}}
