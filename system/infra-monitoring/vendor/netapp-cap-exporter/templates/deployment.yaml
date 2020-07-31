@@ -68,7 +68,11 @@ spec:
             failureThreshold: 3
           {{- end }}
           resources:
+            {{- if hasKey $app "resources" }}
+            {{- toYaml $app.resources | nindent 12 }}
+            {{- else }}
             {{- toYaml $values.exporter.resources | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - name: etc
               mountPath: /etc/netapp
