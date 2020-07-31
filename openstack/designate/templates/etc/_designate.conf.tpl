@@ -57,7 +57,7 @@ min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size 
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
-{{ include "ini_sections.default_transport_url" . }}
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
 
 [oslo_policy]
 policy_file = policy.json
@@ -476,10 +476,5 @@ retry_interval = 1
 
 # [hook_point:designate.api.v2.controllers.zones.get_one]
 
-# Defines CADF Audit Middleware section
-# this is for the cadf audit messaging
-[audit_middleware_notifications]
-topics = notifications
-driver = messagingv2
-transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@{{.Release.Name}}-rabbitmq-notifications:5672/
-mem_queue_size = 1000
+
+{{ include "ini_sections.audit_middleware_notifications" . }}
