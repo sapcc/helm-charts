@@ -4,9 +4,9 @@ groups:
   - alert: HostWithRunningVMsNotResponding
     expr: |
     vrops_hostsystem_stats{statkey="summary_running_VMs_number"} > 0 and 
-    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} and 
-    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_maintenanceState: notInMaintenance"} and 
-    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: PoweredOn"}
+    on (hostsystem) vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} == 0 and
+    on (hostsystem) vrops_hostsystem_properties{propkey="runtime_maintenanceState: notInMaintenance"} == 1 and
+    on (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: PoweredOn"} == 1
     labels:
       severity: info
       tier: vmware
@@ -19,9 +19,9 @@ groups:
   - alert: HostNotResponding
     expr: |
     vrops_hostsystem_stats{statkey="summary_running_VMs_number"} == 0 and 
-    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} and 
-    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_maintenanceState: notInMaintenance"} and 
-    ON (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: PoweredOn"}
+    on (hostsystem) vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} == 0 and
+    on (hostsystem) vrops_hostsystem_properties{propkey="runtime_maintenanceState: notInMaintenance"} == 1 and
+    on (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: PoweredOn"} == 1
     labels:
       severity: info
       tier: vmware
