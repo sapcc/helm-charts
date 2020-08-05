@@ -302,7 +302,6 @@
     - source_labels: [__name__, cucsFcErrStatsDn]
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
-{{- end }}
 
 {{- $values := .Values.bios_exporter -}}
 {{- if $values.enabled }}
