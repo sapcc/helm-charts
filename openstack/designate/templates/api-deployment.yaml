@@ -6,7 +6,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 
 metadata:
-  name: designate-api
+  name: {{ .Release.Name }}-api
   labels:
     system: openstack
     application: designate
@@ -46,7 +46,11 @@ spec:
             - name: DEPENDENCY_JOBS
               value: {{ .Release.Name }}-migration
             - name: DEPENDENCY_SERVICE
+{{- if .Values.percona_cluster.enabled }}
+              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+{{- else }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+{{- end }}
             - name: COMMAND
               value: "true"
       containers:

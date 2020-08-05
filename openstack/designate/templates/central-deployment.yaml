@@ -6,7 +6,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 
 metadata:
-  name: designate-central
+  name: {{ .Release.Name }}-central
   labels:
     system: openstack
     application: designate
@@ -48,9 +48,13 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: "designate-migration"
+              value: "{{ .Release.Name }}-migration"
             - name: DEPENDENCY_SERVICE
+{{- if .Values.percona_cluster.enabled }}
+              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq"
+{{- else }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- end }}
             - name: DEBUG_CONTAINER
               value: "false"
             - name: NODE_NAME

@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: designate-migration
+  name: {{ .Release.Name }}-migration
   labels:
     system: openstack
     type: configuration
@@ -22,7 +22,11 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: designate-mariadb
+{{- if .Values.percona_cluster.enabled }}
+              value: {{ .Release.Name }}-percona-pxc
+{{- else }}
+              value: {{ .Release.Name }}-mariadb
+{{- end }}
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc
