@@ -23,6 +23,7 @@
       - '{__name__=~"^elektra_open_inquiry_metrics$"}'
       - '{__name__=~"^blackbox_integrity_status_gauge", check=~"esxi_hs-.+"}'
       - '{__name__=~"^octavia_as3_version_info$"}'
+      - '{__name__=~"^cinder_.+"}
 
   relabel_configs:
     - action: replace
