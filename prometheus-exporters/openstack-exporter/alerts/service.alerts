@@ -1,0 +1,16 @@
+groups:
+- name: service.alerts
+  rules:
+  - alert: CinderBackendShardLowOvercommitWarning
+    expr: >
+      sum(cinder_max_oversubscription_ratio - cinder_overcommit_ratio) by (backend, shard) < .5
+    for: 5m
+    labels:
+      severity: info
+      tier: os
+      service: cinder
+      context: "openstack-exporter"
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} max over commit is almost reached (< 0.5). Shard needs to be increased."
+    annotations:
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} max over commit is almost reached (< 0.5). Shard needs to be increased."
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} max over commit is almost reached (< 0.5). Shard needs to be increased."
