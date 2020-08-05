@@ -5,15 +5,16 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Deployment
 metadata:
-  name: {{ include "infraMonitoring.fullname" . }}
+  name: snmp-exporter
+  namespace: infra-monitoring
   labels:
-    app: {{ include "infraMonitoring.name" . }}
-    chart: {{ include "infraMonitoring.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    system: infra_monitoring
-
+    app: snmp-exporter
+    type: exporter
 spec:
+  selector:
+    matchLabels:
+      app: snmp-exporter
+      type: exporter
   revisionHistoryLimit: 5
   replicas: {{ .Values.replicas }}
   strategy:
