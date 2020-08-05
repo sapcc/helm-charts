@@ -4,7 +4,7 @@ groups:
   - alert: VVolDatastoreNotAccessible
     expr: |
       vcenter_datastore_accessible{component=~".+vcdatastoremetrics$", type="VVOL"} == 0
-    for: 10m
+    for: 5m
     labels:
       severity: critical
       tier: vmware
@@ -17,7 +17,7 @@ groups:
 
   - alert: VVolDatastoreNotAccessibleFromHost
     expr: vcenter_datastore_accessible_from_host{type="VVOL"} == 0
-    for: 10m
+    for: 5m
     labels:
       severity: critical
       tier: vmware
@@ -25,6 +25,7 @@ groups:
       meta: 'Datastore is not accessible from host'
       awx: #/templates/job_template/114
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_2
+      dashboard: vcenter-vvols-datastore-utilization
     annotations:
       description: 'Datastore {{ $labels.name }} is not accessible from host {{ $labels.host }}'
       summary: 'vVOL Datastore not accessible from host'
@@ -38,6 +39,7 @@ groups:
       service: compute
       meta: 'Datastore {{ $labels.name }} has zero capacity'
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_3
+      dashboard: vcenter-vvols-datastore-utilization
     annotations:
       description: 'Datastore {{ $labels.name }} has zero capacity'
       summary: 'vVOL Datastore has zero capacity'
@@ -51,6 +53,7 @@ groups:
       service: compute
       meta: 'Datastore {{ $labels.name }} has no free space'
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_4
+      dashboard: vcenter-vvols-datastore-utilization
     annotations:
       description: 'Datastore {{ $labels.name }} has no free space'
       summary: 'vVOL Datastore has no free space'
@@ -64,6 +67,7 @@ groups:
       service: compute
       meta: 'Datastore {{ $labels.name }} is 90 percent full'
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_5
+      dashboard: vcenter-vvols-datastore-utilization
     annotations:
       description: 'Datastore {{ $labels.name }} is 90 percent full'
       summary: 'vVOL Datastore 90 percent full'
@@ -77,6 +81,7 @@ groups:
       service: compute
       meta: 'Datastore {{ $labels.name }} is 80 percent full'
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_5
+      dashboard: vcenter-vvols-datastore-utilization
     annotations:
       description: 'Datastore {{ $labels.name }} is 80 percent full'
       summary: 'vVOL Datastore 80 percent full'
