@@ -1,5 +1,5 @@
 {{- $values := .Values -}}
-{{- if $values.alerts.enabled }}
+{{- if $values.snmp_exporter.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -9,7 +9,7 @@ metadata:
   name: {{ printf "snmp-exporter-%s" $path | replace "/" "-" }}
   labels:
     app: oomkill-exporter
-    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
+    prometheus: {{ required ".Values.snmp_exporter.alerts.prometheus missing" $values.snmp_exporter.alerts.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
