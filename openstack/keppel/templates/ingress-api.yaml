@@ -23,7 +23,8 @@ spec:
             backend:
               serviceName: keppel-api
               servicePort: 80
-{{- if .Values.keppel.sans }}
+
+{{- if .Values.keppel.anycast_domain_name }}
 ---
 kind: Ingress
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
@@ -41,15 +42,13 @@ metadata:
 spec:
   tls:
     - secretName: tls-keppel-api-san
-      hosts: [ {{ join ", " .Values.keppel.sans }} ]
+      hosts: [ {{ .Values.keppel.anycast_domain_name }} ]
   rules:
-{{- range $index, $san := .Values.keppel.sans }}
-    - host: {{ $san }}
+    - host: {{ .Values.keppel.anycast_domain_name }}
       http:
         paths:
           - path: /
             backend:
               serviceName: keppel-api
               servicePort: 80
-{{ end }}
 {{ end }}
