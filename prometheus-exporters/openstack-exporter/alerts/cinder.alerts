@@ -3,14 +3,14 @@ groups:
   rules:
   - alert: CinderBackendShardLowOvercommitWarning
     expr: >
-      sum(cinder_max_oversubscription_ratio - cinder_overcommit_ratio) by (backend, shard) < .5
+      sum(cinder_free_until_overcommit_gib) by (region, shard, backend) / 1024 + sum(cinder_free_until_overcommit_gib / cinder_total_capacity_gib * 100 < 10) by (region, shard, backend) * 0
     for: 15m
     labels:
       severity: info
       tier: os
       service: cinder
       context: "openstack-exporter"
-      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} max over commit is almost reached (< 0.5). Shard needs to be increased."
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% storage left before overcommit is reached."
     annotations:
-      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} max over commit is almost reached (< 0.5). Shard needs to be increased."
-      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} max over commit is almost reached (< 0.5). Shard needs to be increased."
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% storage left before overcommit is reached."
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% storage left before overcommit is reached."
