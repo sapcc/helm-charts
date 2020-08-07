@@ -32,7 +32,7 @@ propagate=0
 
 {{- define "osprofiler_url" }}
     {{- $options := merge .Values.osprofiler .Values.global.osprofiler -}}
-    {{- if $options.jaeger.enabled -}}
+    {{- if and (hasKey $options "jaeger") ($options.jaeger.enabled) -}}
 jaeger://localhost:6831
     {{- else if $options.redis -}}
 redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
