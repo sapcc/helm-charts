@@ -15,6 +15,10 @@
 - name:  KEPPEL_API_ANYCAST_URL
   value: 'https://{{$.Values.keppel.anycast_domain_name}}'
 {{- end }}
+{{- if (index $.Values.keppel "anycast_issuer_key.pem") }}
+- name:  KEPPEL_ANYCAST_ISSUER_KEY
+  value: '/etc/keppel/anycast-issuer-key.pem'
+{{- end }}
 - name:  KEPPEL_API_PUBLIC_URL
   value: 'https://keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
 - name:  KEPPEL_AUDIT_SILENT
