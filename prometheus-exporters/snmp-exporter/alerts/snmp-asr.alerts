@@ -72,3 +72,18 @@ groups:
       annotations:
         description: "All ASR routers `{{ $labels.device }}` in the redundancy group are up."
         summary: "All ASR routers `{{ $labels.device }}` in the redundancy group are up."
+
+    - alert: NetworkAsrDynamicNatStopWorking
+      expr: increase(snmp_asr_disman_expExpression{expExpressionName="nat_datapath_drop_counter"}[5m]) > 0 and snmp_asr_disman_expExpression{expExpressionName="natclass_diff"} > 0
+      for: 0m
+      labels:
+        severity: info
+        tier: net
+        service: asr
+        context: asr
+        meta: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
+        playbook: 'docs/devops/alert/network/router.html##asr-nat-class-diff-datapath-drops'
+        dashboard: network-asr-nat-class-diff-datapath-dro
+      annotations:
+        description: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
+        summary: "All ASR routers `{{ $labels.devicename }}` in the redundancy group are up."
