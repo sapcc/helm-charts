@@ -127,7 +127,7 @@ permissive = true
 [database]
 # Database connection string - MariaDB for regional setup
 # and Percona Cluster for inter-regional setup:
-{{- if .Values.percona_cluster.enabled -}}
+{{ if .Values.percona_cluster.enabled -}}
 connection = {{ include "db_url_pxc" . }}
 {{- else }}
 connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8

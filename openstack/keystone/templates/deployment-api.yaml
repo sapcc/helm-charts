@@ -6,7 +6,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 
 metadata:
-  name: keystone-api
+  name: {{ .Release.Name }}-api
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
@@ -28,11 +28,11 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: keystone-api
+      name: {{ .Release.Name }}-api
   template:
     metadata:
       labels:
-        name: keystone-api
+        name: {{ .Release.Name }}-api
         system: openstack
         component: keystone
         type: api
@@ -42,7 +42,7 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
     spec:
 {{- if .Values.rbac.enabled }}
-      serviceAccountName: keystone
+      serviceAccountName: {{ .Release.Name }}
 {{- end }}
       affinity:
         podAntiAffinity:
@@ -85,15 +85,19 @@ spec:
           value: {{ .Release.Namespace }}
 {{- if .Release.IsInstall }}
         - name: DEPENDENCY_JOBS
-          value: keystone-job-migration,keystone-job-bootstrap
+          value: {{ .Release.Name }}-job-migration,{{ .Release.Name }}-job-bootstrap
 {{- else }}
   {{- if or .Values.run_db_migration }}
         - name: DEPENDENCY_JOBS
-          value: keystone-job-migration
+          value: {{ .Release.Name }}-job-migration
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
-          value: {{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached
+{{- if .Values.percona_cluster.enabled }}
+          value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-memcached"
+{{- else }}
+          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached"
+{{- end }}
         - name: COMMAND
           value: "true"
       containers:
@@ -112,7 +116,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: keystone.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
             {{- end }}
             {{- if .Values.api.metrics.enabled }}
