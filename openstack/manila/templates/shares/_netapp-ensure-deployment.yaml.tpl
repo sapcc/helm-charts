@@ -40,7 +40,7 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/bin/bash /scripts/netapp-manila-reexport.sh"
+              value: "/bin/bash /scripts/manila-ensure-reexport.sh"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
