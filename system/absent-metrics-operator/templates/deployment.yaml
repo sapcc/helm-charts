@@ -1,0 +1,34 @@
+kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+
+metadata:
+  name: absent-metrics-operator
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: absent-metrics-operator
+  template:
+    metadata:
+      labels:
+        name: absent-metrics-operator
+    spec:
+      serviceAccount: {{.Release.Name}}-service-user
+      serviceAccountName: {{.Release.Name}}-service-user
+      containers:
+        - name: operator
+          image: {{include "absent_metrics_operator_image" $}}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --log-level=all
