@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: reexport
-          image: "{{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/netapp-manila-nanny:{{.Values.loci.imageVersionEnsure}}"
+          image: "{{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -47,7 +47,7 @@ spec:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb"
-            - name: MANILA_NETAPP_NANNY_INTERVAL
+            - name: MANILA_NETAPP_ENSURE_INTERVAL
               value: "240"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
