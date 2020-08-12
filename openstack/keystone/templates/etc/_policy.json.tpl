@@ -6,7 +6,7 @@
     "cloud_viewer": "role:cloud_identity_viewer or rule:service_role or rule:cloud_admin",
     "owner": "user_id:%(user_id)s or user_id:%(target.token.user_id)s",
     "admin_or_owner": "(rule:admin_required and domain_id:%(target.token.user.domain.id)s) or rule:owner",
-    "admin_and_matching_domain_id": "rule:admin_required and domain_id:%(domain_id)s",
+    "admin_and_matching_domain_id": "rule:admin_required and (domain_id:%(domain_id)s or domain_id:%(target.domain_id)s)",
     "service_admin_or_owner": "rule:service_or_admin or rule:owner",
     "cloud_admin_or_owner": "rule:cloud_admin or rule:owner",
 
