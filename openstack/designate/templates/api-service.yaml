@@ -22,3 +22,24 @@ spec:
   externalIPs:
     - {{ .Values.global.designate_api_external_ip }}
 {{- end }}
+---
+{{- if .Values.global_setup }}
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: {{ .Release.Name }}-api-int
+  labels:
+    system: openstack
+    application: designate
+    type: api
+    component: api
+spec:
+  selector:
+    app: {{ .Release.Name }}-api
+  ports:
+    - name: designate-api
+      port: {{ .Values.global.designate_api_port_internal }}
+  externalIPs:
+    - {{ .Values.global.designate_internal_ip }}
+{{- end }}
