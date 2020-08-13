@@ -6,7 +6,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 
 metadata:
-  name: absent-metrics-operator
+  name: {{.Release.Name}}
 
 spec:
   revisionHistoryLimit: 5
@@ -18,11 +18,14 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      name: absent-metrics-operator
+      name: {{.Release.Name}}
   template:
     metadata:
       labels:
-        name: absent-metrics-operator
+        name: {{.Release.Name}}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "kubernetes"
     spec:
       serviceAccount: {{.Release.Name}}-service-user
       serviceAccountName: {{.Release.Name}}-service-user
@@ -32,3 +35,14 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --log-level=all
+          resources:
+            # observed max usage: CPU = 10m, RAM = 20 MiB
+            requests:
+              cpu: "20m"
+              memory: "50Mi"
+            limits:
+              cpu: "20m"
+              memory: "50Mi"
+          ports:
+            - name: metrics
+              containerPort: 9659
