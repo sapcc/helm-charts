@@ -25,14 +25,22 @@ else
 
 fi
 
-cd
+# cd
 #git clone https://github.com/sapcc/helm-charts.git
-cd ./helm-charts/prometheus-exporters/snmp-exporter/generator/
+# cd ./helm-charts/prometheus-exporters/snmp-exporter/generator/
 
+
+mv /usr/share/snmp/mibs/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/ # This mib makes other generators fail...
 
 for i in $modules;
 
+    
   do
+        if [ $i = "ucs" ]; then # This mib makes other generators fail...
+            mv /usr/share/snmp/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/mibs/
+        fi
+
+
         cp -f ./${i}-generator.yaml ./generator.yml
         echo "##############################################"
         echo "############### config for ${i} ##############"
@@ -40,6 +48,9 @@ for i in $modules;
  
         /gopath/bin/generator generate || exit
 
+        if [ $i = "ucs" ]; then # This mib makes other generators fail...
+            mv /usr/share/snmp/mibs/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/
+        fi
 
         mv -f ./snmp.yml ./_snmp-exporter-${i}.yaml.tmp
         rm -d ./generator.yml
