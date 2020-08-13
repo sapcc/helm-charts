@@ -3,10 +3,9 @@ groups:
   rules:
   - alert: HostWithRunningVMsNotResponding
     expr: |
-      vrops_hostsystem_stats{statkey="summary_running_VMs_number"} > 0 and
-      on (hostsystem) vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} == 0 and
-      on (hostsystem) vrops_hostsystem_properties{propkey="runtime_maintenanceState: notInMaintenance"} == 1 and
-      on (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: Powered On"} == 1
+      vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} == 0
+      and on (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: Unknown"} == 0
+      and on(hostsystem) count(vrops_vm_properties{propkey="runtime_powerState: Powered On"}) by (hostsystem) > 0
     labels:
       severity: info
       tier: vmware
