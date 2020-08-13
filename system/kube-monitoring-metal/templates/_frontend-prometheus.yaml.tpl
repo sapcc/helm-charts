@@ -16,6 +16,7 @@
       - '{__name__=~"^bind_.+"}'
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^broker_.+"}'
+      - '{__name__=~"^certmanager_.+"}'
       - '{__name__=~"^concourse_.+"}'
       - '{__name__=~"^container_cpu_cfs_.+"}'
       - '{__name__=~"^container_fs.+"}'
