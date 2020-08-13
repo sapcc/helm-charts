@@ -34,6 +34,9 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
 {{ tuple . "designate" "worker" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: designate-worker

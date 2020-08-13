@@ -33,6 +33,9 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
       containers:
         - name: designate-producer
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-designate:{{required ".Values.global.image_version_designate_producer is missing" .Values.image_version_designate_producer}}
