@@ -15,7 +15,6 @@ groups:
         annotations:
           description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
           summary: "F5 health check monitor for Unbound pool member unbound1 failed."
-
       - alert: NetworkF5Unbound02IsOffline
         expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound2.*.cloud.sap"} != 1
         for: 5m
@@ -30,7 +29,6 @@ groups:
         annotations:
           description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
           summary: "F5 health check monitor of Unbound pool member unbound2 failed."
-
       - alert: NetworkF5DirSharedUtil
         expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/shared"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/shared"})) >= 85
         for: 5m
@@ -45,7 +43,6 @@ groups:
         annotations:
           description: "Utilization of the \"/shared\" directory on Big-IP device {{ $labels.devicename }} is at {{ $value }}% or more. Proceed with playbook instructions."
           summary: "F5 - high utilization of the \"/shared\" directory."
-
       - alert: NetworkF5DirVarUtil
         expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/var"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/var"})) >= 85
         for: 5m
@@ -60,7 +57,6 @@ groups:
         annotations:
           description: "Utilization of the \"/var\" directory on Big-IP device {{ $labels.devicename }} is at {{ $value }}% or more. Proceed with playbook instructions."
           summary: "F5 - high utilization of the \"/var\" directory."
-
       - alert: NetworkF5DirVarlogUtil
         expr: 100 - round(snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition="/var/log"} / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition="/var/log"} * 100) >= 95
         for: 5m
@@ -75,16 +71,15 @@ groups:
         annotations:
           description: "Utilization of the \"/var/log\" directory on Big-IP device {{ $labels.devicename }} is at {{ $value }}% or more. Proceed with playbook instructions."
           summary: "F5 - high utilization of the \"/var/log\" directory."
-
       - alert: NetworkF5SyncFailed
         expr: snmp_f5_sysCmSyncStatusStatus{module="f5customer", snmp_f5_sysCmSyncStatusStatus="Sync Failed"}
         for: 5m
         labels:
-          severity: info
-          tier: net
-          service: f5
           context: f5
           meta: "Big-IP device {{ $labels.devicename }} reports config-sync failure."
+          service: f5
+          severity: info
+          tier: net
         annotations:
-          description: "An attempt to synchronize configuration from active to standby device reported failed for more than 5 minutes. Check the exact failure reason on the device itself and resolve."
-          summary: "Big-IP device {{ $labels.devicename }} reports config-sync failure."
+          description: Big-IP device {{ $labels.devicename }} reports config sync failure. See the exact reason on the device itself and resolve.
+          summary: Configuration failed to synchronize
