@@ -1,8 +1,7 @@
 {{- define "absent_metrics_operator_image" -}}
-  {{- $tag := index $.Values "absent-metrics-operator" "image_tag" -}}
-  {{- if contains "DEFINED" $tag -}}
+  {{- if contains "DEFINED" $.Values.absent_metrics_operator.image_tag -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
-    {{$.Values.global.registry}}/absent-metrics-operator:{{$tag}}
+    {{$.Values.global.registry}}/absent-metrics-operator:{{$.Values.absent_metrics_operator.image_tag}}
   {{- end -}}
 {{- end -}}
