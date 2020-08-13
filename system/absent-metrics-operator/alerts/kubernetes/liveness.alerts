@@ -1,0 +1,15 @@
+groups:
+- name: liveness.alerts
+  rules:
+    - alert: AbsentMetricsOperatorReconciliationFailure
+      expr: sum(time() - absent_metrics_operator_successful_reconcile_time) by (prometheusrule_namespace, prometheusrule_name) > 300
+      for: 10m
+      labels:
+        tier: k8s
+        service: prometheus
+        severity: info
+      annotations:
+        summary: "Absent Metrics Operator cannot scrape {{ $labels.prometheusrule_namespace }}/{{ $labels.prometheusrule_name }}"
+        description: >
+          The absent metrics operator has not done a successful scrape of {{ $labels.prometheusrule_namespace }}/{{ $labels.prometheusrule_name }}
+          for more than 10 minutes. The `kubectl logs` for absent-metrics-operator in kube-monitoring namespace shoud contain additional info.
