@@ -36,16 +36,15 @@ for i in $modules;
 
     
   do
-        if [ $i = "ucs" ]; then # This mib makes other generators fail...
-            mv /usr/share/snmp/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/mibs/
-        fi
-
-
         cp -f ./${i}-generator.yaml ./generator.yml
         echo "##############################################"
         echo "############### config for ${i} ##############"
         echo "##############################################"
  
+        if [ $i = "ucs" ]; then # This mib makes other generators fail...
+            mv /usr/share/snmp/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/mibs/
+        fi
+
         /gopath/bin/generator generate || exit
 
         if [ $i = "ucs" ]; then # This mib makes other generators fail...
