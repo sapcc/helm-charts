@@ -104,7 +104,7 @@ route:
   - receiver: slack_sre
     continue: false
     match_re:
-      context: sre|availability
+      context: sre
 
   - receiver: slack_monitoring
     continue: false
