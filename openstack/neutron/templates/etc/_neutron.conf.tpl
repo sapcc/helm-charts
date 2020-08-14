@@ -47,7 +47,7 @@ periodic_fuzzy_delay = 10
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
 
-{{- if .Values.octavia }}
+{{- if contains ",f5" .Values.ml2_mechanismdrivers }}
 [octavia]
 base_url = http://{{include "octavia_api_endpoint_host_internal" .}}:9876
 {{- end }}

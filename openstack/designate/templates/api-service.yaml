@@ -2,7 +2,7 @@ kind: Service
 apiVersion: v1
 
 metadata:
-  name: designate-api
+  name: {{ .Release.Name }}-api
   labels:
     system: openstack
     application: designate
@@ -14,7 +14,32 @@ metadata:
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 spec:
   selector:
-    app: designate-api
+    app: {{ .Release.Name }}-api
   ports:
     - name: designate-api
-      port: {{.Values.global.designate_api_port_internal}}
+      port: {{ .Values.global.designate_api_port_internal }}
+{{- if .Values.global_setup }}
+  externalIPs:
+    - {{ .Values.global.designate_api_external_ip }}
+{{- end }}
+---
+{{- if .Values.global_setup }}
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: {{ .Release.Name }}-api-int
+  labels:
+    system: openstack
+    application: designate
+    type: api
+    component: api
+spec:
+  selector:
+    app: {{ .Release.Name }}-api
+  ports:
+    - name: designate-api
+      port: {{ .Values.global.designate_api_port_internal }}
+  externalIPs:
+    - {{ .Values.global.designate_internal_ip }}
+{{- end }}

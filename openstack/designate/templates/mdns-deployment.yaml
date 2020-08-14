@@ -6,7 +6,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 
 metadata:
-  name: designate-mdns
+  name: {{ .Release.Name }}-mdns
   labels:
     system: openstack
     application: designate
@@ -33,10 +33,13 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
 {{ tuple . "designate" "mdns" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: designate-mdns
-          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/loci-designate:{{required ".Values.image_version_designate_mdns is missing" .Values.image_version_designate_mdns}}
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/loci-designate:{{required ".Values.image_version_designate_mdns is missing" .Values.image_version_designate_mdns}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/kubernetes-entrypoint
@@ -48,9 +51,13 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: "designate-migration"
+              value: "{{ .Release.Name }}-migration"
             - name: DEPENDENCY_SERVICE
+{{- if .Values.percona_cluster.enabled }}
+              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq"
+{{- else }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- end }}
             - name: DEBUG_CONTAINER
               value: "false"
             - name: NODE_NAME
@@ -63,7 +70,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: designate.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
           livenessProbe:
             tcpSocket:

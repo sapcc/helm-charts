@@ -4,6 +4,7 @@
 {{- range $vcenter := .Values.vcenters }}
 {{- $vchostname := split "." $vcenter.hostname }}
 {{- range $exporter_type_values := $global_values.exporter_types }}
+{{- if $exporter_type_values.enabled }}
 ---
 kind: Deployment
 {{- if $.Capabilities.APIVersions.Has "apps/v1" }}
@@ -25,6 +26,9 @@ spec:
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
+  selector:
+    matchLabels:
+      component: vcenter-exporter-{{ $vchostname._0 }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
   template:
     metadata:
       labels:
@@ -64,6 +68,7 @@ spec:
           ports:
             - name: metrics
               containerPort: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

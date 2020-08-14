@@ -14,7 +14,7 @@
 
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseIncBackupMissing
     expr: count(maria_backup_status{kind="inc_backup"} == 0) by (release) == 0
-    for: {{ .Values.backup_v2.incremental_backup_in_minutes}}m
+    for: {{ mul .Values.backup_v2.incremental_backup_in_minutes 5 }}m
     labels:
       context: "{{ .Release.Name }}"
       service: {{ include "alerts.service" . }}
@@ -38,7 +38,7 @@
 
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseIncBackupStorageError
     expr: count(maria_backup_status{kind="inc_backup"} == 0) by (release, storage)
-    for: {{ .Values.backup_v2.incremental_backup_in_minutes}}m
+    for: {{ mul .Values.backup_v2.incremental_backup_in_minutes 5 }}m
     labels:
       context: "{{ .Release.Name }}"
       service: {{ include "alerts.service" . }}

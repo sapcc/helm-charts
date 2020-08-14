@@ -262,12 +262,12 @@
     "get_flavor_service_profile": "rule:context_is_admin",
     "get_auto_allocated_topology": "rule:context_is_network_admin",
 
-    "create_trunk": "rule:context_is_admin",
-    "get_trunk": "rule:context_is_admin",
-    "delete_trunk": "rule:context_is_admin",
-    "get_subports": "rule:context_is_admin",
-    "add_subports": "rule:context_is_admin",
-    "remove_subports": "rule:context_is_admin",
+    "create_trunk": "rule:context_is_network_admin",
+    "get_trunk": "rule:context_is_network_viewer",
+    "delete_trunk": "rule:context_is_network_admin",
+    "get_subports": "rule:context_is_network_viewer",
+    "add_subports": "rule:context_is_network_admin",
+    "remove_subports": "rule:context_is_network_admin",
 
     "get_loggable_resources": "rule:context_is_admin",
     "create_log": "rule:context_is_admin",

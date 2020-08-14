@@ -13,13 +13,13 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: neutron-octavia-migration
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/nlbaas2octavia:latest
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "python /var/lib/openstack/src/neutron-lbaas/tools/nlbaas2octavia/nlbaas2octavia.py --config-file /etc/neutron/nlbaas2octavia.conf --all"
+              value: "python ./nlbaas2octavia.py --config-file /etc/neutron/nlbaas2octavia.conf --all"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS

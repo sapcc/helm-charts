@@ -76,18 +76,3 @@ groups:
     annotations:
       description: 'Not all networks have been synced by agent for 5 min: {{ $labels.pod }}'
       summary: Openstack Neutron DHCP Agent lost private networks
-
-  - alert: OpenstackNeutronWaitingDatabaseConnections
-    expr: sum by (application) (pgbouncer_pools_client_waiting_connections{application=~"neutron"}) > 10
-    for: 15m
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.application }}'
-      context: '{{ $labels.application }}'
-      dashboard: pgbouncer
-      meta: '{{ $labels.application }} has waiting database connections for 15 min'
-#      playbook: 'docs/devops/alert/{{ $labels.application }}'
-    annotations:
-      description: '{{ $labels.application }} has more than 10 waiting database connections for 15 min, please check pgbouncer logs'
-      summary: '{{ $labels.application }} waiting db connections'

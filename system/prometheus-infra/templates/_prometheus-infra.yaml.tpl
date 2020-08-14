@@ -15,6 +15,7 @@
       - '{app=~"^netapp-capacity-exporter.*"}'
       - '{app=~"^netapp-perf-exporter.*"}'
       - '{app="ping-exporter"}'
+      - '{app="vcsa-exporter"}'
       - '{job="asw-eapi"}'
       - '{job="bios/ironic"}'
       - '{job="bios/cisco_cp"}'

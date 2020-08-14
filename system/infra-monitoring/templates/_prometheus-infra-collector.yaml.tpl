@@ -195,11 +195,9 @@
       replacement: arista-exporter:9200
 {{- end }}
 
-{{- $values := .Values.snmp_exporter -}}
-{{- if $values.enabled }}
 - job_name: 'snmp'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
+  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
@@ -213,7 +211,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: snmp-exporter:{{$values.listen_port}}
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - source_labels: [module]
       target_label: __param_module
   metric_relabel_configs:
@@ -247,6 +245,10 @@
       regex: 'snmp_arista_entPhysicalSoftwareRev;(.*)'
       replacement: '$1'
       target_label: image_version
+    - source_labels: [__name__, etherStatsIndex]
+      regex: 'snmp_arista_etherStatsCRCAlignErrors;(1\.3\.6\.1\.2\.1\.2\.2\.1\.1\.)([0-9]*)'
+      replacement: '$2'
+      target_label: ifIndex
     - source_labels: [__name__, snmp_asa_sysDescr]
       regex: 'snmp_asa_sysDescr;([a-zA-Z ]*)([0-9().]*)'
       replacement: '$2'
@@ -295,15 +297,11 @@
       replacement: '$2'
       target_label: device
     - source_labels: [__name__, cucsEtherErrStatsDn]
-      regex: 'snmp_ucs_cucsEtherErrStats.+;.+(port)-([0-4]|[7-9]|\d{2}).+'
-      action: drop
-    - source_labels: [__name__, cucsEtherErrStatsDn]
       regex: 'snmp_ucs_cucsEtherErrStats.+;.+(lan).+'
       action: drop
     - source_labels: [__name__, cucsFcErrStatsDn]
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
-{{- end }}
 
 {{- $values := .Values.bios_exporter -}}
 {{- if $values.enabled }}

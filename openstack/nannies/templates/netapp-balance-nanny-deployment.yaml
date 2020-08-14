@@ -54,6 +54,8 @@ template: |
                 valueFrom:
                   fieldRef:
                     fieldPath: metadata.namespace
+              - name: NETAPP_BALANCE_DRY_RUN
+                value: {{ .Values.netapp_balance_nanny.dry_run | quote }}
               - name: NETAPP_BALANCE_VCHOST
                 value: {= host | quote =}
               - name: NETAPP_BALANCE_VCUSER
@@ -66,6 +68,18 @@ template: |
                 value: {{ .Values.netapp_balance_nanny.netapppassword | quote }}
               - name: NETAPP_BALANCE_REGION
                 value: {{ .Values.current_region | quote }}
+              - name: NETAPP_BALANCE_FLEXVOLSIZELIMIT
+                value: {{ int .Values.netapp_balance_nanny.flexvolsizelimit | quote }}
+              - name: NETAPP_BALANCE_FLEXVOLLUNMINSIZE
+                value: {{ int .Values.netapp_balance_nanny.lunminsizeflexvol | quote }}
+              - name: NETAPP_BALANCE_FLEXVOLLUNMAXSIZE
+                value: {{ int .Values.netapp_balance_nanny.lunmaxsizeflexvol | quote }}
+              - name: NETAPP_BALANCE_AGGRLUNMINSIZE
+                value: {{ int .Values.netapp_balance_nanny.lunminsizeaggr | quote }}
+              - name: NETAPP_BALANCE_AGGRLUNMAXSIZE
+                value: {{ int .Values.netapp_balance_nanny.lunmaxsizeaggr | quote }}
+              - name: NETAPP_BALANCE_MAXMOVEVMS
+                value: {{ .Values.netapp_balance_nanny.maxmovevms | quote }}
               - name: NETAPP_BALANCE_INTERVAL
                 value: {{ .Values.netapp_balance_nanny.interval | quote }}
               - name: NETAPP_BALANCE_MINTHRESHOLD
@@ -74,12 +88,6 @@ template: |
                 value: {{ .Values.netapp_balance_nanny.maxthreshold | quote }}
               - name: NETAPP_BALANCE_MAXTHRESHOLDHYSTERESIS
                 value: {{ .Values.netapp_balance_nanny.maxthresholdhysteresis | quote }}
-              - name: NETAPP_BALANCE_VOLUMEMINSIZE
-                value: {{ int .Values.netapp_balance_nanny.volumeminsize | quote }}
-              - name: NETAPP_BALANCE_VOLUMEMAXSIZE
-                value: {{ int .Values.netapp_balance_nanny.volumemaxsize | quote }}
-              - name: NETAPP_BALANCE_MAXMOVEVMS
-                value: {{ .Values.netapp_balance_nanny.maxmovevms | quote }}
               - name: OS_AUTH_URL
                 value: "https://identity-3.{= availability_zone[:-1] =}.cloud.sap:443/v3"
               - name: OS_PROJECT_NAME
@@ -92,5 +100,17 @@ template: |
                 value: "Default"
               - name: OS_PASSWORD
                 value: {= "vcenter_nanny" | derive_password("identity-3." + availability_zone[:-1] + ".cloud.sap") | quote =}
+              - name: NETAPP_BALANCE_VOLUMEMINSIZE
+                value: {{ int .Values.netapp_balance_nanny.volumeminsize | quote }}
+              - name: NETAPP_BALANCE_VOLUMEMAXSIZE
+                value: {{ int .Values.netapp_balance_nanny.volumemaxsize | quote }}
+              - name: NETAPP_BALANCE_LUNMINSIZEFLEXVOL
+                value: {{ int .Values.netapp_balance_nanny.lunminsizeflexvol | quote }}
+              - name: NETAPP_BALANCE_LUNMAXSIZEFLEXVOL
+                value: {{ int .Values.netapp_balance_nanny.lunmaxsizeflexvol | quote }}
+              - name: NETAPP_BALANCE_LUNMINSIZEAGGR
+                value: {{ int .Values.netapp_balance_nanny.lunminsizeaggr | quote }}
+              - name: NETAPP_BALANCE_LUNMAXSIZEAGGR
+                value: {{ int .Values.netapp_balance_nanny.lunmaxsizeaggr | quote }}
 {{- end }}
 {{- end }}

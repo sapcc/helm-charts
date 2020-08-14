@@ -5,15 +5,15 @@
 #
 debug: "True"
 
-tempest:
-  enabled: false
+global_setup: false
+tempest_enabled: false
 
 sentry:
   enabled: true
 
 global:
   dbPassword: DEFINED-IN-REGION-CHART
-  image_repository: DEFINED-IN-OPENSTACK-CHART
+  imageRegistry: DEFINED-IN-OPENSTACK-CHART
   image_namespace: DEFINED-IN-OPENSTACK-CHART
   designate_api_endpoint_protocol_admin: http
   designate_api_endpoint_protocol_internal: http
@@ -85,7 +85,25 @@ rndc_keys:
   algorithm: DEFINED-IN-REGION-CHART
   secret: DEFINED-IN-REGION-CHART
 
+db_name: designate
+pool_id: 794ccc2c-d751-44fe-b57f-8894c9f5c842
+scheduler_filters: attribute, pool_id_attribute, in_doubt_default_pool, fallback
+sink_enabled: False
+worker_enabled: True
+worker_notify: True
+worker_poll_timeout: '20'
+worker_poll_retry_interval: '10'
+worker_poll_max_retries: '60'
+worker_threshold_percentage: '100'
+worker_all_tcp: True
+
+percona_cluster:
+  enabled: false
+  db_name: designate
+  db_user: designate
+
 mariadb:
+  enabled: true
   name: designate
   initdb_configmap: designate-initdb
   persistence_claim:
@@ -93,23 +111,8 @@ mariadb:
   backup:
     image_version: v0.6.4
 
-worker_poll_timeout: '20'
-worker_poll_retry_interval: '10'
-worker_poll_max_retries: '60'
-worker_all_tcp: True
-
-rabbitmq:
-  ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-  # host: rabbitmq
-  users:
-    default:
-      user: openstack
-      password: welcome
-    admin:
-      user: admin
-      password: secret
-
 mysql_metrics:
+  enabled: true
   db_name: designate
   db_user: root
   customMetrics:
@@ -223,6 +226,15 @@ audit:
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
 
+rabbitmq:
+  users:
+    default:
+      user: openstack
+      password: welcome
+    admin:
+      user: admin
+      password: secret
+
 rabbitmq_notifications:
   name: designate
   users:
@@ -265,6 +277,9 @@ resources:
 
 # openstack-watcher-middleware
 watcher:
+  enabled: true
+
+rbac:
   enabled: true
 
 # Deploy Designate Prometheus alerts.

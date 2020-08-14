@@ -7,6 +7,7 @@
 
   params:
     'match[]':
+      - '{__name__=~"^absent_metrics_operator.+"}'
       - '{__name__=~"^active_job_.+"}'
       - '{__name__=~"^aggregated:.+"}'
       - '{__name__=~"^alertmanager_.+"}'
