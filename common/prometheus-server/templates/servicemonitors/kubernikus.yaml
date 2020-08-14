@@ -1,10 +1,10 @@
 {{- if .Values.serviceDiscoveries.kubernikus.enabled }}
-{{- range $index, $secret := (lookup "v1" "Secret" "kubernikus" "").items -}}
-  {{- if hasSuffix "-secret" $secret.metadata.name -}}
+{{- range $index, $secret := (lookup "v1" "Secret" "kubernikus" "").items }}
+  {{- if hasSuffix "-secret" $secret.metadata.name }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: kubernikus-apiserver
+  name: kubernikus-apiserver-{{ $secret.metadata.name | trimSuffix "-secret" }}
   namespace: kubernikus
   labels:
     prometheus: kubernetes
@@ -41,7 +41,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: kubernikus-controller-manager
+  name: kubernikus-controller-manager-{{ $secret.metadata.name | trimSuffix "-secret" }}
   namespace: kubernikus
   labels:
     prometheus: kubernetes
@@ -78,7 +78,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: kubernikus-scheduler
+  name: kubernikus-scheduler-{{ $secret.metadata.name | trimSuffix "-secret" }}
   namespace: kubernikus
   labels:
     prometheus: kubernetes
@@ -115,7 +115,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: kubernikus-etcd
+  name: kubernikus-etcd-{{ $secret.metadata.name | trimSuffix "-secret" }}
   namespace: kubernikus
   labels:
     prometheus: kubernetes
