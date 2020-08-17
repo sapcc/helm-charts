@@ -84,7 +84,7 @@
       - '{__name__=~"^vrops_cluster_cluster_running_hosts}'
       - '{__name__=~"^vrops_cluster_memory_usage_percentage}'
       - '{__name__=~"^vrops_cluster_cpu_capacity_usage_percentage}'
-      - '{__name__=~"^vrops_virtualmachine_vm_memory_kilobytes|number_vcpus_total}'
+      - '{__name__=~"^vrops_virtualmachine_vm_memory_kilobytes}'
       - '{__name__=~"^vrops_virtualmachine_number_vcpus_total}'
       - '{__name__=~"^vrops_virtualmachine_config_hardware_memory_kilobytes}'
       - '{__name__=~"^vrops_virtualmachine_summary_ethernetcards}'
