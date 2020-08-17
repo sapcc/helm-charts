@@ -6,7 +6,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 
 metadata:
-  name: {{.Release.Name}}
+  name: absent-metrics-operator
 
 spec:
   revisionHistoryLimit: 5
@@ -18,17 +18,17 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      name: {{.Release.Name}}
+      name: absent-metrics-operator
   template:
     metadata:
       labels:
-        name: {{.Release.Name}}
+        name: absent-metrics-operator
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/targets: "kubernetes"
     spec:
-      serviceAccount: {{.Release.Name}}-service-user
-      serviceAccountName: {{.Release.Name}}-service-user
+      serviceAccount: absent-metrics-operator-service-user
+      serviceAccountName: absent-metrics-operator-service-user
       containers:
         - name: operator
           image: {{required ".Values.image.repository missing" .Values.image.repository}}:{{required ".Values.image.tag missing" .Values.image.tag}}
