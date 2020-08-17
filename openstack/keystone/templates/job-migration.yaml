@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: keystone-job-migration
+  name: {{ .Release.Name }}-job-migration
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       labels:
-        name: keystone-job-migration
+        name: {{ .Release.Name }}-job-migration
         system: openstack
         component: keystone
         type: job
@@ -27,7 +27,7 @@ spec:
         "helm.sh/hook": post-install, post-upgrade
     spec:
 {{- if .Values.rbac.enabled }}
-      serviceAccountName: keystone
+      serviceAccountName: {{ .Release.Name }}
 {{- end }}
       restartPolicy: OnFailure
       containers:
@@ -42,7 +42,11 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: {{ .Release.Name }}-mariadb
+{{- if .Values.percona_cluster.enabled }}
+              value: "{{ .Release.Name }}-percona-pxc"
+{{- else }}
+              value: "{{ .Release.Name }}-mariadb"
+{{- end }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
@@ -51,7 +55,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: keystone.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
             {{- end }}
           volumeMounts:

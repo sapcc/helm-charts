@@ -1,0 +1,33 @@
+groups:
+- name: host.alerts
+  rules:
+  - alert: HostWithRunningVMsNotResponding
+    expr: |
+      vrops_hostsystem_runtime_connectionstate{state="notResponding"}
+      and on (hostsystem) vrops_hostsystem_runtime_powerstate{state="Unknown"}
+      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{state="Powered On"}) by (hostsystem) > 0
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "Host {{ $labels.hostsystem }} with running vm's not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+      dashboard: esxi-host-disconnected/esxi-host-disconnected?&var-host={{ $labels.hostsystem }}
+    annotations:
+      description: "Host {{ $labels.hostsystem }} with {{ $labels.value }} running vm's not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+      summary: "Host {{ $labels.hostsystem }} with {{ $labels.value }} running vm's not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+  - alert: HostNotResponding
+    expr: |
+      vrops_hostsystem_summary_running_vms_number == 0 and 
+      on (hostsystem) vrops_hostsystem_runtime_connectionstate{state="notResponding"} and 
+      on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and 
+      on (hostsystem) vrops_hostsystem_runtime_powerstate{state="Powered On"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "Host {{ $labels.hostsystem }} not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+    annotations:
+      description: "Host {{ $labels.hostsystem }} not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+      summary: "Host {{ $labels.hostsystem }} not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"      

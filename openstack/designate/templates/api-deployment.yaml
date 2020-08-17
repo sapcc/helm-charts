@@ -6,7 +6,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 
 metadata:
-  name: designate-api
+  name: {{ .Release.Name }}-api
   labels:
     system: openstack
     application: designate
@@ -24,33 +24,50 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      app: designate-api
+      app: {{ .Release.Name }}-api
   template:
     metadata:
       labels:
-        app: designate-api
+        app: {{ .Release.Name }}-api
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
 {{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      initContainers:
+      - name: kubernetes-entrypoint
+        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/loci-designate:{{required ".Values.image_version_designate_api is missing" .Values.image_version_designate_api}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /usr/local/bin/kubernetes-entrypoint
+        env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: {{ .Release.Name }}-migration
+            - name: DEPENDENCY_SERVICE
+{{- if .Values.percona_cluster.enabled }}
+              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+{{- else }}
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+{{- end }}
+            - name: COMMAND
+              value: "true"
       containers:
         - name: designate-api
           image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{ required ".Values.global.image_namespace missing" .Values.global.image_namespace}}/loci-designate:{{required ".Values.image_version_designate_api is missing" .Values.image_version_designate_api}}
           imagePullPolicy: IfNotPresent
           command:
-            - kubernetes-entrypoint
+            - /container.init/designate-api.sh
+            - start
           resources:
 {{ toYaml .Values.resources.api | indent 12 }}
           env:
-            - name: COMMAND
-              value: "/container.init/designate-api-start"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: "designate-migration"
-            - name: DEPENDENCY_SERVICE
-              value: "designate-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
@@ -65,7 +82,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: designate.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
           livenessProbe:
             httpGet:
@@ -81,6 +98,11 @@ spec:
               name: designate-etc
             - mountPath: /container.init
               name: container-init
+            - name: wsgi-designate
+              mountPath: /var/www/cgi-bin/designate
+            - name: designate-etc-wsgi
+              mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
+              subPath: wsgi-designate.conf
         - name: statsd
           image: prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -100,6 +122,11 @@ spec:
         - name: designate-etc
           configMap:
             name: designate-etc
+        - name: designate-etc-wsgi
+          configMap:
+            name: designate-etc-wsgi         
+        - name: wsgi-designate
+          emptyDir: {}
         - name: container-init
           configMap:
             name: designate-bin

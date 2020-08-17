@@ -7,6 +7,7 @@
 
   params:
     'match[]':
+      - '{__name__=~"^absent_metrics_operator.+"}'
       - '{__name__=~"^active_job_.+"}'
       - '{__name__=~"^aggregated:.+"}'
       - '{__name__=~"^alertmanager_.+"}'
@@ -15,6 +16,7 @@
       - '{__name__=~"^bind_.+"}'
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^broker_.+"}'
+      - '{__name__=~"^certmanager_.+"}'
       - '{__name__=~"^concourse_.+"}'
       - '{__name__=~"^container_cpu_cfs_.+"}'
       - '{__name__=~"^container_fs.+"}'

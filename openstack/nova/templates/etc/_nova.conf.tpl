@@ -60,7 +60,7 @@ until_refresh = {{ .Values.usage_until_refresh | default 0 }}
 {{- include "osprofiler" . }}
 
 [conductor]
-{{- range $k, $v := .Values.conductor }}
+{{- range $k, $v := .Values.conductor.config_file }}
 {{ $k }} = {{ $v }}
 {{- end }}
 

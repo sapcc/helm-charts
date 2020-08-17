@@ -6,7 +6,7 @@
     "cloud_viewer": "role:cloud_identity_viewer or rule:service_role or rule:cloud_admin",
     "owner": "user_id:%(user_id)s or user_id:%(target.token.user_id)s",
     "admin_or_owner": "(rule:admin_required and domain_id:%(target.token.user.domain.id)s) or rule:owner",
-    "admin_and_matching_domain_id": "rule:admin_required and domain_id:%(domain_id)s",
+    "admin_and_matching_domain_id": "rule:admin_required and (domain_id:%(domain_id)s or domain_id:%(target.domain_id)s)",
     "service_admin_or_owner": "rule:service_or_admin or rule:owner",
     "cloud_admin_or_owner": "rule:cloud_admin or rule:owner",
 
@@ -88,14 +88,14 @@
 
     "credential_owner": "user_id:%(target.credential.user_id)s or user_id:%(user_id)s",
     "matching_target_credential_project": "project_id:%(target.credential.project_id)s or project_id:%(tenant_id)s",
-    "identity:get_credential": "rule:credential_owner",
-    "identity:list_credentials": "rule:credential_owner",
+    "identity:get_credential": "rule:cloud_admin or rule:credential_owner",
+    "identity:list_credentials": "rule:cloud_admin or rule:credential_owner",
     "identity:create_credential": "rule:cloud_admin or (rule:credential_owner and rule:matching_target_credential_project)",
     "identity:update_credential": "rule:cloud_admin",
     "identity:delete_credential": "rule:cloud_admin or rule:credential_owner",
 
-    "identity:ec2_get_credential": "rule:credential_owner",
-    "identity:ec2_list_credentials": "rule:credential_owner",
+    "identity:ec2_get_credential": "rule:cloud_admin or rule:credential_owner",
+    "identity:ec2_list_credentials": "rule:cloud_admin or rule:credential_owner",
     "identity:ec2_create_credential": "rule:cloud_admin or (rule:credential_owner and rule:matching_target_credential_project)",
     "identity:ec2_delete_credential": "rule:cloud_admin or rule:credential_owner",
 

@@ -3,7 +3,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: keystone-job-pre-upgrade
+  name: {{ .Release.Name }}-job-pre-upgrade
   labels:
     app: {{ template "fullname" . }}
     component: keystone
@@ -17,7 +17,7 @@ spec:
   template:
     spec:
 {{- if .Values.rbac.enabled }}
-      serviceAccountName: keystone
+      serviceAccountName: {{ .Release.Name }}
 {{- end }}
       restartPolicy: Never
       containers:
@@ -25,7 +25,11 @@ spec:
           image: hub.global.cloud.sap/monsoon/kube-python:1.0.0
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c"]
+{{- if .Values.global_setup }}
+          args: ["/scripts/region-check.py --namespace {{ .Release.Namespace }} --region {{ .Values.global.db_region }} --suffix {{ .Values.global.tld }}"]
+{{- else }}
           args: ["/scripts/region-check.py --namespace {{ .Release.Namespace }} --region {{ .Values.global.region }} --suffix {{ .Values.global.tld }}"]
+{{- end }}
           volumeMounts:
             - mountPath: /scripts
               name: scripts

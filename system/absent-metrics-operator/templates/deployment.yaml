@@ -1,0 +1,48 @@
+kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+
+metadata:
+  name: absent-metrics-operator
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: absent-metrics-operator
+  template:
+    metadata:
+      labels:
+        name: absent-metrics-operator
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "kubernetes"
+    spec:
+      serviceAccount: absent-metrics-operator-service-user
+      serviceAccountName: absent-metrics-operator-service-user
+      containers:
+        - name: operator
+          image: {{required ".Values.image.repository missing" .Values.image.repository}}:{{required ".Values.image.tag missing" .Values.image.tag}}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --log-level=all
+          resources:
+            # observed max usage: CPU = 10m, RAM = 20 MiB
+            requests:
+              cpu: "20m"
+              memory: "50Mi"
+            limits:
+              cpu: "20m"
+              memory: "50Mi"
+          ports:
+            - name: metrics
+              containerPort: 9659

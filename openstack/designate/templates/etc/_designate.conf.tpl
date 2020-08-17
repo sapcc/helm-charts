@@ -57,7 +57,8 @@ min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size 
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
-{{ include "ini_sections.default_transport_url" . }}
+
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}/
 
 [oslo_policy]
 policy_file = policy.json
@@ -184,10 +185,14 @@ auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "h
 username = {{ .Values.global.designate_service_user }}
 password = {{ .Values.global.designate_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-project_name = {{.Values.global.keystone_service_project |  default "service"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
+{{- if .Values.global_setup }}
+memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+{{- else }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+{{- end }}
 insecure = True
 token_cache_time = 600
 include_service_catalog = true
@@ -358,10 +363,12 @@ all_tcp = {{ .Values.worker_all_tcp }}
 ##############
 [network_api:neutron]
 # Comma separated list of values, formatted "<name>|<neutron_uri>"
+{{- if eq .Values.global_setup false }}
 endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
 endpoint_type = publicURL
 timeout = 20
 insecure = True
+{{- end }}
 #admin_username = designate
 #admin_password = designate
 #admin_tenant_name = designate
@@ -376,10 +383,13 @@ insecure = True
 # SQLAlchemy Storage
 #-----------------------
 [storage:sqlalchemy]
-# Database connection string - to configure options for a given implementation
-# like sqlalchemy or other see below
-#connection = sqlite:///$state_path/designate.sqlite
+# Database connection string - MariaDB for regional setup
+# and Percona Cluster for inter-regional setup:
+{{ if .Values.percona_cluster.enabled -}}
+connection = {{ include "db_url_pxc" . }}
+{{- else }}
 connection = {{ include "db_url_mysql" . }}
+{{- end }}
 
 mysql_sql_mode = TRADITIONAL
 
@@ -466,11 +476,4 @@ retry_interval = 1
 #   name = '%s.%s' % (func.__module__, func.__name__)
 
 # [hook_point:designate.api.v2.controllers.zones.get_one]
-
-# Defines CADF Audit Middleware section
-# this is for the cadf audit messaging
-[audit_middleware_notifications]
-topics = notifications
-driver = messagingv2
-transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@designate-rabbitmq-notifications:5672/
-mem_queue_size = 1000
+{{ include "ini_sections.audit_middleware_notifications" . }}

@@ -24,8 +24,6 @@ global:
   osprofiler: {}
   pgbouncer:
     enabled: true
-  novaApi:
-    executable: nova-api
 
 osprofiler: {}
 
@@ -34,7 +32,8 @@ auto_assign_aggregates: 'dry_run'
 cell2:
   name: cell2
   enabled: false
-  conductor: {}
+  conductor:
+    config_file: {}
 
 defaults:
   default:
@@ -188,20 +187,24 @@ neutron_dvs_agent_enabled: true
 cross_az_attach: 'False'
 
 api:
-  DEFAULT:
-    api_paste_config: /etc/nova/api-paste.ini
-    # adding metadata here will disable spawning of separate api-metadata pods
-    enabled_apis: osapi_compute
-    use_forwarded_for: true
+  config_file:
+    DEFAULT:
+      api_paste_config: /etc/nova/api-paste.ini
+      enabled_apis: osapi_compute
+      use_forwarded_for: true
 
-  api:
-    list_records_by_skipping_down_cells: false
+    api:
+      list_records_by_skipping_down_cells: false
+
+  use_uwsgi: false
+  wsgi_processes: 16
 
 api_metadata:
-  DEFAULT:
-    api_paste_config: /etc/nova/api-paste.ini
-    enabled_apis: metadata
-    use_forwarded_for: true
+  config_file:
+    DEFAULT:
+      api_paste_config: /etc/nova/api-paste.ini
+      enabled_apis: metadata
+      use_forwarded_for: true
 
 consoles:
   novnc:
@@ -248,7 +251,8 @@ compute:
       clone_from_snapshot: true
       full_clone_snapshots: true
 
-conductor: {}
+conductor:
+  config_file: {}
 
 quota:
   # most default quotas are 0 to enforce usage of the Resource Management tool in Elektra
@@ -292,12 +296,12 @@ pgmetrics:
             usage: "GAUGE"
             description: "VM Count"
     openstack_compute_stuck_instances:
-      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, vm_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE vm_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, vm_state"
+      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, task_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, task_state"
       metrics:
         - project_id:
             usage: "LABEL"
             description: "Project ID"
-        - vm_state:
+        - task_state:
             usage: "LABEL"
             description: "State of the VM"
         - host:
