@@ -2,7 +2,8 @@ groups:
 - name: datastore.alerts
   rules:
   - alert: DataStoreCapacityWarning
-    expr: max_over_time(vrops_datastore_stats{statkey="diskspace_total_usage_gigabytes",vccluster=~".+"}[10m]) / ignoring(statkey) max_over_time(vrops_datastore_stats{statkey="diskspace_capacity_gigabytes",vccluster=~".+"}[10m]) > 0.9
+    expr: >
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) > 0.9
     for: 20m
     labels:
       severity: warning
@@ -17,8 +18,8 @@ groups:
       summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
-      max_over_time(vrops_datastore_stats{statkey="summary_total_number_vms"}[10m]) > 0 
-      and on (datastore) max_over_time(vrops_datastore_properties{propkey="summary_datastore_accessible: PoweredOff"}[10m])
+      max_over_time(vrops_datastore_summary_total_number_vms[10m]) > 0 
+      and on (datastore) max_over_time(vrops_datastore_summary_datastore_accessible{state="PoweredOff"}[10m])
     for: 20m
     labels:
       severity: info
@@ -32,8 +33,8 @@ groups:
       summary: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DatastoreDisconnectedWithoutVmsOnIt
     expr: >
-      max_over_time(vrops_datastore_stats{statkey="summary_total_number_vms"}[10m]) == 0 
-      and on (datastore) max_over_time(vrops_datastore_properties{propkey="summary_datastore_accessible: PoweredOff"}[10m])
+      max_over_time(vrops_datastore_summary_total_number_vms[10m]) == 0 
+      and on (datastore) max_over_time(vrops_datastore_summary_datastore_accessible{state="PoweredOff"}[10m])
     for: 20m
     labels:
       severity: info

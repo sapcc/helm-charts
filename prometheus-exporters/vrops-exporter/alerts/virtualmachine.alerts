@@ -3,10 +3,10 @@ groups:
   rules:
   - alert: InaccessibleShadowVM
     expr: >
-      max_over_time(vrops_vm_stats{statkey="number_vcpus_total"}[10m]) == 1
-      and on(virtualmachine) max_over_time(vrops_vm_stats{statkey="vm_memory_kilobytes"}[10m]) == 131072
-      and on(virtualmachine) max_over_time(vrops_vm_properties{propkey="summary_ethernetCards"}[10m]) == 0
-      and on(virtualmachine) max_over_time(vrops_vm_properties{propkey="runtime_connectionState: disconnected"}[10m]) == 0
+      max_over_time(vrops_virtualmachine_number_vcpus_total[10m]) == 1
+      and on(virtualmachine) max_over_time(vrops_virtualmachine_vm_memory_kilobytes[10m]) == 131072
+      and on(virtualmachine) max_over_time(vrops_virtualmachine_summary_ethernetCards[10m]) == 0
+      and on(virtualmachine) max_over_time(vrops_virtualmachine_runtime_connectionstate[10m]) == 0
     for: 20m
     labels:
       severity: warning
@@ -20,8 +20,8 @@ groups:
       summary: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: VROpsDiskpaceUsageCritical
     expr: >
-      vrops_vm_stats{statkey="diskspace_virtual_machine_used_gigabytes", virtualmachine =~ "vrops.+"} offset 5m
-      / ignoring (statkey) vrops_vm_stats{statkey="vm_diskspace_gigabytes", virtualmachine =~ "vrops.+"} offset 5m
+      vrops_virtualmachine_diskspace_virtual_machine_used_gigabytes{virtualmachine =~ "vrops.+"} offset 5m
+      / ignoring (statkey) vrops_virtualmachine_vm_diskspace_gigabytes{virtualmachine =~ "vrops.+"} offset 5m
       > 0.9
     for: 20m
     labels:
