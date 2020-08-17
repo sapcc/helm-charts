@@ -3,9 +3,9 @@ groups:
   rules:
   - alert: HostWithRunningVMsNotResponding
     expr: |
-      vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} == 0
-      and on (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: Unknown"} == 0
-      and on(hostsystem) count(vrops_vm_properties{propkey="runtime_powerState: Powered On"}) by (hostsystem) > 0
+      vrops_hostsystem_runtime_connectionstate{state="notResponding"}
+      and on (hostsystem) vrops_hostsystem_runtime_powerstate{state="Unknown"}
+      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{state="Powered On"}) by (hostsystem) > 0
     labels:
       severity: info
       tier: vmware
@@ -18,10 +18,10 @@ groups:
       summary: "Host {{ $labels.hostsystem }} with {{ $labels.value }} running vm's not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
   - alert: HostNotResponding
     expr: |
-      vrops_hostsystem_stats{statkey="summary_running_VMs_number"} == 0 and
-      on (hostsystem) vrops_hostsystem_properties{propkey="runtime_connectionState: notResponding"} == 0 and
-      on (hostsystem) vrops_hostsystem_properties{propkey="runtime_maintenanceState: notInMaintenance"} == 1 and
-      on (hostsystem) vrops_hostsystem_properties{propkey="runtime_powerState: Powered On"} == 1
+      vrops_hostsystem_summary_running_vms_number == 0 and 
+      on (hostsystem) vrops_hostsystem_runtime_connectionstate{state="notResponding"} and 
+      on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and 
+      on (hostsystem) vrops_hostsystem_runtime_powerstate{state="Powered On"}
     labels:
       severity: info
       tier: vmware
