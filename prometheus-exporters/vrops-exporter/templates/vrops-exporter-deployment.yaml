@@ -19,7 +19,7 @@ spec:
         type: exporter
     spec:
       containers:
-         - name: default-collectors
+         - name: vrops-exporter
            image: {{ required ".Values.vrops.image.imageRegistry variable missing" .Values.vrops.image.imageRegistry }}/{{ required ".Values.vrops.image.namespace variable missing" .Values.vrops.image.namespace }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" .Values.vrops.image.tag }}
            ports:
              - name: metrics
@@ -48,38 +48,6 @@ spec:
                name: vrops-config
                readOnly: true
 
-         - name: hostsystem-collector
-           image: {{ required ".Values.vrops.image.imageRegistry variable missing" .Values.vrops.image.imageRegistry }}/{{ required ".Values.vrops.image.namespace variable missing" .Values.vrops.image.namespace }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" .Values.vrops.image.tag }}
-           ports:
-             - name: metrics
-               containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
-           command:
-             - ./exporter.py
-           args:
-             - -m
-             - /config/collector_config.yaml
-             - -c
-             - HostSystemStatsCollector
-             - -c
-             - HostSystemPropertiesCollector
-           env:
-           - name: PORT
-             value: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
-           - name: DEBUG
-             value: {{ .Values.vrops.debug | quote }}
-           - name: INVENTORY
-             value: vrops-inventory
-           resources:
-             limits:
-               memory: {{ required ".Values.vrops.exporter_resources.limits.memory missing" .Values.vrops.exporter_resources.limits.memory }}
-               cpu: {{ required ".Values.vrops.exporter_resources.limits.cpu missing" .Values.vrops.exporter_resources.limits.cpu }}
-             requests:
-               memory: {{ required ".Values.vrops.exporter_resources.requests.memory missing" .Values.vrops.exporter_resources.requests.memory }}
-               cpu: {{ required ".Values.vrops.exporter_resources.requests.cpu missing" .Values.vrops.exporter_resources.requests.cpu }}
-           volumeMounts:
-             - mountPath: /config
-               name: vrops-config
-               readOnly: true
            #livenessProbe:
              #tcpSocket:
                #port: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number }}
