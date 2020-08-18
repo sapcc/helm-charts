@@ -593,6 +593,7 @@
     - targets: 
       - 'vrops-exporter:9160'
       - 'vrops-exporter-vm:9160'
+      - 'vrops-exporter-host:9160'
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
