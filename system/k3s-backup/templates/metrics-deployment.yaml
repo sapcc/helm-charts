@@ -19,8 +19,10 @@ spec:
       - name: s3-exporter
         image: "{{ .Values.images.exporter.image }}:{{ .Values.images.exporter.tag }}"
         imagePullPolicy: IfNotPresent
+        args:
+          - --web.listen-address=:{{ .Values.exporter.metricsPort }}
         env:
-        - name: AWS_DEFAULT_REGION
+        - name: AWS_REGION
           valueFrom:
             secretKeyRef:
               key: region

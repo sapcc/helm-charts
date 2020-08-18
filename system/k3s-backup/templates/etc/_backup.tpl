@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-BACKUPDIR=/root/backup/Backup-$(date +"%Y-%m-%d-%H%M%S")
+BACKUP=Backup-$(date +"%Y-%m-%d-%H%M%S")
+BACKUPDIR=/root/backup/$BACKUP
 
 mkdir -p $BACKUPDIR
 cp -r /host/etc/rancher/ $BACKUPDIR
@@ -13,4 +14,4 @@ mv state.backup.db $BACKUPDIR
 ls -la $BACKUPDIR
 
 aws s3 sync /root/backup/ s3://$AWS_BUCKET/
-aws s3 ls $AWS_BUCKET --recursive
+aws s3 ls $AWS_BUCKET/$BACKUP --recursive
