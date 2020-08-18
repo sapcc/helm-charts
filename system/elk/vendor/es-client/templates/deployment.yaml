@@ -91,3 +91,12 @@ spec:
             - name: http
               containerPort: {{.Values.global.http_port}}
               protocol: TCP
+          livenessProbe:
+          livenessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+              - 'curl http://{{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}}@localhost:9200/_cluster/health?local=true'
+            initialDelaySeconds: 90
+            periodSeconds: 60
