@@ -27,6 +27,13 @@ spec:
       prometheus: {{ include "prometheus.name" . }}
   {{- end }}
 
+  {{ if .Values.serviceDiscoveries.probes.enabled }}
+  # Select all Probes with the label 'prometheus: <name>'.
+  probeSelector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" . }}
+  {{- end }}
+
   # Select all (aggregation, alerting) PrometheusRules with the label 'prometheus: <name>'.
   ruleSelector:
     matchLabels:
@@ -36,6 +43,9 @@ spec:
   ruleNamespaceSelector: {}
   serviceMonitorNamespaceSelector: {}
   podMonitorNamespaceSelector: {}
+  {{- if .Values.serviceDiscoveries.probes.enabled }}
+  probeNamespaceSelector: {}
+  {{- end }}
 
   # The labels to add to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager).
   # If Thanos is enabled the prefix `thanos_` is added to external labels to avoid overriding existing ones (region, cluster)
