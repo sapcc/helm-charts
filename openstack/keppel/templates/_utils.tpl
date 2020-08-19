@@ -29,7 +29,9 @@
   value: "{{ $.Values.keppel.rabbitmq.queue_name }}"
 - name:  KEPPEL_AUTH_LOCAL_ROLE
   value: 'swiftoperator'
-- name:  KEPPEL_BURST_BLOB_PULLS # burst budgets are all ~30% of the rate limit per minute
+- name:  KEPPEL_BURST_ANYCAST_BLOB_PULL_BYTES
+  value: '4718592000' # 4500 MiB per account (see below, near the corresponding ratelimit, for rationale)
+- name:  KEPPEL_BURST_BLOB_PULLS # burst budgets for regular pull/push are all ~30% of the rate limit per minute
   value: '300' # per account
 - name:  KEPPEL_BURST_BLOB_PUSHES
   value: '30'  # per account
@@ -61,6 +63,10 @@
   value: '/etc/keppel/policy.json'
 - name:  KEPPEL_PEERS
   value: {{ $.Values.keppel.peer_hostnames | join "," | quote }}
+- name:  KEPPEL_RATELIMIT_ANYCAST_BLOB_PULL_BYTES
+  value: '5242880 B/s' # 5 MiB/s per account (very small to discourage continuous use of anycast, but
+                       # the burst budget is very large to enable anycast pulling of large images; the
+                       # actual burst budget is 4500 MiB, which is 15 minutes worth of rate limit)
 - name:  KEPPEL_RATELIMIT_BLOB_PULLS
   value: '1000r/m' # per account
 - name:  KEPPEL_RATELIMIT_BLOB_PUSHES
