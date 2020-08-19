@@ -1,6 +1,3 @@
-{{- $major := .Capabilities.KubeVersion.Major -}}
-{{- $minor := .Capabilities.KubeVersion.Minor -}}
-
 apiVersion: extensions/v1beta1
 kind: Deployment
 
@@ -45,21 +42,12 @@ spec:
 
           imagePullPolicy: {{ .Values.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
-{{- if and (eq (int $major) 1) (lt (int $minor) 10) }}
           - /usr/local/bin/kubernetes-entrypoint
-{{- else }}
-          - /bin/dumb-init
-          args:
-            - /bin/sh
-            - /scripts/start
-{{- end }}
           env:
-{{- if and (eq (int $major) 1) (lt (int $minor) 10) }}
             - name: COMMAND
               value: "bash /scripts/start"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
-{{- end }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
