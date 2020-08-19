@@ -1,7 +1,7 @@
 - name: backup-v2.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseFullBackupMissing
-    expr: count(maria_backup_status{kind="full_backup", release={{ .Values.alerts.service | quote }} } == 0) == 2
+    expr: count(maria_backup_status{kind="full_backup", release={{ include "alerts.service" . | quote }} } == 0) == 2
     for: 15m
     labels:
       context: "{{ .Release.Name }}"
@@ -13,7 +13,7 @@
       summary: {{ include "fullName" . }} full backup missing
 
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseIncBackupMissing
-    expr: count(maria_backup_status{kind="inc_backup", release={{ .Values.alerts.service | quote }} } == 0) == 2
+    expr: count(maria_backup_status{kind="inc_backup", release={{ include "alerts.service" . | quote }} } == 0) == 2
     for: {{ mul .Values.backup_v2.incremental_backup_in_minutes 5 }}m
     labels:
       context: "{{ .Release.Name }}"
@@ -25,7 +25,7 @@
       summary: {{ include "fullName" . }} incremental backup missing
 
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseFullBackupStorageError
-    expr: count(maria_backup_status{kind="full_backup", release={{ .Values.alerts.service | quote }} } == 0) == 1
+    expr: count(maria_backup_status{kind="full_backup", release={{  include "alerts.service" . | quote }} } == 0) == 1
     for: 15m
     labels:
       context: "{{ .Release.Name }}"
@@ -37,7 +37,7 @@
       summary: {{ include "fullName" . }} backup storage error
 
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseIncBackupStorageError
-    expr: count(maria_backup_status{kind="inc_backup", release={{ .Values.alerts.service | quote }} } == 0) == 1
+    expr: count(maria_backup_status{kind="inc_backup", release={{  include "alerts.service" . | quote }} } == 0) == 1
     for: {{ mul .Values.backup_v2.incremental_backup_in_minutes 5 }}m
     labels:
       context: "{{ .Release.Name }}"
