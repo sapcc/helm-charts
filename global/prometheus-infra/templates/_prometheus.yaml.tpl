@@ -81,6 +81,7 @@
       - '{__name__=~"^vrops_hostsystem_summary_running_vms_number"}'
       - '{__name__=~"^vrops_hostsystem_cpu_sockets_number"}'
       - '{__name__=~"^vrops_hostsystem_runtime_maintenancestate", state="inMaintenance"}'
+      - '{__name__=~"^vrops_hostsystem_runtime_powerstate"}'
       - '{__name__=~"^vrops_cluster_cluster_running_hosts"}'
       - '{__name__=~"^vrops_cluster_memory_usage_percentage"}'
       - '{__name__=~"^vrops_cluster_cpu_capacity_usage_percentage"}'
