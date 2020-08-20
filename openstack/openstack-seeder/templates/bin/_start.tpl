@@ -37,4 +37,4 @@ export OS_DOMAIN_ID={{ .Values.keystone.domainId }}
 export OS_REGION={{.Values.global.region}}
 
 echo "Starting openstack-seeder.."
-/usr/local/bin/openstack-seeder --v {{ default 1 .Values.logLevel }} {{- if .Values.dryRun }} --dry-run{{- end }}
+/usr/local/bin/openstack-seeder --v {{ default 1 .Values.logLevel }} {{- if .Values.dryRun }} --dry-run{{- end }} {{- if .Values.ignoreNamespace }} --ignorenamespace {{- .Values.ignoreNamespace }}{{- end }} {{- if .Values.onlyNamespace }} --onlynamespace {{- .Values.onlyNamespace }}{{- end }}
