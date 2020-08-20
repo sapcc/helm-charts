@@ -237,8 +237,11 @@
       regex: 'snmp_n9kpx_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__,snmp_n9kpx_inetCidrRouteProto]
+    - source_labels: [__name__,inetCidrRouteProto]
       regex: 'snmp_n9kpx_inetCidrRouteProto;(bbnSpfIgp|ttdp|rpl|rip|other|netmgmt|isIs|idpr|icmp|hello|ggp|esIs|egp|dvmrp|dhcp|ciscoIgrp|ciscoEigrp|bgp)'
+      action: drop
+    - source_labels: [__name__,inetCidrRouteStatus]
+      regex: 'snmp_n9kpx_inetCidrRouteStatus;(createAndGo|createAndWait|destroy|notInService|notReady)'
       action: drop
     - source_labels: [__name__, snmp_ipn_sysDescr]
       regex: 'snmp_ipn_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
