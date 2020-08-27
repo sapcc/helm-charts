@@ -14,10 +14,15 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: digicert-issuer
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+      prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
       containers:
         - args:
             - --enable-leader-election
+            - --metrics-addr=:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
           command:
             - /digicert-issuer
           image: {{ include "image" . }}
@@ -30,4 +35,7 @@ spec:
             requests:
               cpu: 100m
               memory: 20Mi
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
       terminationGracePeriodSeconds: 10
