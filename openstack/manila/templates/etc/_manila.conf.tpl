@@ -37,6 +37,8 @@ scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFi
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
 
 migration_ignore_scheduler = True
+# default time to wait for access rules to become active in migration cutover was 180 seconds
+migration_wait_access_rules_timeout = 600
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_shares = 0

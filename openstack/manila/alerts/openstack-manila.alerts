@@ -15,6 +15,20 @@ groups:
       description: Sum of Openstack Manila Shares Stuck is more than 1
       summary: Manila shares in stuck state
 
+  - alert: OpenstackManilaShareSnapshotsStuck
+    expr: (sum(openstack_manila_snapshot_stuck_count_gauge) BY (share_id, status)) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      meta: '{{ $value }} share snapshots'
+      playbook: docs/support/playbook/manila/shares_stuck.html
+      service: manila
+      severity: info
+      tier: os
+    annotations:
+      description: Sum of Openstack Manila Share Snapshots Stuck is more than 1
+      summary: Manila share snapshots in stuck state
+
   - alert: OpenstackManilaSharesStuckCreate
     expr: max(openstack_manila_shares_stuck_max_duration_gauge{status="creating"})
       BY (manila_host) > 120

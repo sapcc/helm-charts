@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-{{- $major := .Capabilities.KubeVersion.Major -}}
-{{- $minor := .Capabilities.KubeVersion.Minor -}}
 
 export http_proxy=
 export all_proxy=
@@ -39,8 +37,4 @@ export OS_DOMAIN_ID={{ .Values.keystone.domainId }}
 export OS_REGION={{.Values.global.region}}
 
 echo "Starting openstack-seeder.."
-{{- if and (eq (int $major) 1) (lt (int $minor) 10) }}
-/usr/local/bin/openstack-seeder --v {{ default 1 .Values.logLevel }}
-{{- else }}
-/usr/local/bin/openstack-seeder --logtostderr --resync {{ default "24h" .Values.resync | quote }} --v {{ default 1 .Values.logLevel }} {{- if .Values.dryRun }} --dry-run{{- end }}
-{{- end }}
+/usr/local/bin/openstack-seeder --v {{ default 1 .Values.logLevel }} {{- if .Values.dryRun }} --dry-run{{- end }} {{- if .Values.ignoreNamespace }} --ignorenamespace={{- .Values.ignoreNamespace }}{{- end }} {{- if .Values.onlyNamespace }} --onlynamespace={{- .Values.onlyNamespace }}{{- end }}

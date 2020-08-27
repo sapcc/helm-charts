@@ -1,11 +1,24 @@
 groups:
 - name: openstack-content-repo.alerts
   rules:
+  - alert: OpenstackContentRepoMetricsMissing
+    expr: absent(repo_sync_last_run) or absent(repo_sync_check_success) or absent(repo_sync_check_httpcode)
+    for: 24h
+    labels:
+      tier: os
+      service: swift
+      severity: info
+      context: repo
+    annotations:
+      description: Some content repo metrics have been missing for 24h. Check the logs of the corresponding statsd pod.
+      summary: Some content repo metrics are missing
+
   - alert: OpenstackRepo
     # TODO Remove repo!~"rhel" when metrics are aged out of the system
     expr: floor((time()-repo_sync_last_run{kind="success_timestamp",repo!~"rhel"})/60/60) > 48
     for: 10m
     labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
       tier: os
       service: swift
       severity: info
@@ -19,6 +32,7 @@ groups:
     expr: repo_sync_check_success != 1 and repo_sync_check_httpcode == 403
     for: 1h
     labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
       tier: os
       service: swift
       severity: info
@@ -33,6 +47,7 @@ groups:
     expr: repo_sync_check_success != 1 and repo_sync_check_httpcode != 403
     for: 1h
     labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
       tier: os
       service: swift
       severity: info

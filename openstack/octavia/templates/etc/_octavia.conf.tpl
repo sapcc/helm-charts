@@ -44,11 +44,11 @@ connection = {{ include "db_url_mysql" . }}
 topic = f5_prov
 
 [certificates]
-endpoint_type = internalURL
+endpoint_type = internal
 region_name = {{.Values.global.region}}
 
 [neutron]
-endpoint_type = internalURL
+endpoint_type = internal
 region_name = {{.Values.global.region}}
 
 [service_auth]
