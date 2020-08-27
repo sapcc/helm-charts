@@ -1,4 +1,5 @@
 {{- if contains ",f5" .Values.ml2_mechanismdrivers }}
+{{- $envAll := . }}
 {{- range $lb := .Values.new_f5.loadbalancers }}
 ---
 kind: Deployment
@@ -34,8 +35,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8000"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
-        configmap-etc-f5-agent: {{ include (print $.Template.BasePath "/configmap-etc-f5-agent.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
+        configmap-f5-agent: {{ include (print $.Template.BasePath "/configmap-f5-agent.yaml") $ | sha256sum }}
     spec:
       hostname: neutron-f5-{{ $lb.name }}
       containers:
