@@ -37,7 +37,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end }}
 
 {{- define "mysql_metrics.db_password" -}}
-{{ .Values.db_password | default .Values.global.dbPassword | default (tuple . .Values.global.dbUser | include "mysql_metrics.password_for_user")}}
+{{ .Values.global.dbPassword | default (tuple . .Values.global.dbUser | include "mysql_metrics.password_for_user")}}
 {{- end -}}
 
 {{/* Needed for testing purposes only. */}}
