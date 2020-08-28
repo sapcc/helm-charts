@@ -642,3 +642,18 @@
       regex: firmware-exporter
       action: keep
 {{- end }}
+
+{{- $values := .Values.apic_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'apic-exporter'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  static_configs:
+    - targets:
+      - 'apic-exporter:9102'
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: apic-exporter
+      action: keep
+{{- end }}
