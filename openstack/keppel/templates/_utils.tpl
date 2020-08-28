@@ -36,7 +36,7 @@
 - name:  KEPPEL_BURST_BLOB_PUSHES
   value: '30'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PULLS
-  value: '30'  # per account
+  value: '300'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
 - name:  KEPPEL_DB_URI
@@ -72,7 +72,9 @@
 - name:  KEPPEL_RATELIMIT_BLOB_PUSHES
   value: '100r/m'  # per account
 - name:  KEPPEL_RATELIMIT_MANIFEST_PULLS
-  value: '100r/m'  # per account
+  value: '1000r/m'  # per account (used to be smaller than rate limit for blob pulls, but we pulled
+                    # it up to account for clients that just poll the state of certain tags without
+                    # actually pulling the image contents)
 - name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
   value: '10r/m'   # per account
 - name:  KEPPEL_REDIS_URI
