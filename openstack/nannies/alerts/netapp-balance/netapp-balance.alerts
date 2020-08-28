@@ -1,0 +1,50 @@
+groups:
+- name: netapp-balance-nanny.alerts
+  rules:
+  - alert: OpenstackNetappBalanceNannyNoVolumesInRangeFlexvol
+    expr: netapp_balancing_nanny_error_count{error_type="flexvol_not_in_range"} > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} has no volumes in the min/max range for flexvol balancing - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} has no volumes in the min/max range for flexvol balancing - should be investigated ..."
+
+  - alert: OpenstackNetappBalanceNannyNoVolumesInRangeAggregate
+    expr: netapp_balancing_nanny_error_count{error_type="aggr_not_in_range"} > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} has no volumes in the min/max range for aggregate balancing - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} has no volumes in the min/max range for aggregate balancing - should be investigated ..."
+
+  - alert: OpenstackNetappBalanceNannyNotEnoughVolumesFlexvol
+    expr: netapp_balancing_nanny_error_count{error_type="flexvol_not_enough_manual"} > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} has not enough volumes in the min/max range for manual flexvol balancing - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} has not enough volumes in the min/max range for manual flexvol balancing - should be investigated ..."
+
+  - alert: OpenstackNetappBalanceNannyNotEnoughVolumesAggregate
+    expr: netapp_balancing_nanny_error_count{error_type="aggr_not_enough_manual"} > 0
+    for: 30m
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} has not enough volumes in the min/max range for manual aggregate balancing - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} has not enough volumes in the min/max range for manual aggregate balancing - should be investigated ..."

@@ -5,13 +5,6 @@ modules:
     - cbgpPeer2AdminStatus
     - cbgpPeer2FsmEstablishedTime
     - cbgpPeer2State
-    - cbgpPeerAcceptedPrefixes
-    - cbgpPeerAddrFamilyAfi
-    - cbgpPeerAddrFamilySafi
-    - cbgpPeerAdvertisedPrefixes
-    - cbgpPeerDeniedPrefixes
-    - cbgpPeerSuppressedPrefixes
-    - cbgpPeerWithdrawnPrefixes
     - ccmHistoryRunningLastChanged
     - ccmHistoryRunningLastSaved
     - cefcFRUPowerAdminStatus
@@ -58,6 +51,10 @@ modules:
     - ospfIfState
     - sysDescr
     - sysUpTime
+    - cseTcamResourceTotal
+    - cseTcamResourceUsed
+    - inetCidrRouteProto
+    - inetCidrRouteStatus
     lookups:
       - source_indexes: [ifIndex]
         lookup: ifAlias
@@ -75,6 +72,10 @@ modules:
         lookup: ifAdminStatus
       - source_indexes: [ifIndex]
         lookup: ifAlias
+      - source_indexes: [entPhysicalIndex]
+        lookup: entPhysicalName
+      - source_indexes: [entPhysicalIndex,cseTcamResourceType]
+        lookup: cseTcamResourceDescr
     overrides:
       ifAlias:
         ignore: true # Lookup metric
@@ -90,6 +91,7 @@ modules:
         type: PhysAddress48
       ifAdminStatus:
         ignore: true
-      mplsL3VpnVrfName:
-        type: DisplayString
-
+      inetCidrRouteProto:
+        type: EnumAsStateSet
+      inetCidrRouteStatus:
+        type: EnumAsStateSet

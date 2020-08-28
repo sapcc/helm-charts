@@ -1,8 +1,7 @@
-{{- if .Release.IsUpgrade }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: designate-seed
+  name: {{ .Release.Name }}-seed
   labels:
     component: designate
     app: {{ template "fullname" . }}
@@ -11,33 +10,42 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
-  - monsoon3/domain-default-seed
-  - monsoon3/domain-cc3test-seed
-  - monsoon3/domain-ccadmin-seed
-  - monsoon3/domain-bs-seed
-  - monsoon3/domain-cp-seed
-  - monsoon3/domain-fsn-seed
-  - monsoon3/domain-hcm-seed
-  - monsoon3/domain-hcp03-seed
-  - monsoon3/domain-hec-seed
-  - monsoon3/domain-monsoon3-seed
-  - monsoon3/domain-neo-seed
-  - monsoon3/domain-s4-seed
-  - monsoon3/domain-wbs-seed
+  - {{ .Release.Namespace }}/domain-default-seed
+  - {{ .Release.Namespace }}/domain-cc3test-seed
+  - {{ .Release.Namespace }}/domain-ccadmin-seed
+  - {{ .Release.Namespace }}/domain-bs-seed
+  - {{ .Release.Namespace }}/domain-cp-seed
+  - {{ .Release.Namespace }}/domain-fsn-seed
+  - {{ .Release.Namespace }}/domain-hcm-seed
+  - {{ .Release.Namespace }}/domain-hcp03-seed
+  - {{ .Release.Namespace }}/domain-hec-seed
+  - {{ .Release.Namespace }}/domain-monsoon3-seed
+  - {{ .Release.Namespace }}/domain-neo-seed
+  - {{ .Release.Namespace }}/domain-s4-seed
+  - {{ .Release.Namespace }}/domain-wbs-seed
 {{- if .Values.tempest_enabled }}
-  - monsoon3/domain-tempest-seed
+  - {{ .Release.Namespace }}/domain-tempest-seed
 {{- end }}
 
   roles:
   - name: cloud_dns_admin
+    description: "All Designate permissions"
   - name: cloud_dns_ops
+    description: "DNS Operations. Create zones and any recordsets, share zones"
   - name: cloud_dns_support
+    description: "DNS Support. Combines all dns_master permissions"
   - name: dns_zonemaster
+    description: "Manage/create sub-zones for already owned zones, accept/create zone transfers, delete and share zones"
   - name: dns_hostmaster
+    description: "Manage A/AAAA/CAA/CNAME/SRV/TXT/NS/PTR recordsets, accept/create zone transfers, delete zones"
   - name: dns_mailmaster
+    description: "Manage A/AAAA/CAA/CNAME/SRV/TXT/MX/PTR recordsets, accept/create zone transfers, delete zones"
   - name: dns_webmaster
+    description: "Manage A/AAAA/CAA/CNAME/SRV/TXT/PTR recordsets, accept/create zone transfers, delete zones"
   - name: dns_admin
+    description: "Equal to dns_webmaster"
   - name: dns_viewer
+    description: "Designate Read-only. View DNS zones and recordsets"
 
   services:
   - name: designate
@@ -735,4 +743,3 @@ spec:
         role: cloud_dns_ops
 {{- end }}
 
-{{- end }}
