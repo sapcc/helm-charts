@@ -87,7 +87,9 @@ enabled = false
     - containerPort: 14271
       name: admin-http
       protocol: TCP
-  args: ["--reporter.grpc.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14250"]
+  args:
+    - --reporter.grpc.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14250
+    - --log-level=debug
 {{- end }}
 {{- end }}
 {{- end }}
