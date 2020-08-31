@@ -48,3 +48,15 @@ groups:
     annotations:
       description: "The {{ $labels.kubernetes_name }} has not enough volumes in the min/max range for manual aggregate balancing - this should be investigated ..."
       summary: "The {{ $labels.kubernetes_name }} has not enough volumes in the min/max range for manual aggregate balancing - should be investigated ..."
+
+  - alert: OpenstackNetappBalanceNannyAggregatesCloseToLimit
+    expr: netapp_balancing_nanny_aggregate_usage_threshold - netapp_balancing_nanny_aggregate_usage_avg < 5
+    for: 3h
+    labels:
+      context: nanny
+      service: nanny
+      severity: info
+      tier: os
+    annotations:
+      description: "The {{ $labels.kubernetes_name }} discovered that the avg aggregate usage is less than 5% below the balancing limit - this should be investigated ..."
+      summary: "The {{ $labels.kubernetes_name }} discovered that the avg aggregate usage is less than 5% below the balancing limit - this should be investigated ..."
