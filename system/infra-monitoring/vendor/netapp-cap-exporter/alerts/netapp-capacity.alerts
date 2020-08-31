@@ -83,6 +83,32 @@ groups:
           description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is full'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
+      - alert: CinderStorageAggregateGrowingFast
+        expr: deriv(netapp_aggregate_used_percentage{aggregate="aggr_ssd_bb036_1"}[120m]) > 0.00025
+        for: 30m
+        labels:
+          severity: info
+          tier: os
+          service: nanny
+          context: nanny
+          meta: 'Testalert: Usage of aggregate {{$labels.aggregate}} is growing very fast'
+        annotations:
+          description: 'Testalert: Usage of aggregate {{$labels.aggregate}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is growing very fast'
+          summary: 'Testalert: Aggregate {{$labels.filer}}/{{$labels.aggregate}} usage is growing very fast'
+
+      - alert: CinderStorageAggregateGettingFullFast
+        expr: predict_linear(netapp_aggregate_used_percentage[120m], 14400) > 90
+        for: 30m
+        labels:
+          severity: info
+          tier: os
+          service: nanny
+          context: nanny
+          meta: 'Testalert: Usage of aggregate {{$labels.aggregate}} is growing very fast towards 90 percent'
+        annotations:
+          description: 'Testalert: Usage of aggregate {{$labels.aggregate}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is growing very fast and will reach 90 percent soon'
+          summary: 'Testalert: Aggregate {{$labels.filer}}/{{$labels.aggregate}} will reach a usage of 90 percent soon'
+
       - alert: VVolDatastoreFlexvolHighUsage
         expr: netapp_volume_used_bytes{app="netapp-capacity-exporter-cinder", volume=~"vv.*"} / 1024/1024/1024 > 4600
         for: 3h
