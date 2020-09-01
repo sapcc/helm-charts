@@ -7,8 +7,8 @@ host = {{ $loadbalancer.name }}
 [F5]
 physical_device_mappings = {{ $loadbalancer.physical_device_mappings }}
 sync_interval = {{ $values.new_f5.periodic_interval }}
-cleanup = {{ $loadbalancer.cleanup | default "false" }}
-migration = {{ $values.migration | default "false" }}
+cleanup = {{ $loadbalancer.new_f5.cleanup | default "false" }}
+migration = {{ $values.new_f5.migration | default "false" }}
 backend = icontrol
 devices = {{ range $i, $host := $loadbalancer.hosts }}
 {{- tuple $host $loadbalancer.username $loadbalancer.password | include "f5_url" }}
