@@ -3,11 +3,11 @@ kind: CustomResourceDefinition
 metadata:
   name: certificaterequests.cert-manager.io
   annotations:
-    cert-manager.io/inject-ca-from-secret: 'kube-system/kube-system-metal-cert-manager-webhook-ca'
+    cert-manager.io/inject-ca-from-secret: 'kube-system/{{ .Release.Name }}-cert-manager-webhook-ca'
   labels:
     app: 'cert-manager'
     app.kubernetes.io/name: 'cert-manager'
-    app.kubernetes.io/instance: 'kube-system-metal'
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
     app.kubernetes.io/managed-by: 'Helm'
     helm.sh/chart: 'cert-manager-v0.15.2'
 spec:
@@ -39,7 +39,7 @@ spec:
     webhookClientConfig:
       service:
         namespace: 'kube-system'
-        name: 'kube-system-metal-cert-manager-webhook'
+        name: '{{ .Release.Name }}-cert-manager-webhook'
         path: /convert
   names:
     kind: CertificateRequest
