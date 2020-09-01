@@ -87,3 +87,20 @@ groups:
       annotations:
         description: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
         summary: "All ASR routers `{{ $labels.devicename }}` in the redundancy group are up."
+
+    - alert: NetworkAsrInterfaceOverUtilization
+      expr: (	rate(snmp_asr_ifHCOutOctets{ifDescr=~"TenGigabitEthernet.*"} [90m]) * 8 / 1000^3 >bool 8.5 or rate(snmp_asr_ifHCOutOctets{ifDescr=~"TenGigabitEthernet.*"} [15m]) * 8 / 1000^3 >bool 9.5) == 1
+      for: 15m
+      labels:
+        severity: info
+        tier: net
+        service: asr
+        context: asr
+        meta: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
+        playbook: 'docs/support/playbook/network/control_plane_router/interface_util'
+        dashboard: neutron-datapath-bandwith
+      annotations:
+        description: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` experiencing high bandwidth utilization.Immediate action required"
+        summary: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` crossed bandwidth threshold"
+
+
