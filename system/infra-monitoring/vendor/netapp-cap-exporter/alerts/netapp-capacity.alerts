@@ -83,7 +83,7 @@ groups:
           description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is full'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
-      - alert: CinderStorageAggregateGrowingFast
+      - alert: CinderStorageAggregateGrowingFastTestAlertA
         expr: deriv(netapp_aggregate_used_percentage{aggregate="aggr_ssd_bb036_1"}[120m]) > 0.00025
         for: 30m
         labels:
@@ -91,10 +91,23 @@ groups:
           tier: os
           service: nanny
           context: nanny
-          meta: 'Testalert: Usage of aggregate {{$labels.aggregate}} is growing very fast'
+          meta: 'TestalertA: Usage of aggregate {{$labels.aggregate}} is growing very fast'
         annotations:
-          description: 'Testalert: Usage of aggregate {{$labels.aggregate}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is growing very fast'
-          summary: 'Testalert: Aggregate {{$labels.filer}}/{{$labels.aggregate}} usage is growing very fast'
+          description: 'TestalertA: Usage of aggregate {{$labels.aggregate}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is growing very fast'
+          summary: 'TestalertA: Aggregate {{$labels.filer}}/{{$labels.aggregate}} usage is growing very fast'
+
+      - alert: CinderStorageAggregateGrowingFastTestAlertB
+        expr: netapp_aggregate_used_percentage > 10 + min_over_time(netapp_aggregate_used_percentage[24h])
+        for: 30m
+        labels:
+          severity: info
+          tier: os
+          service: nanny
+          context: nanny
+          meta: 'TestalertB: Usage of aggregate {{$labels.aggregate}} is growing very fast'
+        annotations:
+          description: 'TestalertB: Usage of aggregate {{$labels.aggregate}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is growing very fast'
+          summary: 'TestalertB: Aggregate {{$labels.filer}}/{{$labels.aggregate}} usage is growing very fast'
 
       - alert: CinderStorageAggregateGettingFullFast
         expr: predict_linear(netapp_aggregate_used_percentage[120m], 14400) > 90
