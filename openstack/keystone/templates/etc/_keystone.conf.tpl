@@ -157,6 +157,9 @@ domain_name_url_safe = new
 lockout_failure_attempts = 5
 lockout_duration = 300
 unique_last_password_count = 5
+{{- if hasKey .Values "disable_user_account_days_inactive" }}
+disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inactive }}
+{{- end }}
 
 {{- if eq .Values.release "rocky" }}
 [oslo_messaging_rabbit]
