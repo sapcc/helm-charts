@@ -101,6 +101,8 @@
       - '{__name__=~"^vrops_vcenter_memory_used_percent"}'
       - '{__name__=~"^vrops_cluster_cpu_capacity_mhz"}'
       - '{__name__=~"^vrops_cluster_memory_capacity_kilobytes"}'
+      - '{__name__=~"^vrops_hostsystem_custom_attributes_hw_info"}'
+      - '{__name__=~"^vrops_hostsystem_memory_ballooning_kilobytes"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_runs_counter_total"}'
       - '{__name__=~"^thousandeyes_test_html_loss_percentage"}'
