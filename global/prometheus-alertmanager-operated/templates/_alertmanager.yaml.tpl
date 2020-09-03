@@ -721,8 +721,8 @@ receivers:
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 
-   - name: slack_nannies_automation
-     slack_configs:
+  - name: slack_nannies_automation
+    slack_configs:
       - channel: '#cc-nannies-automation'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
