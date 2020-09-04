@@ -1,4 +1,5 @@
 FROM python:3.7
+LABEL source_repository="https://github.com/sapcc/helm-charts"
 
 ENV HELM_VERSION=2.16.5
 
