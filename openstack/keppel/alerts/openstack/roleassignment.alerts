@@ -1,0 +1,33 @@
+groups:
+- name: openstack-keppel-roleassignment.alerts
+  rules:
+
+  # allowed role assignments for the `cloud_registry_admin` role:
+  # - group CCADMIN_CLOUD_ADMINS@ccadmin in project cloud_admin@ccadmin
+  - alert: OpenstackKeppelUnexpectedCloudAdminRoleAssignments
+    expr: absent(openstack_assignments_per_role{role_name="cloud_registry_admin"}) or max(openstack_assignments_per_role{role_name="cloud_registry_admin"}) > 1
+    for: 10m
+    labels:
+      tier: os
+      service: keppel
+      severity: info
+      playbook: 'docs/support/playbook/unexpected-role-assignments'
+      meta: 'Unexpected role assignments found for Keystone role "cloud_registry_admin"'
+    annotations:
+      summary: 'Unexpected role assignments'
+      description: 'The Keystone role "cloud_registry_admin" is assigned to more users/groups than expected.'
+
+  # allowed role assignments for the `cloud_registry_admin` role:
+  # <none so far>
+  - alert: OpenstackKeppelUnexpectedCloudViewerRoleAssignments
+    expr: max(openstack_assignments_per_role{role_name="cloud_registry_viewer"}) > 0 # NOTE: cannot match absent() here because this time series is actually absent instead of 0
+    for: 10m
+    labels:
+      tier: os
+      service: keppel
+      severity: info
+      playbook: 'docs/support/playbook/unexpected-role-assignments'
+      meta: 'Unexpected role assignments found for Keystone role "cloud_registry_viewer"'
+    annotations:
+      summary: 'Unexpected role assignments'
+      description: 'The Keystone role "cloud_registry_viewer" is assigned to more users/groups than expected.'

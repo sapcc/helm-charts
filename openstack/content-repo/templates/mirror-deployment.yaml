@@ -2,7 +2,11 @@
 {{- if not ( and ($.Capabilities.APIVersions.Has "batch/v1beta1") $config.schedule ) }}
 {{- if not $config.disabled }}
 kind: Deployment
+{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: content-repo-{{ $repo }}
@@ -41,7 +45,7 @@ spec:
           secretName: swift-http-import
       containers:
       - name: swift-http-import
-        image: {{$.Values.global.docker_repo}}/swift-http-import:{{ include "image_version" $.Values }}
+        image: {{$.Values.global.registry}}/swift-http-import:{{ include "image_version" $.Values }}
         command:
           - /sbin/tini
         args:

@@ -1,15 +1,23 @@
 {{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
 {{- if .Values.vcenter_nanny.enabled }}
-apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
+apiVersion: vcenter-operator.stable.sap.cc/v1
 metadata:
   name: 'vcenter-datacenter-nanny-deployment'
+options:
   scope: 'datacenter'
-template: |{{`
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
   kind: Deployment
+  {{- if .Capabilities.APIVersions.Has "apps/v1" }}
+  apiVersion: apps/v1
+  {{- else }}
   apiVersion: extensions/v1beta1
+  {{- end }}
   metadata:
-    name: vcenter-nanny-{{ name }}
+    name: vcenter-nanny-{= name =}
     namespace: monsoon3
     labels:
       system: openstack
@@ -21,10 +29,13 @@ template: |{{`
       rollingUpdate:
         maxUnavailable: 1
         maxSurge: 1
+    selector:
+      matchLabels:
+          component: vcenter-nanny-{= name =}
     template:
       metadata:
         labels:
-          component: vcenter-nanny-{{ name }}
+          component: vcenter-nanny-{= name =}
       spec:
         nodeSelector:
           zone: farm
@@ -34,14 +45,14 @@ template: |{{`
               name: nova-etc
         containers:
           - name: vcenter-cleanup
-            image: `}}{{ .Values.vcenter_nanny.docker_repo }}/vcenter-nanny:{{ .Values.vcenter_nanny.image_version | replace "string:" "" }}{{`
+            image: {{ .Values.vcenter_nanny.docker_repo }}/vcenter-nanny:{{ .Values.vcenter_nanny.image_version | replace "string:" "" }}
             imagePullPolicy: IfNotPresent
             command:
               - dumb-init
               - kubernetes-entrypoint
             env:
               - name: COMMAND
-                value: "`}}{{ if .Values.vcenter_nanny.debug }}sleep inf{{ else }}/bin/bash /scripts/vcenter-cleanup.sh{{ end }}{{`"
+                value: "{{ if .Values.vcenter_nanny.debug }}sleep inf{{ else }}/bin/bash /scripts/vcenter-cleanup.sh{{ end }}"
               - name: NAMESPACE
                 valueFrom:
                   fieldRef:
@@ -49,39 +60,39 @@ template: |{{`
               - name: DEPENDENCY_SERVICE
                 value: "nova-postgresql,nova-api"
               - name: VCENTER_CLEANUP_ENABLED
-                value: "`}}{{ .Values.vcenter_nanny.enabled }}{{`"
+                value: "{{ .Values.vcenter_nanny.enabled }}"
               - name: VCENTER_CLEANUP_DRY_RUN
-                value: "`}}{{ .Values.vcenter_nanny.dry_run }}{{`"
+                value: "{{ .Values.vcenter_nanny.dry_run }}"
               - name: VCENTER_CLEANUP_POWER_OFF
-                value: "`}}{{ .Values.vcenter_nanny.power_off }}{{`"
+                value: "{{ .Values.vcenter_nanny.power_off }}"
               - name: VCENTER_CLEANUP_UNREGISTER
-                value: "`}}{{ .Values.vcenter_nanny.unregister }}{{`"
+                value: "{{ .Values.vcenter_nanny.unregister }}"
               - name: VCENTER_CLEANUP_DELETE
-                value: "`}}{{ .Values.vcenter_nanny.delete }}{{`"
+                value: "{{ .Values.vcenter_nanny.delete }}"
               - name: VCENTER_CLEANUP_DETACH_GHOST_LIMIT
-                value: "`}}{{ .Values.vcenter_nanny.detach_ghost_limit }}{{`"
+                value: "{{ .Values.vcenter_nanny.detach_ghost_limit }}"
               - name: VCENTER_CLEANUP_DETACH_GHOST_VOLUMES
-                value: "`}}{{ .Values.vcenter_nanny.detach_ghost_volumes }}{{`"
+                value: "{{ .Values.vcenter_nanny.detach_ghost_volumes }}"
               - name: VCENTER_CLEANUP_DETACH_GHOST_PORTS
-                value: "`}}{{ .Values.vcenter_nanny.detach_ghost_ports }}{{`"
+                value: "{{ .Values.vcenter_nanny.detach_ghost_ports }}"
               - name: VCENTER_CLEANUP_VOL_CHECK
-                value: "`}}{{ .Values.vcenter_nanny.vol_check }}{{`"
+                value: "{{ .Values.vcenter_nanny.vol_check }}"
               - name: VCENTER_CLEANUP_BIGVM_SIZE
-                value: "`}}{{ .Values.vcenter_nanny.bigvm_size }}{{`"
+                value: "{{ .Values.vcenter_nanny.bigvm_size }}"
               - name: VCENTER_CLEANUP_BIGVM_SHARES_ACTION_SIZE
-                value: "`}}{{ .Values.vcenter_nanny.bigvm_shares_action_size }}{{`"
+                value: "{{ .Values.vcenter_nanny.bigvm_shares_action_size }}"
               - name: VCENTER_CLEANUP_HOST
-                value: {{ host | quote }}
+                value: {= host | quote =}
               - name: VCENTER_CLEANUP_USER
-                value: {{ username | quote }}
+                value: {= username | quote =}
               - name: VCENTER_CLEANUP_PASSWORD
-                value: {{ password | quote }}
+                value: {= password | quote =}
               - name: VCENTER_CLEANUP_ITERATIONS
-                value: "`}}{{ .Values.vcenter_nanny.iterations }}{{`"
+                value: "{{ .Values.vcenter_nanny.iterations }}"
               - name: VCENTER_CLEANUP_INTERVAL
-                value: "`}}{{ .Values.vcenter_nanny.interval }}{{`"
+                value: "{{ .Values.vcenter_nanny.interval }}"
               - name: OS_AUTH_URL
-                value: "https://identity-3.{{ availability_zone[:-1] }}.cloud.sap:443/v3"
+                value: "https://identity-3.{= availability_zone[:-1] =}.cloud.sap:443/v3"
               - name: OS_PROJECT_NAME
                 value: "cloud_admin"
               - name: OS_PROJECT_DOMAIN_NAME
@@ -91,7 +102,6 @@ template: |{{`
               - name: OS_USER_DOMAIN_NAME
                 value: "Default"
               - name: OS_PASSWORD
-                value: {{ "vcenter_nanny" | derive_password("identity-3." + availability_zone[:-1] + ".cloud.sap") | quote }}
-`}}
+                value: {= "vcenter_nanny" | derive_password("identity-3." + availability_zone[:-1] + ".cloud.sap") | quote =}
 {{- end }}
 {{- end }}

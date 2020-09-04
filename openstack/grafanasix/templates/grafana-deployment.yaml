@@ -1,5 +1,9 @@
-apiVersion: extensions/v1beta1
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
 metadata:
   name: grafana
   labels:
@@ -8,6 +12,10 @@ metadata:
     component: grafana
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+        app: grafana
+        component: grafana
   template:
     metadata:
       labels:

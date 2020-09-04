@@ -1,5 +1,9 @@
-apiVersion: extensions/v1beta1
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
 metadata:
   name: {{ include "infraMonitoring.fullname" . }}
   labels:
@@ -15,12 +19,13 @@ spec:
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
+  selector:
+    matchLabels:
+      app: {{ include "infraMonitoring.name" . }}
   template:
     metadata:
       labels:
         app: {{ include "infraMonitoring.name" . }}
-        release: {{ .Release.Name }}
-        component: redfish
     spec:
       containers:
       - name: {{ include "infraMonitoring.name" . }}
@@ -28,16 +33,20 @@ spec:
         env:
         - name: APP_ENV
           value: "{{ .Values.app_env }}"
-        {{- if .Values.ironic.enabled }}
+        - name: LISTEN_PORT
+          value: "{{ .Values.listen_port }}"
+        - name: TIMEOUT
+          value: "40"
+        {{- if .Values.global.redfish_bm_username }}
         - name: REDFISH_BM_USERNAME
-          value: "{{ .Values.global.redfish_bm_username | default .Values.redfish_bm_username }}"
+          value: {{ required "redfish_bm_username needs to be defined in global values" .Values.global.redfish_bm_username }}
         - name: REDFISH_BM_PASSWORD
-          value: "{{ .Values.global.redfish_bm_password | default .Values.redfish_bm_password }}"
+          value: {{ required "redfish_bm_username needs to be defined in global values" .Values.global.redfish_bm_password }}
         {{- end }}
-        {{- if .Values.netbox.enabled }}
+        {{- if .Values.global.redfish_cp_username }}
         - name: REDFISH_CP_USERNAME
           value: {{ required "redfish_cp_username needs to be defined in global values" .Values.global.redfish_cp_username }}
-        - name: NETBOX_CP_PASSWORD
+        - name: REDFISH_CP_PASSWORD
           value: {{ required "redfish_cp_password needs to be defined in global values" .Values.global.redfish_cp_password }}
         {{- end }}
         {{- if .Values.global.redfish_bb_username }}

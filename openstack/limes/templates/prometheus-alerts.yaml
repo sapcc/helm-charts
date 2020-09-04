@@ -40,8 +40,9 @@ spec:
         # allowed role assignments for the `resource_service` role:
         # - user admin@Default in project admin@Default (openstack-seeder assigns network/DNS quota during build-up)
         # - user limes@Default in project cloud_admin@ccadmin
+        # HOWEVER admin@Default is covered by a system role assignment that does not count towards this metric
         - alert: OpenstackLimesUnexpectedServiceRoleAssignments
-          expr: max(openstack_assignments_per_role_gauge{name="resource_service"}) > 2
+          expr: absent(openstack_assignments_per_role{role_name="resource_service"}) or max(openstack_assignments_per_role{role_name="resource_service"}) > 1
           for: 10m
           labels:
             tier: os
@@ -67,7 +68,7 @@ spec:
         # - user kubernikus-master@Default     in project cloud_admin@ccadmin
         - alert: OpenstackLimesUnexpectedCloudAdminRoleAssignments
           {{- $r := .Values.global.region }}
-          expr: max(openstack_assignments_per_role_gauge{name="cloud_resource_admin"}) > {{if eq $r "eu-nl-1"}} 9 {{else if eq $r "eu-de-1" }} 7 {{else}} 6 {{end}}
+          expr: absent(openstack_assignments_per_role{role_name="cloud_resource_admin"}) or max(openstack_assignments_per_role{role_name="cloud_resource_admin"}) > {{if eq $r "eu-nl-1"}} 9 {{else if eq $r "eu-de-1" }} 7 {{else}} 6 {{end}}
           for: 10m
           labels:
             tier: os
@@ -78,5 +79,20 @@ spec:
           annotations:
             summary: 'Unexpected role assignments'
             description: 'The Keystone role "cloud_resource_admin" is assigned to more users/groups than expected.'
+
+        # allowed role assignments for the `cloud_resource_viewer` role:
+        # - user billing@Default               in project billing@ccadmin (for data transfer from Limes to CBR)
+        - alert: OpenstackLimesUnexpectedCloudViewerRoleAssignments
+          expr: absent(openstack_assignments_per_role{role_name="cloud_resource_viewer"}) or max(openstack_assignments_per_role{role_name="cloud_resource_viewer"}) > 1
+          for: 10m
+          labels:
+            tier: os
+            service: limes
+            severity: info
+            playbook: 'docs/support/playbook/unexpected-role-assignments'
+            meta: 'Unexpected role assignments found for Keystone role "cloud_resource_viewer"'
+          annotations:
+            summary: 'Unexpected role assignments'
+            description: 'The Keystone role "cloud_resource_viewer" is assigned to more users/groups than expected.'
 
 {{- end }}

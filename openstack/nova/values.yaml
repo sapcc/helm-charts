@@ -24,8 +24,6 @@ global:
   osprofiler: {}
   pgbouncer:
     enabled: true
-  novaApi:
-    executable: nova-api
 
 osprofiler: {}
 
@@ -34,7 +32,8 @@ auto_assign_aggregates: 'dry_run'
 cell2:
   name: cell2
   enabled: false
-  conductor: {}
+  conductor:
+    config_file: {}
 
 defaults:
   default:
@@ -66,7 +65,7 @@ pod:
     consoleauth: 2
     conductor: 2
     scheduler: 1
-    placement: 1
+    placement: 2
   lifecycle:
     upgrades:
       deployments:
@@ -188,20 +187,24 @@ neutron_dvs_agent_enabled: true
 cross_az_attach: 'False'
 
 api:
-  DEFAULT:
-    api_paste_config: /etc/nova/api-paste.ini
-    # adding metadata here will disable spawning of separate api-metadata pods
-    enabled_apis: osapi_compute
-    use_forwarded_for: true
+  config_file:
+    DEFAULT:
+      api_paste_config: /etc/nova/api-paste.ini
+      enabled_apis: osapi_compute
+      use_forwarded_for: true
 
-  api:
-    list_records_by_skipping_down_cells: false
+    api:
+      list_records_by_skipping_down_cells: false
+
+  use_uwsgi: false
+  wsgi_processes: 16
 
 api_metadata:
-  DEFAULT:
-    api_paste_config: /etc/nova/api-paste.ini
-    enabled_apis: metadata
-    use_forwarded_for: true
+  config_file:
+    DEFAULT:
+      api_paste_config: /etc/nova/api-paste.ini
+      enabled_apis: metadata
+      use_forwarded_for: true
 
 consoles:
   novnc:
@@ -219,10 +222,14 @@ scheduler:
   driver: "filter_scheduler"
   scheduler_tracks_instance_changes: false
   scheduler_instance_sync_interval: 120
-  default_filters: "AvailabilityZoneFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter, BaremetalExactRamFilter, BaremetalExactCoreFilter, BaremetalExactDiskFilter"
+  default_filters: "AvailabilityZoneFilter, ShardFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter, BaremetalExactRamFilter, BaremetalExactCoreFilter, BaremetalExactDiskFilter"
   ram_weight_multiplier: 1.0
   disk_weight_multiplier: 1.0
   io_ops_weight_multiplier: 0.0
+  soft_affinity_weight_multiplier: 1.0
+  # the prefer-same-host weigher should be able to overpower a worst-case combination of other weighers
+  # (e.g. least ram available + slightly bad disk weight), so make it >= len(other_weighers)
+  prefer_same_host_resize_weight_multiplier: 5.0
 
 compute:
   defaults:
@@ -241,8 +248,11 @@ compute:
       pbm_default_policy: "nova-ephemeral"
       smbios_asset_tag: "SAP CCloud VM"
       bigvm_deployment_free_host_hostgroup_name: "bigvm_free_host_antiaffinity_hostroup"
+      clone_from_snapshot: true
+      full_clone_snapshots: true
 
-conductor: {}
+conductor:
+  config_file: {}
 
 quota:
   # most default quotas are 0 to enforce usage of the Resource Management tool in Elektra
@@ -255,7 +265,7 @@ quota:
   security_group_rules: 0
   security_groups: 0
 
-  server_group_members: 40
+  server_group_members: 40  # this is set by limes now
   # we don't want to set unlimited because that has too much potential to break things
   key_pairs: 10000
 
@@ -286,12 +296,12 @@ pgmetrics:
             usage: "GAUGE"
             description: "VM Count"
     openstack_compute_stuck_instances:
-      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, vm_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE vm_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, vm_state"
+      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, task_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, task_state"
       metrics:
         - project_id:
             usage: "LABEL"
             description: "Project ID"
-        - vm_state:
+        - task_state:
             usage: "LABEL"
             description: "State of the VM"
         - host:
@@ -445,11 +455,8 @@ pgmetrics:
             usage: "GAUGE"
             description: "Node Count"
     openstack_compute_nodes:
-      query: "SELECT compute_nodes.host, compute_nodes.uuid, aggregate_metadata.value AS availability_zone, compute_nodes.hypervisor_type, compute_nodes.free_disk_gb AS free_disk_gb_gauge, compute_nodes.local_gb AS local_gb_gauge, compute_nodes.local_gb_used AS local_gb_used_gauge, compute_nodes.free_ram_mb AS free_ram_mb_gauge, compute_nodes.memory_mb AS memory_mb_gauge, compute_nodes.memory_mb_used AS memory_mb_used_gauge, compute_nodes.vcpus_used AS vcpus_used_gauge, compute_nodes.vcpus AS vcpus_gauge, compute_nodes.running_vms AS running_vms_gauge from compute_nodes join aggregate_hosts on compute_nodes.host=aggregate_hosts.host join aggregate_metadata on aggregate_hosts.aggregate_id=aggregate_metadata.aggregate_id WHERE compute_nodes.deleted = 0 AND aggregate_hosts.deleted=0 AND aggregate_metadata.deleted=0 AND aggregate_metadata.key='availability_zone'"
+      query: "SELECT compute_nodes.host, compute_nodes.uuid, compute_nodes.hypervisor_type, compute_nodes.free_disk_gb AS free_disk_gb_gauge, compute_nodes.local_gb AS local_gb_gauge, compute_nodes.local_gb_used AS local_gb_used_gauge, compute_nodes.free_ram_mb AS free_ram_mb_gauge, compute_nodes.memory_mb AS memory_mb_gauge, compute_nodes.memory_mb_used AS memory_mb_used_gauge, compute_nodes.vcpus_used AS vcpus_used_gauge, compute_nodes.vcpus AS vcpus_gauge, compute_nodes.running_vms AS running_vms_gauge from compute_nodes WHERE compute_nodes.deleted = 0"
       metrics:
-        - availability_zone:
-            usage: "LABEL"
-            description: "Availability Zone details from aggregate_metadata table"
         - uuid:
             usage: "LABEL"
             description: "Compute Node UUID"
@@ -604,6 +611,12 @@ rabbitmq_cell2:
   persistence:
     enabled: false
 
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+
 audit:
   enabled: false
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
@@ -630,6 +643,12 @@ rabbitmq:
       cpu: 1000m
     limits:
       cpu: 2000m
+
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
 
 rabbitmq_notifications:
   name: nova
@@ -665,6 +684,9 @@ logging:
     nova:
       handlers: stdout, sentry
       level: INFO
+    nova.scheduler:
+      handlers: stdout, sentry
+      level: DEBUG
     nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
       handlers: stdout, sentry
       level: INFO
@@ -691,5 +713,5 @@ watcher:
 # Deploy Sentry Prometheus alerts.
 alerts:
   enabled: true
-  # Name of the Prometheus to which the alerts should be assigned to.
+  # Name of the Prometheus to which metrics should be exported
   prometheus: openstack

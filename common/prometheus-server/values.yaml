@@ -19,7 +19,7 @@ global:
 # The repository and tag of the Prometheus image.
 image:
   repository: prom/prometheus
-  tag: v2.15.2
+  tag: v2.19.0
 
 # Mandatory name for this Prometheus.
 # The name is used to find relevant aggregation and alerting rules.
@@ -258,7 +258,7 @@ logLevel: info
 # See: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container .
 resources:
   requests:
-    cpu: 4
+    cpu: "4"
     memory: 8Gi
 
 # A security context defines privilege and access control settings for a Pod or Container.
@@ -303,6 +303,10 @@ serviceDiscoveries:
     # If set to false, all targets are scraped.
     limitToPrometheusTargets: true
 
+  # SD for Kubernetes Probes.
+  probes:
+    enabled: false
+
   # SD for kubernetes API server.
   kubeAPIServer:
     enabled: false
@@ -310,6 +314,10 @@ serviceDiscoveries:
     allowedMetrics:
       - apiserver_request_count
       - apiserver_request_latencies_bucket
+      - apiserver_request_total
+      - apiserver_request_latency_seconds
+      - apiserver_dropped_requests_total
+      - etcd_request_latency_seconds
       - etcd_object_counts
       - process_max_fds
       - process_open_fds
@@ -349,6 +357,11 @@ serviceDiscoveries:
   # Scrape all node exporters.
   nodeExporter:
     enabled: false
+
+  # Scrape kubernikus k8s API component metrics
+  kubernikus:
+    enabled: false
+    namespace: kubernikus
 
 # The pod's tolerations.
 # See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration

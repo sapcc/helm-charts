@@ -32,7 +32,6 @@ rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | defa
 osapi_volume_workers = {{ .Values.osapi_volume_workers | default 16 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-{{- include "ini_sections.database_options_mysql" . }}
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_volumes = 0
@@ -49,10 +48,11 @@ use_default_quota_class=false
 
 scheduler_default_filters = {{ .Values.scheduler_default_filters }}
 
+allow_migration_on_attach = {{ .Values.cinder_api_allow_migration_on_attach }}
+
 {{- include "ini_sections.database" . }}
 
 {{- include "osprofiler" . }}
-
 
 [keystone_authtoken]
 auth_plugin = v3password

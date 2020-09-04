@@ -5,10 +5,11 @@ groups:
         expr: irate(netapp_filer_scrape_failure[5m]) > 0
         for: 10m
         labels:
-          severity: warning
+          severity: info
           tier: storage
           service: netapp-exporter
           context: exporter-health
+          playbook: 'docs/support/playbook/storage/filer_inaccessible.html'
         annotations:
           description: 'Netapp filer {{ $labels.filer }} '
           summary: Netapp ONTAP API inaccessible
@@ -17,12 +18,11 @@ groups:
         expr: netapp_aggregate_used_percentage{app=~".*manila", filer!~"ma01-md007"} > 75
         for: 10m
         labels:
-          severity: warning
+          severity: info
           tier: os
           service: manila
           context: netapp-usage
           dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
-          meta: '{{ $value }}% used'
           playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
         annotations:
           description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
@@ -31,12 +31,11 @@ groups:
       - alert: ManilaStorageAggregateHighUsage
         expr: netapp_aggregate_used_percentage{app=~".*manila", filer=~"ma01-md007"} > 85
         labels:
-          severity: warning
+          severity: info
           tier: os
           service: manila
           context: netapp-usage
           dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
-          meta: '{{ $value }}% used'
           playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint.html'
         annotations:
           description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
@@ -45,7 +44,7 @@ groups:
       - alert: ManilaStorageAggregateFull
         expr: netapp_aggregate_used_percentage{app=~".*manila"} > 90
         labels:
-          severity: critical
+          severity: warning
           tier: os
           service: manila
           context: netapp-usage
@@ -57,7 +56,7 @@ groups:
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
       - alert: CinderStorageAggregateHighUsage
-        expr: netapp_aggregate_used_percentage{app=~".*cinder"} > 75
+        expr: netapp_aggregate_used_percentage{app=~".*cinder"} > 80
         labels:
           severity: warning
           tier: os
@@ -65,12 +64,13 @@ groups:
           context: netapp-usage
           dashboard: netapp-capacity-vpods?&var-region={{$labels.region}}&var-node={{$labels.node}}
           meta: '{{ $value }}% used'
+          playbook: 'docs/support/playbook/cinder/cinder_storage_aggregate_full.html'
         annotations:
-          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is high'
           summary: 'High Capacity Usage on {{$labels.filer}}'
 
       - alert: CinderStorageAggregateFull
-        expr: netapp_aggregate_used_percentage{app=~".*cinder"} > 90
+        expr: netapp_aggregate_used_percentage{app=~".*cinder"} > 95
         labels:
           severity: critical
           tier: os
@@ -78,7 +78,59 @@ groups:
           context: netapp-usage
           dashboard: netapp-capacity-vpods?&var-region={{$labels.region}}&var-node={{$labels.node}}
           meta: '{{ $value }}% used'
+          playbook: 'docs/support/playbook/cinder/cinder_storage_aggregate_full.html'
         annotations:
-          description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
+          description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is full'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
+      - alert: CinderStorageAggregateGrowingFastTestAlertA
+        expr: deriv(netapp_aggregate_used_percentage{aggregate="aggr_ssd_bb036_1"}[120m]) > 0.00025
+        for: 30m
+        labels:
+          severity: info
+          tier: os
+          service: nanny
+          context: nanny
+          meta: 'TestalertA: Usage of aggregate {{$labels.aggregate}} is growing very fast'
+        annotations:
+          description: 'TestalertA: Usage of aggregate {{$labels.aggregate}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is growing very fast'
+          summary: 'TestalertA: Aggregate {{$labels.filer}}/{{$labels.aggregate}} usage is growing very fast'
+
+      - alert: CinderStorageAggregateGrowingFastTestAlertB
+        expr: netapp_aggregate_used_percentage > 10 + min_over_time(netapp_aggregate_used_percentage[24h])
+        for: 30m
+        labels:
+          severity: info
+          tier: os
+          service: nanny
+          context: nanny
+          meta: 'TestalertB: Usage of aggregate {{$labels.aggregate}} is growing very fast'
+        annotations:
+          description: 'TestalertB: Usage of aggregate {{$labels.aggregate}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is growing very fast'
+          summary: 'TestalertB: Aggregate {{$labels.filer}}/{{$labels.aggregate}} usage is growing very fast'
+
+      - alert: CinderStorageAggregateGettingFullFastTestAlert
+        expr: predict_linear(netapp_aggregate_used_percentage[120m], 14400) > 90
+        for: 30m
+        labels:
+          severity: info
+          tier: os
+          service: nanny
+          context: nanny
+          meta: 'Testalert: Usage of aggregate {{$labels.aggregate}} is growing very fast towards 90 percent'
+        annotations:
+          description: 'Testalert: Usage of aggregate {{$labels.aggregate}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is growing very fast and will reach 90 percent soon'
+          summary: 'Testalert: Aggregate {{$labels.filer}}/{{$labels.aggregate}} will reach a usage of 90 percent soon'
+
+      - alert: VVolDatastoreFlexvolHighUsage
+        expr: netapp_volume_used_bytes{app="netapp-capacity-exporter-cinder", volume=~"vv.*"} / 1024/1024/1024 > 4600
+        for: 3h
+        labels:
+          severity: warning
+          tier: os
+          service: nanny
+          meta: 'VVol flex-volume usage over 90 percent of 5 TB'
+          playbook: 'docs/support/playbook/cinder/cinder_storage_aggregate_full.html'
+        annotations:
+          description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is {{ $value }} TB'
+          summary: 'Flex-volume {{$labels.filer}}/{{$labels.volume}} usage larger than 90 percent of 5TB'

@@ -24,6 +24,7 @@ spec:
     - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
       scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
+      honorLabels: true
       relabelings:
         - action: keep
           sourceLabels:
@@ -41,6 +42,10 @@ spec:
             - __meta_kubernetes_pod_container_port_name
             - __meta_kubernetes_pod_annotation_prometheus_io_port
           regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.+;\d+)'
+        - sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+          targetLabel: __scheme__
+          regex: '(https?)'
         - sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_path
           targetLabel: __metrics_path__
@@ -64,6 +69,7 @@ spec:
     - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
       scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
+      honorLabels: true
       relabelings:
         - action: keep
           sourceLabels:
@@ -83,6 +89,10 @@ spec:
             - __meta_kubernetes_pod_container_port_name
             - __meta_kubernetes_pod_annotation_prometheus_io_port_1
           regex: '(9102;.*;.*)|(.*;metrics;.*)|(\d+;.*;\d+)|(.*;.+;\d+)'
+        - sourceLabels:
+            - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+          targetLabel: __scheme__
+          regex: '(https?)'
         - sourceLabels:
             - __meta_kubernetes_pod_annotation_prometheus_io_path
           targetLabel: __metrics_path__

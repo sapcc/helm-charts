@@ -1,11 +1,18 @@
 {{- range $index, $member := .Values.dynomite.member }}
 kind: Deployment
+{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 metadata:
   name: {{ printf "%s-%d" "dynomite" $index }}
   labels:
     release: "{{ $.Release.Name }}"
 spec:
+  selector:
+    matchLabels:
+      app: {{ printf "%s-%d" "dynomite" $index }}
   revisionHistoryLimit: 3
   strategy:
     type: Recreate
@@ -21,7 +28,7 @@ spec:
         # being scraped from non-collector containers within the pod. Having
         # the port named as 'metrics' at the container level is sufficient.
         prometheus.io/scrape: "true"
-        prometheus.io/targets: "kubernetes"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
     spec:
       volumes:
         - name: secret
@@ -85,7 +92,7 @@ spec:
               value: {{ $member | include "dynomite.ip" }}
             {{- if eq $.Values.dynomite.recover "warmup" }}
             - name: WARMUP_PEER
-              value: {{ tuple $member $.Values.dynomite.foreign_member | include "dynomite.token_peers" }}
+              value: {{ required "WARMUP_PEER required" (tuple ( default "" $.Values.dynomite.warmup_rack ) $member $.Values.dynomite.foreign_member | include "dynomite.token_peer" ) }}
             - name: WARMUP_ALLOWED_DIFF
               value: "10"
             {{- end }}
@@ -217,6 +224,8 @@ spec:
           env:
             - name: DYNO_INSTANCE
               value: {{ $member | include "dynomite.ip" }}
+            - name: DYNO_TOKEN
+              value: {{ $member | include "dynomite.token" | quote }}
             - name: REQUIREPASS
               valueFrom:
                 secretKeyRef:

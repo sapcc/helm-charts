@@ -1,16 +1,17 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
-#TODO: needs to be changed for python3
-{{- if .Values.loci.enabled }}
-pybasedir = /var/lib/openstack/lib/python2.7/site-packages/ironic
+{{- if contains "train" .Values.imageVersion }}
+pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
 {{- else }}
-pybasedir = /ironic/ironic
+pybasedir = /var/lib/openstack/lib/python2.7/site-packages/ironic
 {{- end }}
+
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
 {{- if .Values.notification_level }}
 notification_level = {{ .Values.notification_level }}
+versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | default "ironic_versioned_notifications" | quote }}
 {{- end }}
 
 {{- include "ini_sections.default_transport_url" . }}
@@ -74,8 +75,6 @@ token_cache_time = 600
 include_service_catalog = true
 service_type = baremetal
 
-{{- include "ini_sections.audit_middleware_notifications" . }}
-
 [service_catalog]
 auth_section = service_catalog
 valid_interfaces = public {{- /* Public, so that the ironic-python-agent doesn't get a private url */}}
@@ -130,6 +129,17 @@ enabled = true
 service_type = baremetal
 config_file = /etc/ironic/watcher.yaml
 {{ end }}
+
+{{ if .Values.audit.enabled }}
+[audit]
+enabled = True
+audit_map_file = /etc/ironic/api_audit_map.yaml
+ignore_req_list = GET, HEAD
+record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
+metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
+
+{{- include "ini_sections.audit_middleware_notifications" . }}
+{{- end }}
 
 {{- include "osprofiler" . }}
 

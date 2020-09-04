@@ -1,9 +1,14 @@
+{{- $train := hasPrefix "train" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
 {{- if .Values.agent.multus | default false }}
 {{- $az_count := len .Values.global.availability_zones -}}
 {{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
 {{- $az := trimPrefix $.Values.global.region $az_long }}
 ---
+{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: apps/v1beta1
+{{- end }}
 kind: StatefulSet
 metadata:
   name: neutron-network-agent-{{ $az }}
@@ -13,7 +18,7 @@ metadata:
     component: agent
 spec:
   updateStrategy:
-{{- if or (eq $.Values.global.region "qa-de-1") (eq $.Values.global.region "staging") }}
+{{- if or (eq $.Values.global.region "qa-de-1") (eq $.Values.global.region "qa-de-2") }}
     type: RollingUpdate
 {{- else }}
     type: OnDelete
@@ -43,7 +48,18 @@ spec:
         name: neutron-network-agent-{{ $az }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
-{{ tuple $ "neutron" "agent" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - agent
       nodeSelector:
         multus: bond1
         failure-domain.beta.kubernetes.io/zone: {{ $az_long }}
@@ -193,6 +209,12 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
+{{- if $train }}
+                - SYS_ADMIN
+                - DAC_OVERRIDE
+                - DAC_READ_SEARCH
+                - SYS_PTRACE
+{{ end }}
           resources:
 {{ toYaml $.Values.pod.resources.linuxbridge_agent | indent 12 }}
           volumeMounts:

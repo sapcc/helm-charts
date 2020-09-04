@@ -1,14 +1,8 @@
-When passed via `helm upgrade --set`, the image tag is misinterpreted as a float64. So special care is needed to render it correctly.
-
 {{- define "castellum_image" -}}
-  {{- if typeIs "string" $.Values.castellum.image_tag -}}
+  {{- if contains "DEFINED" $.Values.castellum.image_tag -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
-    {{- if typeIs "float64" .Values.castellum.image_tag -}}
-      {{$.Values.castellum.image}}:{{$.Values.castellum.image_tag | printf "%0.f"}}
-    {{- else -}}
-      {{$.Values.castellum.image}}:{{$.Values.castellum.image_tag}}
-    {{- end -}}
+    {{$.Values.global.registry}}/castellum:{{$.Values.castellum.image_tag}}
   {{- end -}}
 {{- end -}}
 
@@ -27,8 +21,6 @@ When passed via `helm upgrade --set`, the image tag is misinterpreted as a float
   value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.json
-- name: CASTELLUM_SENTRY_DSN
-  valueFrom: { secretKeyRef: { name: sentry, key: castellum.DSN.public } }
 - name: CASTELLUM_RABBITMQ_URI
   value: "{{ .Values.castellum.rabbitmq.uri }}"
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME

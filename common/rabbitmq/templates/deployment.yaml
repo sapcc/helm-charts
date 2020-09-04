@@ -1,4 +1,8 @@
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 kind: Deployment
 metadata:
   name: {{ template "fullname" . }}
@@ -7,7 +11,9 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: rabbitmq
+    type: rabbitmq
+    component: {{ default .Chart.Name .Values.name }}
+    system: openstack
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}

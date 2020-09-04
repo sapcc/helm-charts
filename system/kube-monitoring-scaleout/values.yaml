@@ -17,6 +17,10 @@ prometheus-operator:
   fullnameOverride: prometheus
 
   prometheusOperator:
+    image:
+      repository: sapcc/prometheus-operator
+      tag: 30efd14d
+
     createCustomResource: false
     service:
       annotations:
@@ -79,7 +83,7 @@ prometheus-operator:
     ingress:
       enabled: false
       annotations:
-        vice-president: "true"
+        kubernetes.io/tls-acme: "true"
         disco: "true"
         nginx.ingress.kubernetes.io/auth-tls-secret: "kube-system/ingress-cacrt"
         nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
@@ -161,6 +165,10 @@ prometheus-operator:
       alerting:
         enabled: false
 
+absent-metrics-operator:
+  # Enabled on a per region basis in the respective secrets.git values file.
+  enabled: false
+
 kube-state-metrics:
   customLabels:
     app: kube-state-metrics
@@ -209,6 +217,9 @@ prometheus-server:
 
   ingress:
     enabled: true
+    vicePresident: false
+    annotations:
+      kubernetes.io/tls-acme: "true"
     hosts:
       - prometheus-kubernetes.scaleout
       - prometheus.scaleout

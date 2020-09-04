@@ -5,7 +5,7 @@ type_drivers = vlan,vxlan
 tenant_network_types = vxlan,vlan
 
 
-#mechanism_drivers = aci,dvs,openvswitch,arista,asr,manila,f5ml2
+#mechanism_drivers = aci,openvswitch,arista,asr,manila,f5ml2
 
 mechanism_drivers = {{required "A valid .Values.ml2_mechanismdrivers required!" .Values.ml2_mechanismdrivers}}
 

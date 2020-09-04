@@ -12,6 +12,7 @@ groups:
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
       dashboard: kubernetes-health
+      playbook: docs/support/playbook/kubernetes/k8s_apiserver_down.html
     annotations:
       description: Kubernetes API is unavailable!
       summary: All apiservers are down. Kubernetes API is unavailable!
@@ -26,6 +27,7 @@ groups:
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
       dashboard: nodes?var-server={{`{{$labels.instance}}`}}
+      playbook: docs/support/playbook/kubernetes/k8s_apiserver_down.html
     annotations:
       description: ApiServer on {{`{{ $labels.instance }}`}} is DOWN.
       summary: An ApiServer is DOWN
@@ -55,16 +57,3 @@ groups:
     annotations:
       description: ApiServerLatency for {{`{{ $labels.resource }}`}} is higher then usual for the past 15 minutes. Inspect apiserver logs for the root cause.
       summary: ApiServerLatency is unusally high
-
-  - alert: KubernetesApiServerEtcdAccessLatency
-    expr: etcd_request_latencies_summary{quantile="0.99"} / 1e6 > 1.0
-    for: 1h
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: etcd
-      severity: info
-      context: apiserver
-      dashboard: kubernetes-apiserver
-    annotations:
-      description: Latency for apiserver to access etcd is higher than 1s
-      summary: Access to etcd is slow

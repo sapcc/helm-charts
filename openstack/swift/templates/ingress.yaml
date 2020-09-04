@@ -1,8 +1,12 @@
 {{- $probing := .Values.probing }}
 {{- range $cluster_id, $cluster := .Values.clusters }}
 {{- if not $cluster.tls_crt }}
-apiVersion: extensions/v1beta1
 kind: Ingress
+{{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: swift-{{$cluster_id}}

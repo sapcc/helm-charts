@@ -2,15 +2,13 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 3
-
 api_port_internal: 9876
 api_backdoor: false
 
 global:
   imageNamespace: monsoon
-  master_password: ""
   dbUser: octavia
+  rpc_response_timeout: 60
 
 db_name: octavia
 
@@ -20,6 +18,9 @@ mariadb:
   initdb_configmap: octavia-initdb
   persistence_claim:
     name: db-octavia-pvclaim
+  backup:
+    enabled: true
+    os_password: null # use dbBackupServicePassword from globals
 
 ingress:
   annotations:
@@ -29,17 +30,76 @@ ingress:
 mysql_metrics:
   db_name: octavia
   db_user: octavia
+  customMetrics:
+    - help: Total Load Balancer count
+      labels:
+      - "status"
+      - "octavia_host"
+      name: octavia_loadbalancers_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          provisioning_status AS status,
+          server_group_id as octavia_host
+        FROM load_balancer
+        GROUP BY octavia_host, provisioning_status;
+      values:
+      - "count_gauge"
+    - help: Worker agent seconds since the last heartbeat
+      labels:
+      - "octavia_host"
+      name: octavia_monitor_agents_heartbeat_seconds
+      query: |
+        SELECT
+          compute_flavor AS octavia_host,
+          (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(updated_at))) AS heartbeat_seconds
+        FROM amphora
+        WHERE role = 'MASTER'
+        GROUP BY compute_flavor;
+      values:
+      - "heartbeat_seconds"
 
 pod:
+  replicas:
+    api: 3
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+          max_unavailable: 0
+          max_surge: 1
   resources:
     api: null
     housekeeping: null
     worker: null
     driver_agent: null
     status_manager: null
+    statsd:
+      limits:
+        memory: 64Mi
+        cpu: 50m
+      requests:
+        memory: 24Mi
+        cpu: 10m
 
 providers: "noop_driver: 'The No-Op driver.', f5: 'F5 BigIP driver.'"
 default_provider: "f5"
+default_ciphers: DEFAULT:!DHE:!TLSv1:!TLSv1_1
+default_tls_1_0: "false"
+default_tls_1_1: "false"
+default_tls_1_3: "true"
+default_profiles:
+  profile_http: cc_http_profile
+  profile_http_compression: cc_httpcompression_profile
+  profile_l4: cc_fastL4_profile
+  profile_tcp: cc_tcp_profile
+  profile_udp: cc_udp_profile
+  profile_multiplex: cc_oneconnect_profile
+  profile_healthmonitor_tls: cc_serverssl_profile
+external_as3: false
+persist_every: 600
 
 # Deploy Octavia Prometheus alerts.
 alerts:
@@ -49,6 +109,18 @@ alerts:
 
 sentry:
   enabled: true
+
+watcher:
+  enabled: false
+
+audit:
+  enabled: false
+
+statsd:
+  port: 9102
+  image:
+    repository:  prom/statsd-exporter
+    tag: v0.16.0
 
 logging:
   formatters:
@@ -80,7 +152,15 @@ logging:
     octavia.common.keystone:
       handlers: stdout, sentry
       level: WARNING
+    octavia_f5:
+      handlers: stdout, sentry
+      level: DEBUG
+    barbicanclient:
+      handlers: "null"
+      level: ERROR
     auditmiddleware:
       handlers: stdout, sentry
       level: INFO
-
+    sqlalchemy:
+      handlers: stdout, sentry
+      level: WARNING

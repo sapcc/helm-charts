@@ -3,9 +3,14 @@ debug = {{.Values.api.debug}}
 
 registry_host = 127.0.0.1
 
+image_member_quota = 500
+
 log_config_append = /etc/glance/logging.ini
 
 show_image_direct_url= True
+
+property_protection_file = /etc/glance/glance-protection.pp
+property_protection_rule_format = policies
 
 #disable default admin rights for role 'admin'
 admin_role = ''
@@ -56,6 +61,8 @@ swift_store_auth_insecure = True
 swift_store_create_container_on_put = True
 {{- if .Values.swift.multi_tenant }}
 swift_store_multi_tenant = True
+# swift_store_large_object_size = 5120
+# swift_store_large_object_chunk_size = 200
 # the following are deprecated but needed here https://github.com/openstack/glance_store/blob/stable/queens/glance_store/_drivers/swift/utils.py#L128-L145
 swift_store_user = service:{{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
 swift_store_key = {{ .Values.global.glance_service_password | default (tuple . .Values.global.glance_service_user | include "identity.password_for_user") | replace "$" "$$" }}

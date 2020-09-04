@@ -1,0 +1,26 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: openstack-exporter-seed
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+
+  domains:
+  - name: Default
+    users:
+    - name: openstack_exporter{{ .Values.global.user_suffix | default "" }}
+      description: OpenStack exporter user
+      password: {{ derivePassword 1 "long" .Values.global.master_password "openstack_exporter" (include "keystone_api_endpoint_host_public" .) | quote }}
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      role_assignments:
+      # permission to enumerate all projects and domains
+      - user: openstack_exporter{{ .Values.global.user_suffix | default "" }}@Default
+        role: admin
+      # permission to manage all ressources checked by the nanny
+      - user: openstack_exporter{{ .Values.global.user_suffix | default "" }}@Default
+        role: cloud_volume_admin

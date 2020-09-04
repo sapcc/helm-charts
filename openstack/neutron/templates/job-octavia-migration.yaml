@@ -1,0 +1,45 @@
+{{- if .Values.new_f5.migration }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: neutron-octavia-migration
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: neutron-octavia-migration
+          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/nlbaas2octavia:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "python ./nlbaas2octavia.py --config-file /etc/neutron/nlbaas2octavia.conf --all"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_JOBS
+              value: "neutron-migration,octavia-migration"
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - mountPath: /etc/neutron
+              name: etc-neutron
+              readOnly: true
+      volumes:
+        - name: etc-neutron
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                  - key: nlbaas2octavia.conf
+                    path: nlbaas2octavia.conf
+                name: f5-migration
+{{- end }}

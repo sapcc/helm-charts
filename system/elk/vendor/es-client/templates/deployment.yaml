@@ -29,6 +29,8 @@ spec:
         role: client
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/elasticsearch.yml: {{ include  (print $.Template.BasePath "/_elasticsearch.yml.tpl") . | sha256sum }}
+        checksum/readonlyrest.yml: {{ include  (print $.Template.BasePath "/_readonlyrest.yml.tpl") . | sha256sum }}
     spec:
       nodeSelector:
         ccloud.sap.com/nodepool: payload
@@ -38,7 +40,7 @@ spec:
             name: es-client-etc
       initContainers:
       - name: sysctl
-        image: {{.Values.global.docker_repo}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
+        image: {{.Values.global.registry}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
         imagePullPolicy: IfNotPresent
         command: ['sysctl', '-w', 'vm.max_map_count=262144']
         securityContext:
@@ -51,7 +53,7 @@ spec:
               add:
                 - IPC_LOCK
                 - SYS_RESOURCE
-          image: {{.Values.global.docker_repo}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
+          image: {{.Values.global.registry}}/elk-elasticsearch:{{.Values.global.image_version_elasticsearch}}
           imagePullPolicy: IfNotPresent
 #          command: ["/usr/local/bin/dumb-init", "/bin/bash", "-c", "while true; do sleep 1000; done"]
           command: ["/usr/local/bin/dumb-init", "/bin/bash", "/es-etc/elasticsearch-start"]
@@ -76,7 +78,7 @@ spec:
             - name: HTTP_ENABLE
               value: "true"
             - name: ES_JAVA_OPTS
-              value: "-XX:MaxRAM=5g -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+              value: "-XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
             - name: READONLYREST_ENABLE
               value: "true"
           volumeMounts:
@@ -89,3 +91,12 @@ spec:
             - name: http
               containerPort: {{.Values.global.http_port}}
               protocol: TCP
+          livenessProbe:
+          livenessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+              - 'curl http://{{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}}@localhost:9200/_cluster/health?local=true'
+            initialDelaySeconds: 90
+            periodSeconds: 60

@@ -125,7 +125,7 @@ groups:
 
   - alert: PodNotReady
     # alert on pods that are not ready but in the Running phase on a Ready node
-    expr: kube_pod_status_phase_normalized{phase="Running"} * on (pod,node)kube_pod_status_ready_normalized{condition="false"} * on (node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1
+    expr: kube_pod_status_phase_normalized{phase="Running"} * on (pod,node, namespace)kube_pod_status_ready_normalized{condition="false"} * on (node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1
     for: 2h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}

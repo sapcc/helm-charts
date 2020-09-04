@@ -15,6 +15,12 @@
   log_level warn
 </system>
 
+<label @FLUENT_LOG>
+  <match fluent.*>
+    @type stdout
+  </match>
+</label>
+
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
@@ -226,11 +232,11 @@
   @type parser
   key_name log
   reserve_data true
-  grok_failure_key grok_failure
   <parse>
     @type grok
     grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{GREEDYDATA:action} %{METHOD:method} %{URIPATH:pri_path} %{LOWER:action} %{NOTSPACE:user} %{WORD:domain} %{GREEDYDATA:action}
     custom_pattern_path /fluent-bin/pattern
+    grok_failure_key grok_failure
   </parse>
 </filter>
 
@@ -437,6 +443,10 @@
   @type null
 </match>
 
+<match kubernetes.var.log.containers.logstash**>
+  @type null
+</match>
+
 {{- if .Values.forwarding.keystone.enabled }}
 <match kubernetes.var.log.containers.keystone-api**>
   @type copy
@@ -447,6 +457,15 @@
     http_method post
     serializer json
     raise_on_error true
+    <buffer>
+      total_limit_size 256MB
+      flush_at_shutdown true
+      overflow_action block
+      retry_forever true
+      retry_type periodic
+      retry_wait 2s
+      flush_interval 1s
+    </buffer>
   </store>
   <store>
     @type elasticsearch_dynamic
@@ -457,9 +476,10 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
+    logstash_prefix {{.Values.indexname}}
     logstash_format true
-    template_name logstash
-    template_file /fluent-bin/logstash.json
+    template_name {{.Values.indexname}}
+    template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
     time_as_integer false
     type_name _doc
@@ -487,7 +507,7 @@
 <match kubernetes.**>
   @type copy
   <store>
-    @type elasticsearch_dynamic
+    @type elasticsearch
     host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
     port {{.Values.global.elk_elasticsearch_ssl_port}}
     user {{.Values.global.elk_elasticsearch_data_user}}
@@ -495,9 +515,10 @@
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
+    logstash_prefix {{.Values.indexname}}
     logstash_format true
-    template_name logstash
-    template_file /fluent-bin/logstash.json
+    template_name {{.Values.indexname}}
+    template_file /fluent-bin/{{.Values.indexname}}.json
     template_overwrite true
     time_as_integer false
     type_name _doc

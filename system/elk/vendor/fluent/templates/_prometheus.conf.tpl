@@ -11,6 +11,7 @@
     @type prometheus_monitor
     <labels>
         host ${hostname}
+        nodename "#{ENV['K8S_NODE_NAME']}"
     </labels>
     interval 10
 </source>
@@ -19,6 +20,7 @@
     @type prometheus_output_monitor
     <labels>
         host ${hostname}
+        nodename "#{ENV['K8S_NODE_NAME']}"
     </labels>
     interval 10
 </source>
@@ -34,7 +36,6 @@
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
-      container $.kubernetes.container_name
     </labels>
   </metric>
 </filter>

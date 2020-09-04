@@ -1,6 +1,10 @@
 {{- if .Values.wsgi }}
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: neutron-rpc-server
@@ -45,11 +49,7 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "neutron-migration"
             - name: DEPENDENCY_SERVICE
-{{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
-{{- else }}
-              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
-{{- end }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT

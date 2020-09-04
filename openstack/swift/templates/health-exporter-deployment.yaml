@@ -1,7 +1,11 @@
 {{- if $.Values.health_exporter }}
 {{- if not $.Values.health_statsd }}
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: swift-health-exporter

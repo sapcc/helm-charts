@@ -10,6 +10,14 @@ metadata:
 spec:
   requires:
   - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+  - monsoon3/domain-monsoon3-seed
+
+  roles:
+  - name: loadbalancer_admin
+  - name: loadbalancer_viewer
+  - name: loadbalancer_poolmemberadmin
+  - name: cloud_network_admin
+  - name: cloud_keymanager_admin
 
   services:
   - name: octavia
@@ -39,3 +47,7 @@ spec:
         role: cloud_network_admin
       - project: service
         role: cloud_keymanager_admin
+
+# all other group role assignments are granted by neutron seed, because
+# network_* is functionally equivalent to loadbalancer_*, due to the Octavia
+# policy

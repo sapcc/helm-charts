@@ -1,0 +1,99 @@
+{{- if not .Values.inspector.standalone }}
+kind: Deployment
+apiVersion: extensions/v1beta1
+
+metadata:
+  name: ironic-inspector-conductor
+  labels:
+    system: openstack
+    type: backend
+    component: none
+spec:
+  replicas: {{ .Values.pod.replicas.inspector }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: ironic-inspector-conductor
+  template:
+    metadata:
+      labels:
+        name: ironic-inspector-conductor
+{{ tuple . "ironic" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-inspector-etc-hash: {{ include (print $.Template.BasePath "/inspector-etc-configmap.yaml") . | sha256sum }}
+    spec:
+{{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      containers:
+      - name: ironic-inspector-conductor
+        image: {{ .Values.global.imageRegistry }}/{{ .Values.global.image_namespace }}/loci-ironic:{{ .Values.imageVersion }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+        - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "ironic-inspector-conductor --config-file /etc/ironic-inspector/ironic-inspector.conf"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: "ironic-api,ironic-rabbitmq"
+        {{- if .Values.logging.handlers.sentry }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN.python
+        {{- end }}
+        - name: PGAPPNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+{{ toYaml .Values.pod.resources.inspector | indent 10 }}
+        volumeMounts:
+        - mountPath: /etc/ironic-inspector
+          name: etcironic
+        - mountPath: /etc/ironic-inspector/ironic-inspector.conf
+          name: ironic-inspector-etc
+          subPath: ironic-inspector.conf
+          readOnly: true
+        - mountPath: /etc/ironic-inspector/rootwrap.conf
+          name: ironic-etc
+          subPath: rootwrap.conf
+          readOnly: true
+        - mountPath: /etc/sudoers.d/ironic-inspector-rootwrap
+          name: ironic-inspector-rootwrap
+          subPath: ironic-inspector-rootwrap
+          readOnly: true
+        - mountPath: /etc/ironic-inspector/logging.ini
+          name: ironic-etc
+          subPath: logging.ini
+          readOnly: true
+        - mountPath: /etc/ironic-inspector/policy.json
+          name: ironic-etc
+          subPath: policy.json
+          readOnly: true
+      volumes:
+      - name: etcironic
+        emptyDir: {}
+      - name: ironic-etc
+        configMap:
+          name: ironic-etc
+          defaultMode: 0444
+      - name: ironic-inspector-etc
+        configMap:
+          name: ironic-inspector-etc
+          defaultMode: 0444
+      - name: ironic-inspector-rootwrap
+        configMap:
+          name: ironic-inspector-rootwrap
+          defaultMode: 0444
+{{- end }}

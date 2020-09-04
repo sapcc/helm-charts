@@ -57,5 +57,17 @@
     "baremetal:driver:get_properties": "rule:context_is_baremetal_admin",
     "baremetal:driver:get_raid_logical_disk_properties": "rule:context_is_baremetal_admin",
     "baremetal:driver:vendor_passthru": "rule:context_is_admin",
-    "baremetal:driver:ipa_lookup": "rule:public_api"
+    "baremetal:driver:ipa_lookup": "rule:public_api",
+
+    "introspection": "rule:public_api",
+    "introspection:version": "rule:public_api",
+    "introspection:continue": "rule:context_is_admin",
+    "introspection:status": "rule:context_is_admin",
+    "introspection:start": "rule:context_is_admin",
+    "introspection:abort": "rule:context_is_admin",
+    "introspection:data": "rule:context_is_admin",
+    "introspection:reapply": "rule:context_is_admin",
+    "introspection:rule:get": "rule:context_is_admin",
+    "introspection:rule:delete": "rule:context_is_admin",
+    "introspection:rule:create": "rule:context_is_admin"
 }

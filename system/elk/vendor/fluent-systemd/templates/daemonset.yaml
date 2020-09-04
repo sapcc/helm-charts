@@ -19,6 +19,9 @@ spec:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/fluent.conf.tpl: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
+        prometheus.io/targets: infra-collector
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "24231"
     spec:
       {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
@@ -35,7 +38,7 @@ spec:
             path: /var/log
       containers:
         - name: fluent-systemd
-          image: {{.Values.global.docker_repo}}/elk-fluent:{{.Values.image_version}}
+          image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/dumb-init", "/usr/local/bin/fluentd", "-c", "/fluent-etc/fluent.conf", "--use-v1-config", "--suppress-repeated-stacktrace"]
           env:
@@ -43,6 +46,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: NODENAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           resources:
 #            limits:
 #              cpu: 1000m

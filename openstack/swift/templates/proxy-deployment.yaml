@@ -1,6 +1,10 @@
 {{- range $cluster_id, $cluster := .Values.clusters }}
 kind: Deployment
+{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: swift-proxy-{{$cluster_id}}
@@ -32,13 +36,11 @@ spec:
         checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" $ | sha256sum }}
         {{- include "swift_ring_annotations" $ | indent 8 }}
         {{- if $.Values.health_exporter }}
-        {{- if not $.Values.health_statsd }}
         # Prometheus annotations for the swift-health-exporter, the annotations
         # for the statsd-exporter are on the proxy-service level instead
         prometheus.io/scrape: "true"
         prometheus.io/port: "9520"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
-        {{- end }}
         {{- end }}
     spec:
       volumes:
@@ -103,6 +105,14 @@ spec:
               name: swift-container-ring
             - mountPath: /swift-rings/object
               name: swift-object-ring
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
         - name: nginx
           image: {{$.Values.global.imageRegistry}}/monsoon/swift-nginx:{{$.Values.image_version_nginx}}
           command:
@@ -131,6 +141,14 @@ spec:
               name: tls-secret
           livenessProbe:
             httpGet:
+              path: /nginx-health
+              port: 1080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
               path: /healthcheck
               port: {{$cluster.proxy_public_port}}
               scheme: HTTPS
@@ -140,7 +158,7 @@ spec:
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 10
-        {{- if or $.Values.health_statsd $.Values.health_exporter }}
+        {{- if $.Values.health_exporter }}
         - name: collector
           image: {{ include "swift_image" $ }}
           command:
@@ -148,25 +166,12 @@ spec:
           args:
             - /bin/bash
             - /usr/bin/swift-start
-          {{- if $.Values.health_statsd }}
-            - health-statsd
-          env:
-            - name: DEBUG_CONTAINER
-              value: "false"
-            - name: STATSD_PORT
-              value: "9125"
-            - name: LOG_LEVEL
-              value: "info"
-            - name: ADD_HOSTNAME_SUFFIX
-              value: "true"
-          {{- else }}
             - health-exporter
             - --recon.timeout=20
             - --recon.timeout-host=2
           ports:
             - name: metrics
               containerPort: 9520
-          {{- end }}
           {{- if $.Values.resources.enabled }}
           resources:
             # observed usage: CPU = ~10m, RAM = 40-60 MiB

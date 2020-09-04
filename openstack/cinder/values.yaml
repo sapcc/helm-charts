@@ -13,7 +13,9 @@ global:
   pgbouncer:
     enabled: false
 
-osprofiler: {}
+osprofiler:
+  jaeger:
+    enabled: false
 
 pod:
   replicas:
@@ -53,8 +55,16 @@ backend_defaults:
   suppress_requests_ssl_warnings: True
   vmware_connection_pool_size: 10
   vmware_insecure: True
-  vmware_storage_profile: cinder-vvol
   vmware_profile_check_on_attach: False
+  vmware_image_transfer_timeout_secs: 21600
+  max_over_subscription_ratio: 2.0
+
+backends:
+    enabled: vmware,standard_hdd
+    vmware:
+        vmware_storage_profile: cinder-vvol
+    standard_hdd:
+        vmware_storage_profile: cinder-standard-hdd
 
 cinderApiPortPublic: 443
 cinderApiPortInternal: 8776
@@ -62,7 +72,9 @@ cinderApiPortAdmin: 8776
 
 db_name: cinder
 
-scheduler_default_filters: 'AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter'
+scheduler_default_filters: 'AvailabilityZoneFilter,ShardFilter,CapacityFilter,CapabilitiesFilter'
+
+cinder_api_allow_migration_on_attach: True
 
 mariadb:
   enabled: true
@@ -72,6 +84,9 @@ mariadb:
   initdb_configmap: cinder-initdb
   persistence_claim:
     name: db-cinder-pvclaim
+
+max_pool_size: 20
+max_overflow: 5
 
 mysql_metrics:
   db_name: cinder
@@ -88,7 +103,7 @@ mysql_metrics:
       name: openstack_stuck_volumes_count_gauge
       query: |
         SELECT
-          host as cinder_host,
+          COALESCE(host, "No host") AS cinder_host,
           project_id,
           id,
           display_name,
@@ -118,7 +133,7 @@ mysql_metrics:
       name: openstack_stuck_volumes_max_duration_gauge
       query: |
         SELECT
-          host as cinder_host,
+          COALESCE(host, "No host") AS cinder_host,
           project_id,
           id,
           display_name,
@@ -148,7 +163,7 @@ mysql_metrics:
       name: openstack_volumes_count_gauge
       query: |
         SELECT
-          host as cinder_host,
+          COALESCE(host, "No host") AS cinder_host,
           availability_zone,
           volume_type_id,
           project_id,
@@ -176,7 +191,7 @@ mysql_metrics:
       name: openstack_volumes_size_gauge
       query: |
         SELECT
-          host as cinder_host,
+          COALESCE(host, "No host") AS cinder_host,
           availability_zone,
           volume_type_id,
           project_id,
@@ -203,7 +218,7 @@ mysql_metrics:
         SELECT
           snapshots.status,
           snapshots.project_id,
-          volumes.host as cinder_host,
+          COALESCE(volumes.host, "No host") AS cinder_host,
           COUNT(*) AS count_gauge
         from snapshots
         join volumes on snapshots.volume_id=volumes.id
@@ -222,7 +237,7 @@ mysql_metrics:
       query: |
         SELECT
           snapshots.project_id,
-          volumes.host as cinder_host,
+          COALESCE(volumes.host, "No host") AS cinder_host,
           snapshots.status,
           SUM(volume_size) size_gauge
         from snapshots
@@ -243,6 +258,13 @@ audit:
   mem_queue_size: 1000
   record_payloads: false
   metrics_enabled: true
+
+rabbitmq:
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 60m
+    ready_total_wait_for: 60m
 
 rabbitmq_notifications:
   name: cinder

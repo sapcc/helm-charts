@@ -1,10 +1,14 @@
 {{- if .Values.enabled }}
-{{- $values := .Values -}}
+{{- $values := .Values }}
 
-{{- range $i, $prober := .Values.probers -}}
+{{- range $i, $prober := .Values.probers }}
 {{ if ne $i 0 }}---{{ end }}
 
+{{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 kind: Ingress
 
 metadata:
@@ -18,25 +22,24 @@ metadata:
 
 spec:
   tls:
-    - secretName: cloudprober-exporter-{{$prober.name}}
-      hosts: [{{$values.ingress.hostName_prefix}}-{{$prober.name}}.{{$values.global.region}}.{{$values.global.domain}}]
+    - secretName: cloudprober-exporter-{{ $prober.name }}
+      hosts: [{{ $values.ingress.hostName_prefix }}-{{ $prober.name }}.{{ $values.global.region }}.{{ $values.global.domain }}]
   rules:
-    - host: {{$values.ingress.hostName_prefix}}-{{$prober.name}}.{{$values.global.region}}.{{$values.global.domain}}
+    - host: {{ $values.ingress.hostName_prefix }}-{{ $prober.name }}.{{ $values.global.region }}.{{ $values.global.domain }}
       http:
         paths:
         - path: /metrics
           backend:
-            serviceName: cloudprober-exporter-{{$prober.name}}
+            serviceName: cloudprober-exporter-{{ $prober.name }}
             servicePort: 9313
         - path: /config
           backend:
-            serviceName: cloudprober-exporter-{{$prober.name}}
+            serviceName: cloudprober-exporter-{{ $prober.name }}
             servicePort: 9313
         - path: /web
           backend:
-            serviceName: cloudprober-exporter-{{$prober.name}}
+            serviceName: cloudprober-exporter-{{ $prober.name }}
             servicePort: 1080
-
 ---
-{{ end -}}
-{{ end -}}
+{{- end }}
+{{- end }}

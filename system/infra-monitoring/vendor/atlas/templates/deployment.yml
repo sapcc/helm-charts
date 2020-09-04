@@ -1,4 +1,8 @@
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 kind: Deployment
 metadata:
     name: {{ include "atlas.fullname" . }}
@@ -49,8 +53,6 @@ spec:
           value: "{{ .Values.configmap.namespace }}"
         - name: K8S_REGION
           value: {{ .Values.global.region }}
-        - name: PROM_CONFIGMAP_NAME
-          value: "{{ .Values.configmap.name }}"
         - name: CONFIG_FILE
           value: "{{ .Values.config_file }}"
         - name: WRITE_TO

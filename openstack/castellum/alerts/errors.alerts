@@ -32,9 +32,6 @@ groups:
 
     ############################################################################
     # alerts concerning resource scraping in castellum-observer
-    #
-    # Those alerts fire really slow because of the glacial speed of the Manila
-    # API impacting resource scraping speed.
 
     - alert: OpenstackCastellumNoResourceScraping
       expr: absent(rate(castellum_aggregated_successful_resource_scrapes[60m]) > 0)
@@ -54,8 +51,8 @@ groups:
 
     # Resources should be scraped every 30 minutes. We give some extra margin of
     # 15 minutes for the scrape to take place, and alert after 45 minutes.
-    - alert: OpenstackCastellumResourcesNotScraped
-      expr: (max by (asset) (time() - castellum_resource_min_scraped_at)) / 60 >= 45
+    - alert: OpenstackCastellumResourceScrapingDelayed
+      expr: (max by (asset) (time() - castellum_resource_min_checked_at)) / 60 >= 45
       for: 3m
       labels:
         context: resource-scraping
@@ -63,15 +60,30 @@ groups:
         severity: info
         tier: os
         dashboard: castellum
-        meta: "Some {{ $labels.asset }} resources not scraped - Check castellum-observer log!"
-        sentry: 'castellum/'
+        meta: "Some {{ $labels.asset }} resource scrapes are taking too long - Check castellum-observer log!"
       annotations:
         description: |
           Some `{{ $labels.asset }}` resources are older than 45 minutes, even though they should be scraped every 30 minutes.
           The scrapes are either taking too long or failing entirely.
-          In the latter case, the `kubectl logs` for castellum-observer contains more information.
-          There may also be an error logged in Sentry.
-        summary: "`{{ $labels.asset }}` resources are not getting scraped"
+          In the latter case, check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/resource-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "`{{ $labels.asset }}` resources scrapes are taking too long"
+
+    - alert: OpenstackCastellumResourceScrapingFailing
+      expr: castellum_resource_scrape_errors_gauge > 0
+      for: 40m # only alert when at least 2 consecutive scrapes failed
+      labels:
+        context: resource-scraping
+        service: castellum
+        severity: warning
+        tier: os
+        dashboard: castellum
+        playbook: 'docs/support/playbook/castellum/resource_scraping_failing.html'
+        meta: "Some resource scrapes are failing!"
+      annotations:
+        description: |
+          Some resources failed to scrape.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/resource-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "Resource scrapes are failing!"
 
     ############################################################################
     # alerts concerning asset scraping in castellum-observer
@@ -97,7 +109,7 @@ groups:
     #
     # The first alert must have a higher severity than the second one in order to suppress it.
     - alert: OpenstackCastellumAssetScrapingDelayed
-      expr: (max by (asset) (time() - castellum_asset_min_checked_at)) / 60 >= 45
+      expr: (max by (asset) (time() - castellum_asset_min_checked_at)) / 60 >= 15
       for: 3m
       labels:
         context: asset-scraping
@@ -109,12 +121,17 @@ groups:
       annotations:
         description: |
           Some `{{ $labels.asset }}` assets are older than 15 minutes, even though they should be scraping every 5 minutes.
-          It looks like the asset scraping is taking too long.
-          The `kubectl logs` for castellum-observer may contain more information.
+          It looks like the asset scraping are either taking too long or failing entirely.
+          In the latter case, check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
         summary: "`{{ $labels.asset }}` asset scrapes are taking too long"
-    - alert: OpenstackCastellumAssetScrapingFailing
-      expr: (max by (asset) (time() - castellum_asset_min_scraped_at)) / 60 >= 45
-      for: 3m
+
+    - alert: OpenstackCastellumAssetScrapingFailingForFreshAssets
+      expr: castellum_fresh_asset_scrape_errors_gauge > 0
+      for: 4h
+        # As of now, setting the trigger delay shorter causes a ton of misfirings because Manila
+        # frequently creates shares without all the required labels. Therefore the NetApp exporter
+        # does not emit metrics and therefore Castellum cannot scrape the share asset. This gets
+        # fixed by the manila-nanny on the scale of 1-4 hours after share creation.
       labels:
         context: asset-scraping
         service: castellum
@@ -122,13 +139,44 @@ groups:
         tier: os
         dashboard: castellum
         playbook: 'docs/support/playbook/castellum/asset_scraping_failing.html'
-        meta: "Some {{ $labels.asset }} asset scrapes are failing - Check castellum-observer log!"
+        meta: "Some asset scrapes of fresh assets are failing!"
       annotations:
         description: |
-          Some `{{ $labels.asset }}` assets are older than 15 minutes, even though they should be scraped every 5 minutes.
-          It looks like asset scrapes are failing because of backend errors.
-          The `kubectl logs` for castellum-observer contain more information.
-        summary: "`{{ $labels.asset }}` assets are not getting scraped"
+          There are some new assets that we could never successfully scrape as of now.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "Scrapes of fresh assets are failing!"
+
+    - alert: OpenstackCastellumAssetScrapingFailingForExistingAssets
+      expr: castellum_existing_asset_scrape_errors_gauge > 0
+      for: 10m # after two consecutive failed scrapes
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: warning
+        tier: os
+        dashboard: castellum
+        playbook: 'docs/support/playbook/castellum/asset_scraping_failing.html'
+        meta: "Some asset scrapes of existing assets are failing!"
+      annotations:
+        description: |
+          There are some assets that we have successfully scraped in the past, but now we can't.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "Scrapes of existing assets are failing!"
+
+    - alert: OpenstackCastellumCriticalAssetNotGettingResized
+      expr: time() - castellum_critical_inactivity_started_at > 900
+      for: 3m
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: info
+        tier: os
+        dashboard: castellum
+        meta: '{{ $labels.asset }} `{{ $labels.asset_id }}` is stuck in critical usage levels without getting resized'
+      annotations:
+        description: |
+          The {{ $labels.asset }} asset `{{ $labels.asset_id }}` is at critical usage levels, but has not been resized by Castellum for more than 15 minutes. If asset scraping and resizing is otherwise working fine, this might be an instance of a particularly elusive bug. Use the chance and investigate while it's happening!
+        summary: Asset is stuck in critical usage levels without getting resized
 
     ############################################################################
     # alerts concerning asset resizing in castellum-worker
@@ -163,21 +211,19 @@ groups:
           The `kubectl logs` for castellum-worker contain additional info.
         summary: Castellum cannot resize `{{$labels.asset}}` assets
 
-    - alert: OpenstackCastellumFailedAssetResizes
-      # This is only a fallback alert if reporting to Sentry is not working,
-      # hence the second half of the error expression.
-      expr: sum(increase(castellum_operation_state_transitions{to_state="failed"}[5m])) BY (asset) > 0 and absent(sentry_unresolved_issues_count{project="castellum"} > 0)
-      for: 30m
+    - alert: OpenstackCastellumAssetResizingFailing
+      expr: castellum_asset_resize_errors_gauge > 0
+      for: 5m
       labels:
         context: asset-resizing
         service: castellum
-        severity: info
+        severity: warning
         tier: os
+        playbook: 'docs/support/playbook/castellum/asset_resizing_failing.html'
         dashboard: castellum
+        meta: "Some asset resizes are failing!"
       annotations:
         description: |
-          Castellum encountered backend errors while resizing `{{$labels.asset}}` assets.
-          The `kubectl logs` for castellum-worker contain additional info.
-          This alert shows up because Sentry has not collected the exception correctly.
-          *Please have a look at the castellum-worker logs even after this alert resolves.*
-        summary: Castellum encountered backend errors while resizing `{{$labels.asset}}` assets
+          Castellum encountered backend errors while resizing some assets.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors|the Castellum Errors view in Elektra>.
+        summary: Castellum encountered backend errors while resizing some assets

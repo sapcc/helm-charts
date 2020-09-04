@@ -1,5 +1,9 @@
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: neutron-aci-agent
@@ -28,9 +32,7 @@ spec:
         configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       hostname:  aci-agent-pet
-      {{- end }}
       containers:
         - name: neutron-aci-agent
           image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionACI | default .Values.imageVersion | required "Please set neutron.imageVersionACI or similar"}}
@@ -39,7 +41,7 @@ spec:
             - /container.init/neutron-aci-agent-start
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10

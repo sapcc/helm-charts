@@ -1,3 +1,24 @@
+## 3.5.1
+
+* Allow scraping pods via https. Use `prometheus.io/scheme: "https"` annotation.
+
+## 3.5.0
+
+* Update prometheus-server to `v2.19.0`.
+
+## 3.4.2
+
+* Ensure mandatory labels are present on alerts.
+
+## 3.4.1
+
+* Fix `resource.requests.cpu`: It shall be a string.
+
+## 3.4.0
+
+* Bump Prometheus to `v2.17.2`.
+* Update `Prometheus.Spec.{rule|podMonitor|serviceMonitor}NamespaceSelector` to consider every namespace. (Behaviour didn't change but configuration in Prometheus CRD from `any` to `{}`)
+
 ## 3.3.6
 
 * Standardize labels: Introduce labels `container`, `pod` in cAdvisor metrics.

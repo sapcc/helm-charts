@@ -1,7 +1,11 @@
 {{- range $suffix := list "" "-multipath" }}
 ---
 kind: DaemonSet
+{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: swift-drive-autopilot{{$suffix}}
@@ -12,6 +16,9 @@ spec:
   minReadySeconds: 15
   updateStrategy:
     type: RollingUpdate
+  selector:
+    matchLabels:
+      component: swift-drive-autopilot{{$suffix}}
   template:
     metadata:
       labels:
@@ -21,7 +28,9 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9102"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus }}
     spec:
+      {{- if $.Values.use_taints }}
       tolerations:
       - key: "species"
         operator: "Equal"
@@ -33,10 +42,13 @@ spec:
         value: "{{$.Values.species}}-multipath"
         effect: "NoSchedule"
       {{- end }}
+      {{- end }}
       nodeSelector:
         species: {{quote $.Values.species}}
         {{- if eq $suffix "-multipath" }}
         multipath-disks: "true"
+        {{- else if not $.Values.use_taints }}
+        multipath-disks: "false"
         {{- end }}
       volumes:
         - name: config

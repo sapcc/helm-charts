@@ -62,6 +62,7 @@ function cleanup_tempest_leftovers() {
     done
   }
 
+  echo "Cleanup groups, backups, snapshots"
   for i in $(seq 1 18); do
     export OS_USERNAME=nova-tempestuser${i}
     export OS_PROJECT_NAME=nova-tempest${i}
@@ -78,6 +79,7 @@ function cleanup_tempest_leftovers() {
     delete_groups
   done
 
+  echo "Cleanup volumes, group types and volume types"
   for i in $(seq 1 18); do
     export OS_USERNAME=nova-tempestuser${i}
     export OS_PROJECT_NAME=nova-tempest${i}

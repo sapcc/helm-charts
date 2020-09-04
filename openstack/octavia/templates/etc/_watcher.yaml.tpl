@@ -1,0 +1,15 @@
+path_keywords:
+  - loadbalancers
+  - listeners
+  - pools
+  - drivers
+  - members
+  - healthmonitors
+  - l7policies
+  - quotas
+  - providers
+  - flavors
+  - flavorprofiles
+  - availabilityzones
+  - availabilityzoneprofiles
+  - amphorae

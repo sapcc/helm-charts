@@ -1,13 +1,23 @@
 {{- if .Values.enabled }}
 {{- $scrape := .Values.metrics.scrape -}}
-{{- $port := .Values.metrics.port -}}
+{{- $port := .Values.ports.graphiteExporterOutPort -}}
 {{- $targets := .Values.metrics.targets -}}
 {{- $values := .Values }}
+{{- $capabilities := .Capabilities }}
 {{- $release := .Release }}
+{{- $harvestTemplate := print .Template.BasePath "/etc/_netapp-harvest.conf.tpl" }}
+{{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
+{{- $graphiteConf := include (print .Template.BasePath "/etc/_graphite-mapping.conf.tpl") . }}
+{{- $netappFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
 {{- range $name, $app := .Values.apps }}
+{{- $netappHarvestConf := include $harvestTemplate (dict "dupEnabled" $app.dupEnabled "Values" $values) }}
 {{- if $app.enabled }}
 ---
+{{- if $capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 kind: Deployment
 metadata:
   name: {{ $app.fullname }}
@@ -25,8 +35,9 @@ spec:
         prometheus.io/scrape: {{ $scrape | quote }}
         prometheus.io/port: {{ $port | quote }}
         prometheus.io/targets: {{ $targets | quote }}
+        checksum/configmap.yaml: {{ include $configmapTemplate (dict "appName" $name "app" $app "netappHarvestConf" $netappHarvestConf "graphiteConf" $graphiteConf "netappFilerYaml" $netappFilerYaml) | sha256sum }}
     spec:
-      containers: 
+      containers:
       - name: harvest                       # container: harvest
         image: {{ $values.harvest.image }}:{{ $values.harvest.imageTag }}
         resources:
@@ -44,6 +55,12 @@ spec:
             secretKeyRef:
               name: {{ $values.name }}
               key: netappPassword
+        ports:
+          {{- if $app.dupEnabled }}
+          - containerPort: {{ $values.ports.dupInPort }}
+          {{- else }}
+          - containerPort: {{ $values.ports.graphiteExporterInPort }}
+          {{- end }}
         volumeMounts:
         - name: {{ $app.fullname }}
           mountPath: /opt/netapp-harvest/config
@@ -51,7 +68,8 @@ spec:
         image: {{ $values.exporter.image }}
         args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
         ports:
-        - containerPort: 9108
+        - containerPort: {{ $values.ports.graphiteExporterInPort }}
+        - containerPort: {{ $values.ports.graphiteExporterOutPort }}
         volumeMounts:
         - name: {{ $app.fullname }}
           subPath: graphite-mapping.conf
@@ -60,6 +78,24 @@ spec:
           requests:
             memory: {{ $values.exporter.memory }}
             cpu: {{ $values.exporter.cpu }}
+
+      {{- if $app.dupEnabled }}
+      - name: dup
+        image: hub.global.cloud.sap/d067954/gotee:v201911113011-9a29981
+        args:
+          - "-l"
+          - {{ print ":" $values.ports.dupInPort | quote }}
+          - "-1"
+          - {{ print ":" $values.ports.graphiteExporterInPort | quote }}
+          - "-2"
+          - "10.216.0.98:2003"
+        ports:
+          - containerPort: {{ $values.ports.graphiteExporterInPort }}
+          - containerPort: {{ $values.ports.graphiteInPort }}
+          - containerPort: {{ $values.ports.dupInPort }}
+      {{- end }}
+
+
       {{- if eq $name "manila" }}
       {{- /*
         manila filers are predefined in secret files rather than fetched from netbox

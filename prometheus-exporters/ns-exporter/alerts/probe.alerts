@@ -15,3 +15,15 @@ groups:
     annotations:
       description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` failed all dns probes for more than 10 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router }}&type=router|Router {{ $labels.router }}>)'
       summary: Network probes failed
+  - alert: NetworkNamespaceProbeMetricsMissing
+    expr: absent(ns_exporter_probe_success_total)
+    for: 10m
+    labels:
+      context: availability
+      service: neutron
+      severity: warning
+      tier: os
+      meta: 'Metrics for the namespace prober are missing'
+    annotations:
+      description: 'The metrics from the namespace prober are missing. This suggests there is a problem with the exporter deployment. Check the ns-exporter namespace for running pods.'
+      summary: Metrics for namespace prober are missing 

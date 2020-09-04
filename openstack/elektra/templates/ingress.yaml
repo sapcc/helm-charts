@@ -9,8 +9,14 @@ data:
   ca.crt: {{ .Values.ingress.ca | b64enc }}
 ---
 {{- end }}
-apiVersion: extensions/v1beta1
+
 kind: Ingress
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+
 metadata:
   name: elektra
   annotations:

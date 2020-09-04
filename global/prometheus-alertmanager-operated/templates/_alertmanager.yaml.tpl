@@ -54,6 +54,12 @@ route:
       severity: critical|warning|info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
+  - receiver: slack_nannies_automation
+    continue: false
+    match_re:
+      context: nanny-automation
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
   - receiver: slack_snmp
     continue: true
     match_re:
@@ -98,13 +104,13 @@ route:
     match_re:
       tier: os
       severity: info|warning|critical
-      service: arc|backup|barbican|castellum|cinder|cfm|designate|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|neutron|nova|sentry|swift
+      service: arc|backup|barbican|castellum|cinder|cfm|designate|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|neutron|nova|octavia|sentry|swift
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_sre
     continue: false
     match_re:
-      tier: sre
+      context: sre
 
   - receiver: slack_monitoring
     continue: false
@@ -114,6 +120,11 @@ route:
 
   - receiver: elastic
     continue: true
+
+  - receiver: awx
+    continue: true
+    match_re:
+      tier: vmware
 
   - receiver: slack_storage
     continue: false
@@ -183,13 +194,6 @@ route:
     match_re:
       tier: metal
       severity: info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
-  - receiver: pagerduty_vpod
-    continue: true
-    match_re:
-      tier: vpod
-      severity: critical
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
 
   - receiver: slack_vpod_critical
@@ -321,6 +325,15 @@ receivers:
     webhook_configs:
     - send_resolved: true
       url: {{ required ".Values.elastic.logstashURL undefined" .Values.elastic.logstashURL | quote }}
+
+  - name: awx
+    webhook_configs:
+    - send_resolved: true
+      http_config:
+        basic_auth:
+          username: {{ required ".Values.awx.basicAuthUser undefined" .Values.awx.basicAuthUser | quote }}
+          password: {{ required ".Values.awx.basicAuthPwd undefined" .Values.awx.basicAuthPwd | quote }}
+      url: {{ required ".Values.awx.listenerURL undefined" .Values.awx.listenerURL | quote }}
 
   - name: slack_metal_info
     slack_configs:
@@ -708,6 +721,19 @@ receivers:
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 
+  - name: slack_nannies_automation
+    slack_configs:
+      - channel: '#cc-nannies-automation'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
   - name: slack_snmp
     slack_configs:
       - channel: '#cc-snmp'
@@ -749,7 +775,7 @@ receivers:
 
   - name: pagerduty_api
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.api.serviceKey undefined" .Values.pagerduty.api.serviceKey | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.api.serviceKey undefined" .Values.pagerduty_sap.api.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -767,25 +793,7 @@ receivers:
 
   - name: pagerduty_metal
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.metal.serviceKey undefined" .Values.pagerduty.metal.serviceKey | quote }}
-        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
-        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-        details:
-          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
-          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
-          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
-          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
-          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
-          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
-          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
-          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
-          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
-          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-  
-  - name: pagerduty_vpod
-    pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.vpod.serviceKey undefined" .Values.pagerduty.vpod.serviceKey | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.metal.serviceKey undefined" .Values.pagerduty_sap.metal.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -803,7 +811,7 @@ receivers:
 
   - name: pagerduty_network
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.network.serviceKey undefined" .Values.pagerduty.network.serviceKey | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.network.serviceKey undefined" .Values.pagerduty_sap.network.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -821,7 +829,7 @@ receivers:
 
   - name: pagerduty_vmware
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.vmware.serviceKey undefined" .Values.pagerduty.vmware.serviceKey | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.vmware.serviceKey undefined" .Values.pagerduty_sap.vmware.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
@@ -839,7 +847,7 @@ receivers:
 
   - name: pagerduty_alertchain_test
     pagerduty_configs:
-      - service_key: {{ required ".Values.pagerduty.alertTest.serviceKey undefined" .Values.pagerduty.alertTest.serviceKey | quote }}
+      - service_key: {{ required ".Values.pagerduty_sap.alertTest.serviceKey undefined" .Values.pagerduty_sap.alertTest.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}

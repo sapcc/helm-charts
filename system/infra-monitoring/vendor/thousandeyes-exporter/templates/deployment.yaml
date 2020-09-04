@@ -1,5 +1,9 @@
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: {{ include "infraMonitoring.fullname" . }}
@@ -33,7 +37,7 @@ spec:
                value: {{ .Values.basic_auth_user }}
              - name: THOUSANDEYES_BASIC_AUTH_TOKEN
                value: {{ .Values.basic_auth_token }}
-           args: ["-GetHTTP"]
+           args: ["-GetHTTP=true","-GetHttpMetrics=true"]
            ports:
              - name: metrics
                containerPort: {{ .Values.metrics.port}}

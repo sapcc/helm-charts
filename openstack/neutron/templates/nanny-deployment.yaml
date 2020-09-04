@@ -1,5 +1,9 @@
 {{- if .Values.nanny.enabled }}
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 kind: Deployment
 metadata:
   name: neutron-nanny
@@ -42,11 +46,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
-{{- if eq .Values.mariadb.enabled true }}
               value: "neutron-mariadb,neutron-server"
-{{- else }}
-              value: "neutron-postgresql,neutron-server"
-{{- end }}
             - name: NEUTRON_CLEANUP_PENDING_LB_ENABLED
               value: {{ .Values.nanny.cleanup_pending_lb.enabled | quote }}
             - name: NEUTRON_CLEANUP_PENDING_LB_DRY_RUN

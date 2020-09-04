@@ -48,7 +48,7 @@ spec:
 
       - alert: OpenstackSwiftUnexpectedCloudAdminRoleAssignments
         {{- $r := .Values.global.region }}
-        expr: max(openstack_assignments_per_role_gauge{name="swiftreseller"}) > {{if eq $r "eu-nl-1"}} 6 {{ else }} 5 {{ end }}
+        expr: absent(openstack_assignments_per_role{role_name="swiftreseller"}) or max(openstack_assignments_per_role{role_name="swiftreseller"}) > {{if eq $r "eu-nl-1"}} 6 {{ else }} 5 {{ end }}
         for: 10m
         labels:
           tier: os

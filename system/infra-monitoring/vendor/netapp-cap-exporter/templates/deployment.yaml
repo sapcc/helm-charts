@@ -5,11 +5,17 @@
 {{- $targets := .Values.metrics.targets -}}
 {{- $port := .Values.listenPort -}}
 {{- $secretName := include "netapp-cap-exporter.fullname" . -}}
+{{- $netappFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
+{{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
 {{- range $name, $app := .Values.apps }}
 {{- $configmapName := $app.fullname -}}
 {{- if $app.enabled }}
 ---
+{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 kind: Deployment
 metadata:
   name: {{ $app.fullname }}
@@ -27,6 +33,7 @@ spec:
         prometheus.io/scrape: {{ $scrape | quote }}
         prometheus.io/targets: {{ $targets | quote }}
         prometheus.io/port: {{ $port | quote }}
+        checksum/configmap.yaml: {{ include $configmapTemplate (dict "appName" $name "app" $app "netappFilerYaml" $netappFilerYaml) | sha256sum }}
     spec:
       volumes:
         - name: etc
@@ -61,7 +68,11 @@ spec:
             failureThreshold: 3
           {{- end }}
           resources:
+            {{- if hasKey $app "resources" }}
+            {{- toYaml $app.resources | nindent 12 }}
+            {{- else }}
             {{- toYaml $values.exporter.resources | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - name: etc
               mountPath: /etc/netapp

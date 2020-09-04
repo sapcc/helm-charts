@@ -2,55 +2,55 @@ groups:
 - name: n9k.alerts
   rules:
   - alert: NetworkN9kSpineInterfaceInErrorRateReachesCriticalThreshold
-    expr: rate(snmp_acispine_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
+    expr: rate(snmp_acispine_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) > 0.28
     labels:
       severity: critical
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
       summary: 'N9K acispine network interface In error rate check'
 
   - alert: NetworkN9kSpineInterfaceOutErrorRateReachesCriticalThreshold
-    expr: rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
+    expr: rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) > 0.28
     labels:
       severity: critical
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
       summary: 'N9K acispine network interface Out error rate check'
 
   - alert: NetworkN9kLeafInterfaceInErrorRateReachesCriticalThreshold
-    expr: rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
+    expr: rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) > 0.28
     labels:
-      severity: warning
+      severity: critical
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
       summary: 'N9K acileaf network interface In error check'
 
   - alert: NetworkN9kLeafInterfaceOutErrorRateReachesCriticalThreshold
-    expr: rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[1h]) > 0.28
+    expr: rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) > 0.28
     labels:
-      severity: warning
+      severity: critical
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 60 minutes'
+      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
       summary: 'N9K acileaf network interface Out error check'
 
   - alert: NetworkN9kInterfaceInErrorRateReachesWarningThreshold
@@ -119,16 +119,16 @@ groups:
       summary: 'ACI spine interface reset check'
 
   - alert: NetworkAciLeafInterfaceResets
-    expr: sum(resets(({__name__=~"snmp_acileaf_sysUpTime"} - on (server_id) group_right(server_name, interface) ({__name__=~"snmp_acileaf_ifLastChange"}))[5m:]))by (module,devicename,ifDescr) > 2
+    expr: sum(resets(({__name__=~"snmp_acileaf_sysUpTime"} - on (server_id) group_right(server_name, interface) ({__name__=~"snmp_acileaf_ifLastChange"}))[10m:]))by (module,devicename,ifDescr) > 5
     labels:
       severity: critical
       tier: net
       service: aci
       context: aci_leaf_interface_resets
       playbook: docs/devops/alert/network/aci.html#interface_reset
-      meta: "`ACI leaf {{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
+      meta: "`ACI leaf {{ $labels.devicename }}` has more than 5 resets on interface `{{ $labels.ifDescr }}` in the last 10 minutes."
     annotations:
-      description: "`Aci leaf {{ $labels.devicename }}` has more than 2 resets on interface `{{ $labels.ifDescr }}` in the last 5 minutes."
+      description: "`Aci leaf {{ $labels.devicename }}` has more than 5 resets on interface `{{ $labels.ifDescr }}` in the last 10 minutes."
       summary: 'ACI leaf interface reset check'
 
   - alert: NetworkAciIpnInterfaceResets

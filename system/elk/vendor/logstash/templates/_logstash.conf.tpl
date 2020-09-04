@@ -20,6 +20,11 @@ input {
     type => alert
     codec => plain
   }
+  tcp {
+    port  => {{.Values.input_deployments_port}}
+    type => deployment
+    codec => plain
+  }
 }
 
 filter {
@@ -39,6 +44,19 @@ filter {
        if "_jsonparsefailure" not in [tags] {
          split {
            field => "alerts"
+         }
+         mutate {
+             remove_field => ["message"]
+         }
+       }
+    }
+    if [type] == "deployment" {
+       json {
+         source => "message"
+       }
+       if "_jsonparsefailure" not in [tags] {
+         split {
+           field => "helm-release"
          }
          mutate {
              remove_field => ["message"]
@@ -89,6 +107,18 @@ elseif [type] == "alert"{
     index => "alerts-%{+YYYY}"
     template => "/elk-etc/alerts.json"
     template_name => "alerts"
+    template_overwrite => true
+    hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+    user => "{{.Values.global.elk_elasticsearch_data_user}}"
+    password => "{{.Values.global.elk_elasticsearch_data_password}}"
+    ssl => true
+  }
+}
+elseif [type] == "deployment" {
+  elasticsearch {
+    index => "deployments-%{+YYYY}"
+    template => "/elk-etc/deployments.json"
+    template_name => "deployments"
     template_overwrite => true
     hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
     user => "{{.Values.global.elk_elasticsearch_data_user}}"

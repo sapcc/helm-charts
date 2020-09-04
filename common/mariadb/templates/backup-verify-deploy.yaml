@@ -1,5 +1,9 @@
 {{- if .Values.backup_v2.enabled }}
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 kind: Deployment
 metadata:
   name: {{ include "fullName" . }}-verification
@@ -23,14 +27,14 @@ spec:
       annotations:
 {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/port: "8082"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 {{- end }}
     spec:
-      serviceAccountName: db-backup-v2
+      serviceAccountName: {{ .Values.name }}-db-backup-v2
       containers:
       - name: mariabackup-verification
-        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/maria-back-me-up:{{ .Values.backup_v2.image_version }}
+        image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/maria-back-me-up:{{ .Values.backup_v2.image_version }}"
         command:
           - verification
         ports:

@@ -6,6 +6,10 @@ metadata:
     system: openstack
     type: configuration
     component: barbican
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
     spec:
@@ -25,6 +29,13 @@ spec:
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
               value: "barbican-mariadb"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: barbican.DSN.python
+            {{- end }}
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican

@@ -13,7 +13,7 @@ groups:
       severity: warning
       context: node
       meta: "High CPU usage on {{`{{ $labels.node }}`}}"
-      dashboard: nodes?var-server={{`{{$labels.node}}`}}
+      dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
       playbook: docs/support/playbook/kubernetes/k8s_node_host_high_cpu_usage.html
     annotations:
       summary: High load on node
@@ -60,7 +60,7 @@ groups:
       summary: Node {{`{{ $labels.node }}`}} under pressure due to insufficient available memory
 
   - alert: NodeDiskUsagePercentage
-    expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext"}) BY (node,device)) > 85
+    expr: (100 - 100 * sum(node_filesystem_avail_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext|ext4"} / node_filesystem_size_bytes{device!~"tmpfs|by-uuid",fstype=~"xfs|ext|ext4"}) BY (node,device)) > 85
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}

@@ -2,11 +2,11 @@
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDBTooManyConnections
     expr: (mysql_global_variables_max_connections{app=~"{{ include "fullName" . }}"} - mysql_global_status_threads_connected{app=~"{{ include "fullName" . }}"} < 200)
-    for: 30m
+    for: 10m
     labels:
       context: datbase
       service: {{ include "alerts.service" . }}
-      severity: warning
+      severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
     annotations:
       description: {{ include "fullName" . }} has too many connections open. Please check the service containers.
@@ -43,7 +43,7 @@
     labels:
       context: database
       service: {{ include "alerts.service" . }}
-      severity: warning
+      severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: 'docs/support/playbook/manila/mariadb_high_running_threads.html'
     annotations:

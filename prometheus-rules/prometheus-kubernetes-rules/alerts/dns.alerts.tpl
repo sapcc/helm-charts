@@ -2,20 +2,6 @@
 groups:
 - name: dns.alerts
   rules:
-  - alert: KubernetesDNSErrorSpike
-    expr: sum(irate(skydns_skydns_dns_error_count_total[5m])) BY (system, cause) > sum(avg_over_time(skydns_skydns_dns_error_count_total_irate[12h] OFFSET 12h))
-          BY (system, cause) * 4 + 100
-    for: 15m
-    labels:
-      context: errors
-      dashboard: skydns
-      service: dns
-      severity: info
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-    annotations:
-      description: Unusually many errors in {{`{{ $labels.system }}`}}/{{`{{ $labels.cause }}`}}
-      summary: Unusual high kube-dns errors
-
   - alert: KubernetesDNSDown
     expr: up{job="kube-dns"} == 0
     for: 15m

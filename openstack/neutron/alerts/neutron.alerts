@@ -11,7 +11,7 @@ groups:
       context: '{{ $labels.context }}'
       meta: 'Floating IPs network: {{ $labels.check }} exhausted soon'
       sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: docs/support/playbook/neutron/fip_exhausted.html
+      playbook: docs/devops/alert/neutron/index.html#OpenstackNeutronPredictOutOfFIP
     annotations:
       description: 'The Floating IPs on {{ $labels.check }} might
         get exhausted soon as utilized more than 90% of fips. This is heads up
@@ -76,18 +76,3 @@ groups:
     annotations:
       description: 'Not all networks have been synced by agent for 5 min: {{ $labels.pod }}'
       summary: Openstack Neutron DHCP Agent lost private networks
-
-  - alert: OpenstackNeutronWaitingDatabaseConnections
-    expr: sum by (application) (pgbouncer_pools_client_waiting_connections{application=~"neutron"}) > 10
-    for: 15m
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.application }}'
-      context: '{{ $labels.application }}'
-      dashboard: pgbouncer
-      meta: '{{ $labels.application }} has waiting database connections for 15 min'
-#      playbook: 'docs/devops/alert/{{ $labels.application }}'
-    annotations:
-      description: '{{ $labels.application }} has more than 10 waiting database connections for 15 min, please check pgbouncer logs'
-      summary: '{{ $labels.application }} waiting db connections'

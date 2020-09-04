@@ -1,8 +1,12 @@
 {{- if .Release.IsUpgrade }}
 {{- if .Values.manila_nanny.enabled }}
 {{- if or .Values.manila_nanny.db_purge.enabled .Values.manila_nanny.quota_sync.enabled .Values.manila_nanny.db_cleanup.enabled .Values.manila_nanny.share_sync.enabled }}
-apiVersion: extensions/v1beta1
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
 metadata:
   name: manila-nanny
   namespace: monsoon3
@@ -17,6 +21,9 @@ spec:
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
+  selector:
+    matchLabels:
+        component: manila-nanny
   template:
     metadata:
       labels:
@@ -71,10 +78,10 @@ spec:
               name: manila-etc
           {{- if .Values.manila_nanny.db_purge.resources }}
           resources:
-            {{ toYaml .Values.manila_nanny.db_purge.resources | nindent 13 }}
+            {{- toYaml .Values.manila_nanny.db_purge.resources | nindent 13 }}
           {{- else if .Values.manila_nanny.resources }}
           resources:
-            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
+            {{- toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
 {{- if .Values.manila_nanny.quota_sync.enabled }}
@@ -110,10 +117,10 @@ spec:
               name: manila-etc
           {{- if .Values.manila_nanny.quota_sync.resources }}
           resources:
-            {{ toYaml .Values.manila_nanny.quota_sync.resources | nindent 13 }}
+            {{- toYaml .Values.manila_nanny.quota_sync.resources | nindent 13 }}
           {{- else if .Values.manila_nanny.resources }}
           resources:
-            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
+            {{- toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
 {{- if .Values.manila_nanny.db_cleanup.enabled }}
@@ -149,10 +156,10 @@ spec:
               name: manila-etc
           {{- if .Values.manila_nanny.db_cleanup.resources }}
           resources:
-            {{ toYaml .Values.manila_nanny.db_cleanup.resources | nindent 13 }}
+            {{- toYaml .Values.manila_nanny.db_cleanup.resources | nindent 13 }}
           {{- else if .Values.manila_nanny.resources }}
           resources:
-            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
+            {{- toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
 {{- if .Values.manila_nanny.share_sync.enabled }}
@@ -164,7 +171,7 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "{{ if not .Values.manila_nanny.debug }}/bin/bash /scripts/manila-share-size-sync.sh{{ else }}sleep inf{{ end }}"
+              value: "{{ if not .Values.manila_nanny.debug }}/bin/bash /scripts/manila-share-sync.sh{{ else }}sleep inf{{ end }}"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -185,15 +192,105 @@ spec:
               value: {{ .Values.manila_nanny.share_sync.interval | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
+            - name: TASK_SHARE_SIZE
+              value: {{ .Values.manila_nanny.share_sync.task_share_size | quote }}
+            - name: TASK_SHARE_SIZE_DRY_RUN
+              value: {{ .Values.manila_nanny.share_sync.task_share_size_dry_run | quote }}
+            - name: TASK_MISSING_VOLUME
+              value: {{ .Values.manila_nanny.share_sync.task_missing_volume | quote }}
+            - name: TASK_MISSING_VOLUME_DRY_RUN
+              value: {{ .Values.manila_nanny.share_sync.task_missing_volume_dry_run | quote }}
+            - name: TASK_OFFLINE_VOLUME
+              value: {{ .Values.manila_nanny.share_sync.task_offline_volume | quote }}
+            - name: TASK_OFFLINE_VOLUME_DRY_RUN
+              value: {{ .Values.manila_nanny.share_sync.task_offline_volume_dry_run | quote }}
+            - name: TASK_ORPHAN_VOLUME
+              value: {{ .Values.manila_nanny.share_sync.task_orphan_volume | quote }}
+            - name: TASK_ORPHAN_VOLUME_DRY_RUN
+              value: {{ .Values.manila_nanny.share_sync.task_orphan_volume_dry_run | quote }}
+            - name: MANILA_NANNY_HTTP_PORT
+              value: {{ .Values.manila_nanny.share_sync.http_port | quote }}
+            - name: MANILA_NANNY_PROMETHEUS_PORT
+              value: {{ .Values.manila_nanny.share_sync.prometheus_port | quote }}
           volumeMounts:
             - mountPath: /manila-etc
               name: manila-etc
           {{- if .Values.manila_nanny.share_sync.resources }}
           resources:
-            {{ toYaml .Values.manila_nanny.share_sync.resources | nindent 13 }}
+            {{- toYaml .Values.manila_nanny.share_sync.resources | nindent 13 }}
           {{- else if .Values.manila_nanny.resources }}
           resources:
-            {{ toYaml .Values.manila_nanny.resources | nindent 13 }}
+            {{- toYaml .Values.manila_nanny.resources | nindent 13 }}
+          {{- end }}
+{{- end }}
+{{- if .Values.manila_nanny.share_server.enabled }}
+        - name: share-server
+          image: {{.Values.global.imageRegistry}}/monsoon/manila-nanny:{{.Values.manila_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.manila_nanny.debug }}/bin/bash /scripts/manila-share-server.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: DEPENDENCY_SERVICE
+              value: "manila-mariadb,manila-api"
+            - name: MANILA_NANNY_INTERVAL
+              value: {{ .Values.manila_nanny.interval | quote }}
+            - name: MANILA_NANNY_LISTEN_PORT
+              value: {{ .Values.manila_nanny.share_server.listen_port | quote }}
+            - name: MANILA_NANNY_PROMETHEUS_PORT
+              value: {{ .Values.manila_nanny.share_server.prometheus_port | quote }}
+          volumeMounts:
+            - mountPath: /manila-etc
+              name: manila-etc
+          {{- if .Values.manila_nanny.share_server.resources }}
+          resources:
+            {{- toYaml .Values.manila_nanny.share_server.resources | nindent 13 }}
+          {{- else if .Values.manila_nanny.resources }}
+          resources:
+            {{- toYaml .Values.manila_nanny.resources | nindent 13 }}
+          {{- end }}
+{{- end }}
+{{- if .Values.manila_nanny.snapshot.enabled }}
+        - name: snapshot
+          image: {{.Values.global.imageRegistry}}/monsoon/manila-nanny:{{.Values.manila_nanny.image_version}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "{{ if not .Values.manila_nanny.debug }}/bin/bash /scripts/manila-share-snapshot.sh{{ else }}sleep inf{{ end }}"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: DEPENDENCY_SERVICE
+              value: "manila-mariadb,manila-api"
+            - name: MANILA_NANNY_INTERVAL
+              value: {{ .Values.manila_nanny.interval | quote }}
+            - name: MANILA_NANNY_LISTEN_PORT
+              value: {{ .Values.manila_nanny.snapshot.listen_port | quote }}
+            - name: MANILA_NANNY_PROMETHEUS_PORT
+              value: {{ .Values.manila_nanny.snapshot.prometheus_port | quote }}
+          volumeMounts:
+            - mountPath: /manila-etc
+              name: manila-etc
+          {{- if .Values.manila_nanny.snapshot.resources }}
+          resources:
+            {{- toYaml .Values.manila_nanny.snapshot.resources | nindent 13 }}
+          {{- else if .Values.manila_nanny.resources }}
+          resources:
+            {{- toYaml .Values.manila_nanny.resources | nindent 13 }}
           {{- end }}
 {{- end }}
 {{- end }}

@@ -1,7 +1,12 @@
-apiVersion: extensions/v1beta1
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+
 metadata:
-  name: keystone-cron
+  name: {{ .Release.Name }}-cron
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -17,11 +22,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      name: keystone-cron
+      name: {{ .Release.Name }}-cron
   template:
     metadata:
       labels:
-        name: keystone-cron
+        name: {{ .Release.Name }}-cron
         system: openstack
         component: keystone
         type: operations
@@ -31,7 +36,7 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
     spec:
 {{- if .Values.rbac.enabled }}
-      serviceAccountName: keystone
+      serviceAccountName: {{ .Release.Name }}
 {{- end }}
       initContainers:
       - name: kubernetes-entrypoint
@@ -45,15 +50,19 @@ spec:
           value: {{ .Release.Namespace }}
 {{- if .Release.IsInstall }}
         - name: DEPENDENCY_JOBS
-          value: keystone-job-migration,keystone-job-bootstrap
+          value: {{ .Release.Name }}-job-migration,{{ .Release.Name }}-job-bootstrap
 {{- else }}
   {{- if or .Values.run_db_migration }}
         - name: DEPENDENCY_JOBS
-          value: keystone-job-migration
+          value: {{ .Release.Name }}-job-migration
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
-          value: {{ .Release.Name }}-mariadb
+{{- if .Values.percona_cluster.enabled }}
+          value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-memcached"
+{{- else }}
+          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached"
+{{- end }}
         - name: COMMAND
           value: "true"
       containers:
@@ -72,7 +81,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: keystone.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
             {{- end }}
             - name: PYTHONWARNINGS

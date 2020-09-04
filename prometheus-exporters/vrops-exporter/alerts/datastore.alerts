@@ -1,8 +1,9 @@
 groups:
 - name: datastore.alerts
   rules:
-  - alert: DataStoreCapacityLeftCritical
-    expr: vrops_datastore_stats{vccluster=~".+",statkey="diskspace_total_usage_gigabytes"} / ignoring (statkey) vrops_datastore_stats{vccluster=~".+",statkey="diskspace_capacity_gigabytes"} > 0.9
+  - alert: DataStoreCapacityWarning
+    expr: >
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) > 0.9
     for: 20m
     labels:
       severity: warning
@@ -10,20 +11,38 @@ groups:
       service: storage
       context: "vrops-exporter"
       meta: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
       description: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-  - alert: DataStoreCapacityLeftWarning
-    expr: vrops_datastore_stats{vccluster=~".+",statkey="diskspace_total_usage_gigabytes"} / ignoring (statkey) vrops_datastore_stats{vccluster=~".+",statkey="diskspace_capacity_gigabytes"} > 0.75
+  - alert: DatastoreDisconnectedWithVmsOnIt
+    expr: >
+      max_over_time(vrops_datastore_summary_total_number_vms[10m]) > 0 
+      and on (datastore) max_over_time(vrops_datastore_summary_datastore_accessible{state="PoweredOff"}[10m])
     for: 20m
     labels:
       severity: info
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} utilization > 75% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
+      meta: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      playbook:
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 75% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 75% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      description: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+  - alert: DatastoreDisconnectedWithoutVmsOnIt
+    expr: >
+      max_over_time(vrops_datastore_summary_total_number_vms[10m]) == 0 
+      and on (datastore) max_over_time(vrops_datastore_summary_datastore_accessible{state="PoweredOff"}[10m])
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      context: "vrops-exporter"
+      meta: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      playbook:
+    annotations:
+      description: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"

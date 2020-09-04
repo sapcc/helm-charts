@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: keystone
+  name: {{ .Release.Name }}
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -18,7 +18,7 @@ metadata:
 {{- end }}
 spec:
   selector:
-    name: keystone-api
+    name: {{ .Release.Name }}-api
   type: {{ default "ClusterIP" .Values.services.type }}
   ports:
     - name: public
@@ -26,7 +26,9 @@ spec:
       port: 5000
       targetPort: 5000
 {{- if .Values.services.externalip }}
-  externalIPs: [
-    {{ .Values.services.externalip | quote }}
-    ]
+  externalIPs:
+    - {{ .Values.services.externalip | quote }}
+{{- if .Values.global.keystone_internal_ip }}
+    - {{ .Values.global.keystone_internal_ip | quote }}
+{{- end }}
 {{- end }}

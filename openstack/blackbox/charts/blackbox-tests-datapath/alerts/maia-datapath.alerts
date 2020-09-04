@@ -1,0 +1,21 @@
+groups:
+- name: blackbox.alerts
+  rules:
+  - alert: OpenstackMaiaDatapathDown
+    expr: |
+      sum(blackbox_datapath_status_gauge{service=~"maia"})
+      *
+      (1-(sum(blackbox_api_status_gauge{check=~"vcenter-vc.+"}) / count(blackbox_api_status_gauge{check=~"vcenter-vc.+"}))) > 0
+    for: 15m
+    labels:
+      severity: warning
+      tier: os
+      service: 'maia'
+      context: 'maia'
+      dashboard: ccloud-health-datapath-details
+      meta: 'Datapath maia maia_metrics is down for 15 minutes. See Sentry for details'
+      sentry: 'blackbox/?query=test_maia_metrics'
+      playbook: 'docs/devops/alert/maia/#maia_metrics'
+    annotations:
+      description: 'Datapath maia maia_metrics is down for 15 minutes. See Sentry for details'
+      summary: 'Datapath maia maia_metrics is down'

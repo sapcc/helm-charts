@@ -1,0 +1,42 @@
+kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+metadata:
+  name: apic-exporter
+  namespace: {{ .Values.exporter.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: apic-exporter
+  template:
+    metadata:
+      labels:
+        app: apic-exporter
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+    spec:
+      volumes:
+        - name: apic-exporter-config
+          configMap:
+            name: apic-exporter
+      containers:
+        - name: apic-exporter
+          image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.exporter.image.name variable missing" .Values.exporter.image.name }}:{{ required ".Values.exporter.image.tag variable missing" .Values.exporter.image.tag }}
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.exporter.prometheus.port missing" .Values.exporter.prometheus.port }}
+          args:
+            - -c
+            - /apic-config/config.yaml
+            - -p
+            - {{ required ".Values.exporter.prometheus.port missing" .Values.exporter.prometheus.port | quote }}
+          volumeMounts:
+            - mountPath: /apic-config
+              name: apic-exporter-config
+              readOnly: true
+          resources:
+{{ toYaml .Values.exporter.resources | indent 12 }}
+

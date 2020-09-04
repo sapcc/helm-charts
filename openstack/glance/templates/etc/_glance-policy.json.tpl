@@ -2,12 +2,14 @@
     "context_is_cloud_admin":  "role:cloud_image_admin",
     "context_is_admin":  "rule:context_is_cloud_admin",
     "default": "rule:context_is_admin",
+
     "add_image": "",
     "delete_image": "",
     "get_image": "",
     "get_images": "",
     "modify_image": "",
     "publicize_image": "rule:context_is_cloud_admin",
+    "communitize_image": "rule:context_is_admin or role:image_admin",
     "copy_from": "",
     "download_image": "",
     "upload_image": "",
@@ -48,3 +50,4 @@
     "add_metadef_tag":"",
     "add_metadef_tags":""
 }
+

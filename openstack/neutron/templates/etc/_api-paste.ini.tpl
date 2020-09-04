@@ -1,3 +1,4 @@
+{{- $train := hasPrefix "train" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
 [composite:neutron]
 use = egg:Paste#urlmap
 /: neutronversions
@@ -17,8 +18,8 @@ use = egg:Paste#urlmap
 
 [composite:neutronapi_v2_0]
 use = call:neutron.auth:pipeline_factory
-noauth = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id  {{- include "watcher_pipe" . }} catch_errors {{- include "sentry_pipe" . }} extensions neutronapiapp_v2_0
-keystone = cors healthcheck {{- include "osprofiler_pipe" . }} http_proxy_to_wsgi request_id catch_errors {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} extensions neutronapiapp_v2_0
+noauth = cors healthcheck http_proxy_to_wsgi request_id  {{- include "watcher_pipe" . }} catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} extensions neutronapiapp_v2_0
+keystone = cors healthcheck http_proxy_to_wsgi request_id catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} extensions neutronapiapp_v2_0
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
@@ -48,7 +49,11 @@ paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 paste.filter_factory = neutron.api.extensions:plugin_aware_extension_middleware_factory
 
 [app:neutronversionsapp]
+{{- if $train }}
+paste.app_factory = neutron.pecan_wsgi.app:versions_factory
+{{- else }}
 paste.app_factory = neutron.api.versions:Versions.factory
+{{ end }}
 
 [app:neutronapiapp_v2_0]
 paste.app_factory = neutron.api.v2.router:APIRouter.factory

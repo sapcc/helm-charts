@@ -3,6 +3,7 @@ apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
   name: 'vcenter-datacenter-cinder-configmap'
+options:
   scope: 'datacenter'
   jinja2_options:
     variable_start_string: '{='
@@ -19,7 +20,7 @@ template: |
   data:
     cinder-volume.conf: |
       [DEFAULT]
-      enabled_backends = vmware
+      enabled_backends = {{ .Values.backends.enabled }}
 
       [backend_defaults]
       vmware_host_ip = {= host =}
@@ -38,7 +39,15 @@ template: |
       [vmware]
       volume_driver = cinder.volume.drivers.vmware.vmdk.VMwareVcVmdkDriver
       volume_backend_name = vmware
+      vmware_storage_profile = {{ .Values.backends.vmware.vmware_storage_profile  }}
       extra_capabilities = '{"vcenter-shard": "{= host.split(".")[0] =}"}'
+
+      [standard_hdd]
+      volume_driver = cinder.volume.drivers.vmware.vmdk.VMwareVcVmdkDriver
+      volume_backend_name = standard_hdd
+      vmware_storage_profile = {{ .Values.backends.standard_hdd.vmware_storage_profile }}
+      extra_capabilities = '{"vcenter-shard": "{= host.split(".")[0] =}"}'
+
 
       [vstorageobject]
       volume_driver = cinder.volume.drivers.vmware.fcd.VMwareVStorageObjectDriver

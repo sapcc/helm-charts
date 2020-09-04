@@ -107,6 +107,26 @@
       regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
       replacement: '$2'
       target_label: peer_id
+    - source_labels: [__name__, type]
+      regex: '^thousandeyes_test_html_.+;(.+)-(.+)'
+      replacement: '$1'
+      target_label: ptype
+    - source_labels: [__name__, type]
+      regex: '^thousandeyes_test_html_.+;(.+)-(.+)'
+      replacement: '$2'
+      target_label: probed_to_type
+    - source_labels: [__name__, test_name]
+      regex: '^thousandeyes_test_html_.+;([0-9A-Z-]*)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*'
+      replacement: '$1'
+      target_label: probed_to
+    - source_labels: [__name__, test_name]
+      regex: '^thousandeyes_test_html_.+;([0-9A-Z-]*)\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*'
+      replacement: '$2'
+      target_label: dst
+    - source_labels: [__name__, agent_name, country]
+      regex: '^thousandeyes_test_html_.+;(.+),\s(\w*)\s*(.*);(.+)'
+      replacement: '$4, $1'
+      target_label: probed_from
 
 # Scrape config for pods with an additional port for metrics via `prometheus.io/port_1` annotation.
 #
@@ -161,7 +181,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /arista
   relabel_configs:
     - source_labels: [job]
@@ -175,14 +195,12 @@
       replacement: arista-exporter:9200
 {{- end }}
 
-{{- $values := .Values.snmp_exporter -}}
-{{- if $values.enabled }}
 - job_name: 'snmp'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
+  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /snmp
   relabel_configs:
     - source_labels: [job]
@@ -193,7 +211,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: snmp-exporter:{{$values.listen_port}}
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - source_labels: [module]
       target_label: __param_module
   metric_relabel_configs:
@@ -207,42 +225,36 @@
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$2'
       target_label: device
-    - source_labels: [__name__, snmp_n3k_ciscoImageString]
-      regex: 'snmp_n3k_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_n3k_sysDescr]
+      regex: 'snmp_n3k_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_n7k_ciscoImageString]
-      regex: 'snmp_n7k_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
-      target_label: image_version
-    - source_labels: [__name__, snmp_pxdlrouternxos_ciscoImageString]
-      regex: 'snmp_pxdlrouternxos_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_pxdlrouternxos_sysDescr]
+      regex: 'snmp_pxdlrouternxos_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_n9kpx_ciscoImageString]
       regex: 'snmp_n9kpx_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
       target_label: image_version
-    - source_labels: [__name__, snmp_ipn_ciscoImageString]
-      regex: 'snmp_ipn_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
-      target_label: image_version
-    - source_labels: [__name__, snmp_asr_ciscoImageString]
-      regex: 'snmp_asr_ciscoImageString;(?s)(.*)(Version )([0-9a-z.]*)(, CUST-SPECIAL:)([0-9A-Za-z._-]*)(.*)'
-      replacement: '$3-$5'
-      target_label: image_version
-    - source_labels: [__name__, snmp_asr03_ciscoImageString]
-      regex: 'snmp_asr03_ciscoImageString;(.*)(\$)(.*)(\$)'
-      replacement: '$3'
-      target_label: image_version
-    - source_labels: [__name__, snmp_asr04_ciscoImageString]
-      regex: 'snmp_asr04_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__,inetCidrRouteProto]
+      regex: 'snmp_n9kpx_inetCidrRouteProto;(bbnSpfIgp|ttdp|rpl|rip|other|netmgmt|isIs|idpr|icmp|hello|ggp|esIs|egp|dvmrp|dhcp|ciscoIgrp|ciscoEigrp|bgp)'
+      action: drop
+    - source_labels: [__name__,inetCidrRouteStatus]
+      regex: 'snmp_n9kpx_inetCidrRouteStatus;(createAndGo|createAndWait|destroy|notInService|notReady)'
+      action: drop
+    - source_labels: [__name__, snmp_ipn_sysDescr]
+      regex: 'snmp_ipn_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_arista_entPhysicalSoftwareRev]
       regex: 'snmp_arista_entPhysicalSoftwareRev;(.*)'
       replacement: '$1'
       target_label: image_version
+    - source_labels: [__name__, etherStatsIndex]
+      regex: 'snmp_arista_etherStatsCRCAlignErrors;(1\.3\.6\.1\.2\.1\.2\.2\.1\.1\.)([0-9]*)'
+      replacement: '$2'
+      target_label: ifIndex
     - source_labels: [__name__, snmp_asa_sysDescr]
       regex: 'snmp_asa_sysDescr;([a-zA-Z ]*)([0-9().]*)'
       replacement: '$2'
@@ -253,8 +265,24 @@
     - source_labels: [__name__, ifDescr]
       regex: 'snmp_acileaf_if.+;(Tunnel)[0-9]*'
       action: drop
+    - source_labels: [__name__, snmp_acileaf_sysDescr]
+      regex: 'snmp_acileaf_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
     - source_labels: [__name__, snmp_acispine_sysDescr]
-      regex: 'snmp_acispine_sysDescr;(.*)(Version )([0-9().a-z]*)(,.*)'
+      regex: 'snmp_acispine_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr_sysDescr]
+      regex: 'snmp_asr_sysDescr;(?s)(.*)(Version )([0-9().a-zIU:]*)(, )?(CUST-SPECIAL:)?([A-Z0-9_]*)?(.*)'
+      replacement: ${3}${6}
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr03_sysDescr]
+      regex: 'snmp_asr03_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
+      replacement: '$3'
+      target_label: image_version
+    - source_labels: [__name__, snmp_asr04_sysDescr]
+      regex: 'snmp_asr04_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
     - source_labels: [__name__, snmp_f5_sysProductVersion]
@@ -265,8 +293,8 @@
       regex: "snmp_acistretch_sysDescr;(?s)(.*)Version ([0-9.]*)(.*)"
       replacement: '$2'
       target_label: image_version
-    - source_labels: [__name__, snmp_acileaf_ciscoImageString]
-      regex: 'snmp_acileaf_ciscoImageString;(.*)(\$)(.*)(\$)'
+    - source_labels: [__name__, snmp_n7k_sysDescr]
+      regex: 'snmp_n7k_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
 # hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
@@ -274,7 +302,12 @@
       regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
       replacement: '$2'
       target_label: device
-{{- end }}
+    - source_labels: [__name__, cucsEtherErrStatsDn]
+      regex: 'snmp_ucs_cucsEtherErrStats.+;.+(lan).+'
+      action: drop
+    - source_labels: [__name__, cucsFcErrStatsDn]
+      regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
+      action: drop
 
 {{- $values := .Values.bios_exporter -}}
 {{- if $values.enabled }}
@@ -285,7 +318,7 @@
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/ironic.json
+        - /etc/prometheus/configmaps/atlas-ironic-sd/ironic.json
   metrics_path: /
   relabel_configs:
     - source_labels: [__address__]
@@ -305,7 +338,7 @@
   scrape_timeout: {{$values.vpod_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -330,7 +363,7 @@
   scrape_timeout: {{$values.cisco_cp_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -361,7 +394,7 @@
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/ironic.json
+        - /etc/prometheus/configmaps/atlas-ironic-sd/ironic.json
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [__address__]
@@ -378,7 +411,7 @@
   scrape_timeout: {{$values.cp_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -400,7 +433,7 @@
   scrape_timeout: {{$values.esxi_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /ipmi
   relabel_configs:
     - source_labels: [job]
@@ -423,7 +456,7 @@
   scrape_timeout: {{$values.bm_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -443,7 +476,7 @@
   scrape_timeout: {{$values.cp_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -465,7 +498,7 @@
   scrape_timeout: {{$values.bb_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /redfish
   relabel_configs:
     - source_labels: [job]
@@ -486,7 +519,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -510,6 +543,52 @@
   scheme: https
 {{- end }}
 
+{{- if .Values.netbox_exporter.enabled }}
+- job_name: 'netbox'
+  scrape_interval: {{ .Values.netbox_exporter.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporter.scrapeTimeout }}
+  static_configs:
+    - targets:
+      {{- range $.Values.netbox_exporter.targets }}
+      - {{ . }}
+      {{- end }}
+  scheme: https
+{{- end }}
+
+#normal scrape intervals are too frequent, that's why we only occasionally want to query here.
+{{- $values := .Values.bm_cablecheck_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'bm-cablecheck-exporter'
+  params:
+    job: [bm-cablecheck-exporter]
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  static_configs:
+    - targets : ['bm-cablecheck-exporter:9100']
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: bm-cablecheck-exporter
+      action: keep
+{{- end }}
+
+#normal scrape intervals are too frequent, that's why we only occasionally want to query here.
+{{- $values := .Values.vpod_cablecheck_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'vpod-cablecheck-exporter'
+  params:
+    job: [vpod-cablecheck-exporter]
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  static_configs:
+    - targets : ['vpod-cablecheck-exporter:9100']
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: vpod-cablecheck-exporter
+      action: keep
+{{- end }}
+
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
 {{- $values := .Values.vrops_exporter -}}
 {{- if $values.enabled }}
@@ -517,7 +596,10 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   static_configs:
-    - targets: ['vrops-exporter:9160']
+    - targets: 
+      - 'vrops-exporter:9160'
+      - 'vrops-exporter-vm:9160'
+      - 'vrops-exporter-host:9160'
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -533,7 +615,7 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-sd/netbox.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -543,4 +625,35 @@
       target_label: __param_target
     - target_label: __address__
       replacement: esxi-exporter:9203
+{{- end }}
+
+{{- $values := .Values.firmware_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'firmware-exporter'
+  params:
+    job: [firmware-exporter]
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  static_configs:
+    - targets : ['firmware-exporter:9100']
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: firmware-exporter
+      action: keep
+{{- end }}
+
+{{- $values := .Values.apic_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'apic-exporter'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  static_configs:
+    - targets:
+      - 'apic-exporter:9102'
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: apic-exporter
+      action: keep
 {{- end }}

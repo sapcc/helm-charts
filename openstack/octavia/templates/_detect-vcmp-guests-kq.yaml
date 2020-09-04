@@ -1,0 +1,20 @@
+{{- if .Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1" }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosQuery
+metadata:
+  name: octavia-detect-vcmp-guest
+  namespace: monsoon3
+  execute: True
+context: octavia@Default/service
+python: |
+    params={'manufacturer': 'f5', 'region': {{ .Values.region | upper }}}
+    resp = requests.get('https://netbox.global.cloud.sap/api/dcim/devices', params=params, verify=False).json()
+    for device in resp['result']:
+        if device['name'].endswith('mgmt'):
+            continue
+
+        if device['device_type']['slug'] == 'f5-vcmp':
+            continue
+
+
+        {{- end  }}

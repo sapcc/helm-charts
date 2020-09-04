@@ -32,10 +32,14 @@ propagate=0
 
 {{- define "osprofiler_url" }}
     {{- $options := merge .Values.osprofiler .Values.global.osprofiler -}}
-    {{- if $options.redis -}}
+    {{- if hasKey $options "jaeger" -}}
+    {{- if $options.jaeger.enabled -}}
+jaeger://localhost:6831
+    {{- else if $options.redis -}}
 redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
-    {{- else if $options.jaeger -}}
-jaeger://{{ $options.jaeger.svc_name }}.{{ $options.jaeger.namespace | default "monsoon3" }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6831
+    {{- end -}}
+    {{- else if $options.redis -}}
+redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
     {{- end -}}
 {{- end }}
 
@@ -59,4 +63,34 @@ enabled = false
 {{- define "osprofiler_pipe" }}
     {{- $options := merge .Values.osprofiler .Values.global.osprofiler }}
     {{- if $options.enabled }} osprofiler{{ end -}}
+{{- end }}
+
+{{- define "jaeger_agent_sidecar" }}
+{{- if hasKey .Values.osprofiler "jaeger" }}
+{{- if hasKey .Values.osprofiler.jaeger "enabled" }}
+{{- if .Values.osprofiler.jaeger.enabled }}
+- image: jaegertracing/jaeger-agent:{{ .Values.osprofiler.jaeger.version }}
+  name: jaeger-agent
+  ports:
+    - containerPort: 5775
+      name: zk-compact-trft
+      protocol: UDP
+    - containerPort: 6831
+      name: jg-compact-trft
+      protocol: UDP
+    - containerPort: 6832
+      name: jg-binary-trft
+      protocol: UDP
+    - containerPort: 5778
+      name: config-rest
+      protocol: TCP
+    - containerPort: 14271
+      name: admin-http
+      protocol: TCP
+  args:
+    - --reporter.grpc.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14250
+    - --log-level=debug
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}

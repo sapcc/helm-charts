@@ -1,5 +1,9 @@
 kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1 
+{{- end }}
 
 metadata:
   name: blackbox-tests-api
@@ -10,6 +14,9 @@ metadata:
 
 spec:
   replicas: {{.Values.global.replicaCount}}
+  selector:
+    matchLabels:
+      name: blackbox-tests-api
   revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate
@@ -33,9 +40,9 @@ spec:
       containers:
         - name: pytest
 {{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
-          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag | printf "%0.f" }}
+          image: {{.Values.global.registry}}/{{.Values.global.image.name}}:{{.Values.global.image.tag | printf "%0.f" }}
 {{- else }}
-          image: {{.Values.global.image.repository}}:{{.Values.global.image.tag}}
+          image: {{.Values.global.registry}}/{{.Values.global.image.name}}:{{.Values.global.image.tag}}
 {{- end }}
           args:
             - "iterate"
@@ -68,6 +75,10 @@ spec:
               value: {{ .Values.global.openstack.region_name | quote }}
             - name: VC_USERNAME
               value: {{ .Values.global.vcenter.username | quote }}
+            - name: F5_USERNAME
+              value: {{ .Values.global.f5.username | quote }}
+            - name: API_F5_AVAILABILITY_ZONES
+              value: {{ .Values.f5_az | quote }}
             - name: API_BILLING_URL
               value: {{ .Values.billing_url | quote }}
             - name: API_LYRA_URL
@@ -84,6 +95,8 @@ spec:
               value: {{ .Values.elektra_url | quote }}
             - name: API_VC_NAMES
               value: {{ .Values.vcenter_names | quote }}
+            - name: API_F5_HOST
+              value: {{ .Values.f5_host | quote }}
             - name: STATSD_HOST
               value: {{ .Values.statsd.host | quote }}
             - name: STATSD_PORT
@@ -104,6 +117,11 @@ spec:
                 secretKeyRef:
                   name: blackbox-tests-api
                   key: vc.password
+            - name: F5_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-api
+                  key: f5.password
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:

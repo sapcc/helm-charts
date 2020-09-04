@@ -1,5 +1,9 @@
 kind: DaemonSet
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
 apiVersion: extensions/v1beta1
+{{- end }}
 
 metadata:
   name: swift-statsd-exporter
@@ -11,6 +15,9 @@ spec:
   minReadySeconds: 15
   updateStrategy:
     type: RollingUpdate
+  selector:
+    matchLabels:
+      component: swift-statsd-exporter
   template:
     metadata:
       labels:

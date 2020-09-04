@@ -1,0 +1,32 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+{{- if .Values.vm_balance_nanny.enabled }}
+kind: VCenterTemplate
+apiVersion: vcenter-operator.stable.sap.cc/v1
+metadata:
+  name: 'vcenter-datacenter-vm-balance-service'
+options:
+  scope: 'datacenter'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  kind: Service
+  apiVersion: v1
+  metadata:
+    name: vm-balance-nanny-{= name =}
+    namespace: monsoon3
+    labels:
+      system: openstack
+      service: vm-balance-nanny
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9456"
+      prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+  spec:
+    selector:
+      component: vm-balance-nanny-{= name =}
+    ports:
+      - name: metrics
+        port: 9456
+{{- end }}
+{{- end }}

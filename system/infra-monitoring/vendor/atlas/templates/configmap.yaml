@@ -18,9 +18,17 @@ data:
   atlas.yaml: |
     discoveries:
       ironic:
-        refresh_interval: 600
+        refresh_interval: 1200
         targets_file_name: "ironic.json"
         metrics_label: "ironic"
+        configmap_name: {{ .Values.configmap.ironic }}
+        mgmt_interface_ips: true
+        {{- if eq .Values.global.region "qa-de-2" }}
+        netbox_host: "{{ .Values.global.netbox_host_staging }}"
+        {{- else }}
+        netbox_host: "{{ .Values.global.netbox_host }}"
+        {{- end }}
+        netbox_api_token: {{ required "netbox_api_token needs to be defined in global values" .Values.global.netbox_api_token }}
         os_auth:
           auth_url: {{ printf "https://identity-3.%s.cloud.sap/v3" .Values.global.region | quote }}
           user: "{{ .Values.global.ipmi_exporter_user }}"
@@ -29,9 +37,14 @@ data:
           project_name: "{{ .Values.os_project_name }}"
           domain_name: "{{ .Values.os_project_domain_name }}"
       netbox:
-        refresh_interval: 600
+        refresh_interval: 3600
         targets_file_name: "netbox.json"
+        configmap_name: {{ .Values.configmap.netbox }}
+        {{- if eq .Values.global.region "qa-de-2" }}
+        netbox_host: "{{ .Values.global.netbox_host_staging }}"
+        {{- else }}
         netbox_host: "{{ .Values.global.netbox_host }}"
+        {{- end }}
         netbox_api_token: {{ required "netbox_api_token needs to be defined in global values" .Values.global.netbox_api_token }}
         dcim:
           devices:
@@ -176,7 +189,7 @@ data:
               target: 1
               manufacturer: "cisco"
               region: "{{ .Values.global.region }}"
-              q: "asr1"
+              role: "neutron-router"
               status: "active"
 
             - custom_labels: 
@@ -214,6 +227,8 @@ data:
               target: 1
               metrics_label: "pxdlrouternxos"
               role: "directlink-router"
+              manufacturer: "cisco"
+              platform: "cisco-nx-os"
               region: "{{ .Values.global.region }}"
               status: "active"
 
@@ -234,7 +249,10 @@ data:
               target: 1
               manufacturer: "cisco"
               region: "{{ .Values.global.region }}"
-              q: "n7k"
+              role: "core-router"
+              tenant: "converged-cloud"
+              manufacturer: "cisco"
+              platform: "cisco-nx-os"
               status: "active"
 {{- range $switch := .Values.global.n7k.context }}
             - custom_labels:
@@ -242,9 +260,11 @@ data:
                 module: "n7k{{ $switch.context_name | lower }}"
               metrics_label: "n7k{{ $switch.context_name | lower }}"
               target: 1
-              region: "{{ $root.Values.global.region }}"
+              region: "{{ $root.Values.global.region }}"  
+              role: "core-router"
+              tenant: "converged-cloud"
               manufacturer: "cisco"
-              q: "n7k"
+              platform: "cisco-nx-os"
               status: "active"
 {{- end }}
 {{- end }}
@@ -254,7 +274,7 @@ data:
               target: 2
               region: "{{ .Values.global.region }}"
               status: "active"
-              q: "cp"
+              q: "-cp"
               role: "server"
               management_ip: true
               has_primary_ip: true
@@ -264,7 +284,7 @@ data:
               metrics_label: "cisco"
               region: "{{ .Values.global.region }}"
               status: "active"
-              q: "bb"
+              q: "-bb"
               role: "server"
               target: 1
               platform: "vmware-esxi"
@@ -274,11 +294,22 @@ data:
               target: 2
               region: "{{ .Values.global.region }}"
               status: "active"
-              q: "cp"
+              q: "-cp"
               role: "server"
               manufacturer: "cisco"
               management_ip: true
               has_primary_ip: true
+
+            # ucs-exporter mapping
+            - custom_labels:
+                job: "ucs-exporter"
+              metrics_label: "ucs-exporter"
+              region: "{{ .Values.global.region }}"
+              status: "active"
+              q: "ucsa"
+              role: "fabric-interconnect"
+              target: 2
+              platform: "cisco-nx-os"
 
             # Control Plane Server for Redfish Exporter
             # CoreOS nodes
