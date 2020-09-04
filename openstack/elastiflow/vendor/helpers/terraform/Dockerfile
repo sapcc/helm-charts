@@ -1,4 +1,5 @@
 FROM centos:7
+LABEL source_repository="https://github.com/sapcc/helm-charts"
 
 ENV VAULT_VERSION 0.9.3
 ENV TERRAFORM_VERSION=0.11.7
