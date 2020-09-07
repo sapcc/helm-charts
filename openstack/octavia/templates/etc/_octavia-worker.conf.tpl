@@ -37,10 +37,10 @@ as3_endpoint = https://octavia-f5-as3.{{ include "svc_fqdn" $envAll }}
 {{- end }}
 
 # Async Mode (always use async tasks)
-async_mode = $envAll.Values.async_mode
+async_mode = {{ $envAll.Values.async_mode | default "false" }}
 
 # Unsafe Mode (don't check F5 running configuration when applying declarations)
-unsafe_mode = $envAll.Values.unsafe_mode
+unsafe_mode = {{ $envAll.Values.unsafe_mode | default "false" }}
 
 # Default Server TLS Cipher
 [f5_tls_server]
