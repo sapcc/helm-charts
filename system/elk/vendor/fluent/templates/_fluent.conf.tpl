@@ -107,12 +107,27 @@
   @type parser
   key_name log
   reserve_data true
+  tag "ingress"
   <parse>
     @type grok
     grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
+
+{{- if .Values.datahub.enabled }}
+<filter ingress** >>
+type mysql_select
+  host {{.Values.datahub.host}}
+  port {{.Values.datahub.port}}
+  database {{.Values.datahub.db}}
+  username {{.Values.datahub.username}}
+  password {{.Values.datahub.password}}
+  sql "select * from foo where sql_key"
+  sql_key remote_addr
+  columns project_id port_id
+</filter>
+{{- end }}
 
 <filter kubernetes.var.log.containers.elektra**>
   @type parser
@@ -177,16 +192,16 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.ingress-controller**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
-    custom_pattern_path /fluent-bin/pattern
-  </parse>
-</filter>
+#<filter kubernetes.var.log.containers.ingress-controller**>
+#  @type parser
+#  key_name log
+#  reserve_data true
+#  <parse>
+#    @type grok
+#    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
+#    custom_pattern_path /fluent-bin/pattern
+#  </parse>
+#</filter>
 
 <filter kubernetes.var.log.containers.elk-fluent**>
   @type parser
