@@ -2,7 +2,7 @@ global:
   resolve_timeout: 16m
 
 templates:
-  - /notification-templates/*.tmpl
+  - /etc/alertmanager/configmaps/alertmanager-cnmp-notification-templates/*.tmpl
 
 inhibit_rules:
   - source_match:
