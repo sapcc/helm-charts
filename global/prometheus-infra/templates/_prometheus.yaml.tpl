@@ -112,6 +112,7 @@
       - '{__name__=~"^fluentd_.+"}'
       - '{__name__=~"^elasticsearch_cluster_health_status"}'
       - '{__name__=~"^vcsa_service_status"}'
+      - '{__name__="netapp_system_version"}'
 
 
   relabel_configs:
