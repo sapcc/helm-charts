@@ -1,3 +1,8 @@
+## 1.2.2
+
+* Set Chart `apiVersion: v2`.
+* Added annotation triggering certificate automation: `kubernetes.io/tls-acme: "true"`. 
+
 ## 1.0.2
 
 * Adds alert for cluster status.
