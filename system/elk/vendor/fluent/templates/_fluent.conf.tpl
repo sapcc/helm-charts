@@ -107,7 +107,6 @@
   @type parser
   key_name log
   reserve_data true
-  tag "ingress"
   <parse>
     @type grok
     grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}
@@ -116,7 +115,7 @@
 </filter>
 
 {{- if .Values.datahub.enabled }}
-<filter ingress** >>
+<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>>
 type mysql_select
   host {{.Values.datahub.host}}
   port {{.Values.datahub.port}}
