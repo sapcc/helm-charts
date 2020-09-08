@@ -19,14 +19,21 @@ help:
 
 .DEFAULT_GOAL := help
 
-# DOCKER TASKS
+update-json:
+	@echo 'Update json files in context'
+	cp $(JSONPATH)/*.json .
 
-build: ## Build Container
+# DOCKER TASKS
+build: update-json ## Build Container
 	docker build -t elastiflow-logstash-oss .
 
 # VERSION is according to https://semver.org/#backusnaur-form-grammar-for-valid-semver-versions
 tag: ## Tag Image with latest versions
 	@echo 'create tag latest'
-	docker tag elastiflow-logstash-oss $(DOCKER_REPO)/elastiflow-logstash-oss:latest
+	docker tag elastiflow-logstash-oss $(REGISTRY)/elastiflow-logstash-oss:latest
 	@echo 'create tag $(VERSION)'
-	docker tag elastiflow-logstash-oss $(DOCKER_REPO)/elastiflow-logstash-oss:$(VERSION)
+	docker tag elastiflow-logstash-oss $(REGISTRY)/elastiflow-logstash-oss:$(VERSION)
+
+pubish: tag ## Push latest changes to registry
+	docker push $(REGISTRY)/elastiflow-logstash-oss:$(VERSION)
+	docker push $(REGISTRY)/elastiflow-logstash-oss:latest
