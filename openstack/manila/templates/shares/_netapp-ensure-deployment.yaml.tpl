@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: reexport
-          image: "{{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"
+          image: "{{.Values.global.registry}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
