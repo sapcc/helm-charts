@@ -1,3 +1,7 @@
+## 1.3.0
+
+* Allow disabling default notification templates.
+
 ## 1.2.3
 
 * Disable vice-president in ingress by default
