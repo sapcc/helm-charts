@@ -115,14 +115,14 @@
 </filter>
 
 {{- if .Values.datahub.enabled }}
-<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>>
-type mysql_select
+<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+  @type mysql_enrich
   host {{.Values.datahub.host}}
   port {{.Values.datahub.port}}
   database {{.Values.datahub.db}}
   username {{.Values.datahub.username}}
   password {{.Values.datahub.password}}
-  sql "select * from foo where sql_key"
+  sql select * from test where floating_ip_address = where_condition
   sql_key remote_addr
   columns project_id port_id
 </filter>
