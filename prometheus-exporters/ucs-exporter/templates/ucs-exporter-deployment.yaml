@@ -35,19 +35,15 @@ spec:
              - {{ required ".Values.ucs.user missing" .Values.ucs.user }}
              - -p
              - {{ required ".Values.global.master_password missing" .Values.global.master_password }}
-             - -i
-             - {{ required ".Values.ucs.inventory missing" .Values.ucs.inventory }}
-             {{- if .Values.ucs.config }}
              - -c
-             - {{ .Values.ucs.config }}
-             {{- end }}
+             - {{ required ".Values.ucs.config missing" .Values.ucs.config }}
            env:
            - name: PORT
              value: {{ required ".Values.ucs.port_number missing" .Values.ucs.port_number | quote }}
            - name: DEBUG
              value: {{ .Values.ucs.debug | quote }}
            - name: INVENTORY
-             value: ucs-inventory
+             value: {{ required ".Values.ucs.config" missing .Values.ucs.config }}
            resources:
              limits:
                 memory: {{ required ".Values.ucs.limits.memory missing" .Values.ucs.limits.memory }}
