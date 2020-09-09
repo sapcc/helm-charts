@@ -1,0 +1,18 @@
+groups:
+- name: openstack-keystone.alerts
+  rules:
+  - alert: OpenstackKeystoneApi5xx
+    expr: sum(irate(nginx_ingress_controller_requests{ingress=~"keystone", status=~"5.+"}[5m])) > 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      service: keystone
+      context: availability
+      dashboard: keystone
+      meta: 'Keystone API ingress endpoint is throwing 5xx. '
+      sentry: 'keystone'
+      playbook: 'docs/devops/alert/keystone/#api_5xx'
+    annotations:
+      description: 'The keystone ingress API endpoint is throwing 5xx for 5 min. Check if the keystone-api k8s pods are OK.'
+      summary: 'Keystone API ingress endpoint is not healthy'

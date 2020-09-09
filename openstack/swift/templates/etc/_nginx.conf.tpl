@@ -28,9 +28,10 @@ http {
 
     access_log  /var/log/nginx/access.log  main;
 
-    keepalive_timeout     {{ $context.client_timeout }};
-    client_body_timeout   {{ $context.client_timeout }};
-    client_header_timeout {{ $context.client_timeout }};
+    # Don't swallow client timeouts handled by swift itself -> adding some seconds
+    keepalive_timeout     {{ add $context.client_timeout 5 }};
+    client_body_timeout   {{ add $context.client_timeout 5 }};
+    client_header_timeout {{ add $context.client_timeout 5 }};
 
     # non default - default was: not set
     tcp_nopush            on;

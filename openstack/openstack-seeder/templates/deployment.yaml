@@ -1,11 +1,8 @@
-{{- $major := .Capabilities.KubeVersion.Major -}}
-{{- $minor := .Capabilities.KubeVersion.Minor -}}
-
 apiVersion: extensions/v1beta1
 kind: Deployment
 
 metadata:
-  name: openstack-seeder
+  name: {{ .Release.Name }}
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -28,12 +25,12 @@ spec:
     metadata:
       labels:
         app: {{ template "fullname" . }}
-        name: openstack-seeder
+        name: {{ .Release.Name }}
       annotations:
         checksum/bin-configmap.conf: {{ include (print $.Chart.Name "/templates/bin-configmap.yaml") . | sha256sum }}
     spec:
 {{- if .Values.rbac.enabled }}
-      serviceAccountName: openstack-seeder
+      serviceAccountName: {{ .Release.Name }}
 {{- end }}
       containers:
         - name: operator
@@ -45,21 +42,12 @@ spec:
 
           imagePullPolicy: {{ .Values.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
-{{- if and (eq (int $major) 1) (lt (int $minor) 10) }}
           - /usr/local/bin/kubernetes-entrypoint
-{{- else }}
-          - /bin/dumb-init
-          args:
-            - /bin/sh
-            - /scripts/start
-{{- end }}
           env:
-{{- if and (eq (int $major) 1) (lt (int $minor) 10) }}
             - name: COMMAND
               value: "bash /scripts/start"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
-{{- end }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}

@@ -112,7 +112,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- /**********************************************************************************/ -}}
 {{- define "swift_image" -}}
   {{- if ne .Values.image_version "DEFINED_BY_PIPELINE" -}}
-    {{ .Values.global.imageRegistry }}/{{ .Values.imageRegistry_org }}/{{ .Values.imageRegistry_repo }}:{{ .Values.image_version }}
+    {{ .Values.global.registryAlternateRegion }}/{{ .Values.imageRegistry_repo }}:{{ .Values.image_version }}
   {{- else -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- end -}}

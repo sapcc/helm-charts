@@ -32,7 +32,6 @@ rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | defa
 osapi_volume_workers = {{ .Values.osapi_volume_workers | default 16 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-{{- include "ini_sections.database_options_mysql" . }}
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_volumes = 0

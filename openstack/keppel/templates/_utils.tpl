@@ -11,6 +11,14 @@
   value: 'false'
 - name:  KEPPEL_API_LISTEN_ADDRESS
   value: ':80'
+{{- if $.Values.keppel.anycast_domain_name }}
+- name:  KEPPEL_API_ANYCAST_URL
+  value: 'https://{{$.Values.keppel.anycast_domain_name}}'
+{{- end }}
+{{- if (index $.Values.keppel "anycast_issuer_key.pem") }}
+- name:  KEPPEL_ANYCAST_ISSUER_KEY
+  value: '/etc/keppel/anycast-issuer-key.pem'
+{{- end }}
 - name:  KEPPEL_API_PUBLIC_URL
   value: 'https://keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
 - name:  KEPPEL_AUDIT_SILENT
@@ -21,12 +29,14 @@
   value: "{{ $.Values.keppel.rabbitmq.queue_name }}"
 - name:  KEPPEL_AUTH_LOCAL_ROLE
   value: 'swiftoperator'
-- name:  KEPPEL_BURST_BLOB_PULLS # burst budgets are all ~30% of the rate limit per minute
+- name:  KEPPEL_BURST_ANYCAST_BLOB_PULL_BYTES
+  value: '4718592000' # 4500 MiB per account (see below, near the corresponding ratelimit, for rationale)
+- name:  KEPPEL_BURST_BLOB_PULLS # burst budgets for regular pull/push are all ~30% of the rate limit per minute
   value: '300' # per account
 - name:  KEPPEL_BURST_BLOB_PUSHES
   value: '30'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PULLS
-  value: '30'  # per account
+  value: '300'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
 - name:  KEPPEL_DB_URI
@@ -53,12 +63,18 @@
   value: '/etc/keppel/policy.json'
 - name:  KEPPEL_PEERS
   value: {{ $.Values.keppel.peer_hostnames | join "," | quote }}
+- name:  KEPPEL_RATELIMIT_ANYCAST_BLOB_PULL_BYTES
+  value: '5242880 B/s' # 5 MiB/s per account (very small to discourage continuous use of anycast, but
+                       # the burst budget is very large to enable anycast pulling of large images; the
+                       # actual burst budget is 4500 MiB, which is 15 minutes worth of rate limit)
 - name:  KEPPEL_RATELIMIT_BLOB_PULLS
   value: '1000r/m' # per account
 - name:  KEPPEL_RATELIMIT_BLOB_PUSHES
   value: '100r/m'  # per account
 - name:  KEPPEL_RATELIMIT_MANIFEST_PULLS
-  value: '100r/m'  # per account
+  value: '1000r/m'  # per account (used to be smaller than rate limit for blob pulls, but we pulled
+                    # it up to account for clients that just poll the state of certain tags without
+                    # actually pulling the image contents)
 - name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
   value: '10r/m'   # per account
 - name:  KEPPEL_REDIS_URI

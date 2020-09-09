@@ -11,6 +11,7 @@ bigip_verify = false
 bigip_token = true
 esd_dir = /etc/octavia/esd
 sync_to_group = {{ default "" $loadbalancer.sync_to_group }}
+persist_every = {{ $envAll.Values.persist_every }}
 
 # Use FastL4 for TCP listener if possible
 tcp_service_type = Service_L4
@@ -34,6 +35,12 @@ migration = {{ $loadbalancer.migration | default "false" }}
 # External AS3 Endpoint
 as3_endpoint = https://octavia-f5-as3.{{ include "svc_fqdn" $envAll }}
 {{- end }}
+
+# Async Mode (always use async tasks)
+async_mode = {{ $envAll.Values.async_mode | default "false" }}
+
+# Unsafe Mode (don't check F5 running configuration when applying declarations)
+unsafe_mode = {{ $envAll.Values.unsafe_mode | default "false" }}
 
 # Default Server TLS Cipher
 [f5_tls_server]

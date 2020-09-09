@@ -2,8 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 3
-
 api_port_internal: 9876
 api_backdoor: false
 
@@ -44,7 +42,7 @@ mysql_metrics:
           provisioning_status AS status,
           server_group_id as octavia_host
         FROM load_balancer
-        GROUP BY load_balancer.provisioning_status;
+        GROUP BY octavia_host, provisioning_status;
       values:
       - "count_gauge"
     - help: Worker agent seconds since the last heartbeat
@@ -56,12 +54,22 @@ mysql_metrics:
           compute_flavor AS octavia_host,
           (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(updated_at))) AS heartbeat_seconds
         FROM amphora
-        WHERE status = 'READY'
+        WHERE role = 'MASTER'
         GROUP BY compute_flavor;
       values:
       - "heartbeat_seconds"
 
 pod:
+  replicas:
+    api: 3
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+          max_unavailable: 0
+          max_surge: 1
   resources:
     api: null
     housekeeping: null
@@ -91,6 +99,9 @@ default_profiles:
   profile_multiplex: cc_oneconnect_profile
   profile_healthmonitor_tls: cc_serverssl_profile
 external_as3: false
+persist_every: 600
+async_mode: false
+unsafe_mode: false
 
 # Deploy Octavia Prometheus alerts.
 alerts:

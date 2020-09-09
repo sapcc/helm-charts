@@ -28,6 +28,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9102"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus }}
     spec:
       {{- if $.Values.use_taints }}
       tolerations:
@@ -58,7 +59,7 @@ spec:
             path: /
       containers:
         - name: boot
-          image: {{$.Values.global.imageRegistry}}/monsoon/swift-drive-autopilot:{{include "image_version" $}}
+          image: {{$.Values.global.registryAlternateRegion}}/swift-drive-autopilot:{{include "image_version" $}}
           securityContext:
             privileged: true
           args:

@@ -51,11 +51,7 @@ function stop () {
 # all designate configs
 #
 function process_config {
-    cp /designate-etc/designate.conf /etc/designate/designate.conf
-    cp /designate-etc/api-paste.ini /etc/designate/api-paste.ini
-    cp /designate-etc/policy.json  /etc/designate/policy.json
-    cp /designate-etc/logging.conf /etc/designate/logging.conf
-    cp /designate-etc/designate_audit_map.yaml /etc/designate/designate_audit_map.yaml
+    cp /designate-etc/* /etc/designate/
 
     echo "[DEFAULT]" > /etc/designate/hostname.conf
     echo "host = $NODE_NAME" >> /etc/designate/hostname.conf

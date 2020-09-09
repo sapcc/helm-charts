@@ -127,7 +127,7 @@ permissive = true
 [database]
 # Database connection string - MariaDB for regional setup
 # and Percona Cluster for inter-regional setup:
-{{- if .Values.percona_cluster.enabled -}}
+{{ if .Values.percona_cluster.enabled -}}
 connection = {{ include "db_url_pxc" . }}
 {{- else }}
 connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
@@ -157,6 +157,9 @@ domain_name_url_safe = new
 lockout_failure_attempts = 5
 lockout_duration = 300
 unique_last_password_count = 5
+{{- if hasKey .Values "disable_user_account_days_inactive" }}
+disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inactive }}
+{{- end }}
 
 {{- if eq .Values.release "rocky" }}
 [oslo_messaging_rabbit]

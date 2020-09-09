@@ -6,7 +6,7 @@
     "cloud_viewer": "role:cloud_identity_viewer or rule:service_role or rule:cloud_admin",
     "owner": "user_id:%(user_id)s or user_id:%(target.token.user_id)s",
     "admin_or_owner": "(rule:admin_required and domain_id:%(target.token.user.domain.id)s) or rule:owner",
-    "admin_and_matching_domain_id": "rule:admin_required and domain_id:%(domain_id)s",
+    "admin_and_matching_domain_id": "rule:admin_required and (domain_id:%(domain_id)s or domain_id:%(target.domain_id)s)",
     "service_admin_or_owner": "rule:service_or_admin or rule:owner",
     "cloud_admin_or_owner": "rule:cloud_admin or rule:owner",
 
@@ -137,7 +137,7 @@
     "identity:create_system_grant_for_group": "rule:cloud_admin",
     "identity:revoke_system_grant_for_group": "rule:cloud_admin",
 
-    "blacklist_roles": "'resource_service':%(target.role.name)s or 'cloud_registry_admin':%(target.role.name)s or 'cloud_registry_viewer':%(target.role.name)s or 'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'cloud_sharedfilesystem_editor':%(target.role.name)s or 'cloud_sharedfilesystem_viewer':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s or 'cloud_identity_viewer':%(target.role.name)s or 'cloud_support_tools_viewer':%(target.role.name)s",
+    "blacklist_roles": "'resource_service':%(target.role.name)s or 'cloud_registry_admin':%(target.role.name)s or 'cloud_registry_viewer':%(target.role.name)s or 'cloud_dns_resource_admin':%(target.role.name)s or 'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'cloud_sharedfilesystem_editor':%(target.role.name)s or 'cloud_sharedfilesystem_viewer':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s or 'cloud_identity_viewer':%(target.role.name)s or 'cloud_support_tools_viewer':%(target.role.name)s",
     "blacklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s",
     "identity:check_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants",
     "identity:list_grants": "rule:cloud_admin or rule:domain_admin_for_list_grants or rule:project_admin_for_list_grants",

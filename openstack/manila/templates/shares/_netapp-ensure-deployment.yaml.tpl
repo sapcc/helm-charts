@@ -33,21 +33,21 @@ spec:
     spec:
       containers:
         - name: reexport
-          image: "{{.Values.global.imageRegistry}}/{{.Values.loci.imageNamespace}}/netapp-manila-nanny:{{.Values.loci.imageVersionEnsure}}"
+          image: "{{.Values.global.registry}}/manila-ensure:{{.Values.loci.imageVersionEnsure}}"
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "/bin/bash /scripts/netapp-manila-reexport.sh"
+              value: "/bin/bash /scripts/manila-ensure-reexport.sh"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb"
-            - name: MANILA_NETAPP_NANNY_INTERVAL
+            - name: MANILA_NETAPP_ENSURE_INTERVAL
               value: "240"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN

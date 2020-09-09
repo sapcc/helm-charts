@@ -32,10 +32,14 @@ propagate=0
 
 {{- define "osprofiler_url" }}
     {{- $options := merge .Values.osprofiler .Values.global.osprofiler -}}
-    {{- if $options.redis -}}
-redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
-    {{- else if $options.jaeger.enabled -}}
+    {{- if hasKey $options "jaeger" -}}
+    {{- if $options.jaeger.enabled -}}
 jaeger://localhost:6831
+    {{- else if $options.redis -}}
+redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
+    {{- end -}}
+    {{- else if $options.redis -}}
+redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
     {{- end -}}
 {{- end }}
 
@@ -83,7 +87,9 @@ enabled = false
     - containerPort: 14271
       name: admin-http
       protocol: TCP
-  args: ["--collector.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14267"]
+  args:
+    - --reporter.grpc.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14250
+    - --log-level=debug
 {{- end }}
 {{- end }}
 {{- end }}

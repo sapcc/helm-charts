@@ -1,13 +1,15 @@
-{{ if eq .Values.global_setup false }}
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-
+apiVersion: "monitoring.coreos.com/v1"
+kind: "PrometheusRule"
 metadata:
+{{- if eq $values.global_setup true }}
+  name: {{ printf "desginate-global-%s" $path | replace "/" "-" }}
+{{- else }}
   name: {{ printf "desginate-%s" $path | replace "/" "-" }}
+{{- end }}
   labels:
     app: designate
     tier: os
@@ -19,4 +21,3 @@ spec:
 
 {{- end }}
 {{- end }}
-{{ end -}}

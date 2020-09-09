@@ -27,5 +27,5 @@ groups:
         context: availability
         playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor.html"
       annotations:
-        description: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbors. Network datapath threatened!
-        summary: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbors.
+        description: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbor {{`{{ $labels.neighbor }}`}}. Network datapath threatened!
+        summary: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbor {{`{{ $labels.neighbor }}`}}.

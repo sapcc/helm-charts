@@ -195,11 +195,9 @@
       replacement: arista-exporter:9200
 {{- end }}
 
-{{- $values := .Values.snmp_exporter -}}
-{{- if $values.enabled }}
 - job_name: 'snmp'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
+  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
@@ -213,7 +211,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: snmp-exporter:{{$values.listen_port}}
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - source_labels: [module]
       target_label: __param_module
   metric_relabel_configs:
@@ -239,6 +237,12 @@
       regex: 'snmp_n9kpx_ciscoImageString;(.*)(\$)(.*)(\$)'
       replacement: '$3'
       target_label: image_version
+    - source_labels: [__name__,inetCidrRouteProto]
+      regex: 'snmp_n9kpx_inetCidrRouteProto;(bbnSpfIgp|ttdp|rpl|rip|other|netmgmt|isIs|idpr|icmp|hello|ggp|esIs|egp|dvmrp|dhcp|ciscoIgrp|ciscoEigrp|bgp)'
+      action: drop
+    - source_labels: [__name__,inetCidrRouteStatus]
+      regex: 'snmp_n9kpx_inetCidrRouteStatus;(createAndGo|createAndWait|destroy|notInService|notReady)'
+      action: drop
     - source_labels: [__name__, snmp_ipn_sysDescr]
       regex: 'snmp_ipn_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
       replacement: '$3'
@@ -304,7 +308,6 @@
     - source_labels: [__name__, cucsFcErrStatsDn]
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
-{{- end }}
 
 {{- $values := .Values.bios_exporter -}}
 {{- if $values.enabled }}
@@ -596,6 +599,7 @@
     - targets: 
       - 'vrops-exporter:9160'
       - 'vrops-exporter-vm:9160'
+      - 'vrops-exporter-host:9160'
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -636,5 +640,20 @@
   relabel_configs:
     - source_labels: [job]
       regex: firmware-exporter
+      action: keep
+{{- end }}
+
+{{- $values := .Values.apic_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'apic-exporter'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  static_configs:
+    - targets:
+      - 'apic-exporter:9102'
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: apic-exporter
       action: keep
 {{- end }}

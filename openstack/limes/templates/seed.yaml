@@ -1,5 +1,7 @@
 {{- if .Values.limes.clusters.ccloud -}}
 
+{{- $domains := list "bs" "cc3test" "cp" "fsn" "hcm" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs" -}}
+
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
 metadata:
@@ -32,6 +34,7 @@ spec:
   roles:
     - name: cloud_resource_admin
     - name: cloud_resource_viewer
+    - name: cloud_dns_resource_admin
     - name: resource_admin
     - name: resource_viewer
     - name: resource_service
@@ -98,81 +101,24 @@ spec:
         role_assignments:
         - domain: ccadmin
           role: resource_admin
+      - name: CCADMIN_DOMAIN_DNS_OPS
+        role_assignments:
+        - domain: ccadmin
+          role: cloud_dns_resource_admin
+          inherited: true
 
-    - name: bs
+    {{- range $domains }}
+    - name: {{ . | lower }}
       groups:
-      - name: BS_DOMAIN_RESOURCE_ADMINS
+      - name: {{ . | upper }}_DOMAIN_RESOURCE_ADMINS
         role_assignments:
-        - domain: bs
+        - domain: {{ . | lower }}
           role: resource_admin
-
-    - name: cc3test
-      groups:
-      - name: CC3TEST_DOMAIN_RESOURCE_ADMINS
+      - name: {{ . | upper }}_DOMAIN_DNS_OPS
         role_assignments:
-        - domain: cc3test
-          role: resource_admin
-
-    - name: cp
-      groups:
-      - name: CP_DOMAIN_RESOURCE_ADMINS
-        role_assignments:
-        - domain: cp
-          role: resource_admin
-
-    - name: fsn
-      groups:
-      - name: FSN_DOMAIN_RESOURCE_ADMINS
-        role_assignments:
-        - domain: fsn
-          role: resource_admin
-
-    - name: hcm
-      groups:
-      - name: HCM_DOMAIN_RESOURCE_ADMINS
-        role_assignments:
-        - domain: hcm
-          role: resource_admin
-
-    - name: hcp03
-      groups:
-      - name: HCP03_DOMAIN_RESOURCE_ADMINS
-        role_assignments:
-        - domain: hcp03
-          role: resource_admin
-
-    - name: hec
-      groups:
-      - name: HEC_DOMAIN_RESOURCE_ADMINS
-        role_assignments:
-        - domain: hec
-          role: resource_admin
-
-    - name: monsoon3
-      groups:
-      - name: MONSOON3_DOMAIN_RESOURCE_ADMINS
-        role_assignments:
-        - domain: monsoon3
-          role: resource_admin
-
-    - name: neo
-      groups:
-      - name: NEO_DOMAIN_RESOURCE_ADMINS
-        role_assignments:
-        - domain: neo
-          role: resource_admin
-    - name: s4
-      groups:
-      - name: S4_DOMAIN_RESOURCE_ADMINS
-        role_assignments:
-        - domain: s4
-          role: resource_admin
-
-    - name: wbs
-      groups:
-      - name: WBS_DOMAIN_RESOURCE_ADMINS
-        role_assignments:
-        - domain: wbs
-          role: resource_admin
+        - domain: {{ . | lower }}
+          role: cloud_dns_resource_admin
+          inherited: true
+    {{- end }}
 
 {{- end -}}

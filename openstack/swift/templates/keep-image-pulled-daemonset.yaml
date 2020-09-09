@@ -1,0 +1,55 @@
+# Swift is the backing store for Keppel. Therefore Swift is instrumental for
+# the continued availability of many other Docker images, so we want to be able
+# to start it reliably and fast. To ensure this, this daemonset (through its
+# existence) keeps the relevant images permanently pulled on all nodes.
+
+kind: DaemonSet
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+
+metadata:
+  name: keep-image-pulled
+
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 10 # allow updating all pods at once
+  selector:
+    matchLabels:
+      app: keep-image-pulled
+  template:
+    metadata:
+      labels:
+        app: keep-image-pulled
+    spec:
+      # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
+      # - no measurable CPU usage once started
+      # - RAM max. 1.5 MiB (but it turns out that k8s itself runs into OOM when
+      #   starting a container with less than 16 MiB RAM limit)
+      containers:
+        - name: swift
+          image: {{ include "swift_image" . }}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "16Mi"
+            limits:
+              cpu: "1m"
+              memory: "16Mi"
+        - name: nginx
+          image: {{$.Values.global.registryAlternateRegion}}/swift-nginx:{{$.Values.image_version_nginx}}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "16Mi"
+            limits:
+              cpu: "1m"
+              memory: "16Mi"

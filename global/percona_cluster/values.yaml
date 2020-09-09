@@ -20,10 +20,11 @@ dbPassword: test
 mysqlAllowEmptyPassword: false
 xtraBackupPassword: test
 
+# claim name is used as a prefix for full release name
 persistence:
   enabled: true
   accessMode: ReadWriteMany
-  claimName: percona-test-claim
+  claimName: db-global
   size: 100Gi
   # storageClass: "-"
 
@@ -32,9 +33,9 @@ nodeAffinity: {}
 tolerations: []
 
 resources:
- requests:
-   memory: 2048Mi
-   cpu: 1000m
+  requests:
+    memory: 2048Mi
+    cpu: 1000m
 
 configFiles:
   node.cnf: |+
@@ -55,6 +56,7 @@ configFiles:
     innodb_read_io_threads          = 8
     innodb_write_io_threads         = 8
     innodb_print_all_deadlocks      = 1
+    log_bin_trust_function_creators = 1
     bind_address                    = 0.0.0.0
     slow_query_log                  = 1
     long_query_time                 = 5
@@ -77,6 +79,7 @@ metricsExporter:
 
 alerts:
   prometheus: openstack
+  tier: os
 
 prometheus:
   operator:
@@ -136,11 +139,15 @@ tests:
 # segment to be set different for far locations
 gmcast_segment: 1
 
+global:
+  region: global
+  db_region: eu-de-1
+
 # Set 'primary' to true for initiating a bootstrap below:
 service:
   primary: false
   headless: false
   regions:
-    eu-de-1: ""
-    eu-de-2: ""
-    eu-nl-1: ""
+    eu-de-1: "10.46.2.111"
+    eu-de-2: "10.46.180.111"
+    eu-nl-1: "10.46.78.111"

@@ -1,0 +1,16 @@
+groups:
+- name: cinder
+  rules:
+  - alert: CinderBackendShardLowOvercommitWarning
+    expr: >
+      sum(cinder_free_until_overcommit_gib) by (region, shard, backend) / 1024 + sum(cinder_free_until_overcommit_gib / cinder_total_capacity_gib * 100 < 20) by (region, shard, backend) * 0
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: cinder
+      context: "openstack-exporter"
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 20% storage left before overcommit is reached."
+    annotations:
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 20% storage left before overcommit is reached."
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 20% storage left before overcommit is reached."
