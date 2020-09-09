@@ -298,3 +298,27 @@ groups:
     annotations:
       description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host overbooked is {{ $labels.consolidated_needed }} => No suggestion from nanny and consolidated_needed in BB:"
       summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
+
+  - alert: ESXiHostOverutilizedConfiguredMemoryGB
+    expr: (vm_balance_nanny_host_size_consume_all_vm_bytes - vm_balance_nanny_host_size_bytes)/1024/1024/1024 > 0
+    for: 10m
+    labels:
+      service: compute
+      severity: info
+      tier: vmware
+    annotations:
+      description: "ESXi host {{ $labels.nodename }} in region {{ $labels.region }} overutilized on configured memory having more VMs then host memory"
+      summary: "ESXi host {{ $labels.nodename }} in region {{ $labels.region }} overutilized configuired memory having more VMs then host memory"
+
+  - alert: ESXiClusterOverutilizedConfiguredMemoryPercentage
+    expr: (vm_balance_building_block_consume_all_vm_bytes * 100 / (vm_balance_building_block_total_size_bytes )) > 95
+    for: 10m
+    labels:
+      service: compute
+      severity: info
+      tier: vmware
+    annotations:
+      description: "BuildingBlock_BB{{ $labels.Building_block }} in region {{ $labels.region }} more then 95% utilized on configured memory"
+      summary: "BuildingBlock_BB{{ $labels.Building_block }} in region {{ $labels.region }} more then 95% utilized on configured memory need to check hosts"
+
+
