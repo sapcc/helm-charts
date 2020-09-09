@@ -47,6 +47,14 @@
 {{.Values.global.dbPassword | default (tuple . .Values.global.dbUser | include "mariadb.password_for_user")}}
 {{- end -}}
 
+{{- define "registry" -}}
+{{- if .Values.use_alternate_registry -}}
+{{- .Values.global.registryAlternateRegion -}}
+{{- else -}}
+{{- .Values.global.registry -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Needed for testing purposes only. */}}
 {{define "RELEASE-NAME_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "testRelease_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
