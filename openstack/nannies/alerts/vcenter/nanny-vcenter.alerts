@@ -300,14 +300,14 @@ groups:
       summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
 
   - alert: ESXiHostOverutilizedConfiguredMemoryGB
-    expr: (vm_balance_nanny_host_size_consume_all_vm_bytes - vm_balance_nanny_host_size_bytes)/1024/1024/1024 > 100
+    expr: (vm_balance_nanny_host_size_consume_all_vm_bytes - vm_balance_nanny_host_size_bytes)/1024/1024/1024 > 400
     for: 10m
     labels:
       service: compute
       severity: info
       tier: vmware
     annotations:
-      description: "ESXi host {{ $labels.nodename }} in region {{ $labels.region }} overutilized on configured memory having more VMs then host memory"
+      description: "ESXi host {{ $labels.nodename }} in region {{ $labels.region }} overutilized by more then 400 GB on host configured memory size"
       summary: "ESXi host {{ $labels.nodename }} in region {{ $labels.region }} overutilized configuired memory having more VMs then host memory"
 
   - alert: ESXiClusterOverutilizedConfiguredMemoryPercentage
@@ -321,4 +321,14 @@ groups:
       description: "BuildingBlock_BB{{ $labels.Building_block }} in region {{ $labels.region }} more then 95% utilized on configured memory"
       summary: "BuildingBlock_BB{{ $labels.Building_block }} in region {{ $labels.region }} more then 95% utilized on configured memory need to check hosts"
 
+  - alert: PredictHostMemoryBallooning
+    expr: (vm_balance_nanny_host_size_consume_all_vm_bytes - vm_balance_nanny_host_size_bytes)/1024/1024/1024 > 500 and abs(vm_balance_nanny_host_size_consume_big_vm_bytes - vm_balance_nanny_host_size_bytes)/1024/1024/1024 < 100
+    for: 10m
+    labels:
+      service: compute
+      severity: info
+      tier: vmware
+    annotations:
+      description: "ESXi host {{ $labels.nodename }} in region {{ $labels.region }} having chances of memory Ballooning big_VMs consumed all configured memory"
+      summary: "ESXi host {{ $labels.nodename }} in region {{ $labels.region }} having chances of memory Ballooning if big_VMs consumed all configured memory"
 
