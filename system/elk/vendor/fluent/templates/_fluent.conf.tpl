@@ -12,7 +12,7 @@
 @include files/*
 
 <system>
-  log_level warn
+  log_level info
 </system>
 
 <label @FLUENT_LOG>
