@@ -609,7 +609,7 @@
 #special vrops vm treatment since it is taking longer
 {{- $values := .Values.vrops_exporter -}}
 {{- if $values.enabled }}
-- job_name: 'vrops'
+- job_name: 'vrops_vm'
   scrape_interval: {{$values.scrapeIntervalVM}}
   scrape_timeout: {{$values.scrapeTimeoutVM}}
   static_configs:
