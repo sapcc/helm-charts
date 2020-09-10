@@ -122,9 +122,10 @@
   database {{.Values.datahub.db}}
   username {{.Values.datahub.username}}
   password {{.Values.datahub.password}}
-  sql select * from test where floating_ip_address = "where_condition";
-  sql_key remote_addr
-  columns project_id project port domain 
+  sql select * from test;
+  record_key remote_addr
+  columns project_id, project, port, domain
+  refresh_interval 60
 </filter>
 {{- end }}
 
