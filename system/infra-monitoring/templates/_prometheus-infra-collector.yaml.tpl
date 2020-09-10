@@ -604,6 +604,7 @@
     - source_labels: [job]
       regex: vrops
       action: keep
+      target_label: job
 {{- end }}
 
 #special vrops vm treatment since it is taking longer
@@ -620,6 +621,7 @@
     - source_labels: [job]
       regex: vrops
       action: keep
+      target_label: job
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
