@@ -592,6 +592,17 @@
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
 {{- $values := .Values.vrops_exporter -}}
 {{- if $values.enabled }}
+- job_name: 'vrops_vm'
+  scrape_interval: {{$values.scrapeIntervalVM}}
+  scrape_timeout: {{$values.scrapeTimeoutVM}}
+  static_configs:
+    - targets:
+      - 'vrops-exporter-vm:9160'
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: vrops-exporter-vm
+      action: keep
 - job_name: 'vrops'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
@@ -604,24 +615,6 @@
     - source_labels: [job]
       regex: vrops
       action: keep
-      target_label: job
-{{- end }}
-
-#special vrops vm treatment since it is taking longer
-{{- $values := .Values.vrops_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'vrops_vm'
-  scrape_interval: {{$values.scrapeIntervalVM}}
-  scrape_timeout: {{$values.scrapeTimeoutVM}}
-  static_configs:
-    - targets:
-      - 'vrops-exporter-vm:9160'
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: vrops
-      action: keep
-      target_label: job
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
