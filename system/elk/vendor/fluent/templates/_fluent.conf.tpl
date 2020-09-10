@@ -123,6 +123,7 @@
   username {{.Values.datahub.username}}
   password {{.Values.datahub.password}}
   sql select * from test;
+  sql_key floating_ip_address
   record_key remote_addr
   columns project_id, project, port, domain
   refresh_interval 60
