@@ -601,7 +601,7 @@
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
-      regex: vrops-exporter-vm
+      regex: vrops
       action: keep
 - job_name: 'vrops'
   scrape_interval: {{$values.scrapeInterval}}
