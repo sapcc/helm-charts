@@ -1,15 +1,33 @@
 {{- $values := .Values -}}
-{{- if $values..alerts.enabled }}
+{{- if $values.px_exporter.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "event-exporter-%s" $path | replace "/" "-" }}
+  name: {{ printf "snmp-exporter-%s" $path | replace "/" "-" }}
   labels:
-    app: event-exporter
-    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
+    app: snmp-exporter
+    prometheus: {{ required ".Values.snmp_exporter.alerts.prometheus missing" $values.snmp_exporter.alerts.prometheus }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- $values := .Values -}}
+{{- if $values.px_exporter.px.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "px.alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "snmp-exporter-%s" $path | replace "/" "-" }}
+  labels:
+    app: snmp-exporter
+    prometheus: {{ required ".Values.snmp_exporter.alerts.prometheus missing" $values.snmp_exporter.alerts.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
