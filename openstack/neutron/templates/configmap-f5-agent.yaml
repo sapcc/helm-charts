@@ -12,7 +12,13 @@ metadata:
 
 data:
   f5-agent.conf.ini: |
-{{ tuple $.Values $loadbalancer | include "f5_agent_conf_ini" | indent 4 }}
+{{ tuple $ $loadbalancer | include "f5_agent_conf_ini" | indent 4 }}
+
+  f5_change_pw.sh: |
+    #!/bin/sh
+
+{{ tuple $ $loadbalancer.hosts | include "f5_change_pw" | indent 4 }}
+{{ tuple $ (keys $loadbalancer.vcmp_host_guest_mapping) | include "f5_change_pw" | indent 4 }}
 
 {{- end }}
 {{- end }}

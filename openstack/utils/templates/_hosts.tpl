@@ -139,9 +139,16 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 {{- tuple . "root" | include "utils.password_for_user_mysql" }}
 {{- end -}}
 
-{{ define "f5_url" }}
-    {{- $host := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- $password := index . 2 -}}
+{{ define "utils.bigip_url_for_user_and_host" }}
+    {{- $envAll := index . 0 }}
+    {{- $host := index . 1 }}
+    {{- $user := index . 2 }}
+    {{- $password :=  tuple $envAll $user $host "long" | include "utils.password_for_fixed_user_and_host" -}}
 https://{{ $user }}:{{ $password | urlquery }}@{{ $host }}
+{{- end }}
+
+{{ define "utils.bigip_url" }}
+    {{- $envAll := index . 0 }}
+    {{- $host := index . 1 }}
+    {{- tuple $envAll $host "admin" | include "utils.bigip_url_for_user_and_host" }}
 {{- end }}

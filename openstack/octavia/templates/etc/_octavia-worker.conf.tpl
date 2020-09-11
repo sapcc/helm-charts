@@ -6,7 +6,7 @@
 host = {{ $lb_name }}
 
 [f5_agent]
-bigip_urls = {{ $loadbalancer.bigip_urls | join ", " }}
+bigip_urls = {{ range $index, $value := $loadbalancer.hosts -}}{{tuple $envAll . | include "utils.bigip_url"}}{{- if lt $index (sub (len $loadbalancer.hosts) 1) }}, {{ end -}}{{- end }}
 bigip_verify = false
 bigip_token = true
 esd_dir = /etc/octavia/esd

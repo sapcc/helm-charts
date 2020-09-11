@@ -143,6 +143,15 @@ spec:
             {{- end }}
             - name: OS_F5_AGENT__PROMETHEUS_PORT
               value: "8001"
+      initContainers:
+        - name: change-pw
+          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command: ['sh', "/etc/f5/octavia-change-pw.sh"]
+          volumeMounts:
+            - name: octavia-change-pw
+              mountPath: /etc/f5
+              readOnly: true
       volumes:
         - name: octavia-etc
           configMap:
@@ -152,5 +161,14 @@ spec:
             name: octavia-etc-{{ $name }}
         - name: octavia-var
           emptyDir: {}
+        - name: octavia-change-pw
+          projected:
+            defaultMode: 550
+            sources:
+            - configMap:
+                name: octavia-etc-{{ $name }}
+                items:
+                - key: octavia-change-pw.sh
+                  path: octavia-change-pw.sh
 {{- end }}
 {{- end }}

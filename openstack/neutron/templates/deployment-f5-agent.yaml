@@ -56,7 +56,25 @@ spec:
             - name: etc-neutron
               mountPath: /etc/neutron
               readOnly: true
+      initContainers:
+        - name: change-pw
+          image: {{ default "hub.global.cloud.sap" $.Values.global.imageRegistry }}/monsoon/loci-neutron:{{ $.Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ['sh', "/etc/f5/f5_change_pw.sh"]
+          volumeMounts:
+            - name: f5-change-pw
+              mountPath: /etc/f5
+              readOnly: true
       volumes:
+        - name: f5-change-pw
+          projected:
+            defaultMode: 550
+            sources:
+            - configMap:
+                name: neutron-f5-agent-{{ $lb.name }}
+                items:
+                - key: f5_change_pw.sh
+                  path: f5_change_pw.sh
         - name: etc-neutron
           projected:
             defaultMode: 420
