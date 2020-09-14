@@ -41,6 +41,6 @@
     "lbaas_irule": ["cc_http_redirect_a26c_v1_0"]
   },
   "hcm_rmk_restrict_internal": {
-    "lbaas_irule": ['cc_hcm_rmk_restrict_internal"]
+    "lbaas_irule": ["cc_hcm_rmk_restrict_internal"]
   }
 }
