@@ -39,5 +39,8 @@
   },
   "http_redirect_a26c_v1_0": {
     "lbaas_irule": ["cc_http_redirect_a26c_v1_0"]
+  },
+  "dg_hcm_rmk_legacy_allowed: {
+    "lbaas_irule": ["cc_dg_hcm_rmk_legacy_allowed"]
   }
 }
