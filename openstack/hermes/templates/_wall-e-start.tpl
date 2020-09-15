@@ -9,7 +9,9 @@ function process_config {
 function start_application {
 
   set -e
-
+  
+  export LC_ALL=C.UTF-8
+  export LANG=C.UTF-8
   export STDOUT_LOC=${STDOUT_LOC:-/proc/1/fd/1}  
   export STDERR_LOC=${STDERR_LOC:-/proc/1/fd/2}
   unset http_proxy https_proxy all_proxy no_proxy
