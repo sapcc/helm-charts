@@ -41,7 +41,11 @@ spec:
       terminationGracePeriodSeconds: 150
       containers:
         - name: pgbouncer
+{{- if .Values.pgbouncer.custom_repository }}
+          image: {{ .Values.pgbouncer.image }}:{{.Values.global.pgbouncer.imageTag | default .Values.pgbouncer.image_version | default .Values.global.pgbouncer.imageTag | default .Values.global.pgbouncer.image_version | default "latest" }}
+{{- else }}
           image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/pgbouncer-k8s:{{.Values.global.pgbouncer.imageTag | default .Values.pgbouncer.image_version | default .Values.global.pgbouncer.imageTag | default .Values.global.pgbouncer.image_version | default "latest" }}
+{{- end }}
           imagePullPolicy: IfNotPresent
 {{- if $opts.debug }}
           command: ["sleep", "inf"]
