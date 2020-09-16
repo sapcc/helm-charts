@@ -19,10 +19,15 @@ spec:
     port:  9108
     targetPort:  9108
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name:  {{ .Values.api_exporter.name }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
 spec:
   revisionHistoryLimit: 5
   selector:

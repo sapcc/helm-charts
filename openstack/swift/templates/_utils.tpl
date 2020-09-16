@@ -148,8 +148,8 @@ location / {
     proxy_request_buffering off;
     # accept large PUT requests (5 GiB is the limit for a single object in Swift)
     client_max_body_size    5g;
-    proxy_send_timeout      {{ $context.client_timeout }};
-    proxy_read_timeout      {{ $context.client_timeout }};
+    proxy_send_timeout      {{ add $context.client_timeout 5 }};
+    proxy_read_timeout      {{ add $context.client_timeout 5 }};
 }
 {{- end -}}
 

@@ -38,7 +38,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: web
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.global.registry }}/supernova:{{ .Values.image.tag }}"
           imagePullPolicy: {{.Values.image.pullPolicy}}
           ports:
             - name: http
@@ -72,7 +72,11 @@ spec:
             - name: SILENCES_UPDATE_TIMEOUT_SEC
               value: {{ .Values.silences_update_timeout_sec | quote }}
             - name: ACKED_ALERTS_UPDATE_TIMEOUT_SEC
-              value: {{ .Values.acked_alerts_update_timeout_sec | quote }}              
+              value: {{ .Values.acked_alerts_update_timeout_sec | quote }}  
+            - name: OIDC_ENDPOINT
+              value: {{ .Values.oidc_endpoint | quote }}  
+            - name: OIDC_CLIENT_ID
+              value: {{ .Values.oidc_client_id | quote }}  
 
           livenessProbe:
             httpGet:

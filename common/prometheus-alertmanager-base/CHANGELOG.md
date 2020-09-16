@@ -1,3 +1,11 @@
+## 1.3.0
+
+* Allow disabling default notification templates.
+
+## 1.2.3
+
+* Disable vice-president in ingress by default
+
 ## 1.2.2
 
 * Set Chart `apiVersion: v2`.

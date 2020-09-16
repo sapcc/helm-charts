@@ -2,20 +2,20 @@ global:
   resolve_timeout: 16m
 
 templates:
-  - /notification-templates/*.tmpl
+  - /etc/alertmanager/configmaps/alertmanager-cnmp-notification-templates/*.tmpl
 
 inhibit_rules:
   - source_match:
       severity: 'critical'
     target_match:
       severity: 'warning'
-    equal: ['region', 'alertname', 'cluster']
+    equal: ['alertname', 'cluster']
 
   - source_match_re:
       severity: 'critical|warning'
     target_match:
       severity: 'info'
-    equal: ['region', 'alertname', 'cluster']
+    equal: ['alertname', 'cluster']
 
   - source_match_re:
       severity: 'critical'
@@ -23,7 +23,7 @@ inhibit_rules:
     target_match_re:
       severity: 'warning'
       context: '.+'
-    equal: ['region', 'context', 'cluster']
+    equal: ['context', 'cluster']
 
   - source_match_re:
       severity: 'critical|warning'
@@ -31,7 +31,7 @@ inhibit_rules:
     target_match_re:
       severity: 'info'
       context: '.+'
-    equal: ['region', 'context', 'cluster']
+    equal: ['context', 'cluster']
 
   - source_match_re:
       alertname: '.*KubeletDown'
