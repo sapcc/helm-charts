@@ -15,6 +15,9 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: {{ include "infraMonitoring.name" . }}
   replicas: 1
   template:
     metadata:
@@ -29,7 +32,7 @@ spec:
       containers:
          - name: {{ include "infraMonitoring.name" . }}
            imagePullPolicy: IfNotPresent
-           image: {{ .Values.docker_repo }}/vasa-exporter:{{ .Values.image_version | replace "string:" "" }}
+           image: {{ .Values.global.registry }}/vasa-exporter:{{ .Values.image_version | replace "string:" "" }}
            command:
              - python3
            args:

@@ -13,3 +13,15 @@ groups:
     annotations:
       description: Global Infrastructure Prometheus can't federate data from {{ $labels.region }}. Alerting will be unavailable! This could mean the region is partly down!
       summary: Global Infrastructure Prometheus federation is having trouble
+  - alert: InfraPrometheusGlobalThanosLogsNotShipping
+    expr: prometheus_tsdb_storage_blocks_bytes > 4000000000
+    for: 15m
+    labels:
+      context: availability-global
+      meta: Global Infrastructure Prometheus Thanos logs are piling up in memory in {{ $labels.region }}.
+      service: prometheus
+      severity: info
+      tier: monitor
+    annotations:
+      description: Thanos logs in  /prometheus are not properly shipped to swift. It should only host up to 1GB of data. Pod restart might be required.
+      summary: Global Infrastructure Proemtheus is not properly shipping logs

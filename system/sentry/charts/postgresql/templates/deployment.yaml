@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: {{ template "fullname" . }}
-        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/postgres:9.5"
         imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
         args: ["-c", "config_file=/postgresql-conf/postgresql.conf", "-c", "hba_file=/postgresql-conf/pg-hba.conf"]
         env:
@@ -69,7 +69,7 @@ spec:
         - name: postgres-etc
           mountPath: /postgresql-conf
 {{- if .Values.backup.enabled }}
-      - image: {{.Values.backup.repository}}:{{.Values.backup.image_version}}
+      - image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/backup-tools:v0.6.5"
         name: backup
         env:
           - name: MY_POD_NAME

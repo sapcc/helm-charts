@@ -12,7 +12,7 @@
 @include files/*
 
 <system>
-  log_level warn
+  log_level info
 </system>
 
 <label @FLUENT_LOG>
@@ -122,9 +122,11 @@
   database {{.Values.datahub.db}}
   username {{.Values.datahub.username}}
   password {{.Values.datahub.password}}
-  sql select * from test where floating_ip_address = where_condition
-  sql_key remote_addr
-  columns project_id port_id
+  sql select * from test;
+  sql_key floating_ip_address
+  record_key remote_addr
+  columns project_id, project, port, domain
+  refresh_interval 60
 </filter>
 {{- end }}
 

@@ -16,6 +16,9 @@ metadata:
 spec:
   revisionHistoryLimit: 5
   replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "infraMonitoring.name" . }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -30,7 +33,7 @@ spec:
     spec:
       containers:
          - name: {{ include "infraMonitoring.name" . }}
-           image: {{ .Values.global.imageRegistry }}/{{ required ".Values.docker_repo missing" .Values.docker_repo }}:{{ required ".Values.image_version missing" .Values.image_version }}
+           image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.image missing" .Values.image }}:{{ required ".Values.image_version missing" .Values.image_version }}
            imagePullPolicy: IfNotPresent
            ports:
              - name: metrics

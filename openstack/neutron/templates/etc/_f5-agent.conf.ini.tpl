@@ -3,6 +3,7 @@
 {{- $loadbalancer := index . 1 -}}
 [DEFAULT]
 host = {{ $loadbalancer.name }}
+rpc_response_timeout = 300
 
 [F5]
 physical_device_mappings = {{ $loadbalancer.physical_device_mappings }}

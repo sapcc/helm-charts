@@ -18,6 +18,9 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: ping-exporter
   replicas: {{ $values.replicaCount }}
   template:
     metadata:
@@ -34,7 +37,7 @@ spec:
         failure-domain.beta.kubernetes.io/zone: {{$prober}}
       containers:
         - name: ping-exporter-{{$prober}}
-          image: "{{ $values.image.repository }}:{{ $values.image.tag }}"
+          image: "{{ $values.global.registry }}/{{ $values.image.name }}:{{ $values.image.tag }}"
           imagePullPolicy: {{ $values.pullPolicy }}
           command:
             - /app/ping_exporter

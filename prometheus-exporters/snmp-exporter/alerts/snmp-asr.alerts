@@ -77,7 +77,7 @@ groups:
       expr: increase(snmp_asr_disman_expExpression{expExpressionName="nat_datapath_drop_counter"}[5m]) > 0 and snmp_asr_disman_expExpression{expExpressionName="natclass_diff"} > 0
       for: 0m
       labels:
-        severity: info
+        severity: critical
         tier: net
         service: asr
         context: asr
@@ -92,11 +92,11 @@ groups:
       expr: (	rate(snmp_asr_ifHCOutOctets{ifDescr=~"TenGigabitEthernet.*"} [90m]) * 8 / 1000^3 >bool 8.5 or rate(snmp_asr_ifHCOutOctets{ifDescr=~"TenGigabitEthernet.*"} [15m]) * 8 / 1000^3 >bool 9.5) == 1
       for: 15m
       labels:
-        severity: info
+        severity: critical
         tier: net
         service: asr
         context: asr
-        meta: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
+        meta: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` experiencing high bandwidth utilization."
         playbook: 'docs/support/playbook/network/control_plane_router/interface_util.html'
         dashboard: neutron-datapath-bandwith
       annotations:
