@@ -19,7 +19,7 @@
 # Available types in redfish-exporter: type=~"(memory|disk|chassis|fan|system|powersupply|storage|processor)"
 
 groups:
-- name: metal-esxi.alerts
+- name: metal-redfish-esxi.alerts
   rules:      
   - alert: MetalESXiRedfishWarning
     expr: count(max_over_time(redfish_health{job="redfish/bb", type=~"(disk|storage)"}[10m]) == 1) by (server_name, type, exported_name, serial) * on(server_name) group_left count(label_replace(max_over_time(vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}[15m]), "server_name", "$1", "hostsystem", "(.*).cc.*")) by (server_name)
