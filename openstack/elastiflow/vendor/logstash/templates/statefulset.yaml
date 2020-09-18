@@ -161,6 +161,18 @@ spec:
 {{- if .Values.extraEnvs }}
 {{ toYaml .Values.extraEnvs | indent 10 }}
 {{- end }}
+{{- if .Values.jdbc.enabled }}
+          - name: JDBC_USER
+            value: "{{ .Values.jdbc.user }}"
+          - name: JDBC_PASSWORD
+            value: "{{ .Values.jdbc.password }}"
+          - name: JDBC_DB
+            value: "{{ .Values.jdbc.db }}"
+          - name: JDBC_SERVICE
+            value: "{{ .Values.jdbc.service }}"
+          - name: JDBC_NAMESPACE
+            value: "{{ .Values.jdbc.namespace }}"
+{{- end }}          
         volumeMounts:
           {{- if .Values.persistence.enabled }}
           - name: "{{ template "logstash.fullname" . }}"
