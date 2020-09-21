@@ -22,7 +22,7 @@ username = {{ required "Missing loadbalancer username!" $loadbalancer.username }
 password = {{ required "Missing loadbalancer password!" $loadbalancer.password }}
 hosts_guest_mappings = {{ $loadbalancer.vcmp_host_guest_mapping | join ", " }}
 {{- else }}
-devices = {{ tuple $envAll ( keys $loadbalancer.vcmp_host_guest_mapping ) | include "utils.bigip_urls" }}
+devices = {{ tuple $envAll ( keys $loadbalancer.vcmp_host_guest_mapping | sortAlpha ) | include "utils.bigip_urls" }}
 {{- $local := dict "first" true }}
 hosts_guest_mappings = {{ range $vcmp_host, $vcmp_guest_name := $loadbalancer.vcmp_host_guest_mapping }}
     {{- if not $local.first -}}, {{ end -}}
