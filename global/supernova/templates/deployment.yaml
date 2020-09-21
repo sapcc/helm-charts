@@ -25,9 +25,6 @@ spec:
         supernova-config-hash: {{ include (print $.Template.BasePath "/supernova-config.yaml") $ | sha256sum }}
     spec:
       volumes:
-        - name: editors
-          configMap:
-            name: editors
         - name: alertmanager-certs
           secret:
             secretName: alertmanager-sso-cert
@@ -38,16 +35,13 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: web
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.global.registry }}/supernova:{{ .Values.image.tag }}"
           imagePullPolicy: {{.Values.image.pullPolicy}}
           ports:
             - name: http
               containerPort: 80
 
           volumeMounts:
-            - name: editors
-              mountPath: '/home/app/webapp/config/users'
-              readOnly: true
             - name: alertmanager-certs
               mountPath: '/home/app/webapp/config/certs'
               readOnly: true  
@@ -72,7 +66,11 @@ spec:
             - name: SILENCES_UPDATE_TIMEOUT_SEC
               value: {{ .Values.silences_update_timeout_sec | quote }}
             - name: ACKED_ALERTS_UPDATE_TIMEOUT_SEC
-              value: {{ .Values.acked_alerts_update_timeout_sec | quote }}              
+              value: {{ .Values.acked_alerts_update_timeout_sec | quote }}  
+            - name: OIDC_ENDPOINT
+              value: {{ .Values.oidc_endpoint | quote }}  
+            - name: OIDC_CLIENT_ID
+              value: {{ .Values.oidc_client_id | quote }}  
 
           livenessProbe:
             httpGet:

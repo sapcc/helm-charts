@@ -12,6 +12,9 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: {{ include "infraMonitoring.name" . }}
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -30,7 +33,7 @@ spec:
     spec:
       containers:
          - name: {{ include "infraMonitoring.name" . }}
-           image: {{ required "global.imageRegistry variable missing" .Values.global.imageRegistry }}/{{ .Values.image.namespace }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
+           image: {{ required "global.registry variable missing" .Values.global.registry }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
            imagePullPolicy: IfNotPresent
            env:
              - name: THOUSANDEYES_BASIC_AUTH_USER

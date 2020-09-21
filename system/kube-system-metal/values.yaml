@@ -40,11 +40,7 @@ container-linux-update-operator:
     create: true
     serviceAccountName: container-linux-update-operator
 
-cert-manager-crds:
-  enabled: false
-
 cert-manager:
-  enabled: false
   ingressShim:
     defaultIssuerName: digicert-issuer
     defaultIssuerKind: DigicertIssuer
@@ -53,9 +49,12 @@ cert-manager:
     enabled: true
   podAnnotations:
     prometheus.io/targets: kubernetes
+  cainjector:
+    extraArgs:
+    - --leader-elect=false
 
 digicert-issuer:
-  enabled: false
+  enableLeaderElection: "false"
 
 # ingress related but independent values
 ingress:

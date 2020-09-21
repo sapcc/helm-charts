@@ -1,3 +1,7 @@
+## 3.6.2
+
+* Added annotation triggering certificate automation: `kubernetes.io/tls-acme: "true"`.
+
 ## 3.5.1
 
 * Allow scraping pods via https. Use `prometheus.io/scheme: "https"` annotation.
