@@ -35,10 +35,6 @@
 ##
 ################################################################
 
-## GC configuration
--XX:+UseConcMarkSweepGC
--XX:CMSInitiatingOccupancyFraction=75
--XX:+UseCMSInitiatingOccupancyOnly
 
 ## optimizations
 
