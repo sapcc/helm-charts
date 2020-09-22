@@ -383,7 +383,28 @@ mysql_metrics:
           GROUP BY table_schema
       values:
       - "size_in_mb"
-
+    - name: openstack_user_last_active_at
+      help: User list based on last_active_at
+      labels:
+      - "user_id"
+      - "user_name"
+      - "created_at"
+      - "last_active_at"
+      - "domain_name"
+      query: |
+        SELECT
+          COUNT(*) as user_count,
+          user.id as user_id, 
+          id_mapping.local_id as user_name, 
+          user.created_at, 
+          user.last_active_at, 
+          domain.name as domain_name 
+        FROM user 
+        JOIN id_mapping ON user.id = id_mapping.public_id 
+        JOIN project as domain ON user.domain_id = domain.id
+        GROUP BY id_mapping.public_id
+      values:
+      - "user_count"
 rbac:
   enabled: true
 
