@@ -35,11 +35,10 @@
 ##
 ################################################################
 
+# Force parallel gc
+=-XX:+UseParallelGC
 
 ## optimizations
-
-# disable calls to System#gc
--XX:+DisableExplicitGC
 
 # pre-touch memory pages used by the JVM during initialization
 -XX:+AlwaysPreTouch
