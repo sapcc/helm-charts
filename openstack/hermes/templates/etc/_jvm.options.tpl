@@ -36,7 +36,7 @@
 ################################################################
 
 # Force parallel gc
-=-XX:+UseParallelGC
+-XX:+UseParallelGC
 
 ## optimizations
 
