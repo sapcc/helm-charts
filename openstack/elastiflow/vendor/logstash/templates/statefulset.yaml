@@ -58,7 +58,7 @@ spec:
         pipelinechecksum: {{ include (print .Template.BasePath "/configmap-pipeline.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
         {{/* This forces a restart if the configmap has changed */}}
-        {{- if .Values.logstash.jdbc.enabled }}
+        {{- if .Values.jdbc.enabled }}
         pipelinechecksum: {{ include (print .Template.BasePath "/configmap-jdbc-filter.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
     spec:
@@ -130,13 +130,13 @@ spec:
           configMap:
             name: {{ template "logstash.fullname" . }}-pipeline
         {{- end }}
-        {{- if .Values.logstash.jdbc.enabled }}
-        - name: {{ .Values.logstash.jdbc.configMap }}-config
+        {{- if .Values.jdbc.enabled }}
+        - name: {{ .Values.jdbc.configMap }}-config
           configMap:
-            name: {{ .Values.logstash.jdbc.configMap }}
+            name: {{ .Values.jdbc.configMap }}
             items:
-            - key: {{ .Values.logstash.jdbc.configFile }}
-              path: {{ .Values.logstash.jdbc.configFile }}
+            - key: {{ .Values.jdbc.configFile }}
+              path: {{ .Values.jdbc.configFile }}
         {{- end }}
       {{- if .Values.extraVolumes }}
 {{ tpl .Values.extraVolumes . | indent 8 }}
@@ -195,10 +195,10 @@ spec:
             mountPath: /usr/share/logstash/pipeline/{{ $path }}
             subPath: {{ $path }}
           {{- end -}}
-          {{- if .Values.logstash.jdbc.enabled }}
-          - name: {{ .Values.logstash.jdbc.configMap }}-config
-            mountpath: /etc/logstash/elastiflow/conf.d/{{ .Values.logstash.jdbc.configFile }}
-            subPath: {{ .Values.logstash.jdbc.configFile }}
+          {{- if .Values.jdbc.enabled }}
+          - name: {{ .Values.jdbc.configMap }}-config
+            mountpath: /etc/logstash/elastiflow/conf.d/{{ .Values.jdbc.configFile }}
+            subPath: {{ .Values.jdbc.configFile }}
           {{- end -}}
         {{- if .Values.extraVolumeMounts }}
 {{ tpl .Values.extraVolumeMounts . | indent 10 }}
