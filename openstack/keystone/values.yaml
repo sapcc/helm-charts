@@ -400,8 +400,9 @@ mysql_metrics:
           user.last_active_at, 
           domain.name as domain_name 
         FROM user 
-        JOIN id_mapping ON user.id = id_mapping.public_id 
+        LEFT JOIN id_mapping ON user.id = id_mapping.public_id 
         JOIN project as domain ON user.domain_id = domain.id
+        WHERE domain.name != 'Default' AND domain.name != 'kubernikus' AND domain.name != 'tempest'
         GROUP BY id_mapping.public_id
       values:
       - "user_count"
