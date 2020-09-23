@@ -41,11 +41,11 @@ filter {
             
             staging_directory => "/tmp/logstash/jdbc_static/import_data"
             loader_schedule => "* * * * *" # run loaders every minute
-            jdbc_user => "{{ .Values.logstash.jdbc.user }}"
-            jdbc_password => "{{ .Values.logstash.jdbc.password }}"
+            jdbc_user => "{{ .Values.jdbc.user }}"
+            jdbc_password => "{{ .Values.jdbc.password }}"
             jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
             jdbc_driver_library => ""
-            jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
+            jdbc_connection_string => "jdbc:mysql://{{ .Values.jdbc.service }}.{{ .Values.jdbc.namespace }}:3306/{{ .Values.jdbc.db }}"
             }
         }
 
