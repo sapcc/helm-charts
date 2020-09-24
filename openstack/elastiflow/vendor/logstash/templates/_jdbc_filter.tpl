@@ -39,7 +39,7 @@ filter {
             ]
             
             staging_directory => "/tmp/logstash/jdbc_static/import_data"
-            loader_schedule => "* * * * *" # run loaders every minute
+            loader_schedule => "0 0/2 * * *" # run loaders every minute
             jdbc_user => "{{ .Values.jdbc.user }}"
             jdbc_password => "{{ .Values.jdbc.password }}"
             jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
