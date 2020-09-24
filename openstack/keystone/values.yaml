@@ -281,6 +281,7 @@ mariadb:
   enabled: true
   name: keystone
   initdb_configmap: keystone-initdb
+  use_alternate_registry: true
 
   persistence_claim:
     name: db-keystone-pvclaim
@@ -394,13 +395,13 @@ mysql_metrics:
       query: |
         SELECT
           COUNT(*) as user_count,
-          user.id as user_id, 
-          COALESCE(id_mapping.local_id, "No User Name") as user_name, 
-          user.created_at as created_at, 
-          COALESCE(user.last_active_at, "No last_active_at timestamp") as last_active_at, 
-          domain.name as domain_name 
-        FROM user 
-        LEFT JOIN id_mapping ON user.id = id_mapping.public_id 
+          user.id as user_id,
+          COALESCE(id_mapping.local_id, "No User Name") as user_name,
+          user.created_at as created_at,
+          COALESCE(user.last_active_at, "No last_active_at timestamp") as last_active_at,
+          domain.name as domain_name
+        FROM user
+        LEFT JOIN id_mapping ON user.id = id_mapping.public_id
         JOIN project as domain ON user.domain_id = domain.id
         WHERE domain.name != 'Default' AND domain.name != 'kubernikus' AND domain.name != 'tempest'
         GROUP BY id_mapping.public_id
