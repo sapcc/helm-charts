@@ -32,10 +32,9 @@ filter {
             local_lookups => [
                 {
                 id => "lookup_fields"
-                query => "select domain, project, project_id, port from fips where floating_ip_address = :ip"
-                parameters => {ip => "[client][domain]"}
+                query => "select domain, project, project_id, port from fips where floating_ip_address = ?"
+                prepared_parameters => ["[client][domain]"]
                 target => "data"
-                default_hash => "[{domain:'', project:''}]"
                 }
             ]
             
