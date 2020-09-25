@@ -658,4 +658,19 @@
     - source_labels: [job]
       regex: apic-exporter
       action: keep
+
+{{- range $name, $app := .Values.netapp_cap_exporter.apps }}
+{{- if $app.enabled }}
+- job_name: '{{ $app.fullname }}'
+  scrape_interval: {{ $app.scrape_interval }}
+  scrape_timeout: {{ $app..scrapeTimeout}}
+  static_configs:
+    - targets:
+      - '{{ $app.fullname }}:9108'
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: {{ $app.fullname }}
+      action: keep
+{{- end }}
 {{- end }}
