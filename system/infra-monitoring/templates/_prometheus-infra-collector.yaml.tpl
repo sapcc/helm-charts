@@ -663,7 +663,7 @@
 {{- if $app.enabled }}
 - job_name: '{{ $app.fullname }}'
   scrape_interval: {{ $app.scrape_interval }}
-  scrape_timeout: {{ $app..scrapeTimeout}}
+  scrape_timeout: {{ $app.scrapeTimeout}}
   static_configs:
     - targets:
       - '{{ $app.fullname }}:9108'
