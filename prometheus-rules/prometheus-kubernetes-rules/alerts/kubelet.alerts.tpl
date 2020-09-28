@@ -74,7 +74,7 @@ groups:
       summary: Kubelet Kubelet {{`{{$labels.node}}`}} is running {{`{{ $value }}`}} pods. That's too much!
 
   - alert: KubeletHighNumberOfGoRoutines
-    expr: go_goroutines{job="kubernetes-kubelet"} > 5000
+    expr: go_goroutines{job="kubernetes-kubelet"} > {{ default "5000" .Values.kubelet.goroutinesHighCount }}
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
