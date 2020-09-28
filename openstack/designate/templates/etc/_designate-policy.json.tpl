@@ -1,5 +1,4 @@
 {
-    "context_is_cloud_admin": "role:cloud_dns_admin",
     "admin": "rule:context_is_cloud_admin or is_admin:True",
     "primary_zone": "target.zone_type:SECONDARY",
     "owner": "tenant:%(tenant_id)s",
@@ -13,7 +12,9 @@
     "member_and_shared": "role:member and rule:owner_or_zone_shared",
     "viewer": "role:dns_viewer and rule:owner",
     "viewer_and_shared": "role:dns_viewer and rule:owner_or_zone_shared",
+    "cloud_dns_viewer": "role:cloud_dns_viewer",
 
+    "context_is_cloud_admin": "role:cloud_dns_admin",
     "context_is_dns_ops": "rule:context_is_cloud_admin or role:cloud_dns_ops",
     "context_is_dns_support": "rule:context_is_dns_ops or role:cloud_dns_support",
     "context_is_zonemaster": "rule:context_is_dns_support or (role:dns_zonemaster and rule:owner)",
@@ -21,7 +22,7 @@
     "context_is_mailmaster": "rule:context_is_dns_support or (role:dns_mailmaster and rule:owner)",
     "context_is_webmaster": "rule:context_is_dns_support or rule:context_is_mailmaster or rule:context_is_hostmaster or (role:dns_webmaster and rule:owner)",
     "context_is_editor": "rule:dns_admin or rule:member",
-    "context_is_viewer": "rule:viewer_and_shared or rule:member_and_shared or rule:context_is_master or rule:context_is_editor or rule:viewer or rule:member",
+    "context_is_viewer": "rule:viewer_and_shared or rule:member_and_shared or rule:context_is_master or rule:context_is_editor or rule:viewer or rule:member or rule:cloud_dns_viewer",
 
     "context_is_master": "rule:context_is_dns_support or rule:context_is_zonemaster or rule:context_is_hostmaster or rule:context_is_mailmaster or rule:context_is_webmaster or rule:context_is_editor",
 
