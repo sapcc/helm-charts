@@ -16,7 +16,7 @@ data:
   ca.crt: {{ .Values.services.ingress.x509.ca | b64enc }}
 ---
 {{- end }}
-{{- if not .Values.services.ingress.vice_president }}
+{{- if not .Values.services.ingress.kubernetes.io/tls-acme }}
 {{- if .Values.services.public.tlsCertificate}}
 kind: Secret
 apiVersion: v1
@@ -65,12 +65,12 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
-    {{- if .Values.services.ingress.vice_president }}
+    {{- if .Values.services.ingress.kubernetes.io/tls-acme }}
     kubernetes.io/tls-acme: "true"
     {{- end }}
 spec:
   tls:
-    {{- if .Values.services.ingress.vice_president }}
+    {{- if .Values.services.ingress.kubernetes.io/tls-acme }}
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
     {{ else }}
