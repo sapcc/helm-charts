@@ -668,7 +668,7 @@
   static_configs:
     - targets:
       - '{{ $app.fullname }}:9108'
-  metrics_path: /
+  metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
       regex: {{ $app.fullname }}
