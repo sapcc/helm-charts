@@ -13,6 +13,10 @@ octavia_plugins = f5_plugin
 bind_host = 0.0.0.0
 bind_port = {{.Values.global.octavia_port_internal | default 9876}}
 
+# Enable/disable exposing API endpoints. By default, both v1 and v2 are enabled.
+api_v1_enabled = False
+api_v2_enabled = True
+
 # How should authentication be handled (keystone, noauth)
 auth_strategy = keystone
 
