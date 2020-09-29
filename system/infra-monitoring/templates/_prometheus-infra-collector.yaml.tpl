@@ -658,6 +658,7 @@
     - source_labels: [job]
       regex: apic-exporter
       action: keep
+{{- end }}
 
 {{- range $name, $app := .Values.netapp_cap_exporter.apps }}
 {{- if $app.enabled }}
