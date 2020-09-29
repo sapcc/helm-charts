@@ -41,7 +41,7 @@ spec:
       hostname:  {{ $config_agent.hostname }}
       containers:
         - name: neutron-asr1k
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1k or similar"}}
+          image: {{$context.Values.global.registry}}/loci-neutron:{{$context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1k or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr1k-start
@@ -82,7 +82,7 @@ spec:
               protocol: TCP
 
         - name: neutron-asr1k-ml2
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$context.Values.imageVersionASR1kML2 | default $context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1kML2 or similar"}}
+          image: {{$context.Values.global.registry}}/loci-neutron:{{$context.Values.imageVersionASR1kML2 | default $context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1kML2 or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr1k-ml2-start
