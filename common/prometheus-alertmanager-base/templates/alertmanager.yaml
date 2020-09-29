@@ -41,6 +41,7 @@ spec:
 {{ toYaml .Values.secrets | indent 4 }}
   {{- end }}
 
+  {{ if .Values.notificationTemplates.defaultEnabled -}}
   # Additional volumes for the Alertmanager Pod.
   volumes:
     - name: {{ include "alertmanager.fullname" . }}-notification-templates
@@ -52,6 +53,7 @@ spec:
     - name: {{ include "alertmanager.fullname" . }}-notification-templates
       mountPath: /notification-templates
       readOnly: true
+  {{- end }}
 
   {{ if .Values.resources -}}
   # Kubernetes resource requests and limits for this Alertmanager.

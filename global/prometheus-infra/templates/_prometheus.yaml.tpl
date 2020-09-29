@@ -90,6 +90,19 @@
       - '{__name__=~"^vrops_virtualmachine_summary_ethernetcards"}'
       - '{__name__=~"^vrops_virtualmachine_runtime_connectionstate",state="disconnected"}'
       - '{__name__=~"^vrops_vcenter_vcsa_certificate_remaining_days"}'
+      - '{__name__=~"^vrops_hostsystem_runtime_memory_capacity_kilobytes"}'
+      - '{__name__=~"^vrops_hostsystem_memory_host_usage_kilobytes"}'
+      - '{__name__=~"^vrops_vcenter_diskspace_total_gigabytes"}'
+      - '{__name__=~"^vrops_vcenter_diskspace_usage_gigabytes"}'
+      - '{__name__=~"^vrops_hostsystem_summary_version_info"}'
+      - '{__name__=~"^vrops_virtualmachine_runtime_powerstate"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_usage_megahertz"}'
+      - '{__name__=~"^vrops_vcenter_cpu_used_percent"}'
+      - '{__name__=~"^vrops_vcenter_memory_used_percent"}'
+      - '{__name__=~"^vrops_cluster_cpu_capacity_mhz"}'
+      - '{__name__=~"^vrops_cluster_memory_capacity_kilobytes"}'
+      - '{__name__=~"^vrops_hostsystem_custom_attributes_hw_info"}'
+      - '{__name__=~"^vrops_hostsystem_memory_ballooning_kilobytes"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_runs_counter_total"}'
       - '{__name__=~"^thousandeyes_test_html_loss_percentage"}'
@@ -99,6 +112,7 @@
       - '{__name__=~"^fluentd_.+"}'
       - '{__name__=~"^elasticsearch_cluster_health_status"}'
       - '{__name__=~"^vcsa_service_status"}'
+      - '{__name__="netapp_system_version"}'
 
 
   relabel_configs:

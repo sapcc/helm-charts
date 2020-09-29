@@ -422,7 +422,7 @@ effective_cache_size = {{.Values.effective_cache_size | default "4GB" }}
                     #   fatal
                     #   panic (effectively off)
 
-#log_min_duration_statement = -1	# -1 is disabled, 0 logs all statements
+log_min_duration_statement = {{ .Values.log_min_duration_statement }}	# -1 is disabled (default), 0 logs all statements
                     # and their durations, > 0 logs only
                     # statements running at least this number
                     # of milliseconds

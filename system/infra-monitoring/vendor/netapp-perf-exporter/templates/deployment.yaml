@@ -81,14 +81,14 @@ spec:
 
       {{- if $app.dupEnabled }}
       - name: dup
-        image: hub.global.cloud.sap/d067954/gotee:v201911113011-9a29981
+        image: {{ $values.dup.image }}:{{ $values.dup.imageTag }}
         args:
           - "-l"
-          - {{ print ":" $values.ports.dupInPort | quote }}
+          - {{ $values.ports.dupInPort | quote }}
           - "-1"
-          - {{ print ":" $values.ports.graphiteExporterInPort | quote }}
+          - {{ $values.ports.graphiteExporterInPort | quote }}
           - "-2"
-          - "10.216.0.98:2003"
+          - "svc/netapp-graphite:2003"
         ports:
           - containerPort: {{ $values.ports.graphiteExporterInPort }}
           - containerPort: {{ $values.ports.graphiteInPort }}

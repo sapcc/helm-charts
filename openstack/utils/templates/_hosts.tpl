@@ -145,3 +145,18 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
     {{- $password := index . 2 -}}
 https://{{ $user }}:{{ $password | urlquery }}@{{ $host }}
 {{- end }}
+
+{{- define "utils.bigip_url" }}
+    {{- $envAll := index . 0 }}
+    {{- $host := index . 1 }}
+    {{- tuple $host ( $envAll.Values.global.bigip_user | required ".Values.global.bigip_user required!") ( $envAll.Values.global.bigip_password | required ".Values.global.bigip_password required!") | include "f5_url" }}
+{{- end }}
+
+{{- define "utils.bigip_urls" }}
+    {{- $envAll := index . 0 }}
+    {{- $hosts := index . 1 }}
+    {{- range $i, $value := $hosts }}
+        {{- if ne $i 0 }}, {{ end -}}
+        {{- tuple $envAll $value | include "utils.bigip_url" -}}
+    {{- end }}
+{{- end }}

@@ -7,6 +7,7 @@
     "owner": "user_id:%(user_id)s or user_id:%(target.token.user_id)s",
     "admin_or_owner": "(rule:admin_required and domain_id:%(target.token.user.domain.id)s) or rule:owner",
     "admin_and_matching_domain_id": "rule:admin_required and (domain_id:%(domain_id)s or domain_id:%(target.domain_id)s)",
+    "reader_and_matching_domain_id": "role:reader and (domain_id:%(domain_id)s or domain_id:%(target.domain_id)s)",
     "service_admin_or_owner": "rule:service_or_admin or rule:owner",
     "cloud_admin_or_owner": "rule:cloud_admin or rule:owner",
 
@@ -43,16 +44,17 @@
     "identity:update_limit": "rule:admin_required",
     "identity:delete_limit": "rule:admin_required",
 
-    "identity:get_domain": "rule:cloud_admin or rule:admin_and_matching_domain_id or project.domain.id:%(target.domain.id)s or rule:cloud_viewer or role:role_viewer",
+    "identity:get_domain": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:reader_and_matching_domain_id or project.domain.id:%(target.domain.id)s or rule:cloud_viewer or role:role_viewer",
     "identity:list_domains": "rule:cloud_admin or rule:cloud_viewer or role:role_viewer",
     "identity:create_domain": "rule:cloud_admin",
     "identity:update_domain": "rule:cloud_admin",
     "identity:delete_domain": "rule:cloud_admin",
 
-    "admin_and_matching_target_project_domain_id": "rule:admin_required and domain_id:%(target.project.domain_id)s",
+    "reader_and_matching_target_project_domain_id": "role:reader and (domain_id:%(target.project.domain_id)s or domain_id:%(target.domain_id)s)",
+    "admin_and_matching_target_project_domain_id": "rule:admin_required and (domain_id:%(target.project.domain_id)s or domain_id:%(target.domain_id)s)",
     "admin_and_matching_project_domain_id": "rule:admin_required and domain_id:%(project.domain_id)s",
-    "identity:get_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id or project_id:%(target.project.id)s or rule:cloud_viewer or role:role_viewer",
-    "identity:list_projects": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:cloud_viewer",
+    "identity:get_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id or rule:reader_and_matching_target_project_domain_id or project_id:%(target.project.id)s or rule:cloud_viewer or role:role_viewer",
+    "identity:list_projects": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:reader_and_matching_target_project_domain_id or rule:cloud_viewer",
     "identity:list_user_projects": "rule:owner or rule:admin_and_matching_domain_id or rule:cloud_viewer",
     "identity:create_project": "rule:cloud_admin or rule:admin_and_matching_project_domain_id",
     "identity:update_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id",
@@ -88,14 +90,14 @@
 
     "credential_owner": "user_id:%(target.credential.user_id)s or user_id:%(user_id)s",
     "matching_target_credential_project": "project_id:%(target.credential.project_id)s or project_id:%(tenant_id)s",
-    "identity:get_credential": "rule:cloud_admin or rule:credential_owner",
-    "identity:list_credentials": "rule:cloud_admin or rule:credential_owner",
+    "identity:get_credential": "rule:cloud_viewer or rule:credential_owner",
+    "identity:list_credentials": "rule:cloud_viewer or rule:credential_owner",
     "identity:create_credential": "rule:cloud_admin or (rule:credential_owner and rule:matching_target_credential_project)",
     "identity:update_credential": "rule:cloud_admin",
     "identity:delete_credential": "rule:cloud_admin or rule:credential_owner",
 
-    "identity:ec2_get_credential": "rule:cloud_admin or rule:credential_owner",
-    "identity:ec2_list_credentials": "rule:cloud_admin or rule:credential_owner",
+    "identity:ec2_get_credential": "rule:cloud_viewer or rule:credential_owner",
+    "identity:ec2_list_credentials": "rule:cloud_viewer or rule:credential_owner",
     "identity:ec2_create_credential": "rule:cloud_admin or (rule:credential_owner and rule:matching_target_credential_project)",
     "identity:ec2_delete_credential": "rule:cloud_admin or rule:credential_owner",
 
@@ -137,7 +139,7 @@
     "identity:create_system_grant_for_group": "rule:cloud_admin",
     "identity:revoke_system_grant_for_group": "rule:cloud_admin",
 
-    "blacklist_roles": "'resource_service':%(target.role.name)s or 'cloud_registry_admin':%(target.role.name)s or 'cloud_registry_viewer':%(target.role.name)s or 'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'cloud_sharedfilesystem_editor':%(target.role.name)s or 'cloud_sharedfilesystem_viewer':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s or 'cloud_identity_viewer':%(target.role.name)s or 'cloud_support_tools_viewer':%(target.role.name)s",
+    "blacklist_roles": "'resource_service':%(target.role.name)s or 'cloud_registry_admin':%(target.role.name)s or 'cloud_registry_viewer':%(target.role.name)s or 'cloud_dns_resource_admin':%(target.role.name)s or 'cloud_resource_admin':%(target.role.name)s or 'cloud_resource_viewer':%(target.role.name)s or 'cloud_baremetal_admin':%(target.role.name)s or 'cloud_network_admin':%(target.role.name)s or 'cloud_dns_admin':%(target.role.name)s or 'dns_admin':%(target.role.name)s or 'cloud_image_admin':%(target.role.name)s or 'cloud_compute_admin':%(target.role.name)s or 'cloud_keymanager_admin':%(target.role.name)s or 'cloud_volume_admin':%(target.role.name)s or 'cloud_sharedfilesystem_admin':%(target.role.name)s or 'cloud_sharedfilesystem_editor':%(target.role.name)s or 'cloud_sharedfilesystem_viewer':%(target.role.name)s or 'swiftreseller':%(target.role.name)s or 'service':%(target.role.name)s or 'cloud_identity_viewer':%(target.role.name)s or 'cloud_support_tools_viewer':%(target.role.name)s",
     "blacklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s",
     "identity:check_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants",
     "identity:list_grants": "rule:cloud_admin or rule:domain_admin_for_list_grants or rule:project_admin_for_list_grants",

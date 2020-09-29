@@ -6,7 +6,7 @@
 host = {{ $lb_name }}
 
 [f5_agent]
-bigip_urls = {{ $loadbalancer.bigip_urls | join ", " }}
+bigip_urls = {{ if $loadbalancer.devices -}}{{- tuple $envAll $loadbalancer.devices | include "utils.bigip_urls" -}}{{- else -}}{{ $loadbalancer.bigip_urls | join ", " }}{{- end }}
 bigip_verify = false
 bigip_token = true
 esd_dir = /etc/octavia/esd
@@ -35,6 +35,12 @@ migration = {{ $loadbalancer.migration | default "false" }}
 # External AS3 Endpoint
 as3_endpoint = https://octavia-f5-as3.{{ include "svc_fqdn" $envAll }}
 {{- end }}
+
+# Async Mode (always use async tasks)
+async_mode = {{ $envAll.Values.async_mode | default "false" }}
+
+# Unsafe Mode (don't check F5 running configuration when applying declarations)
+unsafe_mode = {{ $envAll.Values.unsafe_mode | default "false" }}
 
 # Default Server TLS Cipher
 [f5_tls_server]

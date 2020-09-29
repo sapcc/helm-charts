@@ -157,6 +157,9 @@ domain_name_url_safe = new
 lockout_failure_attempts = 5
 lockout_duration = 300
 unique_last_password_count = 5
+{{- if hasKey .Values "disable_user_account_days_inactive" }}
+disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inactive }}
+{{- end }}
 
 {{- if eq .Values.release "rocky" }}
 [oslo_messaging_rabbit]
@@ -226,4 +229,8 @@ allowed_origin = {{ .Values.cors.allowed_origin | default "*"}}
 allow_credentials = true
 expose_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token
 allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token,X-Project-Id,X-Project-Name,X-Project-Domain-Id,X-Project-Domain-Name,X-Domain-Id,X-Domain-Name,X-User-Id,X-User-Name,X-User-Domain-name
+{{- end }}
+
+{{- if .Values.osprofiler.enabled }}
+{{- include "osprofiler" . }}
 {{- end }}

@@ -79,7 +79,7 @@ prometheus-operator:
     ingress:
       enabled: false
       annotations:
-        vice-president: "true"
+        kubernetes.io/tls-acme: "true"
         disco: "true"
 
       # Defined via secrets.
@@ -166,6 +166,9 @@ prometheus-operator:
       alerting:
         enabled: false
 
+absent-metrics-operator:
+  enabled: true
+
 kube-state-metrics:
   customLabels:
     app: kube-state-metrics
@@ -179,7 +182,7 @@ kube-state-metrics-exporter:
   prometheusName: kubernetes
 
 ping-exporter:
-  targets: 
+  targets:
     - ingress.admin.cloud.sap
     - 8.8.8.8
 
@@ -219,6 +222,9 @@ prometheus-server:
 
   ingress:
     enabled: true
+    vicePresident: false
+    annotations:
+      kubernetes.io/tls-acme: "true"
     hosts:
       - prometheus-kubernetes.admin
       - prometheus.admin
@@ -264,6 +270,8 @@ prometheus-server:
 
 prometheus-kubernetes-rules:
   prometheusName: kubernetes
+  kubelet:
+    goroutinesHighCount: "8000"
 
 kubernikus-monitoring:
   prometheusName: kubernetes

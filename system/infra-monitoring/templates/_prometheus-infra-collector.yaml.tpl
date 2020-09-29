@@ -7,6 +7,8 @@
 # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
 # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the default of `9102`.
 - job_name: 'pods'
+  scrape_interval: 1m
+  scrape_timeout: 50s
   kubernetes_sd_configs:
   - role: pod
   relabel_configs:
@@ -598,8 +600,8 @@
   static_configs:
     - targets: 
       - 'vrops-exporter:9160'
-      - 'vrops-exporter-vm:9160'
       - 'vrops-exporter-host:9160'
+      - 'vrops-exporter-vm:9160'
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
@@ -656,4 +658,20 @@
     - source_labels: [job]
       regex: apic-exporter
       action: keep
+{{- end }}
+
+{{- range $name, $app := .Values.netapp_cap_exporter.apps }}
+{{- if $app.enabled }}
+- job_name: '{{ $app.fullname }}'
+  scrape_interval: {{ $app.scrapeInterval }}
+  scrape_timeout: {{ $app.scrapeTimeout }}
+  static_configs:
+    - targets:
+      - '{{ $app.fullname }}:9108'
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: {{ $app.fullname }}
+      action: keep
+{{- end }}
 {{- end }}

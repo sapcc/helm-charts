@@ -76,7 +76,7 @@ spec:
       initContainers:
       - name: kubernetes-entrypoint
         #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
         imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
         command:
           - /usr/local/bin/kubernetes-entrypoint
@@ -102,7 +102,7 @@ spec:
           value: "true"
       containers:
         - name: keystone-api
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+          image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
           imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /scripts/keystone-api.sh
@@ -235,6 +235,7 @@ spec:
 {{ toYaml .Values.api.metrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
+{{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: etc-keystone
           emptyDir: {}
