@@ -14,24 +14,46 @@ vrops:
   debug: DEFINED-IN-REGION-SECRETS
   atlas_configmap: atlas-netbox-sd
   inventory_port_number: 80
-  exporter_resources:
-    limits:
-      memory: 500Mi
-      cpu: 300m
-    requests:
-      memory: 300Mi
-      cpu: 150m
-  exporter_vm_resources:
-    limits:
-      memory: 500Mi
-      cpu: 300m
-    requests:
-      memory: 300Mi
-      cpu: 150m
-  exporter_host_resources:
-    limits:
-      memory: 500Mi
-      cpu: 300m
-    requests:
-      memory: 300Mi
-      cpu: 150m
+  # list of targets
+  targets: DEFINED-IN-REGION-SECRETS
+  exporter_types:
+    default:
+      name: default
+      enabled: True
+      collectors: []
+      resources:
+        limits:
+          memory: 500Mi
+          cpu: 300m
+        requests:
+          memory: 300Mi
+          cpu: 150m
+    host:
+      name: host
+      enabled: True
+      collectors:
+        - HostSystemStatsCollector
+        - HostSystemPropertiesCollector
+      resources:
+        limits:
+          memory: 500Mi
+          cpu: 300m
+        requests:
+          memory: 300Mi
+          cpu: 300m
+          #   vm:
+          #     name: vm
+          #     enabled: True
+          #     collectors:
+          #       enabled: True
+          #       collector_1: VMStatsCollector
+          #       collector_2: VMPropertiesCollector
+          #     resources:
+          #       limits:
+          #         memory: 500Mi
+          #         cpu: 300m
+          #       requests:
+          #         memory: 300Mi
+          #         cpu: 150m
+global:
+  registry: DEFINED-IN-GLOBAL-SECRETS
