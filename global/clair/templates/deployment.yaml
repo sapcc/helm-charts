@@ -2,11 +2,6 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: {{ template "fullname" . }}
-  labels:
-    hertiage: {{ .Release.Service | quote }}
-    release: {{ .Release.Name | quote }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-    component: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistory }}
@@ -17,6 +12,9 @@ spec:
       maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.rollingUpdate.maxSurge }}
     {{ end }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
   template:
     metadata:
       labels:
