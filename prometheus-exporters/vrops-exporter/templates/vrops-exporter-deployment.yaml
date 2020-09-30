@@ -25,7 +25,7 @@ spec:
         type: exporter
     spec:
       containers:
-         - name: vrops-exporter
+         - name: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
            image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" $.Values.vrops.image.tag }}
            ports:
              - name: metrics
@@ -59,7 +59,6 @@ spec:
              - mountPath: /config
                name: vrops-config
                readOnly: true
-
            #livenessProbe:
              #tcpSocket:
                #port: {{ required ".Values.vrops.port_number missing" $.Values.vrops.port_number }}
