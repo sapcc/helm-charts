@@ -1,9 +1,10 @@
-{{- if .Values.enabled }}
+{{- if .Values.vrops.enabled }}
+{{- if .Values.exporter_types }}
 {{- range $target := .Values.vrops.targets }}
 {{- $vropshostname := split "." $target.hostname }}
-{{- range $exporter_type := .Values.vrops.exporter_types }}
+{{- range $exporter_type := $.Values.vrops.exporter_types }}
 {{- if $exporter_type.enabled }}
----
+
 kind: Service
 apiVersion: v1
 metadata:
@@ -14,7 +15,7 @@ spec:
     app: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
   ports:
     - name: metrics
-      port: {{ .Values.vrops.port_number }}
+      port: {{ $.Values.vrops.port_number }}
 {{- end }}
 {{- end }}
 {{- end }}

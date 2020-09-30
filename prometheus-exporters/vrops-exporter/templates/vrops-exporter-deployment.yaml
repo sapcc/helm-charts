@@ -1,4 +1,5 @@
 {{- if .Values.vrops.enabled }}
+{{- if .Values.exporter_types }}
 {{- range $target := $.Values.vrops.targets }}
 {{- $vropshostname := split "." $target.hostname }}
 {{- range $exporter_type := $.Values.vrops.exporter_types }}
@@ -25,7 +26,7 @@ spec:
         type: exporter
     spec:
       containers:
-         - name: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
+         - name: vrops-exporter
            image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" $.Values.vrops.image.tag }}
            ports:
              - name: metrics
