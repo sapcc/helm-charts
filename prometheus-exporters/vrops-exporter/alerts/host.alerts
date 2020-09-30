@@ -34,3 +34,19 @@ groups:
     annotations:
       description: "Host {{ $labels.hostsystem }} not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
       summary: "Host {{ $labels.hostsystem }} not responding ({{ $labels.datacenter }}, {{ $labels.vccluster }})"
+  - alert: HostInMaintenanceWithoutCustomAttribute
+    expr: |
+      ((max_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]) == 0)
+      AND ON(hostsystem) max_over_time(vrops_hostsystem_custom_attributes_hw_info{custom_attributes_hw=''}[10m]))
+      OR ON(hostsystem) ((max_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]) == 0)
+      unless ON(hostsystem) max_over_time(vrops_hostsystem_custom_attributes_hw_info[10m]))
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute."
+    annotations:
+      description: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute. Please provide detailed information in the Custom Attribute HW field."
+      summary: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute."
