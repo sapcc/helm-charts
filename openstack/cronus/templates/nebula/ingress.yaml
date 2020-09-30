@@ -1,0 +1,25 @@
+{{- if .Values.nebula.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nebula-ingress
+  annotations:
+    disco: "true"
+    # vice-president: "true" deprecated 30/9/20
+    kubernetes.io/tls-acme: "true"
+  labels:
+    app: nebula
+spec:
+  rules:
+    - host: nebula.{{ .Values.config.region }}.cloud.sap
+      http:
+        paths:
+          - backend:
+              serviceName: nebula-service
+              servicePort: {{ .Values.nebula.http }}
+            path: /
+  tls:
+    - hosts:
+      - nebula.{{ .Values.config.region }}.cloud.sap
+      secretName: tls-secret-nebula-{{ .Values.config.region }}-cloud-sap
+{{- end -}}

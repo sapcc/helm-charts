@@ -1,0 +1,43 @@
+{{- if .Values.nebula.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nebula-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nebula
+      app.kubernetes.io/instance: nebula
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nebula
+        app.kubernetes.io/instance: nebula
+    spec:
+      serviceAccountName: nebula
+      securityContext:
+        {}
+      containers:
+        - name: nebula
+          securityContext:
+            {}
+          image: "{{ .Values.nebula.image.name }}:{{ .Values.nebula.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-config=/nebula/config.yaml"
+          volumeMounts:
+            - name: nebula-config
+              mountPath: "/nebula/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.nebula.http }}
+              protocol: TCP
+          resources:
+            {}
+      volumes:
+        - name: nebula-config
+          secret:
+            secretName: nebula-config
+{{- end -}}
