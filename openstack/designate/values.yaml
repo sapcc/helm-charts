@@ -164,7 +164,30 @@ mysql_metrics:
               GROUP BY
                 name,
                 tenant_id,
-                updated_at;
+                updated_at
+              UNION SELECT 'none' AS zone_name, 'none' AS project_id, 'none' AS updated_at, 0 AS count_gauge;
+
+    - name: openstack_designate_zones_stuck_max_duration
+      help: "max duration for zones that stuck in non active state"
+      labels:
+        - "zone_name"
+        - "project_id"
+        - "status"
+      values:
+        - "max_duration_gauge"
+      query:  |
+              SELECT
+                name AS zone_name,
+                tenant_id AS project_id,
+                status,
+                MAX(NOW() - updated_at) AS max_duration_gauge
+              FROM zones
+              WHERE deleted=False AND status in ('DELETING','CREATING','PENDING') AND AND (updated_at < DATE_SUB(now(), INTERVAL 10 MINUTE))
+              GROUP BY
+                name,
+                tenant_id,
+                status
+              UNION SELECT 'none' AS zone_name, 'none' AS project_id, 'none' AS status, 0 AS max_duration_gauge;
 
     - name: openstack_designate_records
       help: "records count grouped by status"
