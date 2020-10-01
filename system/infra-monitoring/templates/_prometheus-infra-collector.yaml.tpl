@@ -674,5 +674,9 @@
     - source_labels: [job]
       regex: {{ $app.fullname }}
       action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
 {{- end }}
 {{- end }}
