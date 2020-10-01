@@ -600,6 +600,7 @@
   static_configs:
     - targets: 
       - 'vrops-exporter:9160'
+      - 'vrops-exporter-default:9160'
       - 'vrops-exporter-host:9160'
       - 'vrops-exporter-vm:9160'
   metrics_path: /
