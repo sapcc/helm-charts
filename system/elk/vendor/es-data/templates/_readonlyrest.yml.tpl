@@ -43,7 +43,7 @@ readonlyrest:
       # access for winbeat
       - name: winbeat
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
-        indices: ["winbeat-*"]
+        indices: ["winbeat-*", "winlogbeat-*"]
         auth_key: {{.Values.global.winbeat_user}}:{{.Values.global.winbeat_password}}
 
       - name: Monsoon (read only, but can create dashboards)
