@@ -304,7 +304,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "VM Count"
     openstack_compute_stuck_instances:
-      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, task_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, task_state"
+      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, task_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, task_state UNION ALL SELECT 'dummy-row', 'None', 'None', 'None', 'None', 0, 0"
       metrics:
         - project_id:
             usage: "LABEL"
