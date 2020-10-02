@@ -1,7 +1,7 @@
 {{ template "prometheus.alerts" . }}
 
 {{- $values := .Values -}}
-{{- if $values.px_exporter.px.alerts.enabled }}
+{{- if $values.px.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "px.alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -11,7 +11,7 @@ metadata:
   name: {{ printf "px-exporter-%s" $path | replace "/" "-" }}
   labels:
     app: snmp-exporter
-    prometheus: {{ required ".Values.px_exporter.alerts.prometheus missing" $values.px_exporter.alerts.prometheus }}
+    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
