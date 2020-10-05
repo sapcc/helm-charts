@@ -36,7 +36,7 @@ spec:
              - -p
              - {{ required ".Values.global.master_password missing" .Values.global.master_password }}
              - -c
-             - {{ required ".Values.ucs.config missing" .Values.ucs.config }}
+             - /ucs-exporter/config.yaml
            env:
            - name: PORT
              value: {{ required ".Values.ucs.port_number missing" .Values.ucs.port_number | quote }}
@@ -51,6 +51,10 @@ spec:
              requests:
                 memory: {{ required ".Values.ucs.resources.memory missing" .Values.ucs.resources.memory }}
                 cpu: {{ required ".Values.ucs.resources.cpu missing" .Values.ucs.resources.cpu }}
+           volumeMounts:
+             - mountPath: /ucs-exporter
+               name: ucs-config
+               readOnly: true
            livenessProbe:
               httpGet:
                  path: /metrics
@@ -58,4 +62,8 @@ spec:
               initialDelaySeconds: 30
               periodSeconds: 300
               timeoutSeconds: 10
+      volumes:
+        - configMap:
+            name: ucs-config
+          name: ucs-config
 
