@@ -601,7 +601,7 @@
     role: service
     namespaces:
       names:
-        [ - <infra-monitoring> ]
+        - infra-monitoring
   metrics_path: /
   - action: keep
     source_labels: [__meta_kubernetes_service_name]
