@@ -597,41 +597,15 @@
 - job_name: 'vrops'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  static_configs:
-    - targets: 
-      - 'vrops-exporter:9160'
-      - 'vrops-exporter-default:9160'
-      - 'vrops-exporter-host:9160'
-      - 'vrops-exporter-vm:9160'
-      - 'vrops-exporter-vrops-vc-a-0-default:9160'
-      - 'vrops-exporter-vrops-vc-a-0-host:9160'
-      - 'vrops-exporter-vrops-vc-a-0-vm:9160'
-      - 'vrops-exporter-vrops-vc-a-1-default:9160'
-      - 'vrops-exporter-vrops-vc-a-1-host:9160'
-      - 'vrops-exporter-vrops-vc-a-1-vm:9160'
-      - 'vrops-exporter-vrops-vc-b-0-default:9160'
-      - 'vrops-exporter-vrops-vc-b-0-host:9160'
-      - 'vrops-exporter-vrops-vc-b-0-vm:9160'
-      - 'vrops-exporter-vrops-vc-b-1-default:9160'
-      - 'vrops-exporter-vrops-vc-b-1-host:9160'
-      - 'vrops-exporter-vrops-vc-b-1-vm:9160'
-      - 'vrops-exporter-vrops-vc-c-0-default:9160'
-      - 'vrops-exporter-vrops-vc-c-0-host:9160'
-      - 'vrops-exporter-vrops-vc-c-0-vm:9160'
-      - 'vrops-exporter-vrops-vc-c-1-default:9160'
-      - 'vrops-exporter-vrops-vc-c-1-host:9160'
-      - 'vrops-exporter-vrops-vc-c-1-vm:9160'
-      - 'vrops-exporter-vrops-vc-d-0-default:9160'
-      - 'vrops-exporter-vrops-vc-d-0-host:9160'
-      - 'vrops-exporter-vrops-vc-d-0-vm:9160'
-      - 'vrops-exporter-vrops-vc-d-1-default:9160'
-      - 'vrops-exporter-vrops-vc-d-1-host:9160'
-      - 'vrops-exporter-vrops-vc-d-1-vm:9160'
+  kubernetes_sd_configs:
+    role: service
+    namespaces:
+      names:
+        [ - <infra-monitoring> ]
   metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: vrops
-      action: keep
+  - action: keep
+    source_labels: [__meta_kubernetes_service_name]
+    regex: .*vrops-exporter.*
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
