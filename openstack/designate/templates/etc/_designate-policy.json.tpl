@@ -30,9 +30,9 @@
 
     "default": "rule:context_is_viewer",
 
-    "all_tenants": "rule:admin or rule:context_is_dns_support or rule:cloud_dns_viewer",
-    "edit_managed_records" : "rule:admin or rule:context_is_master",
-    "use_low_ttl": "rule:admin or rule:context_is_dns_support",
+    "all_tenants": "rule:context_is_dns_support or rule:cloud_dns_viewer",
+    "edit_managed_records" : "rule:context_is_master",
+    "use_low_ttl": "rule:context_is_dns_support",
 
     "get_quotas": "rule:context_is_viewer",
     "get_quota": "rule:context_is_viewer",
@@ -69,7 +69,7 @@
     "update_sub_zone": "rule:context_is_master",
     "delete_zone": "rule:context_is_master",
 
-    "xfr_zone": "rule:context_is_master or rule:admin",
+    "xfr_zone": "rule:context_is_master",
     "abandon_zone": "rule:context_is_dns_ops",
     "count_zones": "rule:context_is_viewer",
     "count_zones_pending_notify": "rule:context_is_viewer",
