@@ -40,7 +40,7 @@ spec:
 {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: barbican-api
-          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/barbican-ussuri-rate-limit:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -114,6 +114,12 @@ spec:
             - name: barbican-etc
               mountPath: /etc/barbican/barbican_audit_map.yaml
               subPath: barbican_audit_map.yaml
+              readOnly: true
+            {{- end }}
+            {{- if .Values.sapcc_rate_limit.enabled }}
+            - name: barbican-etc
+              mountPath: /etc/barbican/ratelimit.yaml
+              subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
           resources:
