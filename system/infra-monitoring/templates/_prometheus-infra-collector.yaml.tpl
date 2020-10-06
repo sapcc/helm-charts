@@ -599,14 +599,14 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   kubernetes_sd_configs:
     - role: service
-      namespaces:
-        names:
-          - infra-monitoring
   metrics_path: /
   relabel_configs:
     - action: keep
       source_labels: [__meta_kubernetes_service_name]
       regex: .*vrops-exporter.*
+  metric_relabel_configs:
+    - action: labeldrop
+      regex: "instance"
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
