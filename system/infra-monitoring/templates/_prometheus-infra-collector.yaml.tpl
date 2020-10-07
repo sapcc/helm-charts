@@ -599,11 +599,18 @@
   scrape_timeout: {{$values.scrapeTimeout}}
   kubernetes_sd_configs:
     - role: service
+    namesspaces:
+      names:
+        - infra-monitoring
   metrics_path: /
   relabel_configs:
     - action: keep
       source_labels: [__meta_kubernetes_service_name]
       regex: .*vrops-exporter.*
+    - source_labels: [__address__]
+      regex: (vrops.*)(.infra?.*[c])(:.*)
+      target_label: __address__
+      replacement: ${1}${3}
   metric_relabel_configs:
     - action: labeldrop
       regex: "instance"
