@@ -97,7 +97,7 @@ rate_limit_by: initiator_project_id
 max_sleep_time_seconds: 20
 clock_accuracy: 1ns
 log_sleep_time_seconds: 10
+backend_host = {{ .Release.Name }}-sapcc-ratelimit-redis
 backend_port: 6379
 backend_timeout_seconds: 20
-limes_enabled: false
 {{- end }}
