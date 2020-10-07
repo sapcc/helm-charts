@@ -91,7 +91,7 @@ metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{
 {{ if .Values.sapcc_rate_limit.enabled -}}
 [filter:rate_limit]
 use = egg:rate-limit-middleware#rate-limit
-config_file = /etc/glance/ratelimit.yaml
+config_file = /etc/barbican/ratelimit.yaml
 service_type = key-manager
 rate_limit_by: initiator_project_id
 max_sleep_time_seconds: 20
