@@ -42,7 +42,12 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
 [api_database]
+{{- if eq .Values.postgresql.enabled false }}
+connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword | include "db_url_mysql" }}
+{{- include "ini_sections.database_options_mysql" . }}
+{{- else }}
 connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword | include "db_url" }}
+{{- end }}
 
 {{ include "ini_sections.database" . }}
 
