@@ -31,7 +31,7 @@
     "default": "rule:context_is_viewer",
 
     "all_tenants": "rule:context_is_dns_support or rule:cloud_dns_viewer",
-    "edit_managed_records" : "rule:context_is_master",
+    "edit_managed_records": "rule:context_is_master",
     "use_low_ttl": "rule:context_is_dns_support",
 
     "get_quotas": "rule:context_is_viewer",
