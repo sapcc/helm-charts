@@ -48,7 +48,6 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
 {{- else }}
 connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword | include "db_url" }}
 {{- end }}
-{{- end }}
 
 {{ include "ini_sections.database" . }}
 
