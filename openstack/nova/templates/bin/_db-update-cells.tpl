@@ -57,7 +57,7 @@ for line in $(nova-manage cell_v2 list_cells --verbose | grep ':/'); do
       found_cell1="true"
       update_cell "${cell_name}" "${cell_uuid}" \
             "${transport_url}" "{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}" \
-{{ if eq .Values.postgresql.enabled true }}
+{{- if eq .Values.postgresql.enabled true }}
             "${database_connection}" "{{ include "db_url" . }}"
 {{- else }}
             "${database_connection}" "{{ tuple . .Values.dbName .Values.dbUser .Values.dbPassword | include "db_url_mysql" }}"
@@ -85,7 +85,7 @@ if [ "${found_cell1}" = "false" ]; then
   nova-manage cell_v2 create_cell --verbose \
       --name "cell1" \
       --transport-url "{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}" \
-{{ if eq .Values.postgresql.enabled true }}
+{{- if eq .Values.postgresql.enabled true }}
       --database_connection "{{ include "db_url" . }}"
 {{- else }}
       --database_connection "{{ tuple . .Values.dbName .Values.dbUser .Values.dbPassword | include "db_url_mysql" }}"
