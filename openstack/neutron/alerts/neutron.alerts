@@ -18,21 +18,6 @@ groups:
         to check the current FIPs network situation and add new subnet to network soon'
       summary: Floating IPs possibly soon exhausted
 
-  - alert: OpenstackNeutronPredictOutOfFIP
-    expr: predict_linear(snmp_asr_cnatAddrBindNumberOfEntries[1d], 3600 * 24 * 4) > 800
-    for: 10m
-    labels:
-      context: floatingip
-      dashboard: maia-asr-info
-      service: neutron
-      severity: warning
-      tier: os
-    annotations:
-      description: 'STILL IN TEST MODE: The Floating IP''s on {{ $labels.job }} might
-        possibly get exhausted soon. This is not an exact warning, but a heads up
-        to check the current FIP situation.'
-      summary: 'STILL IN TEST MODE: Floating IP''s possibly soon exhausted'
-
   - alert: OpenstackNeutronDhcpAgentLostNetworks
     expr: blackbox_integrity_status_gauge{check=~"dhcp_agent-.+"} == 1
     for: 15m
