@@ -54,3 +54,32 @@ config:
 
 service:
   type: ClusterIP
+
+# nginx values
+ingress-nginx:
+  tcp:
+    465: ""
+  controller:
+    containerPort:
+      http: 80
+      https: 443
+      smtps: 465
+    service:
+      ports:
+        http: 80
+        https: 443
+        smtps: 465
+      targetPorts:
+        http: http
+        https: https
+        smtps: smtps
+      nodePorts:
+        http: ""
+        https: ""
+        465: ""
+    ingressClass: cronus-nginx
+    admissionWebhooks:
+      enabled: false
+    customTemplate:
+      configMapName: cronus-nginx-template
+      configMapKey: nginx.tmpl
