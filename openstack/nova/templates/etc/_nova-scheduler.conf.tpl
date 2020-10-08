@@ -15,6 +15,7 @@ scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instan
 
 [scheduler]
 discover_hosts_in_cells_interval = 60
+workers = {{ .Values.scheduler.workers | default 1 }}
 
 [filter_scheduler]
 bigvm_host_size_filter_uses_flavor_extra_specs = true
