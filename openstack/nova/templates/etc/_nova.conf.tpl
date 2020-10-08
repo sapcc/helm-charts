@@ -182,3 +182,7 @@ user_domain_name = "{{.Values.global.keystone_service_domain | default "Default"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 region_name = {{.Values.global.region}}
+
+[workarounds]
+# This has to be removed when we also remove the deployment of nova-consoleauth
+enable_consoleauth = True
