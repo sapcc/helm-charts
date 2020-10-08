@@ -616,7 +616,7 @@
       regex: "instance"
 {{- end }}
 
-#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+# exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
 {{- $values := .Values.esxi_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'esxi-config'
