@@ -1,4 +1,5 @@
 {{- if .Values.cronus.enabled -}}
+{{- if not .Values.seeder -}}
 cronus:
   cacheSize: {{ .Values.cronus.cacheSize }}
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
@@ -16,4 +17,5 @@ cronus:
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
   debug: {{ .Values.cronus.debug }}
+{{- end -}}
 {{- end -}}
