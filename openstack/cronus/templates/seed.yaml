@@ -1,0 +1,33 @@
+{{- if .Values.cronus.enabled -}}
+{{- if .Values.seeder -}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: cronus-seed
+
+spec:
+  roles:
+    - name: email_admin
+    - name: email_user
+
+  services:
+    - name:        cronus
+      type:        email-aws
+      description: 'Email service'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $.Values.global.region }}'
+          interface: public
+          enabled:   true
+          url:       'https://cronus.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+    - name:        nebula
+      type:        nebula
+      description: 'MultiCloud agent'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $.Values.global.region }}'
+          interface: public
+          enabled:   true
+          url:       'https://nebula.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+{{- end -}}
+{{- end -}}
