@@ -598,8 +598,8 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   kubernetes_sd_configs:
-    - role: service
-    namesspaces:
+  - role: service
+    namespaces:
       names:
         - infra-monitoring
   metrics_path: /

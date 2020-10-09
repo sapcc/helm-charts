@@ -1,3 +1,5 @@
+seeder: false
+
 replicaCount: 1
 cronus:
   enabled: true
@@ -50,5 +52,35 @@ config:
   allowedServices:
     email: email-region
 
+# an existing DNS record to forward disco CNAME records
+ingress:
+  record: my-ingress.region.cloud.com
+
 service:
   type: ClusterIP
+
+# nginx values
+ingress-nginx:
+  tcp:
+    465: ""
+  controller:
+    containerPort:
+      http: 80
+      https: 443
+    service:
+      ports:
+        http: 80
+        https: 443
+      targetPorts:
+        http: http
+        https: https
+      nodePorts:
+        http: ""
+        https: ""
+        465: ""
+    ingressClass: cronus-nginx
+    admissionWebhooks:
+      enabled: false
+    customTemplate:
+      configMapName: cronus-nginx-template
+      configMapKey: nginx.tmpl

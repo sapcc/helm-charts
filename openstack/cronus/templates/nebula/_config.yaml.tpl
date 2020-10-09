@@ -1,4 +1,5 @@
 {{- if .Values.nebula.enabled -}}
+{{- if not .Values.seeder -}}
 nebula:
   cacheSize: {{ .Values.nebula.cacheSize }}
   listenAddr:
@@ -28,4 +29,5 @@ nebula:
   accountStatusPollDelay: {{ .Values.config.accountStatusPollDelay }}
   accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}
   debug: {{ .Values.nebula.debug }}
+{{- end -}}
 {{- end -}}

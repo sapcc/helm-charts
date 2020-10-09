@@ -1,4 +1,5 @@
 {{- if .Values.nebula.enabled -}}
+{{- if not .Values.seeder -}}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -7,6 +8,7 @@ metadata:
     disco: "true"
     # vice-president: "true" deprecated 30/9/20
     kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: cronus-nginx
   labels:
     app: nebula
 spec:
@@ -21,5 +23,6 @@ spec:
   tls:
     - hosts:
       - nebula.{{ .Values.config.region }}.cloud.sap
-      secretName: tls-secret-nebula-{{ .Values.config.region }}-cloud-sap
+      secretName: tls-secret-nebula
+{{- end -}}
 {{- end -}}
