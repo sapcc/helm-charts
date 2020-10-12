@@ -2,7 +2,7 @@
 {{- if eq .Values.postgresql.enabled true -}}
 postgresql+psycopg2://{{.Values.cell0dbUser}}:{{.Values.cell0dbPassword | default (tuple . .Values.cell0dbUser | include "postgres.password_for_user") | urlquery }}@{{.Chart.Name}}-postgresql.{{include "svc_fqdn" .}}:5432/{{.Values.cell0dbName}}
 {{- else -}}
-mysql+pymysql://{{.Values.cell0dbUser}}:{{.Values.cell0dbPassword | urlquery }}@${{.Chart.Name}}-mariadb.{{include "svc_fqdn" .}}:3306/{{.Values.cell0dbName}}?charset=utf8
+mysql+pymysql://{{.Values.cell0dbUser}}:{{ default .Values.cell0dbPassword .Values.global.dbPassword | urlquery }}@${{.Chart.Name}}-mariadb.{{include "svc_fqdn" .}}:3306/{{.Values.cell0dbName}}?charset=utf8
 {{- end -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ mysql+pymysql://{{.Values.cell0dbUser}}:{{.Values.cell0dbPassword | urlquery }}@
 {{- if eq .Values.postgresql.enabled true -}}
 postgresql+psycopg2://{{.Values.cell2dbUser}}:{{ .Values.cell2dbPassword | default (tuple . .Values.cell2dbUser | include "postgres.password_for_user" | urlquery ) }}@{{.Chart.Name}}-{{.Values.cell2.name}}-postgresql.{{include "svc_fqdn" .}}:5432/{{.Values.cell2dbName}}
 {{- else -}}
-mysql+pymysql://{{.Values.cell2dbUser}}:{{.Values.cell2dbPassword | urlquery }}@${{.Chart.Name}}-cell2-mariadb.{{include "svc_fqdn" .}}:3306/{{.Values.cell2dbName}}?charset=utf8
+mysql+pymysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Values.global.dbPassword | urlquery }}@${{.Chart.Name}}-cell2-mariadb.{{include "svc_fqdn" .}}:3306/{{.Values.cell2dbName}}?charset=utf8
 {{- end -}}
 {{- end -}}
 {{- end -}}
