@@ -60,7 +60,7 @@ for line in $(nova-manage cell_v2 list_cells --verbose | grep ':/'); do
 {{- if eq .Values.postgresql.enabled true }}
             "${database_connection}" "{{ include "db_url" . }}"
 {{- else }}
-            "${database_connection}" "{{ tuple . .Values.dbName .Values.dbUser .Values.dbPassword | include "db_url_mysql" }}"
+            "${database_connection}" "{{ tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}"
 {{- end }}
       ;;
 {{ if .Values.cell2.enabled }}
@@ -88,7 +88,7 @@ if [ "${found_cell1}" = "false" ]; then
 {{- if eq .Values.postgresql.enabled true }}
       --database_connection "{{ include "db_url" . }}"
 {{- else }}
-      --database_connection "{{ tuple . .Values.dbName .Values.dbUser .Values.dbPassword | include "db_url_mysql" }}"
+      --database_connection "{{ tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}"
 {{- end }}
       nova-manage cell_v2 discover_hosts
 fi
