@@ -43,7 +43,7 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 
 [api_database]
 {{- if eq .Values.postgresql.enabled false }}
-connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword | include "db_url_mysql" }}
+connection = mysql+pymysql://{{.Values.apidbUser}}:{{.Values.apidbPassword | urlquery}}@nova-api-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/nova_api?charset=utf8
 {{- include "ini_sections.database_options_mysql" . }}
 {{- else }}
 connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword | include "db_url" }}
