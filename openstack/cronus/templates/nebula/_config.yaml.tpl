@@ -2,7 +2,7 @@
 nebula:
   cacheSize: {{ .Values.nebula.cacheSize }}
   listenAddr:
-    http: :{{ .Values.nebula.http }} # default :1080
+    http: # default :1080
   keystone:
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
