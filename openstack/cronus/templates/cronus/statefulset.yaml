@@ -1,11 +1,21 @@
 {{- if .Values.cronus.enabled -}}
-{{- if not .Values.cronus.statefulSet.enabled -}}
+{{- if .Values.cronus.statefulSet.enabled -}}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: cronus-deployment
+  name: cronus-statefulset
+  annotations:
+  {{ toYaml .Values.cronus.statefulSet.annotations | indent 4 }}
+  labels:
+    {{- if .Values.cronus.statefulSet.labels}}
+    {{ toYaml .Values.cronus.statefulSet.labels | nindent 4 }}
+    {{- end}}
 spec:
-  replicas: 1
+  podManagementPolicy: {{ .Values.cronus.statefulSet.podManagementPolicy }}
+  replicas: {{ .Values.cronus.replicas }}
+  serviceName: cronus-service
+  updateStrategy:
+    type: {{ .Values.cronus.statefulSet.updateStrategy }}
   selector:
     matchLabels:
       app.kubernetes.io/name: cronus
@@ -16,6 +26,7 @@ spec:
         app.kubernetes.io/name: cronus
         app.kubernetes.io/instance: cronus
     spec:
+
       serviceAccountName: cronus
       securityContext:
         {}
