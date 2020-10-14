@@ -28,7 +28,7 @@
       - '{job="redfish/bm"}'
       - '{job="redfish/cp"}'
       - '{job="vrops",__name__!~"^vrops_virtualmachine_.*"}'
-      - '{job="vrops",__name__=~"^vrops_virtualmachine_.*", vccluster=~"^management$"}'
+      - '{job="vrops",__name__=~"^vrops_virtualmachine_.*", vccluster=~"^managementbb.+"}'
       - '{job="netbox"}'
       - '{job="firmware-exporter"}'      
       - '{job=~"^netapp-capacity-exporter.*"}'
