@@ -64,11 +64,6 @@ until_refresh = {{ .Values.usage_until_refresh | default 0 }}
 
 {{- include "osprofiler" . }}
 
-[conductor]
-{{- range $k, $v := .Values.conductor.config_file }}
-{{ $k }} = {{ $v }}
-{{- end }}
-
 [spice]
 enabled = True
 html5proxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/spicehtml5/spice_auto.html
