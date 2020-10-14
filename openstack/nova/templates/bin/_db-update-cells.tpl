@@ -90,7 +90,7 @@ if [ "${found_cell1}" = "false" ]; then
 {{- else }}
       --database_connection "{{ tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}"
 {{- end }}
-      nova-manage cell_v2 discover_hosts
+  nova-manage cell_v2 discover_hosts
 fi
 
 {{ if .Values.cell2.enabled }}
