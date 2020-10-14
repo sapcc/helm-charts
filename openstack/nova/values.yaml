@@ -586,7 +586,9 @@ postgresql:
     enabled: true
     custom_repository: true
     config:
-      max_db_connections: 83
+      # per db, nova-api connects to 3 DBs: nova, nova_api, nova_cell0
+      # 50 * 3 DBs * 3 pgbouncer replicas = 450 connections (needs to be below max_connections of postgresql)
+      max_db_connections: 50
       default_pool_size: 50
       reserve_pool_size: 100
       idle_transaction_timeout: 60
@@ -623,7 +625,9 @@ postgresql_cell2:
     enabled: true
     custom_repository: true
     config:
-      max_db_connections: 83
+      # per db, this being a cell, there's only 1 db
+      # 100 * 1 DBs * 3 pgbouncer replicas = 300 connections (needs to be below max_connections of postgresql)
+      max_db_connections: 100
       default_pool_size: 50
       reserve_pool_size: 100
       idle_transaction_timeout: 60
