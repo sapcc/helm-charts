@@ -19,7 +19,7 @@ osprofiler:
 
 pod:
   replicas:
-    api: 2
+    api: 4
     scheduler: 1
   lifecycle:
     upgrades:
@@ -33,7 +33,7 @@ pod:
     api:
       requests:
         cpu: "1500m"
-        memory: "5Gi"
+        memory: "3Gi"
     scheduler:
       requests:
         cpu: "100m"
@@ -79,14 +79,19 @@ cinder_api_allow_migration_on_attach: True
 
 mariadb:
   enabled: true
+  max_connections: 2048
   buffer_pool_size: "2048M"
   log_file_size: "512M"
   name: cinder
   initdb_configmap: cinder-initdb
   persistence_claim:
     name: db-cinder-pvclaim
+  extraConfigFiles:
+    cinder.cnf: |+
+      [mysqld]
+      connect_timeout = 15
 
-max_pool_size: 20
+max_pool_size: 15
 max_overflow: 5
 
 mysql_metrics:
