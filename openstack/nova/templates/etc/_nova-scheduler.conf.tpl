@@ -1,11 +1,11 @@
 [DEFAULT]
 # Scheduling
-scheduler_driver_task_period = {{ .Values.scheduler.driver_task_period | default 60 }}
 scheduler_host_manager = {{ if .Values.global.hypervisors_ironic }}ironic_host_manager{{ else }}host_manager{{ end }}
 scheduler_driver = {{ .Values.scheduler.driver }}
 
 [scheduler]
 discover_hosts_in_cells_interval = 60
+driver_task_period = {{ .Values.scheduler.driver_task_period | default 60 }}
 
 [filter_scheduler]
 available_filters = {{ .Values.scheduler.available_filters | default "nova.scheduler.filters.all_filters" }}
