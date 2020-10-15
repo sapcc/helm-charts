@@ -87,18 +87,18 @@ groups:
       summary: 'RabbitMQ unacknowledged messages count'
 
   - alert: OpenstackElkPredictOutOfDiskSpace
-    expr: elasticsearch_data_diskspace_used_percentage{cluster="hermes",mount=~"/data \\(10.*"} > 65
-    for: 30m
+    expr: elasticsearch_filesystem_data_free_bytes{name=~"hermes"} * 100 / elasticsearch_filesystem_data_size_bytes{name=~"hermes"} < 20
+    for: 60m
     labels:
-      context: elkdiskspace
+      context: diskspace
       service: hermes
       severity: critical
       tier: os
-      playbook: docs/support/playbook/elk_kibana_issues.html
+      playbook: docs/support/playbook/elk_kibana_issues.html#elkpredictoutofdiskspace-alert
     annotations:
-      description: The disk usage on {{ $labels.host }}:{{ $labels.mount }} in the {{ $labels.cluster }} cluster is above 65% now.
-                   Elasticsearch will run out of disk space, and fail to start at 85%
-      summary: Elastic Search will soon run out of disk space
+      description: '{{ $labels.region }} The disk usage for Hermes {{ $labels.name }} is above 80% now.
+                   Please consider cleaning up hermes elasticsearch or lower the retention period for hermes.'
+      summary: 'Hermes in {{ $labels.region }} might run out of disk space'
 
   - alert: OpenstackClusterRed
     expr: elasticsearch_cluster_health_status{cluster="hermes",color="red"} == 1

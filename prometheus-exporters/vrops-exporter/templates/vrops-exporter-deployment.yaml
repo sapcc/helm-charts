@@ -1,48 +1,60 @@
+{{- if .Values.vrops.enabled }}
+{{- range $target := $.Values.vrops.targets }}
+{{- $vropshostname := split "." $target.hostname }}
+{{- range $exporter_type := $.Values.vrops.exporter_types }}
+{{- if $exporter_type.enabled }}
+---
 kind: Deployment
-{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
 apiVersion: apps/v1
 {{- else }}
 apiVersion: extensions/v1beta1
 {{- end }}
 metadata:
-  name: vrops-exporter 
+  name: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
   namespace: infra-monitoring
 spec:
   selector:
     matchLabels:
-      app: vrops-exporter 
+      app: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
       type: exporter
   template:
     metadata:
       labels:
-        app: vrops-exporter
+        app: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
         type: exporter
     spec:
       containers:
          - name: vrops-exporter
-           image: {{ required ".Values.vrops.image.imageRegistry variable missing" .Values.vrops.image.imageRegistry }}/{{ required ".Values.vrops.image.namespace variable missing" .Values.vrops.image.namespace }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" .Values.vrops.image.tag }}
+           image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" $.Values.vrops.image.tag }}
            ports:
              - name: metrics
-               containerPort: {{ required ".Values.vrops.port missing" .Values.vrops.port_number }}
+               containerPort: {{ required ".Values.vrops.port missing" $.Values.vrops.port_number }}
            command:
              - ./exporter.py
            args:
              - -m
              - /config/collector_config.yaml
+             - -t
+             - {{ required "$target.hostname missing" $target.hostname }}
+             {{- range $collector := $exporter_type.collectors }}
+             - -c
+             - {{ $collector }}
+             {{- end }}
            env:
            - name: PORT
-             value: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number | quote }}
+             value: {{ required ".Values.vrops.port_number missing" $.Values.vrops.port_number | quote }}
            - name: DEBUG
-             value: {{ .Values.vrops.debug | quote }}
+             value: {{ $.Values.vrops.debug | quote }}
            - name: INVENTORY
              value: vrops-inventory
            resources:
              limits:
-               memory: {{ required ".Values.vrops.exporter_resources.limits.memory missing" .Values.vrops.exporter_resources.limits.memory }}
-               cpu: {{ required ".Values.vrops.exporter_resources.limits.cpu missing" .Values.vrops.exporter_resources.limits.cpu }}
+               memory: {{ required "$exporter_type.resources.limits.memory missing" $exporter_type.resources.limits.memory }}
+               cpu: {{ required "$exporter_type.resources.limits.cpu missing" $exporter_type.resources.limits.cpu }}
              requests:
-               memory: {{ required ".Values.vrops.exporter_resources.requests.memory missing" .Values.vrops.exporter_resources.requests.memory }}
-               cpu: {{ required ".Values.vrops.exporter_resources.requests.cpu missing" .Values.vrops.exporter_resources.requests.cpu }}
+               memory: {{ required "$exporter_type.resources.requests.memory missing" $exporter_type.resources.requests.memory }}
+               cpu: {{ required "$exporter_type.resources.requests.cpu missing" $exporter_type.resources.requests.cpu }}
            volumeMounts:
              - mountPath: /config
                name: vrops-config
@@ -50,7 +62,7 @@ spec:
 
            #livenessProbe:
              #tcpSocket:
-               #port: {{ required ".Values.vrops.port_number missing" .Values.vrops.port_number }}
+               #port: {{ required ".Values.vrops.port_number missing" $.Values.vrops.port_number }}
              #initialDelaySeconds: 60
              #periodSeconds: 15
              #timeoutSeconds: 10
@@ -58,3 +70,7 @@ spec:
         - configMap:
             name: vrops-exporter-collector-config
           name: vrops-config
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

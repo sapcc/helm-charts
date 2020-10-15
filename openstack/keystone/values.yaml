@@ -9,7 +9,7 @@ global:
 # clusterDomain: cluster.local
   dbUser: keystone
   dbPassword: ""
-# imageRegistry: hub.global.cloud.sap
+# registryAlternateRegion: keppel.$REGION.cloud.sap
 
 debug: false
 insecure_debug: false
@@ -39,7 +39,7 @@ osprofiler:
     enabled: false
 
 api:
-  image: "monsoon/loci-keystone"
+  image: "loci-keystone"
   #imageTag: latest
 
   ## Specify a imagePullPolicy
@@ -165,7 +165,7 @@ api:
     minAvailable: 1
 
 cron:
-  image: "monsoon/loci-keystone"
+  image: "loci-keystone"
   #imageTag: latest
 
   cronSchedule: "0 * * * *"
@@ -192,7 +192,7 @@ cache:
 
 tempest:
   enabled: false
-  image: "monsoon/rally-openstack"
+  image: "rally-openstack"
   #imageTag: "ccloud-1.5.0"
   imageTag: "ccloud-train"
   adminPassword: ""
@@ -214,8 +214,8 @@ services:
   # limitRps: 100
   # limitConnections: 100
 
-  # let the vice-president k8s operator manage the tls certificates
-  # vice-president: true
+  # let kubernetes.io/tls-acme manage tls certificates
+    tlsacme: true
 
     # x509 client certificate support
     x509:
@@ -281,6 +281,7 @@ mariadb:
   enabled: true
   name: keystone
   initdb_configmap: keystone-initdb
+  use_alternate_registry: true
 
   persistence_claim:
     name: db-keystone-pvclaim
@@ -383,7 +384,29 @@ mysql_metrics:
           GROUP BY table_schema
       values:
       - "size_in_mb"
-
+    - name: openstack_user_last_active_at
+      help: User list based on last_active_at
+      labels:
+      - "user_id"
+      - "user_name"
+      - "created_at"
+      - "last_active_at"
+      - "domain_name"
+      query: |
+        SELECT
+          COUNT(*) as user_count,
+          user.id as user_id,
+          COALESCE(id_mapping.local_id, "No User Name") as user_name,
+          user.created_at as created_at,
+          COALESCE(user.last_active_at, "No last_active_at timestamp") as last_active_at,
+          domain.name as domain_name
+        FROM user
+        LEFT JOIN id_mapping ON user.id = id_mapping.public_id
+        JOIN project as domain ON user.domain_id = domain.id
+        WHERE domain.name != 'Default' AND domain.name != 'kubernikus' AND domain.name != 'tempest'
+        GROUP BY id_mapping.public_id
+      values:
+      - "user_count"
 rbac:
   enabled: true
 
@@ -429,3 +452,6 @@ sre:
     api_latency_violations_per_request_ratio_percent:
       token_create: 5
       token_validate: 2
+
+# optional flag to disable users that have not authenticated for 100 years.
+disable_user_account_days_inactive: 36500

@@ -27,16 +27,18 @@ spec:
       - name: wormhole
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         command:
-        - "sh"
-        - "-c"
-        - "wormhole client --listen {{ .Values.interface.ipAddress }}:{{ .Values.interface.port }} --kubeconfig={{ .Values.kubeConfig }}"
+          - "sh"
+          - "-c"
+          - "wormhole client --listen={{ if .Values.interface.listen}}{{ .Values.interface.ipAddress }}:{{ .Values.interface.port }}{{ end }} --health-check={{ .Values.healthCheck }} --kubeconfig={{ .Values.kubeConfig }}"
         volumeMounts:
-          - mountPath: /etc/kubernetes
-            name: etc-kubernetes
+          - mountPath: {{ .Values.kubeHostPath }}
+            name: kubernetes
             readOnly: true
         securityContext:
           privileged: true
+      tolerations:
+      - operator: Exists
       volumes:
-        - name: etc-kubernetes
+        - name: kubernetes
           hostPath:
-            path: /etc/kubernetes
+            path: {{ .Values.kubeHostPath }}

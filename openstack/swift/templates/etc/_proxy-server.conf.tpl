@@ -191,6 +191,21 @@ force_swift_request_proxy_log = true
 use = egg:swift#s3token
 auth_uri = {{ $cluster.keystone_auth_url }}
 
+{{- if $cluster.s3_cred_cache_time }}
+secret_cache_duration = {{ $cluster.s3_cred_cache_time }}
+auth_plugin = v3password
+auth_version = 3
+auth_url = {{ $cluster.keystone_auth_url }}
+insecure = {{ $cluster.keystone_insecure | default false }}
+interface = {{ $cluster.keystone_interface | default "admin" }}
+region_name = {{ $cluster.region_name | default $context.global.region }}
+username = {{ $cluster.swift_service_user }}
+user_domain_name = {{ $cluster.swift_service_user_domain }}
+project_name = {{ $cluster.swift_service_project }}
+project_domain_name = {{ $cluster.swift_service_project_domain }}
+password = {{ $cluster.swift_service_password }}
+{{- end }}
+
 {{ if $context.watcher_enabled -}}
 [filter:watcher]
 use = egg:watcher-middleware#watcher

@@ -137,6 +137,10 @@ logstash:
   extraEnvs:
     - name: ELASTIFLOW_ES_HOST
       value: "elasticsearch-master:9200"
+  jdbc:
+    enabled: false
+    configMap: "jdbc-filter"
+    configFile: "20_filter_95_enrich_ips.conf"
   service:
     type: NodePort
     ports:
@@ -160,6 +164,10 @@ logstash:
         targetPort: 4739
         nodePort: 30740
         protocol: TCP
+      - name: http
+        port: 9600
+        targetPort: 9600
+        protocol: TCP
 
   readinessProbe:
     # use ipfix-tcp port instead of http API to better check elastiflow specific status
@@ -182,7 +190,7 @@ logstash:
 
 logstashExporter:
   name: elastiflow
-  enabled: true
+  enabled: false
   image: 
     repo: bonniernews/logstash_exporter
     tag: v0.1.2

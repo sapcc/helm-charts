@@ -96,7 +96,7 @@ spec:
           - mountPath: /root/.my.cnf
             subPath: ".my.cnf"
             name: mariadb-client
-{{- if .Values.initdb_configmap }}
+{{- if or .Values.initdb_configmap .Values.custom_initdb_configmap }}
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
 {{ end }}
@@ -227,5 +227,10 @@ spec:
         - name: initdb
           configMap:
             name: {{ .Values.initdb_configmap }}
+            defaultMode: 0744
+{{- else if .Values.custom_initdb_configmap }}
+        - name: initdb
+          configMap:
+            name: {{ .Values.custom_initdb_configmap }}
             defaultMode: 0744
 {{ end }}

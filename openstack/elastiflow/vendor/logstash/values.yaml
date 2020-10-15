@@ -37,7 +37,10 @@ imageTag: "7.6.1"
 imagePullPolicy: "IfNotPresent"
 imagePullSecrets: []
 
-podAnnotations: {}
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9198"
+  prometheus.io/targets: "prometheus-openstack"
 
 # additionals labels
 labels: {}
@@ -93,10 +96,12 @@ extraVolumeMounts: ""
   #   mountPath: /usr/share/extras
   #   readOnly: true
 
-extraContainers: ""
-  # - name: do-something
-  #   image: busybox
-  #   command: ['do', 'something']
+extraContainers: |
+  - name: logstash-exporter
+    image: bonniernews/logstash_exporter:v0.1.2
+    ports:
+      - name: metrics
+        containerPort: 9198
 
 extraInitContainers: ""
   # - name: do-something

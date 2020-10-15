@@ -42,7 +42,12 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
 [api_database]
+{{- if eq .Values.postgresql.enabled false }}
+connection = mysql+pymysql://{{.Values.apidbUser}}:{{.Values.apidbPassword | urlquery}}@nova-api-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/nova_api?charset=utf8
+{{- include "ini_sections.database_options_mysql" . }}
+{{- else }}
 connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword | include "db_url" }}
+{{- end }}
 
 {{ include "ini_sections.database" . }}
 
@@ -58,11 +63,6 @@ max_age = {{ .Values.usage_max_age | default 0 }}
 until_refresh = {{ .Values.usage_until_refresh | default 0 }}
 
 {{- include "osprofiler" . }}
-
-[conductor]
-{{- range $k, $v := .Values.conductor.config_file }}
-{{ $k }} = {{ $v }}
-{{- end }}
 
 [spice]
 enabled = True
@@ -177,3 +177,7 @@ user_domain_name = "{{.Values.global.keystone_service_domain | default "Default"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 region_name = {{.Values.global.region}}
+
+[workarounds]
+# This has to be removed when we also remove the deployment of nova-consoleauth
+enable_consoleauth = True

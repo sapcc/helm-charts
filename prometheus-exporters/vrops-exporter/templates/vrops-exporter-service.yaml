@@ -1,11 +1,21 @@
+{{- if .Values.vrops.enabled }}
+{{- range $target := $.Values.vrops.targets }}
+{{- $vropshostname := split "." $target.hostname }}
+{{- range $exporter_type := $.Values.vrops.exporter_types }}
+{{- if $exporter_type.enabled }}
+---
 kind: Service
 apiVersion: v1
 metadata:
-  name: vrops-exporter 
+  name: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
   namespace: infra-monitoring
 spec:
   selector:
-    app: vrops-exporter
+    app: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
   ports:
     - name: metrics
-      port: {{ .Values.vrops.port_number }}
+      port: {{ $.Values.vrops.port_number }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

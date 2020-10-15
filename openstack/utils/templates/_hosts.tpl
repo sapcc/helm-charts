@@ -19,7 +19,20 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 
 {{define "db_host_mysql"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
-{{define "db_url_mysql" }}mysql+pymysql://root:{{.Values.mariadb.root_password | default (include "utils.root_password" .)}}@{{include "db_host_mysql" .}}/{{.Values.db_name}}?charset=utf8{{end}}
+{{define "db_url_mysql" }}
+    {{- if kindIs "map" . -}}
+mysql+pymysql://root:{{.Values.mariadb.root_password | default (include "utils.root_password" .)}}@{{include "db_host_mysql" .}}/{{.Values.db_name}}
+    {{- else }}
+        {{- $envAll := index . 0 }}
+        {{- $name := index . 1 }}
+        {{- $user := index . 2 }}
+        {{- $password := index . 3 }}
+        {{- with $envAll -}}
+mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{include "db_host_mysql" .}}/{{$name}}
+        {{- end }}
+    {{- end -}}
+?charset=utf8
+{{- end}}
 
 {{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}{{end}}
 
@@ -144,4 +157,19 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
     {{- $user := index . 1 }}
     {{- $password := index . 2 -}}
 https://{{ $user }}:{{ $password | urlquery }}@{{ $host }}
+{{- end }}
+
+{{- define "utils.bigip_url" }}
+    {{- $envAll := index . 0 }}
+    {{- $host := index . 1 }}
+    {{- tuple $host ( $envAll.Values.global.bigip_user | required ".Values.global.bigip_user required!") ( $envAll.Values.global.bigip_password | required ".Values.global.bigip_password required!") | include "f5_url" }}
+{{- end }}
+
+{{- define "utils.bigip_urls" }}
+    {{- $envAll := index . 0 }}
+    {{- $hosts := index . 1 }}
+    {{- range $i, $value := $hosts }}
+        {{- if ne $i 0 }}, {{ end -}}
+        {{- tuple $envAll $value | include "utils.bigip_url" -}}
+    {{- end }}
 {{- end }}

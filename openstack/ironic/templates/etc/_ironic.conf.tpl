@@ -42,6 +42,9 @@ dhcp_provider = neutron
 [api]
 host_ip = 0.0.0.0
 public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
+{{- if .Values.api.api_workers }}
+api_workers = {{ .Values.api.api_workers }}
+{{- end }}
 
 [database]
 {{- if eq .Values.mariadb.enabled true }}

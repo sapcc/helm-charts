@@ -29,6 +29,8 @@ resources:
       l7policies:
         type_uri: network/loadbalancer/l7policies
         el_type_uri: network/loadbalancer/l7policy
+        # the unique ID of an l7policy is located in attribute 'l7policy_id' (not 'id')
+        custom_id: l7policy_id
         children:
           rules:
       quotas:

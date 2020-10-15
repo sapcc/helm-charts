@@ -99,14 +99,12 @@ imageName: 'monsoon/loci-neutron'
 # imageVersion:
 # imageVersionServerRPC:
 # imageVersionServerAPI:
-# imageVersionF5:
 # imageVersionACI:
 # imageVersionASR1kML2:
 # imageVersionASR1k:
 # imageVersionUCSM:
 # imageVersionNSXv3:
 # imageVersionNSXTExporter:
-# imageVersionNanny:
 # imageVersionNetworkAgent:
 # imageVersionNetworkAgentDHCP:
 # imageVersionNetworkAgentMetadata:
@@ -282,18 +280,6 @@ mysql_metrics:
         GROUP BY routers.status;
       values:
       - "count_gauge"
-    - help: Total Neutron Loadbalancer count
-      labels:
-      - "operating_status"
-      name: openstack_neutron_loadbalancer_count_gauge
-      query: |
-        SELECT
-          COUNT(*) AS count_gauge,
-          operating_status
-        FROM lbaas_loadbalancers
-        GROUP BY lbaas_loadbalancers.operating_status;
-      values:
-      - "count_gauge"
     - help: Neutron SAP Floating IP by status
       labels:
       - "floating_network_id"
@@ -444,20 +430,6 @@ rabbitmq_notifications:
 # openstack-watcher-middleware
 watcher:
   enabled: true
-
-# neutron nanny
-nanny:
-  enabled: false
-  # run the pod with an infinite sleep loop for debugging
-  debug: false
-  cleanup_pending_lb:
-    enabled: false
-    # dry run mode, i.e. just pretend to cleanup the entries
-    dry_run: true
-    # run the db cleanup every n minutes
-    interval: 60
-    # really delete entities after how many iterations
-    iterations: 3
 
 unittest:
   enabled: false

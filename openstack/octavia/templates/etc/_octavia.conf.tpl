@@ -13,6 +13,10 @@ octavia_plugins = f5_plugin
 bind_host = 0.0.0.0
 bind_port = {{.Values.global.octavia_port_internal | default 9876}}
 
+# Enable/disable exposing API endpoints. By default, both v1 and v2 are enabled.
+api_v1_enabled = False
+api_v2_enabled = True
+
 # How should authentication be handled (keystone, noauth)
 auth_strategy = keystone
 
@@ -60,7 +64,7 @@ project_name = service
 project_domain_id = default
 user_domain_id = default
 username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.octavia_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "$$" }}
+password = {{ .Values.global.octavia_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "" }}
 
 [keystone_authtoken]
 auth_type = v3password
@@ -69,7 +73,7 @@ auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.octavia_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "$$" }}
+password = {{ .Values.global.octavia_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "" }}
 user_domain_id = default
 project_name = service
 project_domain_id = default

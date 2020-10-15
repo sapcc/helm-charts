@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
          - name: vrops-inventory
-           image: {{ required ".Values.vrops.image.imageRegistry variable missing" .Values.vrops.image.imageRegistry }}/{{ required ".Values.vrops.image.namespace variable missing" .Values.vrops.image.namespace }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.inventory.tag variable missing" .Values.vrops.inventory.tag }}
+           image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.inventory.tag variable missing" .Values.vrops.inventory.tag }}
            ports:
              - name: metrics
                containerPort: {{ required ".Values.vrops.inventory_port missing" .Values.vrops.inventory_port_number }}
@@ -52,12 +52,12 @@ spec:
              initialDelaySeconds: 5
              timeoutSeconds: 10
              periodSeconds: 15
-           startupProbe:
-             httpGet:
-               path: /iteration
-               port: {{ required ".Values.vrops.inventory_port_number missing" .Values.vrops.inventory_port_number }}
-             failureThreshold: 30
-             periodSeconds: 10
+           # startupProbe:
+           #   httpGet:
+           #     path: /iteration
+           #     port: {{ required ".Values.vrops.inventory_port_number missing" .Values.vrops.inventory_port_number }}
+           #   failureThreshold: 30
+           #   periodSeconds: 10
       volumes:
         - configMap:
             name: {{ .Values.vrops.atlas_configmap }}

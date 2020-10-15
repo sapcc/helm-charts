@@ -597,16 +597,23 @@
 - job_name: 'vrops'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  static_configs:
-    - targets: 
-      - 'vrops-exporter:9160'
-      - 'vrops-exporter-host:9160'
-      - 'vrops-exporter-vm:9160'
+  kubernetes_sd_configs:
+  - role: service
+    namespaces:
+      names:
+        - infra-monitoring
   metrics_path: /
   relabel_configs:
-    - source_labels: [job]
-      regex: vrops
-      action: keep
+    - action: keep
+      source_labels: [__meta_kubernetes_service_name]
+      regex: .*vrops-exporter.*
+    - source_labels: [__address__]
+      regex: (vrops.*)(.infra?.*[c])(:.*)
+      target_label: __address__
+      replacement: ${1}${3}
+  metric_relabel_configs:
+    - action: labeldrop
+      regex: "instance"
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
@@ -658,4 +665,24 @@
     - source_labels: [job]
       regex: apic-exporter
       action: keep
+{{- end }}
+
+{{- range $name, $app := .Values.netapp_cap_exporter.apps }}
+{{- if $app.enabled }}
+- job_name: '{{ $app.fullname }}'
+  scrape_interval: {{ $app.scrapeInterval }}
+  scrape_timeout: {{ $app.scrapeTimeout }}
+  static_configs:
+    - targets:
+      - '{{ $app.fullname }}:9108'
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: {{ $app.fullname }}
+      action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
+{{- end }}
 {{- end }}

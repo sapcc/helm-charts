@@ -46,7 +46,7 @@ template: |
       spec:
         containers:
         - name: neutron-nsxv3-agent
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionNSXv3 | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionNSXv3 | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command: ["dumb-init"]
           args: ["neutron-nsxv3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
@@ -75,7 +75,7 @@ template: |
             mountPath: /etc/neutron
             readOnly: true
         - name: exporter
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/nsx-t-exporter:{{.Values.imageVersionNSXTExporter | required "Please set neutron.imageVersionNSXTExporter"}}
+          image: {{.Values.global.registry}}/nsx-t-exporter:{{.Values.imageVersionNSXTExporter | required "Please set neutron.imageVersionNSXTExporter"}}
           env:
             {%- set bb = name | replace( "bb", "") | int %}
             {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}

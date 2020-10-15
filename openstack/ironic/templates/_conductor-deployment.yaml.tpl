@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
       - name: ironic-conductor
-        image: {{ .Values.global.imageRegistry }}/{{ .Values.global.image_namespace }}/loci-ironic:{{ .Values.imageVersion }}
+        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
         imagePullPolicy: IfNotPresent
         {{- if $conductor.debug }}
         securityContext:

@@ -29,6 +29,8 @@ osprofiler: {}
 
 auto_assign_aggregates: 'dry_run'
 
+use_tls_acme: true
+
 cell2:
   name: cell2
   enabled: false
@@ -59,13 +61,14 @@ defaults:
 
 pod:
   replicas:
-    api: 2
+    api: 3
     metadata: 2
     console: 2
     consoleauth: 2
     conductor: 2
     scheduler: 1
     placement: 2
+    vspc: 4
   lifecycle:
     upgrades:
       deployments:
@@ -79,7 +82,7 @@ pod:
   resources:
     api:
       requests:
-        cpu: "12000m"
+        cpu: "8000m"
         memory: "13Gi"
     metadata:
       requests:
@@ -113,6 +116,12 @@ pod:
       requests:
         cpu: "1000m"
         memory: "2Gi"
+    vspc:
+      requests:
+        cpu: "200m"
+        memory: "2Gi"
+      limits:
+        memory: "12Gi"
 
 debug: "True"
 
@@ -192,6 +201,7 @@ api:
       api_paste_config: /etc/nova/api-paste.ini
       enabled_apis: osapi_compute
       use_forwarded_for: true
+      osapi_compute_workers: 8
 
     api:
       list_records_by_skipping_down_cells: false
@@ -205,6 +215,7 @@ api_metadata:
       api_paste_config: /etc/nova/api-paste.ini
       enabled_apis: metadata
       use_forwarded_for: true
+      metadata_workers: 4
 
 consoles:
   novnc:
@@ -224,6 +235,7 @@ scheduler:
   scheduler_instance_sync_interval: 120
   default_filters: "AvailabilityZoneFilter, ShardFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter, BaremetalExactRamFilter, BaremetalExactCoreFilter, BaremetalExactDiskFilter"
   ram_weight_multiplier: 1.0
+  cpu_weight_multiplier: 1.0
   disk_weight_multiplier: 1.0
   io_ops_weight_multiplier: 0.0
   soft_affinity_weight_multiplier: 1.0
@@ -252,7 +264,9 @@ compute:
       full_clone_snapshots: true
 
 conductor:
-  config_file: {}
+  config_file:
+    conductor:
+      workers: 8
 
 quota:
   # most default quotas are 0 to enforce usage of the Resource Management tool in Elektra
@@ -273,6 +287,11 @@ quota:
 placement:
   enabled: false
   wsgi_processes: 10
+
+mysql_metrics:
+  enabled: false
+  db_name: nova
+  db_user: nova
 
 pgmetrics:
   name: nova
@@ -296,7 +315,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "VM Count"
     openstack_compute_stuck_instances:
-      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, task_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, task_state"
+      query: "SELECT coalesce(host, 'N/A') AS host, project_id, uuid, availability_zone, task_state, COUNT(*) FILTER (WHERE updated_at < now() - interval '15 minutes') AS count_gauge, MAX(EXTRACT(epoch FROM now() - updated_at)) AS max_duration_gauge FROM instances WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0 GROUP BY host, project_id, uuid, availability_zone, task_state UNION ALL SELECT 'dummy-row', 'None', 'None', 'None', 'None', 0, 0"
       metrics:
         - project_id:
             usage: "LABEL"
@@ -530,7 +549,7 @@ pgmetrics:
 
 postgresql:
   enabled: true
-  imageTag: '9.4.14'
+  imageTag: '9.4'
   postgresDatabase: nova
   dbInit: nova-db-init
   dbMaintain: nova-db-maintain
@@ -545,6 +564,8 @@ postgresql:
     enabled: true
     metrics: true
     os_password: null
+    imageTag: v0.6.5
+    custom_repository: true
 
   resources:
     requests:
@@ -565,15 +586,21 @@ postgresql:
   track_activity_query_size: 2048
   pgbouncer:
     enabled: true
+    custom_repository: true
     config:
-      max_db_connections: 83
-      default_pool_size: 50
+      # per db, nova-api connects to 3 DBs: nova, nova_api, nova_cell0
+      # 50 * 3 DBs * 3 pgbouncer replicas = 450 connections (needs to be below max_connections of postgresql)
+      max_db_connections: 50
+      # sum of the following 2 lines * number of pgbouncer replicas must be >=
+      # osapi_compute_workers * pod.replicas.api * (max_pool_size + max_overflow)
+      # + metadata_workers * pod.replicas.metadata * (max_pool_size + max_overflow)
+      # + conductor workers * pod.replicas.conductor * (max_pool_size + max_overflow)
+      default_pool_size: 100
       reserve_pool_size: 100
       idle_transaction_timeout: 60
 
 postgresql_cell2:
-  custom_repository: true
-  imageTag: "9.5.10"
+  imageTag: "9.5"
   name: nova-cell2
   postgresDatabase: nova-cell2
   dbInit: nova-db-init
@@ -585,6 +612,8 @@ postgresql_cell2:
     enabled: true
     metrics: true
     os_password: null
+    imageTag: v0.6.5
+    custom_repository: true
 
   max_connections: 500
   shared_buffers: '4GB'
@@ -600,11 +629,76 @@ postgresql_cell2:
   track_activity_query_size: 2048
   pgbouncer:
     enabled: true
+    custom_repository: true
     config:
-      max_db_connections: 83
+      # per db, this being a cell, there's only 1 db
+      # 100 * 1 DBs * 1 pgbouncer replicas = 100 connections (needs to be below max_connections of postgresql)
+      max_db_connections: 100
+      # sum of the following 2 lines * number of pgbouncer replicas must be >=
+      # conductor workers * 1 (conductor replicas) * (max_pool_size + max_overflow)
       default_pool_size: 50
       reserve_pool_size: 100
       idle_transaction_timeout: 60
+
+db_name: nova
+max_pool_size: 10
+max_overflow: 5
+
+mariadb:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  name: nova
+  custom_initdb_configmap: nova-mysql-db-init
+  persistence_claim:
+    name: db-nova-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    databases:
+      - nova
+      - nova_cell0
+    verify_tables:
+      - nova.services
+      - nova.instance_metadata
+      - nova_cell0.instance_metadata
+    oauth:
+      client_id: "nova"
+
+mariadb_api:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  name: nova-api
+  custom_initdb_configmap: nova-api-db-init
+  persistence_claim:
+    name: db-nova-api-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    databases:
+      - nova_api
+    verify_tables:
+      - nova_api.flavors
+      - nova_api.key_pairs
+    oauth:
+      client_id: "nova-api"
+
+mariadb_cell2:
+  enabled: false
+  buffer_pool_size: "2048M"
+  log_file_size: "512M"
+  name: nova-cell2
+  custom_initdb_configmap: nova-cell2-db-init
+  persistence_claim:
+    name: db-nova-cell2-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
 
 rabbitmq_cell2:
   name: nova-cell2

@@ -12,7 +12,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: neutron-migration
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          image: {{.Values.global.registry}}/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - /usr/local/bin/kubernetes-entrypoint
@@ -40,8 +40,6 @@ spec:
                 items:
                 - key: neutron.conf
                   path: neutron.conf
-                - key: neutron-lbaas.conf
-                  path: neutron-lbaas.conf
                 - key: ml2-conf.ini
                   path: plugins/ml2/ml2-conf.ini
                 name: neutron-etc

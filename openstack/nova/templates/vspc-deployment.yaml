@@ -13,7 +13,7 @@ metadata:
     type: collector
     component: nova
 spec:
-  replicas: {{ .Values.vspc.replicas | default 1 }}
+  replicas: {{ .Values.pod.replicas.vspc | default 1 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -45,6 +45,16 @@ spec:
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
 {{- end }}
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "echo '' | curl -m 20 telnet://localhost:1333"]
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 21
+          {{- if .Values.pod.resources.vspc }}
+          resources:
+{{ toYaml .Values.pod.resources.vspc | indent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.vspc.telnet.portInternal }}
             - containerPort: {{ .Values.vspc.web.portInternal }}
