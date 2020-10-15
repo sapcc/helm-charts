@@ -135,3 +135,15 @@ groups:
         annotations:
           description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is {{ $value }} GiB'
           summary: 'Flex-volume {{$labels.filer}}/{{$labels.volume}} usage larger than 90 percent of 5TB'
+      - alert: VVolDatastoreFlexvolCriticalUsage
+        expr: netapp_volume_used_bytes{app="netapp-capacity-exporter-cinder", volume=~"vv.*"} / 1024/1024/1024 > (7 * 1024)
+        for: 3h
+        labels:
+          severity: critical
+          tier: os
+          service: nanny
+          meta: 'VVol flex-volume usage over 7 TiB'
+          playbook: 'docs/support/playbook/cinder/cinder_storage_aggregate_full.html'
+        annotations:
+          description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is {{ $value }} GiB'
+          summary: 'Flex-volume {{$labels.filer}}/{{$labels.volume}} usage larger than 7 TiB'
