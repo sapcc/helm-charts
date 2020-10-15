@@ -8,6 +8,8 @@ preflights = VrfDefinition
 clean_orphans = {{$config_agent.clean_orphans | default "True"}}
 clean_orphan_interval = {{$config_agent.clean_orphan_interval | default 600}}
 init_mode = {{$config_agent.init_mode | default "False"}}
+trace_all_yang_calls = {{$config_agent.trace_all_yang_calls | default "False"}}
+trace_yang_call_failures = {{$config_agent.trace_yang_call_failures | default "True"}}
 
 [asr1k_l3]
 fabric_asn = {{required "A valid .Values.asr.fabric_asn entry required!" .Values.asr.fabric_asn}}
