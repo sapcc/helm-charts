@@ -686,3 +686,33 @@
       action: replace
 {{- end }}
 {{- end }}
+
+{{- if .Values.netbox_exporter.enabled }}
+- job_name: netbox_db
+  static_configs:
+    - targets:
+      - 'postgres.netbox.c.eu-de-2.cloud.sap:80'
+  metrics_path: /postgres-metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: netbox_db
+      action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
+
+- job_name: netbox_node
+  static_configs:
+    - targets:
+      - 'postgres.netbox.c.eu-de-2.cloud.sap:80'
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: netbox_db
+      action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
+{{- end }}
