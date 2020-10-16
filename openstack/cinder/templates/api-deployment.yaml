@@ -37,7 +37,7 @@ spec:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "cinder-api"
+              value: "{{ if .Values.api.use_uwsgi }}uwsgi --ini /etc/cinder/api_uwsgi.ini{{ else }}cinder-api{{ end }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
@@ -93,6 +93,12 @@ spec:
               mountPath: /etc/cinder/api-paste.ini
               subPath: api-paste.ini
               readOnly: true
+           {{- if .Values.api.use_uwsgi }}
+            - mountPath: /etc/cinder/api_uwsgi.ini
+              name: cinder-etc
+              subPath: api_uwsgi.ini
+              readOnly: true
+           {{- end }}
             - name: cinder-etc
               mountPath: /etc/cinder/policy.json
               subPath: policy.json
