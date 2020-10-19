@@ -693,14 +693,14 @@
   scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
   static_configs:
     - targets:
-      - 'netbox-redis.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'postgres.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-worker01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-blueprinter.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-web01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-web02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-redis.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'postgres.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-worker01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-blueprinter.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
       - 'netbox-ro.global.cloud.sap:80'
   metrics_path: /metrics
   relabel_configs:
@@ -716,10 +716,10 @@
   scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
   static_configs:
     - targets:
-      - 'netbox-web01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-web02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
       - 'netbox-ro.global.{{ .Values.global.domain }}:80'
   metrics_path: /netboxmetrics
   relabel_configs:
@@ -735,7 +735,7 @@
   scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
   static_configs:
     - targets:
-      - 'postgres.openstack.eu-de-2.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'postgres.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
       - 'netbox-ro.global.{{ .Values.global.domain }}:80'
   metrics_path: /postgres-metrics
   relabel_configs:
@@ -751,10 +751,10 @@
   scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
   static_configs:
     - targets:
-      - 'netbox-web01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-web02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
-      - 'netbox-api02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
       - 'netbox-ro.global.{{ .Values.global.domain }}:80'
   metrics_path: /nginxmetrics
   relabel_configs:
