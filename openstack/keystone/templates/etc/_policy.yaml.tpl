@@ -40,6 +40,7 @@
   'cloud_baremetal_admin':%(target.role.name)s or
   'cloud_network_admin':%(target.role.name)s or
   'cloud_dns_admin':%(target.role.name)s or
+  'cloud_dns_viewer':%(target.role.name)s or
   'dns_admin':%(target.role.name)s or
   'cloud_image_admin':%(target.role.name)s or
   'cloud_compute_admin':%(target.role.name)s or
