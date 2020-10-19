@@ -688,28 +688,78 @@
 {{- end }}
 
 {{- if .Values.netbox_exporter.enabled }}
-- job_name: netbox_db
+- job_name: 'netbox_node'
+  scrape_interval: {{ $app.scrapeInterval }}
+  scrape_timeout: {{ $app.scrapeTimeout }}
   static_configs:
     - targets:
-      - 'postgres.netbox.c.eu-de-2.cloud.sap:80'
-  metrics_path: /postgres-metrics
+      - 'netbox-redis.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'postgres.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-worker01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-blueprinter.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-ro.global.cloud.sap:80'
+  metrics_path: /metrics
   relabel_configs:
     - source_labels: [job]
-      regex: netbox_db
+      regex: {{ $app.fullname }}
       action: keep
     - source_labels: [job]
       target_label: app
       replacement: ${1}
       action: replace
-
-- job_name: netbox_node
+- job_name: 'netbox_app'
+  scrape_interval: {{ $app.scrapeInterval }}
+  scrape_timeout: {{ $app.scrapeTimeout }}
   static_configs:
     - targets:
-      - 'postgres.netbox.c.eu-de-2.cloud.sap:80'
-  metrics_path: /metrics
+      - 'netbox-web01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-ro.global.{{ .Values.global.domain }}:80'
+  metrics_path: /netboxmetrics
   relabel_configs:
     - source_labels: [job]
-      regex: netbox_db
+      regex: {{ $app.fullname }}
+      action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
+- job_name: 'netbox_postgres'
+  scrape_interval: {{ $app.scrapeInterval }}
+  scrape_timeout: {{ $app.scrapeTimeout }}
+  static_configs:
+    - targets:
+      - 'postgres.openstack.eu-de-2.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-ro.global.{{ .Values.global.domain }}:80'
+  metrics_path: /postgres-metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: {{ $app.fullname }}
+      action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
+- job_name: 'netbox_nginx'
+  scrape_interval: {{ $app.scrapeInterval }}
+  scrape_timeout: {{ $app.scrapeTimeout }}
+  static_configs:
+    - targets:
+      - 'netbox-web01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api02.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-ro.global.{{ .Values.global.domain }}:80'
+  metrics_path: /nginxmetrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: {{ $app.fullname }}
       action: keep
     - source_labels: [job]
       target_label: app
