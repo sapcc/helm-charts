@@ -687,10 +687,10 @@
 {{- end }}
 {{- end }}
 
-{{- if .Values.netbox_exporter.enabled }}
+{{- if .Values.netbox_exporters.enabled }}
 - job_name: 'netbox_node'
-  scrape_interval: {{ .Values.netbox_exporter.scrapeInterval }}
-  scrape_timeout: {{ .Values.netbox_exporter.scrapeTimeout }}
+  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
   static_configs:
     - targets:
       - 'netbox-redis.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
@@ -712,8 +712,8 @@
       replacement: ${1}
       action: replace
 - job_name: 'netbox_app'
-  scrape_interval: {{ .Values.netbox_exporter.scrapeInterval }}
-  scrape_timeout: {{ .Values.netbox_exporter.scrapeTimeout }}
+  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
   static_configs:
     - targets:
       - 'netbox-web01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
@@ -731,8 +731,8 @@
       replacement: ${1}
       action: replace
 - job_name: 'netbox_postgres'
-  scrape_interval: {{ .Values.netbox_exporter.scrapeInterval }}
-  scrape_timeout: {{ .Values.netbox_exporter.scrapeTimeout }}
+  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
   static_configs:
     - targets:
       - 'postgres.openstack.eu-de-2.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
@@ -747,8 +747,8 @@
       replacement: ${1}
       action: replace
 - job_name: 'netbox_nginx'
-  scrape_interval: {{ .Values.netbox_exporter.scrapeInterval }}
-  scrape_timeout: {{ .Values.netbox_exporter.scrapeTimeout }}
+  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
   static_configs:
     - targets:
       - 'netbox-web01.openstack.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
