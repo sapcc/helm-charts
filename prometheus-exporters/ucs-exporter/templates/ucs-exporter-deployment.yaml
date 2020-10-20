@@ -29,14 +29,14 @@ spec:
              - name: metrics
                containerPort: {{ required ".Values.ucs.port_number missing" .Values.ucs.port_number }}
            command:
-             - /ucs-exporter/ucs-exporter.py
+             - ./ucs-exporter.py
            args:
              - -u
              - {{ required ".Values.ucs.user missing" .Values.ucs.user }}
              - -p
              - {{ required ".Values.ucs.master_password missing" .Values.ucs.master_password }}
              - -c
-             - /ucs-exporter/config.yaml
+             - /ucs/config.yaml
            env:
            - name: PORT
              value: {{ required ".Values.ucs.port_number missing" .Values.ucs.port_number | quote }}
@@ -50,7 +50,7 @@ spec:
                 memory: {{ required ".Values.ucs.resources.memory missing" .Values.ucs.resources.memory }}
                 cpu: {{ required ".Values.ucs.resources.cpu missing" .Values.ucs.resources.cpu }}
            volumeMounts:
-             - mountPath: /ucs-exporter
+             - mountPath: /ucs
                name: ucs-config
                readOnly: true
            livenessProbe:
