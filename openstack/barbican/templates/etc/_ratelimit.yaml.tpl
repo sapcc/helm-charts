@@ -36,16 +36,16 @@ rates:
   default:
     secrets:
       - action: read/list
-        limit: 5r/s
+        limit: 5r/m
     containers:
       - action: read/list
-        limit: 5r/s
+        limit: 5r/m
     secrets/secret:
       - action: read
-        limit: 1r/s
+        limit: 5r/m
     containers/container:
       - action: read
-        limit: 5r/s
-    secrets/secret/payload
+        limit: 5r/m
+    secrets/secret/payload:
       - action: read
-        limit: 5r/s
+        limit: 5r/m
