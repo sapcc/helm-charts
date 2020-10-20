@@ -28,7 +28,12 @@ spec:
         - name: DEPENDENCY_JOBS
           value: "nova-migration"
         - name: DEPENDENCY_SERVICE
-          value: "nova-postgresql,nova-rabbitmq"
+        {{- if eq .Values.postgresql.enabled true }}
+          value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
+          # plus soft-dependency to nova-rabbitmq-notifications
+        {{- else }}
+          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
+        {{- end }}
         - name: PGAPPNAME
           valueFrom:
             fieldRef:

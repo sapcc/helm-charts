@@ -48,8 +48,12 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "nova-migration"
             - name: DEPENDENCY_SERVICE
-              value: "nova-postgresql,{{ .Release.Name }}-rabbitmq"
+            {{- if eq .Values.postgresql.enabled true }}
+              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
               # plus soft-dependency to nova-rabbitmq-notifications
+            {{- else }}
+              value: "{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
+            {{- end }}
 {{- if .Values.python_warnings }}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}

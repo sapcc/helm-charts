@@ -24,7 +24,7 @@ mariadb:
 
 ingress:
   annotations:
-    vice-president: "true"
+    kubernetes.io/tls-acme: "true"
     disco: "true"
 
 mysql_metrics:
@@ -43,6 +43,24 @@ mysql_metrics:
           server_group_id as octavia_host
         FROM load_balancer
         GROUP BY octavia_host, provisioning_status;
+      values:
+      - "count_gauge"
+    - help: Load Balancer pending
+      labels:
+      - "status"
+      - "octavia_host"
+      - "loadbalancer_id"
+      - "loadbalancer_name"
+      name: octavia_loadbalancers_pending
+      query: |
+        SELECT
+          '1' AS count_gauge,
+          name AS loadbalancer_name,
+          provisioning_status AS status,
+          id AS loadbalancer_id,
+          server_group_id AS octavia_host
+        FROM load_balancer
+        WHERE provisioning_status LIKE "PENDING_%";
       values:
       - "count_gauge"
     - help: Worker agent seconds since the last heartbeat
@@ -101,7 +119,7 @@ default_profiles:
 external_as3: false
 persist_every: -1
 async_mode: false
-unsafe_mode: true
+unsafe_mode: false
 
 # Deploy Octavia Prometheus alerts.
 alerts:

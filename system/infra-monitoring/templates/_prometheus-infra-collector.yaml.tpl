@@ -598,15 +598,22 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   kubernetes_sd_configs:
-    - role: service
-      namespaces:
-        names:
-          - infra-monitoring
+  - role: service
+    namespaces:
+      names:
+        - infra-monitoring
   metrics_path: /
   relabel_configs:
     - action: keep
       source_labels: [__meta_kubernetes_service_name]
       regex: .*vrops-exporter.*
+    - source_labels: [__address__]
+      regex: (vrops.*)(.infra?.*[c])(:.*)
+      target_label: __address__
+      replacement: ${1}${3}
+  metric_relabel_configs:
+    - action: labeldrop
+      regex: "instance"
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
@@ -678,4 +685,84 @@
       replacement: ${1}
       action: replace
 {{- end }}
+{{- end }}
+
+{{- if .Values.netbox_exporters.enabled }}
+- job_name: 'netbox_node'
+  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
+  static_configs:
+    - targets:
+      - 'netbox-redis.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'postgres.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-worker01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-blueprinter.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-ro.global.cloud.sap:80'
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: netbox_node
+      action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
+- job_name: 'netbox_app'
+  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
+  static_configs:
+    - targets:
+      - 'netbox-web01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-ro.global.{{ .Values.global.domain }}:80'
+  metrics_path: /netboxmetrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: netbox_app
+      action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
+- job_name: 'netbox_postgres'
+  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
+  static_configs:
+    - targets:
+      - 'postgres.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-ro.global.{{ .Values.global.domain }}:80'
+  metrics_path: /postgres-metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: netbox_postgres
+      action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
+- job_name: 'netbox_nginx'
+  scrape_interval: {{ .Values.netbox_exporters.scrapeInterval }}
+  scrape_timeout: {{ .Values.netbox_exporters.scrapeTimeout }}
+  static_configs:
+    - targets:
+      - 'netbox-web01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-web02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api01.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-api02.netbox.c.{{ .Values.global.region }}.{{ .Values.global.domain }}:80'
+      - 'netbox-ro.global.{{ .Values.global.domain }}:80'
+  metrics_path: /nginxmetrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: netbox_nginx
+      action: keep
+    - source_labels: [job]
+      target_label: app
+      replacement: ${1}
+      action: replace
 {{- end }}

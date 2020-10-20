@@ -3,10 +3,25 @@ groups:
   rules:
   - alert: DataStoreCapacityWarning
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) > 0.9
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >= 0.8
     for: 20m
     labels:
       severity: warning
+      tier: vmware
+      service: storage
+      context: "vrops-exporter"
+      meta: "Datastore {{ $labels.datastore }} utilization > 80% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
+    annotations:
+      description: "Datastore {{ $labels.datastore }} utilization > 80% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} utilization > 80% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+  - alert: DataStoreCapacityCritical
+    expr: >
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+    for: 20m
+    labels:
+      severity: critical
       tier: vmware
       service: storage
       context: "vrops-exporter"

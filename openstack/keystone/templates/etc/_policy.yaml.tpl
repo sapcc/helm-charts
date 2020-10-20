@@ -15,7 +15,6 @@
 
 #
 #"token_subject": "user_id:%(target.token.user_id)s"
-"token_subject": "user_id:%(target.token.user_id)s"
 
 #
 #"admin_or_token_subject": "rule:admin_required or rule:token_subject"
@@ -24,18 +23,15 @@
 #"service_admin_or_token_subject": "rule:service_or_admin or rule:token_subject"
 
 # ccloud: added these to allow a smooth transitioning from old cloud-admin to new system scopes
-"cloud_admin": >
-  "(role:admin and system_scope:all) or
+"cloud_admin": "(role:admin and system_scope:all) or
   (role:admin and ((is_admin_project:True or domain_id:default){{- if .Values.tempest.enabled }} or domain_id:{{.Values.tempest.domainId}}{{- end}}))"
 
-"cloud_reader": >
-  "(role:reader and system_scope:all) or
+"cloud_reader": "(role:reader and system_scope:all) or
   role:cloud_identity_viewer or
   rule:service_role or
   rule:cloud_admin"
 
-"blacklist_roles": >
-  "'resource_service':%(target.role.name)s or
+"blacklist_roles": "'resource_service':%(target.role.name)s or
   'cloud_registry_admin':%(target.role.name)s or
   'cloud_registry_viewer':%(target.role.name)s or
   'cloud_dns_resource_admin':%(target.role.name)s or
@@ -44,6 +40,7 @@
   'cloud_baremetal_admin':%(target.role.name)s or
   'cloud_network_admin':%(target.role.name)s or
   'cloud_dns_admin':%(target.role.name)s or
+  'cloud_dns_viewer':%(target.role.name)s or
   'dns_admin':%(target.role.name)s or
   'cloud_image_admin':%(target.role.name)s or
   'cloud_compute_admin':%(target.role.name)s or
@@ -226,8 +223,7 @@
 # GET  /v3/domains/{domain_id}
 # Intended scope(s): system, domain, project
 #"identity:get_domain": "(role:reader and system_scope:all) or token.domain.id:%(target.domain.id)s or token.project.domain.id:%(target.domain.id)s"
-"identity:get_domain": >
-  "rule:cloud_reader or
+"identity:get_domain": "rule:cloud_reader or
   token.domain.id:%(target.domain.id)s or
   token.project.domain.id:%(target.domain.id)s or
   role:role_viewer"
@@ -461,8 +457,7 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:check_grant": "(role:reader and system_scope:all) or ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:check_grant": >
-  "rule:cloud_reader or
+"identity:check_grant": "rule:cloud_reader or
   ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or
   (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or
   (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or
@@ -485,8 +480,7 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/users/{user_id}/roles/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:list_grants": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)"
-"identity:list_grants": >
-  "rule:cloud_reader or
+"identity:list_grants": "rule:cloud_reader or
   (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or
   (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or
   (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or
@@ -507,8 +501,7 @@
 # PUT  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:create_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:create_grant": >
-  "rule:cloud_admin or
+"identity:create_grant": "rule:cloud_admin or
   (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
   ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
   ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
@@ -531,8 +524,7 @@
 # DELETE  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:revoke_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:revoke_grant": >
-  "rule:cloud_admin or
+"identity:revoke_grant": "rule:cloud_admin or
   (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
   ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
   ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
@@ -591,8 +583,7 @@
 # HEAD  /v3/groups/{group_id}
 # Intended scope(s): system, domain
 #"identity:get_group": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
-"identity:get_group": >
-  "rule:cloud_reader or
+"identity:get_group": "rule:cloud_reader or
   (role:reader and domain_id:%(target.group.domain_id)s) or
   role:role_viewer"
 
@@ -601,8 +592,7 @@
 # HEAD  /v3/groups
 # Intended scope(s): system, domain
 #"identity:list_groups": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
-"identity:list_groups": >
-  "rule:cloud_reader or
+"identity:list_groups": "rule:cloud_reader or
   (role:reader and domain_id:%(target.group.domain_id)s)"
 
 # List groups to which a user belongs.
@@ -610,8 +600,7 @@
 # HEAD  /v3/users/{user_id}/groups
 # Intended scope(s): system, domain, project
 #"identity:list_groups_for_user": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(user_id)s"
-"identity:list_groups_for_user": >
-  "rule:cloud_reader or
+"identity:list_groups_for_user": "rule:cloud_reader or
   (role:reader and domain_id:%(target.user.domain_id)s) or
   user_id:%(user_id)s"
 
@@ -761,8 +750,7 @@
 # HEAD  /v3/limits/{limit_id}
 # Intended scope(s): system, domain, project
 #"identity:get_limit": "(role:reader and system_scope:all) or (domain_id:%(target.limit.domain.id)s or domain_id:%(target.limit.project.domain_id)s) or (project_id:%(target.limit.project_id)s and not None:%(target.limit.project_id)s)"
-"identity:get_limit": >
-  "rule:cloud_reader or
+"identity:get_limit": "rule:cloud_reader or
   (domain_id:%(target.limit.domain.id)s or domain_id:%(target.limit.project.domain_id)s) or
   (project_id:%(target.limit.project_id)s and not None:%(target.limit.project_id)s)"
 
@@ -926,8 +914,7 @@
 # GET  /v3/projects/{project_id}
 # Intended scope(s): system, domain, project
 #"identity:get_project": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or project_id:%(target.project.id)s"
-"identity:get_project": >
-  "rule:cloud_reader or
+"identity:get_project": "rule:cloud_reader or
   (role:reader and domain_id:%(target.project.domain_id)s) or
   project_id:%(target.project.id)s or
   role:role_viewer"
@@ -936,8 +923,7 @@
 # GET  /v3/projects
 # Intended scope(s): system, domain
 #"identity:list_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
-"identity:list_projects": >
-  "rule:cloud_reader or
+"identity:list_projects": "rule:cloud_reader or
   (role:reader and domain_id:%(target.domain_id)s) or
   role:role_viewer"
 
@@ -945,8 +931,7 @@
 # GET  /v3/users/{user_id}/projects
 # Intended scope(s): system, domain, project
 #"identity:list_user_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s) or user_id:%(target.user.id)s"
-"identity:list_user_projects": >
-  "rule:cloud_reader or
+"identity:list_user_projects": "rule:cloud_reader or
   (role:reader and domain_id:%(target.user.domain_id)s) or
   user_id:%(target.user.id)s"
 
@@ -1139,8 +1124,7 @@
 # HEAD  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:get_role": "role:reader and system_scope:all"
-"identity:get_role": >
-  "rule:cloud_reader or
+"identity:get_role": "rule:cloud_reader or
   role:admin or
   role:role_admin or
   role:role_viewer"
@@ -1150,8 +1134,7 @@
 # HEAD  /v3/roles
 # Intended scope(s): system
 #"identity:list_roles": "role:reader and system_scope:all"
-"identity:list_roles": >
-  "rule:cloud_reader or
+"identity:list_roles": "rule:cloud_reader or
   role:admin or
   role:role_admin or
   role:role_viewer"
@@ -1210,8 +1193,7 @@
 # HEAD  /v3/role_assignments
 # Intended scope(s): system, domain
 #"identity:list_role_assignments": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
-"identity:list_role_assignments": >
-  "rule:cloud_reader or
+"identity:list_role_assignments": "rule:cloud_reader or
   (role:reader and domain_id:%(target.domain_id)s) or
   (role:reader and domain_id:%(scope.domain.id)s) or
   ((role:reader or role:role_viewer) and project_id:%(scope.project.id)s)"
@@ -1221,8 +1203,7 @@
 # HEAD  /v3/role_assignments?include_subtree
 # Intended scope(s): system, domain, project
 #"identity:list_role_assignments_for_tree": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.id)s)"
-"identity:list_role_assignments_for_tree": >
-  "rule:cloud_reader or
+"identity:list_role_assignments_for_tree": "rule:cloud_reader or
   (role:reader and domain_id:%(target.project.domain_id)s) or
   ((role:reader or role:role_viewer) and project_id:%(target.project.id)s)"
 
@@ -1315,7 +1296,6 @@
 # POST  /v3/OS-TRUST/trusts
 # Intended scope(s): project
 #"identity:create_trust": "user_id:%(trust.trustor_user_id)s"
-"identity:create_trust": "user_id:%(trust.trustor_user_id)s"
 
 # List trusts.
 # GET  /v3/OS-TRUST/trusts
@@ -1370,8 +1350,7 @@
 # HEAD  /v3/users/{user_id}
 # Intended scope(s): system, domain, project
 #"identity:get_user": "(role:reader and system_scope:all) or (role:reader and token.domain.id:%(target.user.domain_id)s) or user_id:%(target.user.id)s"
-"identity:get_user": >
-  "rule:cloud_reader or
+"identity:get_user": "rule:cloud_reader or
   (role:reader and token.domain.id:%(target.user.domain_id)s) or
   user_id:%(target.user.id)s or
   role:role_viewer"
@@ -1381,8 +1360,7 @@
 # HEAD  /v3/users
 # Intended scope(s): system, domain
 #"identity:list_users": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
-"identity:list_users": >
-  "rule:cloud_reader or
+"identity:list_users": "rule:cloud_reader or
   (role:reader and domain_id:%(target.domain_id)s)"
 
 # List all projects a user has access to via role assignments.

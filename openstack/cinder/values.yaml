@@ -19,7 +19,7 @@ osprofiler:
 
 pod:
   replicas:
-    api: 2
+    api: 4
     scheduler: 1
   lifecycle:
     upgrades:
@@ -33,7 +33,7 @@ pod:
     api:
       requests:
         cpu: "1500m"
-        memory: "5Gi"
+        memory: "3Gi"
     scheduler:
       requests:
         cpu: "100m"
@@ -71,6 +71,12 @@ cinderApiPortPublic: 443
 cinderApiPortInternal: 8776
 cinderApiPortAdmin: 8776
 
+api:
+  use_uwsgi: false
+  # bare in mind, that with use_uwsgi=false, these workers also have
+  # greenthreads
+  workers: 10
+
 db_name: cinder
 
 scheduler_default_filters: 'AvailabilityZoneFilter,ShardFilter,CapacityFilter,CapabilitiesFilter'
@@ -79,14 +85,19 @@ cinder_api_allow_migration_on_attach: True
 
 mariadb:
   enabled: true
+  max_connections: 2048
   buffer_pool_size: "2048M"
   log_file_size: "512M"
   name: cinder
   initdb_configmap: cinder-initdb
   persistence_claim:
     name: db-cinder-pvclaim
+  extraConfigFiles:
+    cinder.cnf: |+
+      [mysqld]
+      connect_timeout = 15
 
-max_pool_size: 20
+max_pool_size: 15
 max_overflow: 5
 
 mysql_metrics:
@@ -150,7 +161,8 @@ mysql_metrics:
           project_id,
           status,
           id,
-          display_name;
+          display_name
+        UNION SELECT 'dummy', 'dummy', 'dummy', 'dummy', 'dummy', 'dummy', 0;
       values:
       - "max_duration_gauge"
     - help: Cinder volumes count

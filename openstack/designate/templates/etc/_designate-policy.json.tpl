@@ -15,13 +15,13 @@
     "cloud_dns_viewer": "role:cloud_dns_viewer",
 
     "context_is_cloud_admin": "role:cloud_dns_admin",
-    "context_is_dns_ops": "rule:context_is_cloud_admin or role:cloud_dns_ops",
+    "context_is_dns_ops": "rule:context_is_cloud_admin or role:cloud_dns_ops or rule:admin",
     "context_is_dns_support": "rule:context_is_dns_ops or role:cloud_dns_support",
     "context_is_zonemaster": "rule:context_is_dns_support or (role:dns_zonemaster and rule:owner)",
     "context_is_hostmaster": "rule:context_is_dns_support or (role:dns_hostmaster and rule:owner)",
     "context_is_mailmaster": "rule:context_is_dns_support or (role:dns_mailmaster and rule:owner)",
     "context_is_webmaster": "rule:context_is_dns_support or rule:context_is_mailmaster or rule:context_is_hostmaster or (role:dns_webmaster and rule:owner)",
-    "context_is_editor": "rule:dns_admin or rule:member",
+    "context_is_editor": "rule:dns_admin or rule:member or rule:admin",
     "context_is_viewer": "rule:viewer_and_shared or rule:member_and_shared or rule:context_is_master or rule:context_is_editor or rule:viewer or rule:member or rule:cloud_dns_viewer",
 
     "context_is_master": "rule:context_is_dns_support or rule:context_is_zonemaster or rule:context_is_hostmaster or rule:context_is_mailmaster or rule:context_is_webmaster or rule:context_is_editor",
@@ -30,9 +30,9 @@
 
     "default": "rule:context_is_viewer",
 
-    "all_tenants": "rule:admin or rule:context_is_dns_support or rule:cloud_dns_viewer",
-    "edit_managed_records" : "rule:admin or rule:context_is_master",
-    "use_low_ttl": "rule:admin or rule:context_is_dns_support",
+    "all_tenants": "rule:context_is_dns_support or rule:cloud_dns_viewer",
+    "edit_managed_records": "rule:context_is_master",
+    "use_low_ttl": "rule:context_is_dns_support",
 
     "get_quotas": "rule:context_is_viewer",
     "get_quota": "rule:context_is_viewer",
@@ -69,7 +69,7 @@
     "update_sub_zone": "rule:context_is_master",
     "delete_zone": "rule:context_is_master",
 
-    "xfr_zone": "rule:context_is_master or rule:admin",
+    "xfr_zone": "rule:context_is_master",
     "abandon_zone": "rule:context_is_dns_ops",
     "count_zones": "rule:context_is_viewer",
     "count_zones_pending_notify": "rule:context_is_viewer",

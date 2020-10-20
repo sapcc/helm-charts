@@ -6,6 +6,7 @@ scheduler_driver = {{ .Values.scheduler.driver }}
 scheduler_available_filters = {{ .Values.scheduler.available_filters | default "nova.scheduler.filters.all_filters" }}
 scheduler_default_filters = {{ .Values.scheduler.default_filters}}
 
+cpu_weight_multiplier = {{ .Values.scheduler.cpu_weight_multiplier }}
 ram_weight_multiplier = {{ .Values.scheduler.ram_weight_multiplier }}
 disk_weight_multiplier =  {{ .Values.scheduler.disk_weight_multiplier }}
 io_ops_weight_multiplier = {{ .Values.scheduler.io_ops_weight_multiplier }}
@@ -15,6 +16,7 @@ scheduler_tracks_instance_changes = {{ .Values.scheduler.scheduler_tracks_instan
 
 [scheduler]
 discover_hosts_in_cells_interval = 60
+workers = {{ .Values.scheduler.workers | default 1 }}
 
 [filter_scheduler]
 bigvm_host_size_filter_uses_flavor_extra_specs = true
