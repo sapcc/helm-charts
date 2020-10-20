@@ -28,7 +28,11 @@ spec:
         - name: DEPENDENCY_JOBS
           value: "nova-migration"
         - name: DEPENDENCY_SERVICE
-          value: "nova-postgresql"
+        {{- if eq .Values.postgresql.enabled true }}
+          value: "{{ .Release.Name }}-postgresql"
+        {{- else }}
+          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb{{ if eq .Values.cell2.enabled true }},{{ .Release.Name }}-cell2-mariadb{{ end }}"
+        {{- end }}
         - name: PGAPPNAME
           valueFrom:
             fieldRef:

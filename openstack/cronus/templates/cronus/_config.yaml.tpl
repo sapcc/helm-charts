@@ -15,7 +15,5 @@ cronus:
     applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
-    verifyEmailDomain: example.com
-    verifyEmailSecret: domainkey
   debug: {{ .Values.cronus.debug }}
 {{- end -}}

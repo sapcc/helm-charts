@@ -4,7 +4,6 @@ curator:
       ---
       client:
         hosts:
-          - elasticsearch-master
           - elasticsearch-data
         port: 9200
     # Delete indices older than 3 months
@@ -19,7 +18,16 @@ curator:
             continue_if_exception: False
             disable_action: False
             ignore_empty_list: True
+            allow_ilm_indices: True
           filters:
+          - filtertype: pattern
+            kind: prefix
+            value: .kibana
+            exclude: True
+          - filtertype: pattern
+            kind: prefix
+            value: .task
+            exclude: True
           - filtertype: age
             source: name
             direction: older
@@ -30,6 +38,31 @@ curator:
             stats_result:
             epoch:
             exclude: False
+        2:
+          action: delete_indices
+          description: "Delete indices before disk is full. 85G on 100G PVCs"
+          options:
+            timeout_override:
+            continue_if_exception: False
+            disable_action: False
+            ignore_empty_list: True
+            allow_ilm_indices: True
+          filters:
+          - filtertype: pattern
+            kind: prefix
+            value: .kibana
+            exclude: True
+          - filtertype: pattern
+            kind: prefix
+            value: .task
+            exclude: True
+          - filtertype: space
+            disk_space: 1250
+            use_age: True
+            source: creation_date
+            exclude:
+          - filtertype: kibana
+            exclude: True
 
 # master node configs
 elasticsearch:

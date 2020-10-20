@@ -1,0 +1,68 @@
+kind: Deployment
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+metadata:
+  name: ucs-exporter 
+  namespace: infra-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: ucs-exporter 
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: ucs-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.ucs.port_number missing" .Values.ucs.port_number | quote}}
+        prometheus.io/targets: {{ required ".Values.ucs.alerts.prometheus missing" .Values.ucs.alerts.prometheus | quote }}
+    spec:
+      containers:
+         - name: ucs-exporter
+           image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.ucs.image.name missing" .Values.ucs.image.name }}:{{ required ".Values.ucs.image.tag missing" .Values.ucs.image.tag  }}
+           ports:
+             - name: metrics
+               containerPort: {{ required ".Values.ucs.port_number missing" .Values.ucs.port_number }}
+           command:
+             - /usr/bin/python3
+           args:
+             - ucs-exporter.py
+             - -u
+             - {{ required ".Values.ucs.user missing" .Values.ucs.user }}
+             - -p
+             - {{ required ".Values.ucs.master_password missing" .Values.ucs.master_password }}
+             - -c
+             - /ucs/config.yaml
+           env:
+           - name: PORT
+             value: {{ required ".Values.ucs.port_number missing" .Values.ucs.port_number | quote }}
+           - name: DEBUG
+             value: {{ .Values.ucs.debug | quote }}
+           resources:
+             limits:
+                memory: {{ required ".Values.ucs.limits.memory missing" .Values.ucs.limits.memory }}
+                cpu: {{ required ".Values.ucs.limits.cpu missing" .Values.ucs.limits.cpu }}
+             requests:
+                memory: {{ required ".Values.ucs.resources.memory missing" .Values.ucs.resources.memory }}
+                cpu: {{ required ".Values.ucs.resources.cpu missing" .Values.ucs.resources.cpu }}
+           volumeMounts:
+             - mountPath: /ucs
+               name: ucs-config
+               readOnly: true
+           livenessProbe:
+              httpGet:
+                 path: /metrics
+                 port: {{ required ".Values.ucs.port_number missing" .Values.ucs.port_number }}
+              initialDelaySeconds: 30
+              periodSeconds: 300
+              timeoutSeconds: 10
+      volumes:
+        - configMap:
+            name: ucs-config
+          name: ucs-config
+

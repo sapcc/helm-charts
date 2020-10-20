@@ -1,0 +1,12 @@
+groups:
+- name: ucsmchassisfaults.alerts
+  rules:
+  - alert: UcsmChassisFault
+    expr: ucsm_chassis_faults{severity=~"major|critical|warning"}
+    labels:
+      severity: "{{ $labels.severity }}"
+      context: "ucs-exporter"
+      meta: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity as {{ $labels.severity }}"
+    annotations:
+      description: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }} description : {{ $labels.descr }}"
+      summary: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }} description : {{ $labels.descr }}"

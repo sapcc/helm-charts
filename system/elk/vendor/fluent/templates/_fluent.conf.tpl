@@ -547,7 +547,7 @@
     logstash_format true
     template_name {{.Values.indexname}}
     template_file /fluent-bin/{{.Values.indexname}}.json
-    template_overwrite true
+    template_overwrite false
     time_as_integer false
     type_name _doc
     @log_level info

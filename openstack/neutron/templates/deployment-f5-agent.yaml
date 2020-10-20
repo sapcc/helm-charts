@@ -44,6 +44,12 @@ spec:
           image: {{$envAll.Values.global.registry}}/loci-neutron:{{ $.Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command: ["dumb-init", "neutron-f5-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/f5-agent.conf.ini"]
+          livenessProbe:
+            exec:
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/f5-agent.conf.ini", "--agent-type", "F5 Agent"]
+            initialDelaySeconds: 300
+            periodSeconds: 60
+            timeoutSeconds: 15
           env:
             - name: DEBUG_CONTAINER
               value: "false"
