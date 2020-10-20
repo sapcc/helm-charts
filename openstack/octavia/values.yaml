@@ -53,14 +53,15 @@ mysql_metrics:
       - "loadbalancer_name"
       name: octavia_loadbalancers_pending
       query: |
-        SELECT
-          COUNT(*) AS count_gauge,
+        (SELECT
+          '1' AS count_gauge,
           name AS loadbalancer_name,
           provisioning_status AS status,
           id AS loadbalancer_id,
           server_group_id AS octavia_host
         FROM load_balancer
-        WHERE provisioning_status LIKE "PENDING_%";
+        WHERE provisioning_status LIKE "PENDING_%")
+        UNION (select '0', '', '', '', '');
       values:
       - "count_gauge"
     - help: Worker agent seconds since the last heartbeat
