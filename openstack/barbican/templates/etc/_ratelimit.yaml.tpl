@@ -21,31 +21,31 @@ rates:
   global:
     secrets:
       - action: read/list
-        limit: 50r/s
+        limit: 100r/m
     containers:
       - action: read/list
-        limit: 50r/s
+        limit: 100r/m
     secrets/secret:
       - action: read
-        limit: 100r/s
+        limit: 100r/m
     containers/container:
       - action: read
-        limit: 50r/s
+        limit: 100r/m
 
   # default local rate limits applied to each project
   default:
     secrets:
       - action: read/list
-        limit: 5r/m
+        limit: 20r/m
     containers:
       - action: read/list
-        limit: 5r/m
+        limit: 20r/m
     secrets/secret:
       - action: read
-        limit: 5r/m
+        limit: 20r/m
     containers/container:
       - action: read
-        limit: 5r/m
+        limit: 20r/m
     secrets/secret/payload:
       - action: read
-        limit: 5r/m
+        limit: 20r/m
