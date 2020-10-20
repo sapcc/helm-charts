@@ -37,6 +37,7 @@ spec:
         prometheus.io/port: "{{$context.Values.l3_port_metrics |  default 9103}}"
         prometheus.io/port_1: "{{$context.Values.l2_port_metrics |  default 9102}}"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $context.Values.alerts.prometheus | quote }}
+        configmap-asr1k-{{ $config_agent.name }}: {{ tuple $context $config_agent |include "asr1k_configmap" | sha256sum  }}
     spec:
       hostname:  {{ $config_agent.hostname }}
       containers:
