@@ -14,8 +14,3 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
-
-{{- /* Generate backend host for sapcc/openstack-ratelimit-middleware */ -}}
-{{- define "sapcc_rate_limit_backend_host" -}}
-{{- .Chart.Name -}}-sapcc-ratelimit-redis
-{{- end -}}
