@@ -24,7 +24,9 @@ filter {
                     ["subnet", "varchar(255)"],
                     ["subnet_id", "varchar(36)" ],
                     ["subnetpool", "varchar(255)"],
-                    ["subnetpool_id", "varchar(36)" ]
+                    ["subnetpool_id", "varchar(36)" ],
+                    ["router", "varchar(255)"],
+                    ["router_id", "varchar(36)" ]
                 ]
                 }
             ]
@@ -32,7 +34,7 @@ filter {
             local_lookups => [
                 {
                 id => "lookup_fields"
-                query => "select domain, project, project_id, port from fips where floating_ip_address = ?"
+                query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id from fips where floating_ip_address = ?"
                 prepared_parameters => ["[client][domain]"]
                 target => "data"
                 }
@@ -64,17 +66,47 @@ filter {
                 add_field => { cc_project => "%{[data][0][project]}" }
             }
             }
-            if [data][0][project_id] {
+            subnet_id, subnetpool, subnetpool_id
+            if [data][0][network] {
             mutate {
-                add_field => {  cc_project_id => "%{[data][0][project_id]}" }
+                add_field => {  cc_network => "%{[data][0][network]}" }
             }
             }
-            # mutate {
-            #   add_field => { cc_port => "%{[data][0][port]}"
-            #                   cc_domain => "%{[data][0][domain]}" 
-            #                   cc_project => "%{[data][0][project]}" 
-            #                   cc_project_id => "%{[data][0][project_id]}" }
-            #   remove_field => [ "data" ]
+            if [data][0][network_id] {
+            mutate {
+                add_field => {  cc_network_id => "%{[data][0][network_id]}" }
+            }
+            }
+             if [data][0][subnet] {
+            mutate {
+                add_field => {  cc_subnet => "%{[data][0][subnet]}" }
+            }
+            }
+             if [data][0][subnet_id] {
+            mutate {
+                add_field => {  cc_subnet_id => "%{[data][0][subnet_id]}" }
+            }
+            }
+            if [data][0][subnetpool] {
+            mutate {
+                add_field => {  cc_subnetpool => "%{[data][0][subnetpool]}" }
+            }
+            }
+            if [data][0][subnetpool_id] {
+            mutate {
+                add_field => {  cc_subnetpool_id => "%{[data][0][subnetpool_id]}" }
+            }
+            }
+            if [data][0][router] {
+            mutate {
+                add_field => {  cc_router => "%{[data][0][router]}" }
+            }
+            }
+            if [data][0][router_id] {
+            mutate {
+                add_field => {  cc_router_id => "%{[data][0][router_id]}" }
+            }
+            }
         }
         mutate {
                 remove_field => [ "data" ]
