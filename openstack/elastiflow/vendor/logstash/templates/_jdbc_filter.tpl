@@ -25,8 +25,9 @@ filter {
                     ["subnet_id", "varchar(36)" ],
                     ["subnetpool", "varchar(255)"],
                     ["subnetpool_id", "varchar(36)" ],
-                    ["router", "varchar(255)"],
-                    ["router_id", "varchar(36)" ]
+                    ["router_id", "varchar(36)" ],
+                    ["router", "varchar(255)"]
+                    
                 ]
                 }
             ]
