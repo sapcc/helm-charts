@@ -129,10 +129,10 @@
   @type copy
   <store>
     @type elasticsearch
-    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
-    port {{.Values.global.elk_elasticsearch_ssl_port}}
-    user {{.Values.global.elk_elasticsearch_data_user}}
-    password {{.Values.global.elk_elasticsearch_data_password}}
+    host {{.Values.global.cluster_name}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+    port {{.Values.global.cluster_port}}
+    user {{.Values.global.data_user}}
+    password {{.Values.global.data_password}}
     scheme https
     ssl_verify false
     ssl_version TLSv1_2
