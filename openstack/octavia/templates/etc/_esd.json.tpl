@@ -25,7 +25,7 @@
   "no_one_connect_3caB_v1_0": {
     "lbaas_one_connect": ""
   },
-  "http_compression_e4a2_v1_0": {
+  "cc_httpcompression_profile": {
     "lbaas_http_compression": "cc_http_compression_e4a2_v1_0"
   },
   "cookie_encryption_b82a_v1_0": {
