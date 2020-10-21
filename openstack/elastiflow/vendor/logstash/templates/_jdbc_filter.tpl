@@ -66,7 +66,11 @@ filter {
                 add_field => { cc_project => "%{[data][0][project]}" }
             }
             }
-            subnet_id, subnetpool, subnetpool_id
+            if [data][0][project_id] { 
+            mutate {
+                add_field => { cc_project_id => "%{[data][0][project_id]}" }
+            }
+            }
             if [data][0][network] {
             mutate {
                 add_field => {  cc_network => "%{[data][0][network]}" }
