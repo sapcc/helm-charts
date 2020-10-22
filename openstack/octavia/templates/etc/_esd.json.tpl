@@ -26,7 +26,7 @@
     "lbaas_one_connect": ""
   },
   "http_compression_e4a2_v1_0": {
-    "lbaas_http_compression": "cc_http_compression_e4a2_v1_0"
+    "lbaas_http_compression": "cc_httpcompression_profile"
   },
   "cookie_encryption_b82a_v1_0": {
     "lbaas_irule": ["cc_cookie_encryption_b82a_v1_0"]
