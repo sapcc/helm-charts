@@ -130,7 +130,7 @@
   <store>
     @type elasticsearch
     host {{.Values.global.cluster_name}}.{{.Values.global.region}}.{{.Values.global.domain}}
-    port {{.Values.global.cluster_port}}
+    port {{.Values.global.https_port}}
     user {{.Values.global.data_user}}
     password {{.Values.global.data_password}}
     scheme https
