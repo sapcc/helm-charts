@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+
+metadata:
+  name: datahubdb
+  namespace: datahub
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: {{ default true .Values.ingress.disco | quote }}
+
+spec:
+  tls:
+     - secretName: datahubdb
+       hosts: [{{.Values.mariadb.endpoint_host_public}}.{{.Values.global.region}}.{{.Values.global.tld}}]
+  rules:
+    - host: {{.Values.mariadb.endpoint_host_public}}.{{.Values.global.region}}.{{.Values.global.tld}}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: datahubdb
+            servicePort: {{.Values.mariadb.port_public}}
