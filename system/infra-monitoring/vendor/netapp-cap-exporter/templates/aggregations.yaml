@@ -1,1 +1,19 @@
-{{ template "prometheus.aggregations" . }}
+{{- $values := .Values.global.aggregations }}
+{{- if $values.enabled }}
+{{- range $path, $bytes := .Files.Glob "aggregations/*.rules" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    type: aggregation-rules
+    app.kubernetes.io/name: netapp-capacity-exporter
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
