@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datahub-initdb
+  labels:
+    app: mariadb
+    component: database
+
+data:
+  init.sh: |
+    export TERM=dumb
+
+    mysql -u root --password={{.Values.mariadb.root_password}} <<- EOSQL
+      CREATE DATABASE {{.Values.mariadb.dbName}} CHARACTER SET utf8 COLLATE utf8_general_ci;
+      CREATE USER '{{.Values.mariadb.ronly}}' IDENTIFIED BY '{{required "A valid .Values.mariadb.ronly_passwordrequired!" .Values.mariadb.ronly_password}}';
+      GRANT SELECT on {{.Values.mariadb.ronly_user}}.* to '{{.Values.mariadb.dbName}}'@'%' identified by '{{.Values.mariadb.ronly_password}}';
+
+    EOSQL
