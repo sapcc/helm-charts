@@ -2,7 +2,7 @@
 nebula:
   cacheSize: {{ .Values.nebula.cacheSize }}
   listenAddr:
-    http: :{{ .Values.nebula.port.http }} # default :1080
+    http: :{{ .Values.nebula.http }} # default :1080
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}
@@ -17,7 +17,6 @@ nebula:
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
-
   serviceUser:
     username: {{ .Values.config.serviceUsername }}
     password: {{ .Values.config.servicePassword }}

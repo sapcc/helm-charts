@@ -9,8 +9,8 @@ cronus:
       {{ $key }}: {{ $value }}
     {{- end }}
   listenAddr:
-    http: :{{ .Values.cronus.port.http }} # default :5000
-    smtp: :{{ .Values.cronus.port.smtp }} # default :1025
+    http: :{{ .Values.cronus.http }} # default :5000
+    smtp: :{{ .Values.cronus.smtp }} # default :1025
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}
