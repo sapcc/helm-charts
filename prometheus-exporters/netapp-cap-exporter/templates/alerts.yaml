@@ -1,4 +1,4 @@
-{{- $values := .Values.global.alerts }}
+{{ $values := .Values }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -9,7 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/name: netapp-capacity-exporter
     type: alerting-rules
-    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+    prometheus: {{ required ".Values.prometheus missing" $values.prometheus }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}

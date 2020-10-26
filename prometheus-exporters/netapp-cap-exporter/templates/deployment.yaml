@@ -1,11 +1,11 @@
-{{- if .Values.enabled }}
-{{- $values := .Values -}}
+{{- $values := merge .Values .Values.netapp_cap_exporter -}}
+{{- if $values.enabled }}
 {{- $release := .Release -}}
-{{- $scrape := .Values.metrics.scrape -}}
-{{- $targets := .Values.metrics.targets -}}
-{{- $port := .Values.listenPort -}}
+{{- $scrape := $values.metrics.scrape -}}
+{{- $targets := $values.metrics.targets -}}
+{{- $port := $values.listenPort -}}
 {{- $secretName := include "netapp-cap-exporter.fullname" . -}}
-{{- $netappFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
+{{- $manilaFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
 {{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
 {{- range $name, $app := .Values.apps }}
 {{- $configmapName := $app.fullname -}}
@@ -25,8 +25,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: $values.appName
+      {{- if eq $name "manila" }}
       annotations:
-        checksum/configmap.yaml: {{ include $configmapTemplate (dict "appName" $name "app" $app "netappFilerYaml" $netappFilerYaml) | sha256sum }}
+        checksum/configmap.yaml: {{ include $configmapTemplate (dict "appName" $name "app" $app "manilaFilerYaml" $manilaFilerYaml) | sha256sum }}
+      {{- end }}
     spec:
       volumes:
         - name: etc

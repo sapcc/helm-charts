@@ -1,5 +1,4 @@
-{{- $values := .Values.global.aggregations }}
-{{- if $values.enabled }}
+{{ $values := .Values }}
 {{- range $path, $bytes := .Files.Glob "aggregations/*.rules" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -13,7 +12,6 @@ metadata:
     prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
 
 spec:
-{{ printf "%s" $bytes | indent 2 }}
+  {{ printf "%s" $bytes | nindent 2 }}
 
-{{- end }}
 {{- end }}
