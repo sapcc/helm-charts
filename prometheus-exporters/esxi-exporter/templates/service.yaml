@@ -1,7 +1,9 @@
+{{- range $collector := $.Values.collector }}
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: esxi-exporter
+  name: esxi-exporter-{{ required "$collector is missing" $collector }}
   namespace: infra-monitoring
   annotations:
     prometheus.io/scrape: "true"
@@ -9,7 +11,8 @@ metadata:
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 spec:
   selector:
-    app: esxi-exporter
+    app: esxi-exporter-{{ required "$collector is missing" $collector }}
   ports:
     - name: metrics
       port: {{ .Values.listen_port }}
+{{- end }}
