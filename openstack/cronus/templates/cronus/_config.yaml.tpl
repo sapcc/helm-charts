@@ -5,15 +5,25 @@ cronus:
   aws:
     forwardUserAgent: {{ .Values.config.forwardUserAgent }}
     allowedServices:
-      email: {{ .Values.config.allowedServices.email }}
+    {{- range $key, $value := .Values.config.allowedServices }}
+      {{ $key }}: {{ $value }}
+    {{- end }}
   listenAddr:
-    http: # default :5000
-    smtp: # default :1025
+    http: :{{ .Values.cronus.http }} # default :5000
+    smtp: :{{ .Values.cronus.smtp }} # default :1025
   keystone:
+{{- if .Values.config.keystone }}
+{{- range $key, $value := .Values.config.keystone }}
+  {{- if $value }}
+    {{ $key }}: {{ $value }}
+  {{- end }}
+{{- end }}
+{{ else }}
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
     applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
+{{- end }}
   debug: {{ .Values.cronus.debug }}
 {{- end -}}

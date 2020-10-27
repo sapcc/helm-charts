@@ -12,6 +12,17 @@ cronus:
     pullPolicy: IfNotPresent
     tag: latest
     imagePullSecrets: []
+  statefulSet:
+    enabled: true
+    podManagementPolicy: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  replicas: 1
 nebula:
   enabled: true
   cacheSize: 512
@@ -23,25 +34,50 @@ nebula:
     pullPolicy: IfNotPresent
     tag: latest
     imagePullSecrets: []
+  statefulSet:
+    enabled: true
+    podManagementPolicy: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  replicas: 1
+
 
 config:
-  region: eu-de-2
-  authUrl: https://identity
+   ## keystone optional authentication methods, add in @SECRETS the relevant method
+  keystone:
+    # authUrl: https://identity
+    # region: eu-de-2
+    # endpointType: public
+    # applicationCredentialID: application-credential-id
+    # applicationCredentialSecret: application-credential-secret
+    # applicationCredentialName: application-credential-name 
+    # projectID: project-id 
+    # projectName: project-name
+    # projectDomainName: project-domain-name 
+    # projectDomainID: project-domain-id 
+    # userDomainName: user-domain-name 
+    # domainName: domain-name 
+    # domainID: domain-id 
+    # username: username 
+    # password: password
+    # userID: user-id
   group: service-group
   jiraUsername: jira-username
   jiraPassword: jira-password
   serviceUsername: service-username
   servicePassword: service-password
-  applicationCredentialID: application-credential-id
-  applicationCredentialSecret: application-credential-secret
   awsAccess: aws-access
   awsSecret: aws-secret
-  awsUsername: aws-username
+  technicalUsername: aws-username
   awsPolicy: aws-policy
-  endpointType: public
   forwardUserAgent: false
   billingCacheTTL: 24h
-  technicalResponsible: technical-responsible
+  technicalResponsible: technical-responsible@example
   accountStatusTimeout: 5m
   accountStatusPollDelay: 10s
   verifyEmailDomain: example.com

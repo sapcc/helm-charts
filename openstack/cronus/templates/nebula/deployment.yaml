@@ -1,10 +1,30 @@
-{{- if .Values.nebula.enabled -}}
+{{- if .Values.nebula.enabled }}
 apiVersion: apps/v1
+{{ if .Values.nebula.statefulSet.enabled }}
+kind: StatefulSet
+{{ else }}
 kind: Deployment
+{{ end -}}
 metadata:
   name: nebula-deployment
+  {{- if .Values.nebula.annotations }}
+  annotations:
+    {{ toYaml .Values.nebula.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.nebula.labels }}
+  labels:
+    {{ toYaml .Values.nebula.labels | indent 4 }}
+  {{- end }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.nebula.replicas }}
+  {{- if .Values.nebula.statefulSet.enabled }}
+  podManagementPolicy: {{ .Values.nebula.statefulSet.podManagementPolicy }}
+  serviceName: nebula-service
+  updateStrategy:
+  {{ else }}
+  strategy:
+  {{ end }}
+    type: {{ .Values.nebula.updateStrategy }}
   selector:
     matchLabels:
       app.kubernetes.io/name: nebula

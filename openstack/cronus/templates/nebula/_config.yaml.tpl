@@ -2,13 +2,21 @@
 nebula:
   cacheSize: {{ .Values.nebula.cacheSize }}
   listenAddr:
-    http: # default :1080
+    http: :{{ .Values.nebula.http }} # default :1080
   keystone:
+{{- if .Values.config.keystone }}
+{{- range $key, $value := .Values.config.keystone }}
+  {{- if $value }}
+    {{ $key }}: {{ $value }}
+  {{- end }}
+{{- end }}
+{{ else }}
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
     applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
+{{- end }}
   serviceUser:
     username: {{ .Values.config.serviceUsername }}
     password: {{ .Values.config.servicePassword }}
