@@ -10,6 +10,9 @@ nebula:
     {{ $key }}: {{ $value }}
   {{- end }}
 {{- end }}
+{{- if .Values.global.cronus_service_password }}
+    password: {{ .Values.global.cronus_service_password }}
+{{- end }}
 {{ else }}
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
