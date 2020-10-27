@@ -105,7 +105,7 @@
 
   params:
     'match[]':
-      - '{job~=~"^asr1k_tests.*"}'
+      - '{job=~"^asr1k_tests.*"}'
 
   static_configs:
     - targets:
