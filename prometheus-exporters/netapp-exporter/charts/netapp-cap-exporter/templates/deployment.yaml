@@ -2,15 +2,15 @@
 {{- $manilaFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
 {{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
 {{- range $shortAppName, $app := .Values.apps }}
-{{- $longAppName := printf "%s-%s" $.Values.fullname $app.component -}}
-{{- $configmapName := $longAppName -}}
+{{- $fullNameWithComponent := printf "%s-%s" $.Values.fullname $app.component -}}
+{{- $configmapName := $fullNameWithComponent -}}
 {{- $secretName := $.Values.fullname -}}
 {{- if $app.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $longAppName }}
+  name: {{ $fullNameWithComponent }}
   labels:
     app.kubernetes.io/name: {{ $.Values.fullname }}
     app.kubernetes.io/component: {{ $app.component }}
@@ -18,12 +18,12 @@ spec:
   revisionHistoryLimit: 5
   selector:
     matchLabels:
-      app: {{ $longAppName }}
+      app: {{ $fullNameWithComponent }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ $longAppName }}
+        app: {{ $fullNameWithComponent }}
       {{- if eq $shortAppName "manila" }}
       annotations:
         checksum/configmap.yaml: {{ include $configmapTemplate (dict "fullname" $.Values.fullname "appComponent" $app.component "manilaFilerYaml" $manilaFilerYaml) | sha256sum }}
