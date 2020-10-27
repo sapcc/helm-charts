@@ -2,11 +2,11 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ required "Value apps[].name" .app.fullname }}
   labels:
-    app.kubernetes.io/name: netapp-capacity-exporter
+    app.kubernetes.io/name: {{ .fullname }}
+    app.kubernetes.io/component: {{ .appComponent }}
 data:
-  {{- if eq .appName "manila" }}
+  {{- if eq .appComponent "manila" }}
   netapp-filers.yaml: |
   {{- .manilaFilerYaml | nindent 4 }}
   {{- else }}

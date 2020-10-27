@@ -1,11 +1,14 @@
 # Default values for netapp-cap-exporter.
-appName: netapp-capacity-exporter
-enabled: true
-prometheus: infra-collector
+fullname: netapp-capacity-exporter
+
+prometheus:
+  scrape: true
+  port: 9108
 
 apps:
   cinder:
     enabled: false
+    component: "cinder"
     fullname: "netapp-capacity-exporter-cinder"
     scrapeInterval: 1m
     scrapeTimeout: 55s
@@ -13,6 +16,7 @@ apps:
       query: bb
   baremetal:
     enabled: false
+    component: "bare-metal"
     fullname: "netapp-capacity-exporter-bare-metal"
     scrapeInterval: 1m
     scrapeTimeout: 55s
@@ -20,6 +24,7 @@ apps:
       query: bm
   controlplane:
     enabled: false
+    component: "control-plane"
     fullname: "netapp-capacity-exporter-control-plane"
     scrapeInterval: 1m
     scrapeTimeout: 55s
@@ -27,6 +32,7 @@ apps:
       query: cp
   manila:
     enabled: false
+    component: "manila"
     fullname: "netapp-capacity-exporter-manila"
     scrapeInterval: 1m
     scrapeTimeout: 55s
@@ -35,14 +41,11 @@ apps:
         memory: 400Mi
         cpu: 100m
 
-fullnameOverride: "netapp-capacity-exporter"
-listenPort: 9108
 
 exporter:
   image:
     repository: keppel.eu-de-1.cloud.sap/ccloud/netapp-api-exporter
     tag: v1-e9d9e82-20200915113521
-    pullPolicy: IfNotPresent
   resources:
     requests:
       memory: 200Mi
@@ -52,15 +55,7 @@ netappsd:
   image: 
     repository: keppel.eu-de-1.cloud.sap/ccloud/netappsd
     tag: master-20201008151228-7c5dbde
-    pullPolicy: IfNotPresent
   resources:
     requests:
       memory: 50Mi
       cpu: 50m
-
-service:
-  type: ClusterIP
-
-metrics:
-  scrape: true
-  targets: infra-collector

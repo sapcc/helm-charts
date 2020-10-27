@@ -1,0 +1,25 @@
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $app.fullname }}
+  annotations:
+    prometheus.io/port: {{ $.Values.prometheus.port }}
+    prometheus.io/scrape: {{ $.Values.prometheus.scrape | quote }}
+    prometheus.io/targets: {{ $.Values.prometheus.targets }}
+  labels:
+    app.kubernetes.io/name: {{ $.Values.fullname }}
+    app.kubernetes.io.component: {{ $app.component }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $.Values.prometheus.port }}
+      targetPort: {{ $.Values.prometheus.port }}
+      protocol: TCP
+      name: prometheus
+  selector:
+    app: {{ $app.fullname }}
+{{- end }}
+{{- end }}

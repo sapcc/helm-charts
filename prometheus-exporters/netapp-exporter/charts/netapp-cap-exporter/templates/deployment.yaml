@@ -1,33 +1,31 @@
-{{- $values := merge .Values .Values.netapp_cap_exporter -}}
-{{- if $values.enabled }}
-{{- $release := .Release -}}
-{{- $scrape := $values.metrics.scrape -}}
-{{- $targets := $values.metrics.targets -}}
-{{- $port := $values.listenPort -}}
-{{- $secretName := include "netapp-cap-exporter.fullname" . -}}
+{{- if .Values.enabled }}
 {{- $manilaFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
 {{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
-{{- range $name, $app := .Values.apps }}
-{{- $configmapName := $app.fullname -}}
+{{- range $shortAppName, $app := .Values.apps }}
+{{- $longAppName := printf "%s-%s" $.Values.fullname $app.component -}}
+{{- $configmapName := $longAppName -}}
+{{- $secretName := $.Values.fullname -}}
 {{- if $app.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $app.fullname }}
+  name: {{ $longAppName }}
+  labels:
+    app.kubernetes.io/name: {{ $.Values.fullname }}
+    app.kubernetes.io/component: {{ $app.component }}
 spec:
   revisionHistoryLimit: 5
   selector:
     matchLabels:
-      app: {{ $app.fullname }}
+      app: {{ $longAppName }}
   replicas: 1
   template:
     metadata:
-      labels:
-        app.kubernetes.io/name: {{ $values.appName }}
-      {{- if eq $name "manila" }}
+      app: {{ $longAppName }}
+      {{- if eq $shortAppName "manila" }}
       annotations:
-        checksum/configmap.yaml: {{ include $configmapTemplate (dict "appName" $name "app" $app "manilaFilerYaml" $manilaFilerYaml) | sha256sum }}
+        checksum/configmap.yaml: {{ include $configmapTemplate (dict "fullname" $.Values.fullname "appComponent" $app.component "manilaFilerYaml" $manilaFilerYaml) | sha256sum }}
       {{- end }}
     spec:
       volumes:
@@ -36,8 +34,8 @@ spec:
             name: {{ $configmapName }}
       containers:
         - name: exporter
-          image: "{{ $values.exporter.image.repository }}:{{ $values.exporter.image.tag }}"
-          imagePullPolicy: {{ $values.exporter.image.pullPolicy }}
+          image: "{{ required ".Values.exporter.image.repository" $.Values.exporter.image.repository }}:{{ required ".Values.exporter.image.tag" $.Values.exporter.image.tag }}"
+          imagePullPolicy: {{ $.Values.exporter.image.pullPolicy | default "IfNotPresent" }}
           args: [ --config=/etc/netapp/netapp-filers.yaml ]
           env:
           - name: NETAPP_USERNAME
@@ -52,8 +50,8 @@ spec:
                 key: netappPassword
           ports:
             - name: prometheus
-              containerPort: {{ $port }}
-          {{- if ne $name "manila" }}
+              containerPort: {{ $.Values.prometheus.port }}
+          {{- if ne $shortAppName "manila" }}
           livenessProbe:
             httpGet:
               port: 8086
@@ -66,13 +64,13 @@ spec:
             {{- if hasKey $app "resources" }}
             {{- toYaml $app.resources | nindent 12 }}
             {{- else }}
-            {{- toYaml $values.exporter.resources | nindent 12 }}
+            {{- toYaml $.Values.exporter.resources | nindent 12 }}
             {{- end }}
           volumeMounts:
             - name: etc
               mountPath: /etc/netapp
 {{/* manila filers are predefined in secrets */}}
-        {{- if ne $name "manila" }}
+        {{- if ne $shortAppName "manila" }}
         - name: netappsd
           args:
             - -configmap
@@ -80,17 +78,17 @@ spec:
             - -key
             - netapp-filers.yaml
             - -namespace
-            - {{ $release.Namespace }}
+            - {{ $.Release.Namespace }}
             - -netbox-host
-            - {{ required "Value global.netbox_host" $values.global.netbox_host }}
+            - {{ required ".Values.global.netbox_host" $.Values.global.netbox_host }}
             - -netbox-api-token
-            - {{ required "Value global.netbox_api_token" $values.global.netbox_api_token }}
+            - {{ required ".Values.global.netbox_api_token" $.Values.global.netbox_api_token }}
             - -region
-            - {{ required "Value global.region" $values.global.region }}
+            - {{ required ".Values.global.region" $.Values.global.region }}
             - -query
-            - {{ required "Value .netappsd.query of group" $app.netappsd.query }}
-          image: "{{ $values.netappsd.image.repository }}:{{ $values.netappsd.image.tag }}"
-          imagePullPolicy: {{ $values.netappsd.image.pullPolicy }}
+            - {{ required ".Values.apps[].netappsd.query" $app.netappsd.query }}
+          image: "{{ required ".Values.netappsd.image.repository" $.Values.netappsd.image.repository }}:{{ required ".Values.netappsd.image.tag" $.Values.netappsd.image.tag }}"
+          imagePullPolicy: {{ $.Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
           livenessProbe:
             httpGet:
               port: 8086
@@ -99,7 +97,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 6
           resources:
-            {{- toYaml $values.netappsd.resources | nindent 12 }}
+            {{- toYaml $.Values.netappsd.resources | nindent 12 }}
         {{- end }}
 
 {{- end }}

@@ -1,10 +1,9 @@
-{{ $values := merge .Values .Values.netapp_cap_exporter }}
-{{- if $values.enabled }}
+{{- if .Values.enabled }}
 {{- $manilaFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
 {{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
-{{- range $name, $app := $values.apps }}
+{{- range $shortAppName, $app := .Values.apps }}
 {{- if $app.enabled }}
-{{- include $configmapTemplate (dict "appName" $name "app" $app "manilaFilerYaml" $manilaFilerYaml) }}
+{{- include $configmapTemplate (dict "fullname" .Values.fullname "appComponent" $app.component "manilaFilerYaml" $manilaFilerYaml) }}
 {{- end }}
 {{- end }}
 {{- end }}
