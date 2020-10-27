@@ -51,62 +51,62 @@ filter {
         }
 
         if [data] and [data][0] {
-            if [data][0][port] and [data][0][port] != "NULL" 
+            if [data][0][port] and [data][0][port] != "NULL" {
                 mutate {
                     add_field => { cc_port => "%{[data][0][port]}" }
                 }
             }
-            if [data][0][domain] and [data][0][domain] != "NULL"{
+            if [data][0][domain] and [data][0][domain] != "NULL" {
                 mutate {
                     add_field => { cc_domain => "%{[data][0][domain]}" }
                 }
             }
-            if [data][0][project] and [data][0][project] != "NULL"  
+            if [data][0][project] and [data][0][project] != "NULL" { 
                 mutate {
                     add_field => { cc_project => "%{[data][0][project]}" }
                 }
             }
-            if [data][0][project_id] and [data][0][project_id] != "NULL"  
+            if [data][0][project_id] and [data][0][project_id] != "NULL" { 
                 mutate {
                     add_field => { cc_project_id => "%{[data][0][project_id]}" }
                 }
             }
-            if [data][0][network] and [data][0][network] != "NULL" 
+            if [data][0][network] and [data][0][network] != "NULL" {
                 mutate {
                     add_field => {  cc_network => "%{[data][0][network]}" }
                 }
             }
-            if [data][0][network_id] and [data][0][network_id] != "NULL" 
+            if [data][0][network_id] and [data][0][network_id] != "NULL" {
                 mutate {
                     add_field => {  cc_network_id => "%{[data][0][network_id]}" }
                 }
             }
-             if [data][0][subnet] and [data][0][subnet] != "NULL" 
+             if [data][0][subnet] and [data][0][subnet] != "NULL" {
                 mutate {
                     add_field => {  cc_subnet => "%{[data][0][subnet]}" }
                 }
             }
-             if [data][0][subnet_id] and [data][0][subnet_id] != "NULL" 
+             if [data][0][subnet_id] and [data][0][subnet_id] != "NULL" {
                 mutate {
                     add_field => {  cc_subnet_id => "%{[data][0][subnet_id]}" }
                 }
             }
-            if [data][0][subnetpool] and [data][0][subnetpool] != "NULL" 
+            if [data][0][subnetpool] and [data][0][subnetpool] != "NULL" {
                 mutate {
                     add_field => {  cc_subnetpool => "%{[data][0][subnetpool]}" }
                 }
             }
-            if [data][0][subnetpool_id] and [data][0][subnetpool_id] != "NULL" 
+            if [data][0][subnetpool_id] and [data][0][subnetpool_id] != "NULL" {
                 mutate {
                     add_field => {  cc_subnetpool_id => "%{[data][0][subnetpool_id]}" }
                 }
             }
-            if [data][0][router] and [data][0][router] != "NULL" 
+            if [data][0][router] and [data][0][router] != "NULL" {
                 mutate {
                     add_field => {  cc_router => "%{[data][0][router]}" }
                 }
             }
-            if [data][0][router_id] and [data][0][router_id] != "NULL" 
+            if [data][0][router_id] and [data][0][router_id] != "NULL" {
                 mutate {
                     add_field => {  cc_router_id => "%{[data][0][router_id]}" }
                 }
