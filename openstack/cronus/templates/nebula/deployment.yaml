@@ -31,17 +31,15 @@ spec:
       app.kubernetes.io/instance: nebula
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/nebula/_config.yaml.tpl" . | sha256sum }}
       labels:
         app.kubernetes.io/name: nebula
         app.kubernetes.io/instance: nebula
     spec:
       serviceAccountName: nebula
-      securityContext:
-        {}
       containers:
         - name: nebula
-          securityContext:
-            {}
           image: "{{ .Values.nebula.image.name }}:{{ .Values.nebula.image.tag }}"
           imagePullPolicy: IfNotPresent
           args:
@@ -54,8 +52,6 @@ spec:
             - name: http
               containerPort: {{ .Values.nebula.http }}
               protocol: TCP
-          resources:
-            {}
       volumes:
         - name: nebula-config
           secret:
