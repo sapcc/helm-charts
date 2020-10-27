@@ -93,3 +93,21 @@
   static_configs:
     - targets:
       - "prometheus-infra-collector.{{ .Values.global.region }}.cloud.sap"
+
+
+{{ if .Values.ask1k_tests.enabled }}
+  - job_name: 'asr1k_tests'
+    scrape_interval: 60s
+    scrape_timeout: 45s
+
+    honor_labels: true
+    metrics_path: '/federate'
+
+    params:
+      'match[]':
+        - 'job~="^asr1k_tests.*"'
+
+    static_configs:
+      - targets:
+        - '10.236.40.28:9090'
+{{ end }}
