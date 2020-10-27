@@ -31,7 +31,7 @@ spec:
       initContainers:
       # create volume
       - name: {{ $.Values.worker.name }}-{{ .name }}-create-work-dir
-        image: "hub.global.cloud.sap/d074427/openstack-btrfs:latest"
+        image: "keppel.eu-de-1.cloud.sap/ccloud/concourse-openstack-btrfs:latest"
         imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
         command:
         - /bin/sh
@@ -63,10 +63,10 @@ spec:
         - name: WORK_DIR_AZ
           value: {{ .az }}
         - name: WORK_DIR_SIZE_GB
-          value: {{ $.Values.worker.workDirVolumeSizeGb | quote }}
+          value: {{ .workDirVolumeSizeGb | quote }}
       # attach volume to node
       - name: {{ $.Values.worker.name }}-{{ .name }}-attach-work-dir
-        image: "hub.global.cloud.sap/d074427/openstack-btrfs:latest"
+        image: "keppel.eu-de-1.cloud.sap/ccloud/concourse-openstack-btrfs:latest"
         imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
         command:
         - /bin/sh
@@ -92,7 +92,7 @@ spec:
           value: {{ $.Values.openstack.application_credential_secret }}
       # format volume and mount
       - name: {{ $.Values.worker.name }}-{{ .name }}-format-work-dir
-        image: "hub.global.cloud.sap/d074427/openstack-btrfs:latest"
+        image: "keppel.eu-de-1.cloud.sap/ccloud/concourse-openstack-btrfs:latest"
         imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
         securityContext:
           privileged: true
