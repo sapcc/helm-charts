@@ -95,7 +95,7 @@
       - "prometheus-infra-collector.{{ .Values.global.region }}.cloud.sap"
 
 
-{ if .Values.ask1k_tests.enabled }}
+{{ if .Values.ask1k_tests.enabled }}
 - job_name: 'asr1k_tests'
   scrape_interval: 60s
   scrape_timeout: 45s
