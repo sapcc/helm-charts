@@ -2,7 +2,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ .fullname }}
+  name: {{ printf "%s-%s" .fullname .appComponent }}
   labels:
     app.kubernetes.io/name: {{ .fullname }}
     app.kubernetes.io/component: {{ .appComponent }}
