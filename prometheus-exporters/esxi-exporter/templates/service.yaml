@@ -5,14 +5,10 @@ kind: Service
 metadata:
   name: esxi-exporter-{{ required "$collector is missing" $collector }}
   namespace: infra-monitoring
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: {{ .Values.listen_port | quote }}
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 spec:
   selector:
     app: esxi-exporter-{{ required "$collector is missing" $collector }}
   ports:
     - name: metrics
-      port: {{ .Values.listen_port }}
+      port: {{ $.Values.listen_port }}
 {{- end }}
