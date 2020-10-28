@@ -2,7 +2,7 @@ groups:
 - name: namespace-probe.alerts
   rules:
   - alert: NetworkNamespaceProbesFailed
-    expr: sum(changes(ns_exporter_probe_failure_total[10m])) by (network_id, network_name, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total[5m])) by (network_id, network_name, region, router) > 0
+    expr: sum(changes(ns_exporter_probe_failure_total{network_name !~ "^shoot--it.*"}[10m])) by (network_id, network_name, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total{network_name !~ "^shoot--it.*"}[5m])) by (network_id, network_name, region, router) > 0
     for: 10m
     labels:
       context: availability
@@ -14,6 +14,21 @@ groups:
       cloudops: "?searchTerm={{ $labels.network_id }}&type=network"
     annotations:
       description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` failed all dns probes for more than 10 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router }}&type=router|Router {{ $labels.router }}>)'
+      summary: Network probes failed
+  - alert: NetworkNamespaceProbesFailedForShootNetwork
+    expr: sum(changes(ns_exporter_probe_failure_total{network_name =~ "^shoot--it.*"}[10m])) by (network_id, network_name, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total{network_name =~ "^shoot--it.*"}[5m])) by (network_id, network_name, region, router) > 0
+    for: 10m
+    labels:
+      context: availability
+      service: neutron
+      severity: warning
+      tier: os
+      playbook: 'docs/support/playbook/neutron/networknamespaceprobesfailed.html'
+      meta: 'Network {{ $labels.network_name }} failed all probes'
+      cloudops: "?searchTerm={{ $labels.network_id }}&type=network"
+    annotations:
+      description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` failed all dns probes for more than 10 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router }}&type=router|Router {{ $labels.router }}>).
+Please run ```hammer -r {{ $externalLabels.region }} net check {{ $labels.network_id }}``` immediatly and highlight @Sebastian Lohff and @Sebastian Wagner!'
       summary: Network probes failed
   - alert: NetworkNamespaceProbeMetricsMissing
     expr: absent(ns_exporter_probe_success_total)
