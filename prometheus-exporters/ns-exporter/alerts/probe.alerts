@@ -16,8 +16,8 @@ groups:
       description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` failed all dns probes for more than 10 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router }}&type=router|Router {{ $labels.router }}>)'
       summary: Network probes failed
   - alert: NetworkNamespaceProbesFailedForShootNetwork
-    expr: sum(changes(ns_exporter_probe_failure_total{network_name =~ "^shoot--it.*"}[10m])) by (network_id, network_name, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total{network_name =~ "^shoot--it.*"}[5m])) by (network_id, network_name, region, router) > 0
-    for: 10m
+    expr: sum(changes(ns_exporter_probe_failure_total{network_name =~ "^shoot--it.*"}[5m])) by (network_id, network_name, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total{network_name =~ "^shoot--it.*"}[150s])) by (network_id, network_name, region, router) > 0
+    for: 5m
     labels:
       context: availability
       service: neutron
