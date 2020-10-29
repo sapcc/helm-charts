@@ -829,3 +829,17 @@
     - targets:
       - '10.236.40.28:9090'
 {{ end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.ucs_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'ucs'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  kubernetes_sd_configs:
+  - role: service
+    namespaces:
+      names:
+        - infra-monitoring
+  metrics_path: /
+{{- end }}
