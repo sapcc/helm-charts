@@ -539,7 +539,7 @@ mysql_metrics:
       name: openstack_compute_service_version
       query: |
         SELECT
-          id, host AS nova_host, 'binary', version
+          id, host AS nova_host, binary, version
         FROM services
         WHERE deleted_at is NULL;
       values:
@@ -551,7 +551,7 @@ mysql_metrics:
       query: |
         SELECT
           i.host AS nova_host,
-          EXTRACT(EPOCH FROM (now() - max(ia.created_at)))::int AS 'interval'
+          UNIX_TIMESTAMP(DATE_SUB(NOW(),MAX(ia.created_at))) AS interval
         FROM instance_actions AS ia
         JOIN instances AS i ON i.uuid = ia.instance_uuid
         GROUP by i.host;
