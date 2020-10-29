@@ -5,9 +5,9 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Deployment
 metadata:
-    name: {{ include "atlas.fullname" . }}
+    name: atlas
     labels:
-      app: {{ include "atlas.name" . }}
+      app: atlas
       chart: {{ include "atlas.chart" . }}
       release: {{ .Release.Name }}
       heritage: {{ .Release.Service }}
@@ -18,18 +18,18 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ include "atlas.name" . }}
+      app: atlas
       release: {{ .Release.Name }}
       component: service_discovery
   template:
     metadata:
       labels:
-        app: {{ include "atlas.name" . }}
+        app: atlas
         release: {{ .Release.Name }}
         component: service_discovery
     spec:
       containers:
-      - name: {{ include "atlas.name" . }}
+      - name: atlas
         image: "{{ .Values.global.registry }}/{{ .Values.image }}:{{ .Values.tag }}"
         ports:
         - name: metrics
@@ -55,12 +55,13 @@ spec:
           value: {{ .Values.global.region }}
         - name: CONFIG_FILE
           value: "{{ .Values.config_file }}"
-        - name: WRITE_TO
-          value: "{{ .Values.write_to }}"
         volumeMounts:
         - name: config
           mountPath: /etc/config
           readOnly: true
+        - name: {{ .Values.pvc.name }}
+          mountPath: /targets
+          readOnly: false
       - name: atlas-config-reloader
         args:
         - -volume-dir=/etc/config
@@ -74,4 +75,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ include "atlas.fullname" . }}
+            name: atlas-etc
+        - name: {{ .Values.pvc.name }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.pvc.name }}
