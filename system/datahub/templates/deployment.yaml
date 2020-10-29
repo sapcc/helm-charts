@@ -43,8 +43,8 @@ spec:
           - mountPath: /root/.my.cnf
             subPath: ".my.cnf"
             name: mariadb-client
- #         - name: initdb
- #           mountPath: /docker-entrypoint-initdb.d
+          - mountPath: /docker-entrypoint-initdb.d
+            name: initdb
       volumes:
         - name: mariadb-etc
           configMap:
@@ -56,3 +56,7 @@ spec:
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
            claimName: datahubdb-pvclaim
+        - name: initdb
+          configMap:
+            name: {{ .Values.mariadb.initdb_configmap }}
+            defaultMode: 0744

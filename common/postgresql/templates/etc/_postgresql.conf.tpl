@@ -460,7 +460,7 @@ log_line_prefix = '%t'			# special values:
                     #        processes
                     #   %% = '%'
                     # e.g. '<%u%%%d> '
-#log_lock_waits = off			# log lock waits >= deadlock_timeout
+log_lock_waits = on			# log lock waits >= deadlock_timeout
 #log_statement = 'none'			# none, ddl, mod, all
 #log_replication_commands = off
 #log_temp_files = -1			# log temporary files equal or larger

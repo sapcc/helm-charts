@@ -10,9 +10,9 @@ metadata:
     system: openstack
     type: api
     component: ironic
-  {{- if .Values.vice_president }}
+  {{- if .Values.tls_acme }}
   annotations:
-    vice-president: "true"
+    kubernetes.io/tls-acme: "true"
   {{- end }}
 spec:
   tls:

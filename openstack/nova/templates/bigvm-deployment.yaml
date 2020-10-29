@@ -44,7 +44,11 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
+            {{- if eq .Values.mariadb.enabled true }}
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq{{ if .Values.cell2.enabled }},{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb,{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq{{ end }}"
+            {{- else }}
               value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq{{ if .Values.cell2.enabled }},{{ .Release.Name }}-{{ .Values.cell2.name }}-postgresql,{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq{{ end }}"
+            {{- end }}
 {{- if .Values.python_warnings}}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}

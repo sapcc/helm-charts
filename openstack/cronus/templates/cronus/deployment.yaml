@@ -1,27 +1,45 @@
-{{- if .Values.cronus.enabled -}}
+{{- if .Values.cronus.enabled }}
 apiVersion: apps/v1
+{{- if .Values.cronus.statefulSet.enabled }}
+kind: StatefulSet
+{{- else }}
 kind: Deployment
+{{- end }}
 metadata:
   name: cronus-deployment
+  {{- if .Values.cronus.annotations }}
+  annotations:
+    {{ toYaml .Values.cronus.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.cronus.labels }}
+  labels:
+    {{ toYaml .Values.cronus.labels | indent 4 }}
+  {{- end }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.cronus.replicas }}
+  {{- if .Values.cronus.statefulSet.enabled }}
+  podManagementPolicy: {{ .Values.cronus.statefulSet.podManagementPolicy }}
+  serviceName: cronus-service
+  updateStrategy:
+  {{- else }}
+  strategy:
+  {{- end }}
+    type: {{ .Values.cronus.updateStrategy }}
   selector:
     matchLabels:
       app.kubernetes.io/name: cronus
       app.kubernetes.io/instance: cronus
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/cronus/_config.yaml.tpl" . | sha256sum }}
       labels:
         app.kubernetes.io/name: cronus
         app.kubernetes.io/instance: cronus
     spec:
       serviceAccountName: cronus
-      securityContext:
-        {}
       containers:
         - name: cronus
-          securityContext:
-            {}
           image: "{{ .Values.cronus.image.name }}:{{ .Values.cronus.image.tag }}"
           imagePullPolicy: IfNotPresent
           args:
@@ -37,10 +55,8 @@ spec:
             - name: smtp
               containerPort: {{ .Values.cronus.smtp }}
               protocol: TCP
-          resources:
-            {}
       volumes:
         - name: cronus-config
           secret:
             secretName: cronus-config
-{{- end -}}
+{{ end -}}
