@@ -429,7 +429,7 @@ mysql_metrics:
           node AS node_id,
           hostname,
           vm_state,
-          MAX(EXTRACT(epoch FROM launched_at - created_at)) AS time_taken_gauge
+          MAX(launched_at - created_at) AS time_taken_gauge
         FROM instances
         WHERE (launched_at IS NOT NULL AND launched_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
         AND host LIKE 'nova-compute-ironic%'
@@ -450,7 +450,7 @@ mysql_metrics:
           hostname,
           node AS node_id,
           vm_state,
-          MAX(EXTRACT(epoch FROM updated_at - terminated_at)) AS time_taken_gauge
+          MAX(updated_at - terminated_at) AS time_taken_gauge
         FROM instances
         WHERE (terminated_at IS NOT NULL AND terminated_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
         AND host LIKE 'nova-compute-ironic%'
@@ -473,7 +473,8 @@ mysql_metrics:
         FROM instances
         WHERE (created_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
         AND host LIKE 'nova-compute-ironic%'
-        GROUP BY uuid, vm_state, hostname, node;
+        GROUP BY uuid, vm_state, hostname, node
+        UNION SELECT 'none' AS uuid, 'none' AS hostname, 'none' AS node_id, 'none' AS vm_state, 0 AS in_24hrs;
       values:
       - "in_24hrs"
     - help: Total Node count
@@ -551,7 +552,7 @@ mysql_metrics:
       query: |
         SELECT
           i.host AS nova_host,
-          (NOW() - MAX(ia.created_at)) AS interval
+          (NOW() - MAX(ia.created_at)) AS `interval`
         FROM instance_actions AS ia
         JOIN instances AS i ON i.uuid = ia.instance_uuid
         GROUP by i.host;
@@ -567,7 +568,8 @@ mysql_metrics:
           COUNT(*) - COUNT(iae.start_time) AS actions
         FROM instance_actions
         AS ia JOIN instances AS i ON i.uuid = ia.instance_uuid LEFT OUTER JOIN instance_actions_events
-        AS iae ON iae.action_id = ia.id WHERE ia.deleted = 0
+        AS iae ON iae.action_id = ia.id
+        WHERE ia.deleted = 0 AND i.deleted_at is NULL
         AND (ia.created_at > DATE_SUB(now(), INTERVAL 1 WEEK)) GROUP by i.host;
       values:
       - "actions"
