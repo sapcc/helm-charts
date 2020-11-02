@@ -295,9 +295,285 @@ placement:
   wsgi_processes: 10
 
 mysql_metrics:
-  enabled: false
   db_name: nova
   db_user: nova
+  customMetrics:
+    - help: Total Nova VM count
+      labels:
+      - "project_id"
+      - "vm_state"
+      - "nova_host"
+      - "flavor_name"
+      name: openstack_compute_instances_gauge
+      query: |
+        SELECT
+          coalesce(instances.host,'N/A') AS nova_host,
+          instances.project_id,
+          COUNT(*) AS gauge,
+          instances.vm_state,
+          coalesce(instance_types.name,'N/A') AS flavor_name
+        FROM instances
+        JOIN instance_types ON instances.instance_type_id=instance_types.id
+        GROUP BY instances.vm_state, instances.host, instances.project_id, instance_types.name;
+      values:
+      - "gauge"
+    - help: Total Nova VM Stuck count
+      labels:
+      - "project_id"
+      - "task_state"
+      - "nova_host"
+      - "uuid"
+      - "availability_zone"
+      name: openstack_compute_stuck_instances_count_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          project_id,
+          uuid,
+          availability_zone,
+          task_state,
+          SUM(IF(updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE), 1, 0)) AS count_gauge,
+          MAX((NOW() - updated_at)) AS max_duration_gauge
+        FROM instances
+        WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0
+        GROUP BY host, project_id, uuid, availability_zone, task_state UNION ALL SELECT 'dummy-row', 'None', 'None', 'None', 'None', 0, 0;
+      values:
+      - "count_gauge"
+    - help: Total Nova VM Stuck count max duration
+      labels:
+      - "project_id"
+      - "task_state"
+      - "nova_host"
+      - "uuid"
+      - "availability_zone"
+      name: openstack_compute_stuck_instances_max_duration_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          project_id,
+          uuid,
+          availability_zone,
+          task_state,
+          SUM(IF(updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE), 1, 0)) AS count_gauge,
+          MAX((NOW() - updated_at)) AS max_duration_gauge
+        FROM instances
+        WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0
+        GROUP BY host, project_id, uuid, availability_zone, task_state UNION ALL SELECT 'dummy-row', 'None', 'None', 'None', 'None', 0, 0;
+      values:
+      - "max_duration_gauge"
+    - help: Instance launch time in the last 24 hours
+      labels:
+      - "nova_host"
+      - "project_id"
+      - "uuid"
+      - "vm_state"
+      name: openstack_compute_instance_launch_time_taken_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          project_id,
+          uuid,
+          vm_state,
+          MAX(launched_at - created_at) AS time_taken_gauge
+        FROM instances
+        WHERE (launched_at IS NOT NULL AND launched_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND NOT host LIKE 'nova-compute-ironic%'
+        GROUP BY host, project_id, uuid, vm_state;
+      values:
+      - "time_taken_gauge"
+    - help: Instance termination time in the last 24 hours
+      labels:
+      - "nova_host"
+      - "project_id"
+      - "uuid"
+      - "vm_state"
+      name: openstack_compute_instance_termination_time_taken_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          project_id,
+          uuid,
+          vm_state,
+          MAX(updated_at - terminated_at) AS time_taken_gauge
+        FROM instances
+        WHERE (terminated_at IS NOT NULL AND terminated_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND NOT host LIKE 'nova-compute-ironic%'
+        GROUP BY host, project_id, uuid, vm_state;
+      values:
+      - "time_taken_gauge"
+    - help: Instances created in the past 24 hours
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "vm_state"
+      name: openstack_compute_instance_created_in_24hrs_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          uuid,
+          vm_state,
+          COUNT(*) AS in_24hrs_gauge
+        FROM instances
+        WHERE (created_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND NOT host LIKE 'nova-compute-ironic%'
+        AND deleted=0
+        GROUP BY host, uuid, vm_state;
+      values:
+      - "in_24hrs_gauge"
+    - help: Nodes Launch time in the past 24 hours
+      labels:
+      - "project_id"
+      - "uuid"
+      - "vm_state"
+      - "hostname"
+      - "node"
+      name: openstack_ironic_instances_launch_time_taken_gauge
+      query: |
+        SELECT project_id,
+          uuid,
+          node AS node_id,
+          hostname,
+          vm_state,
+          MAX(launched_at - created_at) AS time_taken_gauge
+        FROM instances
+        WHERE (launched_at IS NOT NULL AND launched_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND host LIKE 'nova-compute-ironic%'
+        GROUP BY project_id, uuid, vm_state, hostname, node;
+      values:
+      - "time_taken_gauge"
+    - help: Nodes termination time in past 24 hours
+      labels:
+      - "project_id"
+      - "uuid"
+      - "vm_state"
+      - "hostname"
+      - "node"
+      name: openstack_ironic_instances_termination_time_taken_gauge
+      query: |
+        SELECT project_id,
+          uuid,
+          hostname,
+          node AS node_id,
+          vm_state,
+          MAX(updated_at - terminated_at) AS time_taken_gauge
+        FROM instances
+        WHERE (terminated_at IS NOT NULL AND terminated_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND host LIKE 'nova-compute-ironic%'
+        GROUP BY project_id, uuid, vm_state, hostname, node;
+      values:
+      - "time_taken_gauge"
+    - help: Nodes created in past 24 hours
+      labels:
+      - "uuid"
+      - "vm_state"
+      - "hostname"
+      - "node"
+      name: openstack_ironic_instances_created_in_24hrs
+      query: |
+        SELECT uuid,
+          hostname,
+          node AS node_id,
+          vm_state,
+          COUNT(*) AS in_24hrs
+        FROM instances
+        WHERE (created_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND host LIKE 'nova-compute-ironic%'
+        GROUP BY uuid, vm_state, hostname, node
+        UNION SELECT 'none' AS uuid, 'none' AS hostname, 'none' AS node_id, 'none' AS vm_state, 0 AS in_24hrs;
+      values:
+      - "in_24hrs"
+    - help: Total Node count
+      labels:
+      - "vm_state"
+      - "project_id"
+      - "flavor_name"
+      - "uuid"
+      - "hostname"
+      - "node_id"
+      name: openstack_ironic_instances_gauge
+      query: |
+        SELECT
+          instances.uuid,
+          instances.node AS node_id,
+          instances.project_id,
+          instances.hostname,
+          instances.vm_state,
+          coalesce(instance_types.name,'N/A') AS flavor_name,
+          COUNT(*) AS gauge
+        FROM instances
+        JOIN instance_types ON instances.instance_type_id=instance_types.id where host LIKE 'nova-compute-ironic%'
+        GROUP BY instances.vm_state, instances.project_id, instance_types.name, instances.uuid, instances.hostname, instances.node;
+      values:
+      - "gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "uuid"
+      - "nova_host"
+      - "hypervisor_type"
+      name: openstack_compute_nodes
+      query: |
+        SELECT
+          compute_nodes.host as nova_host,
+          compute_nodes.uuid,
+          compute_nodes.hypervisor_type,
+          compute_nodes.free_disk_gb AS free_disk_gb_gauge,
+          compute_nodes.local_gb AS local_gb_gauge,
+          compute_nodes.local_gb_used AS local_gb_used_gauge,
+          compute_nodes.free_ram_mb AS free_ram_mb_gauge,
+          compute_nodes.memory_mb AS memory_mb_gauge,
+          compute_nodes.memory_mb_used AS memory_mb_used_gauge,
+          compute_nodes.vcpus_used AS vcpus_used_gauge,
+          compute_nodes.vcpus AS vcpus_gauge,
+          compute_nodes.running_vms AS running_vms_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "free_disk_gb_gauge"
+      - "local_gb_gauge"
+      - "local_gb_used_gauge"
+      - "free_ram_mb_gauge"
+      - "memory_mb_gauge"
+      - "memory_mb_used_gauge"
+      - "vcpus_used_gauge"
+      - "vcpus_gauge"
+      - "running_vms_gauge"
+    - help: Version of the service running
+      labels:
+      - "id"
+      - "nova_host"
+      - "binary"
+      name: openstack_compute_service_version
+      query: |
+        SELECT
+          id, host AS nova_host, `binary`, version
+        FROM services
+        WHERE deleted_at is NULL;
+      values:
+      - "version"
+    - help: Seconds since the latest instance_action was created
+      labels:
+      - "nova_host"
+      name: openstack_compute_node_last_action_interval_seconds_interval
+      query: |
+        SELECT
+          i.host AS nova_host,
+          (NOW() - MAX(ia.created_at)) AS `interval`
+        FROM instance_actions AS ia
+        JOIN instances AS i ON i.uuid = ia.instance_uuid
+        WHERE ia.deleted = 0 AND i.host is not NULL
+        GROUP by i.host;
+      values:
+      - "interval"
+    - help: instance_actions entries without instance instance_action_events entries
+      labels:
+      - "nova_host"
+      name: openstack_compute_node_actions_without_events_actions
+      query: |
+        SELECT
+          i.host AS nova_host,
+          COUNT(*) - COUNT(iae.start_time) AS actions
+        FROM instance_actions
+        AS ia JOIN instances AS i ON i.uuid = ia.instance_uuid LEFT OUTER JOIN instance_actions_events
+        AS iae ON iae.action_id = ia.id
+        WHERE ia.deleted = 0 AND i.deleted_at is NULL
+        AND (ia.created_at > DATE_SUB(now(), INTERVAL 1 WEEK)) GROUP by i.host;
+      values:
+      - "actions"
 
 pgmetrics:
   name: nova
@@ -696,8 +972,8 @@ mariadb_api:
 
 mariadb_cell2:
   enabled: false
-  buffer_pool_size: "2048M"
-  log_file_size: "512M"
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
   name: nova-cell2
   custom_initdb_configmap: nova-cell2-db-init
   persistence_claim:
@@ -705,6 +981,10 @@ mariadb_cell2:
     size: "50Gi"
   backup:
     enabled: false
+  backup_v2:
+    enabled: true
+    oauth:
+      client_id: "nova-cell2"
 
 rabbitmq_cell2:
   name: nova-cell2

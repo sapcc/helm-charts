@@ -36,6 +36,8 @@ nebula:
     policyName: {{ .Values.config.awsPolicy }}
     verifyEmailDomain: {{ .Values.config.verifyEmailDomain }}
     verifyEmailSecret: {{ .Values.config.verifyEmailSecret }}
+    useCaseDescription: {{ .Values.config.useCaseDescription }}
+    websiteURL: {{ .Values.config.websiteURL }}
   accountStatusPollDelay: {{ .Values.config.accountStatusPollDelay }}
   accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}
   debug: {{ .Values.nebula.debug }}

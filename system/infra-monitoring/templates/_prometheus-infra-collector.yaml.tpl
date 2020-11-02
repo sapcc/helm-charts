@@ -35,7 +35,7 @@
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
   metric_relabel_configs:
-    - regex: "instance|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance"
+    - regex: "instance|pod_template_hash|exported_instance"
       action: labeldrop
     - source_labels: [__name__, target]
       regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
