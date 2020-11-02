@@ -54,7 +54,7 @@
     "admin_and_matching_target_project_domain_id": "rule:admin_required and (domain_id:%(target.project.domain_id)s or domain_id:%(target.domain_id)s)",
     "admin_and_matching_project_domain_id": "rule:admin_required and domain_id:%(project.domain_id)s",
     "identity:get_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id or rule:reader_and_matching_target_project_domain_id or project_id:%(target.project.id)s or rule:cloud_viewer or role:role_viewer",
-    "identity:list_projects": "rule:cloud_admin or rule:admin_and_matching_domain_id or rule:reader_and_matching_target_project_domain_id or rule:cloud_viewer",
+    "identity:list_projects": "rule:cloud_viewer or rule:admin_and_matching_domain_id or rule:reader_and_matching_domain_id",
     "identity:list_user_projects": "rule:owner or rule:admin_and_matching_domain_id or rule:cloud_viewer",
     "identity:create_project": "rule:cloud_admin or rule:admin_and_matching_project_domain_id",
     "identity:update_project": "rule:cloud_admin or rule:admin_and_matching_target_project_domain_id",
