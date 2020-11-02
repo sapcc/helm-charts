@@ -634,7 +634,7 @@
   relabel_configs:
     - source_labels: [__meta_kubernetes_service_name]
       action: keep
-      regex: esxi-exporter-Config.*
+      regex: esxi-exporter-config.*
     - source_labels: [job]
       regex: vcenter
       action: keep
@@ -667,7 +667,7 @@
   relabel_configs:
     - source_labels: [__meta_kubernetes_service_name]
       action: keep
-      regex: esxi-exporter-Critical.*
+      regex: esxi-exporter-criticalservice.*
     - source_labels: [job]
       regex: vcenter
       action: keep
