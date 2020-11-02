@@ -102,15 +102,15 @@
       replacement: '$3'
       target_label: pxinstance
     - source_labels: [__name__, proto, name]
-      regex: '^bird_.+;BGP;^(PL|TP|MN)-([A-Z0-9]*)-(.*)'
+      regex: '^bird_.+;BGP;(PL|TP|MN)-([A-Z0-9]*)-(.*)'
       replacement: '$1'
       target_label: peer_type
     - source_labels: [__name__, proto, name]
-      regex: '^bird_.+;BGP;^(PL|TP|MN)-([A-Z0-9]*)-(.*)'
+      regex: '^bird_.+;BGP;(PL|TP|MN)-([A-Z0-9]*)-(.*)'
       replacement: '$2'
       target_label: peer_id
     - source_labels: [__name__, proto, name]
-      regex: '^bird_.+;BGP;^(PL|TP|MN)-([A-Z0-9]*)-(.*)'
+      regex: '^bird_.+;BGP;(PL|TP|MN)-([A-Z0-9]*)-(.*)'
       replacement: '$3'
       target_label: peer_hostname
     - source_labels: [__name__, type]
