@@ -101,14 +101,18 @@
       regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
       replacement: '$3'
       target_label: pxinstance
-    - source_labels: [__name__, proto, import_filter]
-      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+    - source_labels: [__name__, proto, name]
+      regex: '^bird_.+;BGP;^(PL|TP|MN)-([A-Z0-9]+)-(.+)'
       replacement: '$1'
       target_label: peer_type
-    - source_labels: [__name__, proto, import_filter]
-      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+    - source_labels: [__name__, proto, name]
+      regex: '^bird_.+;BGP;^(PL|TP|MN)-([A-Z0-9]+)-(.+)'
       replacement: '$2'
       target_label: peer_id
+    - source_labels: [__name__, proto, name]
+      regex: '^bird_.+;BGP;^(PL|TP|MN)-([A-Z0-9]+)-(.+)'
+      replacement: '$3'
+      target_label: peer_hostname
     - source_labels: [__name__, type]
       regex: '^thousandeyes_test_html_.+;(.+)-(.+)'
       replacement: '$1'
