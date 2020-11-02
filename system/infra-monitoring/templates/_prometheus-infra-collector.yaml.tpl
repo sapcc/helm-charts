@@ -622,24 +622,16 @@
 - job_name: 'esxi-config'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  kubernetes_sd_configs:
-      - role: service
-        namespaces:
-          names:
-            - infra-monitoring
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
+  kubernetes_sd_configs:
+  - role: service
+    namespaces:
+      names:
+        - infra-monitoring
   relabel_configs:
     - source_labels: [__meta_kubernetes_service_name]
       action: keep
-      regex: esxi-exporter-config.*
-    - source_labels: [job]
-      regex: vcenter
-      action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
+      regex: .*esxi-exporter-config.*
     - source_labels: [__address__]
       regex: (esxi.*)(.infra?.*[c])(:.*)
       replacement: ${1}${3}
@@ -655,24 +647,16 @@
 - job_name: 'esxi-service'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  kubernetes_sd_configs:
-      - role: service
-        namespaces:
-          names:
-            - infra-monitoring
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
+  kubernetes_sd_configs:
+  - role: service
+    namespaces:
+      names:
+        - infra-monitoring
   relabel_configs:
     - source_labels: [__meta_kubernetes_service_name]
       action: keep
-      regex: esxi-exporter-criticalservice.*
-    - source_labels: [job]
-      regex: vcenter
-      action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
+      regex: .*esxi-exporter-criticalservice.*
     - source_labels: [__address__]
       regex: (esxi.*)(.infra?.*[c])(:.*)
       replacement: ${1}${3}
