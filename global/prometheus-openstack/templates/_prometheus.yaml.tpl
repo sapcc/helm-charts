@@ -24,6 +24,10 @@
       - '{__name__=~"^blackbox_integrity_status_gauge", check=~"esxi_hs-.+"}'
       - '{__name__=~"^octavia_as3_version_info$"}'
       - '{__name__=~"^cinder_.+"}'
+      - '{__name__=~"^elasticsearch_cluster_health_.+"}'
+      - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
+      - '{__name__=~"^logstash_node_queue_.+"}'
+      - '{__name__=~"^logstash_node_pipeline_.+"}'
 
   relabel_configs:
     - action: replace
