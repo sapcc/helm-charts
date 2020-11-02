@@ -101,14 +101,18 @@
       regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
       replacement: '$3'
       target_label: pxinstance
-    - source_labels: [__name__, proto, import_filter]
-      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+    - source_labels: [__name__, proto, name]
+      regex: '^bird_.+;BGP;^(PL|TP|MN)-([A-Z0-9]*)-(.*)'
       replacement: '$1'
       target_label: peer_type
-    - source_labels: [__name__, proto, import_filter]
-      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+    - source_labels: [__name__, proto, name]
+      regex: '^bird_.+;BGP;^(PL|TP|MN)-([A-Z0-9]*)-(.*)'
       replacement: '$2'
       target_label: peer_id
+    - source_labels: [__name__, proto, name]
+      regex: '^bird_.+;BGP;^(PL|TP|MN)-([A-Z0-9]*)-(.*)'
+      replacement: '$3'
+      target_label: peer_hostname
     - source_labels: [__name__, type]
       regex: '^thousandeyes_test_html_.+;(.+)-(.+)'
       replacement: '$1'
@@ -803,3 +807,21 @@
     - targets:
       - '10.236.40.28:9090'
 {{ end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.ucs_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'ucs'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  kubernetes_sd_configs:
+  - role: service
+    namespaces:
+      names:
+        - infra-monitoring
+  metrics_path: /
+  relabel_configs:
+    - action: keep
+      source_labels: [__meta_kubernetes_service_name]
+      regex: ucs-exporter
+{{- end }}
