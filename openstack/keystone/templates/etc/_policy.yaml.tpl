@@ -593,7 +593,8 @@
 # Intended scope(s): system, domain
 #"identity:list_groups": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
 "identity:list_groups": "rule:cloud_reader or
-  (role:reader and domain_id:%(target.group.domain_id)s)"
+  (role:reader and (domain_id:%(target.group.domain_id)s or domain_id:%(domain_id)s)) or
+  (role:role_viewer and (project_domain_id:%(domain_id)s) or project_domain_id:%(target.group.domain_id)s)"
 
 # List groups to which a user belongs.
 # GET  /v3/users/{user_id}/groups
