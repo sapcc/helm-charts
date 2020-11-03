@@ -2,7 +2,7 @@
 {{- $volume := index . 1 -}}
 {{- with index . 0 -}}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: cinder-volume-{{$volume.name}}
   labels:
