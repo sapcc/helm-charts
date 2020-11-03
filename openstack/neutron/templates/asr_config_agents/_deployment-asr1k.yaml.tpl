@@ -3,11 +3,7 @@
 {{- $config_agent := index . 1 -}}
 kind: Deployment
 
-{{- if $context.Capabilities.APIVersions.Has "apps/v1" }}
 apiVersion: apps/v1
-{{- else }}
-apiVersion: extensions/v1beta1
-{{- end }}
 
 metadata:
   name: neutron-asr1k-{{ $config_agent.name }}
