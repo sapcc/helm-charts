@@ -692,10 +692,9 @@
 {{- end }}
 
 {{- range $name, $app := .Values.netapp_cap_exporter.apps }}
-{{- if $app.enabled }}
 - job_name: '{{ $app.fullname }}'
-  scrape_interval: {{ $app.scrapeInterval }}
-  scrape_timeout: {{ $app.scrapeTimeout }}
+  scrape_interval: {{ required ".Values.netapp_cap_exporter.apps[].scrapeInterval" $app.scrapeInterval }}
+  scrape_timeout: {{ required ".Values.netapp_cap_exporter.apps[].scrapeTimeout" $app.scrapeTimeout }}
   static_configs:
     - targets:
       - '{{ $app.fullname }}:9108'
@@ -708,7 +707,6 @@
       target_label: app
       replacement: ${1}
       action: replace
-{{- end }}
 {{- end }}
 
 {{- if .Values.netbox_exporters.enabled }}
