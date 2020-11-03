@@ -29,3 +29,17 @@ groups:
     annotations:
       description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% storage left before overcommit is reached."
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% storage left before overcommit is reached."
+  - alert: CinderBackendStorageEmptyCritical
+    expr: >
+      sum(cinder_free_capacity_gib == 0) by (region, shard, backend) or sum(cinder_total_capacity_gib == 0) by (region, shard, backend)
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: cinder
+      context: "openstack-exporter"
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
+      playbook: docs/support/playbook/cinder/cinder_storage_profile_empty.html
+    annotations:
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
