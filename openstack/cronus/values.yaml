@@ -112,10 +112,18 @@ ingress-nginx:
       nodePorts:
         http: ""
         https: ""
-        465: ""
+        465-tcp: ""
     ingressClass: cronus-nginx
     admissionWebhooks:
       enabled: false
     customTemplate:
       configMapName: cronus-nginx-template
       configMapKey: nginx.tmpl
+    extraVolumeMounts:
+    - name: tls-secret-cronus
+      mountPath: "/etc/ingress-controller/ssl/cronus"
+      readOnly: true
+    extraVolumes:
+    - name: tls-secret-cronus
+      secret:
+        secretName: tls-secret-cronus
