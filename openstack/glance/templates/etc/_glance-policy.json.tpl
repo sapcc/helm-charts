@@ -1,37 +1,29 @@
 {
     "context_is_cloud_admin": "role:cloud_image_admin",
     "context_is_admin": "rule:context_is_cloud_admin",
-    "is_owner": "project_id:%(is_owner)s",
-    "member": "role:member and rule:is_owner",
-    "admin": "role:image_admin and rule:is_owner",
-    "viewer": "role:image_viewer and rule:is_owner",
-    "context_is_image_admin": "rule:context_is_admin or rule:admin",
-    "context_is_editor": "rule:context_is_image_admin or rule:member",
-    "context_is_viewer": "rule:context_is_editor or rule:viewer",
+    "context_is_image_admin": "rule:context_is_admin or role:image_admin",
+    "context_is_editor": "rule:context_is_image_admin or role:member",
+    "context_is_viewer": "rule:context_is_editor or role:image_viewer",
 
-    "add_image": "rule:context_is_image_admin",
-    "delete_image": "rule:context_is_editor",
+    "add_image": "rule:context_is_image_admin or role:member",
+    "delete_image": "context_is_image_admin",
     "get_image": "rule:context_is_viewer",
     "get_images": "rule:context_is_viewer",
-    "modify_image": "rule:context_is_editor",
-
+    "modify_image": "rule:context_is_image_admin",
     "publicize_image": "rule:context_is_cloud_admin",
     "communitize_image": "rule:context_is_admin or rule:context_is_editor",
     
     "copy_from": "rule:context_is_editor",
     "download_image": "rule:context_is_editor",
     "upload_image": "rule:context_is_editor",
-
     "delete_image_location": "rule:context_is_editor",
     "get_image_location": "rule:context_is_viewer",
     "set_image_location": "rule:context_is_editor",
-
     "add_member": "rule:context_is_editor",
     "delete_member": "rule:context_is_editor",
     "get_member": "rule:context_is_viewer",
     "get_members": "rule:context_is_viewer",
     "modify_member": "rule:context_is_editor",
-
     "manage_image_cache": "rule:context_is_admin",
     
     "get_task": "rule:context_is_viewer",
@@ -57,7 +49,7 @@
     "list_metadef_resource_types": "rule:context_is_editor",
     "get_metadef_resource_type": "rule:context_is_viewer",
     "add_metadef_resource_type_association": "rule:context_is_editor",
-
+    
     "get_metadef_property": "rule:context_is_viewer",
     "get_metadef_properties": "rule:context_is_viewer",
     "modify_metadef_property": "rule:context_is_editor",
