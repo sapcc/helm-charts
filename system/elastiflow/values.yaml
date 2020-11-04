@@ -81,10 +81,10 @@ elasticsearch:
       search.max_buckets: 100000
 
   volumeClaimTemplate:
-    accessModes: [ "ReadWriteMany" ]
+    accessModes: ["ReadWriteMany"]
     resources:
       requests:
-        storage: 100G
+        storage: 1G
 
   resources:
     requests:
@@ -118,10 +118,10 @@ elasticsearch-data:
       indices.query.bool.max_clause_count: 8192
       search.max_buckets: 100000
   volumeClaimTemplate:
-    accessModes: [ "ReadWriteMany" ]
+    accessModes: ["ReadWriteMany"]
     resources:
       requests:
-        storage: 100G
+        storage: 500G
   resources:
     requests:
       memory: "4G"
@@ -152,8 +152,8 @@ elasticsearchExporter:
   targets: prometheus-openstack
   
 logstash:
-  image: "robcowart/elastiflow-logstash-oss"
-  imageTag: "4.0.0-beta"
+  image: "elastiflow-logstash"
+  imageTag: "DEFINED-IN-PIPELINE"
   logstashJavaOpts: "-Xmx4G -Xms4G"
 
   persistence:
@@ -176,6 +176,7 @@ logstash:
     configFile: "20_filter_95_enrich_ips.conf"
   service:
     type: NodePort
+    externalTrafficPolicy: Local
     ports:
       - name: netflow-udp
         port: 2055

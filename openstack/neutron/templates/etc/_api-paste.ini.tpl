@@ -1,4 +1,4 @@
-{{- $train := hasPrefix "train" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
+{{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
 [composite:neutron]
 use = egg:Paste#urlmap
 /: neutronversions
@@ -49,7 +49,7 @@ paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 paste.filter_factory = neutron.api.extensions:plugin_aware_extension_middleware_factory
 
 [app:neutronversionsapp]
-{{- if $train }}
+{{- if $ussuri }}
 paste.app_factory = neutron.pecan_wsgi.app:versions_factory
 {{- else }}
 paste.app_factory = neutron.api.versions:Versions.factory

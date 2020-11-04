@@ -125,7 +125,7 @@
   sql select * from test;
   sql_key floating_ip_address
   record_key remote_addr
-  columns project_id, project, port, domain
+  columns project_id, project, port, domain, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id
   refresh_interval 60
 </filter>
 {{- end }}

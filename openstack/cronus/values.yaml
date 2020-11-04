@@ -12,6 +12,17 @@ cronus:
     pullPolicy: IfNotPresent
     tag: latest
     imagePullSecrets: []
+  statefulSet:
+    enabled: true
+    podManagementPolicy: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  replicas: 1
 nebula:
   enabled: true
   cacheSize: 512
@@ -23,35 +34,67 @@ nebula:
     pullPolicy: IfNotPresent
     tag: latest
     imagePullSecrets: []
+  statefulSet:
+    enabled: true
+    podManagementPolicy: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  replicas: 1
+  ingressAnnotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: 1800
 
 config:
-  region: eu-de-2
-  authUrl: https://identity
+  ## keystone optional authentication methods, add in @SECRETS the relevant method
+  keystone:
+    # authUrl: https://identity
+    # region: eu-de-2
+    # endpointType: public
+    # applicationCredentialID: application-credential-id
+    # applicationCredentialSecret: application-credential-secret
+    # applicationCredentialName: application-credential-name 
+    # projectID: project-id 
+    projectName: master
+    projectDomainName: ccadmin
+    # projectDomainID: project-domain-id 
+    userDomainName: Default
+    # domainName: domain-name
+    # domainID: domain-id 
+    username: cronus
+    # password: # a password must be defined in ".Values.global.cronus_service_password"
+    # userID: user-id
   group: service-group
-  jiraUsername: jira-username
-  jiraPassword: jira-password
+  jira:
+    username: jira-username
+    password: jira-password
+    serviceDeskID: 1
+    requestTypeID: 2
+    customFieldID: 3
+    ticketSummaryTemplate: |
+      Delete {{ $accountID }} account ID
+    ticketDescriptionTemplate: |
+      Please delete the {{ $accountID }} account ID
   serviceUsername: service-username
   servicePassword: service-password
-  applicationCredentialID: application-credential-id
-  applicationCredentialSecret: application-credential-secret
   awsAccess: aws-access
   awsSecret: aws-secret
-  awsUsername: aws-username
+  technicalUsername: aws-username
   awsPolicy: aws-policy
-  endpointType: public
   forwardUserAgent: false
   billingCacheTTL: 24h
-  technicalResponsible: technical-responsible
+  technicalResponsible: technical-responsible@example
   accountStatusTimeout: 5m
   accountStatusPollDelay: 10s
   verifyEmailDomain: example.com
   verifyEmailSecret: domainkey
+  useCaseDescription: SES account
+  websiteURL: https://example.com
   allowedServices:
     email: email-region
-
-# an existing DNS record to forward disco CNAME records
-ingress:
-  record: my-ingress.region.cloud.com
 
 service:
   type: ClusterIP
@@ -65,6 +108,9 @@ ingress-nginx:
       http: 80
       https: 443
     service:
+      annotations:
+        disco: "true"
+        disco/record: my-ingress.region.cloud.com.
       ports:
         http: 80
         https: 443
@@ -74,10 +120,18 @@ ingress-nginx:
       nodePorts:
         http: ""
         https: ""
-        465: ""
+        465-tcp: ""
     ingressClass: cronus-nginx
     admissionWebhooks:
       enabled: false
     customTemplate:
       configMapName: cronus-nginx-template
       configMapKey: nginx.tmpl
+    extraVolumeMounts:
+    - name: tls-secret-cronus
+      mountPath: "/etc/ingress-controller/ssl/cronus"
+      readOnly: true
+    extraVolumes:
+    - name: tls-secret-cronus
+      secret:
+        secretName: tls-secret-cronus

@@ -45,11 +45,10 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "nova-migration"
             - name: DEPENDENCY_SERVICE
-            {{- if eq .Values.postgresql.enabled true }}
-              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
-              # plus soft-dependency to nova-rabbitmq-notifications
-            {{- else }}
+            {{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
+            {{- else }}
+              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
             {{- end }}
             - name: STATSD_HOST
               value: "localhost"

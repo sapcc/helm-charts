@@ -15,7 +15,11 @@ groups:
     expr: rate(cloudprober_success{interconnect_type="dc",probed_to_type="lb"}[5m])/rate(cloudprober_total{interconnect_type="dc",probed_to_type="lb"}[5m])
   - record: network:dc_interconnect_vm_availability_sli:ratio_rate5m
     expr: rate(cloudprober_success{interconnect_type="dc",probed_to_type="vm"}[5m])/rate(cloudprober_total{interconnect_type="dc",probed_to_type="vm"}[5m])
-- name: network-region-interconnect-availability
+- name: network-interconnect-availability
   rules:
   - record: network:region_interconnect_master_availability_sli:ratio_rate5m
     expr: rate(cloudprober_success{interconnect_type="region",probed_to_type="master"}[5m])/rate(cloudprober_total{interconnect_type="region",probed_to_type="master"}[5m])
+  - record: network:datacenter_interconnect_success:ratio_rate5m
+    expr: rate(cloudprober_success{interconnect_type="dc",probe=~"ping-node.+"}[5m])/rate(cloudprober_total{interconnect_type="dc",probe=~"ping-node.+"}[5m])
+  - record: network:region_interconnect_sucess:ratio_rate5m
+    expr: rate(cloudprober_success{interconnect_type="region",probe=~"ping-node.+"}[5m])/rate(cloudprober_total{interconnect_type="region",probe=~"ping-node.+"}[5m])

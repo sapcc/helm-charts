@@ -5,14 +5,17 @@ metadata:
   name: nebula-ingress
   annotations:
     disco: "true"
-    # vice-president: "true" deprecated 30/9/20
+    disco/record: {{ index .Values "ingress-nginx" "controller" "service" "annotations" "disco/record" }}
     kubernetes.io/tls-acme: "true"
     kubernetes.io/ingress.class: cronus-nginx
+    {{- range $key, $value := .Values.nebula.ingressAnnotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
   labels:
     app: nebula
 spec:
   rules:
-    - host: nebula.{{ .Values.config.region }}.cloud.sap
+    - host: nebula.{{ .Values.global.region }}.cloud.sap
       http:
         paths:
           - backend:
@@ -21,6 +24,6 @@ spec:
             path: /
   tls:
     - hosts:
-      - nebula.{{ .Values.config.region }}.cloud.sap
+      - nebula.{{ .Values.global.region }}.cloud.sap
       secretName: tls-secret-nebula
 {{- end -}}

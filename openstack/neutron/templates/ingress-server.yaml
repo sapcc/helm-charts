@@ -1,3 +1,4 @@
+{{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 
@@ -17,6 +18,13 @@ spec:
     - host: {{include "neutron_api_endpoint_host_public" .}}
       http:
         paths:
+        {{- if $ussuri }}
+        - path: /v2.0/lbaas
+          pathType: Prefix
+          backend:
+            serviceName: octavia-api
+            servicePort: {{.Values.global.octavia_api_port_internal | default 9876}}
+        {{- end }}
         - path: /
           backend:
             serviceName: neutron-server

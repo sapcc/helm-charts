@@ -35,7 +35,7 @@
   - source_labels: [__meta_kubernetes_pod_name]
     target_label: kubernetes_pod_name
   metric_relabel_configs:
-    - regex: "instance|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance"
+    - regex: "instance|pod_template_hash|exported_instance"
       action: labeldrop
     - source_labels: [__name__, target]
       regex: '^ping_.+;www-(\w*)-(\w*-\w*-\w*).+'
@@ -73,12 +73,21 @@
       regex: '^cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
       replacement: '$3'
       target_label: probed_to
+    - source_labels: [__name__, dst_zone]
+      target_label: probed_to
+      regex: '^cloudprober_.+;(.+)'
+      action: replace
+      replacement: '$1'
     - source_labels: [__name__]
       regex: '^cloudprober_.+'
       replacement: 'region'
       target_label: interconnect_type
     - source_labels: [__name__, probe]
       regex: '^cloudprober_.+;(ping|http)-[a-zA-Z]*-{{ .Values.global.region }}.+'
+      replacement: 'dc'
+      target_label: interconnect_type
+    - source_labels: [__name__, dst_zone]
+      regex: '^cloudprober_.+;{{ .Values.global.region }}.+'
       replacement: 'dc'
       target_label: interconnect_type
     - source_labels: [__name__]
@@ -101,14 +110,18 @@
       regex: '^bird_.+;{{ .Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])'
       replacement: '$3'
       target_label: pxinstance
-    - source_labels: [__name__, proto, import_filter]
-      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+    - source_labels: [__name__, proto, name]
+      regex: '^bird_.+;BGP;(PL|TP|MN)-([A-Z0-9]*)-(.*)'
       replacement: '$1'
       target_label: peer_type
-    - source_labels: [__name__, proto, import_filter]
-      regex: '^bird_.+;BGP;.+_IMPORT_(\w*)_(\w*_\w*)$'
+    - source_labels: [__name__, proto, name]
+      regex: '^bird_.+;BGP;(PL|TP|MN)-([A-Z0-9]*)-(.*)'
       replacement: '$2'
       target_label: peer_id
+    - source_labels: [__name__, proto, name]
+      regex: '^bird_.+;BGP;(PL|TP|MN)-([A-Z0-9]*)-(.*)'
+      replacement: '$3'
+      target_label: peer_hostname
     - source_labels: [__name__, type]
       regex: '^thousandeyes_test_html_.+;(.+)-(.+)'
       replacement: '$1'
@@ -617,7 +630,7 @@
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
-{{- $values := .Values.esxi_exporter -}}
+{{- $values := .Values.esxi_config_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'esxi-config'
   scrape_interval: {{$values.scrapeInterval}}
@@ -633,7 +646,27 @@
     - source_labels: [server_name]
       target_label: __param_target
     - target_label: __address__
-      replacement: esxi-exporter:9203
+      replacement: esxi-exporter-configcollector:9203
+{{- end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.esxi_service_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'esxi-service'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: vcenter
+      action: keep
+    - source_labels: [server_name]
+      target_label: __param_target
+    - target_label: __address__
+      replacement: esxi-exporter-criticalservicecollector:9203
 {{- end }}
 
 {{- $values := .Values.firmware_exporter -}}
@@ -668,10 +701,9 @@
 {{- end }}
 
 {{- range $name, $app := .Values.netapp_cap_exporter.apps }}
-{{- if $app.enabled }}
 - job_name: '{{ $app.fullname }}'
-  scrape_interval: {{ $app.scrapeInterval }}
-  scrape_timeout: {{ $app.scrapeTimeout }}
+  scrape_interval: {{ required ".Values.netapp_cap_exporter.apps[].scrapeInterval" $app.scrapeInterval }}
+  scrape_timeout: {{ required ".Values.netapp_cap_exporter.apps[].scrapeTimeout" $app.scrapeTimeout }}
   static_configs:
     - targets:
       - '{{ $app.fullname }}:9108'
@@ -684,7 +716,6 @@
       target_label: app
       replacement: ${1}
       action: replace
-{{- end }}
 {{- end }}
 
 {{- if .Values.netbox_exporters.enabled }}
@@ -765,4 +796,39 @@
       target_label: app
       replacement: ${1}
       action: replace
+{{- end }}
+
+{{ if .Values.ask1k_tests.enabled }}
+- job_name: 'asr1k_tests'
+  scrape_interval: 60s
+  scrape_timeout: 45s
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
+      - '{job=~"^asr1k_tests.*"}'
+
+  static_configs:
+    - targets:
+      - '10.236.40.28:9090'
+{{ end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.ucs_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'ucs'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  kubernetes_sd_configs:
+  - role: service
+    namespaces:
+      names:
+        - infra-monitoring
+  metrics_path: /
+  relabel_configs:
+    - action: keep
+      source_labels: [__meta_kubernetes_service_name]
+      regex: ucs-exporter
 {{- end }}
