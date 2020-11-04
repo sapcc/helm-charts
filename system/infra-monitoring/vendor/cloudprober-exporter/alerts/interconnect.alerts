@@ -1,6 +1,54 @@
 groups:
 - name: network-interconnect.alerts
   rules:
+  - alert: TESTNetworkDatacenterInterconnectDown
+    expr: sum(network:datacenter_interconnect_success:ratio_rate5m) by (probed_from, probed_to) / count(network:datacenter_interconnect_success:ratio_rate5m) by (probed_from, probed_to) == 0
+    for: 5m
+    labels:
+      severity: info
+      tier: net
+      service: net-interconnect
+      context: net-interconnect-dc
+    annotations:
+      description: 'TEST: Datacenter interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+      summary: 'TEST: Datacenter interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+
+  - alert: TESTNetworkDatacenterInterconnectTargetDown
+    expr: network:datacenter_interconnect_success:ratio_rate5m
+    for: 5m
+    labels:
+      severity: info
+      tier: net
+      service: net-interconnect
+      context: net-interconnect-dc-node
+    annotoations:
+      description: 'TEST: Datacenter interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+      summary: 'TEST: Datacenter interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+
+  - alert: TESTNetworkRegionInterconnectDown
+    expr: sum(network:region_interconnect_sucess:ratio_rate5m) by (probed_from, probed_to) / count(network:region_interconnect_sucess:ratio_rate5m) by (probed_from, probed_to) == 0
+    for: 5m
+    labels:
+      severity: info
+      tier: net
+      service: net-interconnect
+      context: net-interconnect-region
+    annotations:
+      description: 'TEST: Region interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+      summary: 'TEST: Region interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+
+  - alert: TESTNetworkRegionInterconnectTargetDown
+    expr: network:region_interconnect_sucess:ratio_rate5m
+    for: 5m
+    labels:
+      severity: info
+      tier: net
+      service: net-interconnect
+      context: net-interconnect-region-node
+    annotoations:
+      description: 'TEST: Region interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+      summary: 'TEST: Region interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+
   - alert: NetworkDatacenterInterconnectDown
     expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='dc'}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping",interconnect_type='dc'}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='dc'}[5m]) > 0.9
     for: 5m
