@@ -31,8 +31,8 @@ nebula:
     customFieldID: {{ .Values.config.jira.customFieldID }}
     ticketSummaryTemplate: |
 {{ .Values.config.jira.ticketSummaryTemplate | indent 6 }}
-    ticketDescription: |
-{{ .Values.config.jira.ticketDescription | indent 6 }}
+    ticketDescriptionTemplate: |
+{{ .Values.config.jira.ticketDescriptionTemplate | indent 6 }}
   group: {{ .Values.config.group }}
   technicalResponsible: {{ .Values.config.technicalResponsible }}
   aws:
