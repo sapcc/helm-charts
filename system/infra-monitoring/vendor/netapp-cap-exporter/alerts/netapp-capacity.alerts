@@ -56,6 +56,20 @@ groups:
           description: 'Storage Capacity Usage on node {{$labels.node}} is {{ $value }}%'
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
+      - alert: ManilaAvailabilityZoneUsageHigh
+        expr: (min(netapp_aggregate_used_percentage{app=~".*manila"}) by (availability_zone)) > 45
+        for: 1h
+        labels:
+          severity: warning
+          tier: os
+          service: manila
+          context: netapp-az-usage
+          meta: '{{ $labels.availability_zone }} usage high'
+          playbook: 'docs/support/playbook/manila/az_usage_high.html'
+        annotations:
+          description: '{{ $labels.availability_zone }} has less than 5% capacity for new shares'
+          summary: '{{ $labels.availability_zone }} usage above 45%'
+
       - alert: CinderStorageAggregateHighUsage
         expr: netapp_aggregate_used_percentage{app=~".*cinder"} > 83
         labels:
