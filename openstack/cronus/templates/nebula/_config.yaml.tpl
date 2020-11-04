@@ -24,8 +24,15 @@ nebula:
     username: {{ .Values.config.serviceUsername }}
     password: {{ .Values.config.servicePassword }}
   jira:
-    username: {{ .Values.config.jiraUsername }}
-    password: {{ .Values.config.jiraPassword }}
+    username: {{ .Values.config.jira.username }}
+    password: {{ .Values.config.jira.password }}
+    serviceDeskID: {{ .Values.config.jira.serviceDeskID }}
+    requestTypeID: {{ .Values.config.jira.requestTypeID }}
+    customFieldID: {{ .Values.config.jira.customFieldID }}
+    ticketSummaryTemplate: |
+{{ .Values.config.jira.ticketSummaryTemplate | indent 6 }}
+    ticketDescription: |
+{{ .Values.config.jira.ticketDescription | indent 6 }}
   group: {{ .Values.config.group }}
   technicalResponsible: {{ .Values.config.technicalResponsible }}
   aws:
