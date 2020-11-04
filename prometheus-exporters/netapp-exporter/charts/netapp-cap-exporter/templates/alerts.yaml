@@ -1,4 +1,4 @@
-{{- $values := .Values.global.alerts }}
+{{- if .Values.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -7,10 +7,12 @@ kind: PrometheusRule
 metadata:
   name: {{ printf "%s" $path | replace "/" "-" }}
   labels:
+    app.kubernetes.io/name: {{ $.Values.fullname }}
     type: alerting-rules
-    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+    prometheus: {{ required ".Values.global.prometheus.targets missing" $.Values.global.prometheus.targets }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
+{{- end }}
 {{- end }}
