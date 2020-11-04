@@ -81,6 +81,10 @@
       regex: '^cloudprober_.+;(ping|http)-[a-zA-Z]*-{{ .Values.global.region }}.+'
       replacement: 'dc'
       target_label: interconnect_type
+    - source_labels: [__name__, dst_zone]
+      regex: '^cloudprober_.+;{{ .Values.global.region }}.+'
+      replacement: 'dc'
+      target_label: interconnect_type
     - source_labels: [__name__]
       regex: '^ping_.+'
       replacement: 'region'
