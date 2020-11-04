@@ -78,7 +78,7 @@
       regex: '^cloudprober_.+;(.+)'
       action: replace
       replacement: '$1'
-     - source_labels: [__name__]
+    - source_labels: [__name__]
       regex: '^cloudprober_.+'
       replacement: 'region'
       target_label: interconnect_type
