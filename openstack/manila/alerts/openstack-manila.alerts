@@ -334,3 +334,18 @@ groups:
     annotations:
       description: '{{ $labels.service }} db row locks'
       summary: '{{ $labels.service }} db row locks'
+
+# AZ capacity
+  - alert: OpenstackManilaAvailabilityZoneUsageHigh
+    expr: (min(netapp_aggregate_used_percentage{app="netapp-capacity-exporter-manila"}) by (availability_zone)) > 45
+    for: 1h
+    labels:
+      severity: warning
+      tier: os
+      service: manila
+      context: '{{ $labels.availability_zone }}'
+      meta: '{{ $labels.availability_zone }} usage high'
+      playbook: 'docs/support/playbook/manila/az_usage_high.html'
+    annotations:
+      description: '{{ $labels.availability_zone }} has less than 5% capacity for new shares'
+      summary: '{{ $labels.availability_zone }} usage above 45%'
