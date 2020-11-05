@@ -1,4 +1,5 @@
 {{- if .Values.ingress.enabled -}}
+{{- $root := . }}
 {{- $serviceName := include "prometheus-pushgateway.fullname" . }}
 {{- $servicePort := .Values.service.port -}}
 {{- $ingressPath := .Values.ingress.path -}}
@@ -26,7 +27,7 @@ metadata:
 spec:
   rules:
     {{- range $host := .Values.ingress.hosts }}
-    - host: {{ $host }}
+    - host: {{ include "fqdnHelper" (list $host $root) }}
       http:
         paths:
           - path: {{ $ingressPath }}
@@ -36,6 +37,14 @@ spec:
     {{- end -}}
 {{- if .Values.ingress.tls }}
   tls:
-{{ toYaml .Values.ingress.tls | indent 4 }}
-  {{- end -}}
+    - secretName: tls-{{ include "prometheus-pushgateway.externalURL" $root | replace "." "-" }}
+      hosts:
+        {{- range $host := .Values.ingress.hosts }}
+        - {{ include "fqdnHelper" (list $host $root) }}
+        {{- end }}
+        {{- range $host := .Values.ingress.hostsFQDN }}
+        - {{ $host }}
+        {{- end }}
+#{{ toYaml .Values.ingress.tls | indent 4 }}
+  #{{- end -}}
 {{- end -}}
