@@ -9,8 +9,16 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-{{- if .Values.ingress.annotations }}
   annotations:
+    vice-president: {{ required ".Values.ingress.vicePresident missing" .Values.ingress.vicePresident | quote }}
+    kubernetes.io/tls-acme: "true"
+    disco: {{ required ".Values.ingress.disco missing" .Values.ingress.disco | quote }}
+    {{- if .Values.ingress.authentication.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.authTLSSecret missing" .Values.ingress.authentication.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.authTLSVerifyDepth missing" .Values.ingress.authentication.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.authTLSVerifyClient missing" .Values.ingress.authentication.authTLSVerifyClient | quote }}
+    {{ end }}
+{{- if .Values.ingress.annotations }}
 {{ toYaml .Values.ingress.annotations | indent 4}}
 {{- end }}
   labels:
