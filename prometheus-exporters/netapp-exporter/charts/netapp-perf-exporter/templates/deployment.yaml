@@ -4,7 +4,7 @@
 {{- $graphiteConf := include (print .Template.BasePath "/etc/_graphite-mapping.conf.tpl") . }}
 {{- $netappFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
 {{- range $name, $app := .Values.apps }}
-{{- $fullAppNameWithComponent := printf "%s-%s" $.Values.fullname $app.component }}
+{{- $fullNameWithComponent := printf "%s-%s" $.Values.fullname $app.component }}
 {{- $netappHarvestConf := include $harvestTemplate (dict "dupEnabled" $app.dupEnabled "Values" $.Values) }}
 {{- if $app.enabled }}
 ---
@@ -15,7 +15,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Deployment
 metadata:
-  name: {{ $fullAppNameWithComponent }}
+  name: {{ $fullNameWithComponent }}
   labels:
     app.kubernetes.io/name: {{ $.Values.fullname }}
     app.kubernetes.io/component: {{ $app.component }}
@@ -23,12 +23,12 @@ spec:
   revisionHistoryLimit: 5
   selector:
     matchLabels:
-      app: {{ $fullAppNameWithComponent }}
+      app: {{ $fullNameWithComponent }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ $fullAppNameWithComponent }}
+        app: {{ $fullNameWithComponent }}
       annotations:
         prometheus.io/scrape: {{ $.Values.prometheus.scrape | quote }}
         prometheus.io/targets: {{ $.Values.global.prometheus.targets | quote }}
@@ -60,7 +60,7 @@ spec:
           - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
           {{- end }}
         volumeMounts:
-        - name: {{ $fullAppNameWithComponent }}
+        - name: {{ $fullNameWithComponent }}
           mountPath: /opt/netapp-harvest/config
       - name: exporter                      # container: exporter
         image: {{ $.Values.exporter.image }}
@@ -69,7 +69,7 @@ spec:
         - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
         - containerPort: {{ $.Values.ports.graphiteExporterOutPort }}
         volumeMounts:
-        - name: {{ $fullAppNameWithComponent }}
+        - name: {{ $fullNameWithComponent }}
           subPath: graphite-mapping.conf
           mountPath: /graphite-mapping.conf
         resources:
@@ -103,7 +103,7 @@ spec:
         image: {{ $.Values.netappsd.image }}:{{ $.Values.netappsd.imageTag }}
         args:
           - -configmap
-          - {{ $fullAppNameWithComponent }}
+          - {{ $fullNameWithComponent }}
           - -key
           - netapp-filers.yaml
           - -namespace
@@ -123,9 +123,9 @@ spec:
       {{- end }}
 
       volumes:
-        - name: {{ $fullAppNameWithComponent }}
+        - name: {{ $fullNameWithComponent }}
           configMap:
-            name: {{ $fullAppNameWithComponent }}
+            name: {{ $fullNameWithComponent }}
             items:
               - key: netapp-harvest.conf
                 path: netapp-harvest.conf
