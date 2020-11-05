@@ -63,3 +63,27 @@ Return the appropriate apiVersion for networkpolicy.
 {{- print "networking.k8s.io/v1" -}}
 {{- end -}}
 {{- end -}}
+
+
+{{/*
+define fqdn helper, from prometheus-server
+*/}}
+{{/* External URL of this Prometheus Pushgateway. */}}
+{{- define "prometheus-pushgateway.externalURL" -}}
+{{- if and .Values.ingress.hosts .Values.ingress.hostsFQDN -}}
+{{- fail ".Values.ingress.hosts and .Values.ingress.hostsFQDN are mutually exclusive." -}}
+{{- end -}}
+{{- if .Values.ingress.hosts -}}
+{{- $firstHost := first .Values.ingress.hosts -}}
+{{- required ".Values.ingress.hosts must have at least one hostname set" $firstHost -}}.{{- required ".Values.global.region missing" .Values.global.region -}}.{{- required ".Values.global.domain missing" .Values.global.domain -}}
+{{- else -}}
+{{- $firstHost := first .Values.ingress.hostsFQDN -}}
+{{- required ".Values.ingress.hostsFQDN must have at least one hostname set" $firstHost -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "fqdnHelper" -}}
+{{- $host := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- end -}}
