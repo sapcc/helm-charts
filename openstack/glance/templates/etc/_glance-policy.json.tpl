@@ -6,7 +6,7 @@
     "context_is_viewer": "rule:context_is_editor or role:image_viewer",
 
     "add_image": "rule:context_is_image_admin or role:member",
-    "delete_image": "context_is_image_admin",
+    "delete_image": "rule:context_is_image_admin",
     "get_image": "rule:context_is_viewer",
     "get_images": "rule:context_is_viewer",
     "modify_image": "rule:context_is_image_admin",
@@ -49,7 +49,7 @@
     "list_metadef_resource_types": "rule:context_is_editor",
     "get_metadef_resource_type": "rule:context_is_viewer",
     "add_metadef_resource_type_association": "rule:context_is_editor",
-    
+
     "get_metadef_property": "rule:context_is_viewer",
     "get_metadef_properties": "rule:context_is_viewer",
     "modify_metadef_property": "rule:context_is_editor",
