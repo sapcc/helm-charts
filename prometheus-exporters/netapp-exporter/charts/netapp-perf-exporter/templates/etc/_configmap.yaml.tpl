@@ -2,9 +2,9 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ .app.fullname }}
+  name: {{ .appFullName }}
 data:
-  {{- if eq .appName "manila" }}
+  {{- if eq .app.component "manila" }}
   netapp-filers.yaml: |
     {{- .netappFilerYaml | nindent 4 }}
   {{- else }}
