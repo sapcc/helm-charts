@@ -12,13 +12,11 @@
     - action: replace
       source_labels: [__address__]
       target_label: region
-      regex: .+\.(.+).cloud.sap
+      regex: prometheus.(.+).cloud.sap
       replacement: $1
     - action: replace
       source_labels: [region]
-      regex: (.*)
       target_label: cluster
-      replacement: $1
     - action: replace
       target_label: cluster_type
       replacement: admin
@@ -38,7 +36,9 @@
 
   static_configs:
     - targets:
-        - prometheus.admin.cloud.sap
+{{- range $region := .Values.regionList }}
+      - "prometheus.admin.{{ $region }}.cloud.sap"
+{{- end }}
 
 - job_name: 'metal-federation'
   scheme: https
