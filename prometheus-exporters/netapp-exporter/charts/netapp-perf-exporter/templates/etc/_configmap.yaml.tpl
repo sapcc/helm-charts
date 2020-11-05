@@ -2,9 +2,12 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ .appFullName }}
+  name: {{ printf "%s-%s" .fullname .component }}
+  labels:
+    app.kubernetes.io/name: {{ .fullname }}
+    app.kubernetes.io/component: {{ .component }}
 data:
-  {{- if eq .app.component "manila" }}
+  {{- if eq .component "manila" }}
   netapp-filers.yaml: |
     {{- .netappFilerYaml | nindent 4 }}
   {{- else }}

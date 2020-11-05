@@ -4,10 +4,9 @@
 {{- $graphiteConf := include (print .Template.BasePath "/etc/_graphite-mapping.conf.tpl") . }}
 {{- $netappFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
 {{- range $name, $app := .Values.apps }}
-{{- $appFullName := printf "%s-%s" $.Values.fullname $app.component -}}
 {{- if $app.enabled }}
 {{- $netappHarvestConf := include $harvestTemplate (dict "dupEnabled" $app.dupEnabled "Values" $.Values) }}
-{{- include $configmapTemplate (dict "appFullName" $appFullName "app" $app "netappFilerYaml" $netappFilerYaml "netappHarvestConf" $netappHarvestConf "graphiteConf" $graphiteConf) }}
+{{- include $configmapTemplate (dict "fullname" $.Values.fullname "component" $app.component "netappFilerYaml" $netappFilerYaml "netappHarvestConf" $netappHarvestConf "graphiteConf" $graphiteConf) }}
 {{- end }}
 {{- end }}
 {{- end }}
