@@ -16,7 +16,7 @@ groups:
           summary: Netapp ONTAP API inaccessible
 
       - alert: ManilaStorageAggregateHighUsage
-        expr: netapp_aggregate_used_percentage{app=~".*manila", filer!~"ma01-md007"} > 75
+        expr: max_over_time(netapp_aggregate_used_percentage{app=~".*manila", filer!~"ma01-md007"}[2h]) > 75
         for: 10m
         labels:
           severity: info
@@ -30,7 +30,7 @@ groups:
           summary: 'High Capacity Usage on {{$labels.filer}}'
 
       - alert: ManilaStorageAggregateHighUsage
-        expr: netapp_aggregate_used_percentage{app=~".*manila", filer=~"ma01-md007"} > 85
+        expr: max_over_time(netapp_aggregate_used_percentage{app=~".*manila", filer=~"ma01-md007"}[2h]) > 85
         labels:
           severity: info
           tier: os
@@ -43,7 +43,7 @@ groups:
           summary: 'High Capacity Usage on {{$labels.filer}}'
 
       - alert: ManilaStorageAggregateFull
-        expr: netapp_aggregate_used_percentage{app=~".*manila"} > 90
+        expr: max_over_time(netapp_aggregate_used_percentage{app=~".*manila"}[2h]) > 90
         labels:
           severity: warning
           tier: os
