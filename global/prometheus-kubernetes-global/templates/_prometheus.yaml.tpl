@@ -12,11 +12,13 @@
     - action: replace
       source_labels: [__address__]
       target_label: region
-      regex: prometheus.(.+).cloud.sap
+      regex: .+\.(.+).cloud.sap
       replacement: $1
     - action: replace
       source_labels: [region]
+      regex: (.*)
       target_label: cluster
+      replacement: a-$1
     - action: replace
       target_label: cluster_type
       replacement: admin
