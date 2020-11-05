@@ -57,7 +57,7 @@ groups:
           summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
 
       - alert: ManilaAvailabilityZoneUsageHigh
-        expr: (min(netapp_aggregate_used_percentage{app=~".*manila"}) by (availability_zone)) > 45
+        expr: (min by(availability_zone) (avg_over_time(netapp_aggregate_used_percentage{app=~".*manila"}[1h]))) > 45
         for: 1h
         labels:
           severity: warning
