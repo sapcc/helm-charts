@@ -1,22 +1,17 @@
 {{- if and .Values.rbac.create .Values.enabled }}
-{{- range $name, $app := .Values.apps }}
-{{- if $app.enabled }}
-{{- $fullname := printf "%s-%s" $.Values.fullname $app.component }}
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
-   app.kubernetes.io/name : {{ $fullname }}
-  name: {{ $fullname }}
+   app.kubernetes.io/name : {{ .Values.fullname }}
+  name: {{ .Values.fullname }}
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: {{ $.Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: {{ $fullname }}
+  name: {{ .Values.fullname }}
   apiGroup: rbac.authorization.k8s.io
-{{- end }}
-{{- end}}
 {{- end}}
