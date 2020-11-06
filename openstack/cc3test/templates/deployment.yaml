@@ -1,0 +1,36 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: cc3test-api
+  namespace: {{ .Values.cc3test.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: cc3test-api
+  template:
+    metadata:
+      labels:
+        app: cc3test-api
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+    spec:
+      volumes:
+        - name: cc3test-api-config
+          configMap:
+            name: cc3test-api
+      containers:
+        - name: cc3test-api
+          image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
+          path: pytest
+          args:
+            - "--variables '/cc3test/config.yaml'"
+            - "cc3tests/"
+            - "-r ap"
+            - "-m api"
+          volumeMounts:
+            - mountPath: /cc3test
+              name: cc3test-api-config
+              readOnly: true
+          resources:
+{{ toYaml .Values.cc3test.resources | indent 12 }}
+
