@@ -48,4 +48,7 @@ nebula:
   accountStatusPollDelay: {{ .Values.config.accountStatusPollDelay }}
   accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}
   debug: {{ .Values.nebula.debug }}
+  policy:
+    project_admin: project_id:%(project_id)s and role:email_admin
+    nebula:admin: rule:project_admin
 {{- end -}}
