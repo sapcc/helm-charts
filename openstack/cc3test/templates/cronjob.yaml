@@ -22,13 +22,14 @@ spec:
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
             args:
               - "pytest"
-              - "--variables 'cc3test/config.yaml'"
+              - "--disable-pytest-warnings"
+              - "--variables /cc3test-config/config.yaml"
               - "cc3tests/"
               - "-r ap"
               - "-m api"
             volumeMounts:
-            - mountPath: /cc3test
-              name: cc3test-api-config
-              readOnly: true
+              - mountPath: /cc3test-config
+                name: cc3test-api-config
+                readOnly: true
           restartPolicy: Never
 
