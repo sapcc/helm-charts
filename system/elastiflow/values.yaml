@@ -1,4 +1,5 @@
 curator:
+  retention: 92
   configMaps:
     config_yml: |-
       ---
@@ -32,37 +33,12 @@ curator:
             source: name
             direction: older
             timestring: '%Y.%m.%d'
-            unit: months
-            unit_count: 3
+            unit: days
+            unit_count: {{ .Values.retention }}
             field:
             stats_result:
             epoch:
             exclude: False
-        2:
-          action: delete_indices
-          description: "Delete indices before disk is full. 85G on 100G PVCs"
-          options:
-            timeout_override:
-            continue_if_exception: False
-            disable_action: False
-            ignore_empty_list: True
-            allow_ilm_indices: True
-          filters:
-          - filtertype: pattern
-            kind: prefix
-            value: .kibana
-            exclude: True
-          - filtertype: pattern
-            kind: prefix
-            value: .task
-            exclude: True
-          - filtertype: space
-            disk_space: 1250
-            use_age: True
-            source: creation_date
-            exclude:
-          - filtertype: kibana
-            exclude: True
 
 # master node configs
 elasticsearch:
