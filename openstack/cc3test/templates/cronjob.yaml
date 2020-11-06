@@ -5,10 +5,11 @@ metadata:
   namespace: {{ .Values.cc3test.namespace }}
 spec:
   schedule: "*/5 * * * *"
-  successfulJobsHistoryLimit: 2
-  failedJobsHistoryLimit: 0
   jobTemplate:
     spec:
+      concurrencyPolicy: Forbid
+      successfulJobsHistoryLimit: 2
+      failedJobsHistoryLimit: 2
       template:
         spec:
           volumes:
@@ -20,7 +21,7 @@ spec:
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
             args:
               - "pytest"
-              - "--variables '/cc3test/config.yaml'"
+              - "--variables 'cc3test/config.yaml'"
               - "cc3tests/"
               - "-r ap"
               - "-m api"
