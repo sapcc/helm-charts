@@ -16,6 +16,10 @@ spec:
           containers:
           - name: cc3test-api
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
+            volumeMounts:
+            - name: cc3test-api-config
+              mountPath: /cc3test-config
+              readOnly: true
             args:
               - "pytest"
               - "--disable-pytest-warnings"
@@ -23,10 +27,6 @@ spec:
               - "cc3tests/"
               - "-r ap"
               - "-m api"
-            volumeMounts:
-              - mountPath: /cc3test-config
-                name: cc3test-api-config
-                readOnly: true
           restartPolicy: Never
 
           volumes:
