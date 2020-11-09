@@ -24,8 +24,15 @@ nebula:
     username: {{ .Values.config.serviceUsername }}
     password: {{ .Values.config.servicePassword }}
   jira:
-    username: {{ .Values.config.jiraUsername }}
-    password: {{ .Values.config.jiraPassword }}
+    username: {{ .Values.config.jira.username }}
+    password: {{ .Values.config.jira.password }}
+    serviceDeskID: {{ .Values.config.jira.serviceDeskID }}
+    requestTypeID: {{ .Values.config.jira.requestTypeID }}
+    customFieldID: {{ .Values.config.jira.customFieldID }}
+    ticketSummaryTemplate: |
+{{ .Values.config.jira.ticketSummaryTemplate | indent 6 }}
+    ticketDescriptionTemplate: |
+{{ .Values.config.jira.ticketDescriptionTemplate | indent 6 }}
   group: {{ .Values.config.group }}
   technicalResponsible: {{ .Values.config.technicalResponsible }}
   aws:
@@ -41,4 +48,7 @@ nebula:
   accountStatusPollDelay: {{ .Values.config.accountStatusPollDelay }}
   accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}
   debug: {{ .Values.nebula.debug }}
+  policy:
+    project_admin: project_id:%(project_id)s and role:email_admin
+    nebula:admin: rule:project_admin
 {{- end -}}

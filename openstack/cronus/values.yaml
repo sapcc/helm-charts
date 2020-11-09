@@ -68,8 +68,16 @@ config:
     # password: # a password must be defined in ".Values.global.cronus_service_password"
     # userID: user-id
   group: service-group
-  jiraUsername: jira-username
-  jiraPassword: jira-password
+  jira:
+    username: jira-username
+    password: jira-password
+    serviceDeskID: 1
+    requestTypeID: 2
+    customFieldID: 3
+    ticketSummaryTemplate: |
+      Delete {{ $accountID }} account ID
+    ticketDescriptionTemplate: |
+      Please delete the {{ $accountID }} account ID
   serviceUsername: service-username
   servicePassword: service-password
   awsAccess: aws-access
@@ -112,10 +120,18 @@ ingress-nginx:
       nodePorts:
         http: ""
         https: ""
-        465: ""
+        465-tcp: ""
     ingressClass: cronus-nginx
     admissionWebhooks:
       enabled: false
     customTemplate:
       configMapName: cronus-nginx-template
       configMapKey: nginx.tmpl
+    extraVolumeMounts:
+    - name: tls-secret-cronus
+      mountPath: "/etc/ingress-controller/ssl/cronus"
+      readOnly: true
+    extraVolumes:
+    - name: tls-secret-cronus
+      secret:
+        secretName: tls-secret-cronus

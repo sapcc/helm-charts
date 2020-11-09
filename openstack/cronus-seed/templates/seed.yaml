@@ -36,7 +36,15 @@ spec:
           password: '{{ $.Values.global.cronus_service_password }}'
     - name: ccadmin
       projects:
-        - name: master
-          role_assignments:
-            - user: cronus@Default
-              role: keymanager_admin # to manage Barbican secrets
+      - name: master
+        role_assignments:
+        - user: cronus@Default
+          role: keymanager_admin # to manage Barbican secrets
+        swift:
+          enabled: true
+          containers:
+          # allow a user who has a keymanager_admin role in the project to read and write to a swift container
+          - name: cronus_usage_cache
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin

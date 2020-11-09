@@ -1,4 +1,6 @@
 mariadb:
+  name: datahubdb
+  enabled: true
   dbName: datahub
   image: mariadb:10.4.12
   imagePullPolicy: IfNotPresent
@@ -15,8 +17,14 @@ mariadb:
   initdb_configmap: datahub-initdb
   ronly_user: ronly
   ronly_password: DEFINED-IN-REGION
-
-
-db:
-  volume: 10Gi
-  endpoint_host_public: datahubdb
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+  metrics:
+    enabled: true
+  persistence_claim:
+    name: datahubdb-pvclaim
+    enabled: true
+    autoprovision:
+      enabled: true

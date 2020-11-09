@@ -1,0 +1,138 @@
+{{- if .Values.enabled }}
+{{- $harvestTemplate := print .Template.BasePath "/etc/_netapp-harvest.conf.tpl" }}
+{{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
+{{- $graphiteConf := include (print .Template.BasePath "/etc/_graphite-mapping.conf.tpl") . }}
+{{- $netappFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
+{{- range $name, $app := .Values.apps }}
+{{- $fullNameWithComponent := printf "%s-%s" $.Values.fullname $app.component }}
+{{- $netappHarvestConf := include $harvestTemplate (dict "dupEnabled" $app.dupEnabled "Values" $.Values) }}
+{{- if $app.enabled }}
+---
+{{- if $.Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Deployment
+metadata:
+  name: {{ $fullNameWithComponent }}
+  labels:
+    app.kubernetes.io/name: {{ $.Values.fullname }}
+    app.kubernetes.io/component: {{ $app.component }}
+spec:
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: {{ $fullNameWithComponent }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ $fullNameWithComponent }}
+      annotations:
+        prometheus.io/scrape: {{ $.Values.prometheus.scrape | quote }}
+        prometheus.io/targets: {{ $.Values.global.prometheus.targets | quote }}
+        prometheus.io/port: {{ $.Values.ports.graphiteExporterOutPort | quote }}
+        checksum/configmap.yaml: {{ include $configmapTemplate (dict "fullname" $.Values.fullname "component" $app.component "netappHarvestConf" $netappHarvestConf "graphiteConf" $graphiteConf "netappFilerYaml" $netappFilerYaml) | sha256sum }}
+    spec:
+      containers:
+      - name: harvest
+        image: {{ $.Values.harvest.image }}:{{ $.Values.harvest.imageTag }}
+        resources:
+          requests:
+            memory: {{ $.Values.harvest.memory }}
+            cpu: {{ $.Values.harvest.cpu }}
+        env:
+        - name: NETAPP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ $.Values.fullname }}
+              key: netappUser
+        - name: NETAPP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $.Values.fullname }}
+              key: netappPassword
+        ports:
+          {{- if $app.dupEnabled }}
+          - containerPort: {{ $.Values.ports.dupInPort }}
+          {{- else }}
+          - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
+          {{- end }}
+        volumeMounts:
+        - name: {{ $fullNameWithComponent }}
+          mountPath: /opt/netapp-harvest/config
+      - name: exporter                      # container: exporter
+        image: {{ $.Values.exporter.image }}
+        args: [ "--graphite.mapping-config", "/graphite-mapping.conf" ]
+        ports:
+        - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
+        - containerPort: {{ $.Values.ports.graphiteExporterOutPort }}
+        volumeMounts:
+        - name: {{ $fullNameWithComponent }}
+          subPath: graphite-mapping.conf
+          mountPath: /graphite-mapping.conf
+        resources:
+          requests:
+            memory: {{ $.Values.exporter.memory }}
+            cpu: {{ $.Values.exporter.cpu }}
+
+      {{- if $app.dupEnabled }}
+      - name: dup
+        image: {{ $.Values.dup.image }}:{{ $.Values.dup.imageTag }}
+        args:
+          - "-l"
+          - {{ $.Values.ports.dupInPort | quote }}
+          - "-1"
+          - {{ $.Values.ports.graphiteExporterInPort | quote }}
+          - "-2"
+          - "svc/netapp-graphite:2003"
+        ports:
+          - containerPort: {{ $.Values.ports.graphiteExporterInPort }}
+          - containerPort: {{ $.Values.ports.graphiteInPort }}
+          - containerPort: {{ $.Values.ports.dupInPort }}
+      {{- end }}
+
+
+      {{- if eq $name "manila" }}
+      {{- /*
+        manila filers are predefined in secret files rather than fetched from netbox
+      */ -}}
+      {{- else }}
+      - name: sd
+        image: {{ $.Values.netappsd.image }}:{{ $.Values.netappsd.imageTag }}
+        args:
+          - -configmap
+          - {{ $fullNameWithComponent }}
+          - -key
+          - netapp-filers.yaml
+          - -namespace
+          - {{ $.Release.Namespace }}
+          - -netbox-host
+          - {{ required "netbox_host needs to be defined in global values" $.Values.global.netbox_host }}
+          - -netbox-api-token
+          - {{ required "netbox_api_token needs to be defined in global values" $.Values.global.netbox_api_token }}
+          - -region
+          - {{ $.Values.global.region }}
+          - -query
+          - {{ required "$app.netappsd.query" $app.netappsd.query }}
+        resources:
+          requests:
+            memory: {{ $.Values.netappsd.memory }}
+            cpu: {{ $.Values.netappsd.cpu }}
+      {{- end }}
+
+      volumes:
+        - name: {{ $fullNameWithComponent }}
+          configMap:
+            name: {{ $fullNameWithComponent }}
+            items:
+              - key: netapp-harvest.conf
+                path: netapp-harvest.conf
+              - key: netapp-filers.yaml
+                path: netapp-filers.yaml
+              - key: graphite-mapping.conf
+                path: graphite-mapping.conf
+{{- end }}
+{{- end }}
+{{- end }}

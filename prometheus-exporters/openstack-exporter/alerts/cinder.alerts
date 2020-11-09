@@ -29,3 +29,45 @@ groups:
     annotations:
       description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% storage left before overcommit is reached."
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% storage left before overcommit is reached."
+  - alert: CinderBackendShardLowFreeSpaceWarning
+    expr: >
+      sum(cinder_free_capacity_gib) by (region, shard, backend) / 1024 + sum(cinder_free_capacity_gib == 0 or cinder_free_capacity_gib / cinder_total_capacity_gib * 100 < 25) by (region, shard, backend)
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: cinder
+      context: "openstack-exporter"
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 25% free storage left."
+      playbook: docs/support/playbook/cinder/cinder_low_overcommit_ratio.html
+    annotations:
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 25% free storage left."
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 25% free storage left."
+  - alert: CinderBackendShardLowFreeSpaceCritical
+    expr: >
+      sum(cinder_free_capacity_gib) by (region, shard, backend) / 1024 + sum(cinder_free_capacity_gib == 0 or cinder_free_capacity_gib / cinder_total_capacity_gib * 100 < 10) by (region, shard, backend)
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: cinder
+      context: "openstack-exporter"
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% free storage left."
+      playbook: docs/support/playbook/cinder/cinder_low_overcommit_ratio.html
+    annotations:
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% free storage left."
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has less than 10% free storage left."
+  - alert: CinderBackendStorageEmptyCritical
+    expr: >
+      sum(cinder_free_capacity_gib == 0) by (region, shard, backend) or sum(cinder_total_capacity_gib == 0) by (region, shard, backend)
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: cinder
+      context: "openstack-exporter"
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
+      playbook: docs/support/playbook/cinder/cinder_storage_profile_empty.html
+    annotations:
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity."

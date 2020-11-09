@@ -302,14 +302,14 @@ query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 interval = 3600
 
 # Default amount of results returned per page (integer value)
-per_page = 100
+per_page = 200
 
 # How old deleted zones should be (deleted_at) to be purged, in seconds (integer
 # value)
 time_threshold = 604800
 
 # How many zones to be purged on each run (integer value)
-batch_size = 100
+batch_size = 200
 
 #------------------------
 # Delayed zones NOTIFY

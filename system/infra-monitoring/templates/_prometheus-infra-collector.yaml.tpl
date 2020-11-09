@@ -73,12 +73,21 @@
       regex: '^cloudprober_.+;(ping|http)-([a-zA-Z]*)-(.+)'
       replacement: '$3'
       target_label: probed_to
+    - source_labels: [__name__, dst_zone]
+      target_label: probed_to
+      regex: '^cloudprober_.+;(.+)'
+      action: replace
+      replacement: '$1'
     - source_labels: [__name__]
       regex: '^cloudprober_.+'
       replacement: 'region'
       target_label: interconnect_type
     - source_labels: [__name__, probe]
       regex: '^cloudprober_.+;(ping|http)-[a-zA-Z]*-{{ .Values.global.region }}.+'
+      replacement: 'dc'
+      target_label: interconnect_type
+    - source_labels: [__name__, dst_zone]
+      regex: '^cloudprober_.+;{{ .Values.global.region }}.+'
       replacement: 'dc'
       target_label: interconnect_type
     - source_labels: [__name__]
@@ -692,10 +701,9 @@
 {{- end }}
 
 {{- range $name, $app := .Values.netapp_cap_exporter.apps }}
-{{- if $app.enabled }}
 - job_name: '{{ $app.fullname }}'
-  scrape_interval: {{ $app.scrapeInterval }}
-  scrape_timeout: {{ $app.scrapeTimeout }}
+  scrape_interval: {{ required ".Values.netapp_cap_exporter.apps[].scrapeInterval" $app.scrapeInterval }}
+  scrape_timeout: {{ required ".Values.netapp_cap_exporter.apps[].scrapeTimeout" $app.scrapeTimeout }}
   static_configs:
     - targets:
       - '{{ $app.fullname }}:9108'
@@ -708,7 +716,6 @@
       target_label: app
       replacement: ${1}
       action: replace
-{{- end }}
 {{- end }}
 
 {{- if .Values.netbox_exporters.enabled }}
