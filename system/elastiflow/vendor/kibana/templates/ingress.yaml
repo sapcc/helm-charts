@@ -1,0 +1,36 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "kibana.fullname" . -}}
+{{- $servicePort := .Values.service.port -}}
+{{- $ingressPath := .Values.ingress.path -}}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    # this is for kibana sso cert evaluation
+  {{- if .Values.auth.tls_client_auth.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.auth.tls_client_auth.secret }}
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+  {{ end }}
+spec:
+  tls:
+    - secretName: tls-elastiflow-kibana-qa-de-1-cloud-sap
+      hosts: [{{ required ".Values.ingress.endpoint_host_public variable missing" .Values.ingress.endpoint_host_public }}]
+  rules:
+  {{- range .Values.ingress.hosts }}
+    - host: {{ . }}
+      http:
+        paths:
+          - path: {{ $ingressPath }}
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: {{ $servicePort }}
+  {{- end }}
+{{- end }}

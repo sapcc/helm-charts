@@ -1,0 +1,33 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cc3test-api
+  namespace: {{ .Values.cc3test.namespace }}
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          volumes:
+            - name: cc3test-api-config
+              configMap:
+                name: cc3test-api
+          containers:
+          - name: cc3test-api
+            image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
+            volumeMounts:
+            - name: cc3test-api-config
+              mountPath: /cc3test-config
+              readOnly: true
+            args:
+              - "pytest"
+              - "--disable-pytest-warnings"
+              - "tests/"
+              - "-r ap"
+              - "-k test_cwd"
+          restartPolicy: Never

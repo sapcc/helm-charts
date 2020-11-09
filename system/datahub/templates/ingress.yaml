@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 
 metadata:
@@ -10,12 +10,12 @@ metadata:
 spec:
   tls:
      - secretName: datahubdb
-       hosts: [{{.Values.db.endpoint_host_public}}.{{.Values.global.region}}.{{.Values.global.tld}}]
+       hosts: [{{.Values.mariadb.name}}.{{.Values.global.region}}.{{.Values.global.tld}}]
   rules:
-    - host: {{.Values.db.endpoint_host_public}}.{{.Values.global.region}}.{{.Values.global.tld}}
+    - host: {{.Values.mariadb.name}}.{{.Values.global.region}}.{{.Values.global.tld}}
       http:
         paths:
         - path: /
           backend:
-            serviceName: {{.Values.db.endpoint_host_public}}
+            serviceName: {{.Values.mariadb.name}}
             servicePort: {{.Values.mariadb.port_public}}

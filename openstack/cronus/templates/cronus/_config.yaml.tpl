@@ -29,4 +29,10 @@ cronus:
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
   debug: {{ .Values.cronus.debug }}
+  policy:
+    project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user)
+    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user)
+    cronus:usage_viewer: rule:project_scope or rule:domain_scope or role:cloud_email_admin or role:resource_service
+    cronus:aws_proxy: rule:project_scope
+    cronus:smtp_proxy: rule:project_scope
 {{- end -}}

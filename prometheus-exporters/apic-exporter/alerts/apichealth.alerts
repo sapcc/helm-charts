@@ -1,7 +1,7 @@
 groups:
 - name: apichealth.alerts
   rules:
-  - alert: NetworkApicEndpointNotResponding
+  - alert: NetworkApicHostNotResponding
     expr: sum(network_apic_accessible)/count(network_apic_accessible) == 0
     for: 2m
     labels:
@@ -12,10 +12,10 @@ groups:
       dashboard: apic-health
       playbook: /docs/devops/alert/network/aci.html#APIC_endpoints_check
     annotations:
-      description: "All APICs http endpoints are not responding for more than 5 minutes"
-      summary: "All APICs http endpoints are not responding for more than 5 minutes"
+      description: "All APICs hosts are not responding for more than 5 minutes"
+      summary: "All APICs hosts are not responding for more than 5 minutes"
 
-  - alert: NetworkApicEndpointNotResponding
+  - alert: NetworkApicHostNotResponding
     expr: network_apic_accessible == 0
     for: 2m
     labels:
@@ -26,10 +26,10 @@ groups:
       dashboard: apic-health
       playbook: /docs/devops/alert/network/aci.html#APIC_endpoints_check
     annotations:
-      description: "APIC host {{ $labels.apicHost }} http endpoint is not responding"
-      summary: "APIC host {{ $labels.apicHost }} http endpoint is not responding"
+      description: "APIC host {{ $labels.apicHost }} is not responding"
+      summary: "APIC host {{ $labels.apicHost }} is not responding"
 
-  - alert: NetworkApicEndpointMissingMetric
+  - alert: NetworkApicHostMissingMetric
     expr: absent(network_apic_accessible) == 1
     for: 30m
     labels:
@@ -40,5 +40,5 @@ groups:
       dashboard: apic-health
       playbook: /docs/devops/alert/network/aci.html#APIC_endpoints_check
     annotations:
-      description: "APICs http endpoints metric is missing"
-      summary: "APICs http endpoints metric is missing - alerting is broken"
+      description: "APICs host metric is missing"
+      summary: "APICs host metric is missing - alerting is broken"
