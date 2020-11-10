@@ -83,3 +83,17 @@ groups:
         annotations:
           description: Big-IP device {{ $labels.devicename }} reports config sync failure. See the exact reason on the device itself and resolve.
           summary: Configuration failed to synchronize
+      - alert: NetworkF5MemoryDrop
+        expr: min_over_time(idelta(snmp_f5_sysGlobalHostOtherMemUsedKb{module="f5customer"}[5m])[2h:]) < bool -300000 == 1
+        for: 5m
+        labels:
+          context: f5
+          dashboard: f5-memory-utilization-regional
+          meta: "Big-IP device {{ $labels.devicename }} reports major drop in memory utilization."
+          playbook: 'docs/devops/alert/network/f5.html#f5_memory_drop'
+          service: f5
+          severity: info
+          tier: net
+        annotations:
+          description: Big-IP device {{ $labels.devicename }} reports major drop in memory utilization, suggesting API failure.
+          summary: Major drop in memory utilization.
