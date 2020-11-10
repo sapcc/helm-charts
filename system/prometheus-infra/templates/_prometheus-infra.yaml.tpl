@@ -98,4 +98,9 @@
   static_configs:
     - targets:
       - "prometheus-infra-collector.{{ .Values.global.region }}.cloud.sap"
-      - "pushgateway-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
+
+- job_name: pushgateway
+  honor_labels: false
+  static_configs:
+    - targets: 
+      - 'pushgateway-infra:9091'
