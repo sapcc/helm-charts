@@ -1,0 +1,27 @@
+{{- if .Values.mariadb.restore.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datahubdb-restore-config
+  namespace: datahub
+data:
+  config.yaml: |
+    swift:
+      identity_endpoint:  https://identity-3.{{ .Values.global.region }}.cloud.sap/v3
+      user_name: db_backup
+      user_domain_name: Default
+      project_name: "master"
+      project_domain_name: "ccadmin"
+      token: {{ .Values.restore.swift_token }}
+      container_name: "mariadb-backup-{{ .Values.global.region }}"
+    mariadb:
+      user_name: root
+      password: {{ .Values.mariadb.root_password }}
+      ip: {{ .Values.mariadb.name }}-mariadb
+      port: {{ .Values.mariadb.port_public }}
+    openstack_db_names: 
+      - "keystone"
+      - "neutron"
+    download_dir: {{ .Values.mariadb.restore.backup_dir }}
+    debug: {{ .Values.mariadb.restore.debug.enabled }}
+{{- end }}
