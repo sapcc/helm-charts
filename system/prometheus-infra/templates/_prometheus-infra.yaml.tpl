@@ -104,3 +104,4 @@
   static_configs:
     - targets: 
       - 'pushgateway-infra:9091'
+  scrape_interval: 5m
