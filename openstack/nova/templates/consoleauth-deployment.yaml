@@ -34,11 +34,19 @@ spec:
 {{ tuple . "nova" "console-auth" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       hostname: nova-console
       volumes:
-      - name: etcnova
-        emptyDir: {}
       - name: nova-etc
-        configMap:
-          name: nova-etc
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              items:
+              - key: nova.conf
+                path: nova.conf
+              - key: policy.json
+                path: policy.json
+              - key: logging.ini
+                path: logging.ini
+              name: nova-etc
       containers:
       - name: nova-consoleauth
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-consoleauth:{{.Values.imageVersionNovaConsoleauth |  default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
@@ -61,20 +69,8 @@ spec:
           preStop:
             {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
         volumeMounts:
-        - name: etcnova
+        - name: nova-etc
           mountPath: /etc/nova
-        - name: nova-etc
-          mountPath: /etc/nova/nova.conf
-          subPath: nova.conf
-          readOnly: true
-        - name: nova-etc
-          mountPath: /etc/nova/policy.json
-          subPath: policy.json
-          readOnly: true
-        - name: nova-etc
-          mountPath: /etc/nova/logging.ini
-          subPath: logging.ini
-          readOnly: true
 {{- end }}
 {{ $envAll := . }}
 {{- range $name, $config := .Values.consoles }}

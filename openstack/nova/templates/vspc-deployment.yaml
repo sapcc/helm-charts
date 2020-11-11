@@ -33,7 +33,7 @@ spec:
         - name: vmware-vspc
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/vmware-vspc:{{ .Values.vspc.version }}
           imagePullPolicy: IfNotPresent
-          command: ['dumb-init', '--', 'vmware-vspc', '--config-file', '/etc/vspc.conf']
+          command: ['dumb-init', '--', 'vmware-vspc', '--config-file', '/etc/nova/vspc.conf']
           env:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
@@ -67,22 +67,24 @@ spec:
           volumeMounts:
             - mountPath: /var/run/serial_log_dir
               name: serial-log-dir
-            - mountPath: /etc/vspc.conf
+            - mountPath: /etc/nova
               name: nova-etc
-              subPath: vspc.conf
-              readOnly: true
         - name: log-nanny
           image: {{ required ".Values.global.dockerHubMirror: is missing" .Values.global.dockerHubMirror }}/library/busybox
-          args: ['sh', '-c', 'while true; do find /var/run/serial_log_dir -mtime +30 -exec rm {} \;; sleep 1d; done']
+          args: ['sh', '-c', 'while true; do find /var/run/serial_log_dir -type f -mtime +30 -exec rm {} \;; sleep 1d; done']
           volumeMounts:
             - mountPath: /var/run/serial_log_dir
               name: serial-log-dir
       volumes:
-        - name: etcnova
-          emptyDir: {}
         - name: nova-etc
-          configMap:
-            name: nova-etc
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  items:
+                    - key: vspc.conf
+                      path: vspc.conf
+                  name: nova-etc
         - name: serial-log-dir
           persistentVolumeClaim:
             claimName: {{ .Values.vspc.pvc.existingClaim | default "nova-vspc-pvclaim" }}
