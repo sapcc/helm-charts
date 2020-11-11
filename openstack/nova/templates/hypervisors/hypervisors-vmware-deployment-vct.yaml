@@ -78,39 +78,10 @@ template: |
           {{- end }}
           volumeMounts:
           - mountPath: /etc/nova
-            name: etcnova
-          - mountPath: /etc/nova/nova.conf
             name: nova-etc
-            subPath: nova.conf
-            readOnly: true
-          - mountPath: /etc/nova/policy.json
-            name: nova-etc
-            subPath: policy.json
-            readOnly: true
-          - mountPath: /etc/nova/logging.ini
-            name: nova-etc
-            subPath: logging.ini
-            readOnly: true
-          - mountPath: /etc/nova/nova-compute.conf
-            name: hypervisor-config
-            subPath: nova-compute.conf
-            readOnly: true
-          - mountPath: /etc/nova/hostgroup-reservations.json
-            name: hypervisor-config
-            subPath: hostgroup-reservations.json
-            readOnly: true
           - mountPath: /etc/sudoers
-            name: nova-etc
             subPath: sudoers
-            readOnly: true
-          - mountPath: /etc/nova/rootwrap.conf
-            name: nova-etc
-            subPath: rootwrap.conf
-            readOnly: true
-          - mountPath: /etc/nova/rootwrap.d/compute.filters
-            name: nova-etc
-            subPath: compute.filters
-            readOnly: true
+            name: sudoers
         {{- if .Values.neutron_dvs_agent_enabled }}
         - name: neutron-dvs-agent
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
@@ -146,32 +117,8 @@ template: |
 {{ toYaml .Values.pod.resources.hv_vmware_dvs | indent 12 }}
           {{- end }}
           volumeMounts:
-          - mountPath: /etc/neutron
-            name: etcneutron
-          - mountPath: /etc/neutron/neutron.conf
-            name: neutron-etc
-            subPath: neutron.conf
-            readOnly: true
-          - mountPath: /etc/neutron/api-paste.ini
-            name: neutron-etc
-            subPath: api-paste.ini
-            readOnly: true
-          - mountPath: /etc/neutron/policy.json
-            name: neutron-etc
-            subPath: neutron-policy.json
-            readOnly: true
-          - mountPath: /etc/neutron/logging.conf
-            name: neutron-etc
-            subPath: logging.conf
-            readOnly: true
-          - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
-            name: neutron-etc
-            subPath: ml2-conf.ini
-            readOnly: true
-          - mountPath: /etc/neutron/plugins/ml2/ml2-vmware.ini
-            name: ml2-conf-vmware
-            subPath: ml2-vmware.ini
-            readOnly: true
+            - name: neutron-etc
+              mountPath: /etc/neutron
         {{- end }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -184,27 +131,72 @@ template: |
           - name: metrics
             containerPort: 9102
           volumeMounts:
-            - name: nova-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
+            - mountPath: /etc/statsd
+              name: statsd
         volumes:
-        - name: etcnova
-          emptyDir: {}
         - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: hypervisor-config
-          configMap:
-            name: nova-compute-vmware-{= name =}
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: nova.conf
+                  path: nova.conf
+                - key: policy.json
+                  path: policy.json
+                - key: logging.ini
+                  path: logging.ini
+                - key: rootwrap.conf
+                  path: rootwrap.conf
+                - key: compute.filters
+                  path: rootwrap.d/compute.filters
+                name: nova-etc
+            - configMap:
+                items:
+                - key: nova-compute.conf
+                  path: nova-compute.conf
+                - key: hostgroup-reservations.json
+                  path: hostgroup-reservations.json
+                name: nova-compute-vmware-{= name =}
+        - name: sudoers
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: sudoers
+                  path: sudoers
        {{- if .Values.neutron_dvs_agent_enabled }}
-        - name: etcneutron
-          emptyDir: {}
         - name: neutron-etc
-          configMap:
-            name: neutron-etc
-        - name: ml2-conf-vmware
-          configMap:
-            name: neutron-ml2-vmware-{= name =}
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: api-paste.ini
+                  path: api-paste.ini
+                - key: neutron-policy.json
+                  path: policy.json
+                - key: logging.conf
+                  path: logging.conf
+                - key: ml2-conf.ini
+                  path: plugins/ml2/ml2-conf.ini
+                name: neutron-etc
+            - configMap:
+                items:
+                - key: ml2-vmware.ini
+                  path: plugins/ml2/ml2-vmware.ini
+                name: neutron-ml2-vmware-{= name =}
         {{- end }}
+        - name: statsd
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: statsd-exporter.yaml
+                  path: statsd-exporter.yaml
+                name: nova-etc
 {{- end }}
