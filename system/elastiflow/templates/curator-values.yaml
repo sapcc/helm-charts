@@ -1,7 +1,12 @@
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
-  name: curator-extra
+  name: curator-secrets
   namespace: elastiflow
+  labels:
+    app: {{ template "elasticsearch-curator.name" . }}
+    chart: {{ template "elasticsearch-curator.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
 data:
-  CURATOR_RETENTION: "{{ .Values.retention }}"
+  retention: {{ default "100" .Values.curator.retention | b64enc | quote }}

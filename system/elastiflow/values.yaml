@@ -1,5 +1,12 @@
-retention: "100"
 curator:
+  retention: "92"
+  env:
+    DATA_RETENTION: "$(RETENTION)"
+  envFromSecrets:
+    RETENTION:
+      from:
+        secret: curator-secrets
+        key: retention
   configMaps:
     config_yml: |-
       ---
@@ -34,7 +41,7 @@ curator:
             direction: older
             timestring: '%Y.%m.%d'
             unit: days
-            unit_count: 92
+            unit_count: ${DATA_RETENTION}
             field:
             stats_result:
             epoch:
