@@ -1,0 +1,39 @@
+{{- if .Values.multicloudtest.enabled }}
+apiVersion: batch/v1beta1 
+kind: CronJob
+metadata:
+  name: multicloudtest-gcp
+  namespace: cc3test
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: multicloudtest
+            image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.multicloudtest.image.name variable missing" $.Values.multicloudtest.image.name }}:{{ required ".Values.multicloudtest.image.tag variable missing" $.Values.multicloudtest.image.tag }}
+            command:
+              - /usr/bin/pytest 
+            args:
+            - tests/test_compute.py
+            - --backend=gcp
+            - --config
+            - testconfig.yaml
+            - --pushgateway
+            - {{ .Values.multicloudtest.pushgateway }}:9091
+            env:
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: "/config/creds.json"
+            volumeMounts:
+              - mountPath: /config
+                name: creds
+                readOnly: true
+          volumes:
+            - configMap:
+                name: multicloudtest-creds-gcs
+              name: creds
+          restartPolicy: Never
+{{- end }}
