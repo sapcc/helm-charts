@@ -1,11 +1,11 @@
 #
-#"admin_required": "role:admin or is_admin:1"
+"admin_required": "role:admin"
 
 #
-#"service_role": "role:service"
+"service_role": "role:service"
 
 #
-#"service_or_admin": "rule:admin_required or rule:service_role"
+"service_or_admin": "rule:admin_required or rule:service_role"
 
 #
 #"owner": "user_id:%(user_id)s"
@@ -1211,13 +1211,15 @@
 # GET  /v3/services/{service_id}
 # Intended scope(s): system
 #"identity:get_service": "role:reader and system_scope:all"
-"identity:get_service": "rule:cloud_reader"
+"identity:get_service": "rule:cloud_reader or
+  rule:service_or_admin"
 
 # List services.
 # GET  /v3/services
 # Intended scope(s): system
 #"identity:list_services": "role:reader and system_scope:all"
-"identity:list_services": "rule:cloud_reader"
+"identity:list_services": "rule:cloud_reader or
+  rule:service_or_admin"
 
 # Create service.
 # POST  /v3/services

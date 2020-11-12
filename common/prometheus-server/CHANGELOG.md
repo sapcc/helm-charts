@@ -1,3 +1,7 @@
+## 3.7.2
+
+* Fix deprecated apiVersions for Thanos components, Prometheus ingress.
+
 ## 3.6.2
 
 * Added annotation triggering certificate automation: `kubernetes.io/tls-acme: "true"`.

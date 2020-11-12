@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   annotations:
@@ -23,7 +23,7 @@ spec:
     spec:
       initContainers:
         - name: iptables-init
-          image: "{{ .Values.global.registry }}/iptables:{{ .Values.images.iptables.tag }}"
+          image: "{{ .Values.global.registry }}/ccloud/iptables:{{ .Values.images.iptables.tag }}"
           command:
             - /scripts/pmtud/iptables-init.sh
           securityContext:
@@ -33,7 +33,7 @@ spec:
               mountPath: /scripts/pmtud
       containers:
       - name: pmtud
-        image: "{{ .Values.global.registry }}/go-pmtud:{{ .Values.images.pmtud.tag }}"
+        image: "{{ .Values.global.registry }}/ccloud/go-pmtud:{{ .Values.images.pmtud.tag }}"
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:

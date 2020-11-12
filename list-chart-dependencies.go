@@ -22,23 +22,26 @@ func main() {
 		if err != nil {
 			return err
 		}
-		if info.Mode().IsRegular() {
-			switch filepath.Base(path) {
-			case "Chart.yaml":
-				buf, err := ioutil.ReadFile(path)
-				must(err)
-				var data chartData
-				must(yaml.Unmarshal(buf, &data))
-				for _, dep := range data.Dependencies {
-					dependency{filepath.Dir(path), dep}.SerializeTo(os.Stdout)
+		if info.Mode().IsRegular() && filepath.Base(path) == "Chart.yaml" {
+			buf, err := ioutil.ReadFile(path)
+			must(err)
+			chart := chartData{Path: filepath.Dir(path)}
+			must(yaml.Unmarshal(buf, &chart))
+
+			if len(chart.Dependencies) > 0 {
+				for _, dep := range chart.Dependencies {
+					dependency{chart, dep}.SerializeTo(os.Stdout)
 				}
-			case "requirements.yaml":
-				buf, err := ioutil.ReadFile(path)
+			} else {
+				buf, err := ioutil.ReadFile(filepath.Join(chart.Path, "requirements.yaml"))
+				if os.IsNotExist(err) {
+					return nil
+				}
 				must(err)
-				var data requirementsData
-				must(yaml.Unmarshal(buf, &data))
-				for _, dep := range data.Dependencies {
-					dependency{filepath.Dir(path), dep}.SerializeTo(os.Stdout)
+				var reqs requirementsData
+				must(yaml.Unmarshal(buf, &reqs))
+				for _, dep := range reqs.Dependencies {
+					dependency{chart, dep}.SerializeTo(os.Stdout)
 				}
 			}
 		}
@@ -47,7 +50,10 @@ func main() {
 }
 
 type chartData struct {
-	Dependencies []depData `yaml:"dependencies"`
+	Path         string    `yaml:"-" json:"path"`
+	Name         string    `yaml:"name" json:"name"`
+	Version      string    `yaml:"version" json:"version"`
+	Dependencies []depData `yaml:"dependencies" json:"-"`
 }
 
 type requirementsData struct {
@@ -61,8 +67,8 @@ type depData struct {
 }
 
 type dependency struct {
-	Parent     string  `json:"parent"`
-	Dependency depData `json:"dependency"`
+	Parent     chartData `json:"parent"`
+	Dependency depData   `json:"dependency"`
 }
 
 func (d dependency) SerializeTo(w io.Writer) {

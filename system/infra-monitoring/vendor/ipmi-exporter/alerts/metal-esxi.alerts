@@ -75,6 +75,20 @@ groups:
       description: "ESXi Host {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}, Host in maintenance"
       summary: "Dimm error for server: {{ $labels.server_name }}"
       
+  - alert: MetalESXiECCMemCritical
+    expr: count(ipmi_memory_errors{job="vmware-esxi"} > 60000) by (server_name, exported_name, serial)
+    for: 30m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server_name }}"
+      meta: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 60000 correctable ECC errors. Serial: {{ $labels.serial }}, Host in maintenance"
+      playbook: docs/devops/alert/baremetal/vpod.html#MetalESXiMemoryWarn
+    annotations:
+      description: "ESXi Host {{ $labels.server_name }} hardware error. Module {{ $labels.exported_name }} more than 60000 correctable ECC errors. Serial: {{ $labels.serial }}, Host in maintenance"
+      summary: "Hardware error for server: {{ $labels.server_name }}"
+      
   - alert: MetalESXiECCMemWarn
     expr: count(ipmi_memory_errors{job="vmware-esxi"} > 16000) by (server_name, exported_name, serial)
     for: 30m

@@ -1,0 +1,54 @@
+groups:
+- name: thousandeyes.alerts
+  rules:
+  - alert: ThousandeyesSTARGATEReachability
+    expr: count(label_replace(thousandeyes_alert{test_name=~".*Stargate.*"}, "region", "global", "test_name", ".*" )) by (rule_name, test_name, rule_expression, type, region) > 1
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      context: "{{ $labels.type}} {{ $labels.test_name }}"
+      meta: "Thousandeyes Check: {{ $labels.type}} {{ $labels.rule_expression }} / {{ $labels.test_name }}."
+      playbook: /docs/devops/alert/network/thousandeyescheck.html#stargate
+    annotations:
+      description: "`{{ $labels.test_name }}` not reachable. *ThousandeyesAlert was fired separately!*"
+      summary: "Alert ACK via Slack is not possible in the moment!"
+
+  - alert: ThousandeyesSuperNovaReachability
+    expr: count(label_replace(thousandeyes_alert{test_name=~".*SuperNova.*"}, "region", "global", "test_name", ".*" )) by (rule_name, test_name, rule_expression, type, region) > 1
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      context: "{{ $labels.type}} {{ $labels.test_name }}"
+      meta: "Thousandeyes Check: {{ $labels.type}} {{ $labels.rule_expression }} / {{ $labels.test_name }}."
+      playbook: /docs/devops/alert/network/thousandeyescheck.html#supernova
+    annotations:
+      description: "`{{ $labels.test_name }}` not reachable."
+      summary: "SuperNova offline from internet!"
+
+  - alert: ThousandeyesHTTPReachability
+    expr: count(label_replace ( thousandeyes_alert{type="HTTP Server"}, "region", "$1", "test_name", "(^[a-zA-Z0-9-]{7}).*")) by (rule_name, test_name, rule_expression, type, region) > 1
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      context: "{{ $labels.type}} {{ $labels.test_name }}"
+      meta: "Thousandeyes Check: {{ $labels.type}} {{ $labels.rule_expression }} / {{ $labels.test_name }}."
+      playbook: /docs/devops/alert/network/thousandeyescheck.html#honeypots
+    annotations:
+      description: "External HTTP Test for `{{ $labels.test_name }}` failed."
+      summary: "{{ $labels.type }} Alert fires!"
+
+  - alert: ThousandeyesBGPReachability
+    expr: count(label_replace ( thousandeyes_alert{type="BGP"}, "region", "$1", "test_name", "(^[a-zA-Z0-9-]*).*" )) by (rule_name, test_name, rule_expression, type, region) > 1
+    for: 5m
+    labels:
+      severity: warning
+      tier: net
+      context: "{{ $labels.type}} {{ $labels.test_name }}"
+      meta: "Thousandeyes Check: {{ $labels.type}} {{ $labels.rule_expression }} / {{ $labels.test_name }}."
+      playbook: /docs/devops/alert/network/thousandeyescheck.html#bgp
+    annotations:
+      description: "`{{ $labels.test_name }}` is not reachable. *CIOC (for WAN Team/MIM) should be involved already by a direct ThousandeyesAlert.*"
+      summary: "{{ $labels.type }} Alert fires!"

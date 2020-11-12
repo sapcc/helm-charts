@@ -1,12 +1,8 @@
 {{- define "dynomite.image" -}}
-  {{- if typeIs "string" $.Values.dynomite.image.tag -}}
+  {{- if contains "DEFINED" $.Values.dynomite.image.tag -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
-    {{- if typeIs "float64" .Values.dynomite.image.tag -}}
-      {{ .Values.global.registry }}/{{ .Values.dynomite.image.repository }}:{{ .Values.dynomite.image.tag | printf "%0.f" }}
-    {{- else -}}
-      {{ .Values.global.registry }}/{{ .Values.dynomite.image.repository }}:{{ .Values.dynomite.image.tag }}
-    {{- end -}}
+    {{ .Values.global.registry }}/{{ .Values.dynomite.image.repository }}:{{ .Values.dynomite.image.tag }}
   {{- end -}}
 {{- end }}
 
