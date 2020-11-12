@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "statsd-exporter.fullname" . }}
+  labels:
+    {{- include "statsd-exporter.labels" . | nindent 4 }}
+  annotations:
+    "prometheus.io/scrape": {{ .Values.prometheus.scrape | quote}}
+    "prometheus.io/port": {{ .Values.prometheus.port | quote}}
+    "prometheus.io/targets": {{ .Values.prometheus.name | quote}}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.web.port }}
+      targetPort: web
+      protocol: TCP
+      name: web
+    {{- if .Values.statsd.tcpPort }}
+    - port: {{ .Values.statsd.tcpPort }}
+      targetPort: statsd-tcp
+      protocol: TCP
+      name: statsd-tcp
+    {{- end }}
+    {{- if .Values.statsd.udpPort }}
+    - port: {{ .Values.statsd.udpPort }}
+      targetPort: statsd-udp
+      protocol: UDP
+      name: statsd-udp
+    {{- end }}
+  selector:
+    {{- include "statsd-exporter.selectorLabels" . | nindent 4 }}
