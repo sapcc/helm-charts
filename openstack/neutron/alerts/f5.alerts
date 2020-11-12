@@ -8,9 +8,33 @@ groups:
       severity: info
       service: octavia
       tier: os
-      meta: 'F5 Network Agent not syncing since 15m: {{ $labels.kubernetes_pod_name }}, please try restarting pod'
+      meta: 'F5 Network Agent not syncing since 20m: {{ $labels.name }}, please try restarting pod'
       dashboard: octavia
     annotations:
-      description: 'F5 Network Agent not syncing since 15m: {{ $labels.kubernetes_pod_name }}, please try restarting pod'
+      description: 'F5 Network Agent not syncing since 20m: {{ $labels.name }}, please try restarting pod'
       summary: 'F5 Network Agent not syncing'
+  - alert: F5NetworkFullSyncException
+    expr: sum(rate(networking_f5_full_sync_exceptions_total[10m])) by (name) > 0
+    for: 1m
+    labels:
+      severity: info
+      service: octavia
+      tier: os
+      meta: 'F5 Network Agent {{ $labels.name }} full sync aborted: check log'
+      dashboard: octavia
+    annotations:
+      description: 'F5 Network Agent {{ $labels.name }} full sync aborted: check log'
+      summary: 'F5 Network Agent not syncing'
+  - alert: F5NetworkSyncExceptions
+    expr: sum(rate(networking_f5_sync_exceptions_total[10m])) by (name, type) > 0.005 
+    for: 1m
+    labels:
+      severity: info
+      service: octavia
+      tier: os
+      meta: 'F5 Network Agent {{ $labels.name }} has unusual high exception rate for {{ $labels.type }}: check log'
+      dashboard: octavia
+    annotations:
+      description: 'F5 Network Agent {{ $labels.name }} has unusual high exception rate for {{ $labels.type }}: check log'
+      summary: 'F5 Network Agent Exception count'
 
