@@ -1,8 +1,11 @@
 {{- if .Values.multicloudtest.enabled }}
+{{- if eq .Values.multicloudtest.spawn_pod false }}
+{{ $mct := $.Values.multicloudtest }}
+{{- range $.Values.multicloudtest.clouds }}
 apiVersion: batch/v1beta1 
 kind: CronJob
 metadata:
-  name: multicloudtest-gcp
+  name: multicloudtest-{{ .name }}
   namespace: cc3test
 spec:
   schedule: "*/5 * * * *"
@@ -19,21 +22,25 @@ spec:
               - /usr/bin/pytest 
             args:
             - tests/test_compute.py
-            - --backend=gcp
+            - --backend={{ .name }}
             - --config
             - testconfig.yaml
             - --pushgateway
-            - {{ .Values.multicloudtest.pushgateway }}:9091
+            - {{ $mct.pushgateway }}:9091
             env:
-              - name: GOOGLE_APPLICATION_CREDENTIALS
-                value: "/config/creds.json"
+              {{- range .env }}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
             volumeMounts:
               - mountPath: /config
                 name: creds
                 readOnly: true
           volumes:
             - configMap:
-                name: multicloudtest-creds-gcs
+                name: multicloudtest-creds-{{ .name }}
               name: creds
           restartPolicy: Never
+{{- end }}
+{{- end }}
 {{- end }}
