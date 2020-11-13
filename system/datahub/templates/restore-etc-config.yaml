@@ -19,9 +19,13 @@ data:
       password: {{ .Values.mariadb.root_password }}
       ip: {{ .Values.mariadb.name }}-mariadb
       port: {{ .Values.mariadb.port_public }}
-    openstack_db_names: 
-      - "keystone"
-      - "neutron"
+    openstack_dbs:
+{{- range $backup := .Values.mariadb.restore.backups }}
+      -
+        name: {{ $backup.name }}
+        container_name: {{ $backup.container_name }}
+        backup_version: {{ $backup.backup_version }}
+{{- end }}
     download_dir: {{ .Values.mariadb.restore.backup_dir }}
     debug: {{ .Values.mariadb.restore.debug.enabled }}
 {{- end }}
