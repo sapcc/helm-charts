@@ -34,9 +34,13 @@ groups:
         The keppel-janitor should be validating each blob every 7 days, but some blobs have not been validated on schedule.
         Check the logs of keppel-janitor for details.
 
+  # Failed validations are rechecked every 10 minutes. The trigger duration is
+  # such that we only get alerted after two consecutive failed validations.
+  # If we alerted on a single failed validation, we'd get spurious alerts every
+  # time Swift has a hiccup.
   - alert: OpenstackKeppelBlobValidationFailed
     expr: keppel_blobs_validation_errors > 0
-    for: 5m
+    for: 15m
     labels:
       context: janitor
       dashboard: keppel-overview
@@ -65,9 +69,13 @@ groups:
         The keppel-janitor should be validating each manifest every 6 hours, but some manifests have not been validated on schedule.
         Check the logs of keppel-janitor for details.
 
+  # Failed validations are rechecked every 10 minutes. The trigger duration is
+  # such that we only get alerted after two consecutive failed validations.
+  # If we alerted on a single failed validation, we'd get spurious alerts every
+  # time Swift has a hiccup.
   - alert: OpenstackKeppelManifestValidationFailed
     expr: keppel_manifests_validation_errors > 0
-    for: 5m
+    for: 15m
     labels:
       context: janitor
       dashboard: keppel-overview
