@@ -148,7 +148,7 @@
 {{- if .Values.datahub.enabled }}
 <filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
   @type mysql_enrich
-  host {{.Values.datahub.host}}.{{.Values.global.region}}.{{.Values.global.dommain}}
+  host {{.Values.datahub.host}}.{{.Values.global.region}}.{{.Values.global.tld}}
   port {{.Values.datahub.port}}
   database {{.Values.datahub.db}}
   username {{.Values.datahub.username}}
