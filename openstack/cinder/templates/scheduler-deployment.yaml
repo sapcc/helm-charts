@@ -65,28 +65,22 @@ spec:
 {{ toYaml .Values.pod.resources.scheduler | indent 12 }}
           {{- end }}
           volumeMounts:
-            - name: etccinder
+            - name: cinder-etc
               mountPath: /etc/cinder
-            - name: cinder-etc
-              mountPath: /etc/cinder/cinder.conf
-              subPath: cinder.conf
-              readOnly: true
-            - name: cinder-etc
-              mountPath: /etc/cinder/api-paste.ini
-              subPath: api-paste.ini
-              readOnly: true
-            - name: cinder-etc
-              mountPath: /etc/cinder/policy.json
-              subPath: policy.json
-              readOnly: true
-            - name: cinder-etc
-              mountPath: /etc/cinder/logging.ini
-              subPath: logging.ini
-              readOnly: true
  {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
-        - name: etccinder
-          emptyDir: {}
         - name: cinder-etc
-          configMap:
-            name: cinder-etc
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  items:
+                    - key: cinder.conf
+                      path: cinder.conf
+                    - key: api-paste.ini
+                      path: api-paste.ini
+                    - key: policy.json
+                      path: policy.json
+                    - key: logging.ini
+                      path: logging.ini
+                  name: cinder-etc
