@@ -12,7 +12,7 @@ groups:
 #     annotations:
 #       description: "The {{ $labels.kubernetes_name }} discovered a ghost volume. a good opportunity to search for the underlying bug now ..."
 #       summary: Vcenter nanny detected a ghost volume
-# 
+#
 #   - alert: OpenstackVcenterNannyVolumeAttachmentInconsistency
 #     expr: sum(vcenter_nanny_volume_attachment_inconsistencies{region=~"staging|qa-de-1|ap-au-1|ap-ae-1|ap-jp-1|ap-jp-2|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-3"}) > 1000
 #     for: 60m
@@ -294,6 +294,7 @@ groups:
       service: compute
       severity: warning
       tier: vmware
+      no_alert_on_absence: "true"
       playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
     annotations:
       description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host => suggestion: VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} "
@@ -306,6 +307,7 @@ groups:
       service: compute
       severity: warning
       tier: vmware
+      no_alert_on_absence: "true"
       playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
     annotations:
       description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host overbooked is {{ $labels.consolidated_needed }} => No suggestion from nanny and consolidated_needed in BB:"
