@@ -336,7 +336,10 @@
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
-    - source_labels: [__address__]
+    - source_labels: [job]
+      regex: bios/ironic
+      action: keep
+    - source_labels: [server_name]
       target_label: __param_target
     - source_labels: [__param_target]
       target_label: instance
@@ -346,6 +349,8 @@
       target_label:  __param_manufacturer
     - source_labels: [model]
       target_label:  __param_model
+    - source_labels: [job]
+      target_label: __param_job
 - job_name: 'bios/vpod'
   params:
     job: [bios/vpod]
