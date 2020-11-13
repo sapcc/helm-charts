@@ -58,6 +58,7 @@
       - '{__name__=~"^rest_client_.+"}'
       - '{__name__=~"^scheduler_.+"}'
       - '{__name__=~"^scrape_duration_seconds"}'
+      - '{__name__=~"^secrets_exporter_certificate_not_after"}'
       - '{__name__=~"^skydns_.+"}'
       - '{__name__=~"^unbound_.+"}'
       - '{__name__=~"^up"}'
