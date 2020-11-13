@@ -333,7 +333,7 @@
   scrape_timeout: {{$values.ironic_scrapeTimeout}}
   file_sd_configs:
       - files :
-        - /etc/prometheus/configmaps/atlas-ironic-sd/ironic.json
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /
   relabel_configs:
     - source_labels: [__address__]
