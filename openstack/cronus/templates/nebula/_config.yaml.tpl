@@ -52,3 +52,7 @@ nebula:
     project_admin: project_id:%(project_id)s and role:email_admin
     nebula:admin: rule:project_admin
 {{- end -}}
+  metric:
+    pushgatewayUrl: {{ .Values.config.pushgatewayUrl }}
+    metricService: {{ .Values.config.nebula.metricService }}
+

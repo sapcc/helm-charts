@@ -36,3 +36,6 @@ cronus:
     cronus:aws_proxy: rule:project_scope
     cronus:smtp_proxy: rule:project_scope
 {{- end -}}
+  metric:
+    pushgatewayUrl: {{ .Values.config.pushgatewayUrl }}
+    metricService: {{ .Values.config.cronus.metricService }}
