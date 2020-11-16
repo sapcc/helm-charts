@@ -34,6 +34,7 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_share | default false }}
 
 scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter
+scheduler_default_weighers = CapacityWeigher,HostAffinityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
 
 migration_ignore_scheduler = True
