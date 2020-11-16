@@ -278,6 +278,7 @@ data:
               management_ip: true
               has_primary_ip: true
 
+            # all bm machines without cisco
             - custom_labels:
                 job: "bios/ironic"
               metrics_label: "bios-exporter"
@@ -290,6 +291,21 @@ data:
               management_ip: true
               has_primary_ip: true
 
+            # all bm machines from cisco not connected to FI (UCSM)
+            - custom_labels:
+                job: "bios/ironic"
+              metrics_label: "bios-exporter"
+              target: 2
+              region: "{{ .Values.global.region }}"
+              status: "active"
+              q: "-bm"
+              role: "server"
+              manufacturer: "cisco"
+              tag: "non-fi"
+              management_ip: true
+              has_primary_ip: true
+
+            # all bb machines not connected to FI (UCSM)
             - custom_labels:
                 job: "bios/vpod"
               metrics_label: "bios-exporter"
@@ -301,6 +317,7 @@ data:
               target: 1
               platform: "vmware-esxi"
 
+            # all cp machines from cisco
             - custom_labels:
                 job: "bios/cisco_cp"
               metrics_label: "bios-exporter"
@@ -313,6 +330,7 @@ data:
               management_ip: true
               has_primary_ip: true
 
+            # all bb machines from cisco not connected to FI (USCM)
             - custom_labels:
                 job: "bios/cisco_cp"
               metrics_label: "bios-exporter"
@@ -320,19 +338,6 @@ data:
               region: "{{ .Values.global.region }}"
               status: "active"
               q: "-bb"
-              role: "server"
-              manufacturer: "cisco"
-              tag: "non-fi"
-              management_ip: true
-              has_primary_ip: true
-
-            - custom_labels:
-                job: "bios/cisco_cp"
-              metrics_label: "bios-exporter"
-              target: 2
-              region: "{{ .Values.global.region }}"
-              status: "active"
-              q: "-bm"
               role: "server"
               manufacturer: "cisco"
               tag: "non-fi"
