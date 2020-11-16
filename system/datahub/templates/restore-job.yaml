@@ -1,6 +1,6 @@
 {{- if .Values.mariadb.restore.enabled }}
-apiVersion: batch/v1
-kind: Job
+apiVersion: batch/v1beta1
+kind: CronJob
 metadata: 
   name: datahubdb-restore
   namespace: datahub
@@ -8,18 +8,20 @@ metadata:
     component: datahubdb-restore
     system: openstack
 spec:
-  template:
+  schedule: "{{ .Values.mariadb.restore.schedule }}"
+  jobTemplate:
     spec:
-      containers:
-      - name: datahubdb-restore
-        image: "{{ .Values.mariadb.restore.image.repo }}:{{ .Values.mariadb.restore.image.tag }}"
-        volumeMounts:
-        - name: restore-config
-          mountPath: /config
-      restartPolicy: Never
-      volumes:
-      - name: restore-config
-        configMap:
-          name: datahubdb-restore-config
-  backoffLimit: 2
+      template:
+        spec:
+          containers:
+          - name: datahubdb-restore
+            image: "{{ .Values.mariadb.restore.image.repo }}:{{ .Values.mariadb.restore.image.tag }}"
+            volumeMounts:
+            - name: restore-config
+              mountPath: /config
+          restartPolicy: OnFailure
+          volumes:
+          - name: restore-config
+            configMap:
+              name: datahubdb-restore-config
 {{- end }}
