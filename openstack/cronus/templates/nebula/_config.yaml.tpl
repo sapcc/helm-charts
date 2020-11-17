@@ -50,5 +50,7 @@ nebula:
   debug: {{ .Values.nebula.debug }}
   policy:
     project_admin: project_id:%(project_id)s and role:email_admin
+    cloud_admin: project_id:%(project_id)s and role:cloud_email_admin
     nebula:admin: rule:project_admin
+    nebula:cloud_admin: rule:cloud_admin
 {{- end -}}
