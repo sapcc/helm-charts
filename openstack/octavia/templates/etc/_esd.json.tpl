@@ -1,19 +1,19 @@
 {
   "proxy_protocol_2edF_v1_0": {
     "lbaas_fastl4": "",
-    "lbaas_ctcp": "tcp",
+    "lbaas_ctcp": "cc_tcp_profile",
     "lbaas_irule": ["proxy_protocol_2edF_v1_0"],
     "lbaas_one_connect": ""
   },
   "proxy_protocol_V2_e8f6_v1_0": {
     "lbaas_fastl4": "",
-    "lbaas_ctcp": "tcp",
+    "lbaas_ctcp": "cc_tcp_profile",
     "lbaas_irule": ["cc_proxy_protocol_V2_e8f6_v1_0"],
     "lbaas_one_connect": ""
   },
   "standard_tcp_a3de_v1_0": {
     "lbaas_fastl4": "",
-    "lbaas_ctcp": "tcp",
+    "lbaas_ctcp": "cc_tcp_profile",
     "lbaas_one_connect": ""
   },
   "x_forward_5b6e_v1_0": {
