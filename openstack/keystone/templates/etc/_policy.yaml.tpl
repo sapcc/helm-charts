@@ -52,7 +52,8 @@
   'swiftreseller':%(target.role.name)s or
   'service':%(target.role.name)s or
   'cloud_identity_viewer':%(target.role.name)s or
-  'cloud_support_tools_viewer':%(target.role.name)s"
+  'cloud_support_tools_viewer':%(target.role.name)s or
+  'cloud_email_admin':%(target.role.name)s"
 
 "blacklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s"
 
