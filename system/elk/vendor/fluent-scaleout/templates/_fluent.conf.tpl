@@ -152,7 +152,7 @@
   port {{.Values.datahub.port}}
   database {{.Values.datahub.db}}
   username {{.Values.datahub.username}}
-  password {{.Values.datahub.password}}
+  password {{.Values.mariadb.ronly_password}}
   sql select * from test;
   sql_key floating_ip_address
   record_key remote_addr
