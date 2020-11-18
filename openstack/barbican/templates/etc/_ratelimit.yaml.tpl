@@ -1,3 +1,7 @@
+# List of whitelisted scopes keys (domainName/projectName).
+whitelist:
+  - default/service
+
 # Override default ratelimit response.
 ratelimit_response:
   status: 498 Rate Limited
@@ -21,31 +25,31 @@ rates:
   global:
     secrets:
       - action: read/list
-        limit: 100r/m
+        limit: 2000r/m
     containers:
       - action: read/list
-        limit: 100r/m
+        limit: 2000r/m
     secrets/secret:
       - action: read
-        limit: 100r/m
+        limit: 2000r/m
     containers/container:
       - action: read
-        limit: 100r/m
+        limit: 2000r/m
 
   # default local rate limits applied to each project
   default:
     secrets:
       - action: read/list
-        limit: 20r/m
+        limit: 50r/m
     containers:
       - action: read/list
-        limit: 20r/m
+        limit: 50r/m
     secrets/secret:
       - action: read
-        limit: 20r/m
+        limit: 50r/m
     containers/container:
       - action: read
-        limit: 20r/m
+        limit: 50r/m
     secrets/secret/payload:
       - action: read
-        limit: 20r/m
+        limit: 50r/m
