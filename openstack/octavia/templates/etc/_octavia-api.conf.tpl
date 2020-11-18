@@ -11,7 +11,7 @@ CustomLog /dev/stdout proxy env=forwarded
 
 <VirtualHost *:{{.Values.api_port_internal}}>
 
-    WSGIDaemonProcess octavia-wsgi user=octavia group=octavia processes=8 threads=1 display-name=%{GROUP}
+    WSGIDaemonProcess octavia-wsgi user=octavia group=octavia processes=1 threads=100 display-name=%{GROUP}
     WSGIProcessGroup octavia-wsgi
     WSGIScriptAlias / /var/lib/openstack/bin/octavia-wsgi
     WSGIApplicationGroup %{GLOBAL}
