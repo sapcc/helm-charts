@@ -87,7 +87,7 @@
   </store>
   <store>
     @type elasticsearch_dynamic
-    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.s-{{.Values.global.region}}.{{.Values.global.tld}}
     port {{.Values.global.elk_elasticsearch_ssl_port}}
     user {{.Values.global.elk_elasticsearch_admin_user}}
     password {{.Values.global.elk_elasticsearch_admin_password}}
@@ -216,7 +216,7 @@
 </match>
 <match NSX.**>
   @type elasticsearch_dynamic
-  host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+  host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.s-{{.Values.global.region}}.{{.Values.global.tld}}
   port {{.Values.global.elk_elasticsearch_ssl_port}}
   user {{.Values.global.elk_elasticsearch_admin_user}}
   password {{.Values.global.elk_elasticsearch_admin_password}}
