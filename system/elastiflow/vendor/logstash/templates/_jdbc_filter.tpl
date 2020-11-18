@@ -43,7 +43,7 @@ filter {
             staging_directory => "/tmp/logstash/jdbc_static/import_data"
             loader_schedule => "0 0/2 * * *" # run loaders every minute
             jdbc_user => "{{ .Values.jdbc.user }}"
-            jdbc_password => "{{ .Values.mariadb.ronly_password }}"
+            jdbc_password => "{{ .Values.jdbc.password }}"
             jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
             jdbc_driver_library => ""
             jdbc_connection_string => "jdbc:mysql://{{ .Values.jdbc.service }}.{{ .Values.jdbc.namespace }}:3306/{{ .Values.jdbc.db }}"
