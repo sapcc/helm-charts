@@ -168,7 +168,7 @@
   @type copy
   <store>
     @type elasticsearch
-    host {{.Values.global.cluster_name}}.{{.Values.global.region}}.{{.Values.global.domain}}
+    host {{.Values.global.cluster_name}}.{{.Values.global.region}}.{{.Values.global.tld}}
     port {{.Values.global.https_port}}
     user {{.Values.global.data_user}}
     password {{.Values.global.data_password}}
