@@ -30,11 +30,36 @@ mariadb:
       enabled: true
   restore:
     enabled: false
+    schedule: 10 1 * * *
     image:
       repo: keppel.eu-de-1.cloud.sap/ccloud/go-maria-restore
       tag: DEFINED-IN-PIPELINE
     swift_token: DEFININED-IN-SECRETS
+    additional_sql_file: "/config/openstack_view.sql"
     backup_dir: "/backups/"
+    openstack_view: "CREATE OR REPLACE database datahub;
+    CREATE OR REPLACE VIEW datahub.test AS 
+        select  f.floating_ip_address AS floating_ip_address,
+        port.id AS port,p.name AS project,
+        p.id AS project_id,
+        d.name AS domain,
+        n.name AS network,
+        n.id AS network_id,
+        s.name AS subnet,
+        s.id AS subnet_id,
+        sn.name AS subnetpool,
+        sn.id AS subnetpool_id,
+        r.id AS router_id,
+        r.name AS router 
+        from neutron.floatingips f
+            left join keystone.project p on f.project_id = p.id
+            left join keystone.project d on p.domain_id = d.id
+            left join neutron.ipallocations ip on f.floating_ip_address = ip.ip_address
+            left join neutron.networks n on f.floating_network_id = n.id
+            left join neutron.subnets s on ip.subnet_id = s.id
+            left join neutron.subnetpools sn on s.subnetpool_id = sn.id
+            left join neutron.ports port on ip.port_id = port.id
+            left join neutron.routers r on r.id = f.router_id;"
     debug:
       enabled: false
 

@@ -102,6 +102,7 @@ num_retries = 10
 [cinder]
 os_region_name = {{.Values.global.region}}
 cross_az_attach={{.Values.cross_az_attach}}
+http_retries = {{.Values.cinder_http_retries}}
 
 [neutron]
 metadata_proxy_shared_secret = {{ .Values.global.nova_metadata_secret }}

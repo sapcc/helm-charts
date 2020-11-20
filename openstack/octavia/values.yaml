@@ -31,6 +31,50 @@ mysql_metrics:
   db_name: octavia
   db_user: octavia
   customMetrics:
+    - help: Amount of ESD tags used
+      labels:
+      - "status"
+      - "octavia_host"
+      name: octavia_esd_tags_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge
+        FROM tags
+        WHERE tag='proxy_protocol_2edF_v1_0'
+          OR tag='proxy_protocol_V2_e8f6_v1_0'
+          OR tag='standard_tcp_a3de_v1_0'
+          OR tag='x_forward_5b6e_v1_0'
+          OR tag='one_connect_dd5c_v1_0'
+          OR tag='no_one_connect_3caB_v1_0'
+          OR tag='http_compression_e4a2_v1_0'
+          OR tag='cookie_encryption_b82a_v1_0'
+          OR tag='sso_22b0_v1_0'
+          OR tag='sso_required_f544_v1_0'
+          OR tag='http_redirect_a26c_v1_0';
+      values:
+      - "count_gauge"
+    - help: Amount of ESD L7policies used
+      labels:
+      - "status"
+      - "octavia_host"
+      name: octavia_esd_l7policies_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge
+        FROM l7policy
+        WHERE name='proxy_protocol_2edF_v1_0'
+          OR name='proxy_protocol_V2_e8f6_v1_0'
+          OR name='standard_tcp_a3de_v1_0'
+          OR name='x_forward_5b6e_v1_0'
+          OR name='one_connect_dd5c_v1_0'
+          OR name='no_one_connect_3caB_v1_0'
+          OR name='http_compression_e4a2_v1_0'
+          OR name='cookie_encryption_b82a_v1_0'
+          OR name='sso_22b0_v1_0'
+          OR name='sso_required_f544_v1_0'
+          OR name='http_redirect_a26c_v1_0';
+      values:
+      - "count_gauge"
     - help: Total Load Balancer count
       labels:
       - "status"

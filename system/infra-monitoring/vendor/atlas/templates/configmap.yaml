@@ -278,19 +278,49 @@ data:
               management_ip: true
               has_primary_ip: true
 
+            # all bm machines without cisco
+            - custom_labels:
+                job: "bios/ironic"
+              metrics_label: "bios-exporter"
+              target: 2
+              region: "{{ .Values.global.region }}"
+              status: "active"
+              q: "-bm"
+              role: "server"
+              manufacturer__n: "cisco"
+              management_ip: true
+              has_primary_ip: true
+
+            # all bm machines from cisco not connected to FI (UCSM)
+            - custom_labels:
+                job: "bios/ironic"
+              metrics_label: "bios-exporter"
+              target: 2
+              region: "{{ .Values.global.region }}"
+              status: "active"
+              q: "-bm"
+              role: "server"
+              manufacturer: "cisco"
+              tag: "non-fi"
+              management_ip: true
+              has_primary_ip: true
+
+            # all bb machines not connected to FI (UCSM)
             - custom_labels:
                 job: "bios/vpod"
-              metrics_label: "cisco"
+              metrics_label: "bios-exporter"
               region: "{{ .Values.global.region }}"
               status: "active"
               q: "-bb"
               role: "server"
-              tag__n: "non-fi"
+              tagn: "non-fi"
               target: 1
               platform: "vmware-esxi"
 
+            # all cp machines from cisco
             - custom_labels:
                 job: "bios/cisco_cp"
+              metrics_label: "bios-exporter"
               target: 2
               region: "{{ .Values.global.region }}"
               status: "active"
@@ -300,24 +330,14 @@ data:
               management_ip: true
               has_primary_ip: true
 
+            # all bb machines from cisco not connected to FI (USCM)
             - custom_labels:
                 job: "bios/cisco_cp"
+              metrics_label: "bios-exporter"
               target: 2
               region: "{{ .Values.global.region }}"
               status: "active"
               q: "-bb"
-              role: "server"
-              manufacturer: "cisco"
-              tag: "non-fi"
-              management_ip: true
-              has_primary_ip: true
-
-            - custom_labels:
-                job: "bios/cisco_cp"
-              target: 2
-              region: "{{ .Values.global.region }}"
-              status: "active"
-              q: "-bm"
               role: "server"
               manufacturer: "cisco"
               tag: "non-fi"
@@ -344,7 +364,7 @@ data:
               status: "active"
               role: server
               platform: "coreos"
-              tag__n: "no-redfish"
+              tagn: "no-redfish"
               region: "{{ .Values.global.region }}"
 
             # Windows nodes for Active Directory
@@ -355,7 +375,7 @@ data:
               status: "active"
               role: server
               platform: "windows-server"
-              tag__n: "no-redfish"
+              tagn: "no-redfish"
               region: "{{ .Values.global.region }}"
 
             # Linux nodes for Billing Hana
@@ -366,7 +386,7 @@ data:
               status: "active"
               role: server
               platform: "linux"
-              tag__n: "no-redfish"
+              tagn: "no-redfish"
               region: "{{ .Values.global.region }}"
 
             # VMware ESXi Server for Redfish Exporter
@@ -377,7 +397,7 @@ data:
               status: "active"
               role: server
               platform: "vmware-esxi"
-              tag__n: "no-redfish"
+              tagn: "no-redfish"
               region: "{{ .Values.global.region }}"
 
             # Ironic Server for Redfish Exporter
@@ -388,7 +408,7 @@ data:
               status: "active"
               role: server
               platform: "ironic"
-              tag__n: "no-redfish"
+              tagn: "no-redfish"
               region: "{{ .Values.global.region }}"
 
         virtualization:

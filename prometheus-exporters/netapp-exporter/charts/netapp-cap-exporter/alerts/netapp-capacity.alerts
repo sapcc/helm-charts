@@ -2,8 +2,8 @@ groups:
   - name: netapp-capacity.alerts
     rules:
       - alert: NetappFilerScrapeFailure
-        expr: irate(netapp_filer_scrape_failure[5m]) > 0
-        for: 10m
+        expr: increase(netapp_filer_scrape_failure{status="401"}[15m]) > 0
+        for: 15m
         labels:
           severity: info
           tier: storage
@@ -13,7 +13,7 @@ groups:
           playbook: 'docs/support/playbook/storage/filer_inaccessible.html'
         annotations:
           description: 'Netapp filer {{ $labels.filer }} '
-          summary: Netapp ONTAP API inaccessible
+          summary: Netapp exporter fails to authenticate against filer
 
       - alert: ManilaStorageAggregateHighUsage
         expr: max_over_time(netapp_aggregate_used_percentage{app=~".*manila", filer!~"ma01-md007"}[2h]) > 75

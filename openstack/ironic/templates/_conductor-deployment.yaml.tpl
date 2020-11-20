@@ -1,7 +1,7 @@
 {{- define "ironic_conductor_deployment" }}
     {{- $conductor := index . 1 }}
     {{- with index . 0 }}
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ironic-conductor-{{$conductor.name}}

@@ -65,7 +65,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: resources
-      severity: info
+      severity: warning
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly"
     annotations:

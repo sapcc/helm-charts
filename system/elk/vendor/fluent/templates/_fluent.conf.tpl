@@ -120,8 +120,8 @@
   host {{.Values.datahub.host}}
   port {{.Values.datahub.port}}
   database {{.Values.datahub.db}}
-  username {{.Values.datahub.username}}
-  password {{.Values.datahub.password}}
+  username {{.Values.global.datahub.user}}
+  password {{.Values.global.datahub.password}}
   sql select * from test;
   sql_key floating_ip_address
   record_key remote_addr
@@ -497,7 +497,7 @@
   </store>
   <store>
     @type elasticsearch_dynamic
-    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}
     port {{.Values.global.elk_elasticsearch_ssl_port}}
     user {{.Values.global.elk_elasticsearch_data_user}}
     password {{.Values.global.elk_elasticsearch_data_password}}
@@ -536,7 +536,7 @@
   @type copy
   <store>
     @type elasticsearch
-    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
+    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}
     port {{.Values.global.elk_elasticsearch_ssl_port}}
     user {{.Values.global.elk_elasticsearch_data_user}}
     password {{.Values.global.elk_elasticsearch_data_password}}

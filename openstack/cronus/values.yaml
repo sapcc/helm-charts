@@ -56,14 +56,14 @@ config:
     # endpointType: public
     # applicationCredentialID: application-credential-id
     # applicationCredentialSecret: application-credential-secret
-    # applicationCredentialName: application-credential-name 
-    # projectID: project-id 
+    # applicationCredentialName: application-credential-name
+    # projectID: project-id
     projectName: master
     projectDomainName: ccadmin
-    # projectDomainID: project-domain-id 
+    # projectDomainID: project-domain-id
     userDomainName: Default
     # domainName: domain-name
-    # domainID: domain-id 
+    # domainID: domain-id
     username: cronus
     # password: # a password must be defined in ".Values.global.cronus_service_password"
     # userID: user-id
@@ -95,6 +95,17 @@ config:
   websiteURL: https://example.com
   allowedServices:
     email: email-region
+  cronusPolicy:
+    project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user)
+    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user)
+    cronus:usage_viewer: rule:project_scope or rule:domain_scope or role:cloud_email_admin or role:resource_service
+    cronus:aws_proxy: rule:project_scope
+    cronus:smtp_proxy: rule:project_scope
+  nebulaPolicy:
+    project_admin: project_id:%(project_id)s and role:email_admin
+    cloud_admin: project_id:%(project_id)s and role:cloud_email_admin
+    nebula:admin: rule:project_admin
+    nebula:cloud_admin: rule:cloud_admin
 
 service:
   type: ClusterIP

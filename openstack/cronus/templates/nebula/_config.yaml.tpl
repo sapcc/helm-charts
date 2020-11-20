@@ -49,6 +49,7 @@ nebula:
   accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}
   debug: {{ .Values.nebula.debug }}
   policy:
-    project_admin: project_id:%(project_id)s and role:email_admin
-    nebula:admin: rule:project_admin
+{{- range $key, $value := .Values.config.nebulaPolicy }}
+    {{ $key }}: {{ $value }}
+{{- end }}
 {{- end -}}

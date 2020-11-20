@@ -29,6 +29,7 @@ function start_application {
   # grafana-cli plugins install mtanda-histogram-panel
   grafana-cli plugins install grafana-worldmap-panel
   grafana-cli plugins install yesoreyeram-boomtable-panel
+  grafana-cli plugins install jdbranham-diagram-panel
   # install sapcc/grafana-prometheus-alertmanager-datasource
   grafana-cli --pluginUrl https://github.com/sapcc/grafana-prometheus-alertmanager-datasource/archive/master.zip plugins install prometheus-alertmanager
   # install sapcc/Grafana_Status_panel

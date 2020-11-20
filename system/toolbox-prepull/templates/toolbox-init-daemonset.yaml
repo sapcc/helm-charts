@@ -1,0 +1,59 @@
+{{ if .Values.enabled -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: toolbox
+  name: toolbox-init
+spec:
+  selector:
+    matchLabels:
+      app: toolbox
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: toolbox
+      annotations:
+        configmap-toolbox-hash: {{ include (print $.Template.BasePath "/toolbox-init-configmap.yaml") $ | sha256sum }}
+    spec:
+      initContainers:
+        - name: toolbox-init
+          image: "{{ required ".Values.global.registry is missing" .Values.global.registry }}/ccloud/toolbox-docker:{{ required ".Values.images.init.tag is missing" .Values.images.init.tag }}"
+          command:
+            - /scripts/toolbox/toolbox-init.sh
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: var-lib
+              mountPath: /host/var/lib
+            - name: docker
+              mountPath: /var/run/docker.sock
+            - name: toolbox-init
+              mountPath: /scripts/toolbox
+      containers:
+      - name: sleep
+        image: "{{ required ".Values.global.registry is missing" .Values.global.registry }}/ccloud/alpine:{{ required ".Values.images.sleep.tag is missing" .Values.images.sleep.tag }}"
+        imagePullPolicy: IfNotPresent
+        command: ["sleep", "inf"]
+        securityContext:
+           privileged: true
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      terminationGracePeriodSeconds: 5
+      tolerations:
+        - operator: "Exists"
+      volumes:
+        - name: toolbox-init
+          configMap:
+            name: toolbox-init
+            defaultMode: 0744
+        - name: var-lib
+          hostPath:
+            path: /var/lib
+        - name: docker
+          hostPath:
+            path: /var/run/docker.sock
+            type: ""
+{{- end }}
