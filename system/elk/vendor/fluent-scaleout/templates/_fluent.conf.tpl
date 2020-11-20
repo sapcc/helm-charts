@@ -151,8 +151,8 @@
   host {{.Values.datahub.host}}.{{.Values.global.region}}.{{.Values.global.tld}}
   port {{.Values.datahub.port}}
   database {{.Values.datahub.db}}
-  username {{.Values.datahub.username}}
-  password {{.Values.global.datahub_ronly_password}}
+  username {{.Values.global.datahub.user}}
+  password {{.Values.global.datahub.password}}
   sql select * from test;
   sql_key floating_ip_address
   record_key remote_addr
