@@ -15,6 +15,32 @@ groups:
           description: 'Netapp filer {{ $labels.filer }} '
           summary: Netapp exporter fails to authenticate against filer
 
+      - alert: NetappFilerDNSError
+        expr: increase(netapp_filer_dns_error[15m]) > 0
+        for: 15m
+        labels:
+          severity: info
+          tier: storage
+          service: netapp-exporter
+          context: exporter-health
+          no_alert_on_absence: "true"
+        annotations:
+          description: 'Netapp filer {{ $labels.filer }} '
+          summary: Netapp exporter fails with DNS error
+
+      - alert: NetappFilerTimeoutError
+        expr: increase(netapp_filer_timeout_error[15m]) > 0
+        for: 15m
+        labels:
+          severity: info
+          tier: storage
+          service: netapp-exporter
+          context: exporter-health
+          no_alert_on_absence: "true"
+        annotations:
+          description: 'Netapp filer {{ $labels.filer }} '
+          summary: Netapp exporter check timeout ({{ $labels.timeout }})
+
       - alert: ManilaStorageAggregateHighUsage
         expr: max_over_time(netapp_aggregate_used_percentage{app=~".*manila", filer!~"ma01-md007"}[2h]) > 75
         for: 10m
