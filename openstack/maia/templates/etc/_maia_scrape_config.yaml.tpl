@@ -101,7 +101,7 @@
   static_configs:
     - targets: ['prometheus-infra-collector.infra-monitoring:9090']
   metric_relabel_configs:
-    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
+    - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region"
       action: labeldrop
     - action: drop
       source_labels: [vmware_name]
@@ -153,3 +153,6 @@
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
       - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
+      - '{__name__=~"^vrops_virtualmachine_disk_.+"}'
+      - '{__name__=~"^vrops_virtualmachine_network_.+"}'
+      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
