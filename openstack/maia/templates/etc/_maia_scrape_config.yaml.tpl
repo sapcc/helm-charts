@@ -132,6 +132,10 @@
       target_label: __name__
       regex: netapp_volume_(.*)
       replacement: openstack_manila_share_${1}
+    - source_labels: [__name__, project ]
+      regex: '^vrops_virtualmachine_.+;(.+)'
+      replacement: '$1'
+      target_label: project_id
 
   metrics_path: '/federate'
   params:
@@ -146,3 +150,4 @@
       - '{__name__=~"^netapp_capacity_.+"}'
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
