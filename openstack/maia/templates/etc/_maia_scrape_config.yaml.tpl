@@ -136,6 +136,8 @@
       regex: '^vrops_virtualmachine_.+;(.+)'
       replacement: '$1'
       target_label: project_id
+    - regex: 'project'
+      action: labeldrop
 
   metrics_path: '/federate'
   params:
