@@ -19,18 +19,10 @@ f5customer:
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.11
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.12
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.27
-  - 1.3.6.1.4.1.3375.2.2.10.2.3.1.4
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.7
   - 1.3.6.1.4.1.3375.2.2.10.2.3.1.9
-  - 1.3.6.1.4.1.3375.2.2.10.5.2.1.1
   - 1.3.6.1.4.1.3375.2.2.5.1.2.1.23
-  - 1.3.6.1.4.1.3375.2.2.6.2.1.2.1.1
-  - 1.3.6.1.4.1.3375.2.2.6.2.1.2.1.11
-  - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.2
-  - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.29
-  - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.34
-  - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.57
-  - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.58
+  - 1.3.6.1.4.1.3375.2.2.5.3.2.1.11
   get:
   - 1.3.6.1.2.1.1.5.0
   - 1.3.6.1.4.1.3375.2.1.1.2.1.10.0
@@ -325,20 +317,6 @@ f5customer:
       labelname: ltmVirtualServStatName
       oid: 1.3.6.1.4.1.3375.2.2.10.2.3.1.1
       type: DisplayString
-  - name: snmp_f5_ltmVirtualServStatCsMeanConnDur
-    oid: 1.3.6.1.4.1.3375.2.2.10.2.3.1.4
-    type: counter
-    help: The average connection duration in milliseconds for all connections through
-      the specified virtual server. - 1.3.6.1.4.1.3375.2.2.10.2.3.1.4
-    indexes:
-    - labelname: ltmVirtualServStatName
-      type: DisplayString
-    lookups:
-    - labels:
-      - ltmVirtualServStatName
-      labelname: ltmVirtualServStatName
-      oid: 1.3.6.1.4.1.3375.2.2.10.2.3.1.1
-      type: DisplayString
   - name: snmp_f5_ltmVirtualServStatClientBytesIn
     oid: 1.3.6.1.4.1.3375.2.2.10.2.3.1.7
     type: counter
@@ -367,15 +345,6 @@ f5customer:
       labelname: ltmVirtualServStatName
       oid: 1.3.6.1.4.1.3375.2.2.10.2.3.1.1
       type: DisplayString
-  - name: snmp_f5_ltmVirtualServProfileVsName
-    oid: 1.3.6.1.4.1.3375.2.2.10.5.2.1.1
-    type: DisplayString
-    help: The name of a virtual server. - 1.3.6.1.4.1.3375.2.2.10.5.2.1.1
-    indexes:
-    - labelname: ltmVirtualServProfileVsName
-      type: DisplayString
-    - labelname: ltmVirtualServProfileProfileName
-      type: DisplayString
   - name: snmp_f5_ltmNodeAddrNumber
     oid: 1.3.6.1.4.1.3375.2.2.4.1.1
     type: gauge
@@ -391,62 +360,37 @@ f5customer:
     indexes:
     - labelname: ltmPoolName
       type: DisplayString
+  - name: snmp_f5_ltmPoolMemberMonitorStatus
+    oid: 1.3.6.1.4.1.3375.2.2.5.3.2.1.11
+    type: gauge
+    help: The hierarchical load balance state for the specified node address, including
+      parent status - 1.3.6.1.4.1.3375.2.2.5.3.2.1.11
+    indexes:
+    - labelname: ltmPoolMemberPoolName
+      type: DisplayString
+    - labelname: ltmPoolMemberNodeName
+      type: DisplayString
+    - labelname: ltmPoolMemberPort
+      type: gauge
+    enum_values:
+      0: unchecked
+      1: checking
+      2: inband
+      3: forced-up
+      4: up
+      18: addr-down
+      19: down
+      20: forced-down
+      21: maint
+      22: irule-down
+      23: inband-down
+      24: down-manual-resume
   - name: snmp_f5_ltmTcpProfileStatOpen
     oid: 1.3.6.1.4.1.3375.2.2.6.10.2.3.1.2
     type: gauge
     help: The number of current open connections. - 1.3.6.1.4.1.3375.2.2.6.10.2.3.1.2
     indexes:
     - labelname: ltmTcpProfileStatName
-      type: DisplayString
-  - name: snmp_f5_ltmClientSslName
-    oid: 1.3.6.1.4.1.3375.2.2.6.2.1.2.1.1
-    type: DisplayString
-    help: The name of a client-side SSL profile. - 1.3.6.1.4.1.3375.2.2.6.2.1.2.1.1
-    indexes:
-    - labelname: ltmClientSslName
-      type: DisplayString
-  - name: snmp_f5_ltmClientSslCiphers
-    oid: 1.3.6.1.4.1.3375.2.2.6.2.1.2.1.11
-    type: DisplayString
-    help: The set of ciphers available for client-side SSL negotiation. - 1.3.6.1.4.1.3375.2.2.6.2.1.2.1.11
-    indexes:
-    - labelname: ltmClientSslName
-      type: DisplayString
-  - name: snmp_f5_ltmClientSslStatCurConns
-    oid: 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.2
-    type: gauge
-    help: The current number of concurrent connections with established SSL sessions
-      being maintained by the filter. - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.2
-    indexes:
-    - labelname: ltmClientSslStatName
-      type: DisplayString
-  - name: snmp_f5_ltmClientSslStatHandshakeFailures
-    oid: 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.29
-    type: counter
-    help: The total number of handshake failures. - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.29
-    indexes:
-    - labelname: ltmClientSslStatName
-      type: DisplayString
-  - name: snmp_f5_ltmClientSslStatTlsv1
-    oid: 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.34
-    type: counter
-    help: The total connections for SSL TLS protocol version 1. - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.34
-    indexes:
-    - labelname: ltmClientSslStatName
-      type: DisplayString
-  - name: snmp_f5_ltmClientSslStatTlsv11
-    oid: 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.57
-    type: counter
-    help: The total connections for SSL TLS protocol version 1.1. - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.57
-    indexes:
-    - labelname: ltmClientSslStatName
-      type: DisplayString
-  - name: snmp_f5_ltmClientSslStatTlsv12
-    oid: 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.58
-    type: counter
-    help: The total connections for SSL TLS protocol version 1.2. - 1.3.6.1.4.1.3375.2.2.6.2.2.3.1.58
-    indexes:
-    - labelname: ltmClientSslStatName
       type: DisplayString
   - name: snmp_f5_ltmFastL4ProfileStatOpen
     oid: 1.3.6.1.4.1.3375.2.2.6.5.2.3.1.2
