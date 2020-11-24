@@ -4,14 +4,15 @@
     "context_is_image_admin": "rule:context_is_admin or role:image_admin",
     "context_is_editor": "rule:context_is_image_admin or role:member",
     "context_is_viewer": "rule:context_is_editor or role:image_viewer",
+    "default": "rule:context_is_admin",
 
-    "add_image": "rule:context_is_image_admin or role:member",
+    "add_image": "rule:context_is_editor",
     "delete_image": "rule:context_is_image_admin",
     "get_image": "rule:context_is_viewer",
     "get_images": "rule:context_is_viewer",
     "modify_image": "rule:context_is_image_admin",
     "publicize_image": "rule:context_is_cloud_admin",
-    "communitize_image": "rule:context_is_admin or rule:context_is_editor",
+    "communitize_image": "rule:context_is_editor",
     
     "copy_from": "rule:context_is_editor",
     "download_image": "rule:context_is_editor",
