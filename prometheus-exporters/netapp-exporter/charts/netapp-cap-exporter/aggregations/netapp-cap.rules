@@ -7,3 +7,7 @@ groups:
     expr: sum by (app, region, filer, availability_zone) (netapp_aggregate_used_bytes{app=~".*cinder|.*manila"})
   - record: global:netapp_filer_available_bytes
     expr: sum by (app, region, filer, availability_zone) (netapp_aggregate_available_bytes{app=~".*cinder|.*manila"})
+  - record: netapp_aggregate_total_bytes:vpod:small
+    expr: netapp_aggregate_total_bytes{app=~".*cinder"} <= 20*1024*1024*1024*1024
+  - record: netapp_aggregate_total_bytes:vpod:big
+    expr: netapp_aggregate_total_bytes{app=~".*cinder"} > 20*1024*1024*1024*1024
