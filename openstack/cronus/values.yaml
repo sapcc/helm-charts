@@ -5,7 +5,6 @@ cronus:
   http: 5000
   smtp: 1025
   debug: true
-  host: cronus-host
   tls: tls-secret
   image:
     name: cronus-repository
@@ -28,7 +27,6 @@ nebula:
   cacheSize: 512
   http: 1080
   debug: true
-  host: nebula-host
   image:
     name: nebula-repository
     pullPolicy: IfNotPresent
@@ -83,7 +81,20 @@ config:
   awsAccess: aws-access
   awsSecret: aws-secret
   technicalUsername: aws-username
-  awsPolicy: aws-policy
+  policyName: aws-policy
+  iamPolicy: |
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "ses:*",
+                ],
+                "Resource": "*"
+            }
+        ]
+    }
   forwardUserAgent: false
   billingCacheTTL: 24h
   technicalResponsible: technical-responsible@example
@@ -102,10 +113,12 @@ config:
     cronus:aws_proxy: rule:project_scope
     cronus:smtp_proxy: rule:project_scope
   nebulaPolicy:
-    project_admin: project_id:%(project_id)s and role:email_admin
-    cloud_admin: project_id:%(project_id)s and role:cloud_email_admin
-    nebula:admin: rule:project_admin
-    nebula:cloud_admin: rule:cloud_admin
+    project_scope: project_id:%(project_id)s and role:email_admin
+    domain_scope: domain_id:%(target.project.domain.id)s and role:cloud_email_admin
+    cluster_scope: project_domain_name:ccadmin and project_name:cloud_admin
+    cluster_or_domain_scope: rule:cluster_scope or rule:domain_scope
+    nebula:admin: rule:project_scope or rule:cluster_or_domain_scope
+    nebula:cloud_admin: rule:cluster_or_domain_scope
 
 service:
   type: ClusterIP
