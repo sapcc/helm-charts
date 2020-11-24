@@ -40,7 +40,9 @@ nebula:
     access: {{ .Values.config.awsAccess }}
     secret: {{ .Values.config.awsSecret }}
     technicalUsername: {{ .Values.config.technicalUsername }}
-    policyName: {{ .Values.config.awsPolicy }}
+    policyName: {{ .Values.config.policyName }}
+    iamPolicy: |
+{{ .Values.config.iamPolicy | indent 6 }}
     verifyEmailDomain: {{ .Values.config.verifyEmailDomain }}
     verifyEmailSecret: {{ .Values.config.verifyEmailSecret }}
     useCaseDescription: {{ .Values.config.useCaseDescription }}
