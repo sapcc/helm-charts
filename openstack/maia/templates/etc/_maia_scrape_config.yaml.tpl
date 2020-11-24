@@ -154,5 +154,6 @@
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
       - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
       - '{__name__=~"^vrops_virtualmachine_disk_.+"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
       - '{__name__=~"^vrops_virtualmachine_network_.+"}'
       - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
