@@ -49,6 +49,8 @@ netapp_trace_flags=api,method
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
 reserved_share_percentage = {{ $share.reserved_share_percentage | default 50 }}
+# Time to kepp deleted volumes in recovery queue until space is reclaimed
+netapp_delete_retention_hours = {{ $context.Values.delete_retention_hours | default 12 }}
 
 # Float representation of the over subscription ratio when thin
 # provisioning is involved. Default ratio is 20.0, meaning provisioned
