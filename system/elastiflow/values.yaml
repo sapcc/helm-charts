@@ -161,6 +161,7 @@ logstash:
     enabled: false
     configMap: "jdbc-filter"
     configFile: "20_filter_95_enrich_ips.conf"
+    schedule: "30 1 * * *"
   service:
     type: NodePort
     externalTrafficPolicy: Local
@@ -218,7 +219,7 @@ logstashExporter:
   ls:
     uri: http://elastiflow-logstash:9600
   listen_port: 9198
-  targets: prometheus-openstack
+  targets: infra-collector
 
 kibana:
   image: "docker.elastic.co/kibana/kibana"
@@ -235,7 +236,7 @@ kibana:
 alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+  prometheus: infra-collector
 
 queryExporter:
   name: elastiflow
@@ -246,7 +247,7 @@ queryExporter:
   es:
     uri: "http://elasticsearch-master:9200"
   listen_port: 9206
-  targets: prometheus-openstack
+  targets: infra-collector
   config:
     exporter.cfg: |
       [DEFAULT]
