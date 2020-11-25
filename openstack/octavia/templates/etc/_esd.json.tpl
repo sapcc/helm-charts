@@ -22,7 +22,7 @@
   },
   "one_connect_dd5c_v1_0": {
     "lbaas_ctcp": "cc_tcp_profile",
-    "lbaas_one_connect": "oneconnect"
+    "lbaas_one_connect": "cc_oneconnect_profile"
   },
   "no_one_connect_3caB_v1_0": {
     "lbaas_one_connect": ""
