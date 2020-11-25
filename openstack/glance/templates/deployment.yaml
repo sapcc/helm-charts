@@ -154,7 +154,12 @@ spec:
           mountPath: /etc/glance/glance-protection.pp
           subPath: glance-protection.pp
           readOnly: true
-
+        {{- if .Values.sapcc_rate_limit.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/ratelimit.yaml
+          subPath: ratelimit.yaml
+          readOnly: true
+        {{- end }}
       {{- if .Values.imageVersionGlanceRegistry }}
       - name: registry
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/ubuntu-source-glance-registry:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
