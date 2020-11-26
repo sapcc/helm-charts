@@ -18,9 +18,18 @@ mariadb:
   initdb_configmap: octavia-initdb
   persistence_claim:
     name: db-octavia-pvclaim
-  backup:
+  backup_v2:
     enabled: true
-    os_password: null # use dbBackupServicePassword from globals
+    databases:
+      - octavia
+    verify_tables:
+      - octavia.load_balancer
+      - octavia.amphora
+      - octavia.listener
+      - octavia.pool
+      - octavia.member
+    oauth:
+      client_id: octavia
 
 ingress:
   annotations:
