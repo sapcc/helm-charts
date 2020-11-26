@@ -33,10 +33,25 @@ groups:
       summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DataStoreCapacityCritical
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"Management|ephemeral|local"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
     for: 20m
     labels:
       severity: critical
+      tier: os
+      service: storage
+      context: "vrops-exporter"
+      meta: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/cinder/cinder_storage_aggregate_full.html
+    annotations:
+      description: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+  - alert: DataStoreCapacityCritical
+    expr: >
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"Management|ephemeral|local|vVol"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+    for: 20m
+    labels:
+      severity: warning
       tier: os
       service: storage
       context: "vrops-exporter"
