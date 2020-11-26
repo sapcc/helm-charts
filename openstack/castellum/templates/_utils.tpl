@@ -18,6 +18,8 @@
       key: postgres_password
 - name: CASTELLUM_DB_HOSTNAME
   value: "castellum-postgresql.{{ .Release.Namespace }}.svc"
+- name: CASTELLUM_DB_CONNECTION_OPTIONS
+  value: "sslmode=disable"
 - name: CASTELLUM_HTTP_LISTEN_ADDRESS
   value: ":8080"
 - name: CASTELLUM_LOG_SCRAPES
