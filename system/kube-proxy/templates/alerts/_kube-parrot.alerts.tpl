@@ -29,3 +29,17 @@ groups:
       annotations:
         description: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbor {{`{{ $labels.neighbor }}`}}. Network datapath threatened!
         summary: Node {{`{{ $labels.node }}`}} is not advertising any prefixes to its BGP neighbor {{`{{ $labels.neighbor }}`}}.
+
+    - alert: KubeParrotBgpScrapeMissing
+      expr: up{job="parrot-metrics"} == 0
+      for: 15m
+      labels:
+        tier: k8s
+        service: kube-parrot
+        severity: info
+        context: availability
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor.html"
+      annotations:
+        description: kube-parrot is not running on node {{`{{ $labels.node }}`}}. Network datapath threatened!
+        summary: kube-parrot is not running on node {{`{{ $labels.node }}`}}. Network datapath threatened!
+
