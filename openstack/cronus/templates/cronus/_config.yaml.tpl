@@ -33,4 +33,20 @@ cronus:
 {{- range $key, $value := .Values.config.cronusPolicy }}
     {{ $key }}: {{ $value }}
 {{- end }}
+{{- if .Values.hermes }}
+{{- $user := .Values.rabbitmq_notifications.users.default.user }}
+{{- $creds := .Values.hermes.rabbitmq.targets.cronus }}
+  auditSink:
+    rabbitmqUrl: amqp://{{ $user }}:{{ $creds.password }}@{{ $creds.host }}.{{ .Values.global.region }}.cloud.sap:5672
+    queueName: {{ $creds.queue_name }}
+    internalQueueSize: {{ .Values.config.cronusAuditSink.internalQueueSize }}
+    maxContentLen: {{ .Values.config.cronusAuditSink.maxContentLen | int64 }}
+{{- if .Values.config.cronusAuditSink.contentTypePrefixes }}
+    contentTypePrefixes:
+{{- range $k, $v := .Values.config.cronusAuditSink.contentTypePrefixes }}
+      - {{ $v }}
+{{- end }}
+{{- end }}
+    debug: {{ .Values.config.cronusAuditSink.debug | default false }}
+{{- end }}
 {{- end -}}
