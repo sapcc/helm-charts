@@ -54,4 +54,20 @@ nebula:
 {{- range $key, $value := .Values.config.nebulaPolicy }}
     {{ $key }}: {{ $value }}
 {{- end }}
+{{- if .Values.hermes }}
+{{- $user := .Values.rabbitmq_notifications.users.default.user }}
+{{- $creds := .Values.hermes.rabbitmq.targets.cronus }}
+  auditSink:
+    rabbitmqUrl: amqp://{{ $user }}:{{ $creds.password }}@{{ $creds.host }}.{{ .Values.global.region }}.cloud.sap:5672
+    queueName: {{ $creds.queue_name }}
+    internalQueueSize: {{ .Values.config.nebulaAuditSink.internalQueueSize }}
+    maxContentLen: {{ .Values.config.nebulaAuditSink.maxContentLen | int64 }}
+{{- if .Values.config.nebulaAuditSink.contentTypePrefixes }}
+    contentTypePrefixes:
+{{- range $k, $v := .Values.config.nebulaAuditSink.contentTypePrefixes }}
+      - {{ $v }}
+{{- end }}
+{{- end }}
+    debug: {{ .Values.config.nebulaAuditSink.debug | default false }}
+{{- end }}
 {{- end -}}
