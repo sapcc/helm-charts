@@ -31,7 +31,7 @@
   rule:service_role or
   rule:cloud_admin"
 
-"blacklist_roles": "'resource_service':%(target.role.name)s or
+"blocklist_roles": "'resource_service':%(target.role.name)s or
   'cloud_registry_admin':%(target.role.name)s or
   'cloud_registry_viewer':%(target.role.name)s or
   'cloud_dns_resource_admin':%(target.role.name)s or
@@ -55,7 +55,7 @@
   'cloud_support_tools_viewer':%(target.role.name)s or
   'cloud_email_admin':%(target.role.name)s"
 
-"blacklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s"
+"blocklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s"
 
 # Show access rule details.
 # GET  /v3/users/{user_id}/access_rules/{access_rule_id}
@@ -503,10 +503,10 @@
 # Intended scope(s): system, domain
 #"identity:create_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 "identity:create_grant": "rule:cloud_admin or
-  (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blacklist_roles and not rule:blacklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
+  (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
+  ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
+  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
+  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blocklist_roles and not rule:blocklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 
 # Revoke a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a
@@ -526,10 +526,10 @@
 # Intended scope(s): system, domain
 #"identity:revoke_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 "identity:revoke_grant": "rule:cloud_admin or
-  (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blacklist_roles and not rule:blacklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blacklist_roles and not rule:blacklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
+  (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
+  ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
+  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
+  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blocklist_roles and not rule:blocklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
 
 # List all grants a specific user has on the system.
 # ['HEAD', 'GET']  /v3/system/users/{user_id}/roles
