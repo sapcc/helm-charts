@@ -144,11 +144,11 @@
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^snmp_f5_.+"}'
-      - '{__name__=~"^vcenter_cpu_.+"}'
-      - '{__name__=~"^vcenter_disk_.+"}'
-      - '{__name__=~"^vcenter_mem_.+"}'
-      - '{__name__=~"^vcenter_net_.+"}'
-      - '{__name__=~"^vcenter_virtualDisk_.+"}'
+#      - '{__name__=~"^vcenter_cpu_.+"}'
+#      - '{__name__=~"^vcenter_disk_.+"}'
+#      - '{__name__=~"^vcenter_mem_.+"}'
+#      - '{__name__=~"^vcenter_net_.+"}'
+#      - '{__name__=~"^vcenter_virtualDisk_.+"}'
       - '{__name__=~"^netapp_capacity_.+"}'
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
