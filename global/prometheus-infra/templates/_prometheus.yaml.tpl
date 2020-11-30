@@ -111,6 +111,7 @@
       - '{__name__=~"^fluentd_.+"}'
       - '{__name__=~"^elasticsearch_cluster_health_.+"}'
       - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
+      - '{__name__=~"^elasticsearch_cluster_health_active_primary_shards"}'
       - '{__name__=~"^logstash_node_queue_.+"}'
       - '{__name__=~"^logstash_node_pipeline_.+"}'
       - '{__name__=~"^vcsa_service_status"}'
