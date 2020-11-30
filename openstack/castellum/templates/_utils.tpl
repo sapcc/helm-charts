@@ -11,8 +11,15 @@
   value: "false"
 - name: CASTELLUM_ASSET_MANAGERS
   value: "nfs-shares,project-quota"
-- name: CASTELLUM_DB_URI
-  value: "postgres://postgres:{{ .Values.postgresql.postgresPassword }}@castellum-postgresql.{{ .Release.Namespace }}.svc/castellum?sslmode=disable"
+- name: CASTELLUM_DB_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: castellum-secret
+      key: postgres_password
+- name: CASTELLUM_DB_HOSTNAME
+  value: "castellum-postgresql.{{ .Release.Namespace }}.svc"
+- name: CASTELLUM_DB_CONNECTION_OPTIONS
+  value: "sslmode=disable"
 - name: CASTELLUM_HTTP_LISTEN_ADDRESS
   value: ":8080"
 - name: CASTELLUM_LOG_SCRAPES
@@ -23,10 +30,17 @@
   value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.json
-- name: CASTELLUM_RABBITMQ_URI
-  value: "{{ .Values.castellum.rabbitmq.uri }}"
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
   value: "{{ .Values.castellum.rabbitmq.queue_name }}"
+- name: CASTELLUM_RABBITMQ_USERNAME
+  value: "{{ .Values.castellum.rabbitmq.username }}"
+- name: CASTELLUM_RABBITMQ_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: castellum-secret
+      key: rabbitmq_password
+- name: CASTELLUM_RABBITMQ_HOSTNAME
+  value: "{{ .Values.castellum.rabbitmq.hostname }}"
 - name: OS_AUTH_URL
   value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
 - name: OS_AUTH_VERSION
@@ -35,8 +49,6 @@
   value: "3"
 - name: OS_INTERFACE
   value: internal
-- name: OS_PASSWORD
-  value: {{ quote .Values.castellum.service_user.password }}
 - name: OS_PROJECT_DOMAIN_NAME
   value: ccadmin
 - name: OS_PROJECT_NAME
@@ -47,6 +59,11 @@
   value: Default
 - name: OS_USERNAME
   value: castellum
+- name: OS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: castellum-secret
+      key: service_user_password
 {{- end -}}
 
 {{- define "castellum_liveness_readiness_probes" }}
