@@ -9,7 +9,9 @@ data:
 {{ .Files.Get "files/policy.json" | indent 4 }}
   limes.yaml: |
     database:
-      location: "postgres://postgres:{{ .Values.postgresql.postgresPassword }}@limes-postgresql.{{ .Release.Namespace }}.svc/limes?sslmode=disable"
+      password: { fromEnv: LIMES_DB_PASSWORD }
+      hostname: "limes-postgresql.{{ .Release.Namespace }}.svc"
+      connection_options: "sslmode=disable"
 
     api:
       listen: :80
