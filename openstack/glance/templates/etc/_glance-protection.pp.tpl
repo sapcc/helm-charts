@@ -1,5 +1,0 @@
-[.*]
-create = @
-read = @
-update = @
-delete = @
