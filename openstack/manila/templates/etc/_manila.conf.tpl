@@ -33,6 +33,8 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 
 delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_share | default false }}
 
+use_scheduler_creating_share_from_snapshot = {{ .Values.use_scheduler_creating_share_from_snapshot | default false }}
+
 scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter
 # TODO: train does not have HostAffinityWeigher, add in victoria
 scheduler_default_weighers = CapacityWeigher
@@ -50,6 +52,8 @@ quota_snapshot_gigabytes = 0
 quota_share_networks = 0
 quota_share_groups = 0
 quota_share_group_snapshots = 0
+quota_share_replicas = 0
+quota_replica_gigabytes = 0
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 
