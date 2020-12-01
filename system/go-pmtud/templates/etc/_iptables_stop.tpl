@@ -7,7 +7,5 @@ INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5 }')
 
 echo "Outgoing inteface is ${INTERFACE}"
 
-{{- range $network := .Values.iptables.ignoreSourceNetworks }}
-echo "Deleting rule for {{ $network }}"
-iptables -t raw -D PREROUTING -i ${INTERFACE} ! -s {{ $network }} -p icmp -m icmp --icmp-type 3/4 --j NFLOG --nflog-group ${nflog_group}
-{{- end }}
+echo "Deleting rule for redirecting ICMP frag-needed packets to nflog-group ${nflog_group}"
+iptables -t raw -D PREROUTING -i ${INTERFACE} -p icmp -m icmp --icmp-type 3/4 --j NFLOG --nflog-group ${nflog_group}
