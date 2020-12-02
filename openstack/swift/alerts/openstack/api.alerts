@@ -122,7 +122,8 @@ groups:
       summary: swift disk failures on the server IP {{ $labels.storage_ip }}
 
   - alert: OpenstackSwiftAsyncPendings
-    expr: sum(increase(swift_object_server_async_pendings[5m])) > 5000
+    # Exclude the Top1 Project from the expression, to not alert on single containers causing high Async Pendings
+    expr: floor(sum(increase(swift_object_server_async_pendings[5m])) - ignoring(project_id) topk(1, sum(increase(swift_async_pendings_detail[5m]) > 0) by (project_id)))
     for: 15m
     labels:
       context: asyncpendings
