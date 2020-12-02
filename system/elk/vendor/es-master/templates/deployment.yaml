@@ -9,7 +9,11 @@ metadata:
     component: elasticsearch
     role: master
 spec:
-  serviceName: es-master
+  {{- if .Release.IsUpgrade }}
+  serviceName: {{ (lookup "apps/v1" "StatefulSet" .Release.Namespace "es-master").spec.serviceName | quote }}
+  {{- else }}
+  serviceName: "es-master"
+  {{- end }}
   replicas: {{.Values.master_replicas}}
   selector:
     matchLabels:
