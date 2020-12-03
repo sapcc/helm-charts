@@ -1,4 +1,4 @@
-{{- if .Values.enabled }}
+{{- if .Values.graphite.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -22,6 +22,16 @@ spec:
     port: 80
   - name: carbon-receiver
     port: 2003
+--- 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netapp-graphite-etc
+data:
+  carbon.conf: |
+    {{ include (print .Template.BasePath "/etc/_carbon.conf.tpl") . | nindent 4 }}
+  storage-schemas.conf: |
+    {{ include (print .Template.BasePath "/etc/_storage-schemas.conf.tpl") . | nindent 4 }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -44,9 +54,9 @@ spec:
         app: {{ .Values.graphite.name }}
     spec:
       volumes:
-      - name: netapp-etc
+      - name: graphite-etc
         configMap:
-          name: netapp-etc
+          name: netapp-graphite-etc
       - name: pv-storage
         persistentVolumeClaim:
           claimName: {{ .Values.graphite.name }}
@@ -72,16 +82,12 @@ spec:
           - name: pv-storage
             subPath: log-graphite
             mountPath: /var/log/graphite
-          - name: netapp-etc
+          - name: graphite-etc
             subPath: storage-schemas.conf
             mountPath: /opt/graphite/conf/storage-schemas.conf
-          - name: netapp-etc
+          - name: graphite-etc
             subPath: carbon.conf
             mountPath: /opt/graphite/conf/carbon.conf
         resources:
-          requests:
-            memory: {{ .Values.graphite.memory }}
-            cpu: {{ .Values.graphite.cpu }}
-          limits:
-            cpu: {{ .Values.graphite.cpulimit }}
+          {{- toYaml .Values.graphite.resources | nindent 10 }}
 {{- end }}
