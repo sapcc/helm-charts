@@ -53,7 +53,7 @@ readonlyrest:
       # access for logstash to write to the logstash indexes
 
       - name: promuser
-        actions: ["indices:data/read/*"]
+        actions: ["indices:data/read/*", "cluster:monitor/state", "indices:admin/get", "indices:admin/mappings/fields/get", "indices:admin/mappings/get", "indices:admin/aliases/get", "indices:admin/template/get"]
         indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", "jump-*", "kubernikus-*", "scaleout-*", "virtual-*"]
         auth_key: {{.Values.global.prom_user}}:{{.Values.global.prom_password}}
 
