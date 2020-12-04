@@ -22,6 +22,7 @@ spec:
         component: swift-account-caretaker-mergify
       annotations:
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "swift-utils/templates/secret.yaml" . | sha256sum }}
     spec:
       volumes:
         - name: caretaker-etc
@@ -39,6 +40,18 @@ spec:
           env:
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: CARETAKER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: swift-utils-secret
+                  key: caretaker_password
+            {{- range $cluster, $config := .Values.swift_account_caretaker.additional_clusters }}
+            - name: {{ $cluster | upper }}_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: swift-utils-secret
+                  key: {{ $cluster }}_password
+            {{- end }}
           volumeMounts:
             - mountPath: /caretaker-etc
               name: caretaker-etc

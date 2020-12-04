@@ -15,7 +15,7 @@ data:
       os_auth_url: {{ $caretaker.auth_url }}
       os_user_domain_name: Default
       os_username: swift_caretaker
-      os_password: {{ $caretaker.password }}
+      os_password: { fromEnv: CARETAKER_PASSWORD }
       os_project_domain_name: cc3test
       os_project_name: swift_test
     verify:
@@ -23,7 +23,7 @@ data:
         os_auth_url: {{ $caretaker.auth_url }}
         os_user_domain_name: Default
         os_username: swift_caretaker
-        os_password: {{ $caretaker.password }}
+        os_password: { fromEnv: CARETAKER_PASSWORD }
         os_project_domain_name: Default
         os_project_name: service
       {{- range $index, $config := $caretaker.additional_clusters }}
@@ -31,7 +31,8 @@ data:
         os_auth_url: {{ $config.os_auth_url }}
         os_user_domain_name: {{ $config.os_user_domain_name }}
         os_username: {{ $config.os_username }}
-        os_password: {{ $config.os_password }}
+        os_password:
+          fromEnv: {{ $index | upper }}_PASSWORD
         os_project_domain_name: {{ $config.os_project_domain_name }}
         os_project_name: {{ $config.os_project_name }}
         scrape: {{ $config.scrape | default false }}
