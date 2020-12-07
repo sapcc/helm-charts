@@ -1,10 +1,10 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: cc3test-nova
+  name: cc3test-compute
   namespace: {{ .Values.cc3test.namespace }}
 spec:
-  schedule: "*/15 * * * *"
+  schedule: "*/30 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
@@ -18,10 +18,10 @@ spec:
               configMap:
                 name: cc3test-config
           containers:
-          - name: cc3test-nova
+          - name: cc3test-compute-base
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
             command: ["/bin/sh"]
-            args: ["-c", "pytest --disable-pytest-warnings --variables config/config.yaml -m 'nova and base' -r ap tests"]
+            args: ["-c", "pytest --disable-pytest-warnings --variables config/config.yaml -m 'compute and base' -r ap tests"]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config
