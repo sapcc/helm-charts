@@ -544,12 +544,8 @@
       regex: windows-exporter
       action: keep
     - source_labels: [__address__]
-      regex: '(.*)'
-      target_label: testing
-      replacement: $1
-    - source_labels: [__address__]
       action: replace
-      regex: ([^:]+):.*
+      regex: '(.*)'
       replacement: $1:9200
       target_label: __address__
   metric_relabel_configs:
