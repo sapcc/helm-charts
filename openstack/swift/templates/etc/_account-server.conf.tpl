@@ -31,6 +31,7 @@ pipeline = healthcheck recon account-server
 
 [app:account-server]
 use = egg:swift#account
+set log_requests = {{ .Values.log_requests }}
 
 [account-replicator]
 # If the account is reaped after deletion, means no conatiners belong to that
