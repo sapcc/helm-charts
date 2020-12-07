@@ -543,15 +543,15 @@
     - source_labels: [job]
       regex: windows-exporter
       action: keep
+    - source_labels: [__address__]
+      action: replace
+      regex: ([^:]+):.*
+      replacement: $1:9200
+      target_label: __address__
   metric_relabel_configs:
     - source_labels: [__name__]
       regex: '^go_.+'
       action: drop
-    - source_labels: [__address__]
-        action: replace
-        regex: ([^:]+):.*
-        replacement: $1:9200
-        target_label: __address__
         
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
