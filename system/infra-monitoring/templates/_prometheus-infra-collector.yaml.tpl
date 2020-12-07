@@ -553,7 +553,6 @@
       regex: '^go_.+'
       action: drop
 {{- end }}
-{{- end }}
         
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
