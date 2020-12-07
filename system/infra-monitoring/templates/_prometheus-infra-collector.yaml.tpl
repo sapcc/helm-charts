@@ -532,16 +532,15 @@
       replacement: redfish-exporter:{{$values.listen_port}}
 {{- end }}
 
+{{- $values := .Values.windows_exporter -}}
+{{- if $values.enabled }}
 - job_name: 'windows-exporter'
-  params:
-    job: [windows-exporter]
-  scrape_interval: 4m
-  scrape_timeout: 120s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeInterval}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
   metrics_path: /metrics
-  port: 9200
   relabel_configs:
     - source_labels: [job]
       regex: windows-exporter
@@ -550,6 +549,12 @@
     - source_labels: [__name__]
       regex: '^go_.+'
       action: drop
+    - source_labels: [__address__]
+        action: replace
+        regex: ([^:]+):.*
+        replacement: $1:{{$values.listen_port}}
+        target_label: __address__
+{{- end }}
         
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
