@@ -8,7 +8,6 @@
 
   params:
     'match[]':
-      - '{__name__=~"^up"}'
       - '{app="cloudprober-exporter"}'
       - '{app="thousandeyes-exporter"}'
       - '{app="netapp-harvest"}'
@@ -56,6 +55,7 @@
       - '{__name__=~"^snmp_cucsFcErrStatsSignalLosses"}'
       - '{__name__=~"^snmp_cucsFcErrStatsSyncLosses"}'
       - '{__name__=~"^snmp_cucsFcErrStatsCrcRx"}'
+      - '{__name__=~"^up"}'
       - '{__name__=~"^redfish_.+"}'
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_runs_counter_total"}'
