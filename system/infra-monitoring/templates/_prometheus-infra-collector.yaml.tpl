@@ -651,6 +651,8 @@
       regex: (vrops.*)(.infra?.*[c])(:.*)
       target_label: __address__
       replacement: ${1}${3}
+    - source_labels: [__meta_kubernetes_service_name]
+      target_label: app
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
