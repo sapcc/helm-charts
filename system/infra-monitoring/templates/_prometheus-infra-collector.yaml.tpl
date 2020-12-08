@@ -651,9 +651,6 @@
       regex: (vrops.*)(.infra?.*[c])(:.*)
       target_label: __address__
       replacement: ${1}${3}
-  metric_relabel_configs:
-    - action: labeldrop
-      regex: "instance"
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
