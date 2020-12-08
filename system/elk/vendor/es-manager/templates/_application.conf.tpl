@@ -31,6 +31,14 @@ hosts = [
       username = "{{.Values.global.admin_user}}"
       password = "{{.Values.global.admin_password}}"
     }
+  },
+  {
+    host = "http://elasticsearch-master.elastiflow:9200"
+    name = "elastiflow cluster"
+    auth = {
+      username = "{{.Values.global.elastiflow_admin_user}}"
+      password = "{{.Values.global.elastiflow_admin_password}}"
+    }
   }
 ]
 
