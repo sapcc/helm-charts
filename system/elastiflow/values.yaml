@@ -1,4 +1,5 @@
 curator:
+  enabled: false
   retention: "92"
   env:
     DATA_RETENTION: "$(RETENTION)"
@@ -49,7 +50,7 @@ curator:
 
 # master node configs
 elasticsearch:
-  enabled: true
+  enabled: false
   image: "docker.elastic.co/elasticsearch/elasticsearch"
 
   roles:
@@ -62,6 +63,7 @@ elasticsearch:
     elasticsearch.yml: |
       indices.query.bool.max_clause_count: 8192
       search.max_buckets: 250000
+      xpack.security.enabled: false
 
   volumeClaimTemplate:
     accessModes: ["ReadWriteMany"]
@@ -90,6 +92,7 @@ elasticsearch:
           mountPath: /usr/share/elasticsearch/data
 
 elasticsearch-data:
+  enabled: false
   nodeGroup: data
   masterService: elasticsearch-master
   roles:
@@ -129,7 +132,7 @@ elasticsearch-data:
 
 elasticsearchExporter:
   name: elastiflow
-  enabled: true
+  enabled: false
   image: 
     repo: justwatch/elasticsearch_exporter
     tag: 1.1.0
@@ -139,6 +142,7 @@ elasticsearchExporter:
   targets: infra-collector
   
 logstash:
+  enabled: false
   image: "elastiflow-logstash"
   imageTag: "DEFINED-IN-PIPELINE"
   logstashJavaOpts: "-Xmx4G -Xms4G"
@@ -222,6 +226,7 @@ logstashExporter:
   targets: infra-collector
 
 kibana:
+  enabled: true
   image: "docker.elastic.co/kibana/kibana"
   elasticsearchHosts: "http://elasticsearch-master:9200"
   resources:
@@ -240,7 +245,7 @@ alerts:
 
 queryExporter:
   name: elastiflow
-  enabled: true
+  enabled: false
   image:
     repo: braedon/prometheus-es-exporter
     tag: 0.9.0
