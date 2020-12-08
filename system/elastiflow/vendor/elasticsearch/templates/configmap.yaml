@@ -9,10 +9,10 @@ metadata:
     chart: "{{ .Chart.Name }}"
     app: "{{ template "elasticsearch.uname" . }}"
 data:
+  readonlyrest.yml: |
+{{ include (print .Template.BasePath "/_readonlyrest.yml.tpl") . | indent 4}}
 {{- range $path, $config := .Values.esConfig }}
   {{ $path }}: |
 {{ $config | indent 4 -}}
 {{- end -}}
 {{- end -}}
-readonlyrest.yml: |
-{{ include (print .Template.BasePath "/_readonlyrest.yml.tpl") . | indent 4}}
