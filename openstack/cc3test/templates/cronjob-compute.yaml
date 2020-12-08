@@ -26,4 +26,12 @@ spec:
               - name: cc3test-config
                 mountPath: /cc3test/config
                 readOnly: true
+          - name: cc3test-compute-purge
+            image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
+            command: ["/bin/sh"]
+            args: ["-c", "pytest --disable-pytest-warnings --variables config/config.yaml -m 'compute and purge' -r ap tests"]
+            volumeMounts:
+              - name: cc3test-config
+                mountPath: /cc3test/config
+                readOnly: true
           restartPolicy: Never
