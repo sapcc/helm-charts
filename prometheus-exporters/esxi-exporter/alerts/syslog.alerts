@@ -1,0 +1,16 @@
+groups:
+- name: syslog.alerts
+  rules:
+  - alert: ESXiLostSyslogConnection
+    expr: max_over_time(esxi_syslog_host_connection_status[15m]) == 0
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "esxi-exporter"
+      meta: "{{ $labels.host }} lost connection to OctoBus syslog collector."
+      no_alert_on_absence: "true"
+    annotations:
+      description: "{{ $labels.host }} lost connection to OctoBus syslog collector."
+      summary: "{{ $labels.host }} lost connection to OctoBus syslog collector."
