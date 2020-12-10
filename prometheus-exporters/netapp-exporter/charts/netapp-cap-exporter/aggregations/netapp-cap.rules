@@ -11,3 +11,12 @@ groups:
     expr: netapp_aggregate_total_bytes{app=~".*cinder"} <= 20*1024*1024*1024*1024
   - record: netapp_aggregate_total_bytes:vpod:big
     expr: netapp_aggregate_total_bytes{app=~".*cinder"} > 20*1024*1024*1024*1024
+  - record: global:netapp_aggregate_unencrypted_total:manila
+    expr: count (netapp_aggregate_is_encrypted{app=~".*manila"}==0)
+  - record: global:netapp_aggregate_encrypted_total:manila
+    expr: count (netapp_aggregate_is_encrypted{app=~".*manila"}==1)
+  - record: global:netapp_volume_unencrypted_total:manila
+    expr: count by (filer) (netapp_volume_is_encrypted{app=~".*manila"}==0)
+  - record: global:netapp_volume_encrypted_total:manila
+    expr: count by (filer) (netapp_volume_is_encrypted{app=~".*manila"}==1)
+

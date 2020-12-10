@@ -57,7 +57,11 @@ template: |
                   fieldRef:
                     fieldPath: metadata.namespace
               - name: DEPENDENCY_SERVICE
+                {{- if .Values.nova.mariadb.enabled }}
+                value: "nova-mariadb,nova-api"
+                {{- else }}
                 value: "nova-postgresql,nova-api"
+                {{- end }}
               - name: VCENTER_CONSISTENCY_ENABLED
                 value: "{{ .Values.vcenter_nanny_consistency.enabled }}"
               - name: VCENTER_CONSISTENCY_DRY_RUN
