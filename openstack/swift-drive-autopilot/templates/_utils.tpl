@@ -17,7 +17,7 @@
 
   {{ if $.Values.encryption_key -}}
   keys:
-    - secret: {{$.Values.encryption_key}}
+    - secret: { fromEnv: ENCRYPTION_KEY }
   {{ end }}
 
   swift-id-pool: {{ range $idx := until 99 }}
