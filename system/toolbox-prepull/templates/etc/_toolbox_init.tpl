@@ -9,7 +9,7 @@ TOOLBOX_PATH="${TOOLBOX_DIRECTORY}/${TOOLBOX_IMAGE_NAME}"
 if [ -d "${TOOLBOX_PATH}" ]; then rm -Rf ${TOOLBOX_PATH}; fi
 mkdir -p "${TOOLBOX_PATH}"
 
-echo "image: "( {{ required ".Values.global.registry is missing" .Values.global.registry }}/ccloud/toolbox ):( {{ required ".Values.images.toolbox.tag is missing" .Values.images.toolbox.tag }} )""
+# image: "{{ required ".Values.global.registry is missing" .Values.global.registry }}/ccloud/toolbox:{{ required ".Values.images.toolbox.tag is missing" .Values.images.toolbox.tag }}"
 
 docker pull ${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}
 docker run --name toolbox ${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}
