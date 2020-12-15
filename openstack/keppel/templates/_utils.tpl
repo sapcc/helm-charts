@@ -22,7 +22,7 @@
 - name:  KEPPEL_API_PUBLIC_URL
   value: 'https://keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
 - name:  KEPPEL_AUDIT_SILENT
-  value: "{{ ne $.Values.keppel.rabbitmq.uri "" }}"
+  value: "{{ ne $.Values.keppel.rabbitmq.queue_name "" }}"
 - name:  KEPPEL_AUDIT_RABBITMQ_QUEUE_NAME
   value: "{{ $.Values.keppel.rabbitmq.queue_name }}"
 - name: KEPPEL_AUDIT_RABBITMQ_USERNAME
