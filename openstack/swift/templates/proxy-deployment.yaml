@@ -39,6 +39,11 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
         {{- end }}
     spec:
+      {{- if $.Values.proxy_on_nodes }}
+      {{- include "swift_daemonset_tolerations" $ | indent 6 }}
+      nodeSelector:
+        species: {{ $.Values.species }}
+      {{- end }}
       volumes:
         - name: tls-secret
           secret:
