@@ -20,6 +20,7 @@ spec:
       labels:
         name: keppel-health-monitor
       annotations:
+        checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         prometheus.io/targets: "openstack"
@@ -41,7 +42,10 @@ spec:
             - name:  OS_INTERFACE
               value: internal
             - name:  OS_PASSWORD
-              value: {{ quote $.Values.keppel.service_password }}
+              valueFrom:
+                secretKeyRef:
+                  name: keppel-secret
+                  key: service_user_password
             - name:  OS_PROJECT_DOMAIN_NAME
               value: 'Default'
             - name:  OS_PROJECT_NAME
