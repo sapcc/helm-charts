@@ -31,6 +31,7 @@
       - '{job="vrops",__name__=~"^vrops_virtualmachine_.*", vccluster=~"^managementbb.+"}'
       - '{job="netbox"}'
       - '{job="firmware-exporter"}'      
+      - '{job="windows-exporter"}'
       - '{job=~"^netapp-capacity-exporter.*"}'
       - '{__name__=~"^vcenter_.+",job!~"[a-z0-9-]*-vccustomervmmetrics$"}'
       - '{__name__=~"^network_apic_.+"}'

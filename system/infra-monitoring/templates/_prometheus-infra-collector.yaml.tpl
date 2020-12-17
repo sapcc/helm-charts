@@ -532,9 +532,11 @@
       replacement: redfish-exporter:{{$values.listen_port}}
 {{- end }}
 
+{{- $values := .Values.windows_exporter -}}
+{{- if $values.enabled }}
 - job_name: 'windows-exporter'
-  scrape_interval: 4m
-  scrape_timeout: 120s
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
@@ -544,14 +546,13 @@
       regex: windows-exporter
       action: keep
     - source_labels: [__address__]
-      action: replace
-      regex: '(.*)'
-      replacement: $1:9200
+      replacement: $1:{{$values.listen_port}}
       target_label: __address__
   metric_relabel_configs:
     - source_labels: [__name__]
       regex: '^go_.+'
       action: drop
+{{- end }}
         
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
@@ -643,16 +644,17 @@
         - infra-monitoring
   metrics_path: /
   relabel_configs:
-    - action: keep
-      source_labels: [__meta_kubernetes_service_name]
-      regex: .*vrops-exporter.*
     - source_labels: [__address__]
       regex: (vrops.*)(.infra?.*[c])(:.*)
       target_label: __address__
       replacement: ${1}${3}
-  metric_relabel_configs:
+    - source_labels: [__meta_kubernetes_service_name]
+      regex: (vrops-exporter-)(vrops-vc-.+)
+      target_label: collector
+      replacement: ${2}
     - action: labeldrop
-      regex: "instance"
+      source_labels: [__meta_kubernetes_service_name]
+      regex: .*vrops-exporter.*
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.

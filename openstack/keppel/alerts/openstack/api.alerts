@@ -55,3 +55,22 @@ groups:
       description: |
         A blob replication has been running in this Keppel instance for more
         than 15 minutes. This could indicate that the region interconnect is slow.
+
+  - alert: OpenstackKeppelDBConnectionPoolNearlyFull
+    expr: avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 8
+    for: 5m
+    labels:
+      context: dbconnpool
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+      meta: 'DB connection pool nearly full on {{ $labels.pod }}'
+    annoatations:
+      summary: 'DB connection pool nearly full on {{ $labels.pod }}'
+      description: |
+        The DB connection pool on pod {{ $labels.pod }} is filling up. It can
+        go up to 16 connections, but during regular operations we should not go
+        over 3-5 connections to retain some budget for request spikes. Going
+        high on connections for a long time indicates that the pod might be
+        starved for CPU time, so try checking the CPU throttling metrics.
