@@ -56,32 +56,26 @@ spec:
           value: {{ or $volume.python_warnings .Values.python_warnings }}
 {{- end }}
         volumeMounts:
-        - name: etccinder
+        - name: cinder-etc
           mountPath: /etc/cinder
-        - name: cinder-etc
-          mountPath: /etc/cinder/cinder.conf
-          subPath: cinder.conf
-          readOnly: true
-        - name: cinder-etc
-          mountPath: /etc/cinder/policy.json
-          subPath: policy.json
-          readOnly: true
-        - name: cinder-etc
-          mountPath: /etc/cinder/logging.ini
-          subPath: logging.ini
-          readOnly: true
-        - name: volume-config
-          mountPath: /etc/cinder/cinder-volume.conf
-          subPath: cinder-volume.conf
-          readOnly: true
       volumes:
-      - name: etccinder
-        emptyDir: {}
       - name: cinder-etc
-        configMap:
-          name: cinder-etc
-      - name: volume-config
-        configMap:
-          name:  volume-netapp-{{$volume.name}}
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              items:
+              - key: cinder.conf
+                path: cinder.conf
+              - key: policy.json
+                path: policy.json
+              - key: logging.ini
+                path: logging.ini
+              name: cinder-etc
+          - configMap
+              items:
+              - key: cinder-volume.conf
+                path: cinder-volume.conf
+              name: volume-netapp-{{$volume.name}}
 {{- end -}}
 {{- end -}}

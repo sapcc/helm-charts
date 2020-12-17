@@ -61,44 +61,41 @@ template: |{{`
             periodSeconds: 60
             timeoutSeconds: 20
           volumeMounts:
-          - name: etccinder
+          - name: cinder-etc
             mountPath: /etc/cinder
-          - name: cinder-etc
-            mountPath: /etc/cinder/cinder.conf
-            subPath: cinder.conf
-            readOnly: true
-          - name: cinder-etc
-            mountPath: /etc/cinder/policy.json
-            subPath: policy.json
-            readOnly: true
-          - name: cinder-etc
-            mountPath: /etc/cinder/rootwrap.conf
-            subPath: rootwrap.conf
-            readOnly: true
-          - name: cinder-etc
-            mountPath: /etc/cinder/rootwrap.d/volume.filters
-            subPath: volume.filters
-            readOnly: true
-          - name: cinder-etc
-            mountPath: /etc/cinder/logging.ini
-            subPath: logging.ini
-            readOnly: true
-          - name: cinder-etc
-            mountPath: /etc/sudoers
-            subPath: sudoers
-            readOnly: true
-          - name: backup-config
-            mountPath: /etc/cinder/cinder-backup.conf
-            subPath: cinder-backup.conf
-            readOnly: true
+          - name: sudoers
+            mountPath: /etc
         volumes:
-        - name: etccinder
-          emptyDir: {}
         - name: cinder-etc
-          configMap:
-            name: cinder-etc
-        - name: backup-config
-          configMap:
-            name:  backup-vmware-{{ name }}
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: cinder.conf
+                  path: cinder.conf
+                - key: policy.json
+                  path: policy.json
+                - key: rootwrap.conf
+                  path: rootwrap.conf
+                - key: volume.filters
+                  path: rootwrap.d/volume.filters
+                - key: logging.ini
+                  path: logging.ini
+                name: cinder-etc
+            - configMap:
+                items:
+                - key: cinder-backup.conf
+                  path: cinder-backup.conf
+                name: backup-vmware-{{ name }}
+        - name: sudoers
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: sudoers
+                  path: sudoers
+                name: cinder-etc
 `}}
 {{- end }}
