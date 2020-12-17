@@ -1,4 +1,5 @@
 curator:
+  enabled: false
   retention: "92"
   env:
     DATA_RETENTION: "$(RETENTION)"
@@ -7,6 +8,13 @@ curator:
       from:
         secret: curator-secrets
         key: retention
+  nodeSelector:
+    ccloud.sap.com/nodepool: elastiflow
+  tolerations:
+  - key: "dedicated"
+    operator: Equal
+    value: "elastiflow"
+    effect: "NoSchedule"
   configMaps:
     config_yml: |-
       ---
@@ -49,34 +57,30 @@ curator:
 
 # master node configs
 elasticsearch:
-  enabled: true
+  enabled: false
   image: "docker.elastic.co/elasticsearch/elasticsearch"
+  annotations:
+    kubernetes.io/tls-acme: true
+    disco: true
 
   roles:
     master: "true"
     ingest: "false"
     data: "false"
     
-  esJavaOpts: "-Xmx4G -Xms4G"
+  esJavaOpts: "-Xmx2G -Xms2G"
   esConfig:
     elasticsearch.yml: |
       indices.query.bool.max_clause_count: 8192
       search.max_buckets: 250000
+      xpack.security.enabled: false
 
   volumeClaimTemplate:
-    accessModes: ["ReadWriteMany"]
+    accessModes: ["ReadWriteOnce"]
     resources:
       requests:
         storage: 1G
-
-#  resources:
-#    requests:
-#      cpu: 2000m
-#      memory: "4G"
-#    limits:
-#      cpu: 2000m
-#      memory: "6G"
-
+        
   extraInitContainers: |
     - name: configure-ownership
       securityContext:
@@ -90,8 +94,9 @@ elasticsearch:
           mountPath: /usr/share/elasticsearch/data
 
 elasticsearch-data:
+  enabled: false
   nodeGroup: data
-  masterService: elasticsearch-master
+  masterService: elastiflow-master
   roles:
     master: "false"
     ingest: "true"
@@ -102,19 +107,14 @@ elasticsearch-data:
     elasticsearch.yml: |
       indices.query.bool.max_clause_count: 8192
       search.max_buckets: 250000
+      xpack.security.enabled: false
+
   volumeClaimTemplate:
-    accessModes: ["ReadWriteMany"]
+    accessModes: ["ReadWriteOnce"]
     resources:
       requests:
         storage: 500G
-#  resources:
-#    requests:
-#      cpu: 8000m
-#      memory: "10G"
-#    limits:
-#      cpu: 8000m
-#      memory: "14G"
-    
+
   extraInitContainers: |
     - name: configure-ownership
       securityContext:
@@ -129,7 +129,7 @@ elasticsearch-data:
 
 elasticsearchExporter:
   name: elastiflow
-  enabled: true
+  enabled: false
   image: 
     repo: justwatch/elasticsearch_exporter
     tag: 1.1.0
@@ -139,6 +139,7 @@ elasticsearchExporter:
   targets: infra-collector
   
 logstash:
+  enabled: false
   image: "elastiflow-logstash"
   imageTag: "DEFINED-IN-PIPELINE"
   logstashJavaOpts: "-Xmx4G -Xms4G"
@@ -146,13 +147,13 @@ logstash:
   persistence:
     enabled: false
 
-  resources:
-    requests:
-      cpu: 6000m
-      memory: 6G
-    limits:
-      cpu: 6000m
-      memory: 8G
+  # resources:
+  #   requests:
+  #     cpu: 6000m
+  #     memory: 6G
+  #   limits:
+  #     cpu: 6000m
+  #     memory: 8G
 
   extraEnvs:
     - name: ELASTIFLOW_ES_HOST
@@ -222,25 +223,24 @@ logstashExporter:
   targets: infra-collector
 
 kibana:
+  enabled: false
   image: "docker.elastic.co/kibana/kibana"
-  elasticsearchHosts: "http://elasticsearch-master:9200"
-  resources:
-    requests:
-      cpu: "4000m"
-      memory: "4Gi"
-    limits:
-      cpu: "4000m"
-      memory: "5Gi"
+  elasticsearchHosts: "http://elastiflow-master:9200"
+  # resources:
+  #   requests:
+  #     memory: 4Gi
+  #   limits:
+  #     memory: 5Gi
 
 # Deploy Prometheus alerts.
 alerts:
-  enabled: true
+  enabled: false
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: infra-collector
 
 queryExporter:
   name: elastiflow
-  enabled: true
+  enabled: false
   image:
     repo: braedon/prometheus-es-exporter
     tag: 0.9.0
