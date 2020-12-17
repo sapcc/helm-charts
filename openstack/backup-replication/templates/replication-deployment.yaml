@@ -20,6 +20,7 @@ spec:
       annotations:
         checksum/bin: {{ include (print $.Template.BasePath "/bin-configmap.yaml") $ | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/replication-configmap.yaml") $ | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
     spec:
       volumes:
       - name: bin
@@ -42,6 +43,16 @@ spec:
         - /usr/bin/swift-http-import
         - /etc/swift-http-import/{{ $source_region }}.yaml
         env:
+        - name: {{ $.Values.global.region | upper }}_AUTH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backup-replication-secret
+              key: {{ $.Values.global.region }}_auth_password
+        - name: {{ $source_region | upper }}_AUTH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backup-replication-secret
+              key: {{ $source_region }}_auth_password
         - name: 'LOG_TRANSFERS'
           value: 'true'
         - name: 'DEBUG'

@@ -47,10 +47,14 @@ groups:
       summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
 
   - alert: OpenstackLimesMissingCapacity
-    # note: this ignores baremetal capacity ("compute/instances_<flavorname>")
+    # This ignores baremetal capacity ("compute/instances_<flavorname>")
     # since many of these are zero legitimately (we do not have all BM server
-    # types in all regions)
-    expr: global:limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0
+    # types in all regions).
+    #
+    # The check for non-zero domain quota skips resources that only report
+    # usage, not quota nor capacity (at the moment, those are
+    # "compute/{cores,ram}_{bigvm,regular}").
+    expr: global:limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0 and on (full_resource, os_cluster) global:limes_consolidated_domain_quota{full_resource!~"compute/instances_*"} > 0
     for: 1h
     labels:
       context: failedcapacityscrapes

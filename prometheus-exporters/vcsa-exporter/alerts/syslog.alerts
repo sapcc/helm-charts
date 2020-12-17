@@ -1,0 +1,16 @@
+groups:
+- name: syslog.alerts
+  rules:
+  - alert: VCSALostSyslogConnection
+    expr: vcsa_logging_status{loghost=~"in-syslog.c0001.+ccloud.octobus.tools.sap"} == 0
+    for: 30m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vcsa-exporter"
+      meta: "vCSA {{ $labels.vccluster }} lost connection to OctoBus Remote Syslog Collector {{ $labels.loghost }}."
+      no_alert_on_absence: "true"
+    annotations:
+      description: "vCSA {{ $labels.vccluster }} lost connection to OctoBus Remote Syslog Collector {{ $labels.loghost }}."
+      summary: "vCSA {{ $labels.vccluster }} lost connection to OctoBus Remote Syslog Collector {{ $labels.loghost }}."

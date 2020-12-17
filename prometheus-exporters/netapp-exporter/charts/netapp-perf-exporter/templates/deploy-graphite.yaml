@@ -1,0 +1,93 @@
+{{- if .Values.graphite.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.graphite.name }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.graphite.name }}
+spec:
+  selector:
+    app: {{ .Values.graphite.name }}
+  ports:
+  - name: nginx
+    port: 80
+  - name: carbon-receiver
+    port: 2003
+--- 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netapp-graphite-etc
+data:
+  carbon.conf: |
+    {{ include (print .Template.BasePath "/etc/_carbon.conf.tpl") . | nindent 4 }}
+  storage-schemas.conf: |
+    {{ include (print .Template.BasePath "/etc/_storage-schemas.conf.tpl") . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.graphite.name }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+spec:
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.graphite.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.graphite.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.graphite.name }}
+    spec:
+      volumes:
+      - name: graphite-etc
+        configMap:
+          name: netapp-graphite-etc
+      - name: pv-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.graphite.name }}
+      containers:
+      - name: {{ .Values.graphite.name }}
+        image: {{ .Values.graphite.image }}
+        ports:
+        - containerPort: 80
+        - containerPort: 2003
+        - containerPort: 2004
+        - containerPort: 2023
+        - containerPort: 2024
+        - containerPort: 8125
+          protocol: UDP
+        - containerPort: 8126
+        volumeMounts:
+          - name: pv-storage
+            subPath: storage
+            mountPath: /opt/graphite/storage
+          - name: pv-storage
+            subPath: log
+            mountPath: /var/log
+          - name: pv-storage
+            subPath: log-graphite
+            mountPath: /var/log/graphite
+          - name: graphite-etc
+            subPath: storage-schemas.conf
+            mountPath: /opt/graphite/conf/storage-schemas.conf
+          - name: graphite-etc
+            subPath: carbon.conf
+            mountPath: /opt/graphite/conf/carbon.conf
+        resources:
+          {{- toYaml .Values.graphite.resources | nindent 10 }}
+{{- end }}

@@ -22,6 +22,8 @@ spec:
         from: daemonset
         release: "{{$.Release.Name}}"
       annotations:
+        checksum/configmap: {{ include "swift-drive-autopilot/templates/configmap.yaml" $ | sha256sum }}
+        checksum/secret: {{ include "swift-drive-autopilot/templates/secret.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9102"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus }}
@@ -60,7 +62,12 @@ spec:
             privileged: true
           args:
             - /etc/drive-autopilot/config{{$suffix}}.yaml
-          # env:
+          env:
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: swift-drive-autopilot-secret
+                  key: encryption_key
           #   - name: 'DEBUG'
           #     value: '1'
           volumeMounts:

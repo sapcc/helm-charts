@@ -32,6 +32,7 @@ pipeline = healthcheck recon object-server
 
 [app:object-server]
 use = egg:swift#object
+set log_requests = {{ .Values.log_requests }}
 {{- if .Values.s3api_enabled }}
 allowed_headers = Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Expires, X-Delete-At, X-Object-Manifest, X-Robots-Tag, X-Static-Large-Object
 {{- else}}

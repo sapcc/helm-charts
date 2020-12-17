@@ -532,6 +532,28 @@
       replacement: redfish-exporter:{{$values.listen_port}}
 {{- end }}
 
+{{- $values := .Values.windows_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'windows-exporter'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: windows-exporter
+      action: keep
+    - source_labels: [__address__]
+      replacement: $1:{{$values.listen_port}}
+      target_label: __address__
+  metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: '^go_.+'
+      action: drop
+{{- end }}
+        
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vasa'
@@ -629,9 +651,10 @@
       regex: (vrops.*)(.infra?.*[c])(:.*)
       target_label: __address__
       replacement: ${1}${3}
-  metric_relabel_configs:
-    - action: labeldrop
-      regex: "instance"
+    - source_labels: [__meta_kubernetes_service_name]
+      regex: (vrops-exporter-)(vrops-vc-.+)
+      target_label: collector
+      replacement: ${2}
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
@@ -672,6 +695,26 @@
       target_label: __param_target
     - target_label: __address__
       replacement: esxi-exporter-criticalservicecollector:9203
+{{- end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.esxi_syslog_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'esxi-logforwarding'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: vcenter
+      action: keep
+    - source_labels: [server_name]
+      target_label: __param_target
+    - target_label: __address__
+      replacement: esxi-exporter-syslogconnectioncollector:9203
 {{- end }}
 
 {{- $values := .Values.firmware_exporter -}}

@@ -24,7 +24,8 @@ spec:
       annotations:
         checksum/check.bin: {{ include "content-repo/templates/bin-configmap.yaml" . | sha256sum }}
         checksum/check.etc: {{ include "content-repo/templates/configmap.yaml" . | sha256sum }}
-        checksum/check.secrets: {{ include "content-repo/templates/secrets.yaml" . | sha256sum }}
+        checksum/check.secrets: {{ include "content-repo/templates/secret.yaml" . | sha256sum }}
+        checksum/check.secrets-certs: {{ include "content-repo/templates/secret-certs.yaml" . | sha256sum }}
     spec:
       volumes:
       - name: bin
@@ -32,7 +33,7 @@ spec:
           name: bin-content-repo
       - name: secret
         secret:
-          secretName: swift-http-import
+          secretName: swift-http-import-certs
       containers:
       {{- range $release, $config := .Values.rhn_entitlement_checks }}
       - name: check-{{ $release }}
@@ -43,6 +44,7 @@ spec:
           - {{ $release }}
           - {{ $config.check_url }}
         env:
+        {{ include "secret_env_vars" $ | indent 10 }}
           - name: STATSD_HOSTNAME
             value: {{ $.Values.statsd_hostname | quote }}
           - name: CHECK_INTERVAL
@@ -52,5 +54,5 @@ spec:
             name: secret
           - mountPath: /bin-check
             name: bin
-       {{- end}}
+      {{- end}}
 {{- end }}
