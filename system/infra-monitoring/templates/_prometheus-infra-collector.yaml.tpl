@@ -644,7 +644,7 @@
         - infra-monitoring
   metrics_path: /
   relabel_configs:
-    - action: keep
+    - action: labeldrop
       source_labels: [__meta_kubernetes_service_name]
       regex: .*vrops-exporter.*
     - source_labels: [__address__]
