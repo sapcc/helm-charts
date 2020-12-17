@@ -2,6 +2,7 @@
 cronus:
   cacheSize: {{ .Values.cronus.cacheSize }}
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
+  barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
   aws:
     forwardUserAgent: {{ .Values.config.forwardUserAgent }}
     allowedServices:
