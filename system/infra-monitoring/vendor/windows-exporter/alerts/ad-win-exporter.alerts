@@ -1,0 +1,15 @@
+groups:
+- name: ad-win-exporter.alerts
+  rules:      
+  - alert: ADMetricsDownInfo
+    expr: count(up{job="windows-exporter"} == 0) by (server_name, model, manufacturer, serial) 
+    for: 10m
+    labels:
+      severity: info
+      tier: ad
+      service: active-directory
+      context: "{{ $labels.server_name }}"
+      meta: "Windows metrics cannot be fetched from node {{ $labels.server_name }}"
+    annotations:
+      description: "Windows metrics cannot be fetched from node {{ $labels.server_name }}. Check if the windows exporter service is running"
+      summary: "Windows metrics cannot be fetched from node {{ $labels.server_name }}"
