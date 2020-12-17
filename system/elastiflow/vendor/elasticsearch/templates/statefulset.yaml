@@ -53,6 +53,13 @@ spec:
         configchecksum: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
     spec:
+      tolerations:
+      - key: "dedicated"
+        operator: Equal
+        value: "elastiflow"
+        effect: "NoSchedule"
+      nodeSelector:
+        ccloud.sap.com/nodepool: elastiflow
       {{- if .Values.schedulerName }}
       schedulerName: "{{ .Values.schedulerName }}"
       {{- end }}
@@ -289,7 +296,10 @@ spec:
           - name: esconfig
             mountPath: /usr/share/elasticsearch/config/{{ $path }}
             subPath: {{ $path }}
-          {{- end -}}
+          {{- end }}
+          - name: esconfig
+            mountPath: /usr/share/elasticsearch/config/readonlyrest.yml
+            subPath: readonlyrest.yml
         {{- if .Values.extraVolumeMounts }}
 {{ tpl .Values.extraVolumeMounts . | indent 10 }}
         {{- end }}
