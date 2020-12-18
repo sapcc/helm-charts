@@ -7,21 +7,27 @@ whitelist: {{ .Values.api_rate_limit.project_whitelist }}
 
 # Override default ratelimit response.
 ratelimit_response:
-  status: 498 Rate Limited
-  status_code: 498
+  status: 429 Too Many Requests
+  status_code: 429
   json_body: { "message": "Rate limit exceeded" }
 
 # Override default blacklist response.
 blacklist_response:
-  status: 497 Blacklisted
-  status_code: 497
-  json_body: { "message": "You have been blacklisted. Please contact administrator." }
+  status: 403 Forbidden
+  status_code: 403
+  json_body: { "message": "Blacklisted" }
 
 # Group multiple CADF actions to one rate limit action.
 groups:
   write:
+    - create
     - update
     - delete
+    - update/os-begin_detaching
+    - update/os-complete
+    - update/os-extend
+    - update/os-force_delete
+    - update/os-reset_status
   read:
     - read
     - read/list
