@@ -644,6 +644,9 @@
         - infra-monitoring
   metrics_path: /
   relabel_configs:
+    - action: keep
+      source_labels: [__meta_kubernetes_service_name]
+      regex: .*vrops-exporter.*
     - source_labels: [__address__]
       regex: (vrops.*)(.infra?.*[c])(:.*)
       target_label: __address__
@@ -652,9 +655,6 @@
       regex: (vrops-exporter-)(vrops-vc-.+)
       target_label: collector
       replacement: ${2}
-    - action: labeldrop
-      source_labels: [__meta_kubernetes_service_name]
-      regex: .*vrops-exporter.*
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
