@@ -15,3 +15,16 @@ groups:
         annotations:
           description: "Keystone logs shipping to Octobus not working"
           summary: "KeystoneLogs2Octobus not working"
+      - alert: OctobusESXiHostLogShippingNotWorking
+        expr: vrops_hostsystem_summary_version_info unless on(hostsystem) elasticsearch_octobus_esx_hostsystem_doc_count
+        for: 30m
+        labels:
+          severity: info
+          tier: vmware
+          service: audit
+          context: logging
+          meta: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
+          playbook: docs/devops/alert/vcenter/#Missing_Logs_in_Octobus
+        annotations:
+          description: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
+          summary: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
