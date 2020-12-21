@@ -1,0 +1,17 @@
+groups:
+  - name: logs
+    rules:
+      - alert: OctobusKeystoneLogShipping
+        expr: elasticsearch_octobus_keystone_logs_doc_count{logs="keystone-api"} == 0
+        for: 15m
+        labels:
+          severity: info
+          tier: api
+          service: audit
+          context: logging
+          meta: "No keystone logs shipping to Octobus"
+          playbook: 'docs/devops/alert/log-shipping#keystone'
+          dashboard: octobus-keystone-logshipping
+        annotations:
+          description: "Keystone logs shipping to Octobus not working"
+          summary: "KeystoneLogs2Octobus not working"
