@@ -1,0 +1,26 @@
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: andromeda-server
+  labels:
+{{ include "andromeda.labels" . | indent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  tls:
+    - hosts: ["andromeda.{{.Values.global.region}}.{{.Values.global.tld}}"]
+      secretName: andromeda
+  rules:
+    - host: andromeda.{{.Values.global.region}}.{{.Values.global.tld}}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: andromeda-server
+              servicePort: http

@@ -1,0 +1,71 @@
+{{- if .Values.ingress.enabled -}}
+{{- $paths := .Values.ingress.paths -}}
+{{- $ports := .Values.service.ports -}}
+{{- $fullName := include "cockroachdb.fullname" . -}}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+{{- if .Values.ingress.annotations }}
+  annotations:
+    disco/zone-name: "cc.{{.Values.global.region}}.{{.Values.global.tld}}"
+    {{- range $key, $value := .Values.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}
+  name: {{ $fullName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm.sh/chart: {{ template "cockroachdb.chart" . }}
+    app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
+    app.kubernetes.io/instance: {{ $.Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
+{{- if .Values.ingress.labels }}
+{{- toYaml .Values.ingress.labels | nindent 4 }}
+{{- end }}
+spec:
+  rules:
+    - host: {{ template "cockroachdb.name" . }}.cc.{{.Values.global.region}}.{{.Values.global.tld}}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: {{ $ports.http.name | quote }}
+  tls:
+    - hosts: ["{{ template "cockroachdb.name" . }}.cc.{{.Values.global.region}}.{{.Values.global.tld}}"]
+      secretName: cockroachdb
+
+{{- end -}}
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+
+metadata:
+  name: {{ $fullName }}-external-grpc
+  annotations:
+    disco/zone-name: "cc.{{.Values.global.region}}.{{.Values.global.tld}}"
+    # The ingress controller won't pick this up
+    kubernetes.io/ingress.class: "noop.disco"
+    # Enable CNAME creation via DISCO.
+    disco: "true"
+    # CNAME to external IP.
+    disco/record: {{ .Values.service.externalIP | quote }}
+    # Record type.
+    disco/record-type: "A"
+
+# workaround to enable the vice-president for non-ingress based swift.
+# the vp will only evaluate the following spec.tls section
+spec:
+  # Mandatory TLS spec but not used for DISCO.
+  tls:
+    - secretName: not-existent
+      hosts: [something]
+  # DISCO creates CNAME bases on spec.rules[].host
+  rules:
+    - host: {{ template "cockroachdb.fullname" . }}.cc.{{.Values.global.region}}.{{.Values.global.tld}}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: {{ .Values.service.ports.grpc.external.name }}
+              servicePort: {{ .Values.service.ports.grpc.external.port }}
