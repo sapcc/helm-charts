@@ -23,7 +23,6 @@ spec:
       serviceAccountName: {{ template "andromeda.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if eq ( include "cockroachdb.fqdn" . ) ( first .Values.cockroachdb.conf.join ) }}
       initContainers:
         - name: wait-for-migration
           image: "quay.io/stackanetes/kubernetes-entrypoint:v0.3.1"
@@ -34,7 +33,6 @@ spec:
               value: {{ include "andromeda.fullname" . }}-migration
             - name: COMMAND
               value: "true"
-      {{- end }}
       containers:
         - name: {{ .Chart.Name }}-server
           securityContext:

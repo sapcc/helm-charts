@@ -1,4 +1,3 @@
-{{- if eq ( include "cockroachdb.fqdn" . ) ( first .Values.cockroachdb.conf.join ) }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -35,7 +34,7 @@ spec:
           - --host
           - {{ include "andromeda.name" . }}-cockroachdb
           - --execute
-          - CREATE DATABASE {{ include "andromeda.name" . }};
+          - CREATE DATABASE IF NOT EXISTS {{ include "andromeda.name" . }};
       containers:
         - name: {{ include "andromeda.fullname" . }}-migration
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -54,4 +53,3 @@ spec:
                   items:
                     - key: andromeda.conf
                       path: andromeda.conf
-{{- end }}
