@@ -655,6 +655,9 @@
       regex: (vrops-exporter-)(vrops-vc-.+)
       target_label: collector
       replacement: ${2}
+  metric_relabel_configs:
+    - action: labeldrop
+      regex: "instance"
 {{- end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
