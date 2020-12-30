@@ -30,6 +30,10 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+{{- define "nats.fqdn" -}}
+{{- template "nats.fullname" . }}.cc.{{ .Values.global.region }}.{{ .Values.global.tld -}}
+{{- end -}}
+
 {{/*
 Common labels
 */}}

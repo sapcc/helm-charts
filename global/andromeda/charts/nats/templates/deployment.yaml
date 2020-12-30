@@ -32,7 +32,17 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          command: ["nats-server", "--config", "/etc/nats/nats-server.conf", "-V"]
+          command:
+          - nats-server
+          - --config
+          - /etc/nats/nats-server.conf
+          - --cluster_advertise
+          - "{{ template "nats.fqdn" . }}"
+          {{- if not ( eq ( include "nats.fqdn" . ) .Values.seed.host ) }}
+          - --routes
+          - "nats-route://{{ .Values.seed.user }}:{{ .Values.seed.pass }}@{{ .Values.seed.host }}:6222"
+          {{- end }}
+          - -V
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http

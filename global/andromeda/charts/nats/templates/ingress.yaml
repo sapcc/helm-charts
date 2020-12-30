@@ -1,41 +1,33 @@
-{{- if .Values.ingress.enabled -}}
-{{- $fullName := include "nats.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
-apiVersion: extensions/v1beta1
-{{- end }}
 kind: Ingress
+
 metadata:
-  name: {{ $fullName }}
-  labels:
-    {{- include "nats.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  name: {{ template "nats.fullname" . }}-external
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    disco/zone-name: "cc.{{.Values.global.region}}.{{.Values.global.tld}}"
+    # The ingress controller won't pick this up
+    kubernetes.io/ingress.class: "noop.disco"
+    # Enable CNAME creation via DISCO.
+    disco: "true"
+    # CNAME to external IP.
+    disco/record: {{ .Values.service.externalIP | quote }}
+    # Record type.
+    disco/record-type: "A"
+
+# workaround to enable the vice-president for non-ingress based swift.
+# the vp will only evaluate the following spec.tls section
 spec:
-  {{- if .Values.ingress.tls }}
+  # Mandatory TLS spec but not used for DISCO.
   tls:
-    {{- range .Values.ingress.tls }}
-    - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
-    {{- end }}
-  {{- end }}
+    - secretName: not-existent
+      hosts: [something]
+  # DISCO creates CNAME bases on spec.rules[].host
   rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
+    - host: {{ template "nats.fullname" . }}.cc.{{.Values.global.region}}.{{.Values.global.tld}}
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ . }}
+          - path: /
             backend:
-              serviceName: {{ $fullName }}
-              servicePort: {{ $svcPort }}
-          {{- end }}
-    {{- end }}
-  {{- end }}
+              serviceName: nats
+              servicePort: {{ .Values.service.port }}
+
