@@ -29,7 +29,15 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
+        # First argument should be the path to the config file.
+        - "/etc/clair/config.yaml"
         - "-log-level={{ .Values.logLevel }}"
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: clair
+              key: postgres_password
         {{ if .Values.insecureTls }}- "--insecure-tls" {{end}}
         ports:
         - name: clair-api
