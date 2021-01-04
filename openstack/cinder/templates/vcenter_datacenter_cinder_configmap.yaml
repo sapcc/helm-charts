@@ -48,7 +48,12 @@ template: |
       vmware_storage_profile = {{ .Values.backends.standard_hdd.vmware_storage_profile }}
       extra_capabilities = '{"vcenter-shard": "{= host.split(".")[0] =}"}'
 
-      {{ .Values.backends.custom_backend }}
+      {{- range $backend, $kvs := .Values.backends.additional_backends }}
+      [{{ $backend }}]
+      {{- range $key, $value := $kvs }}
+      {{ $key }} = {{ $value }}
+      {{- end }}
+      {{- end }}
 
       [vstorageobject]
       volume_driver = cinder.volume.drivers.vmware.fcd.VMwareVStorageObjectDriver
