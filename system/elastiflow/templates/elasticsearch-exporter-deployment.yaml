@@ -23,8 +23,13 @@ spec:
       labels:
         component: es-exporter-{{ .Values.elasticsearchExporter.name }}
     spec:
+      tolerations:
+      - key: "dedicated"
+        operator: Equal
+        value: "elastiflow"
+        effect: "NoSchedule"
       nodeSelector:
-        zone: farm
+        ccloud.sap.com/nodepool: elastiflow
       restartPolicy: Always
       securityContext:
         runAsNonRoot: true
