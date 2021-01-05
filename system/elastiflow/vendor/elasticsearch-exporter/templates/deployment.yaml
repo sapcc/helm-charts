@@ -28,6 +28,13 @@ spec:
 {{ toYaml .Values.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      tolerations:
+      - key: "dedicated"
+        operator: Equal
+        value: "elastiflow"
+        effect: "NoSchedule"
+      nodeSelector:
+        ccloud.sap.com/nodepool: elastiflow
       {{- if .Values.serviceAccount.create  }}
       serviceAccountName: {{ template "elasticsearch-exporter.fullname" . }}
       {{- else }}
