@@ -1,23 +1,22 @@
 {{- if .Values.enabled }}
-{{- $values := .Values -}}
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
 metadata:
   name: ipProbing
   labels:
-    prometheus: {{ $values.prometheus }}
+    prometheus: {{ .Values.prometheus }}
 spec:
   jobName: ipProbing
   prober:
-    url: {{ $values.prober }}
-  module: {{ $values.module }}
-  interval: {{ $values.scrapeIntrval }}
-  scrapeTimeout: {{ $values.scrapeTimeout }}
+    url: {{ .Values.prober }}
+  module: {{ .Values.module }}
+  interval: {{ .Values.scrapeIntrval }}
+  scrapeTimeout: {{ .Values.scrapeTimeout }}
   targets:
     staticConfig:
       static:
-        {{- range $i, $ip := $values.static_ip_targets }}
-        - {{ $ip | trim }}
+        {{- range .Values.static_ip_targets }}
+        - {{ . }}
         {{- end }}
      labels:
        target: sapcp_apim # static labels assigned to every metric of this set
