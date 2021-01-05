@@ -19,7 +19,7 @@ global:
 # The repository and tag of the Prometheus image.
 image:
   repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/prometheus
-  tag: v2.21.0
+  tag: v2.23.0
 
 # Mandatory name for this Prometheus.
 # The name is used to find relevant aggregation and alerting rules.
@@ -187,17 +187,13 @@ thanos:
   # Specification for Thanos sidecar to Prometheus server.
   # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
   spec:
-    baseImage: sapcc/thanos
-    # Contains fix for cross-domain authentication (user in different domain than Swift container).
-    # See https://github.com/thanos-io/thanos/pull/1118, which is part of >=v0.5.0 .
-    # Cannot upgrade to anything newer as the below given value as the Prometheus operator has hardcoded the deprecated `--cluster` flags for the sidecar.
-    # So the operator needs to be upgraded first, but requires newer k8s versions supporting apps/v1.StatefulSet -.-
-    version: v0.4.0-2-ga680c93
+    baseImage: thanosio/thanos
+    version: v0.17.1
 
   # Image for Thanos components.
   components:
     baseImage: thanosio/thanos
-    version: v0.8.1
+    version: v0.17.1
 
   # Specification for Thanos components.
   compactor:
