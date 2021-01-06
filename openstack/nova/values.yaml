@@ -507,35 +507,129 @@ mysql_metrics:
       - "gauge"
     - help: Stats on compute nodes
       labels:
-      - "uuid"
       - "nova_host"
+      - "uuid"
       - "hypervisor_type"
-      name: openstack_compute_nodes
+      name: openstack_compute_nodes_free_disk_gb_gauge
       query: |
         SELECT
-          coalesce(compute_nodes.host, 'N/A') AS nova_host,
-          compute_nodes.uuid,
-          compute_nodes.hypervisor_type,
-          COALESCE(compute_nodes.free_disk_gb, 0) AS free_disk_gb_gauge,
-          COALESCE(compute_nodes.local_gb, 0) AS local_gb_gauge,
-          COALESCE(compute_nodes.local_gb_used, 0) AS local_gb_used_gauge,
-          COALESCE(compute_nodes.free_ram_mb, 0) AS free_ram_mb_gauge,
-          COALESCE(compute_nodes.memory_mb, 0) AS memory_mb_gauge,
-          COALESCE(compute_nodes.memory_mb_used, 0) AS memory_mb_used_gauge,
-          COALESCE(compute_nodes.vcpus_used, 0) AS vcpus_used_gauge,
-          COALESCE(compute_nodes.vcpus, 0) AS vcpus_gauge,
-          COALESCE(compute_nodes.running_vms, 0) AS running_vms_gauge
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.free_disk_gb, 0) AS free_disk_gb_gauge
         FROM compute_nodes
         WHERE compute_nodes.deleted=0;
       values:
       - "free_disk_gb_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_local_gb_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.local_gb, 0) AS local_gb_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
       - "local_gb_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_local_gb_used_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.local_gb_used, 0) AS local_gb_used_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
       - "local_gb_used_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_free_ram_mb_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.free_ram_mb, 0) AS free_ram_mb_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
       - "free_ram_mb_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_memory_mb_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.memory_mb, 0) AS memory_mb_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
       - "memory_mb_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_memory_mb_used_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.memory_mb_used, 0) AS memory_mb_used_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
       - "memory_mb_used_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_vcpus_used_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.vcpus_used, 0) AS vcpus_used_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
       - "vcpus_used_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_vcpus_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.vcpus, 0) AS vcpus_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
       - "vcpus_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_running_vms_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.running_vms, 0) AS running_vms_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
       - "running_vms_gauge"
     - help: Version of the service running
       labels:
