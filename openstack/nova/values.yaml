@@ -513,18 +513,18 @@ mysql_metrics:
       name: openstack_compute_nodes
       query: |
         SELECT
-          compute_nodes.host as nova_host,
+          coalesce(compute_nodes.host, 'N/A') AS nova_host,
           compute_nodes.uuid,
           compute_nodes.hypervisor_type,
-          compute_nodes.free_disk_gb AS free_disk_gb_gauge,
-          compute_nodes.local_gb AS local_gb_gauge,
-          compute_nodes.local_gb_used AS local_gb_used_gauge,
-          compute_nodes.free_ram_mb AS free_ram_mb_gauge,
-          compute_nodes.memory_mb AS memory_mb_gauge,
-          compute_nodes.memory_mb_used AS memory_mb_used_gauge,
-          compute_nodes.vcpus_used AS vcpus_used_gauge,
-          compute_nodes.vcpus AS vcpus_gauge,
-          compute_nodes.running_vms AS running_vms_gauge
+          COALESCE(compute_nodes.free_disk_gb, 0) AS free_disk_gb_gauge,
+          COALESCE(compute_nodes.local_gb, 0) AS local_gb_gauge,
+          COALESCE(compute_nodes.local_gb_used, 0) AS local_gb_used_gauge,
+          COALESCE(compute_nodes.free_ram_mb, 0) AS free_ram_mb_gauge,
+          COALESCE(compute_nodes.memory_mb, 0) AS memory_mb_gauge,
+          COALESCE(compute_nodes.memory_mb_used, 0) AS memory_mb_used_gauge,
+          COALESCE(compute_nodes.vcpus_used, 0) AS vcpus_used_gauge,
+          COALESCE(compute_nodes.vcpus, 0) AS vcpus_gauge,
+          COALESCE(compute_nodes.running_vms, 0) AS running_vms_gauge
         FROM compute_nodes
         WHERE compute_nodes.deleted=0;
       values:
@@ -545,7 +545,7 @@ mysql_metrics:
       name: openstack_compute_service_version
       query: |
         SELECT
-          id, host AS nova_host, `binary`, version
+          id, coalesce(host, 'N/A') AS nova_host, `binary`, version
         FROM services
         WHERE deleted_at is NULL;
       values:
@@ -556,7 +556,7 @@ mysql_metrics:
       name: openstack_compute_node_last_action_interval_seconds_interval
       query: |
         SELECT
-          i.host AS nova_host,
+          coalesce(i.host, 'N/A') AS nova_host,
           (NOW() - MAX(ia.created_at)) AS `interval`
         FROM instance_actions AS ia
         JOIN instances AS i ON i.uuid = ia.instance_uuid
@@ -570,7 +570,7 @@ mysql_metrics:
       name: openstack_compute_node_actions_without_events_actions
       query: |
         SELECT
-          i.host AS nova_host,
+          coalesce(i.host, 'N/A') AS nova_host,
           COUNT(*) - COUNT(iae.start_time) AS actions
         FROM instance_actions
         AS ia JOIN instances AS i ON i.uuid = ia.instance_uuid LEFT OUTER JOIN instance_actions_events
