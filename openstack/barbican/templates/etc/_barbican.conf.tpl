@@ -76,3 +76,7 @@ mem_queue_size = 1000
 {{- end }}
 
 {{- include "ini_sections.cache" . }}
+
+[oslo_policy]
+
+policy_file = /etc/barbican/policy.yaml
