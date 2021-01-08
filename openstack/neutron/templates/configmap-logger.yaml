@@ -1,0 +1,12 @@
+{{- if .Values.logger.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neutron-logger
+  resourceVersion: "1.0"
+data:
+  config: |
+{{ include (print .Template.BasePath "/etc/_logger_redis.conf.tpl") . | indent 4 }}
+  pipeline: |
+{{ include (print .Template.BasePath "/etc/_logger_logstash.conf.tpl") . | indent 4 }}
+{{- end }}
