@@ -52,3 +52,15 @@ groups:
     annotations:
       description: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute. Please provide detailed information in the Custom Attribute HW field."
       summary: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute."
+  - alert: VMsOnFailoverHost
+    expr: vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost == 1 AND ON(hostsystem) vrops_hostsystem_summary_number_vms_total > 0
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter"
+      meta: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it."
+    annotations:
+      description: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. Free up the host."
+      summary: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it."
