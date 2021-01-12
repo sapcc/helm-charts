@@ -22,6 +22,22 @@ groups:
         "keppel-health-monitor" pod in the Kubernetes namespace "keppel" is
         running, and if so, check its log for error messages.
 
+  - alert: OpenstackKeppelAnycastDown
+    expr: keppel_anycastmonitor_result != 1
+    for: 3m
+    labels:
+      context: anycast-api
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+      meta: 'Keppel anycast health check failing for {{ $labels.account }}'
+    annotations:
+      summary: 'Keppel anycast health check failing for {{ $labels.account }}'
+      description: |
+        The Keppel anycast health check is failing for some peers. Check the
+        logs of the "keppel-anycast-monitor" pod for details.
+
   - alert: OpenstackKeppelSlowPeering
     expr: time() - keppel_peers_last_peered_at > 1800
     for: 5m
