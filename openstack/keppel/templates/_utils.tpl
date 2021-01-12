@@ -85,7 +85,7 @@
 - name:  KEPPEL_OSLO_POLICY_PATH
   value: '/etc/keppel/policy.json'
 - name:  KEPPEL_PEERS
-  value: {{ $.Values.keppel.peer_hostnames | join "," | quote }}
+  value: "{{ range .Values.keppel.peers }}{{ .hostname }},{{ end }}"
 - name:  KEPPEL_RATELIMIT_ANYCAST_BLOB_PULL_BYTES
   value: '5242880 B/s' # 5 MiB/s per account (very small to discourage continuous use of anycast, but
                        # the burst budget is very large to enable anycast pulling of large images; the
