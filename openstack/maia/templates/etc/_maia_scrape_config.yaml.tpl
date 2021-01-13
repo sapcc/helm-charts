@@ -167,9 +167,9 @@
   params:
     'match[]':
       # ccloud cronus mail service metrics
-      - '{__name__=~"^cronus_email_bounce"}'
-      - '{__name__=~"^cronus_email_complaint"}'
-      - '{__name__=~"^cronus_email_delivery"}'
-      - '{__name__=~"^cronus_email_reputation_bouncerate"}'
-      - '{__name__=~"^cronus_email_reputation_complaintrate"}'
-      - '{__name__=~"^cronus_email_send"}'
+      - '{__name__=~"^cronus_aws_ses_bounce"}'
+      - '{__name__=~"^cronus_aws_ses_complaint"}'
+      - '{__name__=~"^cronus_aws_ses_delivery"}'
+      - '{__name__=~"^cronus_aws_ses_reputation_bouncerate"}'
+      - '{__name__=~"^cronus_aws_ses_reputation_complaintrate"}'
+      - '{__name__=~"^cronus_aws_ses_send"}'
