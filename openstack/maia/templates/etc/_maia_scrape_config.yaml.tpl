@@ -162,7 +162,7 @@
   scrape_interval: 1m
   scrape_timeout: 55s
   static_configs:
-    - targets: ['prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap:9090']
+    - targets: ['prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap']
   metrics_path: '/federate'
   params:
     'match[]':
