@@ -1,0 +1,64 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-castellum-pod.alerts
+  rules:
+      - alert: OpenstackCastellumPodCPUThrottling
+        expr: rate(container_cpu_cfs_throttled_seconds_total{namespace="castellum"}[1h]) > 1
+        for: 15m
+        labels:
+          tier: os
+          service: castellum
+          severity: info
+          context: cpu
+          dashboard: castellum-overview
+          meta: "{{ $labels.pod }}/{{ $labels.container }}"
+        annotations:
+          summary: Container is constantly CPU-throttled
+          description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
+            constantly. This is probably impacting performance, so check if we can increase the number
+            of replicas or the resource requests/limits.
+
+      - alert: OpenstackCastellumPodSchedulingInsufficientMemory
+        expr: sum(rate(kube_pod_failed_scheduling_memory_total{namespace="castellum"}[30m])) by (pod_name) > 0
+        for: 15m
+        labels:
+          severity: warning
+          tier: os
+          service: castellum
+          context: memory
+          dashboard: castellum-overview
+          meta: "{{ $labels.pod_name }}"
+          no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+        annotations:
+          summary: Scheduling failed due to insufficient memory
+          description: The pod {{ $labels.pod_name }} failed to be scheduled. Insufficient memory!
+
+      - alert: OpenstackCastellumPodOOMKilled
+        expr: sum(rate(klog_pod_oomkill{namespace="castellum"}[30m])) by (pod_name) > 0
+        for: 5m
+        labels:
+          tier: os
+          service: castellum
+          severity: info
+          context: memory
+          dashboard: castellum-overview
+          meta: "{{ $labels.pod_name }}"
+          no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
+        annotations:
+          summary: Pod was oomkilled
+          description: The pod {{ $labels.pod_name }} was oomkilled recently
+
+      - alert: OpenstackCastellumPodOOMExceedingLimits
+        expr: castellum_container_memory_usage_percent > 70 and predict_linear(castellum_container_memory_usage_percent[1h], 7*3600) > 100
+        for: 30m
+        labels:
+          tier: os
+          service: castellum
+          severity: info
+          context: memory
+          dashboard: castellum-overview
+          meta: "{{ $labels.pod_name }}"
+        annotations:
+          summary: Exceeding memory limits in 8h
+          description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
