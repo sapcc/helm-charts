@@ -58,8 +58,13 @@ spec:
               value: "nova-compute"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
 {{- if or $hypervisor.python_warnings .Values.python_warnings }}
             - name: PYTHONWARNINGS
               value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
@@ -110,8 +115,13 @@ spec:
               value: /container.init/nova-libvirt-start
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
@@ -156,8 +166,13 @@ spec:
               value: /usr/sbin/virtlogd
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{ .Values.sentry_dsn | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
