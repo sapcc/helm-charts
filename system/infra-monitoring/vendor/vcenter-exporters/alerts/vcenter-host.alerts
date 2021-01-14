@@ -50,17 +50,17 @@ groups:
       description: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
       summary: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
   - alert: VCenterWrongHALevelConfiguration
-    expr: vcenter_failover_nodes_set > 1
+    expr: vcenter_failover_nodes_set > 2
     for: 30m
     labels:
       severity: warning
       tier: vmware
       service: compute
-      meta: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has more than one failover host configured, it should be 1"
+      meta: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has more than two failover host configured, it should be 1"
       playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
     annotations:
-      description: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has more than one failover host configured, it should be 1"
-      summary: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has more than one failover host configured, it should be 1"
+      description: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
+      summary: "VC {{ $labels.hostname }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
   - alert: VCenterRedundancyLostHALevelNotSet
     expr: vcenter_failover_nodes_set == 0
     for: 30m
