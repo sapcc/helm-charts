@@ -883,3 +883,23 @@
       source_labels: [__meta_kubernetes_service_name]
       regex: ucs-exporter
 {{- end }}
+
+{{ if .Values.network_generic_ssh_exporter.enabled }}
+- job_name: 'network/ssh'
+  scrape_interval: 60s
+  scrape_timeout: 45s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /ssh
+  relabel_configs:
+    - source_labels: [job]
+      regex: network/ssh
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: network-generic-ssh-exporter:9116
+{{ end }}
