@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: network-generic-ssh-exporter
+  namespace: infra-monitoring
+  labels:
+    system: openstack
+    service: logging
+    component: network-generic-ssh-exporter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.network_generic_ssh_exporter.listen_port }}"
+    prometheus.io/targets: "{{ .Values.network_generic_ssh_exporter.alerts.prometheus }}"
+spec:
+  selector:
+    component: elastic-query-exporter
+  ports:
+    - name: metrics
+      port: {{ .Values.network_generic_ssh_exporter.listen_port }}
