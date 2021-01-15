@@ -41,24 +41,30 @@
     "get_metadef_namespaces": "rule:context_is_viewer",
     "modify_metadef_namespace": "rule:context_is_editor",
     "add_metadef_namespace": "rule:context_is_editor",
+    "delete_metadef_namespace": "rule:context_is_editor",
 
     "get_metadef_object": "rule:context_is_viewer",
     "get_metadef_objects": "rule:context_is_viewer",
     "modify_metadef_object": "rule:context_is_editor",
     "add_metadef_object": "rule:context_is_editor",
+    "delete_metadef_object": "rule:context_is_editor",
 
     "list_metadef_resource_types": "rule:context_is_editor",
     "get_metadef_resource_type": "rule:context_is_viewer",
     "add_metadef_resource_type_association": "rule:context_is_editor",
+    "remove_metadef_resource_type_association": "rule:context_is_editor",
 
     "get_metadef_property": "rule:context_is_viewer",
     "get_metadef_properties": "rule:context_is_viewer",
     "modify_metadef_property": "rule:context_is_editor",
     "add_metadef_property": "rule:context_is_editor",
+    "remove_metadef_property": "rule:context_is_editor",
     
     "get_metadef_tag": "rule:context_is_viewer",
     "get_metadef_tags": "rule:context_is_viewer",
     "modify_metadef_tag": "rule:context_is_editor",
     "add_metadef_tag": "rule:context_is_editor",
-    "add_metadef_tags": "rule:context_is_editor"
+    "delete_metadef_tag": "rule:context_is_editor",
+    "add_metadef_tags": "rule:context_is_editor",
+    "delete_metadef_tags": "rule:context_is_editor"
 }
