@@ -908,4 +908,7 @@
       target_label: instance
     - target_label: __address__
       replacement: network-generic-ssh-exporter:9116
+  metric_relabel_configs:
+    - action: labeldrop
+      regex: "metrics_label"
 {{ end }}
