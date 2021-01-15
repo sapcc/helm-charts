@@ -38,14 +38,12 @@ rates:
     attachments:
       - action: read
         limit: 3000r/m
-    attachments:
       - action: write
         limit: 100r/m
 
     attachments/attachment:
       - action: read
         limit: 3000r/m
-    attachments/attachment:
       - action: write
         limit: 100r/m
 
@@ -56,7 +54,6 @@ rates:
     snapshots:
       - action: read
         limit: 3000r/m
-    snapshots:
       - action: write
         limit: 100r/m
 
@@ -67,7 +64,6 @@ rates:
     snapshots/snapshot:
       - action: read
         limit: 3000r/m
-    snapshots/snapshot:
       - action: write
         limit: 100r/m
 
@@ -78,14 +74,12 @@ rates:
     types:
       - action: read
         limit: 3000r/m
-    types:
       - action: write
         limit: 100r/m
 
     volumes:
       - action: read
         limit: 3000r/m
-    volumes:
       - action: write
         limit: 100r/m
 
@@ -96,7 +90,6 @@ rates:
     volumes/volume:
       - action: read
         limit: 3000r/m
-    volumes/volume:
       - action: write
         limit: 100r/m
 
