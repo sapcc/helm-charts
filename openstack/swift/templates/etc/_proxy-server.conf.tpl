@@ -49,7 +49,7 @@ disable_path = /etc/swift/healthcheck/proxy.disabled
 [filter:cache]
 use = egg:swift#memcache
 memcache_servers = memcached.{{$helm_release.Namespace}}.svc:11211
-memcache_max_connections = 10
+memcache_max_connections = 32
 
 # We only have one memcache, so the error suppression behavior is not useful for us.
 # See also commit message on <https://github.com/openstack/swift/commit/aff65242ff87b24d43d7a6ce2b1c33546363144b>.
