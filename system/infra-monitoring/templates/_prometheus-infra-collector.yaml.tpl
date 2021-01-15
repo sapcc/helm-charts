@@ -898,6 +898,12 @@
       action: keep
     - source_labels: [__address__]
       target_label: __param_target
+    - source_labels: [credential]
+      target_label: __param_credential
+    - source_labels: [batch]
+      target_label: __param_batch
+    - source_labels: [device]
+      target_label: __param_device
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
