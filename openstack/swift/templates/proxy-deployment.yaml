@@ -44,6 +44,16 @@ spec:
       nodeSelector:
         species: {{ $.Values.species }}
       {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: component
+                operator: In
+                values:
+                - swift-proxy-{{$cluster_id}}
+            topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: tls-secret
           secret:
