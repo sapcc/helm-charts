@@ -76,7 +76,7 @@ groups:
       summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
-      max_over_time(vrops_datastore_summary_total_number_vms[10m]) > 0
+      max_over_time(vrops_datastore_summary_total_number_vms{type!~"local"}[10m]) > 0
       and on (datastore) max_over_time(vrops_datastore_summary_datastore_accessible{state="PoweredOff"}[10m])
     for: 20m
     labels:
@@ -91,7 +91,7 @@ groups:
       summary: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DatastoreDisconnectedWithoutVmsOnIt
     expr: >
-      max_over_time(vrops_datastore_summary_total_number_vms[10m]) == 0
+      max_over_time(vrops_datastore_summary_total_number_vms{type!~"local"}[10m]) == 0
       and on (datastore) max_over_time(vrops_datastore_summary_datastore_accessible{state="PoweredOff"}[10m])
     for: 20m
     labels:
