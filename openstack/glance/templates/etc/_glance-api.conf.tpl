@@ -56,6 +56,8 @@ filesystem_store_datadir = /glance_store
 swift_store_region={{.Values.global.region}}
 swift_store_auth_insecure = True
 swift_store_create_container_on_put = True
+swift_buffer_on_upload = True
+swift_upload_buffer_dir = /upload
 {{- if .Values.swift.multi_tenant }}
 swift_store_multi_tenant = True
 # swift_store_large_object_size = 5120
@@ -77,6 +79,9 @@ swift_store_use_trusts=True
 
 [oslo_messaging_notifications]
 driver = noop
+
+[oslo_policy]
+policy_file = /etc/glance/policy.yaml
 
 {{- include "ini_sections.cache" . }}
 

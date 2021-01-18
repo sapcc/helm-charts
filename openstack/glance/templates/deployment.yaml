@@ -112,6 +112,8 @@ spec:
         - name: api
           containerPort: {{.Values.api_port_internal}}
         volumeMounts:
+        - name: swift-buffer
+          mountPath: /upload
         - name: etcglance
           mountPath: /etc/glance
         - name: glance-etc
@@ -125,8 +127,8 @@ spec:
           readOnly: true
         {{- end }}
         - name: glance-etc
-          mountPath: /etc/glance/policy.json
-          subPath: policy.json
+          mountPath: /etc/glance/policy.yaml
+          subPath: policy.yaml
           readOnly: true
         - name: glance-etc
           mountPath: /etc/glance/glance-api-paste.ini
@@ -206,8 +208,8 @@ spec:
           readOnly: true
         {{- end }}
         - name: glance-etc
-          mountPath: /etc/glance/policy.json
-          subPath: policy.json
+          mountPath: /etc/glance/policy.yaml
+          subPath: policy.yaml
           readOnly: true
         - name: glance-etc
           mountPath: /etc/glance/glance-registry-paste.ini
@@ -255,6 +257,8 @@ spec:
       {{- end }}
       volumes:
       - name: etcglance
+        emptyDir: {}
+      - name: swift-buffer
         emptyDir: {}
       - name: image-store
       {{- if .Values.file.persistence.enabled }}
