@@ -57,6 +57,7 @@
       - '{__name__=~"^snmp_cucsFcErrStatsSignalLosses"}'
       - '{__name__=~"^snmp_cucsFcErrStatsSyncLosses"}'
       - '{__name__=~"^snmp_cucsFcErrStatsCrcRx"}'
+      - '{__name__=~"^ssh_.+"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^redfish_.+"}'
       - '{__name__=~"^cablecheck_error_status"}'
