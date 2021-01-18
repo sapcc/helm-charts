@@ -886,8 +886,8 @@
 
 {{ if .Values.network_generic_ssh_exporter.enabled }}
 - job_name: 'network/ssh'
-  scrape_interval: 60s
-  scrape_timeout: 45s
+  scrape_interval: 120s
+  scrape_timeout: 60s
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
