@@ -80,6 +80,9 @@ swift_store_use_trusts=True
 [oslo_messaging_notifications]
 driver = noop
 
+[oslo_policy]
+policy_file = /etc/glance/policy.yaml
+
 {{- include "ini_sections.cache" . }}
 
 [barbican]
