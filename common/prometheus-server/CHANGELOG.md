@@ -1,3 +1,6 @@
+## 4.0.1
+* Change Thanos from dockerhub to keppel mirror
+
 ## 4.0.0
 
 * **[Breaking]** ChartVersion is now v2.
