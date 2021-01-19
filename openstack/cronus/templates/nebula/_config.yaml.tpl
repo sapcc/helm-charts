@@ -26,9 +26,8 @@ nebula:
     password: {{ .Values.config.multiCloud.password }}
   # TODO: needs to be deleted in newer versions
   serviceUser:
-    endpoint: {{ .Values.config.multiCloud.endpoint }}
-    username: {{ .Values.config.multiCloud.username }}
-    password: {{ .Values.config.multiCloud.password }}
+    username: {{ .Values.config.serviceUsername }}
+    password: {{ .Values.config.serviceUsername }}
   jira:
     endpoint: {{ .Values.config.jira.endpoint }}
     username: {{ .Values.config.jira.username }}
