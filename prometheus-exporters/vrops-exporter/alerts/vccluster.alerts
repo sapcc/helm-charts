@@ -16,18 +16,18 @@ groups:
       summary: "Missing failover host for in {{ $labels.vcenter }} cluster {{ $labels.vccluster }}."
   - alert: VCenterRedundancyLostHAPolicyFaulty
     expr: |
-      sum by (datacenter, vcenter) (vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"}) unless
-      sum by (datacenter, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"}) != 0
+      sum by (vccluster, vcenter) (vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"}) unless
+      sum by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"}) != 0
     for: 30m
     labels:
       severity: critical
       tier: vmware
       service: compute
-      meta: "VC {{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.datacenter }}, failover will not work."
+      meta: "VC {{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
       playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
     annotations:
-      description: "VC {{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.datacenter }}, failover will not work."
-      summary: "VC {{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.datacenter }}, failover will not work."
+      description: "VC {{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
+      summary: "VC {{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
   - alert: VCenterRedundancyLostHAPolicyNotConfigured
     expr: vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"} == 0
     for: 30m
