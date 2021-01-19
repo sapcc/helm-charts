@@ -27,7 +27,7 @@ nebula:
   # TODO: needs to be deleted in newer versions
   serviceUser:
     username: {{ .Values.config.serviceUsername }}
-    password: {{ .Values.config.serviceUsername }}
+    password: {{ .Values.config.servicePassword }}
   jira:
     endpoint: {{ .Values.config.jira.endpoint }}
     username: {{ .Values.config.jira.username }}
