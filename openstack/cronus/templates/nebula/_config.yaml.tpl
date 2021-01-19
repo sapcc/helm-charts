@@ -20,10 +20,17 @@ nebula:
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
+  multiCloud:
+    endpoint: {{ .Values.config.multiCloud.endpoint }}
+    username: {{ .Values.config.multiCloud.username }}
+    password: {{ .Values.config.multiCloud.password }}
+  # TODO: needs to be deleted in newer versions
   serviceUser:
-    username: {{ .Values.config.serviceUsername }}
-    password: {{ .Values.config.servicePassword }}
+    endpoint: {{ .Values.config.multiCloud.endpoint }}
+    username: {{ .Values.config.multiCloud.username }}
+    password: {{ .Values.config.multiCloud.password }}
   jira:
+    endpoint: {{ .Values.config.jira.endpoint }}
     username: {{ .Values.config.jira.username }}
     password: {{ .Values.config.jira.password }}
     serviceDeskID: {{ .Values.config.jira.serviceDeskID }}
