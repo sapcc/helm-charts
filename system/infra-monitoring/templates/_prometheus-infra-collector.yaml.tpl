@@ -859,11 +859,11 @@
 
   params:
     'match[]':
-      - '{job=~"^asr1k_tests.*"}'
+      - '{job=~"^asr1k_tests.*", __name__=~"(probe_[a-z]+_duration_seconds|probe_success)"}'
 
   static_configs:
     - targets:
-      - '10.236.40.28:9090'
+      - 'prometheus.asr1k-tests.c.{{ .Values.global.region }}.cloud.sap:9090'
 {{ end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
