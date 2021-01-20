@@ -11,6 +11,7 @@
       - '{__name__=~"^ALERTS$"}'
       - '{__name__=~"^global:.+"}'
       - '{__name__=~"^probe_(dns|duration|http|success).*"}'
+      - '{__name__=~"^elasticsearch_octobus_.+"}'
       - '{__name__=~"^snmp_asa_.+"}'
       - '{__name__=~"^snmp_asr_nat.+"}'
       - '{__name__=~"^snmp_asr_disman.+"}'
