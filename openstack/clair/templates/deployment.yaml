@@ -25,6 +25,7 @@ spec:
         name: clair
       annotations:
         checksum/configmap: {{ include "clair/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "clair/templates/secret.yaml" . | sha256sum }}
     spec:
       volumes:
         - name: config
@@ -36,11 +37,16 @@ spec:
           imagePullPolicy: IfNotPresent
           command: [ /bin/sh, /etc/clair/start.sh ]
           env:
+            - name: AUTH_PRESHARED_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: clair
+                  key: auth_preshared_key
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: clair-postgresql # NOTE: this secret is provided by the postgresql chart
-                  key: postgres-password
+                  name: clair
+                  key: postgres_password
           volumeMounts:
             - mountPath: /etc/clair
               name: config

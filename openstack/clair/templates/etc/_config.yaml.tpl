@@ -40,7 +40,7 @@ notifier:
 
 auth:
   psk:
-    key: [ {{ quote .Values.clair.auth.preshared_key }} ]
+    key: [ "%AUTH_PRESHARED_KEY%" ]
     issuer: [ keppel-api@{{.Values.global.region}}.cloud.sap ]
 
 metrics:
