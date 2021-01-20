@@ -46,7 +46,14 @@
   value: '300'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
-- name: KEPPEL_DB_PASSWORD
+- name:  KEPPEL_CLAIR_PRESHARED_KEY
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: clair_preshared_key
+- name:  KEPPEL_CLAIR_URL
+  value: "https://{{ .Values.keppel.clair.hostname }}"
+- name:  KEPPEL_DB_PASSWORD
   valueFrom:
     secretKeyRef:
       name: keppel-secret
