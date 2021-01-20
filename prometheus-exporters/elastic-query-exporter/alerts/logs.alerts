@@ -5,21 +5,35 @@ groups:
         expr: elasticsearch_octobus_keystone_logs_doc_count{logs="keystone-api"} == 0
         for: 15m
         labels:
-          severity: warning
+          severity: critical
           tier: os
           service: audit
           context: logging
           meta: "No keystone logs shipping to Octobus"
           playbook: 'docs/support/playbook/elk_kibana_issues.html#keystone-logs-missing-in-octobus'
-          dashboard: octobus-keystone-logshipping
+          dashboard: octobus-logshipping
         annotations:
           description: "Keystone logs shipping to Octobus not working"
           summary: "KeystoneLogs2Octobus not working"
+      - alert: OctobusJumpserverLogShipping
+        expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0
+        for: 15m
+        labels:
+          severity: info
+          tier: os
+          service: audit
+          context: logging
+          meta: "No Jumpserver logs shipping to Octobus"
+          playbook: 'docs/support/playbook/elk_kibana_issues.html#jumpserver-logs-missing-in-octobus'
+          dashboard: octobus-logshipping
+        annotations:
+          description: "Jumpserver logs shipping to Octobus not working"
+          summary: "JumpserverLogs2Octobus not working"
       - alert: OctobusESXiHostLogShippingNotWorking
         expr: vrops_hostsystem_runtime_connectionstate{state="connected"} unless on(hostsystem) elasticsearch_octobus_esx_hostsystem_doc_count
         for: 15m
         labels:
-          severity: warning
+          severity: critical
           tier: vmware
           service: audit
           context: logging
