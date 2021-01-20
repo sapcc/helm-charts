@@ -41,7 +41,7 @@ notifier:
 auth:
   psk:
     key: "%AUTH_PRESHARED_KEY%"
-    issuer: [ keppel-api@keppel.{{.Values.global.region}}.{{.Values.global.tld}} {{- range .Values.clair.auth.additional_client_regions }}, keppel-api@keppel.{{.}}.{{$.Values.global.tld}} {{- end }} ]
+    iss: [ keppel-api@keppel.{{.Values.global.region}}.{{.Values.global.tld}} {{- range .Values.clair.auth.additional_client_regions }}, keppel-api@keppel.{{.}}.{{$.Values.global.tld}} {{- end }} ]
 
 metrics:
   name: prometheus
