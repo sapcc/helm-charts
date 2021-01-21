@@ -78,7 +78,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:logdate}.%{POSINT} %{NOTSPACE} %{LOGLEVEL:log_level} %{NOTSPACE} \[%{GREEDYDATA:}\] %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} \[%{GREEDYDATA}\] "%{WORD:verb} %{NOTSPACE:request} %{NOTSPACE:httpversion}" %{NUMBER:response} (?:%{NUMBER:bytes}|-) %{BASE10NUM:request_duration}
+    grok_pattern %{TIMESTAMP_ISO8601:logdate}.%{POSINT} %{NOTSPACE} %{LOGLEVEL:log_level} %{NOTSPACE} \[%{GREEDYDATA:}\] %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} \[%{GREEDYDATA}\] "%{WORD:verb} %{NOTSPACE:request} %{NOTSPACE:httpversion}" %{NUMBER:response} (?:%{NUMBER:bytes}|-)
   </parse>
 </filter>
 
