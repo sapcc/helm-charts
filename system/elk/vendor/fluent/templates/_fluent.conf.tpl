@@ -78,7 +78,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:logdate}.%{POSINT} %{NOTSPACE} %{LOGLEVEL:log_level} %{NOTSPACE} \[%{GREEDYDATA:}\]%{SPACE}%{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{SYSLOG5424SD} "%{WORD:verb}%{SPACE}%{URIPATHPARAM:request}%{SPACE}%{NOTSPACE:httpversion}" %{NUMBER:response} (?:%{NUMBER:bytes}|-) %{BASE10NUM:request_duration}
+    grok_pattern %{TIMESTAMP_ISO8601:logdate}.%{POSINT} %{NOTSPACE} %{LOGLEVEL:log_level} %{NOTSPACE} \[%{GREEDYDATA:}\] %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{SYSLOG5424SD} "%{WORD:verb} %{URIPATHPARAM:request} %{NOTSPACE:httpversion}" %{NUMBER:response} (?:%{NUMBER:bytes}|-) %{BASE10NUM:request_duration}
   </parse>
 </filter>
 
@@ -172,7 +172,7 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.postgres** kubernetes.var.log.containers.ad-healthcheck** kubernetes.var.log.containers.elektra-postgresql** kubernetes.var.log.containers.trident** kubernetes.var.log.containers.prometheus-frontend** kubernetes.var.log.containers.blackbox**>
+<filter kubernetes.var.log.containers.ad-healthcheck** kubernetes.var.log.containers.elektra-postgresql** kubernetes.var.log.containers.trident** kubernetes.var.log.containers.prometheus-frontend** kubernetes.var.log.containers.blackbox**>
   @type parser
   key_name log
   reserve_data true
@@ -320,27 +320,6 @@
   </record>
 </filter>
 
-<filter kubernetes.var.log.containers.postgres-keystone**>
-  @type record_transformer
-  <record>
-    process "postgres-keystone"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.postgres-glance**>
-  @type record_transformer
-  <record>
-    process "postgres-glance"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.postgres-neutron**>
-  @type record_transformer
-  <record>
-    process "postgres-neutron"
-  </record>
-</filter>
-
 <filter kubernetes.var.log.containers.neutron-server**>
   @type record_transformer
   <record>
@@ -355,20 +334,6 @@
   </record>
 </filter>
 
-<filter kubernetes.var.log.containers.postgres-nova**>
-  @type record_transformer
-  <record>
-    process "postgres-nova"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.postgres-barbican**>
-  @type record_transformer
-  <record>
-    process "postgres-barbican"
-  </record>
-</filter>
-
 <filter kubernetes.var.log.containers.nova-compute**>
   @type record_transformer
   <record>
@@ -380,13 +345,6 @@
   @type record_transformer
   <record>
     process "concourse-web"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.arc-postgresql**>
-  @type record_transformer
-  <record>
-    process "arc-postgresql"
   </record>
 </filter>
 
@@ -415,13 +373,6 @@
   @type record_transformer
   <record>
     process "elk-wall-e"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.concourse-postgresql**>
-  @type record_transformer
-  <record>
-    process "concourse-postgresql"
   </record>
 </filter>
 
