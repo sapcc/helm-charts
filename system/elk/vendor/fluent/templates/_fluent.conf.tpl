@@ -61,13 +61,24 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
+<filter kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
     grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?(%{REQUESTID:requestid})
+    custom_pattern_path /fluent-bin/pattern
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.glance**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{TIMESTAMP_ISO8601:logdate}.%{POSINT} %{POSINT} %{LOGLEVEL:log_level} %{NOTSPACE} \[%{NOTSPACE:request_id}%{SPACE}%{NOTSPACE}%{SPACE}%{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{IP},%{IP} %{NOTSPACE} %{NOTSPACE} %{SYSLOG5424SD} "%{WORD:verb} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}" %{NUMBER:response} (?:%{NUMBER:bytes}|-) %{BASE10NUM:request_duration}
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
