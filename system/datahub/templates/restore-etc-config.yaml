@@ -31,5 +31,7 @@ data:
     region: {{ .Values.global.region }}
 {{- end }}
 
-  openstack_view.sql:
+  openstack_view.sql: |
     {{ .Values.mariadb.restore.openstack_view }}
+    ALTER USER 'root'@'localhost' IDENTIFIED BY '{{.Values.mariadb.root_password}}';
+    GRANT SELECT on {{.Values.mariadb.dbName}}.* to '{{.Values.global.datahub.user}}'@'%' identified by '{{.Values.global.datahub.password}}';
