@@ -78,7 +78,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{TIMESTAMP_ISO8601:logdate}.%{POSINT} %{POSINT} %{LOGLEVEL:log_level} %{NOTSPACE} \[%{NOTSPACE:request_id}%{SPACE}%{NOTSPACE}%{SPACE}%{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{IP},%{IP} %{NOTSPACE} %{NOTSPACE} %{SYSLOG5424SD} "%{WORD:verb} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}" %{NUMBER:response} (?:%{NUMBER:bytes}|-) %{BASE10NUM:request_duration}
+    grok_pattern %{TIMESTAMP_ISO8601:logdate}.%{POSINT} %{POSINT} %{LOGLEVEL:log_level} %{NOTSPACE} \[%{NOTSPACE:request_id}%{SPACE}%{NOTSPACE}%{SPACE}%{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{SYSLOG5424SD} "%{WORD:verb} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}" %{NUMBER:response} (?:%{NUMBER:bytes}|-) %{BASE10NUM:request_duration}
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
