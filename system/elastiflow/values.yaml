@@ -2,22 +2,23 @@ curator:
   enabled: false
   retention: "92"
   env:
-    DATA_RETENTION: "$(RETENTION)"
-    USERNAME: "$(USER)"
-    PASSWORD: "$(PW)"
-  envFromSecrets:
-    RETENTION:
-      from:
-        secret: curator-secrets
+  - name: DATA_RETENTION
+    valueFrom:
+      secretKeyRef:
+        name: elastic-curator
         key: retention
-    USER:
-      from:
-        secret: curator-secrets
+  - name: ELASTIC_USER
+    valueFrom:
+      secretKeyRef:
+        name: elastic-curator
         key: username
-    PW:
-      from:
-        secret: curator-secrets
+  - name: ELASTIC_PASS
+    valueFrom:
+      secretKeyRef:
+        name: elastic-curator
         key: password
+  - name: ELASTIC_CREDS
+    value: $(ELASTIC_USER):$(ELASTIC_PASS)
   nodeSelector:
     ccloud.sap.com/nodepool: elastiflow
   tolerations:
@@ -32,7 +33,7 @@ curator:
         hosts:
           - elastiflow-data
         port: 9200
-        http_auth: ${USERNAME}:${PASSWORD}
+        http_auth: ${ELASTIC_CREDS}
       logging:
         loglevel: DEBUG
     # Delete indices older than 3 months
