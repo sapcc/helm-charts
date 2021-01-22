@@ -2,6 +2,7 @@ credentials:
   default:
     username: {{ .Values.network_generic_ssh_exporter.user }}
     password: {{ .Values.network_generic_ssh_exporter.password }}
+    
 metrics:
   nat_static:
     regex: >-
@@ -32,7 +33,7 @@ metrics:
       Hits:\s+(\d+)\s+Misses:\s(\d+)
     value: $1
     description: Indicates how many packets did not find a match in the current NAT database
-    metric_type_name: gauge
+    metric_type_name: counter
     command: show ip nat statistics | incl Misses
     timeout_secs: 3
   redundancy_state:
@@ -53,7 +54,7 @@ metrics:
     regex: "sadd (\\d+)"
     value: $1
     description: Displays how many add message failed to be sent to the other device
-    metric_type_name: gauge
+    metric_type_name: counter
     command: "show plat hard qfp act feat nat data ha | b Send Fails:"
     timeout_secs: 5
   redundancy_send_queue:
@@ -63,13 +64,6 @@ metrics:
     metric_type_name: string
     command: "show plat hard qfp act system rg 1 stat | incl tx_seq_flags"
     timeout_secs: 5
-  nat_datapath_drop_counter:
-    regex: "ALLOC_ADDR_PORT_FAIL (\\d+)"
-    value: $1
-    description: Displays the failed port allocations of the nat stack
-    metric_type_name: gauge
-    command: "show platform hardware qfp active feature nat datapath stats"
-    timeout_secs: 10
   vrf_count_cc_cloud:
     regex: "Number of lines which match regexp = (\\d+)"
     value: $1
@@ -91,6 +85,71 @@ metrics:
     metric_type_name: gauge
     command: show interface summary | count ^\* BD
     timeout_secs: 5
+  qfp_punt_arp_received:
+    regex: >-
+      \s+\d{3}\s+ARP request or response\s+(\d+)\s+(\d+)
+    value: $1
+    description: Counter of the number of ARP packages received
+    metric_type_name: counter
+    command: show platform hardware qfp active infrastructure punt statistics type per-cause | include ^  007.+ARP
+    timeout_secs: 3
+  qfp_punt_arp_transmitted:
+    regex: >-
+      \s+\d{3}\s+ARP request or response\s+(\d+)\s+(\d+)
+    value: $2
+    description: Counter of the number of ARP packages received
+    metric_type_name: counter
+    command: show platform hardware qfp active infrastructure punt statistics type per-cause | include ^  007.+ARP
+    timeout_secs: 3
+  software_punt_polcier_arp_conform_normal:
+    regex: >-
+      \s+\d+\s+ARP request or response\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)
+    value: $3
+    description: Counter of punted, conforming ARP packets
+    metric_type_name: counter
+    command: show platform software punt-policer | in \ +7\ +ARP
+    timeout_secs: 3
+  software_punt_polcier_arp_conform_high:
+    regex: >-
+      \s+\d+\s+ARP request or response\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)
+    value: $4
+    description: Counter of punted, bursted ARP packets
+    metric_type_name: counter
+    command: show platform software punt-policer | in \ +7\ +ARP
+    timeout_secs: 3
+  software_punt_polcier_arp_drop_normal:
+    regex: >-
+      \s+\d+\s+ARP request or response\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)
+    value: $5
+    description: Counter of punted, dropped normal ARP packets
+    metric_type_name: counter
+    command: show platform software punt-policer | in \ +7\ +ARP
+    timeout_secs: 3
+  software_punt_polcier_arp_drop_high:
+    regex: >-
+      \s+\d+\s+ARP request or response\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)
+    value: $6
+    description: Counter of punted, dropped high ARP packets
+    metric_type_name: counter
+    command: show platform software punt-policer | in \ +7\ +ARP
+    timeout_secs: 3
+  qfp_classification_ce_data_nat_1001_classes:
+    regex: >-
+      \(classes: (\d+)
+    value: $1
+    description: feature-manager class-group ce_data nat 1001 detail
+    metric_type_name: gauge
+    command: show platform hardware qfp active classification feature-manager class-group ce_data nat 1001 detail | in ^class-group
+    timeout_secs: 3
+  qfp_classification_client_nat_1001_classes:
+    regex: >-
+      \(classes: (\d+)
+    value: $1
+    description: class-group-manager class-Group client nat 1001
+    metric_type_name: gauge
+    command: show platform hardware qfp active classification class-group-manager class-Group client nat 1001 | in ^class-group
+    timeout_secs: 5
+
 batches:
   neutron-router:
     - nat_dynamic
@@ -104,7 +163,15 @@ batches:
     - vrf_count_cc_cloud
     - vrf_count_total
     - bd_count_total
-    #- nat_datapath_drop_counter
+    - qfp_punt_arp_received
+    - qfp_punt_arp_transmitted
+    - software_punt_polcier_arp_conform_normal
+    - software_punt_polcier_arp_conform_high
+    - software_punt_polcier_arp_drop_normal
+    - software_punt_polcier_arp_drop_high
+    - qfp_classification_ce_data_nat_1001_classes
+    - qfp_classification_client_nat_1001_classes
+
 devices:
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
