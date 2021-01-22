@@ -58,6 +58,7 @@ swift_store_auth_insecure = True
 swift_store_create_container_on_put = True
 swift_buffer_on_upload = True
 swift_upload_buffer_dir = /upload
+swift_store_expire_soon_interval = 1800
 {{- if .Values.swift.multi_tenant }}
 swift_store_multi_tenant = True
 # swift_store_large_object_size = 5120
