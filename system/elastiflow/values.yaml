@@ -2,25 +2,21 @@ curator:
   enabled: false
   retention: "92"
   env:
-  - name: DATA_RETENTION
-    value: "$(RETENTION)"
-  - name: ELASTIC_USER
-    valueFrom:
-      secretKeyRef:
-        name: elastic-curator
-        key: username
-  - name: ELASTIC_PASS
-    valueFrom:
-      secretKeyRef:
-        name: elastic-curator
-        key: password
-  - name: ELASTIC_CREDS
-    value: $(ELASTIC_USER):$(ELASTIC_PASS)
+    DATA_RETENTION: "$(RETENTION)"
+    ELASTIC_CREDS: "$(USERNAME):$(PASSWORD)"
   envFromSecrets:
       RETENTION:
         from:
           secret: curator-secrets
           key: retention
+      USERNAME:
+        from:
+          secret: curator-secrets
+          key: username
+      PASSWORD:
+        from:
+          secret: curator-secrets
+          key: password
   nodeSelector:
     ccloud.sap.com/nodepool: elastiflow
   tolerations:
