@@ -3,10 +3,7 @@ curator:
   retention: "92"
   env:
   - name: DATA_RETENTION
-    valueFrom:
-      secretKeyRef:
-        name: elastic-curator
-        key: retention
+    value: "$(RETENTION)"
   - name: ELASTIC_USER
     valueFrom:
       secretKeyRef:
@@ -19,6 +16,11 @@ curator:
         key: password
   - name: ELASTIC_CREDS
     value: $(ELASTIC_USER):$(ELASTIC_PASS)
+  envFromSecrets:
+      RETENTION:
+        from:
+          secret: curator-secrets
+          key: retention
   nodeSelector:
     ccloud.sap.com/nodepool: elastiflow
   tolerations:
