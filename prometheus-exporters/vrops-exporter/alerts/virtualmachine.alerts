@@ -20,9 +20,7 @@ groups:
       summary: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: VROpsDiskpaceUsageCritical
     expr: >
-      vrops_virtualmachine_diskspace_virtual_machine_used_gigabytes{virtualmachine =~ "vrops.+"} offset 5m
-      / ignoring (statkey) vrops_virtualmachine_diskspace_gigabytes{virtualmachine =~ "vrops.+"} offset 5m
-      > 0.9
+      vrops_virtualmachine_database_disk_usage_percent{virtualmachine=~"vrops-vc.*"} > 90
     for: 20m
     labels:
       severity: info
