@@ -157,3 +157,19 @@
       - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
       - '{__name__=~"^vrops_virtualmachine_network_.+"}'
       - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
+
+- job_name: 'prometheus-infra-scaleout'
+  scrape_interval: 1m
+  scrape_timeout: 55s
+  static_configs:
+    - targets: ['prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap']
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      # ccloud cronus mail service metrics
+      - '{__name__=~"^cronus_aws_ses_bounce"}'
+      - '{__name__=~"^cronus_aws_ses_complaint"}'
+      - '{__name__=~"^cronus_aws_ses_delivery"}'
+      - '{__name__=~"^cronus_aws_ses_reputation_bouncerate"}'
+      - '{__name__=~"^cronus_aws_ses_reputation_complaintrate"}'
+      - '{__name__=~"^cronus_aws_ses_send"}'
