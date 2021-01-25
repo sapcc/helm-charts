@@ -9,6 +9,9 @@ octavia_plugins = f5_plugin
 # AMQP Transport URL
 {{ include "ini_sections.default_transport_url" . }}
 
+# Tracing
+{{- include "osprofiler" . }}
+
 [api_settings]
 bind_host = 0.0.0.0
 bind_port = {{.Values.global.octavia_port_internal | default 9876}}
@@ -19,9 +22,6 @@ api_v2_enabled = True
 
 # How should authentication be handled (keystone, noauth)
 auth_strategy = keystone
-
-# Tracing
-{{- include "osprofiler" . }}
 
 # Dictionary of enabled provider driver names and descriptions
 enabled_provider_drivers = {{ .Values.providers }}
