@@ -20,6 +20,9 @@ api_v2_enabled = True
 # How should authentication be handled (keystone, noauth)
 auth_strategy = keystone
 
+# Tracing
+{{- include "osprofiler" . }}
+
 # Dictionary of enabled provider driver names and descriptions
 enabled_provider_drivers = {{ .Values.providers }}
 
