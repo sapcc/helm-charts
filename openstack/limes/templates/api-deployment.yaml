@@ -84,13 +84,16 @@ spec:
             periodSeconds: 5
           {{- if $.Values.limes.resources.enabled }}
           resources:
-            # observed usage: CPU <= 10m, RAM = 25-70 MiB
+            # observed usage: CPU <= 20m, RAM = 25-70 MiB
+            #
+            # However, we have some very significant spikes esp. when billing
+            # scrapes us, so we give some extra CPU headroom to stay performant.
             limits:
-              cpu: '20m'
-              memory: '200Mi'
+              cpu: '50m'
+              memory: '150Mi'
             requests:
-              cpu: '10m'
-              memory: '50Mi'
+              cpu: '50m'
+              memory: '150Mi'
           {{- end }}
 ---
 {{end}}
