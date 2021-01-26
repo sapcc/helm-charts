@@ -77,6 +77,65 @@
       - '{__name__=~"^bios_exporter",setting_name=~"memory_memorymode|biosvfselectmemoryrasconfiguration|memory_ras_configuration|bios_memsettings_adddcsetting|bios_memsettings_memopmode"}'
       - '{__name__=~"^bios_exporter_up"}'
       - '{__name__=~"^pxcloudprober_.+"}'
+      - '{__name__=~"^cablecheck_error_status"}'
+      - '{__name__=~"^cablecheck_runs_counter_total"}'
+      - '{__name__=~"^thousandeyes_test_html_loss_percentage"}'
+      - '{__name__=~"^thousandeyes_test_html_avg_latency_milliseconds"}'
+      - '{__name__=~"^thousandeyes_requests_total"}'
+      - '{__name__=~"^thousandeyes_requests_fails"}'
+      - '{__name__=~"^fluentd_.+"}'
+      - '{__name__=~"^elasticsearch_cluster_health_.+"}'
+      - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
+      - '{__name__=~"^elasticsearch_cluster_health_active_primary_shards"}'
+      - '{__name__=~"^logstash_node_queue_.+"}'
+      - '{__name__=~"^logstash_node_pipeline_.+"}'
+      - '{__name__=~"^vcsa_service_status"}'
+
+
+  relabel_configs:
+    - action: replace
+      source_labels: [__address__]
+      target_label: region
+      regex: prometheus-infra.scaleout.(.+).cloud.sap
+      replacement: $1
+    - action: replace
+      target_label: cluster_type
+      replacement: controlplane
+
+  metric_relabel_configs:
+    - action: replace
+      source_labels: [__name__]
+      target_label: __name__
+      regex: global:(.+)
+      replacement: $1
+    - source_labels: [__name__, prometheus_source, prometheus]
+      regex: '^up;^$;(.+)'
+      replacement: '$1'
+      target_label: prometheus_source
+      action: replace
+
+  {{ if .Values.authentication.enabled }}
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+  {{ end }}
+
+  static_configs:
+    - targets:
+{{- range $region := .Values.regionList }}
+      - "prometheus-infra.scaleout.{{ $region }}.cloud.sap"
+{{- end }}
+
+- job_name: 'prometheus-regions-vrops-federation'
+  scheme: https
+  scrape_interval: 60s
+  scrape_timeout: 55s
+
+  honor_labels: true
+  metrics_path: '/federate'
+
+  params:
+    'match[]':
       - '{__name__=~"^vrops_vcenter_cpu_used_percent"}'
       - '{__name__=~"^vrops_vcenter_memory_used_percent"}'
       - '{__name__=~"^vrops_vcenter_diskspace_total_gigabytes"}'
@@ -109,20 +168,6 @@
       - '{__name__=~"^vrops_virtualmachine_runtime_connectionstate",state="disconnected"}'
       - '{__name__=~"^vrops_virtualmachine_runtime_powerstate"}'
       - '{__name__=~"^vrops_datastore_.+", type!~"local"}'
-      - '{__name__=~"^cablecheck_error_status"}'
-      - '{__name__=~"^cablecheck_runs_counter_total"}'
-      - '{__name__=~"^thousandeyes_test_html_loss_percentage"}'
-      - '{__name__=~"^thousandeyes_test_html_avg_latency_milliseconds"}'
-      - '{__name__=~"^thousandeyes_requests_total"}'
-      - '{__name__=~"^thousandeyes_requests_fails"}'
-      - '{__name__=~"^fluentd_.+"}'
-      - '{__name__=~"^elasticsearch_cluster_health_.+"}'
-      - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
-      - '{__name__=~"^elasticsearch_cluster_health_active_primary_shards"}'
-      - '{__name__=~"^logstash_node_queue_.+"}'
-      - '{__name__=~"^logstash_node_pipeline_.+"}'
-      - '{__name__=~"^vcsa_service_status"}'
-
 
   relabel_configs:
     - action: replace
