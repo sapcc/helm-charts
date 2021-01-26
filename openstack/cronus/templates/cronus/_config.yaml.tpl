@@ -29,6 +29,12 @@ cronus:
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
+  # blocked sender domains
+  blockedDomains:
+{{- range $k, $v := .Values.config.blockedDomains }}
+    - {{ $v }}
+{{- end }}
+    - {{ .Values.config.verifyEmailDomain }}
   debug: {{ .Values.cronus.debug }}
   policy:
 {{- range $key, $value := .Values.config.cronusPolicy }}
