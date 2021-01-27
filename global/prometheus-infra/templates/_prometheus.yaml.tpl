@@ -25,6 +25,7 @@
       - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketLossDS"}'
       - '{__name__=~"^snmp_asr03_rttMonJitterStatsPacketOutOfSequence"}'
       - '{__name__=~"^snmp_asr04_sysDescr"}'
+      - '{__name__=~"^elasticsearch_openstack_glance.+"}'
       - '{__name__=~"^snmp_n3k_sysDescr"}'
       - '{__name__=~"^snmp_n7k_sysDescr"}'
       - '{__name__=~"^snmp_pxdlrouternxos_sysDescr"}'
