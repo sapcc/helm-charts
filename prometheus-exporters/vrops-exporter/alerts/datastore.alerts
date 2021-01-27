@@ -9,11 +9,11 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      meta: 'Datastore {{ $labels.datastore }} is not accessible'
+      meta: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})'
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_1
     annotations:
-      description: 'Datastore {{ $labels.datastore }} is not accessible'
-      summary: 'Datastore {{ $labels.datastore }} is not accessible'
+      description: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})'
+      summary: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})'
   - alert: VVolDatastoreZeroFreeSpace
     expr: |
       vrops_datastore_diskspace_freespace_gigabytes{type="vVOL"} == 0
@@ -22,12 +22,12 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      meta: 'Datastore {{ $labels.datastore }} has no free space'
+      meta: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})'
       dashboard: vcenter-datastore-utilization
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_4
     annotations:
-      description: 'Datastore {{ $labels.datastore }} has no free space'
-      summary: 'Datastore {{ $labels.datastore }} has no free space'
+      description: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})'
+      summary: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})'
   - alert: VVolDatastoreZeroCapacity
     expr: |
       vrops_datastore_diskspace_capacity_gigabytes{type="vVOL"} == 0
@@ -36,12 +36,12 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      meta: 'Datastore {{ $labels.datastore }} has zero capacity'
+      meta: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})'
       dashboard: vcenter-datastore-utilization
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_3
     annotations:
-      description: 'Datastore {{ $labels.datastore }} has zero capacity'
-      summary: 'Datastore {{ $labels.datastore }} has zero capacity'
+      description: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})'
+      summary: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})'
   - alert: DataStoreCapacityWarning
     expr: >
       max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"Management|ephemeral|vmfs.*"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >= 0.8
@@ -51,12 +51,12 @@ groups:
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} utilization > 80% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      meta: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 80% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 80% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      description: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DataStoreCapacityCritical
     expr: >
       max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"Management|ephemeral|vmfs.*"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
@@ -66,12 +66,12 @@ groups:
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      meta: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      description: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: VVolDataStoreCapacityWarning
     expr: >
       max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >= 0.8
@@ -81,12 +81,12 @@ groups:
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "vVOL Datastore {{ $labels.datastore }} utilization > 80% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      meta: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_5
     annotations:
-      description: "vVOL Datastore {{ $labels.datastore }} utilization > 80% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 80% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      description: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: VVolDataStoreCapacityCritical
     expr: >
       max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
@@ -96,12 +96,12 @@ groups:
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "vVOL Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      meta: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_5
     annotations:
-      description: "vVOL Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      description: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DataStoreCapacityCritical
     expr: >
       max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
@@ -111,12 +111,12 @@ groups:
       tier: os
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      meta: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/cinder_storage_aggregate_full.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      description: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DataStoreCapacityCritical
     expr: >
       max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"Management|ephemeral|local|vVOL"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
@@ -126,12 +126,12 @@ groups:
       tier: os
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      meta: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/cinder_storage_aggregate_full.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 90% ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      description: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
       max_over_time(vrops_datastore_summary_total_number_vms[10m]) > 0
@@ -142,11 +142,11 @@ groups:
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      meta: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       playbook: docs/devops/alert/vcenter/#test_eph_ds_1
     annotations:
-      description: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      description: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
   - alert: DatastoreDisconnectedWithoutVmsOnIt
     expr: >
       max_over_time(vrops_datastore_summary_total_number_vms[10m]) == 0
@@ -157,8 +157,8 @@ groups:
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      meta: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       playbook: docs/devops/alert/vcenter/#test_eph_ds_2
     annotations:
-      description: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      description: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
