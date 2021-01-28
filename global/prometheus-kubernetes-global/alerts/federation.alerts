@@ -1,7 +1,7 @@
 groups:
 - name: federation.alerts
   rules:
-  - alert: KubernetesAdminPrometheusDown
+  - alert: KubernetesAdminPrometheusFederationDown
     expr: count by(region) (up{job="admin-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type="admin"})
     for: 15m
     labels:
@@ -13,10 +13,10 @@ groups:
       tier: k8s
       playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: Prometheus Frontend in region {{ $labels.region }} is DOWN. Alerting and dashboards are unavailable.
+      description: Global Prometheus cannot federate from Prometheus Frontend in region {{ $labels.region }}. Alerting and dashboards are unavailable.
       summary: Prometheus Frontend is DOWN
 
-  - alert: KubernetesControlPlanePrometheusDown
+  - alert: KubernetesControlPlanePrometheusFederationDown
     expr: count by(region) (up{job="metal-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type="metal"})
     for: 15m
     labels:
@@ -28,8 +28,8 @@ groups:
       tier: k8s
       playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: Prometheus Frontend in region {{ $labels.region }} is DOWN. Alerting and dashboards are unavailable.
-      summary: Prometheus Frontend is DOWN
+      description: Global Prometheus cannot federate from Prometheus Frontend in region {{ $labels.region }}. Alerting and dashboards are unavailable.
+      summary: Prometheus Frontend federation is down
 
   - alert: KubernetesControlplanePrometheusFederationCollectorDown
     expr: absent(up{job="prometheus-collector-federation"}) or up{job="prometheus-collector-federation"} == 0
@@ -44,9 +44,9 @@ groups:
       playbook: docs/support/playbook/prometheus/federation.html
     annotations:
       description: Prometheus Frontend can't federate data from the collector. Data will be stale
-      summary: Prometheus Frontend Federation is DOWN
+      summary: Prometheus frontend-collector federation is down
 
-  - alert: KubernetesScaleoutPrometheusDown
+  - alert: KubernetesScaleoutPrometheusFederationDown
     expr: count by(cluster) (up{job="scaleout-federation"}) unless count by(cluster) (up{job="prometheus-kubernetes", cluster_type="scaleout"})
     for: 15m
     labels:
@@ -58,10 +58,10 @@ groups:
       tier: k8s
       playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: "Prometheus in scaleout cluster {{ $labels.cluster }} is DOWN. Alerting and dashboards are unavailable."
-      summary: Prometheus is DOWN
+      description: "Global Prometheus cannot federate from Prometheus in scaleout cluster {{ $labels.cluster }}. Alerting and dashboards are unavailable."
+      summary: Prometheus federation down
 
-  - alert: KubernetesInternetPrometheusDown
+  - alert: KubernetesInternetPrometheusFederationDown
     expr: count by(cluster) (up{job="internet-federation"}) unless count by(cluster) (up{job="prometheus-kubernetes", cluster_type="internet"})
     for: 15m
     labels:
@@ -73,10 +73,10 @@ groups:
       tier: k8s
       playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: "Prometheus in internet cluster {{ $labels.cluster }} is DOWN. Alerting and dashboards are unavailable."
-      summary: Prometheus is DOWN
+      description: "Global Prometheus cannot federate from Prometheus in internet cluster {{ $labels.cluster }}. Alerting and dashboards are unavailable."
+      summary: Prometheus federation down
 
-  - alert: KubernetesCustomerPrometheusDown
+  - alert: KubernetesCustomerPrometheusFederationDown
     expr: count by(cluster) (up{job="customer-federation"}) unless count by(cluster) (up{job="prometheus-kubernetes", cluster_type="customer"})
     for: 15m
     labels:
@@ -88,8 +88,8 @@ groups:
       tier: k8s
       playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: "Prometheus in customer cluster {{ $labels.cluster }} is DOWN. Alerting and dashboards are unavailable."
-      summary: Prometheus is DOWN
+      description: "Global Prometheus cannot federate from Prometheus in customer cluster {{ $labels.cluster }}. Alerting and dashboards are unavailable."
+      summary: Prometheus federation down
 
   - alert: KubernetesPrometheusFederationRegions
     expr: absent(up{job="metal-federation"}) or up{job="prometheus-regions-federation", cluster_type=~"metal"} == 0
