@@ -2,7 +2,7 @@ groups:
 - name: openstack-nova.alerts
   rules:
   - alert: OpenstackNovaMaxDiskUsagePerc
-    expr: (sum(avg(openstack_compute_nodes_local_gb_used_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) / (sum(avg(openstack_compute_nodes_local_gb_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) > 0.95
+    expr: (sum(avg(openstack_compute_nodes_local_gb_used_gauge{nova_host!~".*ironic.*",availability_zone!~"true|false"}) by (nova_host,availability_zone)) by (availability_zone)) / (sum(avg(openstack_compute_nodes_local_gb_gauge{nova_host!~".*ironic.*",availability_zone!~"true|false"}) by (nova_host,availability_zone)) by (availability_zone)) > 0.95
     for: 8h
     labels:
       context: diskspace
@@ -16,7 +16,7 @@ groups:
       summary: Nova Maximum Disk Usage percentage metric
 
   - alert: OpenstackNovaMaxRAMUsagePerc
-    expr: (sum(avg(openstack_compute_nodes_memory_mb_used_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) / (sum(avg(openstack_compute_nodes_memory_mb_gauge{host!~".*ironic.*",availability_zone!~"true|false"}) by (host,availability_zone)) by (availability_zone)) > 0.95
+    expr: (sum(avg(openstack_compute_nodes_memory_mb_used_gauge{nova_host!~".*ironic.*",availability_zone!~"true|false"}) by (nova_host,availability_zone)) by (availability_zone)) / (sum(avg(openstack_compute_nodes_memory_mb_gauge{nova_host!~".*ironic.*",availability_zone!~"true|false"}) by (nova_host,availability_zone)) by (availability_zone)) > 0.95
     for: 8h
     labels:
       context: diskspace
@@ -30,7 +30,7 @@ groups:
       summary: Nova Maximum RAM Usage percentage metric
 
   - alert: OpenstackNovaInstanceInErrorState
-    expr: sum(openstack_compute_instance_created_in_24hrs_gauge{task_state='error'})by(uuid,host) > 0
+    expr: sum(openstack_compute_instance_created_in_24hrs_gauge{task_state='error'})by(uuid,nova_host) > 0
     for: 5m
     labels:
       dashboard: nova-hypervisor
@@ -39,11 +39,11 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Nova Instance {{$labels.uuid }} Stuck in Error in {{ $labels.host }}
+      description: Nova Instance {{$labels.uuid }} Stuck in Error in {{ $labels.nova_host }}
       summary: Openstack Nova Instance In Error State
 
   - alert: OpenstackNovaInstanceStuckBuilding
-    expr: sum(openstack_compute_stuck_instances_count_gauge{host!~"nova-compute-ironic.*",task_state="building"}) BY (host) > 0
+    expr: sum(openstack_compute_stuck_instances_count_gauge{nova_host!~"nova-compute-ironic.*",task_state="building"}) BY (nova_host) > 0
     for: 5m
     labels:
       dashboard: nova-hypervisor
@@ -52,11 +52,11 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Nova Instance Stuck in Building state over 15mins in {{ $labels.host }}
+      description: Nova Instance Stuck in Building state over 15mins in {{ $labels.nova_host }}
       summary: Openstack Nova Instance Stuck in Building state metric
 
   - alert: OpenstackNovaInstanceStuckDeleting
-    expr: sum(openstack_compute_stuck_instances_count_gauge{task_state="deleting"}) BY (host) > 0
+    expr: sum(openstack_compute_stuck_instances_count_gauge{task_state="deleting"}) BY (nova_host) > 0
     for: 5m
     labels:
       dashboard: nova-hypervisor
@@ -65,11 +65,11 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Nova Instance Stuck in Deleting state over 15mins in {{ $labels.host }}
+      description: Nova Instance Stuck in Deleting state over 15mins in {{ $labels.nova_host }}
       summary: Openstack Nova Instance Stuck in Deleting state metric
 
   - alert: OpenstackNovaInstanceStuckStopping
-    expr: sum(openstack_compute_stuck_instances_count_gauge{task_state="stopping"}) BY (host) > 0
+    expr: sum(openstack_compute_stuck_instances_count_gauge{task_state="stopping"}) BY (nova_host) > 0
     for: 5m
     labels:
       dashboard: nova-hypervisor
@@ -77,12 +77,12 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Nova Instance Stuck in Stopping state over 15mins in {{ $labels.host }}
+      description: Nova Instance Stuck in Stopping state over 15mins in {{ $labels.nova_host }}
       summary: Openstack Nova Instance Stuck in Stopping state metric
 
   - alert: OpenstackNovaInstanceStuckStarting
     expr: sum(openstack_compute_stuck_instances_count_gauge{task_state="starting"})
-      BY (host) > 0
+      BY (nova_host) > 0
     for: 5m
     labels:
       dashboard: nova-hypervisor
@@ -90,11 +90,11 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Nova Instance Stuck in Starting state over 15mins in {{ $labels.host }}
+      description: Nova Instance Stuck in Starting state over 15mins in {{ $labels.nova_host }}
       summary: Openstack Nova Instance Stuck in Starting state metric
 
   - alert: OpenstackNovaInstanceStuckSpawning
-    expr: sum(openstack_compute_stuck_instances_count_gauge{host!~"nova-compute-ironic.*",task_state="spawning"}) BY (host) > 0
+    expr: sum(openstack_compute_stuck_instances_count_gauge{nova_host!~"nova-compute-ironic.*",task_state="spawning"}) BY (nova_host) > 0
     for: 5m
     labels:
       dashboard: nova-hypervisor
@@ -102,11 +102,11 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Nova Instance Stuck in Spawning state over 15mins in {{ $labels.host }}
+      description: Nova Instance Stuck in Spawning state over 15mins in {{ $labels.nova_host }}
       summary: Openstack Nova Instance Stuck in Spawning state metric
 
   - alert: OpenstackNovaInstanceStuckRebooting
-    expr: sum(openstack_compute_stuck_instances_count_gauge{task_state="rebooting"}) BY (host) > 0
+    expr: sum(openstack_compute_stuck_instances_count_gauge{task_state="rebooting"}) BY (nova_host) > 0
     for: 5m
     labels:
       dashboard: nova-hypervisor
@@ -115,7 +115,7 @@ groups:
       severity: info
       tier: os
     annotations:
-      description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.host }}
+      description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.nova_host }}
       summary: Openstack Nova Instance Stuck in Rebooting state metric
 
   - alert: OpenstackNovaApiDown
