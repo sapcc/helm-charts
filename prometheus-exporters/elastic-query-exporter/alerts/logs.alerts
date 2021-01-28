@@ -56,16 +56,15 @@ groups:
           description: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
           summary: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
       - alert: VMPoweredDownDuringFailedHostMigration
-        expr: elasticsearch_octobus_vmdown_hostsystem_doc_count
-        for: 5m
+        expr: elasticsearch_octobus_vmdown_hit
         labels:
           severity: info
           tier: vmware
           service: compute
           context: logging
           no_alert_on_absence: "true"
-          meta: "A VM on host {{ $labels.hostsystem }} unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."
+          meta: "A VM on unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."
           playbook: docs/devops/alert/vcenter/#VM%20powered%20off%20during%20vMotion
         annotations:
-          description: "A VM on host {{ $labels.hostsystem }} unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."
+          description: "A VM unexpectedly powered down during a failed host migration: {{ $labels.message }}"
           summary: "A VM unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."
