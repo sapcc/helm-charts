@@ -1,6 +1,19 @@
 groups:
 - name: nsxt.alerts
   rules:
+  - alert: NSXTAgentTooManyJobs
+    expr: nsxv3_agent_passive_queue_size + nsxv3_agent_active_queue_size > 100
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: neutron
+      meta: 'NSX-T Agent has too many queued up Jobs: {{ $labels.name }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+    annotations:
+      description: 'NSX-T Agent has too many queued up jobs: {{ $labels.name }}, try restarting the agent'
+      summary: 'NSX-T Agent has too many jobs'
+
   - alert: NSXTManagementNodeOffline
     expr: nsxv3_cluster_management_offline_nodes > 0
     for: 5m
