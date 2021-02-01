@@ -74,6 +74,187 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
+{{- define "swift_proxy_volumes" }}
+{{- $cluster := index . 0 -}}
+- name: tls-secret
+  secret:
+    secretName: tls-swift-{{ $cluster }}
+- name: swift-bin
+  configMap:
+    name: swift-bin
+- name: swift-etc
+  configMap:
+    name: swift-etc
+- name: swift-etc-cluster
+  configMap:
+    name: swift-etc-{{ $cluster }}
+- name: swift-account-ring
+  configMap:
+    name: swift-account-ring
+- name: swift-container-ring
+  configMap:
+    name: swift-container-ring
+- name: swift-object-ring
+  configMap:
+    name: swift-object-ring
+{{- end }}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_proxy_container" }}
+{{- $cluster := index . 0 -}}
+{{- $context := index . 1 -}}
+- name: proxy
+  image: {{ include "swift_image" $context }}
+  command:
+    - /usr/bin/dumb-init
+  args:
+    - /bin/bash
+    - /usr/bin/swift-start
+    - proxy-server
+  env:
+    - name: DEBUG_CONTAINER
+      value: "false"
+    {{- if $context.Values.sentry.enabled }}
+    - name: SENTRY_DSN
+      valueFrom:
+        secretKeyRef:
+          name: sentry
+          key: swift.DSN.public
+    {{- end }}
+  {{- if $context.Values.resources.enabled }}
+  resources:
+    # observed usage: CPU = 300m-2500m, RAM = 450-800 MiB
+    requests:
+      cpu: "2500m"
+      memory: "1500Mi"
+    limits:
+      cpu: "2500m"
+      memory: "1500Mi"
+  {{- end }}
+  volumeMounts:
+    - mountPath: /swift-etc
+      name: swift-etc
+    - mountPath: /swift-etc-cluster
+      name: swift-etc-cluster
+    - mountPath: /swift-rings/account
+      name: swift-account-ring
+    - mountPath: /swift-rings/container
+      name: swift-container-ring
+    - mountPath: /swift-rings/object
+      name: swift-object-ring
+  livenessProbe:
+    httpGet:
+      path: /healthcheck
+      port: 8080
+      scheme: HTTP
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+- name: nginx
+  image: {{ $context.Values.global.registryAlternateRegion }}/swift-nginx:{{ $context.Values.image_version_nginx }}
+  command:
+    - /usr/bin/dumb-init
+  args:
+    - /bin/sh
+    - /swift-bin/nginx-start
+  {{- if $context.Values.resources.enabled }}
+  resources:
+    # observed usage: CPU = 10m-500m, RAM = 50-100 MiB
+    requests:
+      cpu: "1000m"
+      memory: "200Mi"
+    limits:
+      cpu: "1000m"
+      memory: "200Mi"
+  {{- end }}
+  volumeMounts:
+    - mountPath: /swift-bin
+      name: swift-bin
+    - mountPath: /swift-etc
+      name: swift-etc
+    - mountPath: /swift-etc-cluster
+      name: swift-etc-cluster
+    - mountPath: /tls-secret
+      name: tls-secret
+  livenessProbe:
+    httpGet:
+      path: /nginx-health
+      port: 1080
+      scheme: HTTP
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /healthcheck
+      port: {{ $cluster.proxy_public_port }}
+      scheme: HTTPS
+      httpHeaders:
+        - name: Host
+          value: {{ tuple $cluster $context.Values | include "swift_endpoint_host" }}
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 5
+{{- if $context.Values.health_exporter }}
+- name: collector
+  image: {{ include "swift_image" $context }}
+  command:
+    - /usr/bin/dumb-init
+  args:
+    - /bin/bash
+    - /usr/bin/swift-start
+    - health-exporter
+    - --recon.timeout=20
+    - --recon.timeout-host=2
+  ports:
+    - name: metrics
+      containerPort: 9520
+  {{- if $context.Values.resources.enabled }}
+  resources:
+    # observed usage: CPU = ~10m, RAM = 70-100 MiB
+    # low cpu allocation results in performance degradation
+    requests:
+      cpu: "100m"
+      memory: "150Mi"
+    limits:
+      cpu: "100m"
+      memory: "150Mi"
+  {{- end }}
+  volumeMounts:
+    - mountPath: /swift-etc
+      name: swift-etc
+    - mountPath: /swift-rings/account
+      name: swift-account-ring
+    - mountPath: /swift-rings/container
+      name: swift-container-ring
+    - mountPath: /swift-rings/object
+      name: swift-object-ring
+{{- end}}
+- name: statsd
+  image: prom/statsd-exporter:{{ $context.Values.image_version_auxiliary_statsd_exporter }}
+  args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+  {{- if $context.Values.resources.enabled }}
+  resources:
+    # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
+    requests:
+      cpu: "120m"
+      memory: "1024Mi"
+    limits:
+      cpu: "120m"
+      memory: "1024Mi"
+  {{- end }}
+  ports:
+    - name: statsd
+      containerPort: 9125
+      protocol: UDP
+    - name: metrics
+      containerPort: 9102
+  volumeMounts:
+    - mountPath: /swift-etc
+      name: swift-etc
+{{- end }}
+
+{{- /**********************************************************************************/ -}}
 {{- define "swift_standard_container" -}}
 {{- $image   := index . 0 -}}
 {{- $service := index . 1 -}}
