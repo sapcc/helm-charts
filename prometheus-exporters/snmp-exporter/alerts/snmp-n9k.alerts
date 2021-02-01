@@ -2,108 +2,125 @@ groups:
 - name: n9k.alerts
   rules:
   - alert: NetworkN9kSpineInterfaceInErrorRateReachesCriticalThreshold
-    expr: rate(snmp_acispine_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) > 0.28
+    expr: |
+      rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) / 
+      (rate(snmp_acispine_ifOutNUcastPkts[30m]) + rate(snmp_acispine_ifOutUcastPkts[30m])) > 0.005
     labels:
       severity: critical
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
+      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 0.5% errors in 30 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
+      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 0.5% errors in 30 minutes'
       summary: 'N9K acispine network interface In error rate check'
 
   - alert: NetworkN9kSpineInterfaceOutErrorRateReachesCriticalThreshold
-    expr: rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) > 0.28
+    expr: |
+      rate(snmp_acispine_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) / 
+      (rate(snmp_acispine_ifInNUcastPkts[30m]) + rate(snmp_acispine_ifInUcastPkts[30m])) > 0.005
     labels:
       severity: critical
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
+      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 0.5% errors in 30 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
+      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 0.5% errors in 30 minutes'
       summary: 'N9K acispine network interface Out error rate check'
 
   - alert: NetworkN9kLeafInterfaceInErrorRateReachesCriticalThreshold
-    expr: rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) > 0.28
+    expr: |
+      rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) / 
+      (rate(snmp_acileaf_ifInNUcastPkts[30m]) + rate(snmp_acileaf_ifInUcastPkts[30m])) > 0.005
     labels:
       severity: critical
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
+      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }}§s'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
+      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 0.5% errors in 30 minutes'
       summary: 'N9K acileaf network interface In error check'
 
   - alert: NetworkN9kLeafInterfaceOutErrorRateReachesCriticalThreshold
-    expr: rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) > 0.28
+    expr: |
+      rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[30m]) / 
+      (rate(snmp_acileaf_ifOutNUcastPkts[30m]) + rate(snmp_acileaf_ifOutUcastPkts[30m])) > 0.005
     labels:
       severity: critical
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
+      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 0.5% errors in 30 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 1k errors in 30 minutes'
+      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.role }} {{ $labels.devicename }} has more than 0.5% errors in 30 minutes'
       summary: 'N9K acileaf network interface Out error check'
 
-  - alert: NetworkN9kInterfaceInErrorRateReachesWarningThreshold
-    expr: rate(snmp_acispine_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
+  - alert: NetworkN9kSpineInterfaceInErrorRateReachesWarningThreshold
+    expr:
+      rate(snmp_acispine_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) / 
+      (rate(snmp_acispine_ifInNUcastPkts[10m]) + rate(snmp_acispine_ifInUcastPkts[10m])) > 0.0025
     labels:
       severity: warning
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 0.25% errors in 10 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 0.25% errors in 10 minutes'
       summary: 'N9K acispine network interface In error check'
 
-  - alert: NetworkN9kInterfaceOutErrorRateReachesWarningThreshold
-    expr: rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
+  - alert: NetworkN9kSpineInterfaceOutErrorRateReachesWarningThreshold
+    expr:
+      rate(snmp_acispine_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) / 
+      (rate(snmp_acispine_ifOutNUcastPkts[10m]) + rate(snmp_acispine_ifOutUcastPkts[10m])) > 0.0025
     labels:
       severity: warning
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 0.25% errors in 10 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 0.25% errors in 10 minutes'
       summary: 'N9K acispine network interface Out error rate check'
 
-  - alert: NetworkN9kInterfaceInErrorRateReachesWarningThreshold
-    expr: rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
-    labels:
-      severity: warning
-      tier: net
-      service: n9k
-      context: network_n9k_interface_error_rate
-      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
-      playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
-    annotations:
-      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
-      summary: 'N9K acileaf interface In error rate check'
 
-  - alert: NetworkN9kInterfaceOutErrorRateReachesWarningThreshold
-    expr: rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) > 0.83
+  - alert: NetworkN9kLeafInterfaceInErrorRateReachesWarningThreshold
+    expr:
+      rate(snmp_acileaf_ifInErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) / 
+      (rate(snmp_acileaf_ifInNUcastPkts[10m]) + rate(snmp_acileaf_ifInUcastPkts[10m])) > 0.0025
     labels:
       severity: warning
       tier: net
       service: n9k
       context: network_n9k_interface_error_rate
-      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
+      meta: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 0.25% errors in 10 minutes'
       playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
     annotations:
-      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 500 errors in 10 minutes'
-      summary: 'N9K acileaf interface Out error rate check'
+      description: 'N9K: IN-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 0.25% errors in 10 minutes'
+      summary: 'N9K acileaf network interface In error check'
+
+  - alert: NetworkN9kLeafInterfaceOutErrorRateReachesWarningThreshold
+    expr:
+      rate(snmp_acileaf_ifOutErrors{device!~"^mgmt.+", device!~"^gmp.+"}[10m]) / 
+      (rate(snmp_acileaf_ifOutNUcastPkts[10m]) + rate(snmp_acileaf_ifOutUcastPkts[10m])) > 0.0025
+    labels:
+      severity: warning
+      tier: net
+      service: n9k
+      context: network_n9k_interface_error_rate
+      meta: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 0.25% errors in 10 minutes'
+      playbook: /docs/devops/alert/network/switch.html#n9k_interface_errors
+    annotations:
+      description: 'N9K: OUT-Interface {{ $labels.interface }} on device {{ $labels.devicename }} has more than 0.25% errors in 10 minutes'
+      summary: 'N9K acileaf network interface Out error rate check'
 
   - alert: NetworkAciSpineInterfaceResets
     expr: sum(resets(({__name__=~"snmp_acispine_sysUpTime"} - on (server_id) group_right(server_name, interface) ({__name__=~"snmp_acispine_ifLastChange"}))[5m:])) by (module,devicename,ifDescr) > 2
