@@ -1,0 +1,17 @@
+groups:
+  - name: net-ssh
+    rules:
+    - alert: NetworkAsrArpPuntDrop
+      expr: (rate(ssh_software_punt_polcier_arp_drop_high[5m]) + rate(ssh_software_punt_polcier_arp_drop_normal[5m])) > 0 
+      for: 40m
+      labels:
+        severity: info
+        tier: net
+        service: asr
+        context: asr
+        meta: "ASR devicename `{{ $labels.name }}` is reporting ARP punt policer drops"
+        playbook: 'docs/support/playbook/network/control_plane_router/arp_punt_drop.html'
+        dashboard: neutron-router
+      annotations:
+        description: "ASR `{{ $labels.model }}` `{{ $labels.name }}` is reporting ARP punt policer drops"
+        summary: "ASR devicename `{{ $labels.name }}` is reporting ARP punt policer drops"
