@@ -15,7 +15,7 @@ filter {
                 index_columns => ["floating_ip_address"]
                 columns => [
                     ["floating_ip_address", "varchar(64)"],
-                    ["floating_ip_id", "varchar(36)"],
+                    ["floating_ip_id", "varchar(36)"],                    
                     ["port", "varchar(36)" ],
                     ["project", "varchar(64)" ],
                     ["project_id", "varchar(64)" ],
@@ -29,6 +29,7 @@ filter {
                     ["router_id", "varchar(36)" ],
                     ["router", "varchar(255)"],
                     ["instance_id", "varchar(255)"],
+                    ["owner", "varchar(255)"],
                     ["instance_name", "varchar(255)"],
                     ["host", "varchar(255)"],
                     ["availability_zone", "varchar(255)"]
