@@ -102,7 +102,9 @@ groups:
       summary:  The BGP session from {{ $labels.name }} to {{ $labels.app }} is advertising more than the maximal allowed number of prefixes. Routes exceeding the limit will be dropped to limit the effect on the PX service.
   
   - alert: PXRouteTableSignificantChanges
-    expr: floor((floor(delta(sum(bird_protocol_prefix_import_count{peer_type="PL"}) by (app)[30m:])) / sum(bird_protocol_prefix_import_count{peer_type="PL"} offset 30m) by (app)) * 100) > 25
+    expr: |
+      (floor((floor(delta(sum by(app) (bird_protocol_prefix_import_count{peer_type="PL", name!~"PL-CC3-qa-de.*"})[30m:])) 
+      / sum by(app) (bird_protocol_prefix_import_count{peer_type="PL", name!~"PL-CC3-qa-de.*"} offset 30m)) * 100)) > 25
     for: 2m
     labels:
       severity: warn
