@@ -74,9 +74,9 @@
       target_label: region
       regex: prometheus-infra-collector.(.+).cloud.sap
       replacement: $1
-    - action: replace
-      target_label: cluster_type
-      replacement: controlplane
+#    - action: replace
+#      target_label: cluster_type
+#      replacement: controlplane
 
   metric_relabel_configs:
     - source_labels: [__name__, prometheus]
