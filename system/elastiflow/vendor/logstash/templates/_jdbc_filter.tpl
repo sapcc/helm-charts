@@ -29,7 +29,6 @@ filter {
                     ["router_id", "varchar(36)" ],
                     ["router", "varchar(255)"],
                     ["instance_id", "varchar(255)"],
-                    ["owner", "varchar(255)"],
                     ["instance_name", "varchar(255)"],
                     ["host", "varchar(255)"],
                     ["availability_zone", "varchar(255)"]
@@ -40,7 +39,7 @@ filter {
             local_lookups => [
                 {
                 id => "lookup_fields"
-                query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, owner, instance_name, host, availability_zone from fips where floating_ip_address = ?"
+                query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone from fips where floating_ip_address = ?"
                 prepared_parameters => ["[client][domain]"]
                 target => "data"
                 }
@@ -120,11 +119,6 @@ filter {
             if [data][0][instance_id] and [data][0][instance_id] != "NULL" {
                 mutate {
                     add_field => {  cc_instance_id => "%{[data][0][instance_id]}" }
-                }
-            }
-            if [data][0][owner] and [data][0][owner] != "NULL" {
-                mutate {
-                    add_field => {  cc_owner => "%{[data][0][owner]}" }
                 }
             }
             if [data][0][instance_name] and [data][0][instance_name] != "NULL" {
