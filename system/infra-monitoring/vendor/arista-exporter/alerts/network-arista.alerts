@@ -35,7 +35,7 @@ groups:
       
   - alert: MetalIronicAristaMonEFPCritical
     # sum of EFP Slices per chip is above 275%
-    expr: sum(arista_tcam{table=~"EFP", feature !~ ""}) by (instance, model, serial, chip, table)  > 275
+    expr: max_over_time((sum(arista_tcam{feature!~"",table=~"EFP"}) by(instance, model, serial, chip, table))[5m:]) > 275
     for: 30m
     labels:
       severity: critical
@@ -51,7 +51,7 @@ groups:
 
   - alert: MetalIronicAristaMonEFPWarning
     # sum of EFP Slices per chip is above 195%
-    expr: sum(arista_tcam{table=~"EFP", feature !~ ""}) by (instance, model, serial, chip, table)  > 195
+    expr: max_over_time((sum(arista_tcam{feature!~"",table=~"EFP"}) by(instance, model, serial, chip, table))[5m:]) > 195
     for: 30m
     labels:
       severity: warning
@@ -67,7 +67,7 @@ groups:
 
   - alert: MetalIronicAristaMonSwitchDownCritical
     # No metrics could be retrieved from the switch. Means API is not reachable.
-    expr: count(arista_up == 0) by (instance)
+    expr:  max_over_time((arista_up == bool 0)[3m:]) > 0
     for: 10m
     labels:
       severity: critical
@@ -99,7 +99,7 @@ groups:
 
   - alert: MetalIronicAristaMonResponseWarn
     # Slow response from the Switch above 2 second.
-    expr: count(arista_response > 2) by (instance)
+    expr: max_over_time(arista_response[3m]) > 2
     for: 10m
     labels:
       severity: warning
@@ -115,7 +115,7 @@ groups:
 
   - alert: MetalIronicAristaMonResponseCritical
     # Slow response from the Switch above 5 second but below 20 seconds (which is the timeout value an dis covered by the down alert)
-    expr: count(arista_response > 5 and arista_response < 20) by (instance)
+    expr: max_over_time(arista_response[3m]) > 2 < 20
     for: 10m
     labels:
       severity: critical

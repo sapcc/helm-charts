@@ -8,16 +8,16 @@ groups:
     expr: count(arista_tcam{feature=~"|ACL", table=~"TCAM|EFP|IFP"} > 90)  by (instance, model, serial, table)
       
   - record: MetalIronicAristaMonEFPInfo
-    expr: sum(arista_tcam{table=~"EFP", feature !~ ""}) by (instance, model, serial, chip, table)  > 275
+    expr: max_over_time((sum(arista_tcam{feature!~"",table=~"EFP"}) by(instance, model, serial, chip, table))[5m:]) > 275
 
   - record: MetalIronicAristaMonSwitchDownCritical
-    expr: count(arista_up == 0) by (instance)
+    expr:  max_over_time((arista_up == bool 0)[3m:]) > 0
 
   - record: MetalIronicAristaMonDiscoveryWar
     expr: count(up{job="baremetal/arista"} == 0) by (instance)
 
   - record: MetalIronicAristaMonResponseWarn
-    expr: count(arista_response > 2) by (instance)
+    expr: max_over_time(arista_response[3m]) > 2
 
   - record: MetalIronicAristaMonResponseCritical
     expr: count(arista_response > 5 and arista_response < 20) by (instance)
