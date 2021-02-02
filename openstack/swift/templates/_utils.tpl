@@ -100,7 +100,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end }}
 
 {{- /**********************************************************************************/ -}}
-{{- define "swift_proxy_container" }}
+{{- define "swift_proxy_containers" }}
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
 - name: proxy
