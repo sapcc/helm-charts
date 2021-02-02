@@ -29,10 +29,12 @@ groups:
       summary:  "All PX BGP peers on PX domain {{ $labels.pxdomain }} in {{ $labels.region }} for service {{ $labels.pxservice }} are down. Redundancy for Service {{ $labels.pxservice }} is lost."
   
   - alert: PXConsumerBgpConnectionDown
-    expr: ((sum(bird_protocol_up{name!~"kernel."} ==bool 1)  by (region, pxservice, pxdomain) ==bool 0) ) + on(region, pxservice, pxdomain) group_right() ((bird_protocol_up{name!~"kernel.", peer_type="PL"} ==bool 0 ) * 1000) == 1000
+    expr: |
+      ((sum by(region, pxservice, pxdomain) (bird_protocol_up{name!~"kernel."} == bool 1) == bool 0)) 
+      + on(region, pxservice, pxdomain) group_right() ((bird_protocol_up{name!~"kernel.",peer_type="PL",  name!~"PL-CC3-qa-de.*"} == bool 0) * 1000) == 1000
     for: 5m
     labels:
-      severity: warning
+      severity: critical
       tier: net
       service: px
       context: px
