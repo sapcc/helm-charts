@@ -79,7 +79,7 @@
       replacement: controlplane
 
   metric_relabel_configs:
-    - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash|instance"
+    - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash"
       action: labeldrop
     - source_labels: [__name__, prometheus]
       regex: '^up;(.+)'
