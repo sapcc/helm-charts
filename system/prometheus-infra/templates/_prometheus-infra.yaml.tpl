@@ -91,6 +91,11 @@
       replacement: '$1@$2'
       target_label: uniqueident
       action: replace
+    - source_labels: [__name__, instance]
+      regex: '^probe_success;(.+)'
+      replacement: '$1'
+      target_label: target
+      action: replace
 
   {{ if .Values.authentication.enabled }}
   tls_config:
