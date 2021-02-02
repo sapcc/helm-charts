@@ -133,10 +133,10 @@
   database {{.Values.datahub.db}}
   username {{.Values.global.datahub.user}}
   password {{.Values.global.datahub.password}}
-  sql select * from test;
+  sql select * from openstack_ips;
   sql_key floating_ip_address
   record_key remote_addr
-  columns project_id, project, port, domain, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id
+  columns project_id, project, port, domain, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, owner, instance_name, host, availability_zone
   refresh_interval 60
 </filter>
 {{- end }}

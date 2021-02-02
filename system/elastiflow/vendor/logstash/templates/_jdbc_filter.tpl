@@ -15,6 +15,7 @@ filter {
                 index_columns => ["floating_ip_address"]
                 columns => [
                     ["floating_ip_address", "varchar(64)"],
+                    ["floating_ip_id", "varchar(36)"],
                     ["port", "varchar(36)" ],
                     ["project", "varchar(64)" ],
                     ["project_id", "varchar(64)" ],
@@ -26,7 +27,12 @@ filter {
                     ["subnetpool", "varchar(255)"],
                     ["subnetpool_id", "varchar(36)" ],
                     ["router_id", "varchar(36)" ],
-                    ["router", "varchar(255)"]
+                    ["router", "varchar(255)"],
+                    ["instance_id", "varchar(255)"],
+                    ["owner", "varchar(255)"],
+                    ["instance_name", "varchar(255)"],
+                    ["host", "varchar(255)"],
+                    ["availability_zone", "varchar(255)"]
                 ]
                 }
             ]
@@ -34,7 +40,7 @@ filter {
             local_lookups => [
                 {
                 id => "lookup_fields"
-                query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id from fips where floating_ip_address = ?"
+                query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, owner, instance_name, host, availability_zone from fips where floating_ip_address = ?"
                 prepared_parameters => ["[client][domain]"]
                 target => "data"
                 }
@@ -109,6 +115,31 @@ filter {
             if [data][0][router_id] and [data][0][router_id] != "NULL" {
                 mutate {
                     add_field => {  cc_router_id => "%{[data][0][router_id]}" }
+                }
+            }
+            if [data][0][instance_id] and [data][0][instance_id] != "NULL" {
+                mutate {
+                    add_field => {  cc_instance_id => "%{[data][0][instance_id]}" }
+                }
+            }
+            if [data][0][owner] and [data][0][owner] != "NULL" {
+                mutate {
+                    add_field => {  cc_owner => "%{[data][0][owner]}" }
+                }
+            }
+            if [data][0][instance_name] and [data][0][instance_name] != "NULL" {
+                mutate {
+                    add_field => {  cc_instance_name => "%{[data][0][instance_name]}" }
+                }
+            }
+            if [data][0][host] and [data][0][host] != "NULL" {
+                mutate {
+                    add_field => {  cc_host => "%{[data][0][host]}" }
+                }
+            }
+            if [data][0][availability_zone] and [data][0][availability_zone] != "NULL" {
+                mutate {
+                    add_field => {  cc_availability_zone => "%{[data][0][availability_zone]}" }
                 }
             }
         }
