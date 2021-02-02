@@ -79,8 +79,6 @@
       replacement: controlplane
 
   metric_relabel_configs:
-    - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash"
-      action: labeldrop
     - source_labels: [__name__, prometheus]
       regex: '^up;(.+)'
       replacement: '$1'
@@ -96,6 +94,8 @@
       replacement: '$1'
       target_label: target
       action: replace
+    - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash|instance"
+      action: labeldrop
 
   {{ if .Values.authentication.enabled }}
   tls_config:
