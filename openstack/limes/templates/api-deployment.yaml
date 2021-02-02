@@ -88,12 +88,18 @@ spec:
             #
             # However, we have some very significant spikes esp. when billing
             # scrapes us, so we give some extra CPU headroom to stay performant.
+            #
+            # We also need some extra memory headroom because of the sheer size
+            # of some reports rendered by billing. In qa-de-1, the "tempest"
+            # domain has ~2000 projects in order to test the behavior of
+            # large-scale deployments. A full project report with `?detail` for
+            # that domain is about 160 MiB of pure JSON.
             limits:
               cpu: '50m'
-              memory: '150Mi'
+              memory: '300Mi'
             requests:
               cpu: '50m'
-              memory: '150Mi'
+              memory: '300Mi'
           {{- end }}
 ---
 {{end}}
