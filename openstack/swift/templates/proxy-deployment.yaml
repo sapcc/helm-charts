@@ -1,5 +1,5 @@
 {{- range $cluster_id, $cluster := .Values.clusters }}
-{{- if $cluster.deployment }}
+{{- if $cluster.proxy_deployment_enabled }}
 kind: Deployment
 apiVersion: apps/v1
 
@@ -10,11 +10,11 @@ metadata:
     os-cluster: {{$cluster_id}}
 spec:
   revisionHistoryLimit: 5
-  replicas: {{ required "deployment.replicas is required" $cluster.deployment.replicas }}
+  replicas: {{ required "proxy_deployment_replicas is required" $cluster.proxy_deployment_replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      {{- if eq $cluster.deployment.replicas 1.0 }}
+      {{- if eq $cluster.proxy_deployment_replicas 1.0 }}
       maxUnavailable: 0
       {{- else }}
       maxUnavailable: 1
@@ -40,7 +40,7 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
         {{- end }}
     spec:
-      {{- if $.Values.proxy_on_nodes }}
+      {{- if $cluster.proxy_deployment_to_storage_nodes }}
       {{- include "swift_daemonset_tolerations" $ | indent 6 }}
       nodeSelector:
         species: {{ $.Values.species }}

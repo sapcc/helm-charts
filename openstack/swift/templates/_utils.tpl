@@ -122,18 +122,15 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
           name: sentry
           key: swift.DSN.public
     {{- end }}
-  {{- if index $cluster $kind }}
-  {{- if index $cluster $kind "resources" }}
-  {{- $resources := index $cluster $kind "resources" }}
+  {{- $resources_cpu := index $cluster (printf "proxy_%s_resources_cpu" $kind) }}
+  {{- $resources_memory := index $cluster (printf "proxy_%s_resources_memory" $kind) }}
   resources:
     requests:
-      cpu: {{ required (printf "%s.%s %s" $kind "resources.requests.cpu" "is required") $resources.requests.cpu | quote }}
-      memory: {{ required (printf "%s.%s %s" $kind "resources.requests.memory" "is required") $resources.requests.memory | quote }}
+      cpu: {{ required (printf "proxy_%s_resources_cpu is required" $kind) $resources_cpu | quote }}
+      memory: {{ required (printf "proxy_%s_resources_memory is required" $kind) $resources_memory | quote }}
     limits:
-      cpu: {{ required (printf "%s.%s %s" $kind "resources.limits.cpu" "is required") $resources.limits.cpu | quote }}
-      memory: {{ required (printf "%s.%s %s" $kind "resources.limits.memory" "is required") $resources.limits.memory | quote }}
-  {{- end }}
-  {{- end }}
+      cpu: {{ required (printf "proxy_%s_resources_cpu is required" $kind) $resources_cpu | quote }}
+      memory: {{ required (printf "proxy_%s_resources_memory is required" $kind) $resources_memory | quote }}
   volumeMounts:
     - mountPath: /swift-etc
       name: swift-etc
@@ -160,7 +157,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   args:
     - /bin/sh
     - /swift-bin/nginx-start
-  {{- if $context.Values.resources.enabled }}
   resources:
     # observed usage: CPU = 10m-500m, RAM = 50-100 MiB
     requests:
@@ -169,7 +165,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     limits:
       cpu: "1000m"
       memory: "200Mi"
-  {{- end }}
   volumeMounts:
     - mountPath: /swift-bin
       name: swift-bin
@@ -212,7 +207,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   ports:
     - name: metrics
       containerPort: 9520
-  {{- if $context.Values.resources.enabled }}
   resources:
     # observed usage: CPU = ~10m, RAM = 70-100 MiB
     # low cpu allocation results in performance degradation
@@ -222,7 +216,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     limits:
       cpu: "100m"
       memory: "150Mi"
-  {{- end }}
   volumeMounts:
     - mountPath: /swift-etc
       name: swift-etc
@@ -236,7 +229,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 - name: statsd
   image: prom/statsd-exporter:{{ $context.Values.image_version_auxiliary_statsd_exporter }}
   args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
-  {{- if $context.Values.resources.enabled }}
   resources:
     # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
     requests:
@@ -245,7 +237,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     limits:
       cpu: "120m"
       memory: "1024Mi"
-  {{- end }}
   ports:
     - name: statsd
       containerPort: 9125
