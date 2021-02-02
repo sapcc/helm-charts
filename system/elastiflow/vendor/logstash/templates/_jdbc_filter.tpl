@@ -4,7 +4,7 @@ filter {
             loaders =>[
                 {
                 id => "datahubdb"
-                query => "select * from test"
+                query => "select * from openstack_ips"
                 local_table => "fips"
                 }
             ]
