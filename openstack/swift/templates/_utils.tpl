@@ -75,7 +75,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_proxy_volumes" }}
-{{- $cluster := index . 0 -}}
+{{- $cluster := index . 0 }}
 - name: tls-secret
   secret:
     secretName: tls-swift-{{ $cluster }}
@@ -97,12 +97,13 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 - name: swift-object-ring
   configMap:
     name: swift-object-ring
-{{- end }}
+{{- end -}}
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_proxy_containers" }}
-{{- $cluster := index . 0 -}}
-{{- $context := index . 1 -}}
+{{- $kind    := index . 0 -}}
+{{- $cluster := index . 1 -}}
+{{- $context := index . 2 }}
 - name: proxy
   image: {{ include "swift_image" $context }}
   command:
@@ -121,15 +122,17 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
           name: sentry
           key: swift.DSN.public
     {{- end }}
-  {{- if $context.Values.resources.enabled }}
+  {{- if index $cluster $kind }}
+  {{- if index $cluster $kind "resources" }}
+  {{- $resources := index $cluster $kind "resources" }}
   resources:
-    # observed usage: CPU = 300m-2500m, RAM = 450-800 MiB
     requests:
-      cpu: "2500m"
-      memory: "1500Mi"
+      cpu: {{ required (printf "%s.%s %s" $kind "resources.requests.cpu" "is required") $resources.requests.cpu | quote }}
+      memory: {{ required (printf "%s.%s %s" $kind "resources.requests.memory" "is required") $resources.requests.memory | quote }}
     limits:
-      cpu: "2500m"
-      memory: "1500Mi"
+      cpu: {{ required (printf "%s.%s %s" $kind "resources.limits.cpu" "is required") $resources.limits.cpu | quote }}
+      memory: {{ required (printf "%s.%s %s" $kind "resources.limits.memory" "is required") $resources.limits.memory | quote }}
+  {{- end }}
   {{- end }}
   volumeMounts:
     - mountPath: /swift-etc
@@ -252,7 +255,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   volumeMounts:
     - mountPath: /swift-etc
       name: swift-etc
-{{- end }}
+{{- end -}}
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_standard_container" -}}
