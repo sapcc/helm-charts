@@ -134,7 +134,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled manifest sync, or 0 if no replica repos have ever been synced"
     keppel_manifests:
-      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM manifests"
+      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(next_vuln_check_at)), 0) AS min_next_vuln_check_at FROM manifests"
       metrics:
         - count:
             usage: "GAUGE"
@@ -145,6 +145,9 @@ pgmetrics:
         - validation_errors:
             usage: "GAUGE"
             description: "Number of manifests stored in Keppel that failed their last validation"
+        - min_next_vuln_check_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of next scheduled vulnerability check, or 0 if no manifests have ever been checked for vulnerabilities"
     keppel_unknown_blobs:
       query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM unknown_blobs'
       metrics:
