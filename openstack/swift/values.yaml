@@ -60,9 +60,6 @@ client_timeout: 60 # same as default, but also sets nginx timeout to a similar v
 # Don't log requests to object, container or account servers
 log_requests: false
 
-# Proxy pods should run on storage nodes
-proxy_on_nodes: false
-
 # Local to advertise the ExternalIP only on nodes that run the pod
 # Only works with ServiceType NodePort
 external_traffic_policy_local: false
@@ -74,9 +71,6 @@ memcached_servers:
 
 sentry:
   enabled: false
-
-resources:
-  enabled: true
 
 # Deploy Swift Prometheus alerts.
 alerts:
@@ -103,7 +97,17 @@ alerts:
 #     swift_service_project: service
 #     swift_service_project_domain: Default
 #     swift_service_password: DEFINED_IN_REGION_CHART
-#     replicas: 2
+
+#     Swift proxies can be deployed as Deployment, Daemonset or both
+#     proxy_deployment_enabled: true
+#     proxy_deployment_replicas: 2
+#     proxy_deployment_to_storage_nodes: true
+#     proxy_deployment_resources_cpu: "2500m"
+#     proxy_deployment_resources_memory: "1500Mi"
+
+#     proxy_daemonset_enabled: true
+#     proxy_daemonset_resources_cpu: "2500m"
+#     proxy_daemonset_resources_memory: "1500Mi"
 
     # The default is using the cache.swift for token caching
     # Specifing a memcached server name here will overrule that, see .Values.memcached_servers
