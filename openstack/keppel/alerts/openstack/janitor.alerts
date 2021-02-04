@@ -233,3 +233,19 @@ groups:
         Each existing account should be announced to the Dynomite database once every hour.
         However, some accounts have not been announced on schedule, so it looks like Dynomite is having issues.
         Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotCheckingVulnerabilities
+    expr: keppel_manifests_count > 0 and time() - keppel_manifests_min_next_vuln_check_at > 7200
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Manifests are not being checked for vulnerabilities'
+      description: |
+        Keppel should check the vulnerability status of each manifest once per hour.
+        However, some manifests have not had their vulnerability status checked on schedule, so it looks like vulnerability checking is having issues.
+        Check the logs of keppel-janitor for details.
