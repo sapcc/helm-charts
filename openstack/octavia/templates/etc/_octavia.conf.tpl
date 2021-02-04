@@ -38,6 +38,12 @@ network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 [status_manager]
 health_check_interval = 60
 
+{{ if .Values.house_keeping }}
+[house_keeping]
+cleanup_interval = {{ .Values.house_keeping.cleanup_interval }}
+load_balancer_expiry_age = {{ .Values.house_keeping.expiry_age }}
+{{- end }}
+
 {{ if .Values.network_segment_physical_network }}
 [networking]
 f5_network_segment_physical_network = {{ .Values.network_segment_physical_network }}
