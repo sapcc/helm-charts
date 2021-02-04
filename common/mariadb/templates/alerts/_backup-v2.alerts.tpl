@@ -2,7 +2,7 @@
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseFullBackupMissing
     expr: maria_backup_status{kind="full_backup", release={{ include "alerts.service" . | quote }} } != 1
-    for: 15m
+    for: 4h
     labels:
       context: "{{ .Release.Name }}"
       service: {{ include "alerts.service" . }}
