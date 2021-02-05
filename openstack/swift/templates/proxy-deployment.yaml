@@ -11,7 +11,7 @@ metadata:
     os-cluster: {{ $cluster_id }}
 spec:
   revisionHistoryLimit: 5
-  {{- $replicas_az := default 1.0 (index $cluster (printf "proxy_deployment_replicas_%s" $az)) }}
+  {{- $replicas_az := default 0.0 (index $cluster (printf "proxy_deployment_replicas_%s" $az)) }}
   replicas: {{ $replicas_az }}
   strategy:
     type: RollingUpdate
@@ -43,28 +43,10 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
         {{- end }}
     spec:
-      {{- if $cluster.proxy_deployment_to_storage_nodes }}
-      {{- include "swift_daemonset_tolerations" $ | indent 6 }}
-      {{- end }}
+      # No tolerations for swift nodes
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{ $az }}
       affinity:
-        nodeAffinity:
-          # Only schedule on nodes in this az
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: failure-domain.beta.kubernetes.io/zone
-                operator: In
-                values:
-                - {{ $az }}
-          # Prefere non storage nodes for scheduling
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-              - key: species
-                operator: NotIn
-                values:
-                - {{ $.Values.species }}
         podAntiAffinity:
           # Prefere to be scheduled on nodes not yet running this proxy from a deplyoment
           preferredDuringSchedulingIgnoredDuringExecution:
