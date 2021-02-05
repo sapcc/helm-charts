@@ -29,6 +29,7 @@
       - '{job="redfish/cp"}'
       - '{job="vrops",__name__!~"^vrops_virtualmachine_.*"}'
       - '{job="vrops",__name__=~"^vrops_virtualmachine_.*", vccluster=~"^managementbb.+"}'
+      - '{job="vrops",__name__=~"vrops_api_response"}'
       - '{job="netbox"}'
       - '{job="firmware-exporter"}'      
       - '{job="windows-exporter"}'
