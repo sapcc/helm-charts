@@ -48,8 +48,12 @@ spec:
 {{- end }}
       containers:
       - name: mariadb
-        image: {{.Values.image}}
+        image: {{ .Values.image }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        lifecycle:
+          postStart:
+            exec:
+              command: ["mysql_upgrade"]
         env:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
