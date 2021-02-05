@@ -31,30 +31,22 @@ propagate=0
 {{- end }}
 
 {{- define "osprofiler" }}
-    {{- $options := merge .Values.osprofiler .Values.global.osprofiler }}
-    {{- if $options.enabled }}
-
+{{- if .Values.osprofiler.enabled }}
 [profiler]
 enabled = true
 connection_string = jaeger://localhost:6831
-hmac_keys = {{ $options.hmac_keys }}
-trace_sqlalchemy = {{ $options.trace_sqlalchemy }}
-    {{- else }}
-
-[profiler]
-enabled = false
-    {{- end }}
+hmac_keys = {{ .Values.global.osprofiler.hmac_keys }}
+trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
+{{- end }}
 {{- end }}
 
 {{- define "osprofiler_pipe" }}
-    {{- $options := merge .Values.osprofiler .Values.global.osprofiler }}
-    {{- if $options.enabled }} osprofiler{{ end -}}
+    {{- if .Values.osprofiler.enabled }} osprofiler{{ end -}}
 {{- end }}
 
 {{- define "jaeger_agent_sidecar" }}
-    {{- $options := merge .Values.osprofiler .Values.global.osprofiler }}
-    {{- if $options.enabled }}
-- image: jaegertracing/jaeger-agent:{{ $options.jaeger.version }}
+{{- if .Values.osprofiler.enabled }}
+- image: jaegertracing/jaeger-agent:{{ .Values.global.osprofiler.jaeger.version }}
   name: jaeger-agent
   ports:
     - containerPort: 5775
@@ -75,5 +67,5 @@ enabled = false
   args:
     - --reporter.grpc.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14250
     - --log-level=debug
-    {{- end }}
+{{- end }}
 {{- end }}
