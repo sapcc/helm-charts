@@ -9,35 +9,34 @@ groups:
       tier: vmware
       service: vrops-exporter
       context: "vrops-exporter"
-      meta: "No vRops metrics are delivered since 15m. Check exporter and local vRops for possible problems". 
-      playbook: "." 
+      meta: "No vRops metrics are delivered since 15m. Check exporter and local vRops for possible problems."
+      playbook: "."
     annotations:
-      description: "No vRops metrics are delivered since 15m. Check exporter and local vRops for possible problems". 
-      summary: "No vRops metrics are delivered since 15m. Check exporter and local vRops for possible problems". 
+      description: "No vRops metrics are delivered since 15m. Check exporter and local vRops for possible problems."
+      summary: "No vRops metrics are delivered since 15m. Check exporter and local vRops for possible problems."
   - alert: VRopsSingleCollectorDown
-    expr: count by(target) (vrops_api_response != 200) == 1 
+    expr: count by(target) (vrops_api_response != 200) == 1
     for: 10m
     labels:
       severity: info
       tier: vmware
       service: vrops-exporter
       context: "vrops-exporter"
-      meta: "API response is not 200 as expected, check collector logs and kick pod". 
-      playbook: "." 
-    annotations:
-      description: "API response is not 200 as expected, check collector logs and kick pod". 
-      summary: "vrops-exporter: solely collector {{ $labels.collector}} talking to {{ $labels.target }} is not working". 
+      meta: "API response is not 200 as expected, check collector logs and kick pod."
+      playbook: "."
+      annotations:
+      description: "API response is not 200 as expected, check collector logs and kick pod."
+      summary: "vrops-exporter: solely collector {{ $labels.collector}} talking to {{ $labels.target }} is not working."
   - alert: VRopsMultipleCollectorsDown
-    expr: count by(target) (vrops_api_response != 200) > 1 
+    expr: count by(target) (vrops_api_response != 200) > 1
     for: 10m
     labels:
       severity: info
       tier: vmware
       service: vrops-exporter
       context: "vrops-exporter"
-      meta: "Multiple pods are not getting expected API answers. Check vrops-inventory pods and general vROps availability".
-      playbook: "." 
+      meta: "Multiple pods are not getting expected API answers. Check vrops-inventory logs and general vROps availability."
+      playbook: "."
     annotations:
-      description: "Multiple pods are not getting expected API answers. Check vrops-inventory pods and general vROps availability". 
-
-      summary: "vrops-exporter: multiple collectors talking to {{ $labels.target }} are not working". 
+      description: "Multiple pods are not getting expected API answers. Check vrops-inventory logs and general vROps availability."
+      summary: "vrops-exporter: multiple collectors talking to {{ $labels.target }} are not working."
