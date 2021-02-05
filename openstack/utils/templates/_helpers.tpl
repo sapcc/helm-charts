@@ -30,31 +30,17 @@ propagate=0
 {{ end }}
 {{- end }}
 
-{{- define "osprofiler_url" }}
-    {{- $options := merge .Values.osprofiler .Values.global.osprofiler -}}
-    {{- if hasKey $options "jaeger" -}}
-    {{- if $options.jaeger.enabled -}}
-jaeger://localhost:6831
-    {{- else if $options.redis -}}
-redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
-    {{- end -}}
-    {{- else if $options.redis -}}
-redis://:{{ $options.redis.redisPassword }}@flamegraph-redis.monsoon3.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6379/0
-    {{- end -}}
-{{- end }}
-
 {{- define "osprofiler" }}
     {{- $options := merge .Values.osprofiler .Values.global.osprofiler }}
     {{- if $options.enabled }}
 
 [profiler]
-connection_string = {{ include "osprofiler_url" . }}
-        {{- range $key, $value := $options }}
-            {{- if not (kindIs "map" $value) }}
-{{ $key }} = {{ $value }}
-            {{- end }}
-        {{- end }}
+enabled = true
+connection_string = jaeger://localhost:6831
+hmac_keys = {{ $options.hmac_keys }}
+trace_sqlalchemy = {{ $options.trace_sqlalchemy }}
     {{- else }}
+
 [profiler]
 enabled = false
     {{- end }}
@@ -66,10 +52,9 @@ enabled = false
 {{- end }}
 
 {{- define "jaeger_agent_sidecar" }}
-{{- if hasKey .Values.osprofiler "jaeger" }}
-{{- if hasKey .Values.osprofiler.jaeger "enabled" }}
-{{- if .Values.osprofiler.jaeger.enabled }}
-- image: jaegertracing/jaeger-agent:{{ .Values.osprofiler.jaeger.version }}
+    {{- $options := merge .Values.osprofiler .Values.global.osprofiler }}
+    {{- if $options.enabled }}
+- image: jaegertracing/jaeger-agent:{{ $options.jaeger.version }}
   name: jaeger-agent
   ports:
     - containerPort: 5775
@@ -90,7 +75,5 @@ enabled = false
   args:
     - --reporter.grpc.host-port=openstack-jaeger-collector.{{ .Release.Namespace }}.svc:14250
     - --log-level=debug
-{{- end }}
-{{- end }}
-{{- end }}
+    {{- end }}
 {{- end }}
