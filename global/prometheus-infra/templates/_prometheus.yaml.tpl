@@ -137,6 +137,7 @@
 
   params:
     'match[]':
+      - '{__name__=~"^vrops_api_response"}'
       - '{__name__=~"^vrops_vcenter_cpu_used_percent"}'
       - '{__name__=~"^vrops_vcenter_memory_used_percent"}'
       - '{__name__=~"^vrops_vcenter_diskspace_total_gigabytes"}'
@@ -154,6 +155,7 @@
       - '{__name__=~"^vrops_hostsystem_custom_attributes_hw_info"}'
       - '{__name__=~"^vrops_hostsystem_memory_ballooning_kilobytes"}'
       - '{__name__=~"^vrops_hostsystem_memory_host_usage_kilobytes"}'
+      - '{__name__=~"^vrops_hostsystem_memory_usage_percentage"}'
       - '{__name__=~"^vrops_hostsystem_memory_swap_out_rate_kbps"}'
       - '{__name__=~"^vrops_hostsystem_memory_swap_used_rate_kbps"}'
       - '{__name__=~"^vrops_hostsystem_summary_number_vms_total"}'
