@@ -13,4 +13,7 @@ groups:
     expr: sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (action, target_type_uri)
 
   - record: swift_opm_top10
-    expr: topk(10, sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (action, target_project_id) > 15)
+    expr: topk(10, sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (target_project_id) > 15)
+
+  - record: swift_opm_top10_by_action
+    expr: topk(10, sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (target_project_id, action) > 15)
