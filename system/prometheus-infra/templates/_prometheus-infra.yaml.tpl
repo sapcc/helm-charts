@@ -66,8 +66,7 @@
       - '{__name__=~"^nsxt_trim_exception"}'
       - '{__name__=~"^elasticsearch_cluster_health_.+"}'
       - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
-      - '{__name__=~"^logstash_node_queue_.+"}'
-      - '{__name__=~"^logstash_node_pipeline_.+"}'
+      - '{__name__=~"^logstash_node_.+"}'
 
   relabel_configs:
     - action: replace
