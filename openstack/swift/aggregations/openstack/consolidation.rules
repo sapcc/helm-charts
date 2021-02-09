@@ -8,3 +8,9 @@ groups:
 
   - record: swift_async_pendings_rate
     expr: sum(increase(swift_object_server_async_pendings[5m])) by (kubernetes_namespace)
+
+  - record: swift_opm
+    expr: sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (action, target_type_uri)
+
+  - record: swift_opm_top10
+    expr: topk(10, sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (action, target_project_id) > 15)
