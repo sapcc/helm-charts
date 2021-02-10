@@ -24,13 +24,15 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: vrops-collector-target
-                    operator: In
-                    values:
-                      - {{ $vropshostname._0 }}
-              topologyKey: kubernetes.io/hostname
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: vrops-collector-target
+                      operator: In
+                      values:
+                        - {{ $vropshostname._0 }}
+                topologyKey: kubernetes.io/hostname
       containers:
          - name: vrops-exporter
            image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" $.Values.vrops.image.tag }}
