@@ -30,6 +30,7 @@ spec:
     spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
 {{ tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      hostname: nova-api-metadata
       containers:
         - name: nova-api-metadata
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
