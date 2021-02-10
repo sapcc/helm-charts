@@ -19,7 +19,18 @@ spec:
       labels:
         app: vrops-exporter-{{ $vropshostname._0 }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
         type: exporter
+        vrops-collector-target: {{ $vropshostname._0 }}
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: vrops-collector-target
+                    operator: In
+                    values:
+                      - {{ $vropshostname._0 }}
+              topologyKey: kubernetes.io/hostname
       containers:
          - name: vrops-exporter
            image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" $.Values.vrops.image.tag }}
