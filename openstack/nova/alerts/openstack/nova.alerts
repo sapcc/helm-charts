@@ -350,3 +350,15 @@ groups:
     annotations:
       description: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
       summary: '{{ $labels.check }}: host is disabled without reason'
+
+  - alert: OpenstackNovaComputeServiceVersionsMismatch
+    expr: count(count_values('service_version', openstack_compute_service_version)) != 1
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: nova
+      context: '{{ $labels.context }}'
+    annotations:
+      description: Nova contains services with differing versions for 1h.
+      summary: Nova service versions do not match.
