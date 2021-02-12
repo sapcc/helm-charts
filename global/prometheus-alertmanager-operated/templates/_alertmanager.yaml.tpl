@@ -776,6 +776,21 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty_sap.osd_mom_compute.serviceKey undefined" .Values.pagerduty_sap.osd_mom_compute.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+        details:
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   - name: pagerduty_network
     pagerduty_configs:
