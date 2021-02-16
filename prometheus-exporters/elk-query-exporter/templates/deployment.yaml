@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: es-query-exporter
+  name: elk-query-exporter
   namespace: elk
   labels:
-    component: es-query-exporter
+    component: elk-query-exporter
 spec:
   selector:
     matchLabels:
-      component: es-query-exporter
+      component: elk-query-exporter
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        component: es-query-exporter
+        component: elk-query-exporter
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -29,20 +29,20 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
       volumes:
-        - name: es-query-exporter
+        - name: elk-query-exporter
           configMap:
-            name: es-query-exporter
+            name: elk-query-exporter
       containers:
-        - name: es-query-exporter
-          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/braedon/prometheus-es-exporter:{{ .Values.version }}
+        - name: elk-query-exporter
+          image: keppel.eu-de-1.cloud.sap/ccloud/elk-query-exporter:{{ .Values.version }}
           imagePullPolicy: IfNotPresent
-          command: [ "prometheus-es-exporter", "-p", "{{ .Values.listen_port }}", "-c", "/es-query-exporter/exporter.cfg", "--cluster-health-disable", "--nodes-stats-disable", "--indices-stats-disable", "--basic-user", "{{ .Values.global.prom_user }}", "--basic-password", "{{ .Values.global.prom_password }}", "-e", "{{.Values.protocol}}://{{.Values.hostname}}:{{.Values.port}}", "--log-level", "{{.Values.log_level}}" ]
+          command: [ "prometheus-es-exporter", "-p", "{{ .Values.listen_port }}", "-c", "/elk-query-exporter/exporter.cfg", "--cluster-health-disable", "--nodes-stats-disable", "--indices-stats-disable", "--basic-user", "{{ .Values.global.prom_user }}", "--basic-password", "{{ .Values.global.prom_password }}", "-e", "{{.Values.protocol}}://{{.Values.hostname}}:{{.Values.port}}", "--log-level", "{{.Values.log_level}}" ]
           ports:
             - name: metrics
               containerPort: {{ .Values.listen_port }}
           volumeMounts:
-            - mountPath: /es-query-exporter
-              name: es-query-exporter
+            - mountPath: /elk-query-exporter
+              name: elk-query-exporter
           securityContext:
             capabilities:
               drop:
