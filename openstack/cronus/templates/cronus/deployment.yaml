@@ -25,6 +25,13 @@ spec:
   strategy:
   {{- end }}
     type: {{ .Values.cronus.updateStrategy }}
+{{- if eq "RollingUpdate" .Values.cronus.updateStrategy }}
+{{- if not .Values.cronus.statefulSet.enabled }}
+    rollingUpdate:
+      maxSurge: {{ .Values.cronus.maxSurge }}
+      maxUnavailable: {{ .Values.cronus.maxUnavailable }}
+{{- end }}
+{{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: cronus
