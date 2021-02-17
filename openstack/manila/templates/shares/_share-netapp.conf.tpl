@@ -9,10 +9,11 @@ host = manila-share-netapp-{{$enabled_share.name}}
 enabled_share_backends = {{$enabled_share.name}}
 
 {{- range $i, $share := $context.Values.global.netapp.filers }}
+{{- $share_backend := $share.backend_name | default $share.vserver | default "netapp-multi"}}
 
 [{{$share.name}}]
-share_backend_name={{$share.backend_name | default $share.vserver | default "netapp-multi"}}
-replication_domain={{ $share.replication_domain | default $share.physical_network }}
+share_backend_name={{ $share_backend }}
+replication_domain={{ $share.replication_domain | default $share_backend }}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
 {{- if $share.vserver }}
 driver_handles_share_servers = false
