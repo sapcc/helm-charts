@@ -3,7 +3,7 @@ simulator:
   cronuscli: {{ .Values.simulator.cronuscli }}
   recipient: {{ .Values.simulator.recipient }}
   shellToUse: {{ .Values.simulator.shellToUse }}
-  slack: {{ .Values.simulator.slack }}
+  slack: https://hooks.slack.com/services/{{ .Values.global.cronus_simulator_slack }}
   timeWaitInterval: {{ .Values.simulator.timeWaitInterval }}
   keystone:
       authUrl: {{ .Values.config.keystone.authUrl }}
