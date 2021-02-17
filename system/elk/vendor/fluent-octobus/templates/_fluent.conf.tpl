@@ -68,7 +68,7 @@
 </filter>
 
 <match **>
-  @copy
+  @type copy
   <store>
     @type http
     endpoint_url "https://{{.Values.forwarding.keystone.host}}"
