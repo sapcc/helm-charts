@@ -30,7 +30,6 @@
       - '{job="vrops",__name__!~"^vrops_virtualmachine_.*"}'
       - '{job="vrops",__name__=~"^vrops_virtualmachine_.*", vccluster=~"^managementbb.+"}'
       - '{job="vrops",__name__=~"vrops_api_response"}'
-      - '{job="vrops",__name__=~"vrops_inventory_collection_time_seconds|vrops_inventory_iteration_total"}'
       - '{job="netbox"}'
       - '{job="firmware-exporter"}'      
       - '{job="windows-exporter"}'
@@ -68,6 +67,7 @@
       - '{__name__=~"^elasticsearch_cluster_health_.+"}'
       - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
       - '{__name__=~"^logstash_node_.+"}'
+      - '{__name__=~"vrops_inventory_collection_time_seconds|vrops_inventory_iteration_total"}'
 
   relabel_configs:
     - action: replace
