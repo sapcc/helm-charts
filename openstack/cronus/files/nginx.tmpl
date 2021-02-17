@@ -723,9 +723,30 @@ stream {
         }
     }
 
+    # TCP services
+    {{ range $tcpServer := .TCPBackends }}
     server {
-        listen                465 ssl;
-        proxy_pass            cronus-service:1025;
+        preread_by_lua_block {
+            ngx.var.proxy_upstream_name="tcp-{{ $tcpServer.Backend.Namespace }}-{{ $tcpServer.Backend.Name }}-{{ $tcpServer.Backend.Port }}";
+        }
+
+        {{ range $address := $all.Cfg.BindAddressIpv4 }}
+        listen                  {{ $address }}:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }} ssl;
+        {{ else }}
+        listen                  {{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }} ssl;
+        {{ end }}
+        {{ if $IsIPV6Enabled }}
+        {{ range $address := $all.Cfg.BindAddressIpv6 }}
+        listen                  {{ $address }}:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }} ssl;
+        {{ else }}
+        listen                  [::]:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }} ssl;
+        {{ end }}
+        {{ end }}
+        proxy_timeout           {{ $cfg.ProxyStreamTimeout }};
+        proxy_pass              upstream_balancer;
+        {{ if $tcpServer.Backend.ProxyProtocol.Encode }}
+        proxy_protocol          on;
+        {{ end }}
 
         ssl_certificate         /etc/ingress-controller/ssl/cronus/tls.crt;
         ssl_certificate_key     /etc/ingress-controller/ssl/cronus/tls.key;
@@ -751,32 +772,6 @@ stream {
         {{ end }}
 
         ssl_ecdh_curve {{ $cfg.SSLECDHCurve }};
-    }
-
-    # TCP services
-    {{ range $tcpServer := .TCPBackends }}
-    server {
-        preread_by_lua_block {
-            ngx.var.proxy_upstream_name="tcp-{{ $tcpServer.Backend.Namespace }}-{{ $tcpServer.Backend.Name }}-{{ $tcpServer.Backend.Port }}";
-        }
-
-        {{ range $address := $all.Cfg.BindAddressIpv4 }}
-        listen                  {{ $address }}:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }};
-        {{ else }}
-        listen                  {{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }};
-        {{ end }}
-        {{ if $IsIPV6Enabled }}
-        {{ range $address := $all.Cfg.BindAddressIpv6 }}
-        listen                  {{ $address }}:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }};
-        {{ else }}
-        listen                  [::]:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }};
-        {{ end }}
-        {{ end }}
-        proxy_timeout           {{ $cfg.ProxyStreamTimeout }};
-        proxy_pass              upstream_balancer;
-        {{ if $tcpServer.Backend.ProxyProtocol.Encode }}
-        proxy_protocol          on;
-        {{ end }}
     }
     {{ end }}
 
