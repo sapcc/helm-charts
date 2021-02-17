@@ -50,7 +50,7 @@
   container_name_to_kubernetes_regexp '^(?<name_prefix>[^_]+)_(?<container_name>[^\._]+)(\.(?<container_hash>[^_]+))?_(?<pod_name>[^_]+)_(?<namespace>[^_]+)_[^_]+_[^_]+$'
 </filter>
 
-<filter **>
+<filter kubernetes.**>
   @type parser
   key_name log
   reserve_data true
@@ -67,7 +67,7 @@
     remove_keys message,stream
 </filter>
 
-<match **>
+<match kubernetes.**>
   @type copy
   <store>
     @type http
