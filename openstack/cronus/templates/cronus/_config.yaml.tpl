@@ -12,6 +12,9 @@ cronus:
   listenAddr:
     http: :{{ .Values.cronus.http }} # default :5000
     smtp: :{{ .Values.cronus.smtp }} # default :1025
+{{- if .Values.cronus.listenProxyProtocol }}
+    proxyProtocol: {{ .Values.cronus.listenProxyProtocol }}
+{{- end }}
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}

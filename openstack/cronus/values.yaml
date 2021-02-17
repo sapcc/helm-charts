@@ -4,6 +4,7 @@ cronus:
   cacheSize: 256
   http: 5000
   smtp: 1025
+  listenProxyProtocol: false
   debug: true
   tls: tls-secret
   image:
@@ -157,8 +158,11 @@ service:
 # nginx values
 ingress-nginx:
   tcp:
-    465: ""
+    465: cronus/cronus-service:1025
   controller:
+    # pod annotations are needed to recreate nginx pods on template update
+    podAnnotations:
+      recreate: proxyProtocol
     containerPort:
       http: 80
       https: 443
@@ -175,7 +179,6 @@ ingress-nginx:
       nodePorts:
         http: ""
         https: ""
-        465-tcp: ""
     ingressClass: cronus-nginx
     admissionWebhooks:
       enabled: false
