@@ -37,6 +37,8 @@ token_cache_time = 600
 service_token_roles_required = True
 include_service_catalog = true
 service_type = image
+collect_timing = false
+split_loggers = false
 
 [paste_deploy]
 flavor = keystone
