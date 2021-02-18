@@ -29,6 +29,7 @@ spec:
   - {{ .Release.Namespace }}/domain-neo-seed
   - {{ .Release.Namespace }}/domain-s4-seed
   - {{ .Release.Namespace }}/domain-wbs-seed
+  - {{ .Release.Namespace }}/monsoon3/domain-cis-seed
 {{- end }}
 {{- if .Values.tempest_enabled }}
   - {{ .Release.Namespace }}/domain-tempest-seed
@@ -703,6 +704,54 @@ spec:
     - name: WBS_SERVICE_DESK
       role_assignments:
       - domain: wbs
+        role: cloud_dns_ops
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
+
+  - name: cis
+    groups:
+    - name: CIS_DOMAIN_DNS_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_support
+        inherited: true
+    - name: CIS_DOMAIN_DNS_OPS
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_ops
+        inherited: true
+      - domain: cis
+        role: role_viewer
+        inherited: true
+      - domain: cis
+        role: audit_viewer
+        inherited: true
+    - name: NEO_API_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_admin
+        inherited: true
+    - name: CIS_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_ops
+        inherited: true
+    - name: CIS_NETWORK_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_ops
+        inherited: true
+    - name: CIS_STORAGE_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_ops
+        inherited: true
+    - name: CIS_SERVICE_DESK
+      role_assignments:
+      - domain: cis
         role: cloud_dns_ops
         inherited: true
     role_assignments:
