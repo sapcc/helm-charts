@@ -859,7 +859,7 @@
 
   params:
     'match[]':
-      - '{__name__=~"(probe_dns_duration_seconds:avg|probe_success:avg)"}'
+      - '{__name__=~"(probe_.+_duration_seconds:avg|probe_success:avg)"}'
       - '{__name__=~".*probes_by_attributes"}'
   static_configs:
     - targets:
