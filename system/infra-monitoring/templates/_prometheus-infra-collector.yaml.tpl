@@ -851,16 +851,16 @@
 
 {{ if .Values.ask1k_tests.enabled }}
 - job_name: 'asr1k_tests'
-  scrape_interval: 60s
-  scrape_timeout: 45s
+  scrape_interval: 30s
+  scrape_timeout: 25s
 
   honor_labels: true
   metrics_path: '/federate'
 
   params:
     'match[]':
-      - '{job=~"^asr1k_tests.*", __name__=~"(probe_[a-z]+_duration_seconds|probe_success)"}'
-
+      - '{__name__=~"(probe_dns_duration_seconds:avg|probe_success:avg)"}'
+      - '{__name__=~".*probes_by_attributes"}'
   static_configs:
     - targets:
       - 'prometheus.asr1k-tests.c.{{ .Values.global.region }}.cloud.sap:9090'
