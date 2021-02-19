@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "logstash.fullname" . }}-proxy
+  labels:
+    app: "{{ template "logstash.fullname" . }}-proxy"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "logstash.fullname" . }}-proxy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "logstash.fullname" . }}-proxy
+        chart: "{{ .Chart.Name }}"
+        heritage: {{ .Release.Service | quote }}
+        release: {{ .Release.Name | quote }}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - elastiflow-logstash
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: {{ template "logstash.fullname" . }}-proxy
+        image: nginx
+        volumeMounts:
+        - mountPath: /etc/nginx	
+          readOnly: true	
+          name: nginx-conf
+        ports:
+{{ toYaml .Values.nginx.ports | indent 8 }}
+      volumes:
+        - name: nginx-conf	
+          configMap:	
+            name: elastiflow-nginx-config
+            items:	
+              - key: nginx.conf	
+                path: nginx.conf
+        - name: envoy-conf	
+          configMap:	
+            name: elastiflow-envoy-config
+            items:	
+              - key: envoy.yaml	
+                path: envoy.yaml

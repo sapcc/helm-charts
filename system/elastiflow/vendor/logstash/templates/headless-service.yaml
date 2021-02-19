@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "logstash.fullname" . }}-svc
+  labels:
+    app: "{{ template "logstash.fullname" . }}"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+spec:
+  clusterIP: None
+  ports:
+  - name: foobar
+    port: 1337
+    protocol: UDP
+    targetPort: 1337
+  selector:
+    app: "{{ template "logstash.fullname" . }}"

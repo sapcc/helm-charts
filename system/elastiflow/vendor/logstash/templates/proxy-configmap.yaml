@@ -1,0 +1,33 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: elastiflow-nginx-config
+  labels:
+    app: "{{ template "logstash.fullname" . }}-nginx"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+data:
+  nginx.conf: |
+    pid  /tmp/nginx.pid;
+    user nginx;
+    worker_processes  5;
+    error_log  /dev/stdout info;
+    events {
+      worker_connections  10240;
+    }
+
+    stream {
+
+      upstream logstash_udp_upstream {
+        server elastiflow-logstash-0.elastiflow-logstash-svc:2055;
+        server elastiflow-logstash-1.elastiflow-logstash-svc:2055;
+      }
+      server {
+          listen 2055 udp;
+          proxy_pass logstash_udp_upstream;
+          proxy_responses 0;
+          proxy_buffer_size 16384k;
+          proxy_bind $remote_addr transparent;
+      }
+    }

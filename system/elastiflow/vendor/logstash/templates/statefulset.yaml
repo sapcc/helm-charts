@@ -13,7 +13,7 @@ metadata:
     {{- end }}
 spec:
   {{- if .Values.service }}
-  serviceName: {{ template "logstash.fullname" . }}
+  serviceName: {{ template "logstash.fullname" . }}-svc
   {{- end }}
   selector:
     matchLabels:
@@ -160,6 +160,9 @@ spec:
         readinessProbe:
 {{ toYaml .Values.readinessProbe | indent 10 }}
         ports:
+        - name: netflow
+          containerPort: 2055
+          protocol: UDP
         - name: http
           containerPort: {{ .Values.httpPort }}
       {{- if .Values.extraPorts }}
