@@ -1,0 +1,55 @@
+{{- if .Values.simulator.enabled }}
+apiVersion: apps/v1
+{{- if .Values.simulator.statefulSet.enabled }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: cronus-simulator
+  {{- if .Values.simulator.annotations }}
+  annotations:
+    {{ toYaml .Values.simulator.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.simulator.labels }}
+  labels:
+    {{ toYaml .Values.simulator.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.simulator.replicas }}
+  {{- if .Values.simulator.statefulSet.enabled }}
+  podManagementPolicy: {{ .Values.simulator.statefulSet.podManagementPolicy }}
+  serviceName: cronus-simulator-service
+  updateStrategy:
+  {{- else }}
+  strategy:
+  {{- end }}
+    type: {{ .Values.simulator.updateStrategy }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cronus-simulator
+      app.kubernetes.io/instance: cronus-simulator
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/cronus-simulator/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        app.kubernetes.io/name: cronus-simulator
+        app.kubernetes.io/instance: cronus-simulator
+    spec:
+      serviceAccountName: cronus-simulator
+      containers:
+        - name: cronus-simulator
+          image: "{{ .Values.simulator.image.name }}:{{ .Values.simulator.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-config=/cronus-simulator/config.yaml"
+          volumeMounts:
+            - name: cronus-simulator-config
+              mountPath: "/cronus-simulator/config.yaml"
+              subPath: config.yaml
+      volumes:
+        - name: cronus-simulator-config
+          secret:
+            secretName: cronus-simulator-config
+{{ end -}}
