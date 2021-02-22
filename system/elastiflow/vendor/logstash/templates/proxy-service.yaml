@@ -2,23 +2,23 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "logstash.fullname" . }}-nginx
+  name: {{ template "logstash.fullname" . }}-proxy
   labels:
-    app: "{{ template "logstash.fullname" . }}-nginx"
+    app: "{{ template "logstash.fullname" . }}-proxy"
     chart: "{{ .Chart.Name }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
   annotations:
     parrot.sap.cc/announce: 'true'
 spec:
-  externalTrafficPolicy: {{ .Values.nginx.service.externalTrafficPolicy }}
   ports:
-{{ toYaml .Values.nginx.service.ports | indent 4 }}
+    - name: beats
+      port: 5044
+      protocol: TCP
   selector:
     app: "{{ template "logstash.fullname" . }}-proxy"
     chart: "{{ .Chart.Name }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-  type: {{ .Values.nginx.service.type }}
-  externalIPs: ["{{.Values.external_ip}}"]
+#   externalIPs: ["{{.Values.external_ip}}"]
 {{- end }}

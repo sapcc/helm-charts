@@ -1,6 +1,6 @@
 {{- if .Values.enable_logstash}}
 apiVersion: apps/v1
-kind: Deployment
+kind: Statefulset
 metadata:
   name: netflow-logstash
   labels:
@@ -9,6 +9,8 @@ metadata:
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
 spec:
+  replicas: 2
+  serviceName: {{ template "logstash.fullname" . }}-svc
   selector:
     matchLabels:
       app: netflow-logstash
@@ -25,8 +27,8 @@ spec:
       - name: netflow-logstash
         image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-logstash:20210219143306
         ports:
-          - containerPort: 2055
-            protocol: UDP
+          - containerPort: 5044
+            protocol: TCP
         env:
           - name: LS_JAVA_OPTS
             value: "-Xmx4G -Xms4G"        
