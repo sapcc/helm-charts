@@ -1,0 +1,41 @@
+{{- if .Values.enable_logstash}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netflow-logstash
+  labels:
+    app: "netflow-logstash"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: netflow-logstash
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: netflow-logstash
+        chart: "{{ .Chart.Name }}"
+        heritage: {{ .Release.Service | quote }}
+        release: {{ .Release.Name | quote }}
+    spec:
+      containers:
+      - name: netflow-logstash
+        image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-logstash:20210219143306
+        ports:
+          - containerPort: 2055
+            protocol: UDP
+        env:
+          - name: LS_JAVA_OPTS
+            value: "-Xmx4G -Xms4G"        
+          - name: ELASTIFLOW_ES_HOST
+            value: "elastiflow-elastic.scaleout.qa-de-1.cloud.sap:443"
+          - name: ELASTIFLOW_ES_SSL_ENABLE
+            value: "true"
+          - name: ELASTIFLOW_ES_USER
+            value: "elastiuser"
+          - name: ELASTIFLOW_ES_PASSWD
+            value: "hX83SxoM0MzhIGwa"
+{{- end }}
