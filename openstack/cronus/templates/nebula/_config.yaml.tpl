@@ -76,4 +76,7 @@ nebula:
 {{- end }}
     debug: {{ .Values.config.nebulaAuditSink.debug | default false }}
 {{- end }}
+{{- if .Values.nebula.sentryDsn }}
+  sentryDsn: {{ .Values.nebula.sentryDsn }}
+{{- end }}
 {{- end -}}
