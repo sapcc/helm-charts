@@ -1,0 +1,28 @@
+{{- if .Values.enable_logstash }}
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: elastiflow
+    meta.helm.sh/release-namespace: elastiflow
+    parrot.sap.cc/announce: "true"
+  labels:
+    app: elastiflow-logstash
+    app.kubernetes.io/managed-by: Helm
+    chart: logstash
+    heritage: Helm
+    release: elastiflow
+spec:
+  ports:
+  - name: beat-tcp
+    port: 5044
+    protocol: TCP
+    targetPort: 5044
+  selector:
+    app: netflow-filebeat
+    chart: logstash
+    heritage: Helm
+    release: elastiflow
+  sessionAffinity: None
+  type: NodePort
+{{- end}}
