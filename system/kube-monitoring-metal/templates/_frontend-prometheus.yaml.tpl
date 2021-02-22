@@ -71,6 +71,7 @@
       - '{__name__=~"^total"}'
       - '{__name__=~"^success"}'
       - '{__name__=~"^latency"}'
+      - '{__name__=~"^pvc_usage"}'
 
   # Add region label to all metrics, don't delete this without knowing what you are doing.
   relabel_configs:
