@@ -1,0 +1,30 @@
+{{- if .Values.enable_filebeat}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netflow-filebeat
+  labels:
+    app: "netflow-filebeat"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: netflow-filebeat
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: netflow-filebeat
+        chart: "{{ .Chart.Name }}"
+        heritage: {{ .Release.Service | quote }}
+        release: {{ .Release.Name | quote }}
+    spec:
+      containers:
+      - name: netflow-filebeat
+        image: keppel.eu-de-1.cloud.sap/filebeat-netflow:test
+        ports:
+          - containerPort: 2055
+            protocol: UDP
+{{- end }}

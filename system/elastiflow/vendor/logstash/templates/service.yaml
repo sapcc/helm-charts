@@ -14,7 +14,11 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   selector:
+  {{- if .Values.enable_statefulset }}
     app: "{{ template "logstash.fullname" . }}"
+  {{- else if .Values.enable_filebeat }}
+    app: "netflow-filebeat"
+  {{- end}}
     chart: "{{ .Chart.Name }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
