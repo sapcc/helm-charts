@@ -59,4 +59,7 @@ cronus:
 {{- end }}
     debug: {{ .Values.config.cronusAuditSink.debug | default false }}
 {{- end }}
+{{- if .Values.cronus.sentryDsn }}
+  sentryDsn: {{ .Values.cronus.sentryDsn }}
+{{- end }}
 {{- end -}}
