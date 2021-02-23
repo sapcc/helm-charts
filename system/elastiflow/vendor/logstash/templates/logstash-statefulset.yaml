@@ -8,6 +8,10 @@ metadata:
     chart: "{{ .Chart.Name }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9198"
+    prometheus.io/targets: "infra-collector"
 spec:
   replicas: 2
   serviceName: {{ template "logstash.fullname" . }}-svc
@@ -33,11 +37,16 @@ spec:
           - name: LS_JAVA_OPTS
             value: "-Xmx4G -Xms4G"        
           - name: ELASTIFLOW_ES_HOST
-            value: "elastiflow-elastic.scaleout.qa-de-1.cloud.sap:443"
+            value: "{{ .Values.elastic.host }}"
           - name: ELASTIFLOW_ES_SSL_ENABLE
-            value: "true"
+            value: "{{ .Values.elastic.ssl }}"
           - name: ELASTIFLOW_ES_USER
-            value: "elastiuser"
+            value: "{{ .Values.elastic.user }}"
           - name: ELASTIFLOW_ES_PASSWD
-            value: "hX83SxoM0MzhIGwa"
+            value: "{{ .Values.elastic.password }}"
+      - name: logstash-exporter
+        image: bonniernews/logstash_exporter:v0.1.2
+        ports:
+          - name: metrics
+            containerPort: 9198
 {{- end }}
