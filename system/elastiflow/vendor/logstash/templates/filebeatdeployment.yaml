@@ -23,9 +23,19 @@ spec:
     spec:
       containers:
       - name: netflow-filebeat
-        image: keppel.eu-de-1.cloud.sap/ccloud/filebeat-netflow:test
+        image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-logstash:beatsoutput
         imagePullPolicy: Always
         ports:
           - containerPort: 2055
             protocol: UDP
+        volumeMounts:
+          - name: lumberjack
+            mountPath: "/usr/share/logstash/config/"
+            readOnly: true
+      volumes:
+        - name: lumberjack
+          secret:
+            secretName: logstash-secrets
+            items:
+              - key: lumberjack.cert
 {{- end }}
