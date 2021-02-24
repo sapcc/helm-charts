@@ -193,6 +193,23 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     initialDelaySeconds: 10
     timeoutSeconds: 1
     periodSeconds: 5
+{{- if $context.Values.nginx_exporter }}
+- name: nginx-exporter
+  image: {{ $context.Values.global.dockerHubMirrorAlternateRegion }}/nginx/nginx-prometheus-exporter:{{ $context.Values.image_version_nginx_exporter }}
+  args:
+    - -nginx.scrape-uri
+    - http://127.0.0.1:1080/nginx_status
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "150Mi"
+    limits:
+      cpu: "100m"
+      memory: "150Mi"
+  ports:
+    - name: metrics
+      containerPort: 9113
+{{- end -}}
 {{- if $context.Values.health_exporter }}
 - name: collector
   image: {{ include "swift_image" $context }}
