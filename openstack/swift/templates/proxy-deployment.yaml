@@ -30,6 +30,7 @@ spec:
       labels:
         component: swift-proxy-{{ $cluster_id }}
         from: deployment
+        os-cluster: {{ $cluster_id }}
       annotations:
         checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
@@ -39,7 +40,6 @@ spec:
         # Prometheus annotations for the swift-health-exporter, the annotations
         # for the statsd-exporter are on the proxy-service level instead
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9520"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
         {{- end }}
     spec:
