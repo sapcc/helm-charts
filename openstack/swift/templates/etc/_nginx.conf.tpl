@@ -97,6 +97,14 @@ http {
             access_log off;
             return 200 "healthy\n";
         }
+
+        location /nginx_status {
+            stub_status;
+
+            access_log off;
+            allow 127.0.0.1;
+            deny all;
+        }
     }
 }
 {{end}}
