@@ -23,6 +23,22 @@ cronus:
       labels: {}
       servicePort: 80
   updateStrategy: RollingUpdate
+  affinity:
+    # don't co-locate cronus replicas on the same node
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchExpressions:
+          - key: name
+            operator: In
+            values:
+              - cronus
+              - usage
+          - key: instance
+            operator: In
+            values:
+              - cronus
   replicas: 3
   # all below can be used only with a deployment style
   maxSurge: 1
@@ -31,6 +47,7 @@ cronus:
     replicas: 1
     maxSurge: 1
     maxUnavailable: 0
+
 nebula:
   enabled: true
   cacheSize: 512
@@ -158,7 +175,6 @@ config:
 
 service:
   type: ClusterIP
-  port: 80
 
 # nginx values
 ingress-nginx:
@@ -181,9 +197,6 @@ ingress-nginx:
       targetPorts:
         http: http
         https: https
-      nodePorts:
-        http: ""
-        https: ""
     ingressClass: cronus-nginx
     admissionWebhooks:
       enabled: false
@@ -198,6 +211,25 @@ ingress-nginx:
     - name: tls-secret-cronus
       secret:
         secretName: tls-secret-cronus
+    affinity:
+      # don't co-locate ingress controller replicas on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - controller
+            - key: app.kubernetes.io/instance
+              operator: In
+              values:
+                - cronus
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - ingress-nginx
 
 simulator:
   enabled: true
