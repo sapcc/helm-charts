@@ -91,6 +91,7 @@
       - '{__name__=~"^logstash_node_queue_.+"}'
       - '{__name__=~"^logstash_node_pipeline_.+"}'
       - '{__name__=~"^vcsa_service_status"}'
+      - '{__name__=~"^windows_updates_.+"}'
 
 
   relabel_configs:
