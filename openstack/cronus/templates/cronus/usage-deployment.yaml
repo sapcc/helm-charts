@@ -6,7 +6,7 @@ kind: StatefulSet
 kind: Deployment
 {{- end }}
 metadata:
-  name: cronus
+  name: usage
   {{- if .Values.cronus.annotations }}
   annotations:
     {{ toYaml .Values.cronus.annotations | indent 4 }}
@@ -16,10 +16,10 @@ metadata:
     {{ toYaml .Values.cronus.labels | indent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cronus.replicas }}
+  replicas: {{ .Values.cronus.usage.replicas }}
   {{- if .Values.cronus.statefulSet.enabled }}
   podManagementPolicy: {{ .Values.cronus.statefulSet.podManagementPolicy }}
-  serviceName: cronus
+  serviceName: usage
   updateStrategy:
   {{- else }}
   strategy:
@@ -28,25 +28,25 @@ spec:
 {{- if eq "RollingUpdate" .Values.cronus.updateStrategy }}
 {{- if not .Values.cronus.statefulSet.enabled }}
     rollingUpdate:
-      maxSurge: {{ .Values.cronus.maxSurge }}
-      maxUnavailable: {{ .Values.cronus.maxUnavailable }}
+      maxSurge: {{ .Values.cronus.usage.maxSurge }}
+      maxUnavailable: {{ .Values.cronus.usage.maxUnavailable }}
 {{- end }}
 {{- end }}
   selector:
     matchLabels:
-      name: cronus
+      name: usage
       instance: cronus
   template:
     metadata:
       annotations:
         checksum/config: {{ include "cronus/templates/cronus/_config.yaml.tpl" . | sha256sum }}
       labels:
-        name: cronus
+        name: usage
         instance: cronus
     spec:
       serviceAccountName: cronus
       containers:
-        - name: cronus
+        - name: usage
           image: "{{ .Values.cronus.image.name }}:{{ .Values.cronus.image.tag }}"
           imagePullPolicy: {{ .Values.cronus.pullPolicy }}
           args:
@@ -59,9 +59,6 @@ spec:
             - name: http
               containerPort: {{ .Values.cronus.http }}
               protocol: TCP
-            - name: smtp
-              containerPort: {{ .Values.cronus.smtp }}
-              protocol: TCP
           readinessProbe:
             httpGet:
               path: /healthz
@@ -71,4 +68,4 @@ spec:
         - name: cronus
           secret:
             secretName: cronus
-{{- end -}}
+{{ end -}}

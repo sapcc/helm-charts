@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: cronus-ingress
+  name: cronus
   annotations:
     disco: "true"
     disco/record: {{ index .Values "ingress-nginx" "controller" "service" "annotations" "disco/record" }}
@@ -12,18 +12,22 @@ metadata:
     {{ $key }}: {{ $value | quote }}
     {{- end }}
   labels:
-    app: cronus
+    name: cronus
 spec:
   rules:
-    - host: cronus.{{ .Values.global.region }}.cloud.sap
+    - host: cronus.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
           - backend:
-              serviceName: cronus-service
-              servicePort: {{ .Values.cronus.http }}
+              serviceName: cronus
+              servicePort: http
             path: /
+          - backend:
+              serviceName: usage
+              servicePort: http
+            path: /v1/usage
   tls:
     - hosts:
-      - cronus.{{ .Values.global.region }}.cloud.sap
+      - cronus.{{ .Values.global.region }}.{{ .Values.global.tld }}
       secretName: tls-secret-cronus
 {{- end -}}
