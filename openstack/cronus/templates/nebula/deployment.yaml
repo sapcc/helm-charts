@@ -19,7 +19,7 @@ spec:
   replicas: {{ .Values.nebula.replicas }}
   {{- if .Values.nebula.statefulSet.enabled }}
   podManagementPolicy: {{ .Values.nebula.statefulSet.podManagementPolicy }}
-  serviceName: nebula-service
+  serviceName: nebula
   updateStrategy:
   {{- else }}
   strategy:
@@ -27,33 +27,38 @@ spec:
     type: {{ .Values.nebula.updateStrategy }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: nebula
-      app.kubernetes.io/instance: nebula
+      name: nebula
+      instance: nebula
   template:
     metadata:
       annotations:
         checksum/config: {{ include "cronus/templates/nebula/_config.yaml.tpl" . | sha256sum }}
       labels:
-        app.kubernetes.io/name: nebula
-        app.kubernetes.io/instance: nebula
+        name: nebula
+        instance: nebula
     spec:
       serviceAccountName: nebula
       containers:
         - name: nebula
           image: "{{ .Values.nebula.image.name }}:{{ .Values.nebula.image.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.cronus.pullPolicy }}
           args:
             - "-config=/nebula/config.yaml"
           volumeMounts:
-            - name: nebula-config
+            - name: nebula
               mountPath: "/nebula/config.yaml"
               subPath: config.yaml
           ports:
             - name: http
               containerPort: {{ .Values.nebula.http }}
               protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
       volumes:
-        - name: nebula-config
+        - name: nebula
           secret:
-            secretName: nebula-config
+            secretName: nebula
 {{- end -}}
