@@ -180,7 +180,15 @@ spec:
           - name: ELASTIFLOW_ES_USER
             value: "{{ .Values.elastic.user }}"
           - name: ELASTIFLOW_ES_PASSWD
-            value: "{{ .Values.elastic.password }}"
+            valueFrom:
+              secretKeyRef:
+                name: elastiflow-secret
+                key: ELASTIFLOW_ES_PASSWD
+          - name: DATAHUB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elastiflow-secret
+                key: DATAHUB_PASSWORD
         volumeMounts:
           {{- if .Values.persistence.enabled }}
           - name: "{{ template "logstash.fullname" . }}"
