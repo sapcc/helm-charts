@@ -29,13 +29,31 @@ spec:
         command:
           - "sh"
           - "-c"
-          - "wormhole client --listen={{ if .Values.interface.listen}}{{ .Values.interface.ipAddress }}:{{ .Values.interface.port }}{{ end }} --health-check={{ .Values.healthCheck }} --kubeconfig={{ .Values.kubeConfig }}"
+          - |
+{{- if .Values.certCheck }}
+            cp ${KUBE_CLIENT_CERT} /tmp/client-cert.livenesspobe
+{{- end }}
+            exec wormhole client --listen={{ if .Values.interface.listen }}{{ .Values.interface.ipAddress }}:{{ .Values.interface.port }}{{ end }} --health-check={{ .Values.healthCheck }} --kubeconfig={{ .Values.kubeConfig }}
         volumeMounts:
           - mountPath: {{ .Values.kubeHostPath }}
             name: kubernetes
             readOnly: true
         securityContext:
           privileged: true
+{{- if .Values.certCheck }}
+        livenessProbe:
+          exec:
+            command:
+            - cmp
+            - -s
+            - ${KUBE_CLIENT_CERT}
+            - /tmp/client-cert.livenesspobe
+          initialDelaySeconds: 60
+          periodSeconds: 60
+        env:
+        - name: KUBE_CLIENT_CERT
+          value: {{ .Values.kubeClientCert }}
+{{- end }}
       tolerations:
       - operator: Exists
       volumes:
