@@ -50,7 +50,7 @@ filter {
               staging_directory => "/tmp/logstash/jdbc_static/import_data"
               loader_schedule => "{{ .Values.jdbc.schedule }}"
               jdbc_user => "{{ .Values.global.datahub.user }}"
-              jdbc_password => "$DATAHUB_PASSWORD"
+              jdbc_password => ${DATAHUB_PASSWORD}
               jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
               jdbc_driver_library => ""
               jdbc_connection_string => "jdbc:mysql://{{ .Values.jdbc.service }}.{{ .Values.jdbc.namespace }}:3306/{{ .Values.jdbc.db }}"

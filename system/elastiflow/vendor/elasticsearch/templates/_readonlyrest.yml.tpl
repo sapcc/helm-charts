@@ -9,11 +9,11 @@ readonlyrest:
       - name: data
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
         indices: ["elastiflow-*"]
-        auth_key: {{.Values.global.elastiflow_user}}:$ELASTIFLOW_PASSWORD
+        auth_key: {{.Values.global.elastiflow_user}}:${ELASTIFLOW_PASSWORD}
 
       # admin user
       - name: Admin
-        auth_key: {{.Values.global.elastiflow_admin_user}}:$ELASTIFLOW_ADMIN_PW
+        auth_key: {{.Values.global.elastiflow_admin_user}}:${ELASTIFLOW_ADMIN_PW}
 
       # deny access without a proper sso cert validated from the ingress - proxy definition see below
       - name: no-sso
@@ -45,7 +45,7 @@ readonlyrest:
       ssl_enabled: {{ .Values.global.ldap.ssl }}
       ssl_trust_all_certs: {{ .Values.global.ldap.ssl_skip_verify}}
       bind_dn: "{{.Values.global.ldap.bind_dn}},{{ .Values.global.ldap.suffix }}"
-      bind_password: "$LDAP_PASSWORD"
+      bind_password: "${LDAP_PASSWORD}"
       search_user_base_DN: "OU=Identities,{{ .Values.global.ldap.suffix }}"
       user_id_attribute: "sAMAccountName"
       search_groups_base_DN: "{{ .Values.global.ldap.group_search_base_dns }},{{ .Values.global.ldap.suffix }}"
