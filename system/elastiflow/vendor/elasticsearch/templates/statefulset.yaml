@@ -181,20 +181,20 @@ spec:
           cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /tmp/keystore/
         env: {{ toYaml .Values.extraEnvs | nindent 10 }}
           - name: ELASTIFLOW_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: elasticsearch-secret
-                  key: ELASTIFLOW_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elasticsearch-secret
+                key: ELASTIFLOW_PASSWORD
           - name: ELASTIFLOW_ADMIN_PW
-              valueFrom:
-                secretKeyRef:
-                  name: elasticsearch-secret
-                  key: ELASTIFLOW_ADMIN_PW
+            valueFrom:
+              secretKeyRef:
+                name: elasticsearch-secret
+                key: ELASTIFLOW_ADMIN_PW
           - name: LDAP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: elasticsearch-secret
-                  key: LDAP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elasticsearch-secret
+                key: LDAP_PASSWORD
         resources: {{ toYaml .Values.initResources | nindent 10 }}
         volumeMounts:
           - name: keystore
@@ -283,6 +283,21 @@ spec:
             value: "{{ .Values.networkHost }}"
           - name: ES_JAVA_OPTS
             value: "{{ .Values.esJavaOpts }}"
+          - name: ELASTIFLOW_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elasticsearch-secret
+                key: ELASTIFLOW_PASSWORD
+          - name: ELASTIFLOW_ADMIN_PW
+            valueFrom:
+              secretKeyRef:
+                name: elasticsearch-secret
+                key: ELASTIFLOW_ADMIN_PW
+          - name: LDAP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elasticsearch-secret
+                key: LDAP_PASSWORD
           {{- range $role, $enabled := .Values.roles }}
           - name: node.{{ $role }}
             value: "{{ $enabled }}"
