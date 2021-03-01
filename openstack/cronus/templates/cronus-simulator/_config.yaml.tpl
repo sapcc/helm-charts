@@ -5,6 +5,11 @@ simulator:
   shellToUse: {{ .Values.simulator.shellToUse }}
   slack: https://hooks.slack.com/services/{{ .Values.global.cronus_simulator_slack }}
   timeWaitInterval: {{ .Values.simulator.timeWaitInterval }}
+  remote: {{ .Values.simulator.remote }}
+  remoteRegion: {{ .Values.simulator.remoteRegion }}
+  remotePassword: {{ .Values.simulator.remotePassword }}
+  cronus: {{ .Values.simulator.cronus }}
+  nebula: {{ .Values.simulator.nebula }}
   keystone:
       authUrl: {{ .Values.config.keystone.authUrl }}
       endpointType: {{ .Values.config.keystone.endpointType }}
