@@ -1,0 +1,55 @@
+{{- if .Values.exporter.enabled }}
+apiVersion: apps/v1
+{{- if .Values.exporter.statefulSet.enabled }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: cronus-exporter
+  {{- if .Values.exporter.annotations }}
+  annotations:
+    {{ toYaml .Values.exporter.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.exporter.labels }}
+  labels:
+    {{ toYaml .Values.exporter.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.exporter.replicas }}
+  {{- if .Values.exporter.statefulSet.enabled }}
+  podManagementPolicy: {{ .Values.exporter.statefulSet.podManagementPolicy }}
+  serviceName: cronus-exporter-service
+  updateStrategy:
+  {{- else }}
+  strategy:
+  {{- end }}
+    type: {{ .Values.exporter.updateStrategy }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cronus-exporter
+      app.kubernetes.io/instance: cronus-exporter
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/cronus-exporter/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        app.kubernetes.io/name: cronus-exporter
+        app.kubernetes.io/instance: cronus-exporter
+    spec:
+      serviceAccountName: cronus-exporter
+      containers:
+        - name: cronus-exporter
+          image: "{{ .Values.exporter.image.name }}:{{ .Values.exporter.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-config=/cronus-exporter/config.yaml"
+          volumeMounts:
+            - name: cronus-exporter-config
+              mountPath: "/cronus-exporter/config.yaml"
+              subPath: config.yaml
+      volumes:
+        - name: cronus-exporter-config
+          secret:
+            secretName: cronus-exporter-config
+{{ end -}}
