@@ -20,6 +20,19 @@ traefik:
     - "--entryPoints.websecure.http.tls=true"
 
 cert-manager:
+  image:
+    repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-controller
+    tag: v0.15.2
+  webhook:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-webhook
+      tag: v0.15.2
+  cainjector:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-cainjector
+      tag: v0.15.2
+    extraArgs:
+    - --leader-elect=false
   ingressShim:
     defaultIssuerName: digicert-issuer
     defaultIssuerKind: DigicertIssuer
@@ -28,9 +41,6 @@ cert-manager:
     enabled: true
   podAnnotations:
     prometheus.io/targets: kubernetes
-  cainjector:
-    extraArgs:
-    - --leader-elect=false
 
 digicert-issuer:
   enableLeaderElection: "false"
