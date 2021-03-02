@@ -864,6 +864,9 @@
   static_configs:
     - targets:
       - 'prometheus.asr1k-tests.c.{{ .Values.global.region }}.cloud.sap:9090'
+{{- if eq .Values.global.region "qa-de-1" }}
+      - 'prometheus.asr1k-tests-monsoon.c.{{ .Values.global.region }}.cloud.sap:9090'
+{{- end }}
 {{ end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
