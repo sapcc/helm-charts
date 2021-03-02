@@ -192,6 +192,26 @@ metrics:
     command: show platform hardware qfp active classification class-group-manager class-Group client nat 1001 | include ^class-group
     timeout_secs: 5
 
+  nx_ntp_configured:
+    regex: >-
+      ^ntp server (\S+) .+?$
+    multi_value: true
+    value: $1
+    description: Configured DNS Severs by dns name.
+    metric_type_name: string
+    command: show running-config ntp | include "ntp server"
+    timeout_secs: 5
+
+  xe_ntp_configured:
+    regex: >-
+      ^\s+ntp server vrf \S+ (\S+) .+?$
+    multi_value: true
+    value: $1
+    description: Configured DNS Severs by dns name.
+    metric_type_name: string
+    command: show ntp config
+    timeout_secs: 5
+
 batches:
   neutron-router:
     - nat_dynamic
@@ -215,7 +235,17 @@ batches:
     - qfp_classification_ce_data_nat_1001_classes
     - qfp_classification_client_nat_1001_classes
 
+  cisco-nx-os_core-router:
+    - nx_ntp_configured
+
+  cisco-ios-xe_core-router:
+    - xe_ntp_configured
+
+
 devices:
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
+    init_command: terminal length 0
+  cisco-nx-os:
+    prompt_regex: ^\S+\# $
     init_command: terminal length 0
