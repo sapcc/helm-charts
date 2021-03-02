@@ -55,9 +55,17 @@ template: |
               - name: VMFS_BALANCE_VCHOST
                 value: {= host | quote =}
               - name: VMFS_BALANCE_VCUSER
+                {{- if .Values.nannies.vcenter_username | default "" }}
+                value: {{ .Values.nannies.vcenter_username | quote }}
+                {{- else }}
                 value: {= username | quote =}
+                {{- end }}
               - name: VMFS_BALANCE_VCPASSWORD
+                {{- if .Values.nannies.vcenter_username | default "" }}
+                value: {= "{{ .Values.nannies.vcenter_username }}" | derive_password | quote =}
+                {{- else }}
                 value: {= password | quote =}
+                {{- end }}
               - name: VMFS_BALANCE_MIN_USAGE
                 value: {{ int .Values.vmfs_balance_nanny.min_usage | quote }}
               - name: VMFS_BALANCE_MAX_USAGE
