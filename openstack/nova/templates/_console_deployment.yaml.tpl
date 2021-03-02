@@ -62,7 +62,7 @@ spec:
         - name: OS_USERNAME
           value: {{ .Values.global.nova_service_user | default "nova" }}
         - name: OS_PASSWORD
-          value: {{ .Values.global.nova_service_password | default (tuple . .Values.global.nova_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+          value: {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
         - name: OS_PROJECT_NAME
           value: {{.Values.global.keystone_service_project | default "service" }}
         - name: OS_AUTH_URL
