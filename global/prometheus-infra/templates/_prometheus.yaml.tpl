@@ -84,6 +84,8 @@
       - '{__name__=~"^thousandeyes_test_html_avg_latency_milliseconds"}'
       - '{__name__=~"^thousandeyes_requests_total"}'
       - '{__name__=~"^thousandeyes_requests_fails"}'
+      - '{__name__=~"^ssh_nx_ntp_configured"}'
+      - '{__name__=~"^ssh_xe_ntp_configured"}'
       - '{__name__=~"^fluentd_.+"}'
       - '{__name__=~"^elasticsearch_cluster_health_.+"}'
       - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
