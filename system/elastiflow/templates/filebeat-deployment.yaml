@@ -1,32 +1,35 @@
-{{- if .Values.enable_filebeat}}
+{{- if .Values.filebeat.enabled}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: netflow-filebeat
+  name: "elastiflow-filebeat"
   labels:
-    app: "netflow-filebeat"
+    app: "elastiflow-filebeat"
     chart: "{{ .Chart.Name }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
 spec:
   selector:
     matchLabels:
-      app: netflow-filebeat
+      app: elastiflow-filebeat
   replicas: 1
   template:
     metadata:
       labels:
-        app: netflow-filebeat
+        app: elastiflow-filebeat
         chart: "{{ .Chart.Name }}"
         heritage: {{ .Release.Service | quote }}
         release: {{ .Release.Name | quote }}
     spec:
       containers:
-      - name: netflow-filebeat
-        image: keppel.eu-de-1.cloud.sap/ccloud/netflow-filebeat:test
-        imagePullPolicy: Always
+      - name: filebeat
+        image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-filebeat:DEFINED_IN_PIPELINE
         ports:
           - containerPort: 2055
             protocol: UDP
-
+        env:
+          - name: LOGSTASH_HOSTS
+            value: {{ .Values.filebeat.logstash_hosts }}
+          - name: WORKERS
+            value: {{ .Values.filebeat.workers }}
 {{- end }}

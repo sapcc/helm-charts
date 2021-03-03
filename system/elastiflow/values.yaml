@@ -173,33 +173,38 @@ logstash:
     configFile: "20_filter_95_enrich_ips.conf"
     schedule: "30 1 * * *"
   service:
-    type: NodePort
-    externalTrafficPolicy: Local
+    # type: NodePort
+    # externalTrafficPolicy: Local
+    clusterIP: None
     ports:
-      - name: netflow-udp
-        port: 2055
-        targetPort: 2055
-        nodePort: 30055
-        protocol: UDP
-      - name: sflow-udp
-        port: 6343
-        targetPort: 6343
-        nodePort: 30343
-        protocol: UDP
-      - name: ipfix-udp
-        port: 4739
-        targetPort: 4739
-        nodePort: 30739
-        protocol: UDP
-      - name: ipfix-tcp
-        port: 4739
-        targetPort: 4739
-        nodePort: 30740
+      - name: beat-tcp
+        port: 5044
         protocol: TCP
-      - name: http
-        port: 9600
-        targetPort: 9600
-        protocol: TCP
+        targetPort: 5044
+      # - name: netflow-udp
+      #   port: 2055
+      #   targetPort: 2055
+      #   nodePort: 30055
+      #   protocol: UDP
+      # - name: sflow-udp
+      #   port: 6343
+      #   targetPort: 6343
+      #   nodePort: 30343
+      #   protocol: UDP
+      # - name: ipfix-udp
+      #   port: 4739
+      #   targetPort: 4739
+      #   nodePort: 30739
+      #   protocol: UDP
+      # - name: ipfix-tcp
+      #   port: 4739
+      #   targetPort: 4739
+      #   nodePort: 30740
+      #   protocol: TCP
+      # - name: http
+      #   port: 9600
+      #   targetPort: 9600
+      #   protocol: TCP
 
   readinessProbe:
     # use ipfix-tcp port instead of http API to better check elastiflow specific status
@@ -230,6 +235,20 @@ logstashExporter:
     uri: http://elastiflow-logstash:9600
   listen_port: 9198
   targets: infra-collector
+
+filebeat:
+  enabled: false
+  logstash_hosts: ["elastiflow-logstash-0.elastiflow-logstash", "elastiflow-logstash-1.elastiflow-logstash"]
+  externalIPs:
+  workers: 6
+  service:
+      type: NodePort
+      externalTrafficPolicy: Local
+      ports:
+        - name: netflow-udp
+          port: 2055
+          targetPort: 2055
+          protocol: UDP
 
 kibana:
   enabled: false
