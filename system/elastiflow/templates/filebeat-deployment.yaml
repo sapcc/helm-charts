@@ -23,13 +23,16 @@ spec:
     spec:
       containers:
       - name: filebeat
-        image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-filebeat:DEFINED_IN_PIPELINE
+        image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-filebeat:202103031724
         ports:
           - containerPort: 2055
             protocol: UDP
         env:
           - name: LOGSTASH_HOSTS
-            value: {{ .Values.filebeat.logstash_hosts }}
+            value: |+
+              {{- range $i, $e := until (( int .Values.logstash.replicas )) }}
+              - "elastiflow-logstash-{{$i}}"
+              {{- end}}
           - name: WORKERS
             value: {{ .Values.filebeat.workers }}
 {{- end }}
