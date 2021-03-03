@@ -318,8 +318,8 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end }}
 
 {{- /**********************************************************************************/ -}}
-{{- define "swift_nginx_location" }}
-{{- $context := index . 0 }}
+{{- define "swift_nginx_location" -}}
+{{- $context := index . 0 }} # This comments ensures that whitespace does not appear before newline
 location / {
     # NOTE: It's imperative that the argument to proxy_pass does not
     # have a trailing slash. Swift needs to see the original request
@@ -331,7 +331,6 @@ location / {
     proxy_set_header  X-Forwarded-Host   $host:$server_port;
     proxy_set_header  X-Forwarded-Server $host;
     proxy_pass_header Date;
-
     # buffering must be disabled since GET response or PUT request bodies can be *very* large
     # based on http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering
     # http 1.1 must be enabled when chunked transfer encoding is used to avoid request buffering
@@ -346,7 +345,7 @@ location / {
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
-{{- define "swift_nginx_ratelimit" }}
+{{- define "swift_nginx_ratelimit" -}}
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
 {{- if $cluster.rate_limit_connections }}
