@@ -34,8 +34,8 @@ pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_forma
 use = egg:swift#proxy
 allow_account_management = true
 account_autocreate = false
-node_timeout = 60
-recoverable_node_timeout = 10
+node_timeout = {{ $context.node_timeout }}
+recoverable_node_timeout = {{ $context.recoverable_node_timeout }}
 conn_timeout = 0.5
 sorting_method = shuffle
 {{- if $context.debug }}
