@@ -10,6 +10,7 @@ simulator:
   remotePassword: {{ .Values.simulator.remotePassword }}
   cronus: {{ .Values.simulator.cronus }}
   nebula: {{ .Values.simulator.nebula }}
+  delayTimeSeconds: {{ .Values.simulator.delayTimeSeconds }}
   keystone:
       authUrl: {{ .Values.config.keystone.authUrl }}
       endpointType: {{ .Values.config.keystone.endpointType }}
