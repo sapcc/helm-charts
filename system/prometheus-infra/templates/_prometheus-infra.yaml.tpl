@@ -110,4 +110,5 @@
   static_configs:
     - targets: 
       - 'pushgateway-infra:9091'
+      - 'cronus-pushgateway.cronus:9091'
   scrape_interval: 5m
