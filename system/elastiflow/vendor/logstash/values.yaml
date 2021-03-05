@@ -1,5 +1,3 @@
----
-replicas: 2
 
 # Allows you to add any config files in /usr/share/logstash/config/
 # such as logstash.yml and log4j2.properties
@@ -131,9 +129,19 @@ podManagementPolicy: "Parallel"
 httpPort: 9600
 
 # Custom ports to add to logstash
-extraPorts: []
-  # - name: beats
-  #   containerPort: 5001
+extraPorts:
+  - name: ipfix-udp
+    port: 4739
+    protocol: UDP
+    targetPort: 4739
+  - name: ipfix-tcp
+    port: 4739
+    protocol: TCP
+    targetPort: 4739
+  - name: beats-tcp
+    port: 5044
+    protocol: TCP
+    targetPort: 5044
 
 updateStrategy: RollingUpdate
 
