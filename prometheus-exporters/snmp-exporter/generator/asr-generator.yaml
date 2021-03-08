@@ -41,8 +41,13 @@ modules:
       - cpmCPUTotalIndex
       - cpmCPUTotalPhysicalIndex
       - cpmProcExtUtil1Min
-      - cpmProcExtMemAllocated
+      - cpmProcExtHCMemAllocatedRev
+      - cpmProcExtHCMemFreedRev
       - cpmProcessName
+      - cpmVirtualProcessName
+      - cpmVirtualProcessUtil1Min
+      - cpmVirtualProcessHCMemAllocated
+      - cpmVirtualProcessHCMemFreed
       - entPhysicalName
       - ifInDiscards
       - ifInErrors
@@ -82,8 +87,10 @@ modules:
         lookup: ifAlias
       - source_indexes: [entPhysicalIndex]
         lookup: entPhysicalName
-      - source_indexes: [cpmProcessPID]
+      - source_indexes: [cpmCPUTotalIndex, cpmProcessPID]
         lookup: cpmProcessName
+      - source_indexes: [cpmCPUTotalIndex, cpmProcessPID, cpmVirtualProcessID]
+        lookup: cpmVirtualProcessName
     overrides:
       ifAlias:
         ignore: true # Lookup metric
