@@ -1,0 +1,41 @@
+{{- if .Values.filebeat.enabled}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "elastiflow-filebeat"
+  labels:
+    app: "elastiflow-filebeat"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+spec:
+  selector:
+    matchLabels:
+      app: elastiflow-filebeat
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: elastiflow-filebeat
+        chart: "{{ .Chart.Name }}"
+        heritage: {{ .Release.Service | quote }}
+        release: {{ .Release.Name | quote }}
+    spec:
+      containers:
+      - name: filebeat
+        image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-filebeat:202103081700
+        ports:
+          - containerPort: 2055
+            protocol: UDP
+        env:
+          - name: LOGSTASH_HOSTS
+            value: "[{{- range $i, $e := until (( int .Values.logstash.replicas )) }}\"elastiflow-logstash-{{$i}}.elastiflow-logstash\", {{- end}}]"
+          - name: NUM_WORKERS
+            value: {{ mul .Values.filebeat.workers .Values.logstash.replicas | quote}}
+          - name: LOGSTASH_LB
+            value: {{ .Values.filebeat.loadbalance | quote }}
+          - name: LOGSTASH_TTL
+            value: {{ .Values.filebeat.ttl | quote }}
+          - name: LOGSTASH_PIPELINING
+            value: {{ .Values.filebeat.pipelining | quote }}
+{{- end }}
