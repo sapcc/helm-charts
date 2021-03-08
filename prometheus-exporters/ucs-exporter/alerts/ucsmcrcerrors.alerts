@@ -2,13 +2,15 @@ groups:
 - name: ucsmcrcerrors.alerts
   rules:
   - alert: UcsmCRCError
-    expr: max_over_time(ucsm_crc_error[20m]) > 0
+    expr: increase(ucsm_crc_error[30m]) > 100
+    for: 20m
     labels:
       severity: info
       tier: vmware
       service: compute
       context: "ucs-exporter"
       meta: "Server {{ $labels.server }} has crc errors for port {{ $labels.port }}"
+      no_alert_on_absence: "true"
     annotations:
       description: "Server {{ $labels.server }} has crc errors : {{ $labels.port }}"
       summary: "Server {{ $labels.server }} has crc errors : {{ $labels.port }}"
