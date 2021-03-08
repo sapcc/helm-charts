@@ -29,7 +29,7 @@ spec:
             protocol: UDP
         env:
           - name: LOGSTASH_HOSTS
-            value: {{ .Values.filebeat.hosts | quote }}
+            value: "[{{- range $i, $e := until (( int .Values.logstash.replicas )) }}\"elastiflow-logstash-{{$i}}.elastiflow-logstash\", {{- end}}]"
           - name: NUM_WORKERS
             value: {{ mul .Values.filebeat.workers .Values.logstash.replicas | quote}}
           - name: LOGSTASH_LB
