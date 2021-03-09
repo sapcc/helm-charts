@@ -163,3 +163,26 @@
       - '{__name__="aws_ses_cronus_provider_reputation_bouncerate"}'
       - '{__name__="aws_ses_cronus_provider_reputation_complaintrate"}'
       - '{__name__="aws_ses_cronus_provider_send"}'
+
+
+{{- if .Values.cronus.enabled }}
+- job_name: 'cronus-reputation-statistics'
+  scheme: https
+  scrape_interval: 5m
+  scrape_timeout: 55s
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+  static_configs:
+    - targets:
+      - "prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      - '{__name__="aws_ses_cronus_provider_bounce"}'
+      - '{__name__="aws_ses_cronus_provider_complaint"}'
+      - '{__name__="aws_ses_cronus_provider_delivery"}'
+      - '{__name__="aws_ses_cronus_provider_reputation_bouncerate"}'
+      - '{__name__="aws_ses_cronus_provider_reputation_complaintrate"}'
+      - '{__name__="aws_ses_cronus_provider_send"}'
+{{ end }}
