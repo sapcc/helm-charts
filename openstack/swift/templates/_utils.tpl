@@ -66,7 +66,7 @@ metadata:
 data:
   # nginx
   nginx.conf: |
-{{ tuple $cluster $context.Values | include "nginx.conf" | indent 4 }}
+{{ tuple $cluster $kind $context.Values | include "nginx.conf" | indent 4 }}
 
   # swift
   container-sync-realms.conf: |
