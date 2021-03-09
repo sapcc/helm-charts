@@ -157,12 +157,6 @@
       - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
       - '{__name__=~"^vrops_virtualmachine_network_.+"}'
       - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
-      - '{__name__="aws_ses_cronus_provider_bounce"}'
-      - '{__name__="aws_ses_cronus_provider_complaint"}'
-      - '{__name__="aws_ses_cronus_provider_delivery"}'
-      - '{__name__="aws_ses_cronus_provider_reputation_bouncerate"}'
-      - '{__name__="aws_ses_cronus_provider_reputation_complaintrate"}'
-      - '{__name__="aws_ses_cronus_provider_send"}'
 
 
 {{- if .Values.cronus.enabled }}
