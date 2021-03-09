@@ -67,11 +67,36 @@
 - name:  KEPPEL_DRIVER_AUTH
   value: 'keystone'
 - name:  KEPPEL_DRIVER_FEDERATION
-  value: 'redis'
+  value: 'multi'
 - name:  KEPPEL_DRIVER_RATELIMIT
   value: 'basic'
 - name:  KEPPEL_DRIVER_STORAGE
   value: 'swift'
+- name:  KEPPEL_FEDERATION_MULTI_DRIVERS
+  value: 'redis,swift'
+- name:  KEPPEL_FEDERATION_OS_AUTH_URL
+  value: "https://identity-3.{{ $.Values.federation.leader_region }}.{{ $.Values.global.tld }}/v3"
+- name:  KEPPEL_FEDERATION_OS_AUTH_VERSION
+  value: '3'
+- name:  KEPPEL_FEDERATION_OS_IDENTITY_API_VERSION
+  value: '3'
+- name:  KEPPEL_FEDERATION_OS_INTERFACE
+  value: public
+- name:  KEPPEL_FEDERATION_OS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: federation_service_user_password
+- name:  KEPPEL_FEDERATION_OS_PROJECT_DOMAIN_NAME
+  value: 'ccadmin'
+- name:  KEPPEL_FEDERATION_OS_PROJECT_NAME
+  value: 'master'
+- name:  KEPPEL_FEDERATION_OS_REGION_NAME
+  value: {{ quote $.Values.federation.leader_region }}
+- name:  KEPPEL_FEDERATION_OS_USER_DOMAIN_NAME
+  value: 'Default'
+- name:  KEPPEL_FEDERATION_OS_USERNAME
+  value: 'keppel'
 - name: KEPPEL_FEDERATION_REDIS_HOSTNAME
   value: "{{ $.Values.dynomite.hostname }}"
 - name: KEPPEL_FEDERATION_REDIS_PORT
@@ -85,6 +110,8 @@
       key: dynomite_password
 - name:  KEPPEL_FEDERATION_REDIS_PREFIX
   value: {{ quote $.Values.dynomite.prefix }}
+- name:  KEPPEL_FEDERATION_SWIFT_CONTAINER
+  value: 'keppel_federation_db'
 - name:  KEPPEL_GUI_URI
   value: {{ quote $.Values.keppel.dashboard_url_pattern }}
 - name:  KEPPEL_ISSUER_KEY
@@ -128,7 +155,7 @@
   value: '3'
 - name:  OS_INTERFACE
   value: internal
-- name: OS_PASSWORD
+- name:  OS_PASSWORD
   valueFrom:
     secretKeyRef:
       name: keppel-secret

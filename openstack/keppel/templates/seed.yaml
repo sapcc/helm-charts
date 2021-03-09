@@ -70,15 +70,17 @@ spec:
           role_assignments:
             - domain: ccadmin
               role: registry_admin
-      {{- if .Values.keppel.e2e_test_password }}
       projects:
         - name: master
           role_assignments:
+            - user: keppel@Default
+              role: swiftreseller # to write into the "keppel_federation_db" container
+            {{- if .Values.keppel.e2e_test_password }}
             - user: keppel_e2e@Default
               role: admin # to create Keppel accounts
             - user: keppel_e2e@Default
               role: registry_admin # to pull/push images
-      {{- end }}
+            {{- end }}
 
     {{- range $domains }}
     - name: {{.}}
