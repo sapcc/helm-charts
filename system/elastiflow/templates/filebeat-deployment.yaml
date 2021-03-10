@@ -8,6 +8,10 @@ metadata:
     chart: "{{ .Chart.Name }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9479"
+    prometheus.io/targets: "infra-collector"
 spec:
   selector:
     matchLabels:
@@ -38,4 +42,9 @@ spec:
             value: {{ .Values.filebeat.ttl | quote }}
           - name: LOGSTASH_PIPELINING
             value: {{ .Values.filebeat.pipelining | quote }}
+      - name: exporter
+        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/trustpilot/beat-exporter:0.4.0
+        ports:
+          - name: metrics
+            containerPort: 9479
 {{- end }}
