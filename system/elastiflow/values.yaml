@@ -239,10 +239,15 @@ logstashExporter:
 filebeat:
   enabled: false
   externalIPs:
-  workers: 2
-  loadbalance: true
-  ttl: 0
-  pipelining: 2
+  netflow:
+    buffer: 1024
+    queue: 4096
+  logstash:
+    workers: 2
+    loadbalance: true
+    ttl: 0
+    pipelining: 2
+    bulk: 1024
 
   service:
     type: NodePort
@@ -252,6 +257,13 @@ filebeat:
         port: 2055
         targetPort: 2055
         protocol: UDP
+  resources:
+    requests:
+      cpu: "6000m"
+      memory: "6G"
+    limits:
+      cpu: "8000m"
+      memory: "12G"
 
 kibana:
   enabled: false
