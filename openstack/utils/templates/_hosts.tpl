@@ -130,12 +130,6 @@ mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{include "db_host_mysql" .}}
     {{- derivePassword 1 $template $envAll.Values.global.master_password $user $host }}
 {{- end }}
 
-{{- define "identity.password_for_user" }}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) ("long")| include "utils.password_for_fixed_user_and_host" }}
-{{- end }}
-
 {{- define "utils.password_for_fixed_user_mysql"}}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
