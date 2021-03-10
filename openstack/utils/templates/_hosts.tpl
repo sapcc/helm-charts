@@ -51,13 +51,6 @@ mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{include "db_host_mysql" .}}
 
 {{define "internal_service"}}{{ $envAll := index . 0 }}{{ $service := index . 1 }}{{$service}}.{{$envAll.Release.Namespace}}.svc.kubernetes.{{$envAll.Values.global.region}}.{{$envAll.Values.global.tld}}{{ end }}
 
-{{- define "svc.password_for_user_and_service" }}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- $service := index . 2 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) ("long") | include "utils.password_for_fixed_user_and_host" }}
-{{- end }}
-
 {{define "nova_console_endpoint_host_public"}}compute-console-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
 {{define "horizon_endpoint_host"}}horizon-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
@@ -128,12 +121,6 @@ mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{include "db_host_mysql" .}}
     {{- $host := index . 2 }}
     {{- $template:= index . 3 }}
     {{- derivePassword 1 $template $envAll.Values.global.master_password $user $host }}
-{{- end }}
-
-{{- define "identity.password_for_user" }}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) ("long")| include "utils.password_for_fixed_user_and_host" }}
 {{- end }}
 
 {{- define "utils.password_for_fixed_user_mysql"}}

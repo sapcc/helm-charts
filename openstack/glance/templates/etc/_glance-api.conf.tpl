@@ -67,7 +67,7 @@ swift_store_multi_tenant = True
 # swift_store_large_object_chunk_size = 200
 # the following are deprecated but needed here https://github.com/openstack/glance_store/blob/stable/queens/glance_store/_drivers/swift/utils.py#L128-L145
 swift_store_user = service:{{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
-swift_store_key = {{ .Values.global.glance_service_password | default (tuple . .Values.global.glance_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+swift_store_key = {{ required ".Values.global.glance_service_password is missing" .Values.global.glance_service_password | replace "$" "$$" }}
 swift_store_auth_version = 3
 swift_store_auth_address = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- else }}
