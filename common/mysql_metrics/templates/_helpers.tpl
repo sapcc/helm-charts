@@ -17,17 +17,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{ define "metrics_db_host"}}{{- if eq .Values.db_type "pxc" }}{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}{{ else }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}{{end}}
 
-{{- define "mysql_metrics.password_for_fixed_user_and_host" }}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- $host := index . 2 }}
-    {{- derivePassword 1 "basic" $envAll.Values.global.master_password $user $host }}
-{{- end }}
-
 {{- define "mysql_metrics.password_for_fixed_user"}}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
-    {{- tuple $envAll $user ( include "metrics_db_host" $envAll ) | include "mysql_metrics.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll $user ( include "metrics_db_host" $envAll ) }}
 {{- end }}
 
 {{- define "mysql_metrics.password_for_user"}}
