@@ -159,7 +159,7 @@
       - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
 
 
-{{- if .Values.cronus.enabled }}
+{{- if .Values.cronus.enabled | default "false" }}
 - job_name: 'cronus-reputation-statistics'
   scheme: https
   scrape_interval: 5m
