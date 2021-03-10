@@ -33,18 +33,14 @@ spec:
           configMap:
             name: maia
         {{- if .Values.cronus.enabled }}
-        - name: prometheus-infra-cert
+        - name: cronus
           secret:
             secretName: cronus-prometheus-infra-sso-cert
             items:
             - key: sso.crt
-              path: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
-        - name: prometheus-infra-key
-          secret:
-            secretName: cronus-prometheus-infra-sso-cert
-            items:
+              path: sso.crt
             - key: sso.key
-              path: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+              path: sso.key
         {{ end }}
       containers:
         - name: maia
@@ -70,10 +66,8 @@ spec:
             - mountPath: /etc/maia
               name: maia-etc
             {{- if .Values.cronus.enabled }}
-            - mountPath: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
-              name: prometheus-infra-cert
-            - mountPath: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
-              name: prometheus-infra-key
+            - name: cronus
+              mountPath: /cronus
             {{ end }}
           ports:
             - name: api
