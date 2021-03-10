@@ -32,6 +32,20 @@ spec:
         - name: maia-etc
           configMap:
             name: maia
+        {{- if .Values.cronus.enabled | default "false" }}
+        - name: prometheus-infra-cert
+          secret:
+            secretName: cronus-prometheus-infra-sso-cert
+            items:
+            - key: sso.crt
+              path: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+        - name: prometheus-infra-key
+          secret:
+            secretName: cronus-prometheus-infra-sso-cert
+            items:
+            - key: sso.key
+              path: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+        {{ end }}
       containers:
         - name: maia
           # remove the "string:" prefix which is used to prevent helm's --set option from reformatting plain numbers into floats in scientific notation
@@ -55,6 +69,12 @@ spec:
           volumeMounts:
             - mountPath: /etc/maia
               name: maia-etc
+            {{- if .Values.cronus.enabled | default "false" }}
+            - mountPath: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+              name: prometheus-infra-cert
+            - mountPath: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+              name: prometheus-infra-key
+            {{ end }}
           ports:
             - name: api
               containerPort: {{ .Values.maia.listen_port }}
