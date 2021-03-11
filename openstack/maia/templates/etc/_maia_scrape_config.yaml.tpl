@@ -165,8 +165,8 @@
   scrape_interval: 5m
   scrape_timeout: 55s
   tls_config:
-    cert_file: /cronus/sso.crt
-    key_file: /cronus/sso.key
+    cert_file: /etc/prometheus/secrets/sso.crt
+    key_file: /etc/prometheus/secrets/sso.key
   static_configs:
     - targets:
       - "prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
