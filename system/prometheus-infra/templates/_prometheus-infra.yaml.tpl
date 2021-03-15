@@ -112,3 +112,41 @@
       - 'pushgateway-infra:9091'
       - 'cronus-pushgateway.cronus:9091'
   scrape_interval: 5m
+
+{{ if .Values.cronus.enabled }}
+- job_name: blackbox-nebula # To get metrics about the exporter’s targets
+  metrics_path: /probe
+  params:
+    module: [http_2xx_nebula]
+  static_configs:
+    - targets:
+      {{- range .Values.cronus.regions }}
+      - https://nebula.{{ .region }}.cloud.sap
+      {{- end }}
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: blackbox-exporter.cronus:9115
+
+- job_name: blackbox-cronus # To get metrics about the exporter’s targets
+  metrics_path: /probe
+  params:
+    module: [http_2xx_cronus]
+  static_configs:
+    - targets:
+      {{- range .Values.cronus.regions }}
+      - https://cronus.{{ .region }}.cloud.sap
+      {{- end }}
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: blackbox-exporter.cronus:9115
+{{ end }}
+
+
