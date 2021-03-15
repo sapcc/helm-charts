@@ -1,3 +1,4 @@
+{{- if $.Values.nginx_external }}
 {{- range $cluster_id, $cluster := .Values.clusters }}
 {{- range $az := $.Values.global.availability_zones }}
 kind: Deployment
@@ -10,7 +11,7 @@ metadata:
     os-cluster: {{ $cluster_id }}
 spec:
   revisionHistoryLimit: 5
-  {{- $replicas_az := default 1.0 (index $cluster (printf "proxy_deployment_replicas_%s" $az)) }}
+  {{- $replicas_az := default 2.0 (index $cluster (printf "nginx_deployment_replicas_%s" $az)) }}
   replicas: {{ $replicas_az }}
   strategy:
     type: RollingUpdate
@@ -30,6 +31,7 @@ spec:
         component: swift-nginx-{{ $cluster_id }}
         from: deployment
         os-cluster: {{ $cluster_id }}
+        for-service: swift-proxy-{{ $cluster_id }}
       annotations:
         checksum/nginx.bin: {{ include "swift/templates/nginx-bin-configmap.yaml" $ | sha256sum }}
         checksum/nginx-cluster.etc: {{ include "swift/templates/etc/nginx-cluster-configmap.yaml" $ | sha256sum }}
@@ -62,5 +64,6 @@ spec:
         {{- tuple "false" $cluster $ | include "swift_nginx_containers" | indent 8 }}
 
 ---
+{{- end }}
 {{- end }}
 {{- end }}

@@ -344,6 +344,8 @@ location / {
     # have a trailing slash. Swift needs to see the original request
     # URL for its domain-remap and staticweb functionalities.
     proxy_pass        http://{{ $upstream }}:8080;
+    proxy_next_upstream error timeout;
+    proxy_next_upstream_tries 3;
     proxy_set_header  Host               $host;
     proxy_set_header  X-Real_IP          $remote_addr;
     proxy_set_header  X-Forwarded-For    $proxy_add_x_forwarded_for;
