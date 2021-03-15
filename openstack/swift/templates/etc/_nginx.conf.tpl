@@ -1,6 +1,7 @@
 {{- define "nginx.conf" -}}
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
+{{- $upstream := index . 2 -}}
 # this is based on the default nginx.conf from the default docker hub nginx container
 
 user  nginx;
@@ -52,7 +53,6 @@ http {
         #listen 443 default_server ssl http2;
         listen 443 default_server ssl;
         server_name {{tuple $cluster $context | include "swift_endpoint_host"}};
-        ssl on;
 
         ssl_certificate     /etc/nginx/ssl/tls.crt;
         ssl_certificate_key /etc/nginx/ssl/tls.key;
@@ -66,7 +66,7 @@ http {
         ssl_prefer_server_ciphers on;
 
         {{- tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
-        {{- tuple $context | include "swift_nginx_location" | indent 8 }}
+        {{- tuple $upstream $context | include "swift_nginx_location" | indent 8 }}
     }
 
     # Only allow non ssl for allowed sans, otherwise redirect
@@ -85,7 +85,7 @@ http {
         listen 80;
         server_name {{$san}}.{{$context.global.region}}.{{$context.global.tld}};
         {{- tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
-        {{- tuple $context | include "swift_nginx_location" | indent 8 }}
+        {{- tuple $upstream $context | include "swift_nginx_location" | indent 8 }}
     }
     {{- end }}
 

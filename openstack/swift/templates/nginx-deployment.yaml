@@ -1,17 +1,16 @@
 {{- range $cluster_id, $cluster := .Values.clusters }}
-{{- if $cluster.proxy_deployment_enabled }}
 {{- range $az := $.Values.global.availability_zones }}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: swift-proxy-{{ $cluster_id }}-{{ $az }}
+  name: swift-nginx-{{ $cluster_id }}-{{ $az }}
   labels:
     release: "{{ $.Release.Name }}"
     os-cluster: {{ $cluster_id }}
 spec:
   revisionHistoryLimit: 5
-  {{- $replicas_az := default 0.0 (index $cluster (printf "proxy_deployment_replicas_%s" $az)) }}
+  {{- $replicas_az := default 1.0 (index $cluster (printf "proxy_deployment_replicas_%s" $az)) }}
   replicas: {{ $replicas_az }}
   strategy:
     type: RollingUpdate
@@ -24,26 +23,18 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      component: swift-proxy-{{ $cluster_id }}
+      component: swift-nginx-{{ $cluster_id }}
   template:
     metadata:
       labels:
-        component: swift-proxy-{{ $cluster_id }}
+        component: swift-nginx-{{ $cluster_id }}
         from: deployment
         os-cluster: {{ $cluster_id }}
-        for-service: swift-proxy-{{ $cluster_id }}
       annotations:
-        checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
-        {{- include "swift_conf_annotations" $ | indent 8 }}
         checksum/nginx.bin: {{ include "swift/templates/nginx-bin-configmap.yaml" $ | sha256sum }}
         checksum/nginx-cluster.etc: {{ include "swift/templates/etc/nginx-cluster-configmap.yaml" $ | sha256sum }}
-        {{- include "swift_ring_annotations" $ | indent 8 }}
-        {{- if $.Values.health_exporter }}
-        # Prometheus annotations on pod level without port
-        # discovery will find all exposed container ports for exporters running in containers
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
-        {{- end }}
     spec:
       # No tolerations for swift nodes
       nodeSelector:
@@ -66,11 +57,10 @@ spec:
                   - deployment
               topologyKey: "kubernetes.io/hostname"
       volumes:
-        {{- tuple $cluster_id | include "swift_proxy_volumes" | indent 8 }}
+        {{- tuple $cluster_id | include "swift_nginx_volumes" | indent 8 }}
       containers:
-        {{- tuple "deployment" $cluster $ | include "swift_proxy_containers" | indent 8 }}
+        {{- tuple "false" $cluster $ | include "swift_nginx_containers" | indent 8 }}
 
 ---
-{{- end }}
 {{- end }}
 {{- end }}
