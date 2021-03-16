@@ -179,4 +179,7 @@
       - '{__name__="aws_ses_cronus_provider_reputation_bouncerate"}'
       - '{__name__="aws_ses_cronus_provider_reputation_complaintrate"}'
       - '{__name__="aws_ses_cronus_provider_send"}'
+  metric_relabel_configs:
+    - action: labeldrop
+      regex: "exported_instance|exported_job|instance|job|tags"
 {{ end }}
