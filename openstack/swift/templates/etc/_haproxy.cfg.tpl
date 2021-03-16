@@ -39,12 +39,13 @@ frontend api
 
 frontend api-http
   bind *:80
+  {{- $allowed := join " or " $cluster.sans_http }}
   {{ range $index, $san := $cluster.sans_http -}}
-  acl allow hdr(host) -i {{ $san }}.{{$context.global.region}}.{{$context.global.tld}}
-  {{- end }}
+  acl {{ $san }} hdr(host) -i {{ $san }}.{{$context.global.region}}.{{$context.global.tld}}
+  {{ end }}
 
-  http-request redirect scheme https code 301 if !allow
-  use_backend swift_proxy if allow
+  http-request redirect scheme https code 301 unless {{ $allowed }}
+  use_backend swift_proxy if {{ $allowed }}
 
 backend swift_proxy
   server swift-svc {{ $upstream }}:8080
