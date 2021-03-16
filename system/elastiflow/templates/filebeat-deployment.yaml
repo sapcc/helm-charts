@@ -20,10 +20,14 @@ spec:
         chart: "{{ .Chart.Name }}"
         heritage: {{ .Release.Service | quote }}
         release: {{ .Release.Name | quote }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9479"
+        prometheus.io/targets: "infra-collector"
     spec:
       containers:
       - name: filebeat
-        image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-filebeat:202103081700
+        image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-filebeat:202103101730
         ports:
           - containerPort: 2055
             protocol: UDP
@@ -31,11 +35,26 @@ spec:
           - name: LOGSTASH_HOSTS
             value: "[{{- range $i, $e := until (( int .Values.logstash.replicas )) }}\"elastiflow-logstash-{{$i}}.elastiflow-logstash\", {{- end}}]"
           - name: NUM_WORKERS
-            value: {{ .Values.filebeat.workers | quote}}
+            value: {{ .Values.filebeat.logstash.workers | quote}}
           - name: LOGSTASH_LB
-            value: {{ .Values.filebeat.loadbalance | quote }}
+            value: {{ .Values.filebeat.logstash.loadbalance | quote }}
           - name: LOGSTASH_TTL
-            value: {{ .Values.filebeat.ttl | quote }}
+            value: {{ .Values.filebeat.logstash.ttl | quote }}
           - name: LOGSTASH_PIPELINING
-            value: {{ .Values.filebeat.pipelining | quote }}
+            value: {{ .Values.filebeat.logstash.pipelining | quote }}
+          - name: LOGSTASH_PIPELINING
+            value: {{ .Values.filebeat.logstash.bulk | quote }}
+          - name: NETFLOW_BUFFER
+            value : {{.Values.filebeat.netflow.buffer | quote}}
+          - name: NETFLOW_QUEUE
+            value : {{.Values.filebeat.netflow.queue | quote}}
+        resources:
+{{ toYaml .Values.filebeat.resources | indent 10 }}
+
+      - name: exporter
+        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/trustpilot/beat-exporter:0.4.0
+        ports:
+          - name: metrics
+            containerPort: 9479
+  
 {{- end }}

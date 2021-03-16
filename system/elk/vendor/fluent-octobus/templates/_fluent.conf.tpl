@@ -76,14 +76,15 @@
     http_method post
     serializer json
     raise_on_error true
+    slow_flush_log_threshold 105.0
     <buffer>
-      total_limit_size 256MB
+      queue_limit_length 24
+      chunk_limit_size 8MB
       flush_at_shutdown true
       overflow_action block
       retry_forever true
       retry_type periodic
-      retry_wait 2s
-      flush_interval 1s
+      flush_interval 8s
     </buffer>
   </store>
   <store>
