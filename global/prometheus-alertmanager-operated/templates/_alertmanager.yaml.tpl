@@ -120,6 +120,12 @@ route:
   - receiver: elastic
     continue: true
 
+  - receiver: octobus
+    continue: true
+    match_re:
+      severity: critical
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
   - receiver: awx
     continue: true
     match_re:
@@ -316,6 +322,11 @@ receivers:
     webhook_configs:
     - send_resolved: true
       url: {{ required ".Values.elastic.logstashURL undefined" .Values.elastic.logstashURL | quote }}
+
+  - name: octobus
+    webhook_configs:
+    - send_resolved: false
+      url: {{ required ".Values.octobus.gymInstance undefined" .Values.octobus.gymInstance | quote }}
 
   - name: awx
     webhook_configs:
