@@ -100,6 +100,8 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     - /bin/sh
     - /nginx-bin/nginx-start
   env:
+    - name: DEBUG_CONTAINER
+      value: "false"
     - name: LOCAL_NGINX
       value: {{ $local | quote }}
   resources:
