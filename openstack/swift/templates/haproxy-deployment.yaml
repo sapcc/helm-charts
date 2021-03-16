@@ -36,6 +36,7 @@ spec:
         checksum/haproxy.bin: {{ include "swift/templates/haproxy-bin-configmap.yaml" $ | sha256sum }}
         checksum/haproxy-cluster.etc: {{ include "swift/templates/etc/haproxy-cluster-configmap.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
+        prometheus.io/port: "8404"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
     spec:
       # No tolerations for swift nodes
@@ -95,7 +96,7 @@ spec:
               name: haproxy-etc-cluster
           livenessProbe:
             httpGet:
-              path: /monitor
+              path: /stats
               port: 8404
               scheme: HTTP
             initialDelaySeconds: 10
