@@ -36,7 +36,6 @@ spec:
         checksum/haproxy.bin: {{ include "swift/templates/haproxy-bin-configmap.yaml" $ | sha256sum }}
         checksum/haproxy-cluster.etc: {{ include "swift/templates/etc/haproxy-cluster-configmap.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8404"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
     spec:
       # No tolerations for swift nodes
@@ -113,6 +112,9 @@ spec:
             initialDelaySeconds: 10
             timeoutSeconds: 1
             periodSeconds: 5
+          ports:
+            - name: metrics
+              containerPort: 8404
 
 ---
 {{- end }}
