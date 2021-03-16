@@ -194,7 +194,7 @@ metrics:
 
   nx_ntp_configured:
     regex: >-
-      ^ntp server (\S+) .+?$
+      ^ntp server (\S+).*?$
     multi_value: true
     value: $1
     description: Configured DNS Severs by dns name.
@@ -204,7 +204,7 @@ metrics:
 
   xe_ntp_configured:
     regex: >-
-      ^\s+ntp server vrf \S+ (\S+) .+?$
+      ^\s+ntp server vrf \S+ (\S+).*?$
     multi_value: true
     value: $1
     description: Configured DNS Severs by dns name.
