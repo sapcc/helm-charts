@@ -37,6 +37,9 @@ listen stats
 frontend api
   bind *:443 ssl crt /usr/local/etc/haproxy/ssl/tls.pem
 
+  capture request header User-Agent len 64
+  capture response header X-Openstack-Request-Id len 64
+
   default_backend swift_proxy
 
 frontend api-http
