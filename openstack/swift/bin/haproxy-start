@@ -33,8 +33,9 @@ cat /tls-secret/tls.crt /tls-secret/tls.key > ${SSL_DIR}/tls.pem
     cp -f /tls-secret/tls.crt ${SSL_DIR}
     cp -f /tls-secret/tls.key ${SSL_DIR}
     cat /tls-secret/tls.crt /tls-secret/tls.key > ${SSL_DIR}/tls.pem
-    echo "$(date): cert watch: reloading haproxy"
-    # TODO: This needs revisting. Don't kill all haproxy at once. This is not a reload
+    echo "$(date): cert watch: graceful shutdown haproxy"
+    # TODO: This needs revisting. This is not a reload. Minimum safty measure: Don't start all haproxy at the same time
+    sleep $(( RANDOM % 300 ))
     kill -USR1 $(pidof haproxy)
   fi
 
