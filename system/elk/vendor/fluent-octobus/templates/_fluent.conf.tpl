@@ -83,6 +83,10 @@
       retry_type periodic
       flush_interval 8s
     </buffer>
+    <format>
+      @type json
+    </format>
+    json_array true
   </store>
   <store>
     @type prometheus
