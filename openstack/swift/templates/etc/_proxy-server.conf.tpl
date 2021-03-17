@@ -1,11 +1,12 @@
 {{- define "proxy-server.conf" -}}
 {{- $cluster := index . 0 -}}
-{{- $context := index . 1 -}}
-{{- $helm_release := index . 2 -}}
+{{- $kind := index . 1 -}}
+{{- $context := index . 2 -}}
+{{- $helm_release := index . 3 -}}
 [DEFAULT]
 bind_port = 8080
 # NOTE: value for prod, was 4 in staging before
-workers = 8
+workers = {{ (index $cluster (printf "proxy_%s_workers" $kind)) | default 4 }}
 user = swift
 expose_info = true
 # NOTE: value for prod, was 512 in staging before

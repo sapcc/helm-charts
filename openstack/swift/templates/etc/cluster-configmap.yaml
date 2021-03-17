@@ -1,23 +1,6 @@
 {{- range $cluster_id, $cluster := .Values.clusters }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: swift-etc-{{$cluster_id}}
-  labels:
-    system: openstack
-    service: objectstore
-    component: configuration
-
-data:
-  # nginx
-  nginx.conf: |
-{{ tuple $cluster $.Values | include "nginx.conf" | indent 4 }}
-
-  # swift
-  container-sync-realms.conf: |
-{{ tuple $cluster $.Values | include "container-sync-realms.conf" | indent 4 }}
-  proxy-server.conf: |
-{{ tuple $cluster $.Values $.Release | include "proxy-server.conf" | indent 4 }}
-
+{{ tuple $ $cluster_id "daemonset" | include "swift_cluster_configmap" }}
+---
+{{ tuple $ $cluster_id "deployment" | include "swift_cluster_configmap" }}
 ---
 {{- end }}

@@ -1,10 +1,11 @@
 {{- define "nginx.conf" -}}
 {{- $cluster := index . 0 -}}
-{{- $context := index . 1 -}}
+{{- $kind := index . 1 -}}
+{{- $context := index . 2 -}}
 # this is based on the default nginx.conf from the default docker hub nginx container
 
 user  nginx;
-worker_processes  4;
+worker_processes  {{ (index $cluster (printf "proxy_%s_nginx_workers" $kind)) | default 4 }};
 
 error_log  /var/log/nginx/error.log warn;
 pid        /var/run/nginx.pid;

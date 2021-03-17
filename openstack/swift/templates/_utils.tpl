@@ -49,6 +49,33 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
+{{- define "swift_cluster_configmap" }}
+{{- $context := index . 0 -}}
+{{- $cluster_id := index . 1 -}}
+{{- $kind := index . 2 -}}
+{{- $cluster := index $context.Values.clusters $cluster_id -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: swift-etc-{{ $cluster_id }}-{{ $kind }}
+  labels:
+    system: openstack
+    service: objectstore
+    component: configuration
+
+data:
+  # nginx
+  nginx.conf: |
+{{ tuple $cluster $kind $context.Values | include "nginx.conf" | indent 4 }}
+
+  # swift
+  container-sync-realms.conf: |
+{{ tuple $cluster $context.Values | include "container-sync-realms.conf" | indent 4 }}
+  proxy-server.conf: |
+{{ tuple $cluster $kind $context.Values $context.Release | include "proxy-server.conf" | indent 4 }}
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
 {{- define "swift_daemonset_volumes" }}
 - name: swift-etc
   configMap:
@@ -75,7 +102,8 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_proxy_volumes" }}
-{{- $cluster := index . 0 }}
+{{- $kind := index . 0 -}}
+{{- $cluster := index . 1 }}
 - name: tls-secret
   secret:
     secretName: tls-swift-{{ $cluster }}
@@ -87,7 +115,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     name: swift-etc
 - name: swift-etc-cluster
   configMap:
-    name: swift-etc-{{ $cluster }}
+    name: swift-etc-{{ $cluster }}-{{ $kind }}
 - name: swift-account-ring
   configMap:
     name: swift-account-ring
