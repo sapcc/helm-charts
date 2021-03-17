@@ -72,10 +72,7 @@
   <store>
     @type http
     endpoint_url "https://{{.Values.forwarding.keystone.host}}"
-    cacert_file "/etc/ssl/certs/ca-certificates.crt"
-    http_method post
-    serializer json
-    raise_on_error true
+    tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
     <buffer>
       queue_limit_length 24
