@@ -1,5 +1,11 @@
 {{define "designate_api_endpoint_host_public"}}dns-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
+{{- if eq .Values.global_setup true -}}
+{{- if eq .Values.global.db_region "qa-de-1" -}}
+{{define "keystone_api_endpoint_host_public"}}identity-3-qa.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{- end -}}
+{{- end -}}
+
 {{- define "rabbitmq_host" -}}
 {{- if .Values.global_setup -}}
 {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
