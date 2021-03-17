@@ -181,5 +181,5 @@
       - '{__name__="aws_ses_cronus_provider_send"}'
   metric_relabel_configs:
     - action: labeldrop
-      regex: "exported_instance|exported_job|instance|job|tags|multicloud_id|cluster|cluster_type|thanos_cluster|thanos_cluster_type|thanos_region|prometheus"
+      regex: "exported_instance|exported_job|instance|job|tags"
 {{ end }}
