@@ -45,6 +45,11 @@ static_resources:
       socket_address:
         address: 0.0.0.0
         port_value: 443
+    access_log:
+      name: envoy.access_loggers.file
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
+        path: /dev/stdout
     filter_chains:
     - filters:
       - name: envoy.filters.network.http_connection_manager
@@ -88,6 +93,11 @@ static_resources:
       socket_address:
         address: 0.0.0.0
         port_value: 80
+    access_log:
+      name: envoy.access_loggers.file
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
+        path: /dev/stdout
     filter_chains:
     - filters:
       - name: envoy.filters.network.http_connection_manager
