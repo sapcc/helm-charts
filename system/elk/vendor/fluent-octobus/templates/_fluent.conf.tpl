@@ -71,7 +71,7 @@
   @type copy
   <store>
     @type http
-    endpoint_url "https://{{.Values.forwarding.keystone.host}}"
+    endpoint "https://{{.Values.forwarding.keystone.host}}"
     tls_ca_cert_path "/etc/ssl/certs/ca-certificates.crt"
     slow_flush_log_threshold 105.0
     <buffer>
