@@ -4,6 +4,7 @@
 {{- $upstream := index . 2 -}}
 global
   log stdout format raw local0 info
+  zero-warning
 
   maxconn 2000
 
