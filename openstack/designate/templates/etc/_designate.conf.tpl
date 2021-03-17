@@ -181,7 +181,11 @@ auth_type = v3password
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+{{- if .Values.global_setup }}
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{ .Values.global.keystone_internal_ip }}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+{{- else }}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+{{- end }}
 username = {{ .Values.global.designate_service_user }}
 password = {{ .Values.global.designate_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
