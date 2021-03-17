@@ -122,6 +122,22 @@ groups:
         In some cases, invalid manifests in the repo could be blocking the blob mount sweep.
         Check the logs of keppel-janitor for details.
 
+  - alert: OpenstackKeppelNotGarbageCollectingImages
+    expr: keppel_repos_count > 0 and time() - keppel_repos_min_next_gc_at > 600
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'GC policies are not being executed'
+      description: |
+        In each repository, customers' GC policies should be executed once per hour.
+        However, some repos have not been garbage-collected on schedule, so it looks like the GC is having issues.
+        Check the logs of keppel-janitor for details.
+
   - alert: OpenstackKeppelNotDeletingBlobMounts
     expr: keppel_blob_mounts_min_can_be_deleted_at > 0 and time() - keppel_blob_mounts_min_can_be_deleted_at > 7200
     for: 5m
