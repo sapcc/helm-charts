@@ -126,7 +126,7 @@ metrics:
     value: $4
     multi_value: true
     labels:
-      couter_id: $1
+      counter_id: $1
       cause_name: $2
     description: Counter of the number of QFP punts and injects
     metric_type_name: counter
@@ -139,7 +139,7 @@ metrics:
     value: $5
     multi_value: true
     labels:
-      couter_id: $1
+      counter_id: $1
       cause_name: $2
     description: Counter of the number of QFP punts and injects
     metric_type_name: counter
