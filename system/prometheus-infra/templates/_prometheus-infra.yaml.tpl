@@ -121,7 +121,7 @@
   static_configs:
     - targets:
       {{- range .Values.cronus.regions }}
-      - https://nebula.{{ .region }}.cloud.sap
+      - https://nebula.{{ .region }}.cloud.sap/healthz
       {{- end }}
   relabel_configs:
     - source_labels: [__address__]
@@ -138,7 +138,7 @@
   static_configs:
     - targets:
       {{- range .Values.cronus.regions }}
-      - https://cronus.{{ .region }}.cloud.sap
+      - https://cronus.{{ .region }}.cloud.sap/healthz
       {{- end }}
   relabel_configs:
     - source_labels: [__address__]
