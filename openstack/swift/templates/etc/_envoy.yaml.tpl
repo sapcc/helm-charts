@@ -115,7 +115,6 @@ static_resources:
           common_http_protocol_options:
             idle_timeout: {{ add $context.client_timeout $context.node_timeout 5 }}s
           route_config:
-            {{- if $cluster.sans_http }}
             name: swift-service
             virtual_hosts:
             {{ range $index, $san := $cluster.sans_http -}}
@@ -126,7 +125,6 @@ static_resources:
                 route:
                   cluster: swift-cluster
                   idle_timeout: {{ add $context.client_timeout 5 }}s
-            {{- end }}
             {{- end }}
             - name: redirect
               domains: ["*"]
