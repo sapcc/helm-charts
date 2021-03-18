@@ -1,0 +1,123 @@
+{{- range $cluster_id, $cluster := .Values.clusters }}
+{{- range $az := $.Values.global.availability_zones }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: swift-envoy-{{ $cluster_id }}-{{ $az }}
+  labels:
+    release: "{{ $.Release.Name }}"
+    os-cluster: {{ $cluster_id }}
+spec:
+  revisionHistoryLimit: 5
+  {{- $replicas_az := 0.0 }}
+  {{- if $.Values.envoy_external }}
+  {{- $replicas_az = default 2.0 (index $cluster (printf "envoy_deployment_replicas_%s" $az)) }}
+  {{- end }}
+  replicas: {{ $replicas_az }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      {{- if eq $replicas_az 1.0 }}
+      maxUnavailable: 0
+      {{- else }}
+      maxUnavailable: 1
+      {{- end }}
+      maxSurge: 2
+  selector:
+    matchLabels:
+      component: swift-envoy-{{ $cluster_id }}
+  template:
+    metadata:
+      labels:
+        component: swift-envoy-{{ $cluster_id }}
+        from: deployment
+        os-cluster: {{ $cluster_id }}
+        for-service: swift-proxy-{{ $cluster_id }}
+      annotations:
+        checksum/envoy.bin: {{ include "swift/templates/envoy-bin-configmap.yaml" $ | sha256sum }}
+        checksum/envoy-cluster.etc: {{ include "swift/templates/etc/envoy-cluster-configmap.yaml" $ | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+    spec:
+      # No tolerations for swift nodes
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: {{ $az }}
+      affinity:
+        podAntiAffinity:
+          # Prefere to be scheduled on nodes not yet running this proxy from a deplyoment
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - swift-envoy-{{ $cluster_id }}
+                - key: from
+                  operator: In
+                  values:
+                  - deployment
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: tls-swift-{{ $cluster_id }}
+        - name: envoy-bin
+          configMap:
+            name: envoy-bin
+        - name: envoy-etc-cluster
+          configMap:
+            name: envoy-etc-{{ $cluster_id }}
+      containers:
+        - name: envoy
+          image: {{ $.Values.global.registryAlternateRegion }}/swift-envoy:{{ default $.Values.image_version_envoy "v1.17.1-20210317124712" }}
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - /bin/sh
+            - /envoy-bin/envoy-start
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "200Mi"
+            limits:
+              cpu: "1000m"
+              memory: "200Mi"
+          volumeMounts:
+            - mountPath: /tls-secret
+              name: tls-secret
+            - mountPath: /envoy-bin
+              name: envoy-bin
+            - mountPath: /envoy-etc-cluster
+              name: envoy-etc-cluster
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 9901
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{ $cluster.proxy_public_port }}
+              scheme: HTTPS
+              httpHeaders:
+                - name: Host
+                  value: {{ tuple $cluster $.Values | include "swift_endpoint_host" }}
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 5
+          ports:
+            - name: metrics
+              containerPort: 9902
+
+---
+{{- end }}
+{{- end }}

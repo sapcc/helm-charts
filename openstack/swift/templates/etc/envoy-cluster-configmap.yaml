@@ -1,0 +1,16 @@
+{{- range $cluster_id, $cluster := .Values.clusters }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-etc-{{ $cluster_id }}
+  labels:
+    system: openstack
+    service: objectstore
+    component: configuration
+
+data:
+  envoy.yaml: |
+{{ tuple $cluster $.Values (printf "swift-proxy-internal-%s.swift.svc" $cluster_id) | include "envoy.yaml" | indent 4 }}
+
+---
+{{- end }}
