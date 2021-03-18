@@ -44,6 +44,8 @@ frontend api
 
 frontend api-http
   bind *:80
+  monitor-uri /haproxy_test
+
   {{- $allowed := join " or " $cluster.sans_http }}
   {{ range $index, $san := $cluster.sans_http -}}
   acl {{ $san }} hdr(host) -i {{ $san }}.{{$context.global.region}}.{{$context.global.tld}}:{{ $cluster.proxy_public_http_port }}
