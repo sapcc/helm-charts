@@ -120,7 +120,7 @@ static_resources:
             virtual_hosts:
             {{ range $index, $san := $cluster.sans_http -}}
             - name: swift-service
-              domains: ["{{ $san }}.{{ $context.global.region }}.{{ $context.global.tld }}"]
+              domains: ["{{ $san }}.{{ $context.global.region }}.{{ $context.global.tld }}:{{ $cluster.proxy_public_http_port }}"]
               routes:
               - match: { prefix: "/" }
                 route:
