@@ -42,7 +42,8 @@ metrics:
 
   redundancy_state:
     regex: "My Role: ([A-Z]+)"
-    value: $1
+    labels:
+      redundancy_state: $1
     description: Displays the current role in the redundancy group
     metric_type_name: string
     command: show redundancy application group 1 | inc My Role
@@ -66,7 +67,8 @@ metrics:
          
   redundancy_send_queue:
     regex: "0x(.)"
-    value: $1
+    labels:
+      redundancy_send_queue: $1
     description: Displays the most significant bit of the send queue possibly indicating a overflow
     metric_type_name: string
     command: "show plat hard qfp act system rg 1 stat | incl tx_seq_flags"
@@ -233,7 +235,6 @@ metrics:
     regex: >-
       ^ntp server (\S+).*?$
     multi_value: true
-    value: $1
     labels:
       ntp_configured: $1
     description: Configured DNS Severs by dns name.
@@ -245,7 +246,6 @@ metrics:
     regex: >-
       ^\s+ntp server vrf \S+ (\S+).*?$
     multi_value: true
-    value: $1
     labels:
       ntp_configured: $1
     description: Configured DNS Severs by dns name.
