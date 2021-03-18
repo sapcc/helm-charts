@@ -15,6 +15,7 @@ cronus:
 {{- if .Values.cronus.listenProxyProtocol }}
     proxyProtocol: {{ .Values.cronus.listenProxyProtocol }}
 {{- end }}
+    shutdownTimeout: {{ .Values.cronus.terminationGracePeriod | default 60 }}s
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}
