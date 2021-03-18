@@ -27,7 +27,7 @@ spec:
             - name: USERNAME
               value: {{ .Values.sftp.user | quote }}
             - name: PASSWORD
-              value: {{ derivePassword 1 "long" .Values.global.master_password .Values.sftp.user (include "sftp_api_endpoint_host" .) | quote }}
+              value: {{ required ".Values.sftp.password missing" .Values.sftp.password | quote }}
           resources:
 {{ toYaml .Values.pod.resources.sftp_backup | indent 12 }}
           volumeMounts:
