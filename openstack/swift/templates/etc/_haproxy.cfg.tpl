@@ -16,7 +16,7 @@ global
 
 defaults
   log global
-  log-format "[%tr] %ci:%cp %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %{+Q}r %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hr %hs"
+  log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %{+Q}r %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hr %hs"
 
   mode http
   option forwardfor
@@ -46,7 +46,7 @@ frontend api-http
   bind *:80
   {{- $allowed := join " or " $cluster.sans_http }}
   {{ range $index, $san := $cluster.sans_http -}}
-  acl {{ $san }} hdr(host) -i {{ $san }}.{{$context.global.region}}.{{$context.global.tld}}
+  acl {{ $san }} hdr(host) -i {{ $san }}.{{$context.global.region}}.{{$context.global.tld}}:{{ $cluster.proxy_public_http_port }}
   {{- end }}
 
   http-request redirect scheme https code 301 {{- if $allowed}} unless {{ $allowed }}
