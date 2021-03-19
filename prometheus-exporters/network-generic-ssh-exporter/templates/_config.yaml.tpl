@@ -231,6 +231,22 @@ metrics:
     command: show platform hardware qfp active feature nat datapath stats
     timeout_secs: 10
 
+  bgp_sessions:
+    regex: >-
+      ^BGP neighbor is (\S+),(\s+vrf (\S+),)?\s+remote AS (\d+).*?(remote AS (\d+),).*?((\w+) link).*?\n\s{2,}BGP state = (\w+),.*?$
+    multi_value: true
+    labels:
+      vrf: $3
+      state: $9
+      peer_ip: $1
+      remote_as: $6
+      peer_type: $8
+      local_as: $4
+    description: Indicates if a session in a VRF is established or not
+    metric_type_name: string
+    command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state)
+    timeout_secs: 4
+
   nx_ntp_configured:
     regex: >-
       ^ntp server (\S+).*?$
@@ -276,14 +292,13 @@ batches:
     - qfp_classification_ce_data_nat_1001_classes
     - qfp_classification_client_nat_1001_classes
     - qfp_nat_datapath_stats
-    
+    - bgp_sessions
     
   cisco-nx-os_core-router:
     - nx_ntp_configured
 
   cisco-ios-xe_core-router:
     - xe_ntp_configured
-
 
 devices:
   cisco-ios-xe:
