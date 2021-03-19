@@ -1,5 +1,5 @@
 {
-    "volume": ["name~", "status", "metadata",
+    "volume": ["name", "name~", "status", "metadata",
                "bootable", "migration_status", "availability_zone",
                "group_id", "user_id"],
     "backup": ["name", "status", "volume_id"],
