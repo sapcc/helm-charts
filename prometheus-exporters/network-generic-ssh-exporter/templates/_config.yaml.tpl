@@ -233,14 +233,14 @@ metrics:
 
   bgp_sessions:
     regex: >-
-      ^BGP neighbor is (\S+),(\s+vrf (\S+),)?\s+remote AS (\d+).*?(remote AS (\d+),).*?((\w+) link).*?\n\s{2,}BGP state = (\w+),.*?$
+      ^BGP neighbor is (\S+),(\s+vrf (\S+),)?\s+remote AS (\d+),.*?((\w+) link).*?\n\s{2,}BGP state = (\w+),.*?$
     multi_value: true
     labels:
       vrf: $3
-      state: $9
+      state: $7
       peer_ip: $1
-      remote_as: $6
-      peer_type: $8
+      remote_as: $4
+      peer_type: $6
       local_as: $4
     description: Indicates if a session in a VRF is established or not
     metric_type_name: string
