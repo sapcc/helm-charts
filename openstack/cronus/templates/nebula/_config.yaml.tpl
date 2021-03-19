@@ -1,6 +1,15 @@
 {{- if .Values.nebula.enabled -}}
 nebula:
   cacheSize: {{ .Values.nebula.cacheSize }}
+{{- if .Values.config.retry }}
+  retry:
+{{- if .Values.config.retry.maxConnectionRetries }}
+    maxConnectionRetries: {{ .Values.config.retry.maxConnectionRetries }}
+{{- end }}
+{{- if .Values.config.retry.retryInterval }}
+    retryInterval: {{ .Values.config.retry.retryInterval }}
+{{- end }}
+{{- end }}
   listenAddr:
     http: :{{ .Values.nebula.http }} # default :1080
     shutdownTimeout: {{ .Values.config.accountStatusTimeout }}s
