@@ -3,6 +3,15 @@ cronus:
   cacheSize: {{ .Values.cronus.cacheSize }}
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
   barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
+{{- if .Values.config.retry }}
+  retry:
+{{- if .Values.config.retry.maxConnectionRetries }}
+    maxConnectionRetries: {{ .Values.config.retry.maxConnectionRetries }}
+{{- end }}
+{{- if .Values.config.retry.retryInterval }}
+    retryInterval: {{ .Values.config.retry.retryInterval }}
+{{- end }}
+{{- end }}
   aws:
     forwardUserAgent: {{ .Values.config.forwardUserAgent }}
     allowedServices:
