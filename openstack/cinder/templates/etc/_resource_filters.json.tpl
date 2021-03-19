@@ -3,7 +3,7 @@
                "bootable", "migration_status", "availability_zone",
                "group_id", "user_id"],
     "backup": ["name", "status", "volume_id"],
-    "snapshot": ["name~", "status", "volume_id", "metadata",
+    "snapshot": ["name", "name~", "status", "volume_id", "metadata",
                  "availability_zone"],
     "group": [],
     "group_snapshot": ["status", "group_id"],
