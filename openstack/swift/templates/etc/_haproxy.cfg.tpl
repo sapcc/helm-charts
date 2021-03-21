@@ -16,11 +16,12 @@ global
 
 defaults
   log global
-  log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %{+Q}r %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hr %hs"
+  log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %{+Q}r %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc retries:%rc %sq/%bq %hr %hs"
 
   mode http
   option forwardfor
   retries 3
+  retry-on all-retryable-errors
 
   timeout connect 10s
   timeout client {{ add $context.client_timeout 5 }}s
