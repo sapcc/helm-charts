@@ -2,7 +2,7 @@ credentials:
   default:
     username: {{ .Values.network_generic_ssh_exporter.user }}
     password: {{ .Values.network_generic_ssh_exporter.password }}
-    
+
 metrics:
   nat_static:
     regex: >-
@@ -42,8 +42,14 @@ metrics:
 
   redundancy_state:
     regex: "My Role: ([A-Z]+)"
-    labels:
-      redundancy_state: $1
+    value: $1
+    map_values:
+      - regex: INIT
+        value: 1
+      - regex: STANDBY
+        value: 2
+      - regex: ACTIVE
+        value: 3
     description: Displays the current role in the redundancy group
     metric_type_name: string
     command: show redundancy application group 1 | inc My Role
@@ -231,17 +237,60 @@ metrics:
     command: show platform hardware qfp active feature nat datapath stats
     timeout_secs: 10
 
+  qfp_nat_datapath_gatein:
+    regex: >-
+      (\w+) (\d+)
+    value: $2
+    multi_value: true
+    labels:
+      type: $1
+    description: Distribution of entries amoing the NAT Gatekeepers entries
+    metric_type_name: gauge
+    command: show platform hardware qfp active feature nat datapath gatein activity
+    timeout_secs: 3
+  
+  qfp_nat_datapath_gateout:
+    regex: >-
+      (\w+) (\d+)
+    value: $2
+    multi_value: true
+    labels:
+      type: $1
+    description: Distribution of entries amoing the NAT Gatekeepers entries
+    metric_type_name: gauge
+    command: show platform hardware qfp active feature nat datapath gateout activity
+    timeout_secs: 3
+  
+  tcam_total:
+    regex: >-
+      ^Total.*?(regions|used cell entries|free cell entries) +: (\d+)
+    value: $2
+    multi_value: true
+    labels:
+      type: $1
+    description: Usage of TCAM memory
+    metric_type_name: gauge
+    command: show platform hardware qfp active tcam resource-manager usage | begin Total TCAM Cell Usage Information
+    timeout_secs: 3
+
   bgp_sessions:
     regex: >-
       ^BGP neighbor is (\S+),(\s+vrf (\S+),)?\s+remote AS (\d+),.*?((\w+) link).*?\n\s{2,}BGP state = (\w+),.*?$
     multi_value: true
+    value: $7
     labels:
       vrf: $3
-      state: $7
       peer_ip: $1
       remote_as: $4
       peer_type: $6
       local_as: $4
+    map_values:
+      - regex: Established
+        value: 8
+      - regex: Idle
+        value: 2
+      - regex: .*
+        value: 1
     description: Indicates if a session in a VRF is established or not
     metric_type_name: string
     command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state)
@@ -292,8 +341,11 @@ batches:
     - qfp_classification_ce_data_nat_1001_classes
     - qfp_classification_client_nat_1001_classes
     - qfp_nat_datapath_stats
+    - qfp_nat_datapath_gatein
+    - qfp_nat_datapath_gateout
     - bgp_sessions
-    
+    - tcam_total
+
   cisco-nx-os_core-router:
     - nx_ntp_configured
 
