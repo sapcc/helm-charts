@@ -72,12 +72,17 @@ metrics:
     timeout_secs: 5
          
   redundancy_send_queue:
-    regex: "0x(.)"
-    labels:
-      redundancy_send_queue: $1
-    description: Displays the most significant bit of the send queue possibly indicating a overflow
+    value: $1
+    regex: >-
+      \s+tx_seq_flags\s+0x(.)\w+
+    map_values:
+      - regex: "\\d"
+        value: 0
+      - regex: .*
+        value: 1
+    description: Displays if the most significant bit is larger 0x9 or not
     metric_type_name: string
-    command: "show plat hard qfp act system rg 1 stat | incl tx_seq_flags"
+    command: "show platform hardware qfp active system rg 1 stat | incl tx_seq_flags"
     timeout_secs: 5
  
   openstack_vrf_count_total:
@@ -319,6 +324,8 @@ metrics:
     timeout_secs: 5
 
 batches:
+  test:
+    - redundancy_send_queue
   neutron-router:
     - nat_dynamic
     - nat_static
