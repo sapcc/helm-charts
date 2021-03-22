@@ -27,6 +27,7 @@
       - '{job="redfish/bb"}'
       - '{job="redfish/bm"}'
       - '{job="redfish/cp"}'
+      - '{job="ucs"}'
       - '{job="vrops",__name__!~"^vrops_virtualmachine_.*"}'
       - '{job="vrops",__name__=~"^vrops_virtualmachine_.*", vccluster=~"^managementbb.+"}'
       - '{job="vrops",__name__=~"vrops_api_response"}'
