@@ -3,14 +3,16 @@ simulator:
   cronuscli: {{ .Values.simulator.cronuscli }}
   recipient: {{ .Values.simulator.recipient }}
   shellToUse: {{ .Values.simulator.shellToUse }}
+  slackMode: {{ .Values.simulator.slackMode }}
   slack: https://hooks.slack.com/services/{{ .Values.global.cronus_simulator_slack }}
   timeWaitInterval: {{ .Values.simulator.timeWaitInterval }}
   remote: {{ .Values.simulator.remote }}
-  remoteRegion: {{ .Values.simulator.remoteRegion }}
-  remotePassword: {{ .Values.simulator.remotePassword }}
+  remoteRegion: {{ .Values.config.keystone.region }}
+  remotePassword: {{ .Values.global.cronus_service_password }}
   cronus: {{ .Values.simulator.cronus }}
   nebula: {{ .Values.simulator.nebula }}
   delayTimeSeconds: {{ .Values.simulator.delayTimeSeconds }}
+  pushgatewayUrl: {{ .Values.exporter.pushgatewayUrl }}
   keystone:
       authUrl: {{ .Values.config.keystone.authUrl }}
       endpointType: {{ .Values.config.keystone.endpointType }}
@@ -19,7 +21,5 @@ simulator:
       region: {{ .Values.config.keystone.region }}
       userDomainName: {{ .Values.config.keystone.userDomainName }}
       username: {{ .Values.config.keystone.username }}
-      {{- if .Values.global.cronus_service_password }}
       password: {{ .Values.global.cronus_service_password }}
-      {{- end }}
 {{- end }}
