@@ -8,6 +8,10 @@ metadata:
     chart: "{{ .Chart.Name }}"
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9479"
+    prometheus.io/targets: "infra-collector"
 spec:
   selector:
     matchLabels:
@@ -27,7 +31,7 @@ spec:
     spec:
       containers:
       - name: filebeat
-        image: keppel.eu-de-1.cloud.sap/ccloud/elastiflow-filebeat:202103101730
+        image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.filebeat.image variable missing" .Values.filebeat.image }}:{{ required ".Values.filebeat.imageTag variable missing" .Values.filebeat.imageTag }}
         ports:
           - containerPort: 2055
             protocol: UDP
@@ -56,5 +60,4 @@ spec:
         ports:
           - name: metrics
             containerPort: 9479
-  
 {{- end }}
