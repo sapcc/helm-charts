@@ -57,6 +57,7 @@ frontend api-http
   {{- end }}
 
 backend swift_proxy
-  server swift-svc {{ $upstream }}:8080
+  option http-server-close
 
+  server swift-svc {{ $upstream }}:8080
 {{ end }}
