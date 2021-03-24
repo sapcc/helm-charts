@@ -2,6 +2,7 @@
 simulator:
   cronuscli: {{ .Values.simulator.cronuscli }}
   recipient: {{ .Values.simulator.recipient }}
+  sender: {{ .Values.simulator.sender }}
   shellToUse: {{ .Values.simulator.shellToUse }}
   slackMode: {{ .Values.simulator.slackMode }}
   slack: https://hooks.slack.com/services/{{ .Values.global.cronus_simulator_slack }}
