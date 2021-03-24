@@ -89,8 +89,12 @@ groups:
         This could hint at the manifests or their metadata being corrupted.
         The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM manifests`.
 
+  # This alert is less sensitive than the other "janitor task is running behind
+  # schedule" checks, since this task quite often gets stuck on Docker Hub's
+  # restrictive rate limits, and those short-lived alerts just generate useless
+  # noise.
   - alert: OpenstackKeppelNotSyncingReplicatedManifests
-    expr: keppel_replicated_repos_count > 0 and time() - keppel_replicated_repos_min_next_manifest_sync_at > 600
+    expr: keppel_replicated_repos_count > 0 and time() - keppel_replicated_repos_min_next_manifest_sync_at > 3600
     for: 5m
     labels:
       context: janitor
