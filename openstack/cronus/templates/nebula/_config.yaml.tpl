@@ -1,8 +1,18 @@
 {{- if .Values.nebula.enabled -}}
 nebula:
   cacheSize: {{ .Values.nebula.cacheSize }}
+{{- if .Values.config.retry }}
+  retry:
+{{- if .Values.config.retry.maxConnectionRetries }}
+    maxConnectionRetries: {{ .Values.config.retry.maxConnectionRetries }}
+{{- end }}
+{{- if .Values.config.retry.retryInterval }}
+    retryInterval: {{ .Values.config.retry.retryInterval }}
+{{- end }}
+{{- end }}
   listenAddr:
     http: :{{ .Values.nebula.http }} # default :1080
+    shutdownTimeout: {{ .Values.config.accountStatusTimeout }}s
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}
@@ -54,7 +64,7 @@ nebula:
     useCaseDescription: {{ .Values.config.useCaseDescription }}
     websiteURL: {{ .Values.config.websiteURL }}
   accountStatusPollDelay: {{ .Values.config.accountStatusPollDelay }}
-  accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}
+  accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}s
   debug: {{ .Values.nebula.debug }}
   policy:
 {{- range $key, $value := .Values.config.nebulaPolicy }}

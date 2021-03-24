@@ -2,7 +2,7 @@ credentials:
   default:
     username: {{ .Values.network_generic_ssh_exporter.user }}
     password: {{ .Values.network_generic_ssh_exporter.password }}
-    
+
 metrics:
   nat_static:
     regex: >-
@@ -43,6 +43,13 @@ metrics:
   redundancy_state:
     regex: "My Role: ([A-Z]+)"
     value: $1
+    map_values:
+      - regex: INIT
+        value: 1
+      - regex: STANDBY
+        value: 2
+      - regex: ACTIVE
+        value: 3
     description: Displays the current role in the redundancy group
     metric_type_name: string
     command: show redundancy application group 1 | inc My Role
@@ -65,11 +72,17 @@ metrics:
     timeout_secs: 5
          
   redundancy_send_queue:
-    regex: "0x(.)"
     value: $1
-    description: Displays the most significant bit of the send queue possibly indicating a overflow
+    regex: >-
+      \s+tx_seq_flags\s+0x(.)\w+
+    map_values:
+      - regex: "\\d"
+        value: 0
+      - regex: .*
+        value: 1
+    description: Displays if the most significant bit is larger 0x9 or not
     metric_type_name: string
-    command: "show plat hard qfp act system rg 1 stat | incl tx_seq_flags"
+    command: "show platform hardware qfp active system rg 1 stat | incl tx_seq_flags"
     timeout_secs: 5
  
   openstack_vrf_count_total:
@@ -120,59 +133,83 @@ metrics:
     command: show ip access-lists | count Extended IP access list (NAT|PBR)-
     timeout_secs: 5
   
-  qfp_punt_arp_received:
+  qfp_punt_inject_received:
     regex: >-
-      \s+\d{3}\s+ARP request or response\s+(\d+)\s+(\d+)
-    value: $1
-    description: Counter of the number of ARP packages received
-    metric_type_name: counter
-    command: show platform hardware qfp active infrastructure punt statistics type per-cause | include ^  007.+ARP
-    timeout_secs: 3
-
-  qfp_punt_arp_transmitted:
-    regex: >-
-      \s+\d{3}\s+ARP request or response\s+(\d+)\s+(\d+)
-    value: $2
-    description: Counter of the number of ARP packages received
-    metric_type_name: counter
-    command: show platform hardware qfp active infrastructure punt statistics type per-cause | include ^  007.+ARP
-    timeout_secs: 3
-
-  software_punt_polcier_arp_conform_normal:
-    regex: >-
-      \s+\d+\s+ARP request or response\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)
-    value: $3
-    description: Counter of punted, conforming ARP packets
-    metric_type_name: counter
-    command: show platform software punt-policer | include \ +7\ +ARP
-    timeout_secs: 3
-
-  software_punt_polcier_arp_conform_high:
-    regex: >-
-      \s+\d+\s+ARP request or response\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)
+      ^\s{2}(\d+)\s{2,}((\S|\s)+?)\s{2,}(\d+)\s{2,}(\d+)\s*?$
     value: $4
-    description: Counter of punted, bursted ARP packets
+    multi_value: true
+    labels:
+      counter_id: $1
+      cause_name: $2
+    description: Counter of the number of QFP punts and injects
     metric_type_name: counter
-    command: show platform software punt-policer | include \ +7\ +ARP
+    command: show platform hardware qfp active infrastructure punt statistics type per-cause
     timeout_secs: 3
 
-  software_punt_polcier_arp_drop_normal:
+  qfp_punt_inject_transmitted:
     regex: >-
-      \s+\d+\s+ARP request or response\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)
+      ^\s{2}(\d+)\s{2,}((\S|\s)+?)\s{2,}(\d+)\s{2,}(\d+)\s*?$
     value: $5
-    description: Counter of punted, dropped normal ARP packets
+    multi_value: true
+    labels:
+      counter_id: $1
+      cause_name: $2
+    description: Counter of the number of QFP punts and injects
     metric_type_name: counter
-    command: show platform software punt-policer | include \ +7\ +ARP
+    command: show platform hardware qfp active infrastructure punt statistics type per-cause
     timeout_secs: 3
 
-  software_punt_polcier_arp_drop_high:
+  software_punt_polcier_conform_normal:
     regex: >-
-      \s+\d+\s+ARP request or response\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)
+      ^\s{0,3}(\d+)\s{2,}((\S|\s)+?)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\w+)\s{2,}(\w+)\s*$
     value: $6
-    description: Counter of punted, dropped high ARP packets
+    multi_value: true
+    labels:
+      cause: $1
+      cause_text: $2
+    description: Counter of punted, conforming packets
     metric_type_name: counter
-    command: show platform software punt-policer | include \ +7\ +ARP
-    timeout_secs: 3
+    command: show platform software punt-policer
+    timeout_secs: 10
+
+  software_punt_polcier_conform_high:
+    regex: >-
+      ^\s{0,3}(\d+)\s{2,}((\S|\s)+?)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\w+)\s{2,}(\w+)\s*$
+    value: $7
+    multi_value: true
+    labels:
+      cause: $1
+      cause_text: $2
+    description: Counter of punted, conforming bursted (high) packets
+    metric_type_name: counter
+    command: show platform software punt-policer
+    timeout_secs: 10
+
+  software_punt_polcier_drop_normal:
+    regex: >-
+      ^\s{0,3}(\d+)\s{2,}((\S|\s)+?)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\w+)\s{2,}(\w+)\s*$
+    value: $8
+    multi_value: true
+    labels:
+      cause: $1
+      cause_text: $2
+    description: Counter of punted, dropped packets exceding normal treshhold
+    metric_type_name: counter
+    command: show platform software punt-policer
+    timeout_secs: 10
+
+  software_punt_polcier_drop_high:
+    regex: >-
+      ^\s{0,3}(\d+)\s{2,}((\S|\s)+?)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\d+)\s{2,}(\w+)\s{2,}(\w+)\s*$
+    value: $9
+    multi_value: true
+    labels:
+      cause: $1
+      cause_text: $2
+    description: Counter of punted, dropped packets exceding high treshhold
+    metric_type_name: counter
+    command: show platform software punt-policer
+    timeout_secs: 10
 
   qfp_classification_ce_data_nat_1001_classes:
     regex: >-
@@ -192,11 +229,84 @@ metrics:
     command: show platform hardware qfp active classification class-group-manager class-Group client nat 1001 | include ^class-group
     timeout_secs: 5
 
+  qfp_nat_datapath_stats:
+    regex: >-
+      Subcode #(\d+)\s+(\S+)\s+(\d+)
+    value: $3
+    multi_value: true
+    labels:
+      subcode: $1
+      reason: $2
+    description: Drop subcodes and counters for QFP NAT processing
+    metric_type_name: counter
+    command: show platform hardware qfp active feature nat datapath stats
+    timeout_secs: 10
+
+  qfp_nat_datapath_gatein:
+    regex: >-
+      (\w+) (\d+)
+    value: $2
+    multi_value: true
+    labels:
+      type: $1
+    description: Distribution of entries amoing the NAT Gatekeepers entries
+    metric_type_name: gauge
+    command: show platform hardware qfp active feature nat datapath gatein activity
+    timeout_secs: 3
+  
+  qfp_nat_datapath_gateout:
+    regex: >-
+      (\w+) (\d+)
+    value: $2
+    multi_value: true
+    labels:
+      type: $1
+    description: Distribution of entries amoing the NAT Gatekeepers entries
+    metric_type_name: gauge
+    command: show platform hardware qfp active feature nat datapath gateout activity
+    timeout_secs: 3
+  
+  tcam_total:
+    regex: >-
+      ^Total.*?(regions|used cell entries|free cell entries) +: (\d+)
+    value: $2
+    multi_value: true
+    labels:
+      type: $1
+    description: Usage of TCAM memory
+    metric_type_name: gauge
+    command: show platform hardware qfp active tcam resource-manager usage | begin Total TCAM Cell Usage Information
+    timeout_secs: 3
+
+  bgp_sessions:
+    regex: >-
+      ^BGP neighbor is (\S+),(\s+vrf (\S+),)?\s+remote AS (\d+),.*?((\w+) link).*?\n\s{2,}BGP state = (\w+),.*?$
+    multi_value: true
+    value: $7
+    labels:
+      vrf: $3
+      peer_ip: $1
+      remote_as: $4
+      peer_type: $6
+      local_as: $4
+    map_values:
+      - regex: Established
+        value: 8
+      - regex: Idle
+        value: 2
+      - regex: .*
+        value: 1
+    description: Indicates if a session in a VRF is established or not
+    metric_type_name: string
+    command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state)
+    timeout_secs: 4
+
   nx_ntp_configured:
     regex: >-
-      ^ntp server (\S+) .+?$
+      ^ntp server (\S+).*?$
     multi_value: true
-    value: $1
+    labels:
+      ntp_configured: $1
     description: Configured DNS Severs by dns name.
     metric_type_name: string
     command: show running-config ntp | include "ntp server"
@@ -204,15 +314,18 @@ metrics:
 
   xe_ntp_configured:
     regex: >-
-      ^\s+ntp server vrf \S+ (\S+) .+?$
+      ^\s+ntp server vrf \S+ (\S+).*?$
     multi_value: true
-    value: $1
+    labels:
+      ntp_configured: $1
     description: Configured DNS Severs by dns name.
     metric_type_name: string
     command: show ntp config
     timeout_secs: 5
 
 batches:
+  test:
+    - redundancy_send_queue
   neutron-router:
     - nat_dynamic
     - nat_static
@@ -226,21 +339,25 @@ batches:
     - openstack_route_map_count
     - openstack_access_list_count
     - bd_count_total
-    - qfp_punt_arp_received
-    - qfp_punt_arp_transmitted
-    - software_punt_polcier_arp_conform_normal
-    - software_punt_polcier_arp_conform_high
-    - software_punt_polcier_arp_drop_normal
-    - software_punt_polcier_arp_drop_high
+    - qfp_punt_inject_received
+    - qfp_punt_inject_transmitted
+    - software_punt_polcier_conform_normal
+    - software_punt_polcier_conform_high
+    - software_punt_polcier_drop_normal
+    - software_punt_polcier_drop_high
     - qfp_classification_ce_data_nat_1001_classes
     - qfp_classification_client_nat_1001_classes
+    - qfp_nat_datapath_stats
+    - qfp_nat_datapath_gatein
+    - qfp_nat_datapath_gateout
+    - bgp_sessions
+    - tcam_total
 
   cisco-nx-os_core-router:
     - nx_ntp_configured
 
   cisco-ios-xe_core-router:
     - xe_ntp_configured
-
 
 devices:
   cisco-ios-xe:

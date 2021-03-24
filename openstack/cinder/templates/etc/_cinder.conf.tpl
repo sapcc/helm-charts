@@ -26,7 +26,7 @@ api_paste_config = /etc/cinder/api-paste.ini
 
 auth_strategy = keystone
 
-rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
+rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 600 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
 {{- if not .Values.api.use_uwsgi }}

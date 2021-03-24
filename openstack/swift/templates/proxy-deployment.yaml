@@ -31,10 +31,14 @@ spec:
         component: swift-proxy-{{ $cluster_id }}
         from: deployment
         os-cluster: {{ $cluster_id }}
+        {{- if $.Values.for_service_deployment }}
+        for-service: swift-proxy-{{ $cluster_id }}
+        {{- end }}
       annotations:
         checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
-        checksum/swift.bin: {{ include "swift/templates/bin-configmap.yaml" $ | sha256sum }}
+        checksum/nginx.bin: {{ include "swift/templates/nginx-bin-configmap.yaml" $ | sha256sum }}
+        checksum/nginx-cluster.etc: {{ include "swift/templates/etc/nginx-cluster-configmap.yaml" $ | sha256sum }}
         {{- include "swift_ring_annotations" $ | indent 8 }}
         {{- if $.Values.health_exporter }}
         # Prometheus annotations on pod level without port
