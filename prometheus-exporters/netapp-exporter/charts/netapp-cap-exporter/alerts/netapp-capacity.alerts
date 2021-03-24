@@ -1,8 +1,8 @@
 groups:
   - name: netapp-capacity.alerts
     rules:
-      - alert: NetappFilerScrapeFailure
-        expr: increase(netapp_filer_scrape_failure{status="401"}[15m]) > 0
+      - alert: NetappFilerExporterAuthenticationError
+        expr: increase(netapp_filer_authentication_error[15m]) > 0
         for: 15m
         labels:
           severity: info
@@ -12,10 +12,10 @@ groups:
           no_alert_on_absence: "true"
           playbook: 'docs/support/playbook/storage/filer_inaccessible.html'
         annotations:
-          description: 'Netapp filer {{ $labels.filer }} '
-          summary: Netapp exporter fails to authenticate against filer
+          summary:  'Authentication failed with Netapp filer'
+          description: '{{ $labels.host }}'
 
-      - alert: NetappFilerDNSError
+      - alert: NetappFilerExporterDNSError
         expr: increase(netapp_filer_dns_error[15m]) > 0
         for: 15m
         labels:
@@ -25,11 +25,11 @@ groups:
           context: exporter-health
           no_alert_on_absence: "true"
         annotations:
-          description: 'Netapp filer {{ $labels.filer }} '
-          summary: Netapp exporter fails with DNS error
+          summary: 'Hostname can not be resolved'
+          description: '{{ $labels.host }}'
 
-      - alert: NetappFilerTimeoutError
-        expr: increase(netapp_filer_timeout_error[15m]) > 0
+      - alert: NetappFilerExporterUnknownError
+        expr: increase(netapp_filer_unknown_error[15m]) > 0
         for: 15m
         labels:
           severity: info
@@ -38,8 +38,8 @@ groups:
           context: exporter-health
           no_alert_on_absence: "true"
         annotations:
-          description: 'Netapp filer {{ $labels.filer }} '
-          summary: Netapp exporter check timeout ({{ $labels.timeout }})
+          summary: 'Netapp exporter unknown error while checking'
+          description: '{{ $labels.host }}'
 
       - alert: ManilaStorageAggregateHighUsage
         expr: max_over_time(netapp_aggregate_used_percentage{app=~".*manila", availability_zone!="eu-de-2a"}[2h]) > 75
