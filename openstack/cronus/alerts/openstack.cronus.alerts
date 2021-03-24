@@ -1,27 +1,27 @@
 groups:
-- name: cronus.alert
+- name: cronus.alerts
   rules:
   - alert: cronus.sendemail
     expr: cronus_simulator_event_test_passed{action="send-email"} == 0
     for: 5m
     labels:
       meta: Cronus - send emails fails in {{ $labels.region }} with message {{ $labels.message }}
-      service: prometheus
+      service: '{{ $labels.component }}'
       severity: critical
       tier: monitor
       playbook: docs/support/alert/playbook/cronus
     annotations:
       description: Cronus - send emails fails in {{ $labels.region }} with message {{ $labels.message }}
       summary: See logs https://sentry.{{ $labels.region }}.cloud.sap/monsoon/cronus/?query=requestID:{{ $labels.request_id }}
-- name: nebula.reconcile
+- name: nebula.alerts
   rules:
-  - alert: cronus.sendemail
+  - alert: nebula.reconcile
     expr: cronus_simulator_event_test_passed{action="reconcile"} == 0
-    for: 5m
+    for: 10m
     labels:
       meta: Nebula - reconcile account fails in {{ $labels.region }} with message {{ $labels.message }}
-      service: prometheus
-      severity: critical
+      service: '{{ $labels.component }}'
+      severity: warning
       tier: monitor
       playbook: docs/support/alert/playbook/cronus
     annotations:
