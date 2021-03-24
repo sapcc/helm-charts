@@ -38,10 +38,12 @@ listen stats
 frontend api
   bind *:443 ssl crt /usr/local/etc/haproxy/ssl/tls.pem
 
+  acl s3 hdr_beg(x-amz-date) -m found
   capture request header User-Agent len 64
   capture response header X-Openstack-Request-Id len 64
 
   default_backend swift_proxy
+  use_backend swift_proxy_s3 if s3
 
 frontend api-http
   bind *:80
@@ -60,4 +62,10 @@ backend swift_proxy
   option http-server-close
 
   server swift-svc {{ $upstream }}:8080
+
+backend swift_proxy_s3
+  option http-server-close
+
+  server swift-svc {{ $upstream }}:8080
+
 {{ end }}
