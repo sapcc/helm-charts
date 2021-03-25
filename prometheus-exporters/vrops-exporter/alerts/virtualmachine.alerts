@@ -18,17 +18,3 @@ groups:
     annotations:
       description: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       summary: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-  - alert: VROpsDiskpaceUsageCritical
-    expr: >
-      vrops_virtualmachine_database_disk_usage_percent{virtualmachine=~"vrops-vc.*"} > 90
-    for: 20m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      context: "vrops-exporter"
-      meta: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
-      playbook: docs/devops/alert/vcenter/
-    annotations:
-      description: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
-      summary: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
