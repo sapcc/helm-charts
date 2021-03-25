@@ -58,6 +58,10 @@ frontend api-http
   use_backend swift_proxy if {{ $allowed }}
   {{- end }}
 
+# We have two separate backends with identical configuration, in order to
+# be able to distinguish S3-API requests from Swift-API requests in Prometheus
+# metrics. (The backend name shows up as a metric label.)
+
 backend swift_proxy
   option http-server-close
 
