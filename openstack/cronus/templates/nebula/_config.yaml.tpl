@@ -63,8 +63,10 @@ nebula:
     verifyEmailSecret: {{ .Values.config.verifyEmailSecret }}
     useCaseDescription: {{ .Values.config.useCaseDescription }}
     websiteURL: {{ .Values.config.websiteURL }}
-{{- range $key, $value := .Values.nebula.sesAdditionalContactEmails }}
+{{- if .Values.config.sesAdditionalContactEmails }}
+{{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
     - {{ $value }}
+{{- end }}
 {{- end }}
   accountStatusPollDelay: {{ .Values.config.accountStatusPollDelay }}
   accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}s
