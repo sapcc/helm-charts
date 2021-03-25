@@ -17,7 +17,7 @@ groups:
         summary: "Neutron Router  `{{ $labels.name }}` is reporting ARP punt policer drops"
         
     - alert: NetworkAsrNatSpike
-      expr: increase((ssh_redundancy_send_fails_delete + ignoring (redundancy_send_queue) ssh_redundancy_send_queue{redundancy_send_queue!~"[0-9]"})[5m:]) > 0
+      expr: increase(((ssh_redundancy_send_queue ==bool 1 ) * ssh_redundancy_send_fails_delete)[5m:]) > 0
       for: 5m
       labels:
         severity: critical
@@ -63,7 +63,7 @@ groups:
 
     - alert: NetworkAsrRedundancyGroupBothDevicesDown
       expr: >-
-        sum(label_replace(ssh_redundancy_state{redundancy_state="ACTIVE"}, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]{2}).") ==bool 0) by (cluster) == 0
+        sum(label_replace(ssh_redundancy_state, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]{2}).") ==bool 3) by (cluster) == 0
       for: 5m
       labels:
         severity: critical
@@ -79,7 +79,7 @@ groups:
 
     - alert: NetworkAsrRedundancyGroupBothDevicesUp
      expr: >-
-        sum(label_replace(ssh_redundancy_state{redundancy_state="ACTIVE"}, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]{2}).") ==bool 0) by (cluster) == 2
+        sum(label_replace(ssh_redundancy_state, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]{2}).") ==bool 3) by (cluster)  == 2
       for: 5m
       labels:
         severity: critical
@@ -95,7 +95,8 @@ groups:
 
     - alert: NetworkAsrDynamicNatStopWorking
       expr: >-
-        (increase(ssh_qfp_nat_datapath_stats[5m]) > 0) + ignoring(subcode, reason) (abs(ssh_qfp_classification_ce_data_nat_1001_classes - ssh_qfp_classification_client_nat_1001_classes) > 0)
+        (increase(ssh_qfp_nat_datapath_stats{subcode=~"(18|30)"}[5m]) > 0)
+        AND ignoring(subcode, reason) (abs(ssh_qfp_classification_ce_data_nat_1001_classes - ssh_qfp_classification_client_nat_1001_classes) > 0)
       for: 0m
       labels:
         severity: critical
