@@ -8,11 +8,17 @@
 worker:
   nameOverride: ""
   name: concourse-worker
-
+  env:
+  # default is 250
+  - name: CONCOURSE_GARDEN_MAX_CONTAINERS
+    value: "500"
+  # default is 10.254.0.0/22
+  - name: CONCOURSE_GARDEN_NETWORK_POOL
+    value: "10.254.0.0/16"
 concourse:
   image: concourse/concourse
   imageTag: "5.4.1"
-  pullPolicy: IfNotPresent
+  imagePullPolicy: IfNotPresent
 
   concourse:
     web:
@@ -155,13 +161,13 @@ concourse:
     create: true
 
 webhook-broadcaster:
-  image: sapcc/concourse-webhook-broadcaster
+  image: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/sapcc/concourse-webhook-broadcaster
   imageTag: "0.6.3"
   pullPolicy: IfNotPresent
 
 cleanup:
   enabled: false
-  image: sapcc/concourse-ci-cleanup
+  image: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/sapcc/concourse-ci-cleanup
   imageTag: "0.1.1"
   pullPolicy: IfNotPresent
   # worker_prefix:
@@ -191,7 +197,7 @@ gitResourceProxy:
   timeout: 60s
   enabled: true
   debug: true
-  image: sapcc/concourse-git-resource-proxy
+  image: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/sapcc/concourse-git-resource-proxy
   imageTag: 0.5.0
   imagePullPolicy: IfNotPresent
 

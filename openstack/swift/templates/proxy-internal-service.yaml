@@ -1,0 +1,17 @@
+{{- range $cluster_id, $cluster := .Values.clusters }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: swift-proxy-internal-{{ $cluster_id }}
+  labels:
+    release: "{{ $.Release.Name }}"
+    os-cluster: {{ $cluster_id }}
+spec:
+  selector:
+    component: swift-proxy-{{ $cluster_id }}
+  ports:
+    - name: proxy
+      port: 8080
+      targetPort: 8080
+---
+{{- end }}

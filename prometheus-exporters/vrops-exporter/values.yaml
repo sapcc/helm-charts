@@ -7,7 +7,14 @@ vrops:
     tag: DEFINED-IN-REGION-SECRETS
     port_number: 80
     sleep: 60
-    timeout: 295
+    timeout: 120
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
   inventory_exporter:
     port_number: 9161
   port_number: 9160
@@ -24,7 +31,6 @@ vrops:
     default:
       name: default
       enabled: false
-      splitted: false
       collectors: []
       resources:
         limits:
@@ -36,7 +42,6 @@ vrops:
     host:
       name: host
       enabled: false
-      splitted: false
       collectors:
         - HostSystemStatsCollector
         - HostSystemPropertiesCollector
@@ -50,10 +55,8 @@ vrops:
     vm-memory:
       name: vm-memory
       enabled: false
-      splitted: true
       collectors:
-        - VMStatsCollector
-      rubric: memory
+        - VMStatsMemoryCollector
       resources:
         limits:
           memory: 300Mi
@@ -64,10 +67,8 @@ vrops:
     vm-cpu:
       name: vm-cpu
       enabled: false
-      splitted: true
       collectors:
-        - VMStatsCollector
-      rubric: cpu
+        - VMStatsCPUCollector
       resources:
         limits:
           memory: 300Mi
@@ -78,10 +79,8 @@ vrops:
     vm-network:
       name: vm-network
       enabled: false
-      splitted: true
       collectors:
-        - VMStatsCollector
-      rubric: network
+        - VMStatsNetworkCollector
       resources:
         limits:
           memory: 300Mi
@@ -92,10 +91,8 @@ vrops:
     vm-virtualdisk:
       name: vm-virtualdisk
       enabled: false
-      splitted: true
       collectors:
-        - VMStatsCollector
-      rubric: virtualdisk
+        - VMStatsVirtualDiskCollector
       resources:
         limits:
           memory: 300Mi
@@ -106,11 +103,20 @@ vrops:
     vm-other:
       name: vm-other
       enabled: false
-      splitted: true
       collectors:
-        - VMStatsCollector
+        - VMStatsDefaultCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-properties:
+      name: vm-properties
+      enabled: false
+      collectors:
         - VMPropertiesCollector
-      rubric: other
       resources:
         limits:
           memory: 300Mi

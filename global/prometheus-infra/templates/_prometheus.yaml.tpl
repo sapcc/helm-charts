@@ -84,6 +84,9 @@
       - '{__name__=~"^thousandeyes_test_html_avg_latency_milliseconds"}'
       - '{__name__=~"^thousandeyes_requests_total"}'
       - '{__name__=~"^thousandeyes_requests_fails"}'
+      - '{__name__=~"^ssh_nx_ntp_configured"}'
+      - '{__name__=~"^ssh_nx_ntp_configured"}'
+      - '{__name__=~"^ssh_redundancy_state"}'
       - '{__name__=~"^fluentd_.+"}'
       - '{__name__=~"^elasticsearch_cluster_health_.+"}'
       - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
@@ -91,6 +94,7 @@
       - '{__name__=~"^logstash_node_queue_.+"}'
       - '{__name__=~"^logstash_node_pipeline_.+"}'
       - '{__name__=~"^vcsa_service_status"}'
+      - '{__name__=~"^windows_updates_.+"}'
 
 
   relabel_configs:
@@ -138,6 +142,8 @@
   params:
     'match[]':
       - '{__name__=~"^vrops_api_response"}'
+      - '{__name__=~"^vrops_inventory_collection_time_seconds"}'
+      - '{__name__=~"^vrops_inventory_iteration_total"}'
       - '{__name__=~"^vrops_vcenter_cpu_used_percent"}'
       - '{__name__=~"^vrops_vcenter_memory_used_percent"}'
       - '{__name__=~"^vrops_vcenter_diskspace_total_gigabytes"}'

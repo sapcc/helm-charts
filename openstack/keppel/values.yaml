@@ -46,14 +46,11 @@ keppel:
     hostname: "" # set to non-empty value to enable
     auth_preshared_key: DEFINED_IN_VALUES_FILE
 
-# Dynomite (the interregional distributed Redis cluster) is used for tracking
-# account name claims, using Keppel's "redis" federation driver.
-dynomite:
-  hostname: DEFINED_IN_VALUES_FILE
-  port:     8102
-  password: DEFINED_IN_VALUES_FILE
-  database: 0
-  prefix:   keppel # prepended to all keys in Redis, to disambiguate clusters (e.g. QA vs. Prod)
+# This refers to the region holding the shared Swift container where the
+# "swift" federation driver tracks account name claims.
+federation:
+  leader_region:    DEFINED_IN_VALUES_FILE
+  service_password: DEFINED_IN_VALUES_FILE
 
 # Redis is used for caching user's Keystone tokens and for tracking the
 # consumption of rate limits. Both usecases are ephemeral, so we don't need
@@ -116,7 +113,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled blob mount deletion, or 0 if no blob mounts are currently marked for deletion"
     keppel_repos:
-      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(next_blob_mount_sweep_at)), 0) AS min_next_blob_mount_sweep_at FROM repos'
+      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(next_blob_mount_sweep_at)), 0) AS min_next_blob_mount_sweep_at, COALESCE(EXTRACT(epoch FROM MIN(next_gc_at)), 0) AS min_next_gc_at FROM repos'
       metrics:
         - count:
             usage: "GAUGE"
@@ -124,6 +121,9 @@ pgmetrics:
         - min_next_blob_mount_sweep_at:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled blob mount sweep, or 0 if no repos have ever been sweeped"
+        - min_next_gc_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of next scheduled image GC, or 0 if no repos have ever been garbage-collected"
     keppel_replicated_repos:
       query: "SELECT COUNT(r.id) AS count, COALESCE(EXTRACT(epoch FROM MIN(r.next_manifest_sync_at)), 0) AS min_next_manifest_sync_at FROM repos r JOIN accounts a ON r.account_name = a.name WHERE a.upstream_peer_hostname != ''"
       metrics:

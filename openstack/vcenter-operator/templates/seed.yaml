@@ -11,7 +11,7 @@ spec:
     users:
     - name: {{ .Values.variables.os_username }}{{ .Values.global.user_suffix }}
       description: Vcenter Operator
-      password: {{ tuple . .Values.variables.os_username | include "identity.password_for_user" | quote }}
+      password: {{ derivePassword 1 "long" .Values.global.vcenter_operator_master_password .Values.variables.os_username (include "keystone_api_endpoint_host_public" .) | quote }}
   - name: {{ .Values.variables.os_project_domain_name }}
     projects:
     - name: {{ .Values.variables.os_project_name }}

@@ -1,18 +1,20 @@
-replicaCount: 1
+global:
+  region: RegionOne
+  tld: openstack.local
 cronus:
   enabled: true
   cacheSize: 256
   http: 5000
   smtp: 1025
+  listenProxyProtocol: false
   debug: true
   tls: tls-secret
   image:
     name: cronus-repository
     pullPolicy: IfNotPresent
     tag: latest
-    imagePullSecrets: []
   statefulSet:
-    enabled: true
+    enabled: false
     podManagementPolicy: OrderedReady
     annotations: {}
     labels: {}
@@ -21,7 +23,32 @@ cronus:
       labels: {}
       servicePort: 80
   updateStrategy: RollingUpdate
-  replicas: 1
+  terminationGracePeriod: 60
+  affinity:
+    # don't co-locate cronus replicas on the same node
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchExpressions:
+          - key: name
+            operator: In
+            values:
+              - cronus
+              - usage
+          - key: instance
+            operator: In
+            values:
+              - cronus
+  replicas: 3
+  # all below can be used only with a deployment style
+  maxSurge: 1
+  maxUnavailable: 0
+  usage:
+    replicas: 1
+    maxSurge: 1
+    maxUnavailable: 0
+
 nebula:
   enabled: true
   cacheSize: 512
@@ -31,7 +58,6 @@ nebula:
     name: nebula-repository
     pullPolicy: IfNotPresent
     tag: latest
-    imagePullSecrets: []
   statefulSet:
     enabled: true
     podManagementPolicy: OrderedReady
@@ -104,7 +130,7 @@ config:
   billingCacheTTL: 24h
   barbicanCacheTTL: 15m
   technicalResponsible: technical-responsible@example
-  accountStatusTimeout: 5m
+  accountStatusTimeout: 300 # 5m
   accountStatusPollDelay: 10s
   verifyEmailDomain: example.com
   verifyEmailSecret: domainkey
@@ -154,8 +180,11 @@ service:
 # nginx values
 ingress-nginx:
   tcp:
-    465: ""
+    465: cronus/cronus:1025
   controller:
+    # pod annotations are needed to recreate nginx pods on template update
+    podAnnotations:
+      recreate: enableRealIP
     containerPort:
       http: 80
       https: 443
@@ -169,10 +198,6 @@ ingress-nginx:
       targetPorts:
         http: http
         https: https
-      nodePorts:
-        http: ""
-        https: ""
-        465-tcp: ""
     ingressClass: cronus-nginx
     admissionWebhooks:
       enabled: false
@@ -187,3 +212,59 @@ ingress-nginx:
     - name: tls-secret-cronus
       secret:
         secretName: tls-secret-cronus
+    affinity:
+      # don't co-locate ingress controller replicas on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - controller
+            - key: app.kubernetes.io/instance
+              operator: In
+              values:
+                - cronus
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - ingress-nginx
+
+simulator:
+  enabled: true
+  image:
+    name: cronus-exporter-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  statefulSet:
+    enabled: true
+    podManagementPolicy: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  replicas: 1
+  nebula: 
+  cronus:
+  remote: 
+  remoteRegion:
+  remotePassword:
+  slack: slack-url
+  recipient: recipient-email
+  cronuscli: cronuscli
+  timeWaitInterval: 60
+  shellToUse: bash
+  projectDomainName: project-domain
+  projectName: project-name
+
+exporter:
+  duration: "10m"
+  period: 10
+  loopInterval: 10
+  pushgatewayUrl: http://localhost:9091

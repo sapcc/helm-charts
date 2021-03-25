@@ -1,0 +1,23 @@
+groups:
+- name: elkquery.alerts
+  rules:
+  - alert: ElkEsQueryExporterMissing
+    expr: up{job=~"es-query-exporter"} == 0
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elk_kibana_issues.html
+    annotations:
+      description: 'es-query-exporter in {{ $labels.region }} is missing.'
+      summary: 'es-query-exporter in {{ $labels.region }} is missing.'
+  - alert: OctobusQueryExporterError
+    expr: elasticsearch_octobus_exporter_error_hit
+    labels:
+      severity: warning
+      tier: monitor
+    annotations:
+      description: 'elastic-query-exporter in {{ $labels.region }} had an error.'
+      summary: 'elastic-query-exporter in {{ $labels.region }} had an error.'

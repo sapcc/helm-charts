@@ -6,15 +6,13 @@ metadata:
   labels:
     release: "{{ $.Release.Name }}"
     os-cluster: {{ $cluster_id }}
-  annotations:
-    {{- include "swift_prometheus_annotations" $ | indent 4 }}
 spec:
   {{- if $.Values.external_traffic_policy_local }}
   type: NodePort
   externalTrafficPolicy: Local
   {{- end }}
   selector:
-    component: swift-proxy-{{ $cluster_id }}
+    for-service: swift-proxy-{{ $cluster_id }}
   ports:
     - name: api
       port: {{ $cluster.proxy_public_port }}

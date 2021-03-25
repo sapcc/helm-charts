@@ -74,14 +74,93 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
-{{- define "swift_proxy_volumes" }}
+{{- define "swift_nginx_volumes" }}
 {{- $cluster := index . 0 }}
 - name: tls-secret
   secret:
     secretName: tls-swift-{{ $cluster }}
-- name: swift-bin
+- name: nginx-etc-cluster
   configMap:
-    name: swift-bin
+    name: nginx-etc-{{ $cluster }}
+- name: nginx-bin
+  configMap:
+    name: nginx-bin
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_nginx_containers" }}
+{{- $local    := index . 0 -}}
+{{- $cluster := index . 1 -}}
+{{- $context := index . 2 }}
+- name: nginx
+  image: {{ $context.Values.global.registryAlternateRegion }}/swift-nginx:{{ $context.Values.image_version_nginx }}
+  command:
+    - /usr/bin/dumb-init
+  args:
+    - /bin/sh
+    - /nginx-bin/nginx-start
+  env:
+    - name: DEBUG_CONTAINER
+      value: "false"
+    - name: LOCAL_NGINX
+      value: {{ $local | quote }}
+  resources:
+    # observed usage: CPU = 10m-500m, RAM = 50-100 MiB
+    requests:
+      cpu: "1000m"
+      memory: "200Mi"
+    limits:
+      cpu: "1000m"
+      memory: "200Mi"
+  volumeMounts:
+    - mountPath: /nginx-bin
+      name: nginx-bin
+    - mountPath: /nginx-etc-cluster
+      name: nginx-etc-cluster
+    - mountPath: /tls-secret
+      name: tls-secret
+  livenessProbe:
+    httpGet:
+      path: /nginx-health
+      port: 1080
+      scheme: HTTP
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /healthcheck
+      port: {{ $cluster.proxy_public_port }}
+      scheme: HTTPS
+      httpHeaders:
+        - name: Host
+          value: {{ tuple $cluster $context.Values | include "swift_endpoint_host" }}
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 5
+{{- if $context.Values.nginx_exporter }}
+- name: nginx-exporter
+  image: {{ $context.Values.global.dockerHubMirrorAlternateRegion }}/nginx/nginx-prometheus-exporter:{{ $context.Values.image_version_nginx_exporter }}
+  args:
+    - -nginx.scrape-uri
+    - http://127.0.0.1:1080/nginx_status
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "150Mi"
+    limits:
+      cpu: "100m"
+      memory: "150Mi"
+  ports:
+    - name: metrics
+      containerPort: 9113
+{{- end -}}
+{{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_proxy_volumes" }}
+{{- $cluster := index . 0 }}
+{{- tuple $cluster | include "swift_nginx_volumes" }}
 - name: swift-etc
   configMap:
     name: swift-etc
@@ -150,49 +229,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     initialDelaySeconds: 10
     timeoutSeconds: 1
     periodSeconds: 10
-- name: nginx
-  image: {{ $context.Values.global.registryAlternateRegion }}/swift-nginx:{{ $context.Values.image_version_nginx }}
-  command:
-    - /usr/bin/dumb-init
-  args:
-    - /bin/sh
-    - /swift-bin/nginx-start
-  resources:
-    # observed usage: CPU = 10m-500m, RAM = 50-100 MiB
-    requests:
-      cpu: "1000m"
-      memory: "200Mi"
-    limits:
-      cpu: "1000m"
-      memory: "200Mi"
-  volumeMounts:
-    - mountPath: /swift-bin
-      name: swift-bin
-    - mountPath: /swift-etc
-      name: swift-etc
-    - mountPath: /swift-etc-cluster
-      name: swift-etc-cluster
-    - mountPath: /tls-secret
-      name: tls-secret
-  livenessProbe:
-    httpGet:
-      path: /nginx-health
-      port: 1080
-      scheme: HTTP
-    initialDelaySeconds: 10
-    timeoutSeconds: 1
-    periodSeconds: 10
-  readinessProbe:
-    httpGet:
-      path: /healthcheck
-      port: {{ $cluster.proxy_public_port }}
-      scheme: HTTPS
-      httpHeaders:
-        - name: Host
-          value: {{ tuple $cluster $context.Values | include "swift_endpoint_host" }}
-    initialDelaySeconds: 10
-    timeoutSeconds: 1
-    periodSeconds: 5
+{{- tuple "true" $cluster $context | include "swift_nginx_containers" -}}
 {{- if $context.Values.health_exporter }}
 - name: collector
   image: {{ include "swift_image" $context }}
@@ -301,20 +338,22 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 {{- end }}
 
 {{- /**********************************************************************************/ -}}
-{{- define "swift_nginx_location" }}
-{{- $context := index . 0 }}
+{{- define "swift_nginx_location" -}}
+{{- $upstream := index . 0 -}}
+{{- $context := index . 1 }} # This comments ensures that whitespace does not appear before newline
 location / {
     # NOTE: It's imperative that the argument to proxy_pass does not
     # have a trailing slash. Swift needs to see the original request
     # URL for its domain-remap and staticweb functionalities.
-    proxy_pass        http://127.0.0.1:8080;
+    proxy_pass        http://{{ $upstream }}:8080;
+    proxy_next_upstream error timeout;
+    proxy_next_upstream_tries 3;
     proxy_set_header  Host               $host;
     proxy_set_header  X-Real_IP          $remote_addr;
     proxy_set_header  X-Forwarded-For    $proxy_add_x_forwarded_for;
     proxy_set_header  X-Forwarded-Host   $host:$server_port;
     proxy_set_header  X-Forwarded-Server $host;
     proxy_pass_header Date;
-
     # buffering must be disabled since GET response or PUT request bodies can be *very* large
     # based on http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering
     # http 1.1 must be enabled when chunked transfer encoding is used to avoid request buffering
@@ -323,13 +362,13 @@ location / {
     proxy_request_buffering off;
     # accept large PUT requests (5 GiB is the limit for a single object in Swift)
     client_max_body_size    5g;
-    proxy_send_timeout      {{ add $context.client_timeout 5 }};
-    proxy_read_timeout      {{ add $context.client_timeout 5 }};
+    proxy_send_timeout      {{ add $context.client_timeout $context.node_timeout 5 }};
+    proxy_read_timeout      {{ add $context.client_timeout $context.node_timeout 5 }};
 }
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
-{{- define "swift_nginx_ratelimit" }}
+{{- define "swift_nginx_ratelimit" -}}
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
 {{- if $cluster.rate_limit_connections }}

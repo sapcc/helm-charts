@@ -10,7 +10,11 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
-  - {{.Values.global.keystoneNamespace}}/keystone-seed
+{{- if eq .Values.global_setup true }}
+    - {{.Values.global.keystoneNamespace}}/keystone-global-seed
+{{- else }}
+    - {{.Values.global.keystoneNamespace}}/keystone-seed
+{{- end }}
 
   domains:
   - name: tempest

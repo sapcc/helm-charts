@@ -4,9 +4,9 @@
 # name: value
 
 global:
-# tld: cloud.sap
-# region: cluster
-# clusterDomain: cluster.local
+  # tld: cloud.sap
+  # region: cluster
+  # clusterDomain: cluster.local
   dbUser: keystone
   dbPassword: ""
 # registryAlternateRegion: keppel.$REGION.cloud.sap
@@ -35,8 +35,6 @@ nodeAffinity: {}
 # osprofiler
 osprofiler:
   enabled: false
-  jaeger:
-    enabled: false
 
 api:
   image: "loci-keystone"
@@ -68,12 +66,12 @@ api:
     enabled: true
     format: cadf
     opt_out:
-    # ignore all authentication events since the scope (project_id/domain_id) is missing
-    # Note: exception for *authenticate* event types: the outcome has to be added as suffix to make this work
-    # see https://github.com/openstack/keystone/blob/af4e98c770d771144463e6dd49cb4b559d48c403/keystone/notifications.py#L743
-    - identity.authenticate.success
-    - identity.authenticate.failed
-    - identity.authenticate.pending
+      # ignore all authentication events since the scope (project_id/domain_id) is missing
+      # Note: exception for *authenticate* event types: the outcome has to be added as suffix to make this work
+      # see https://github.com/openstack/keystone/blob/af4e98c770d771144463e6dd49cb4b559d48c403/keystone/notifications.py#L743
+      - identity.authenticate.success
+      - identity.authenticate.failed
+      - identity.authenticate.pending
 
   token:
     provider: fernet
@@ -96,11 +94,11 @@ api:
       0: <put-your-credential-keys-here>
 
   auth:
-  # Allowed authentication methods. (list value)
+    # Allowed authentication methods. (list value)
     methods: password,token,totp,external,oauth1,application_credential
-    password: cc_password   # CCloud password auth method with EWS mirroring
-    totp: cc_radius         # SecurID via totp auth method/plugin
-    external: cc_x509       # x509 client certificate based authentication
+    password: cc_password # CCloud password auth method with EWS mirroring
+    totp: cc_radius # SecurID via totp auth method/plugin
+    external: cc_x509 # x509 client certificate based authentication
 
   # SecurID authentication settings over Radius (required for cc_radius)
   cc_radius:
@@ -126,7 +124,7 @@ api:
 
   metrics:
     enabled: true
-    port: '9102'
+    port: "9102"
 
     image: prom/statsd-exporter
     imageTag: v0.12.2
@@ -197,7 +195,7 @@ tempest:
   imageTag: "ccloud-train"
   adminPassword: ""
   userPassword: ""
-# tempest domain-id  -- do not set in production environments!
+  # tempest domain-id  -- do not set in production environments!
   domainId: not_set_this_in_production
 
 sentry:
@@ -206,15 +204,15 @@ sentry:
 
 services:
   type: ClusterIP
-#  externalip: "192.168.1.100"
+  #  externalip: "192.168.1.100"
 
   ingress:
     enabled: false
     # see https://github.com/kubernetes/ingress/blob/74d57c950282484885a74c92d3413110e3b95c69/controllers/nginx/configuration.md#rate-limiting
-  # limitRps: 100
-  # limitConnections: 100
+    # limitRps: 100
+    # limitConnections: 100
 
-  # let kubernetes.io/tls-acme manage tls certificates
+    # let kubernetes.io/tls-acme manage tls certificates
     tlsacme: true
 
     # x509 client certificate support
@@ -307,7 +305,7 @@ mysql_metrics:
           COUNT(*) as roles
         FROM role
       values:
-      - "roles"
+        - "roles"
     - name: openstack_users_total
       help: Total keystone user count
       query: |
@@ -316,7 +314,7 @@ mysql_metrics:
         FROM id_mapping
         WHERE entity_type = 'user'
       values:
-      - "users"
+        - "users"
     - name: openstack_groups_total
       help: Total keystone group count
       query: |
@@ -325,7 +323,7 @@ mysql_metrics:
         FROM id_mapping
         WHERE entity_type = 'group'
       values:
-      - "groups"
+        - "groups"
     - name: openstack_domains_total
       help: Total keystone domain count
       query: |
@@ -334,7 +332,7 @@ mysql_metrics:
         FROM project
         WHERE domain_id = '<<keystone.domain.root>>'
       values:
-      - "domains"
+        - "domains"
     - name: openstack_projects_total
       help: Total keystone project count
       query: |
@@ -343,7 +341,7 @@ mysql_metrics:
         FROM project
         WHERE domain_id != '<<keystone.domain.root>>'
       values:
-      - "projects"
+        - "projects"
     - name: openstack_assignments_total
       help: Total keystone role-assignment count
       query: |
@@ -351,7 +349,7 @@ mysql_metrics:
           COUNT(*) as role_assignments
         FROM assignment
       values:
-      - "role_assignments"
+        - "role_assignments"
     - name: openstack_revocations_total
       help: Total keystone token revocation count
       query: |
@@ -359,11 +357,11 @@ mysql_metrics:
           COUNT(*) as revocations
         FROM revocation_event
       values:
-      - "revocations"
+        - "revocations"
     - name: openstack_assignments_per_role
       help: Total keystone role-assignment count per role
       labels:
-      - "role_name"
+        - "role_name"
       query: |
         SELECT
           COUNT(*) as assignments,
@@ -372,26 +370,26 @@ mysql_metrics:
         JOIN role r ON r.id = a.role_id
         GROUP BY r.name
       values:
-      - "assignments"
+        - "assignments"
     - name: mysql_database_size
       help: Total database size
       labels:
-      - "schema_name"
+        - "schema_name"
       query: |
-          SELECT table_schema AS schema_name,
-            ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) AS size_in_mb
-          FROM information_schema.tables
-          GROUP BY table_schema
+        SELECT table_schema AS schema_name,
+          ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) AS size_in_mb
+        FROM information_schema.tables
+        GROUP BY table_schema
       values:
-      - "size_in_mb"
+        - "size_in_mb"
     - name: openstack_user_last_active_at
       help: User list based on last_active_at
       labels:
-      - "user_id"
-      - "user_name"
-      - "created_at"
-      - "last_active_at"
-      - "domain_name"
+        - "user_id"
+        - "user_name"
+        - "created_at"
+        - "last_active_at"
+        - "domain_name"
       query: |
         SELECT
           COUNT(*) as user_count,
@@ -406,7 +404,7 @@ mysql_metrics:
         WHERE domain.name != 'Default' AND domain.name != 'kubernikus' AND domain.name != 'tempest'
         GROUP BY id_mapping.public_id
       values:
-      - "user_count"
+        - "user_count"
 rbac:
   enabled: true
 
@@ -455,3 +453,4 @@ sre:
 
 # optional flag to disable users that have not authenticated for 100 years.
 disable_user_account_days_inactive: 36500
+

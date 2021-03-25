@@ -20,6 +20,7 @@ spec:
   - {{ .Release.Namespace }}/domain-cc3test-seed
   - {{ .Release.Namespace }}/domain-ccadmin-seed
   - {{ .Release.Namespace }}/domain-bs-seed
+  - {{ .Release.Namespace }}/domain-cis-seed
   - {{ .Release.Namespace }}/domain-cp-seed
   - {{ .Release.Namespace }}/domain-fsn-seed
   - {{ .Release.Namespace }}/domain-hcm-seed
@@ -63,7 +64,11 @@ spec:
     endpoints:
     - interface: public
       region: {{ .Values.global.region }}
+{{- if .Values.global.designate_public_api }}
+      url: https://{{ .Values.global.designate_public_api }}
+{{- else }}
       url: https://dns-3.{{.Values.global.region}}.{{.Values.global.tld}}
+{{- end }}
     - interface: internal
       region: {{ .Values.global.region }}
 {{- if .Values.global_setup }}
@@ -230,6 +235,7 @@ spec:
       role: cloud_dns_admin
       inherited: true
 
+{{- if ne .Values.global_setup true }}
   - name: bs
     groups:
     - name: BS_DOMAIN_DNS_SUPPORT
@@ -271,6 +277,54 @@ spec:
     - name: BS_SERVICE_DESK
       role_assignments:
       - domain: bs
+        role: cloud_dns_ops
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
+
+  - name: cis
+    groups:
+    - name: CIS_DOMAIN_DNS_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_support
+        inherited: true
+    - name: CIS_DOMAIN_DNS_OPS
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_ops
+        inherited: true
+      - domain: cis
+        role: role_viewer
+        inherited: true
+      - domain: cis
+        role: audit_viewer
+        inherited: true
+    - name: CIS_API_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_admin
+        inherited: true
+    - name: CIS_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_ops
+        inherited: true
+    - name: CIS_NETWORK_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_ops
+        inherited: true
+    - name: CIS_STORAGE_SUPPORT
+      role_assignments:
+      - domain: cis
+        role: cloud_dns_ops
+        inherited: true
+    - name: CIS_SERVICE_DESK
+      role_assignments:
+      - domain: cis
         role: cloud_dns_ops
         inherited: true
     role_assignments:
@@ -709,6 +763,7 @@ spec:
     - user: admin@Default
       role: cloud_dns_admin
       inherited: true
+{{- end }}
 
 {{- if .Values.tempest_enabled }}
   - name: tempest

@@ -1,8 +1,18 @@
 {{- if .Values.nebula.enabled -}}
 nebula:
   cacheSize: {{ .Values.nebula.cacheSize }}
+{{- if .Values.config.retry }}
+  retry:
+{{- if .Values.config.retry.maxConnectionRetries }}
+    maxConnectionRetries: {{ .Values.config.retry.maxConnectionRetries }}
+{{- end }}
+{{- if .Values.config.retry.retryInterval }}
+    retryInterval: {{ .Values.config.retry.retryInterval }}
+{{- end }}
+{{- end }}
   listenAddr:
     http: :{{ .Values.nebula.http }} # default :1080
+    shutdownTimeout: {{ .Values.config.accountStatusTimeout }}s
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}
@@ -54,7 +64,7 @@ nebula:
     useCaseDescription: {{ .Values.config.useCaseDescription }}
     websiteURL: {{ .Values.config.websiteURL }}
   accountStatusPollDelay: {{ .Values.config.accountStatusPollDelay }}
-  accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}
+  accountStatusTimeout: {{ .Values.config.accountStatusTimeout }}s
   debug: {{ .Values.nebula.debug }}
   policy:
 {{- range $key, $value := .Values.config.nebulaPolicy }}
@@ -64,7 +74,7 @@ nebula:
 {{- $user := .Values.rabbitmq_notifications.users.default.user }}
 {{- $creds := .Values.hermes.rabbitmq.targets.cronus }}
   auditSink:
-    rabbitmqUrl: amqp://{{ $user }}:{{ $creds.password }}@{{ if .Values.config.nebulaAuditSink.host }}{{ .Values.config.nebulaAuditSink.host }}{{ else }}{{ $creds.host }}.{{ .Values.global.region }}.cloud.sap:5672{{ end }}
+    rabbitmqUrl: amqp://{{ $user }}:{{ $creds.password }}@{{ if .Values.config.nebulaAuditSink.host }}{{ .Values.config.nebulaAuditSink.host }}{{ else }}{{ $creds.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:5672{{ end }}
     queueName: {{ $creds.queue_name }}
     internalQueueSize: {{ .Values.config.nebulaAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.nebulaAuditSink.maxContentLen | int64 }}
@@ -75,5 +85,8 @@ nebula:
 {{- end }}
 {{- end }}
     debug: {{ .Values.config.nebulaAuditSink.debug | default false }}
+{{- end }}
+{{- if .Values.nebula.sentryDsn }}
+  sentryDsn: {{ .Values.nebula.sentryDsn }}
 {{- end }}
 {{- end -}}

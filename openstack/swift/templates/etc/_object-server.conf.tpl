@@ -6,7 +6,7 @@
 bind_ip = 0.0.0.0
 bind_port = 6000
 
-workers = 12
+workers = auto
 max_clients = 1024
 backlog = 8192
 client_timeout = {{ .Values.client_timeout }}

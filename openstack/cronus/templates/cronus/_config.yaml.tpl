@@ -3,6 +3,15 @@ cronus:
   cacheSize: {{ .Values.cronus.cacheSize }}
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
   barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
+{{- if .Values.config.retry }}
+  retry:
+{{- if .Values.config.retry.maxConnectionRetries }}
+    maxConnectionRetries: {{ .Values.config.retry.maxConnectionRetries }}
+{{- end }}
+{{- if .Values.config.retry.retryInterval }}
+    retryInterval: {{ .Values.config.retry.retryInterval }}
+{{- end }}
+{{- end }}
   aws:
     forwardUserAgent: {{ .Values.config.forwardUserAgent }}
     allowedServices:
@@ -12,6 +21,10 @@ cronus:
   listenAddr:
     http: :{{ .Values.cronus.http }} # default :5000
     smtp: :{{ .Values.cronus.smtp }} # default :1025
+{{- if .Values.cronus.listenProxyProtocol }}
+    proxyProtocol: {{ .Values.cronus.listenProxyProtocol }}
+{{- end }}
+    shutdownTimeout: {{ .Values.cronus.terminationGracePeriod | default 60 }}s
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}
@@ -44,7 +57,7 @@ cronus:
 {{- $user := .Values.rabbitmq_notifications.users.default.user }}
 {{- $creds := .Values.hermes.rabbitmq.targets.cronus }}
   auditSink:
-    rabbitmqUrl: amqp://{{ $user }}:{{ $creds.password }}@{{ if .Values.config.cronusAuditSink.host }}{{ .Values.config.cronusAuditSink.host }}{{ else }}{{ $creds.host }}.{{ .Values.global.region }}.cloud.sap:5672{{ end }}
+    rabbitmqUrl: amqp://{{ $user }}:{{ $creds.password }}@{{ if .Values.config.cronusAuditSink.host }}{{ .Values.config.cronusAuditSink.host }}{{ else }}{{ $creds.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:5672{{ end }}
     queueName: {{ $creds.queue_name }}
     internalQueueSize: {{ .Values.config.cronusAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.cronusAuditSink.maxContentLen | int64 }}
@@ -55,5 +68,8 @@ cronus:
 {{- end }}
 {{- end }}
     debug: {{ .Values.config.cronusAuditSink.debug | default false }}
+{{- end }}
+{{- if .Values.cronus.sentryDsn }}
+  sentryDsn: {{ .Values.cronus.sentryDsn }}
 {{- end }}
 {{- end -}}

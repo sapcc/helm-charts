@@ -27,6 +27,7 @@
       - '{job="redfish/bb"}'
       - '{job="redfish/bm"}'
       - '{job="redfish/cp"}'
+      - '{job="ucs"}'
       - '{job="vrops",__name__!~"^vrops_virtualmachine_.*"}'
       - '{job="vrops",__name__=~"^vrops_virtualmachine_.*", vccluster=~"^managementbb.+"}'
       - '{job="vrops",__name__=~"vrops_api_response"}'
@@ -67,6 +68,7 @@
       - '{__name__=~"^elasticsearch_cluster_health_.+"}'
       - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
       - '{__name__=~"^logstash_node_.+"}'
+      - '{__name__=~"vrops_inventory_collection_time_seconds|vrops_inventory_iteration_total"}'
 
   relabel_configs:
     - action: replace
@@ -109,4 +111,27 @@
   static_configs:
     - targets: 
       - 'pushgateway-infra:9091'
+      - 'cronus-pushgateway.cronus:9091'
   scrape_interval: 5m
+
+{{ if .Values.cronus.enabled }}
+- job_name: cronus-health # To get metrics about the exporter’s targets
+  metrics_path: /probe
+  params:
+    module: [http_2xx]
+  static_configs:
+    - targets:
+      {{- range .Values.cronus.regions }}
+      - https://nebula.{{ .region }}.cloud.sap/healthz
+      - https://cronus.{{ .region }}.cloud.sap/healthz
+      {{- end }}
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: blackbox-exporter.cronus:9115
+{{ end }}
+
+

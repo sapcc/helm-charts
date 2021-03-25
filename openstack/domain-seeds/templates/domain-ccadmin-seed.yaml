@@ -9,7 +9,11 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
+{{- if eq .Values.global_setup true }}
+    - {{.Values.global.keystoneNamespace}}/keystone-global-seed
+{{- else }}
     - {{.Values.global.keystoneNamespace}}/keystone-seed
+{{- end }}
     - domain-default-seed
 
   domains:

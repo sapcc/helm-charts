@@ -3,10 +3,9 @@ groups:
   rules:
   - alert: PXTransportDlWanLinkProbesFailing
     expr: |
-      (increase(snmp_pxdlrouternxos_rttMonLatestRttOperTime{rttMonCtrlAdminIndex=~"4.."}[5m]) < bool 1 + 
-      ((max_over_time(snmp_pxdlrouternxos_rttMonLatestRttOperSense[5m]) !=bool 1)  *10)) 
-      !=0
-    for: 5m
+      snmp_pxdlrouternxos_rttMonLatestRttOperSense{rttMonCtrlAdminIndex=~"4.."} != 1
+      or increase(sum(snmp_pxdlrouternxos_rttMonJitterStatsRTTSum{rttMonCtrlAdminIndex=~"4.."}) without (rttMonJitterStatsStartTimeIndex)[5m:]) == 0
+    for: 2m
     labels:
       severity: critical
       tier: net
@@ -44,7 +43,7 @@ groups:
     expr: snmp_pxdlrouternxos_ifLastChange{ifAdminStatus="1", ifType="6", ifAlias=~"WAN.*", ifOperStatus!="1"}
     for: 5m
     labels:
-      severity: warning
+      severity: critical
       tier: net
       service: px
       context: px

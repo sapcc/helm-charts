@@ -23,7 +23,7 @@ matcher:
   migrations: true
 
 updaters:
-  sets: [ alpine, rhel, suse, ubuntu ]
+  sets: [ alpine, debian, rhel, suse, ubuntu ]
   config: {} # no special config options for updaters yet
 
 notifier:
