@@ -64,6 +64,7 @@ nebula:
     useCaseDescription: {{ .Values.config.useCaseDescription }}
     websiteURL: {{ .Values.config.websiteURL }}
 {{- if .Values.config.sesAdditionalContactEmails }}
+    sesAdditionalContactEmails:
 {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
     - {{ $value }}
 {{- end }}
