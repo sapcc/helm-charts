@@ -163,6 +163,16 @@
   </parse>
 </filter>
 
+<filter kubernetes.var.log.containers.{{.Values.global.region}}-px**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{WORD:process}:%{SPACE}%{WORD}%{SPACE}%{NOTSPACE:device}%{SPACE}%{GREEDYDATA}\(%{NUMBER}\),%{SPACE}action:%{SPACE}%{WORD:action}
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.mysql**>
   @type parser
   key_name log
