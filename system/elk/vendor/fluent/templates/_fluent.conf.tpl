@@ -169,7 +169,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{WORD:process}:%{SPACE}%{WORD}%{SPACE}%{NOTSPACE:device}%{SPACE}%{GREEDYDATA}\(%{NUMBER}\),%{SPACE}action:%{SPACE}%{WORD:action}
+    grok_pattern %{WORD:process}:%{SPACE}%{WORD}%{SPACE}%{NOTSPACE:device}%{SPACE}%{GREEDYDATA:error_message}\(%{NUMBER}\),%{SPACE}action:%{SPACE}%{WORD:action}
   </parse>
 </filter>
 
