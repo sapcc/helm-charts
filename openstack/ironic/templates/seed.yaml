@@ -80,7 +80,7 @@ spec:
       instances_zhv1vic1.small: 0
       instances_zhv1vic1.medium: 0
       instances_zhv1mlx1.large: 0
-      
+
   flavors:
   - name: "zg1bcm1.medium"
     id: "910"
@@ -365,7 +365,7 @@ spec:
     users:
     - name: {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix | default "" }}
       description: Ironic Service
-      password: {{ .Values.global.ironic_service_password | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user") | quote }}
+      password: {{ required ".Values.global.ironic_service_password is missing" .Values.global.ironic_service_password | quote }}
       role_assignments:
       - project: service
         role: service
@@ -381,7 +381,7 @@ spec:
         role: swiftreseller
     - name: ipmi_exporter
       description: IPMI Exporter for MB Monitoring
-      password: {{ .Values.global.ipmi_exporter_user_passwd | default (tuple . .Values.global.ipmi_exporter_user_passwd | include "identity.password_for_user") | quote }}
+      password: {{ required "ipmi_exporter_user_passwd is missing" .Values.global.ipmi_exporter_user_passwd | quote }}
 
 {{- if .Values.tempest_enabled }}
   - name: tempest
