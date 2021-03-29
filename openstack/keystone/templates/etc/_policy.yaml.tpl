@@ -1,25 +1,22 @@
-#
+#"admin_required": "role:admin"
 "admin_required": "role:admin"
 
-#
+#"service_role": "role:service"
 "service_role": "role:service"
 
-#
+#"service_or_admin": "rule:admin_required or rule:service_role"
 "service_or_admin": "rule:admin_required or rule:service_role"
 
-#
+#"owner": "user_id:%(user_id)s"
 "owner": "user_id:%(user_id)s"
 
-#
 #"admin_or_owner": "rule:admin_required or rule:owner"
 
-#
+#"token_subject": "user_id:%(target.token.user_id)s"
 "token_subject": "user_id:%(target.token.user_id)s"
 
-#
 #"admin_or_token_subject": "rule:admin_required or rule:token_subject"
 
-#
 #"service_admin_or_token_subject": "rule:service_or_admin or rule:token_subject"
 
 # ccloud: added these to allow a smooth transitioning from old cloud-admin to new system scopes
