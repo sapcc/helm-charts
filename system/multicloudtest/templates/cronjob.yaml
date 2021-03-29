@@ -43,18 +43,16 @@ spec:
                 value: {{ $mct.ssh.public_key.path }}
             volumeMounts:
               - mountPath: /config
-                name: creds
+                name: creds-and-config
                 readOnly: true
-              - mountPath: /config
-                name: config
-                subPath: config.yaml
           volumes:
-            - secret:
-                secretName: multicloudtest-creds-{{ $cloud.name }}
-              name: creds
-            - configMap:
-                name: multicloudtest-config
-              name: config
+          - name: creds-and-config
+            projected:
+              sources:
+              - secret:
+                  name: multicloudtest-creds-{{ $cloud.name }}
+              - configMap:
+                  name: multicloudtest-config
           restartPolicy: Never
 {{- end }}
 {{- end }}
