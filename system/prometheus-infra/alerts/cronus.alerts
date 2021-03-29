@@ -2,17 +2,17 @@ groups:
 - name: CronusAlerts
   rules:
   - alert: CronusSendEmail
-    expr: cronus_simulator_event_test_passed{action="send-email"} == 0
+    expr: (sum(sum_over_time(aws_ses_cronus_provider_send[5m])) < 50 >= bool 1 OR sum(sum_over_time(aws_ses_cronus_provider_send[5m])) > 50 <= bool 0) == 1
     for: 5m
     labels:
-      meta: Cronus - send emails fails in {{ $labels.region }} with message {{ $labels.message }}
+      meta: Cronus - sending emails is bellow expected in region {{ $labels.region }}
       service: '{{ $labels.component }}'
       severity: critical
       tier: monitor
       playbook: docs/support/alert/playbook/cronus
     annotations:
-      description: Cronus - send emails fails in {{ $labels.region }} with message {{ $labels.message }}
-      summary: See logs https://sentry.{{ $labels.region }}.cloud.sap/monsoon/cronus/?query=requestID:{{ $labels.request_id }}
+      description: Cronus - sending emails is bellow expected in region {{ $labels.region }}
+      summary: sending emails is expected to be above 50 emails per 5 minutes and any other result indicates a problem with sending emails
 - name: NebulaAlerts
   rules:
   - alert: NebulaReconcile
