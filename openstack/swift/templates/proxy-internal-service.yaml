@@ -7,11 +7,18 @@ metadata:
     release: "{{ $.Release.Name }}"
     os-cluster: {{ $cluster_id }}
 spec:
+  {{- if $cluster.svc_node_port }}
+  type: NodePort
+  externalTrafficPolicy: Local
+  {{- end }}
   selector:
     component: swift-proxy-{{ $cluster_id }}
   ports:
     - name: proxy
       port: 8080
       targetPort: 8080
+      {{- if $cluster.svc_node_port }}
+      nodePort: {{ $cluster.svc_node_port }}
+      {{- end }}
 ---
 {{- end }}
