@@ -14,7 +14,7 @@
 #"admin_or_owner": "rule:admin_required or rule:owner"
 
 #
-#"token_subject": "user_id:%(target.token.user_id)s"
+"token_subject": "user_id:%(target.token.user_id)s"
 
 #
 #"admin_or_token_subject": "rule:admin_required or rule:token_subject"
