@@ -35,7 +35,11 @@ spec:
     spec:
       containers:
       - name: ironic-conductor
+        {{- if .Values.oslo_metrics.enabled }}
+        image: {{ .Values.global.registry }}/test-ironic:oslo-metrics01
+        {{- else}}
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
+        {{- end }}
         imagePullPolicy: IfNotPresent
         {{- if $conductor.debug }}
         securityContext:
@@ -156,6 +160,26 @@ spec:
             port: ironic-console
           initialDelaySeconds: 5
           periodSeconds: 3
+      {{- if .Values.oslo_metrics.enabled }}
+      - name: oslo-exporter
+        image: prom/statsd-exporter
+        args:
+        - --web.listen-address=:9102
+        - --web.telemetry-path=/metrics
+        - --statsd.listen-udp=:8125
+        - --statsd.listen-tcp=
+        - --statsd.cache-size=1000
+        - --statsd.event-queue-size=10000
+        - --statsd.event-flush-threshold=1000
+        - --statsd.event-flush-interval=200ms
+        ports:
+        - name: web
+          containerPort: 9102
+          protocol: TCP
+        - name: statsd-udp
+          containerPort: 8125
+          protocol: UDP
+      {{- end }}
       volumes:
       - name: etcironic
         emptyDir: {}
