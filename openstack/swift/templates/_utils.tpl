@@ -400,7 +400,7 @@ limit_req_status 429;
 {{- $cluster := index . 1 }}
 option http-server-close
 
-{{ if and $cluster.upstreams -}}
+{{ if $cluster.upstreams -}}
 balance roundrobin
 option httpchk HEAD /healthcheck
 default-server check downinter 30s maxconn 500
