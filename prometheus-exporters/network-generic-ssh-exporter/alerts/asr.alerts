@@ -1,0 +1,111 @@
+groups:
+  - name: ssh-asr
+    rules:
+    - alert: NetworkAsrArpPuntDrop
+      expr: (rate(ssh_software_punt_polcier_drop_normal{cause="7"}[5m]) + rate(ssh_software_punt_polcier_drop_high[5m])) > 0
+      for: 40m
+      labels:
+        severity: info
+        tier: net
+        service: asr
+        context: asr
+        meta: "Neutron Router `{{ $labels.name }}` is reporting ARP punt policer drops"
+        playbook: 'docs/support/playbook/network/control_plane_router/arp_punt_drop.html'
+        dashboard: neutron-router
+      annotations:
+        description: "Neutron Router `{{ $labels.model }}` `{{ $labels.name }}` is reporting ARP punt policer drops"
+        summary: "Neutron Router  `{{ $labels.name }}` is reporting ARP punt policer drops"
+        
+    - alert: NetworkAsrNatSpike
+      expr: increase(((ssh_redundancy_send_queue ==bool 1 ) * ssh_redundancy_send_fails_delete)[5m:]) > 0
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        playbook: 'docs/devops/alert/network/router.html#asr_nat_spike'
+        dashboard: network-asr-nat-table 
+      annotations:
+        description: "ASR devicename `{{ $labels.devicename }}` is experiencing a stuck queue-full bit. Risk of outage is present, peer-sync is not working. Immediate action required"
+        summary: "ASR devicename `{{ $labels.devicename }}` risk of NAT spikes and table overflow."
+        
+    - alert: NetworkAsrDeviceIsDown
+      expr: (ssh_nat_static + ssh_nat_dynamic) > 3500000
+      for: 15m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
+        playbook: 'docs/devops/alert/network/router.html#asr_nat_table_overflow'
+        dashboard: neutron-router
+      annotations:
+        description: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
+        summary: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
+
+    - alert: NetworkAsrNatTableIsNearlyFull
+      expr: (ssh_nat_static + ssh_nat_dynamic) > 2000000
+      for: 15m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+        playbook: 'docs/devops/alert/network/router.html#asr_nat_table_overflow'
+        dashboard: neutron-router
+        spc: "ServiceAreaCode=04&TicketType=01&Priority=1&ServiceName=NW_CLOUD_CC&ServiceUnit=10&Subject=NetworkAsrNatTableIsNearlyFull+-+devicename%3A+{{ $labels.devicename }}&Description=NAT+table+on+ASR+devicename+{{ $labels.devicename }}+is+nearly+full+for+15+min+with+more+than+2M+NAT+translations.+This+will+stop+creating+new+NAT+sessions+soon."
+      annotations:
+        description: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+        summary: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+
+    - alert: NetworkAsrRedundancyGroupBothDevicesDown
+      expr: >-
+        sum(label_replace(ssh_redundancy_state, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]{2}).") ==bool 3) by (cluster) == 0
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Cluster down! All ASR routers in the cluster `{{ $labels.cluster }}` are inactive."
+        playbook: 'docs/devops/alert/network/router.html#asr_both_devices_down'
+        dashboard: neutron-router
+      annotations:
+        description: "Cluster down! All ASR routers in the cluster `{{ $labels.cluster }}` are inactive."
+        summary: "Cluster down! All ASR routers in the cluster `{{ $labels.cluster }}` are inactive."
+
+    - alert: NetworkAsrRedundancyGroupBothDevicesUp
+     expr: >-
+        sum(label_replace(ssh_redundancy_state, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]{2}).") ==bool 3) by (cluster)  == 2
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Split brain! All ASR routers in the cluster `{{ $labels.cluster }}` are active."
+        playbook: 'docs/devops/alert/network/router.html#asr_both_devices_up'
+        dashboard: neutron-router
+      annotations:
+        description: "Split brain! All ASR routers in the cluster `{{ $labels.cluster }}` are active."
+        summary: "Split brain! All ASR routers in the cluster `{{ $labels.cluster }}` are active."
+
+    - alert: NetworkAsrDynamicNatStopWorking
+      expr: >-
+        (increase(ssh_qfp_nat_datapath_stats{subcode=~"(18|30)"}[5m]) > 0)
+        AND ignoring(subcode, reason) (abs(ssh_qfp_classification_ce_data_nat_1001_classes - ssh_qfp_classification_client_nat_1001_classes) > 0)
+      for: 0m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
+        playbook: 'docs/devops/alert/network/router.html##asr-nat-class-diff-datapath-drops'
+        dashboard: neutron-router
+      annotations:
+        description: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
+        summary: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
