@@ -40,25 +40,33 @@ data:
         - "{{$tl}}"
       {{- end }}
     storages:
+    {{- if .Values.global.mariadb.backup_v2.aws }}
       s3:
-        - name: aws-{{ .Values.global.mariadb.backup_v2.aws.region }}
+      {{- range $aws := .Values.global.mariadb.backup_v2.aws }}
+        - name: aws-{{ $aws.region }}
           aws_access_key_id: {{ .Values.global.backup_v2.aws_access_key_id }}
           aws_secret_access_key: {{ .Values.global.backup_v2.aws_secret_access_key }}
-          region: {{ .Values.global.mariadb.backup_v2.aws.region }}
+          region: {{ $aws.region }}
           bucket_name: "mariadb-backup-{{ .Values.global.region }}"
           sse_customer_algorithm: "AES256"
-          sse_customer_key: "{{ .Values.global.mariadb.backup_v2.aws.sse_customer_key }}"
+          sse_customer_key: "{{ $aws.sse_customer_key }}"
+      {{- end }}
+    {{- end }}
+    {{- if .Values.global.mariadb.backup_v2.swift }}
       swift:
-        - name: swift-{{ .Values.global.region }}
+      {{- range $swift := .Values.global.mariadb.backup_v2.swift }}
+        - name: swift-{{ $swift.region }}
           auth_version: 3
-          auth_url:  https://identity-3.{{ .Values.global.region }}.cloud.sap/v3
+          auth_url:  https://identity-3.{{ $swift.region }}.cloud.sap/v3
           user_name: db_backup
           user_domain_name: Default
           project_name: master
           project_domain_name: ccadmin
-          password: {{ .Values.backup_v2.swift.password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote }}
-          region: {{ .Values.global.region }}
+          password: {{ .Values.backup_v2.swift.password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup_v2.swift.password" | quote }}
+          region: {{ $swift.region }}
           container_name: "mariadb-backup-{{ .Values.global.region }}"
+      {{- end }}
+    {{- end }}
     verification:
       interval_in_minutes: {{ .Values.backup_v2.verification_interval }}
 {{- end }}
