@@ -10,9 +10,6 @@
     'match[]':
       - '{app="cloudprober-exporter"}'
       - '{app="thousandeyes-exporter"}'
-      - '{app="netapp-harvest"}'
-      - '{app="netapp-api-exporter"}'
-      - '{app=~"^netapp-perf-exporter.*"}'
       - '{app="ping-exporter"}'
       - '{app="vcsa-exporter"}'
       - '{job="asw-eapi"}'
@@ -34,7 +31,6 @@
       - '{job="netbox"}'
       - '{job="firmware-exporter"}'      
       - '{job="windows-exporter"}'
-      - '{job=~"^netapp-capacity-exporter.*"}'
       - '{__name__=~"^probe_success",job=~"infra-probe-.+"}'
       - '{__name__=~"^vcenter_.+",job!~"[a-z0-9-]*-vccustomervmmetrics$"}'
       - '{__name__=~"^network_apic_.+"}'
@@ -69,6 +65,10 @@
       - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
       - '{__name__=~"^logstash_node_.+"}'
       - '{__name__=~"vrops_inventory_collection_time_seconds|vrops_inventory_iteration_total"}'
+      - '{__name__=~"netapp_aggregate_.+"}'
+      - '{__name__=~"netapp_volume_.+"}'
+      - '{__name__=~"netapp_filer_.+"}'
+
 
   relabel_configs:
     - action: replace
