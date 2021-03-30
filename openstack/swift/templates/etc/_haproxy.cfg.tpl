@@ -1,7 +1,7 @@
 {{- define "haproxy.cfg" -}}
-{{- $cluster := index . 0 -}}
-{{- $context := index . 1 -}}
-{{- $upstream := index . 2 -}}
+{{- $cluster_id := index . 0 -}}
+{{- $cluster    := index . 1 -}}
+{{- $context    := index . 2 -}}
 global
   log stdout format raw local0 info
   zero-warning
@@ -9,6 +9,7 @@ global
   maxconn 2000
 
   # TODO: Should be replaced by https://ssl-config.mozilla.org/#server=haproxy&version=2.3&config=intermediate&openssl=1.1.1d&guideline=5.6
+  # AES256-SHA256 seems to be needed for iPXE with tlsv1.2
 
   # https://ssl-config.mozilla.org/#server=haproxy&version=2.3&config=old&openssl=1.1.1d&guideline=5.6
   # old configuration - this is for backward compatibility with nginx based deplyoments and poor clients like iPXE
@@ -66,13 +67,9 @@ frontend api-http
 # metrics. (The backend name shows up as a metric label.)
 
 backend swift_proxy
-  option http-server-close
-
-  server swift-svc {{ $upstream }}:8080
+{{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | indent 2 }}
 
 backend swift_proxy_s3
-  option http-server-close
-
-  server swift-svc {{ $upstream }}:8080
+{{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | indent 2 }}
 
 {{ end }}

@@ -393,3 +393,23 @@ limit_req_status 429;
 {{- $release.Name -}}-sapcc-ratelimit-redis
 {{- end -}}
 {{- end -}}
+
+{{- /**********************************************************************************/ -}}
+{{- define "swift_haproxy_backend" -}}
+{{- $cluster_id := index . 0 -}}
+{{- $cluster := index . 1 }}
+option http-server-close
+
+{{ if $cluster.upstreams -}}
+balance roundrobin
+option httpchk HEAD /healthcheck
+default-server check downinter 30s maxconn 500
+
+{{ range $index, $upstream := $cluster.upstreams -}}
+{{- $short_name := splitn "." 2  $upstream.name -}}
+server {{ printf "%9s" $short_name._0 }} {{ $upstream.target }}:{{ default 8080 $cluster.svc_node_port }} # {{ $upstream.name }}
+{{ end -}}
+{{- else -}}
+server swift-svc swift-proxy-internal-{{ $cluster_id }}:8080
+{{- end }}
+{{- end -}}
