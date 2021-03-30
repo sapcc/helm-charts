@@ -5,13 +5,13 @@ groups:
     expr: (sum(sum_over_time(aws_ses_cronus_provider_send[5m])) < 50 >= bool 1 OR sum(sum_over_time(aws_ses_cronus_provider_send[5m])) > 50 <= bool 0) == 1
     for: 5m
     labels:
-      meta: Cronus - sending emails is bellow expected in region {{ $labels.region }}
+      meta: Cronus - sending emails is below expected in region {{ $labels.region }}
       service: '{{ $labels.component }}'
       severity: critical
       tier: monitor
-      playbook: docs/support/alert/playbook/cronus
+      playbook: docs/devops/alert/cronus
     annotations:
-      description: Cronus - sending emails is bellow expected in region {{ $labels.region }}
+      description: Cronus - sending emails is below expected in region {{ $labels.region }}
       summary: sending emails is expected to be above 50 emails per 5 minutes and any other result indicates a problem with sending emails
 - name: NebulaAlerts
   rules:
@@ -23,7 +23,7 @@ groups:
       service: '{{ $labels.component }}'
       severity: warning
       tier: monitor
-      playbook: docs/support/alert/playbook/cronus
+      playbook: docs/devops/alert/nebula
     annotations:
       description: Nebula - reconcile account fails in {{ $labels.region }} with message {{ $labels.message }}
       summary: See logs https://sentry.{{ $labels.region }}.cloud.sap/monsoon/nebula/?query=requestID:{{ $labels.request_id }}
