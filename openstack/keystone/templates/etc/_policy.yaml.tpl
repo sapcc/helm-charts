@@ -435,6 +435,17 @@
 #"identity:remove_endpoint_group_from_project": "role:admin and system_scope:all"
 "identity:remove_endpoint_group_from_project": "rule:cloud_admin"
 
+# grant-specific rules
+"domain_admin_for_grants": "(rule:domain_admin_for_global_role_grants or rule:domain_admin_for_domain_role_grants) and not rule:blocklist_roles and not rule:blocklist_projects"
+"domain_admin_for_global_role_grants": "rule:admin_required and None:%(target.role.domain_id)s and rule:domain_admin_grant_match"
+"domain_admin_for_domain_role_grants": "rule:admin_required and domain_id:%(target.role.domain_id)s and rule:domain_admin_grant_match"
+"domain_admin_grant_match": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s"
+"project_admin_for_grants": "(rule:project_admin_for_global_role_grants or rule:project_admin_for_domain_role_grants) and not rule:blocklist_roles and not rule:blocklist_projects"
+"project_admin_for_global_role_grants": "(rule:admin_required or role:role_admin) and None:%(target.role.domain_id)s and project_id:%(project_id)s"
+"project_admin_for_domain_role_grants": "(rule:admin_required or role:role_admin) and project_domain_id:%(target.role.domain_id)s and project_id:%(project_id)s"
+"domain_admin_for_list_grants": "rule:admin_required and rule:domain_admin_grant_match"
+"project_admin_for_list_grants": "(rule:admin_required or role:role_admin or role:role_viewer) and project_id:%(project_id)s"
+
 # Check a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a
 # group. These terms also apply to the OS-INHERIT APIs, where grants
@@ -458,11 +469,7 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:check_grant": "(role:reader and system_scope:all) or ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:check_grant": "rule:cloud_reader or
-  ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or
-  (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or
-  (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or
-  (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
+"identity:check_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants"
 
 # List roles granted to an actor on a target. A target can be either a
 # domain or a project. An actor can be either a user or a group. For
@@ -481,11 +488,7 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/users/{user_id}/roles/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:list_grants": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)"
-"identity:list_grants": "rule:cloud_reader or
-  (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or
-  (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or
-  (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or
-  (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)"
+"identity:list_grants": "rule:cloud_admin or rule:domain_admin_for_list_grants or rule:project_admin_for_list_grants"
 
 # Create a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a
@@ -502,11 +505,7 @@
 # PUT  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:create_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:create_grant": "rule:cloud_admin or
-  (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blocklist_roles and not rule:blocklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
+"identity:create_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants"
 
 # Revoke a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a
@@ -525,11 +524,7 @@
 # DELETE  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:revoke_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:revoke_grant": "rule:cloud_admin or
-  (((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s and not rule:blocklist_roles and not rule:blocklist_projects) or
-  ((role:admin or role:role_admin) and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s) and not rule:blocklist_roles and not rule:blocklist_projects) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
+"identity:revoke_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants"
 
 # List all grants a specific user has on the system.
 # ['HEAD', 'GET']  /v3/system/users/{user_id}/roles
