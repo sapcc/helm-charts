@@ -29,7 +29,7 @@ spec:
             - tests/test_{{ $test }}.py
             - --backend={{ $cloud.name }}
             - --config
-            - testconfig.yaml
+            - /config/config.yaml
             - --pushgateway
             - {{ $mct.pushgateway }}:9091
             env:
@@ -43,12 +43,16 @@ spec:
                 value: {{ $mct.ssh.public_key.path }}
             volumeMounts:
               - mountPath: /config
-                name: creds
+                name: creds-and-config
                 readOnly: true
           volumes:
-            - secret:
-                secretName: multicloudtest-creds-{{ $cloud.name }}
-              name: creds
+          - name: creds-and-config
+            projected:
+              sources:
+              - secret:
+                  name: multicloudtest-creds-{{ $cloud.name }}
+              - configMap:
+                  name: multicloudtest-config
           restartPolicy: Never
 {{- end }}
 {{- end }}

@@ -8,13 +8,13 @@
 "service_or_admin": "rule:admin_required or rule:service_role"
 
 #
-#"owner": "user_id:%(user_id)s"
+"owner": "user_id:%(user_id)s"
 
 #
 #"admin_or_owner": "rule:admin_required or rule:owner"
 
 #
-#"token_subject": "user_id:%(target.token.user_id)s"
+"token_subject": "user_id:%(target.token.user_id)s"
 
 #
 #"admin_or_token_subject": "rule:admin_required or rule:token_subject"
@@ -321,7 +321,7 @@
 # GET  /v3/users/{user_id}/credentials/OS-EC2
 # Intended scope(s): system, project
 #"identity:ec2_list_credentials": "(role:reader and system_scope:all) or rule:owner"
-"identity:ec2_list_credentials": "rule:cloud_reader or user_id:%(target.credential.user_id)s"
+"identity:ec2_list_credentials": "rule:cloud_reader or rule:owner"
 
 # Create ec2 credential.
 # POST  /v3/users/{user_id}/credentials/OS-EC2

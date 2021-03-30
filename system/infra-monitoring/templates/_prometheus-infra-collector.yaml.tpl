@@ -312,11 +312,6 @@
       regex: 'snmp_n7k_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
-# hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
-    - source_labels: [__name__, devicename]
-      regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
-      replacement: '$2'
-      target_label: device
     - source_labels: [__name__, cucsEtherErrStatsDn]
       regex: 'snmp_ucs_cucsEtherErrStats.+;.+(lan).+'
       action: drop
