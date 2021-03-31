@@ -19,6 +19,9 @@ spec:
         - name: cc3test-config
           configMap:
             name: cc3test-config
+        - name: cc3test-secrets
+          secret:
+            secretName: cc3test-secrets
       containers:
         - name: cc3test-debug
           image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
@@ -27,4 +30,7 @@ spec:
           volumeMounts:
             - name: cc3test-config
               mountPath: /cc3test/config
+              readOnly: true
+            - name: cc3test-secrets
+              mountPath: /cc3test/secrets
               readOnly: true
