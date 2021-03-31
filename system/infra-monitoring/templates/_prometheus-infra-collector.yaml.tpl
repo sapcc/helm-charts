@@ -201,8 +201,6 @@
       regex: jumpserver
       action: keep
     - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__address__]
       target_label: __address__
       regex:       '(.*)'
       replacement: $1:9100
