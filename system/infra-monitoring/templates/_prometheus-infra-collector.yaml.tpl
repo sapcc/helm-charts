@@ -202,12 +202,13 @@
       action: keep
     - source_labels: [__address__]
       target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
     - source_labels: [__address__]
       target_label: __address__
       regex:       '(.*)'
       replacement: $1:9100
+  metric_relabel_configs:
+    - regex: "role|server_id|state"
+      action: labeldrop
 
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
