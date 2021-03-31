@@ -204,8 +204,10 @@
       target_label: __param_target
     - source_labels: [__param_target]
       target_label: instance
-    - target_label: __address__
-      replacement: [__param_target]:9100
+    - source_labels: [__address__]
+      target_label: __address__
+      regex:       '(.*)'
+      replacement: $1:9100
 
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
