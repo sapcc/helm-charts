@@ -61,7 +61,8 @@ nebula:
 {{ .Values.config.iamPolicy | indent 6 }}
     verifyEmailDomain: {{ .Values.config.verifyEmailDomain }}
     verifyEmailSecret: {{ .Values.config.verifyEmailSecret }}
-    useCaseDescription: {{ .Values.config.useCaseDescription }}
+    useCaseDescription: |
+{{ .Values.config.useCaseDescription | indent 6 }}
     websiteURL: {{ .Values.config.websiteURL }}
 {{- if .Values.config.sesAdditionalContactEmails }}
     sesAdditionalContactEmails:
