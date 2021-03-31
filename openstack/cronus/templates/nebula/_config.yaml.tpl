@@ -91,6 +91,24 @@ nebula:
       - {{ $v }}
 {{- end }}
 {{- end }}
+{{- if .Values.config.nebulaAuditSink.queryKeysToMask }}
+    queryKeysToMask:
+{{- range $svc, $list := .Values.config.nebulaAuditSink.queryKeysToMask }}
+      {{ $svc }}:
+{{- range $k, $v := $list }}
+      - {{ $v }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.config.nebulaAuditSink.jsonKeysToMask }}
+    jsonKeysToMask:
+{{- range $svc, $list := .Values.config.nebulaAuditSink.jsonKeysToMask }}
+      {{ $svc }}:
+{{- range $k, $v := $list }}
+      - {{ $v }}
+{{- end }}
+{{- end }}
+{{- end }}
     debug: {{ .Values.config.nebulaAuditSink.debug | default false }}
 {{- end }}
 {{- if .Values.nebula.sentryDsn }}

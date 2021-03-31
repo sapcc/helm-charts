@@ -67,6 +67,24 @@ cronus:
       - {{ $v }}
 {{- end }}
 {{- end }}
+{{- if .Values.config.cronusAuditSink.queryKeysToMask }}
+    queryKeysToMask:
+{{- range $svc, $list := .Values.config.cronusAuditSink.queryKeysToMask }}
+      {{ $svc }}:
+{{- range $k, $v := $list }}
+      - {{ $v }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.config.cronusAuditSink.jsonKeysToMask }}
+    jsonKeysToMask:
+{{- range $svc, $list := .Values.config.cronusAuditSink.jsonKeysToMask }}
+      {{ $svc }}:
+{{- range $k, $v := $list }}
+      - {{ $v }}
+{{- end }}
+{{- end }}
+{{- end }}
     debug: {{ .Values.config.cronusAuditSink.debug | default false }}
 {{- end }}
 {{- if .Values.cronus.sentryDsn }}
