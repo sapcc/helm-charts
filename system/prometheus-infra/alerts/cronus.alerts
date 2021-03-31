@@ -2,7 +2,7 @@ groups:
 - name: CronusAlerts
   rules:
   - alert: CronusSendEmail
-    expr: (sum(sum_over_time(aws_ses_cronus_provider_send[5m])) < 50 >= bool 1 OR sum(sum_over_time(aws_ses_cronus_provider_send[5m])) > 50 <= bool 0) == 1
+    expr: (sum(sum_over_time(aws_ses_cronus_provider_send[5m])) >= 50) OR ((count(aws_ses_cronus_provider_send) OR vector(0)) == 0)
     for: 5m
     labels:
       meta: Cronus - sending emails is below expected in region {{ $labels.region }}
@@ -16,7 +16,7 @@ groups:
 - name: NebulaAlerts
   rules:
   - alert: NebulaReconcile
-    expr: cronus_simulator_event_test_passed{action="reconcile"} == 0
+    expr: cronus_simulator_event_test_passed{action="reconcile"} == 0 OR ((count(aws_ses_cronus_provider_send) OR vector(0)) == 0)
     for: 10m
     labels:
       meta: Nebula - reconcile account fails in {{ $labels.region }} with message {{ $labels.message }}
