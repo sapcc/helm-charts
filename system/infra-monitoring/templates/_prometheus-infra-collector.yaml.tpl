@@ -189,6 +189,24 @@
       replacement: '$1'
       target_label: probed_to_type
 
+- job_name: 'jumpserver'
+  params:
+    job: [jumpserver]
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: jumpserver
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: [__param_target]:9100
+
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'arista'
