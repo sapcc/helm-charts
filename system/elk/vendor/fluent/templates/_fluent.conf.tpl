@@ -120,6 +120,7 @@
   reserve_data true
   <parse>
     @type grok
+    grok_pattern %{GREEDYDATA}]%{SPACE}"%{WORD:method}%{SPACE}%{IMAGE_METHOD:path}%{NOTSPACE}%{SPACE}%{NOTSPACE:httpversion}"%{SPACE}%{NUMBER:response}
     grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}
     custom_pattern_path /fluent-bin/pattern
   </parse>
