@@ -40,13 +40,16 @@ polling_interval=5
 prevent_arp_spoofing = False
 
 [linux_bridge]
+{{ if .Values.global.apods -}}
 {{ $local := dict "first" true -}}
-physical_interface_mappings = {{ range $k, $az := required "A valid .Values.global.availability_zones!" .Values.global.availability_zones -}}
+physical_interface_mappings = {{ range $k, $az := .Values.global.apods -}}
     {{- if not $local.first -}},{{- end -}}
     {{- $az -}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
     {{- $_ := set $local "first" false -}}
-    {{- end }},
-    {{- required "A valid .Values.cp_physical_network required!" $.Values.cp_physical_network -}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
+    {{- end }}{{- if .Values.cp_network_interface }},{{- $.Values.cp_physical_network -}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}{{- end -}}
+{{- else -}}
+physical_interface_mappings = {{required "A valid .Values.cp_physical_network required!" .Values.cp_physical_network}}:{{required "A valid .Values.cp_network_interface required!" .Values.cp_network_interface}}
+{{- end }}
 
 [vxlan]
 enable_vxlan = false
