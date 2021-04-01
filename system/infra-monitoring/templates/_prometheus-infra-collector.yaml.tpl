@@ -205,7 +205,7 @@
       regex:       '(.*)'
       replacement: $1:9100
   metric_relabel_configs:
-    - regex: "role|server_id|state|job"
+    - regex: "role|server_id|state"
       action: labeldrop
 
 {{- $values := .Values.arista_exporter -}}
