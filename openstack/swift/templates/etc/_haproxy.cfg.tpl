@@ -54,7 +54,7 @@ frontend api-http
   monitor-uri /haproxy_test
 
   {{- $allowed := join " or " $cluster.sans_http }}
-  {{ range $index, $san := $cluster.sans_http -}}
+  {{- range $index, $san := $cluster.sans_http }}
   acl {{ $san }} hdr(host) -i {{ $san }}.{{$context.global.region}}.{{$context.global.tld}}:{{ $cluster.proxy_public_http_port }}
   {{- end }}
 
@@ -67,9 +67,9 @@ frontend api-http
 # metrics. (The backend name shows up as a metric label.)
 
 backend swift_proxy
-{{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | indent 2 }}
+{{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | nindent 2 }}
 
 backend swift_proxy_s3
-{{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | indent 2 }}
+{{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | nindent 2 }}
 
-{{ end }}
+{{- end }}
