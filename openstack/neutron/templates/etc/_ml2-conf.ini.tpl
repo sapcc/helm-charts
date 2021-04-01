@@ -41,11 +41,9 @@ prevent_arp_spoofing = False
 
 [linux_bridge]
 {{ if .Values.global.apods -}}
-{{ $local := dict "first" true -}}
-physical_interface_mappings = {{ range $k, $az := .Values.global.apods -}}
-    {{- if not $local.first -}},{{- end -}}
-    {{- $az -}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
-    {{- $_ := set $local "first" false -}}
+physical_interface_mappings = {{ range $k, $apod := .Values.global.apods -}}
+    {{- if ne $k 0 -}},{{- end -}}
+    {{- $apod -}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
     {{- end }}{{- if .Values.cp_network_interface }},{{- $.Values.cp_physical_network -}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}{{- end -}}
 {{- else -}}
 physical_interface_mappings = {{required "A valid .Values.cp_physical_network required!" .Values.cp_physical_network}}:{{required "A valid .Values.cp_network_interface required!" .Values.cp_network_interface}}
