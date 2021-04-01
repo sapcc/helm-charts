@@ -40,7 +40,14 @@ polling_interval=5
 prevent_arp_spoofing = False
 
 [linux_bridge]
+{{ if .Values.global.apods -}}
+physical_interface_mappings = {{ range $k, $apod := .Values.global.apods -}}
+    {{- if ne $k 0 -}},{{- end -}}
+    {{- $apod -}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
+    {{- end }}{{- if .Values.cp_network_interface }},{{- $.Values.cp_physical_network -}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}{{- end -}}
+{{- else -}}
 physical_interface_mappings = {{required "A valid .Values.cp_physical_network required!" .Values.cp_physical_network}}:{{required "A valid .Values.cp_network_interface required!" .Values.cp_network_interface}}
+{{- end }}
 
 [vxlan]
 enable_vxlan = false
