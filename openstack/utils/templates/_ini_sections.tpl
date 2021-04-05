@@ -1,11 +1,3 @@
-{{- define "oslo_messaging_rabbit" }}
-{{- include "ini_sections.oslo_messaging_rabbit" . }}
-{{- /* Those options are ignored, if transport_url is set */}}
-rabbit_userid = {{ .Values.rabbitmq_user | default .Values.global.rabbitmq_default_user | default "openstack"}}
-rabbit_password = {{ .Values.rabbitmq_pass | default .Values.global.rabbitmq_default_pass | default "openstack" }}
-rabbit_hosts =  {{ .Chart.Name }}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- end }}
-
 {{- define "ini_sections.oslo_messaging_rabbit" }}
 [oslo_messaging_rabbit]
 rabbit_ha_queues = {{ .Values.rabbitmq_ha_queues | default .Values.global.rabbitmq_ha_queues | default "true" }}
@@ -24,9 +16,8 @@ max_overflow = -1
 {{- end }}
 
 {{- define "ini_sections.database_options_mysql" }}
-min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size | default 10 }}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
+max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 50 }}
+max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 5 }}
 {{- end }}
 
 {{- define "ini_sections.database" }}

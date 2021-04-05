@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: ironic-api
@@ -31,7 +31,11 @@ spec:
 {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
       - name: ironic-api
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-api:{{.Values.imageVersionIronicApi | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        {{- if .Values.oslo_metrics.enabled }}
+        image: {{ .Values.global.registry }}/test-ironic:oslo-metrics01
+        {{- else}}
+        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
+        {{- end }}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.api | indent 10 }}
@@ -46,7 +50,11 @@ spec:
         - name: DEPENDENCY_JOBS
           value: "ironic-db-migration"
         - name: DEPENDENCY_SERVICE
-          value: "ironic-postgresql,rabbitmq"
+          {{- if eq .Values.mariadb.enabled true }}
+          value: "ironic-mariadb,ironic-rabbitmq"
+          {{- else }}
+          value: "ironic-postgresql,ironic-rabbitmq"
+          {{- end }}
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
           valueFrom:
@@ -90,6 +98,12 @@ spec:
           name: ironic-etc
           subPath: logging.ini
           readOnly: true
+        {{ if .Values.audit.enabled }}
+        - name: ironic-etc
+          mountPath: /etc/ironic/api_audit_map.yaml
+          subPath: api_audit_map.yaml
+          readOnly: true
+        {{- end }}
         {{- if .Values.watcher.enabled }}
         - name: ironic-etc
           mountPath: /etc/ironic/watcher.yaml
@@ -114,6 +128,26 @@ spec:
             subPath: statsd-exporter.yaml
             readOnly: true
 {{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 6 }}
+      {{- if .Values.oslo_metrics.enabled }}
+      - name: oslo-exporter
+        image: prom/statsd-exporter
+        args:
+        - --web.listen-address=:9102
+        - --web.telemetry-path=/metrics
+        - --statsd.listen-udp=:8125
+        - --statsd.listen-tcp=
+        - --statsd.cache-size=1000
+        - --statsd.event-queue-size=10000
+        - --statsd.event-flush-threshold=1000
+        - --statsd.event-flush-interval=200ms
+        ports:
+        - name: web
+          containerPort: 9102
+          protocol: TCP
+        - name: statsd-udp
+          containerPort: 8125
+          protocol: UDP
+      {{- end }}
       volumes:
       - name: etcironic
         emptyDir: {}

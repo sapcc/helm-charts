@@ -15,38 +15,31 @@
   log_level warn
 </system>
 
+<label @FLUENT_LOG>
+  <match fluent.*>
+    @type stdout
+  </match>
+</label>
+
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
   path /var/log/containers/*.log
+  exclude_path /var/log/containers/fluentd*
   pos_file /var/log/es-containers.log.pos
   time_format %Y-%m-%dT%H:%M:%S.%N
   tag kubernetes.*
   format json
-  read_from_head true
   keep_time_key true
 </source>
 
-# source
-<source>
-  @type forward
-  bind 0.0.0.0
-  port 24224
-</source>
+<match fluent.**>
+  @type null
+</match>
 
-# count number of incoming records per tag
-<filter company.*>
-  @type prometheus
-  <metric>
-    name fluentd_input_status_num_records_total
-    type counter
-    desc The total number of incoming records
-    <labels>
-      tag ${tag}
-      hostname ${hostname}
-    </labels>
-  </metric>
-</filter>
+# prometheus monitoring config
+
+@include /fluent-bin/prometheus.conf
 
 <filter kubernetes.**>
   @type kubernetes_metadata
@@ -68,40 +61,35 @@
   </parse>
 </filter>
 
-# count number of outgoing records per tag
-<match company.*>
-  @type copy
-  <store>
-    @type forward
-    <server>
-      name ${hostname}
-      hostname ${hostname}
-      port 24224
-      weight 60
-    </server>
-  </store>
-  <store>
-    @type prometheus
-    <metric>
-      name fluentd_output_status_num_records_total
-      type counter
-      desc The total number of outgoing records
-      <labels>
-        tag ${tag}
-        hostname ${hostname}
-      </labels>
-    </metric>
-  </store>
-</match>
-
-
-<filter kubernetes.var.log.containers.manila** kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.glance** kubernetes.var.log.containers.keystone** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
+<filter kubernetes.var.log.containers.ironic** kubernetes.var.log.containers.cinder**  kubernetes.var.log.containers.nova** kubernetes.var.log.containers.designate** kubernetes.var.log.containers.neutron-server** kubernetes.var.log.containers.neutron** kubernetes.var.log.containers.barbican** kubernetes.var.log.containers.ceilometer-central**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
     grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?(%{REQUESTID:requestid})
+    custom_pattern_path /fluent-bin/pattern
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.glance**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{DATE_EU:timestamp}%{SPACE}%{GREEDYDATA}"%{WORD:method}%{SPACE}%{IMAGE_METHOD:path}%{NOTSPACE}%{SPACE}%{NOTSPACE:httpversion}"%{SPACE}%{NUMBER:response}
+    custom_pattern_path /fluent-bin/pattern
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.manila-api** kubernetes.var.log.containers.manila-scheduler** kubernetes.var.log.containers.manila-share-netapp**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE} %{NUMBER:pid} %{NOTSPACE:log_level} %{NOTSPACE:program} (\[?)%{NOTSPACE:request_id} %{NOTSPACE:user_id} %{NOTSPACE:project_id} %{NOTSPACE:domain_id} %{NOTSPACE:id1} %{REQUESTID:id2}(\]?) %{GREEDYDATA:log_request}
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
@@ -114,7 +102,7 @@
   </exclude>
 </filter>
 
-<filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.nginx** kubernetes.var.log.containers.horizon**>
+<filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.horizon**>
   @type parser
   key_name log
   reserve_data true
@@ -124,6 +112,35 @@
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
+
+
+<filter	kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}] "%{WORD:method} %{IMAGE_METHOD:path}%{GREEDYDATA}1" %{NUMBER:response} %{GREEDYDATA}
+    custom_pattern_path /fluent-bin/pattern
+  </parse>
+</filter>
+
+{{- if .Values.datahub.enabled }}
+<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+  @type mysql_enrich
+  @log_level info
+  host {{.Values.datahub.host}}
+  port {{.Values.datahub.port}}
+  database {{.Values.datahub.db}}
+  username {{.Values.global.datahub.user}}
+  password {{.Values.global.datahub.password}}
+  sql select * from openstack_ips;
+  sql_key floating_ip_address
+  record_key remote_addr
+  columns project_id, project, port, domain, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, owner, instance_name, host, availability_zone
+  refresh_interval 60
+</filter>
+{{- end }}
 
 <filter kubernetes.var.log.containers.elektra**>
   @type parser
@@ -147,6 +164,16 @@
   </parse>
 </filter>
 
+<filter kubernetes.var.log.containers.{{.Values.global.region}}-px**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{WORD:process}:%{SPACE}%{WORD}%{SPACE}%{NOTSPACE:device}%{SPACE}%{GREEDYDATA:error_message}\(%{NUMBER}\),%{SPACE}action:%{SPACE}%{WORD:action}
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.mysql**>
   @type parser
   key_name log
@@ -157,7 +184,7 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.postgres** kubernetes.var.log.containers.ad-healthcheck** kubernetes.var.log.containers.elektra-postgresql** kubernetes.var.log.containers.trident** kubernetes.var.log.containers.prometheus-frontend** kubernetes.var.log.containers.blackbox**>
+<filter kubernetes.var.log.containers.ad-healthcheck** kubernetes.var.log.containers.elektra-postgresql** kubernetes.var.log.containers.trident** kubernetes.var.log.containers.prometheus-frontend** kubernetes.var.log.containers.blackbox**>
   @type parser
   key_name log
   reserve_data true
@@ -184,21 +211,20 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel} msg="Error scraping target %{IPV4:ip}: error (walking|getting) target %{IPV4}: %{SNMP_ERROR:snmp_error}
-    custom_pattern_path /fluent-bin/pattern
+    grok_pattern level=%{NOTSPACE:loglevel} ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} module=%{NOTSPACE:snmp_module} target=%{IP:ip} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA:snmp_msg}\"
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.ingress-controller**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
-    custom_pattern_path /fluent-bin/pattern
-  </parse>
-</filter>
+#<filter kubernetes.var.log.containers.ingress-controller**>
+#  @type parser
+#  key_name log
+#  reserve_data true
+#  <parse>
+#    @type grok
+#    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
+#    custom_pattern_path /fluent-bin/pattern
+#  </parse>
+#</filter>
 
 <filter kubernetes.var.log.containers.elk-fluent**>
   @type parser
@@ -252,6 +278,18 @@
   </parse>
 </filter>
 
+<filter kubernetes.var.log.containers.keystone-api**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{GREEDYDATA:action} %{METHOD:method} %{URIPATH:pri_path} %{LOWER:action} %{NOTSPACE:user} %{WORD:domain} %{GREEDYDATA:action}
+    custom_pattern_path /fluent-bin/pattern
+    grok_failure_key grok_failure
+  </parse>
+</filter>
+
 <filter kubernetes.var.log.containers.elektra**>
   @type record_transformer
   <record>
@@ -294,27 +332,6 @@
   </record>
 </filter>
 
-<filter kubernetes.var.log.containers.postgres-keystone**>
-  @type record_transformer
-  <record>
-    process "postgres-keystone"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.postgres-glance**>
-  @type record_transformer
-  <record>
-    process "postgres-glance"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.postgres-neutron**>
-  @type record_transformer
-  <record>
-    process "postgres-neutron"
-  </record>
-</filter>
-
 <filter kubernetes.var.log.containers.neutron-server**>
   @type record_transformer
   <record>
@@ -329,20 +346,6 @@
   </record>
 </filter>
 
-<filter kubernetes.var.log.containers.postgres-nova**>
-  @type record_transformer
-  <record>
-    process "postgres-nova"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.postgres-barbican**>
-  @type record_transformer
-  <record>
-    process "postgres-barbican"
-  </record>
-</filter>
-
 <filter kubernetes.var.log.containers.nova-compute**>
   @type record_transformer
   <record>
@@ -354,13 +357,6 @@
   @type record_transformer
   <record>
     process "concourse-web"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.arc-postgresql**>
-  @type record_transformer
-  <record>
-    process "arc-postgresql"
   </record>
 </filter>
 
@@ -389,13 +385,6 @@
   @type record_transformer
   <record>
     process "elk-wall-e"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.concourse-postgresql**>
-  @type record_transformer
-  <record>
-    process "concourse-postgresql"
   </record>
 </filter>
 
@@ -451,49 +440,60 @@
   @type null
 </match>
 
-<source>
-  @type prometheus
-  bind 0.0.0.0
-  port 24231
-  metrics_path /metrics
-</source>
-<source>
-  @type prometheus_output_monitor
-  interval 10
-  <labels>
-    hostname ${hostname}
-  </labels>
-</source>
+<match kubernetes.var.log.containers.es-query-exporter**>
+  @type null
+</match>
 
-<match **>
-   @type elasticsearch_dynamic
-   host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.cluster_region}}.{{.Values.global.domain}}
-   port {{.Values.global.elk_elasticsearch_ssl_port}}
-   user {{.Values.global.elk_elasticsearch_data_user}}
-   password {{.Values.global.elk_elasticsearch_data_password}}
-   scheme https
-   ssl_verify false
-   ssl_version TLSv1_2
-   logstash_format true
-   template_name logstash
-   template_file /fluent-bin/logstash.json
-   template_overwrite true
-   time_as_integer false
-   type_name _doc
-   @log_level info
-   slow_flush_log_threshold 50.0
-   request_timeout 60s
-   include_tag_key true
-   resurrect_after 120
-   reconnect_on_error true
-   <buffer>
-     flush_at_shutdown true
-     flush_thread_interval 5
-     overflow_action block
-     retry_forever true
-     retry_wait 2s
-     flush_thread_count 4
-     flush_interval 3s
-   </buffer>
-# second is missing, it it is only deployed to one elk cluster
+<match kubernetes.var.log.containers.logstash**>
+  @type null
+</match>
+
+# count number of outgoing records per tag
+<match kubernetes.**>
+  @type copy
+  <store>
+    @type elasticsearch
+    host {{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}
+    port {{.Values.global.elk_elasticsearch_ssl_port}}
+    user {{.Values.global.elk_elasticsearch_data_user}}
+    password {{.Values.global.elk_elasticsearch_data_password}}
+    scheme https
+    ssl_verify false
+    ssl_version TLSv1_2
+    logstash_prefix {{.Values.indexname}}
+    logstash_format true
+    template_name {{.Values.indexname}}
+    template_file /fluent-bin/{{.Values.indexname}}.json
+    template_overwrite false
+    time_as_integer false
+    type_name _doc
+    @log_level info
+    slow_flush_log_threshold 50.0
+    request_timeout 60s
+    include_tag_key true
+    resurrect_after 120
+    reconnect_on_error true
+    <buffer>
+      total_limit_size 256MB
+      flush_at_shutdown true
+      flush_thread_interval 5
+      overflow_action block
+      retry_forever true
+      retry_wait 2s
+      flush_thread_count 2
+      flush_interval 1s
+    </buffer>
+  </store>
+  <store>
+    @type prometheus
+    <metric>
+      name fluentd_output_status_num_records_total
+      type counter
+      desc The total number of outgoing records
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        container $.kubernetes.container_name
+      </labels>
+    </metric>
+  </store>
  </match>

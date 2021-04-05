@@ -1,0 +1,15 @@
+groups:
+- name: ucsmcrcerrors.alerts
+  rules:
+  - alert: UcsmCRCError
+    expr: delta(ucsm_crc_error[30m]) > 100
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "ucs-exporter"
+      meta: "Server {{ $labels.server }} has crc errors for port {{ $labels.port }}"
+    annotations:
+      description: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
+      summary: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"

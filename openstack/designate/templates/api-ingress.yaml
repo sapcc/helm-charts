@@ -1,25 +1,36 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 
 metadata:
-  name: designate-api
+  name: {{ .Release.Name }}-api
   labels:
     system: openstack
     type: api
     component: designate
-  {{- if .Values.vice_president }}
   annotations:
-    vice-president: "true"
-  {{- end}}
+    kubernetes.io/tls-acme: "true"
 spec:
   tls:
+{{- if .Values.global.designate_public_api }}
+    - secretName: tls-{{ .Values.global.designate_public_api | replace "." "-" }}
+      hosts: [{{ .Values.global.designate_public_api }}]
+{{- else }}
     - secretName: tls-{{include "designate_api_endpoint_host_public" . | replace "." "-"}}
       hosts: [{{ include "designate_api_endpoint_host_public" . }}]
+{{- end }}
   rules:
+{{- if .Values.global.designate_public_api }}
+    - host: {{ .Values.global.designate_public_api }}
+{{- else }}
     - host: {{include "designate_api_endpoint_host_public" .}}
+{{- end }}
       http:
         paths:
         - path: /
           backend:
+{{- if .Values.global_setup }}
+            serviceName: designate-global-api
+{{- else }}
             serviceName: designate-api
+{{- end }}
             servicePort: {{.Values.global.designate_api_port_internal}}

@@ -7,10 +7,6 @@ use_forwarded_for = true
 # rate limiting is handled outside
 api_rate_limit = false
 
-# Following opt is used for definition of share backends that should be enabled.
-# Values are conf groupnames that contain per manila-share service opts.
-enabled_share_backends = netapp-multi
-
 # Manila requires 'share-type' for share creation.
 # So, set here name of some share-type that will be used by default.
 default_share_type = default
@@ -37,17 +33,16 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 
 delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_share | default false }}
 
-# Float representation of the over subscription ratio when thin
-# provisioning is involved. Default ratio is 20.0, meaning provisioned
-# capacity can be 20 times the total physical capacity. If the ratio
-# is 10.5, it means provisioned capacity can be 10.5 times the total
-# physical capacity. A ratio of 1.0 means provisioned capacity cannot
-# exceed the total physical capacity. A ratio lower than 1.0 is
-# invalid. (floating point value)
-max_over_subscription_ratio = {{ .Values.max_over_subscription_ratio | default 3.0 }}
+use_scheduler_creating_share_from_snapshot = {{ .Values.use_scheduler_creating_share_from_snapshot | default false }}
 
-scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter
+scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter
+# TODO: train does not have HostAffinityWeigher, add in victoria
+scheduler_default_weighers = CapacityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
+
+migration_ignore_scheduler = True
+# default time to wait for access rules to become active in migration cutover was 180 seconds
+migration_wait_access_rules_timeout = 600
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_shares = 0
@@ -57,6 +52,8 @@ quota_snapshot_gigabytes = 0
 quota_share_networks = 0
 quota_share_groups = 0
 quota_share_group_snapshots = 0
+quota_share_replicas = -1
+quota_replica_gigabytes = -1
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 
@@ -102,7 +99,8 @@ service_token_roles_required = True
 service_token_roles = service
 insecure = True
 token_cache_time = 600
-include_service_catalog = false
+include_service_catalog = true
+service_type = sharev2
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
 {{- if .Values.memcached.enabled }}

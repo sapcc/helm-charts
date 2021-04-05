@@ -1,6 +1,6 @@
 {{- if .Values.wsgi }}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: neutron-rpc-server
@@ -34,18 +34,18 @@ spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: neutron-server
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionServerRPC | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerRPC | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command: ['dumb-init', 'kubernetes-entrypoint']
           env:
             - name: COMMAND
-              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/neutron_lbaas.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-f5.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini"
+              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
               value: "neutron-migration"
             - name: DEPENDENCY_SERVICE
-              value: "neutron-postgresql,{{ .Release.Name }}-rabbitmq"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
@@ -68,10 +68,6 @@ spec:
               name: neutron-etc
               subPath: neutron.conf
               readOnly: true
-            - mountPath: /etc/neutron/neutron_lbaas.conf
-              name: neutron-etc
-              subPath: neutron-lbaas.conf
-              readOnly: true
             - mountPath: /etc/neutron/logging.conf
               name: neutron-etc
               subPath: logging.conf
@@ -91,10 +87,6 @@ spec:
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf-manila.ini
               name: neutron-etc-vendor
               subPath: ml2-conf-manila.ini
-              readOnly: true
-            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-f5.ini
-              name: neutron-etc-vendor
-              subPath: ml2-conf-f5.ini
               readOnly: true
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini
               name: neutron-etc-vendor

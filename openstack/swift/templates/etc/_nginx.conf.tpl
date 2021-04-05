@@ -1,6 +1,7 @@
 {{- define "nginx.conf" -}}
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
+{{- $upstream := index . 2 -}}
 # this is based on the default nginx.conf from the default docker hub nginx container
 
 user  nginx;
@@ -28,9 +29,10 @@ http {
 
     access_log  /var/log/nginx/access.log  main;
 
-    keepalive_timeout     {{ $context.client_timeout }};
-    client_body_timeout   {{ $context.client_timeout }};
-    client_header_timeout {{ $context.client_timeout }};
+    # Don't swallow client timeouts handled by swift itself -> adding some seconds
+    keepalive_timeout     {{ add $context.client_timeout 5 }};
+    client_body_timeout   {{ add $context.client_timeout 5 }};
+    client_header_timeout {{ add $context.client_timeout 5 }};
 
     # non default - default was: not set
     tcp_nopush            on;
@@ -51,7 +53,6 @@ http {
         #listen 443 default_server ssl http2;
         listen 443 default_server ssl;
         server_name {{tuple $cluster $context | include "swift_endpoint_host"}};
-        ssl on;
 
         ssl_certificate     /etc/nginx/ssl/tls.crt;
         ssl_certificate_key /etc/nginx/ssl/tls.key;
@@ -64,8 +65,8 @@ http {
         ssl_ciphers 'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS';
         ssl_prefer_server_ciphers on;
 
-        {{ tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
-        {{ tuple $context | include "swift_nginx_location" | indent 8 }}
+        {{- tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
+        {{- tuple $upstream $context | include "swift_nginx_location" | indent 8 }}
     }
 
     # Only allow non ssl for allowed sans, otherwise redirect
@@ -83,9 +84,27 @@ http {
         #listen 80 http2;
         listen 80;
         server_name {{$san}}.{{$context.global.region}}.{{$context.global.tld}};
-        {{ tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
-        {{ tuple $context | include "swift_nginx_location" | indent 8 }}
+        {{- tuple $cluster $context | include "swift_nginx_ratelimit" | indent 8 }}
+        {{- tuple $upstream $context | include "swift_nginx_location" | indent 8 }}
     }
     {{- end }}
+
+    # Healthcheck for Nginx, nothing else
+    server {
+        listen 1080 default_server;
+
+        location /nginx-health {
+            access_log off;
+            return 200 "healthy\n";
+        }
+
+        location /nginx_status {
+            stub_status;
+
+            access_log off;
+            allow 127.0.0.1;
+            deny all;
+        }
+    }
 }
 {{end}}

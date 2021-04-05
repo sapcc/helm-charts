@@ -16,6 +16,7 @@ spec:
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-monsoon3-seed
   - monsoon3/domain-bs-seed
+  - monsoon3/domain-cis-seed
   - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
   - monsoon3/domain-hcm-seed
@@ -84,6 +85,8 @@ spec:
         role: service
       - project: service
         role: cloud_network_admin
+      - project: service
+        role: cloud_sharedfilesystem_admin
 
   - name: ccadmin
     projects:
@@ -179,6 +182,44 @@ spec:
       - project: service_desk
         role: sharedfilesystem_admin
       - domain: bs
+        role: sharedfilesystem_viewer
+        inherited: true
+
+  - name: cis
+    groups:
+    - name: CIS_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: sharedfilesystem_admin
+      - domain: cis
+        role: sharedfilesystem_admin
+        inherited: true
+    - name: CIS_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: sharedfilesystem_admin
+      - domain: cis
+        role: sharedfilesystem_viewer
+        inherited: true
+    - name: CIS_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: sharedfilesystem_admin
+      - domain: cis
+        role: sharedfilesystem_viewer
+        inherited: true
+    - name: CIS_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: sharedfilesystem_admin
+      - domain: cis
+        role: sharedfilesystem_admin
+        inherited: true
+    - name: CIS_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: sharedfilesystem_admin
+      - domain: cis
         role: sharedfilesystem_viewer
         inherited: true
 
@@ -527,22 +568,5 @@ spec:
       - domain: wbs
         role: sharedfilesystem_viewer
         inherited: true
-
-  share_types:
-  - name: default
-    is_public: true
-    specs:
-      driver_handles_share_servers: true
-      snapshot_support: true
-    extra_specs:
-      compression: "<is> True"
-      dedupe: "<is> True"
-      netapp:hide_snapdir: "True"
-      netapp:snapshot_policy : "none"
-      netapp:split_clone_on_create : "True"
-      netapp:thin_provisioned : "True"
-      create_share_from_snapshot_support: "True"
-      share_backend_name : "netapp-multi"
-      revert_to_snapshot_support : "True"
 {{- end }}
 {{- end }}

@@ -1,7 +1,8 @@
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: apps/v1
+
 metadata:
-  name: keystone-api
+  name: {{ .Release.Name }}-api
   labels:
     app: {{ template "fullname" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
@@ -23,11 +24,11 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: keystone-api
+      name: {{ .Release.Name }}-api
   template:
     metadata:
       labels:
-        name: keystone-api
+        name: {{ .Release.Name }}-api
         system: openstack
         component: keystone
         type: api
@@ -37,7 +38,7 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
     spec:
 {{- if .Values.rbac.enabled }}
-      serviceAccountName: keystone
+      serviceAccountName: {{ .Release.Name }}
 {{- end }}
       affinity:
         podAntiAffinity:
@@ -71,34 +72,33 @@ spec:
       initContainers:
       - name: kubernetes-entrypoint
         #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
         imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
         command:
-          - /usr/local/bin/kubernetes-entrypoint
+          - kubernetes-entrypoint
         env:
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
 {{- if .Release.IsInstall }}
         - name: DEPENDENCY_JOBS
-          value: keystone-job-migration,keystone-job-bootstrap
+          value: {{ .Release.Name }}-job-migration,{{ .Release.Name }}-job-bootstrap
 {{- else }}
   {{- if or .Values.run_db_migration }}
         - name: DEPENDENCY_JOBS
-          value: keystone-job-migration
+          value: {{ .Release.Name }}-job-migration
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
-{{- if eq .Values.global.database "postgres" }}
-          value: {{ .Release.Name }}-postgresql,{{ .Release.Name }}-memcached
-{{- end }}
-{{- if eq .Values.global.database "mariadb" }}
-          value: {{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached
+{{- if .Values.percona_cluster.enabled }}
+          value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-memcached"
+{{- else }}
+          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached"
 {{- end }}
         - name: COMMAND
           value: "true"
       containers:
         - name: keystone-api
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+          image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
           imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /scripts/keystone-api.sh
@@ -112,7 +112,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: keystone.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
             {{- end }}
             {{- if .Values.api.metrics.enabled }}
@@ -123,6 +123,8 @@ spec:
             - name: STATSD_PREFIX
               value: {{ .Values.api.metrics.prefix | default "openstack" | quote }}
             {{- end }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           ports:
             - name: public
               containerPort: 5000
@@ -153,7 +155,7 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
-{{- if eq .Values.release "train" }}
+{{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
               subPath: policy.yaml
@@ -186,7 +188,7 @@ spec:
               mountPath: /etc/apache2/mods-available/mpm_event.conf
               subPath: mpm_event.conf
               readOnly: true
-            {{- if eq .Values.release "stein" }}
+            {{- if ne .Values.release "rocky" }}
             - name: keystone-etc
               mountPath: /etc/keystone/access_rules.json
               subPath: access_rules.json
@@ -229,6 +231,7 @@ spec:
 {{ toYaml .Values.api.metrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
+{{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: etc-keystone
           emptyDir: {}

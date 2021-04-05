@@ -1,0 +1,66 @@
+{{- range $cluster_id, $cluster := .Values.clusters }}
+{{- if $cluster.s3_cred_cache_prewarm_credentials }}
+
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: swift-s3-cache-prewarmer-{{ $cluster_id }}
+  labels:
+    release: "{{$.Release.Name}}"
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: swift-s3-cache-prewarmer-{{ $cluster_id }}
+  template:
+    metadata:
+      labels:
+        component: swift-s3-cache-prewarmer-{{ $cluster_id }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+    spec:
+      containers:
+        - name: prewarmer
+          image: {{ include "swift_image" $ }}
+          command:
+            - /usr/bin/swift-s3-cache-prewarmer
+            - 'prewarm'
+            - '--conservative'
+            - '--expiry'
+            - "{{$cluster.s3_cred_cache_time}}s"
+            - '--servers'
+            - "memcached.{{$.Release.Namespace}}.svc:11211"
+          args: {{ toJson $cluster.s3_cred_cache_prewarm_credentials }}
+          ports:
+            - name: metrics
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "50Mi"
+          env:
+            - name: OS_AUTH_URL
+              value: {{ $cluster.keystone_auth_url }}
+            - name: OS_INTERFACE
+              value: {{$cluster.keystone_interface | default "admin"}}
+            - name: OS_PASSWORD
+              value: {{ quote $cluster.swift_service_password }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ $cluster.swift_service_project_domain }}
+            - name: OS_PROJECT_NAME
+              value: {{ $cluster.swift_service_project }}
+            - name: OS_REGION_NAME
+              value: {{ $cluster.region_name | default $.Values.global.region }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ $cluster.swift_service_user_domain }}
+            - name: OS_USERNAME
+              value: {{ $cluster.swift_service_user }}
+
+{{- end }}
+{{- end }}

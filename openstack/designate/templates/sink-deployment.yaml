@@ -1,6 +1,6 @@
 {{- if .Values.sink_enabled }}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: designate-sink
@@ -29,6 +29,9 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -41,10 +44,10 @@ spec:
             topologyKey: "kubernetes.io/hostname"
       containers:
         - name: designate-sink
-          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-designate-sink:{{required ".Values.global.image_version_designate_sink is missing" .Values.image_version_designate_sink}}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
           imagePullPolicy: IfNotPresent
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+            - kubernetes-entrypoint
           env:
             - name: COMMAND
               value: "/container.init/designate-sink-start"
@@ -57,7 +60,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: designate.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
           volumeMounts:
             - mountPath: /designate-etc

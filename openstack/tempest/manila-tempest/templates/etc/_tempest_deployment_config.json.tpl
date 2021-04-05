@@ -11,14 +11,14 @@
     },
     "users": [
         {
-            "username": "tempestuser1",
+            "username": "manila-tempestuser1",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
             "project_name": "tempest1",
             "project_domain_name": "tempest"
         },
         {
-            "username": "tempestuser2",
+            "username": "manila-tempestuser2",
             "password": {{ .Values.tempestAdminPassword | quote }},
             "user_domain_name": "tempest",
             "project_name": "tempest2",

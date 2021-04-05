@@ -3,12 +3,13 @@ apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
   name: 'vcenter-cluster-nova-compute-deployment'
+options:
   scope: 'cluster'
   jinja2_options:
     variable_start_string: '{='
     variable_end_string: '=}'
 template: |
-  apiVersion: extensions/v1beta1
+  apiVersion: apps/v1
   kind: Deployment
   metadata:
     name: nova-compute-{= name =}
@@ -43,7 +44,7 @@ template: |
 {{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
         containers:
         - name: nova-compute
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.global.image_namespace }}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           terminationGracePeriodSeconds: 900
           command:
@@ -54,8 +55,13 @@ template: |
             value: "nova-compute"
           - name: NAMESPACE
             value: {{ .Release.Namespace }}
+          {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
-            value: {{ .Values.sentry_dsn | quote }}
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
           - name: STATSD_HOST
             value: "localhost"
           - name: STATSD_PORT
@@ -64,10 +70,10 @@ template: |
             value: "ignore:Unverified HTTPS request"
           - name: PGAPPNAME
             value: nova-compute-{= name =}
+          {{- if .Values.pod.resources.hv_vmware }}
           resources:
-            requests:
-              cpu: "1000m"
-              memory: "1Gi"
+{{ toYaml .Values.pod.resources.hv_vmware | indent 12 }}
+          {{- end }}
           volumeMounts:
           - mountPath: /etc/nova
             name: etcnova
@@ -105,13 +111,18 @@ template: |
             readOnly: true
         {{- if .Values.neutron_dvs_agent_enabled }}
         - name: neutron-dvs-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
           imagePullPolicy: IfNotPresent
           command: ["dumb-init"]
           args: ["neutron-dvs-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-vmware.ini"]
           env:
+          {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
-            value: {{ .Values.neutron.sentry_dsn | quote }}
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
           - name: STATSD_HOST
             value: "localhost"
           - name: STATSD_PORT
@@ -128,10 +139,10 @@ template: |
               - bash
               - -c
               - "[ -f /tmp/neutron-dvs-agent.alive ] && [ $(($(date +%s) - $(date -r /tmp/neutron-dvs-agent.alive +%s))) -lt 300 ]"
+          {{- if .Values.pod.resources.hv_vmware_dvs }}
           resources:
-            requests:
-              cpu: "1000m"
-              memory: "2Gi"
+{{ toYaml .Values.pod.resources.hv_vmware_dvs | indent 12 }}
+          {{- end }}
           volumeMounts:
           - mountPath: /etc/neutron
             name: etcneutron

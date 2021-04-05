@@ -1,10 +1,10 @@
 kind: Ingress
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 
 metadata:
   name: keppel-api
   annotations:
-    vice-president: "true"
+    kubernetes.io/tls-acme: "true"
     disco: "true"
 
 spec:
@@ -19,3 +19,28 @@ spec:
             backend:
               serviceName: keppel-api
               servicePort: 80
+
+{{- if .Values.keppel.anycast_domain_name }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+
+metadata:
+  name: keppel-api-san
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "false"
+
+spec:
+  tls:
+    - secretName: tls-keppel-api-san
+      hosts: [ {{ .Values.keppel.anycast_domain_name }} ]
+  rules:
+    - host: {{ .Values.keppel.anycast_domain_name }}
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: keppel-api
+              servicePort: 80
+{{ end }}

@@ -3,6 +3,7 @@ apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
   name: 'vcenter-cluster-nova-compute-configmap'
+options:
   scope: 'cluster'
   jinja2_options:
     variable_start_string: '{='
@@ -26,6 +27,7 @@ template: |
       {{- if .Values.compute.defaults.default.max_concurrent_builds_per_project }}
       max_concurrent_builds_per_project = {{ .Values.compute.defaults.default.max_concurrent_builds_per_project }}
       {{- end }}
+      max_concurrent_builds = {{ .Values.compute.defaults.default.max_concurrent_builds }}
       ram_allocation_ratio = {{ .Values.compute.defaults.default.ram_allocation_ratio }}
       cpu_allocation_ratio = {{ .Values.compute.defaults.default.cpu_allocation_ratio }}
       block_device_allocate_retries = {{ .Values.compute.defaults.default.block_device_allocate_retries }}
@@ -37,6 +39,11 @@ template: |
 
       [database]
       connection = {= cells['cell-' + availability_zone].database_connection | quote =}
+      {% elif cells is defined and 'cell-' + vcenter_name in cells %}
+      transport_url = {= cells['cell-' + vcenter_name].transport_url | quote =}
+
+      [database]
+      connection = {= cells['cell-' + vcenter_name].database_connection | quote =}
       {% endif %}
 
       [vmware]

@@ -1,0 +1,67 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: cronus-seed
+
+spec:
+  roles:
+    - name: email_admin
+    - name: email_user
+    - name: cloud_email_admin
+
+  services:
+    - name:        cronus
+      type:        email-aws
+      description: 'Email service'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $.Values.global.region }}'
+          interface: public
+          enabled:   true
+          url:       'https://cronus.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+        - region:    '{{ $.Values.global.region }}'
+          interface: internal
+          enabled:   true
+          url:       'https://cronus.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+    - name:        nebula
+      type:        nebula
+      description: 'MultiCloud agent'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $.Values.global.region }}'
+          interface: public
+          enabled:   true
+          url:       'https://nebula.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+        - region:    '{{ $.Values.global.region }}'
+          interface: internal
+          enabled:   true
+          url:       'https://nebula.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+
+  domains:
+    - name: Default
+      users:
+        - name: cronus
+          description: Cronus Service
+          password: '{{ $.Values.global.cronus_service_password }}'
+    - name: monsoon3
+      projects:
+      - name: cronus-simulator
+        role_assignments:
+        - user: cronus@Default
+          role: email_admin # for monitoring
+    - name: ccadmin
+      projects:
+      - name: master
+        role_assignments:
+        - user: cronus@Default
+          role: keymanager_admin # to manage Barbican secrets
+        - user: cronus@Default
+          role: email_admin # for monitoring and system accounts
+        swift:
+          enabled: true
+          containers:
+          # allow a user who has a keymanager_admin role in the project to read and write to a swift container
+          - name: cronus_usage_cache
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin

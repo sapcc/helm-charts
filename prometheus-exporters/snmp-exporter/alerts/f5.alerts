@@ -1,0 +1,112 @@
+groups:
+  - name: f5
+    rules:
+      - alert: NetworkF5Unbound01IsOffline
+        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound1.*.cloud.sap"} != 1
+        for: 5m
+        labels:
+          severity: info
+          tier: net
+          service: f5
+          context: f5
+          meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          playbook: 'docs/devops/alert/network/f5.html#f5_unbound_offline'
+          dashboard: f5-dns-resolver-cache-for-unbounds
+        annotations:
+          description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          summary: "F5 health check monitor for Unbound pool member unbound1 failed."
+      - alert: NetworkF5Unbound02IsOffline
+        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound2.*.cloud.sap"} != 1
+        for: 5m
+        labels:
+          severity: info
+          tier: net
+          service: f5
+          context: f5
+          meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          playbook: 'docs/devops/alert/network/f5.html#f5_unbound_offline'
+          dashboard: f5-dns-resolver-cache-for-unbounds
+        annotations:
+          description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          summary: "F5 health check monitor of Unbound pool member unbound2 failed."
+      - alert: NetworkF5DirSharedUtil
+        expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/shared"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/shared"})) >= 85
+        for: 5m
+        labels:
+          severity: critical
+          tier: net
+          service: f5
+          context: f5
+          meta: "F5 - high utilization of the \"/shared\" directory."
+          playbook: 'docs/devops/alert/network/f5.html#f5_disc_util'
+          dashboard: f5-disc-utilization-regional
+        annotations:
+          description: "Utilization of the \"/shared\" directory on Big-IP device {{ $labels.devicename }} is at {{ $value }}% or more. Proceed with playbook instructions."
+          summary: "F5 - high utilization of the \"/shared\" directory."
+      - alert: NetworkF5DirVarUtil
+        expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/var"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/var"})) >= 85
+        for: 5m
+        labels:
+          severity: critical
+          tier: net
+          service: f5
+          context: f5
+          meta: "F5 - high utilization of the \"/var\" directory."
+          playbook: 'docs/devops/alert/network/f5.html#f5_disc_util'
+          dashboard: f5-disc-utilization-regional
+        annotations:
+          description: "Utilization of the \"/var\" directory on Big-IP device {{ $labels.devicename }} is at {{ $value }}% or more. Proceed with playbook instructions."
+          summary: "F5 - high utilization of the \"/var\" directory."
+      - alert: NetworkF5DirVarlogUtil
+        expr: 100 - round(snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition="/var/log"} / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition="/var/log"} * 100) >= 95
+        for: 5m
+        labels:
+          severity: critical
+          tier: net
+          service: f5
+          context: f5
+          meta: "F5 - high utilization of the \"/var/log\" directory."
+          playbook: 'docs/devops/alert/network/f5.html#f5_disc_util'
+          dashboard: f5-disc-utilization-regional
+        annotations:
+          description: "Utilization of the \"/var/log\" directory on Big-IP device {{ $labels.devicename }} is at {{ $value }}% or more. Proceed with playbook instructions."
+          summary: "F5 - high utilization of the \"/var/log\" directory."
+      - alert: NetworkF5SyncFailed
+        expr: snmp_f5_sysCmSyncStatusStatus{module="f5customer", snmp_f5_sysCmSyncStatusStatus="Sync Failed"}
+        for: 10m
+        labels:
+          context: f5
+          meta: "Big-IP device {{ $labels.devicename }} reports config-sync failure."
+          service: f5
+          severity: info
+          tier: net
+        annotations:
+          description: Big-IP device {{ $labels.devicename }} reports config sync failure. See the exact reason on the device itself and resolve.
+          summary: Configuration failed to synchronize
+      - alert: NetworkF5MemoryDrop
+        expr: min_over_time(delta(snmp_f5_sysGlobalHostOtherMemUsedKb{module="f5customer"}[15m])[2h:]) < bool -300000 == 1
+        for: 10m
+        labels:
+          context: f5
+          dashboard: f5-memory-utilization-regional
+          meta: "Big-IP device {{ $labels.devicename }} reports major drop in memory utilization."
+          playbook: 'docs/devops/alert/network/f5.html#f5_memory_drop'
+          service: f5
+          severity: critical
+          tier: net
+        annotations:
+          description: Big-IP device {{ $labels.devicename }} reports major drop in memory utilization, usually caused by API failure. Proceed with playbook instructions.
+          summary: Possible API failure.
+      - alert: NetworkF5PoolsFlapping
+        expr: (ceil((count by (devicename) (changes(snmp_f5_ltmPoolStatusAvailState[10m]) > 5) / sum by (devicename) (snmp_f5_ltmPoolNumber)) * 100)) > 50
+        for: 5m
+        labels:
+          context: f5
+          meta: "Big-IP device {{ $labels.devicename }} reports that {{ $value }}% of all pools on the device are flapping."
+          playbook: 'docs/devops/alert/network/f5.html#f5_pool_flapping'
+          service: f5
+          severity: critical
+          tier: net
+        annotations:
+          description: "Big-IP device {{ $labels.devicename }} reports {{ $value }}% of pools are flapping."
+          summary: Load balancing pools are flapping.

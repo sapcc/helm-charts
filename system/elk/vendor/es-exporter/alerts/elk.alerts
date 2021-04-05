@@ -2,8 +2,8 @@ groups:
 - name: elk.alerts
   rules:
   - alert: ElkPredictOutOfDiskSpace
-    expr: elasticsearch_filesystem_data_free_bytes{name=~"es-data.*"} * 100 / elasticsearch_filesystem_data_size_bytes{name=~"es-data.*"} < 15
-    for: 30m
+    expr: elasticsearch_filesystem_data_free_bytes{name=~"es-data.*"} * 100 / elasticsearch_filesystem_data_size_bytes{name=~"es-data.*"} < 10
+    for: 60m
     labels:
       context: diskspace
       service: elk
@@ -11,7 +11,7 @@ groups:
       tier: os
       playbook: docs/support/playbook/elk_kibana_issues.html#elkpredictoutofdiskspace-alert
     annotations:
-      description: '{{ $labels.region }} The disk usage for node {{ $labels.name }} is above 85% now.
+      description: '{{ $labels.region }} The disk usage for node {{ $labels.name }} is above 90% now.
                    Please consider cleaning up elasticsearch or lower the retention period for the logs.'
       summary: 'ELK in {{ $labels.region }} might run out of disk space'
 

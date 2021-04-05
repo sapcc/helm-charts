@@ -9,6 +9,7 @@
   params:
     'match[]':
       - '{__name__=~"^ALERTS$"}'
+      - '{__name__=~"^prometheus_build_info$"}'
 
   relabel_configs:
     - action: replace

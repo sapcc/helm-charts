@@ -15,15 +15,15 @@ data:
   tls.key: {{ $ing.tlsKey | b64enc }}
 {{- end }}
 ---
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: ingress-{{ $name | replace "." "-" }}
   labels:
     chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
-  {{- if $ing.vice_president }}
+  {{- if $ing.cert_manager}}
   annotations:
-    vice-president: "true"
+    kubernetes.io/tls-acme: "true"
   {{- end }}
 spec:
   tls:

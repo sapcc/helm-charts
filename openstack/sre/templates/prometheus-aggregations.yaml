@@ -14,18 +14,45 @@ spec:
   groups:
   - name: openstack-sre.aggregations
     rules:
-{{- range $api, $slo := $values.slo.api_error_ratio_percent }}
-    - record: global:api_errors_per_request_slo:percent
+{{- range $api, $slo := $values.slo.api_availability_percent }}
+    - record: global:api_availability_warning_slo:percent
       labels:
           ingress: {{ $api | quote }}
           region: {{required ".Values.global.region missing" $values.global.region}}
-      expr: {{ $slo | quote }}
+      expr: {{ $slo.warning | default $values.slo.defaults.api_availability_percent.warning | quote }}
+{{- end }}
 
+{{- range $api, $slo := $values.slo.api_availability_percent }}
+    - record: global:api_availability_critical_slo:percent
+      labels:
+          ingress: {{ $api | quote }}
+          region: {{required ".Values.global.region missing" $values.global.region}}
+      expr: {{ $slo.critical | default $values.slo.defaults.api_availability_percent.critical | quote }}
 {{- end }}
 
 {{- range $period := $values.periods }}
     - record: global:api_errors_per_request_sli:ratio_rate{{$period}}
       expr: |2
-          sum(rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}])) by (region, ingress) /  sum(rate(nginx_ingress_controller_requests[{{$period}}])) by (region, ingress)
+          (sum by(region,ingress) (rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}])) OR (0 * count by (region, ingress) (nginx_ingress_controller_requests) )) /  sum by(region, ingress) (rate(nginx_ingress_controller_requests[{{$period}}]))
 
 {{- end }}
+    - record: global:api_errors_per_request_per_date_sli:ratio_rate1d
+      expr: |2
+          sum by(region, ingress, day, month, year) ((rate(nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server",status=~"5.."}[1d]) or (0 * nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server"}))
+            + ignoring(year, month, day) group_right()
+              count_values without() ("year", year(timestamp(
+                count_values without() ("month", month(timestamp(
+                  count_values without() ("day", day_of_month(timestamp(
+                    nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server"}
+                  )))
+                )))
+              ))) * 0) /
+          sum by(region, ingress, day, month, year) (rate(nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server"}[1d])
+            + ignoring(year, month, day) group_right()
+              count_values without() ("year", year(timestamp(
+                count_values without() ("month", month(timestamp(
+                  count_values without() ("day", day_of_month(timestamp(
+                    nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server"}
+                  )))
+                )))
+              ))) * 0)

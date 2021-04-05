@@ -1,7 +1,7 @@
 {{- $opts := merge .Values.pgbouncer .Values.global.pgbouncer }}
 {{- if $opts.enabled }}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: {{.Values.postgresDatabase}}-pgbouncer
   namespace:  {{.Release.Namespace}}
@@ -37,7 +37,11 @@ spec:
       terminationGracePeriodSeconds: 150
       containers:
         - name: pgbouncer
+{{- if .Values.pgbouncer.custom_repository }}
+          image: {{ .Values.pgbouncer.image }}:{{.Values.global.pgbouncer.imageTag | default .Values.pgbouncer.image_version | default .Values.global.pgbouncer.imageTag | default .Values.global.pgbouncer.image_version | default "latest" }}
+{{- else }}
           image: {{.Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/pgbouncer-k8s:{{.Values.global.pgbouncer.imageTag | default .Values.pgbouncer.image_version | default .Values.global.pgbouncer.imageTag | default .Values.global.pgbouncer.image_version | default "latest" }}
+{{- end }}
           imagePullPolicy: IfNotPresent
 {{- if $opts.debug }}
           command: ["sleep", "inf"]

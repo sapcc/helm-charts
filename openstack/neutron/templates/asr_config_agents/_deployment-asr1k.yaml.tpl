@@ -3,7 +3,7 @@
 {{- $config_agent := index . 1 -}}
 kind: Deployment
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: neutron-asr1k-{{ $config_agent.name }}
@@ -33,19 +33,18 @@ spec:
         prometheus.io/port: "{{$context.Values.l3_port_metrics |  default 9103}}"
         prometheus.io/port_1: "{{$context.Values.l2_port_metrics |  default 9102}}"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $context.Values.alerts.prometheus | quote }}
+        configmap-asr1k-{{ $config_agent.name }}: {{ tuple $context $config_agent |include "asr1k_configmap" | sha256sum  }}
     spec:
-      {{- if ge $context.Capabilities.KubeVersion.Minor "7" }}
       hostname:  {{ $config_agent.hostname }}
-      {{- end }}
       containers:
         - name: neutron-asr1k
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1k or similar"}}
+          image: {{$context.Values.global.registry}}/loci-neutron:{{$context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1k or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr1k-start
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -80,10 +79,16 @@ spec:
               protocol: TCP
 
         - name: neutron-asr1k-ml2
-          image: {{ default "hub.global.cloud.sap" $context.Values.global.imageRegistry }}/monsoon/loci-neutron:{{$context.Values.imageVersionASR1kML2 | default $context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1kML2 or similar"}}
+          image: {{$context.Values.global.registry}}/loci-neutron:{{$context.Values.imageVersionASR1kML2 | default $context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1kML2 or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr1k-ml2-start
+          livenessProbe:
+            exec:
+              command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
           env:
             - name: DEBUG_CONTAINER
             {{ if $context.Values.pod.debug.asr1k_ml2_agent }}

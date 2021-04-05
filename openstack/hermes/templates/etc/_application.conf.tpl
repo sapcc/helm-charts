@@ -27,6 +27,10 @@ hosts = [
   {
     host = "http://elasticsearch.hermes:9200"
     name = "hermes cluster"
+  },
+  {
+    host = "http://elasticsearch-data.elastiflow:9200"
+    name = "elastiflow cluster"
   }
 ]
 
@@ -35,11 +39,14 @@ auth = {
   type: ldap
   settings: {
     url = "ldaps://{{.Values.ldap.host}}:{{.Values.ldap.port}}"
+    method = "simple"
     base-dn = "{{.Values.ldap.search_base_dbs}},{{.Values.ldap.suffix}}"
     bind-dn = "{{.Values.ldap.bind_dn}},{{.Values.ldap.suffix}}"
     bind-pw = "{{.Values.ldap.password}}"
-    user-domain = "{{.Values.ldap.userdomain}}"
-    userAttr = "sAMAccountName"
-    userGroup = "{{.Values.ldap.user_group}},{{.Values.ldap.suffix}}"
+user-template = "%s@{{.Values.ldap.userdomain}}"
+    group-search {
+      user-attr = "sAMAccountName"
+      group = "{{.Values.ldap.user_group}},{{.Values.ldap.suffix}}"
+    }
   }
 }

@@ -1,12 +1,12 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: keppel-api
 
 spec:
   revisionHistoryLimit: 5
-  replicas: 1
+  replicas: {{ if .Values.keppel.slim }} 1 {{ else }} {{ .Values.keppel.replicas.api }} {{ end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -19,11 +19,10 @@ spec:
     metadata:
       labels:
         name: keppel-api
-        serves: keppel-api # shared with dev-toolbox deployment
       annotations:
-        checksum: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
+        checksum/configmap: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
     spec:
-      serviceAccountName: keppel-api-service-user
       volumes:
         - name: config
           configMap:
@@ -31,10 +30,9 @@ spec:
       containers:
         - name: api
           image: {{include "keppel_image" .}}
-          imagePullPolicy: {{.Values.keppel.image_pull_policy}}
-          command: [ /usr/bin/keppel-api ]
-          args: []
-          env: {{ include "keppel_api_environment" . | indent 12 }}
+          imagePullPolicy: IfNotPresent
+          args: [ server, api ]
+          env: {{ include "keppel_environment" $ | indent 12 }}
           volumeMounts:
             - mountPath: /etc/keppel
               name: config
@@ -51,3 +49,13 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
+          # NOTE: observed resource usage in eu-de-1 (as of 2020-12)
+          # - CPU: 50m with 4 replicas was running into throttling, so give plenty headroom
+          # - RAM: levels off around 50 Mi
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "128Mi"
+            limits:
+              cpu: "150m"
+              memory: "128Mi"

@@ -31,7 +31,7 @@ spec:
       initContainers:
       # create volume
       - name: {{ $.Values.worker.name }}-{{ .name }}-create-work-dir
-        image: "hub.global.cloud.sap/d074427/openstack-btrfs:latest"
+        image: "keppel.eu-de-1.cloud.sap/ccloud/concourse-openstack-btrfs:latest"
         imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
         command:
         - /bin/sh
@@ -63,10 +63,10 @@ spec:
         - name: WORK_DIR_AZ
           value: {{ .az }}
         - name: WORK_DIR_SIZE_GB
-          value: {{ $.Values.worker.workDirVolumeSizeGb | quote }}
+          value: {{ .workDirVolumeSizeGb | quote }}
       # attach volume to node
       - name: {{ $.Values.worker.name }}-{{ .name }}-attach-work-dir
-        image: "hub.global.cloud.sap/d074427/openstack-btrfs:latest"
+        image: "keppel.eu-de-1.cloud.sap/ccloud/concourse-openstack-btrfs:latest"
         imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
         command:
         - /bin/sh
@@ -92,7 +92,7 @@ spec:
           value: {{ $.Values.openstack.application_credential_secret }}
       # format volume and mount
       - name: {{ $.Values.worker.name }}-{{ .name }}-format-work-dir
-        image: "hub.global.cloud.sap/d074427/openstack-btrfs:latest"
+        image: "keppel.eu-de-1.cloud.sap/ccloud/concourse-openstack-btrfs:latest"
         imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
         securityContext:
           privileged: true
@@ -196,10 +196,12 @@ spec:
         - name: CONCOURSE_GARDEN_DNS_PROXY_ENABLE
           value: "false"
 {{- if $.Values.worker.env }}
-{{ toYaml $.Values.worker.env | indent 12 }}
+{{ toYaml $.Values.worker.env | indent 8 }}
 {{- end }}
+{{- if $.Values.worker.resources }}
         resources:
-{{ toYaml $.Values.worker.resources | indent 12 }}
+{{ toYaml $.Values.worker.resources | indent 10 }}
+{{- end }}
         securityContext:
           privileged: true
         volumeMounts:
@@ -212,7 +214,7 @@ spec:
           mountPath: /usr/local/share/ca-certificates
         - name: pre-stop
           mountPath: /land-worker
-      terminationGracePeriodSeconds: 1800
+      terminationGracePeriodSeconds: 180
       volumes:
       - name: sap-root-certs
         secret:

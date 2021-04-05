@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: {{ include "alertmanager.fullname" . }}
+  labels:
+    app: alertmanager
+    alertmanager: {{ include "alertmanager.name" . }}
+
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9093"
+    prometheus.io/targets: "kubernetes"
+
+spec:
+  {{- if .Values.mesh.nodePort }}
+  type: NodePort
+  {{- end }}
+
+  selector:
+    app: alertmanager
+    alertmanager: {{ include "alertmanager.name" . }}
+
+  ports:
+    - name: http
+      port: 9093
+      targetPort: web
+    - name: mesh-tcp
+      protocol: TCP
+      port: {{ required ".Values.mesh.port missing" .Values.mesh.port }}
+      targetPort: mesh-tcp
+      {{ if .Values.mesh.nodePort -}}
+      nodePort: {{ .Values.mesh.nodePort }}
+      {{- end }}
+    - name: mesh-udp
+      protocol: UDP
+      port: {{ required ".Values.mesh.port missing" .Values.mesh.port }}
+      targetPort: mesh-udp
+      {{ if .Values.mesh.nodePort -}}
+      nodePort: {{ .Values.mesh.nodePort }}
+      {{- end }}

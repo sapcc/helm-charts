@@ -1,0 +1,21 @@
+{{ if .Values.proxy.metricPort -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-proxy-metrics
+  labels:
+    app: kube-proxy
+
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: "kubernetes"
+
+spec:
+  ports:
+  - name: metrics
+    port: {{ required ".Values.proxy.metricPort missing" .Values.proxy.metricPort }}
+
+  selector:
+    name: kube-proxy
+    k8s-app: kube-proxy
+{{- end }}

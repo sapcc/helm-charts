@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: ironic-inspector
@@ -32,18 +32,26 @@ spec:
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
       - name: ironic-inspector
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-inspector:{{.Values.imageVersionIronicInspector | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        {{- if .Values.oslo_metrics.enabled }}
+        image: {{ .Values.global.registry }}/test-ironic:oslo-metrics01
+        {{- else}}
+        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
+        {{- end }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
         - kubernetes-entrypoint
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
         env:
         - name: COMMAND
-          value: "ironic-inspector"
+          value: "ironic-inspector --config-file /etc/ironic-inspector/ironic-inspector.conf"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
-          value: "ironic-api,rabbitmq"
+          value: "ironic-api,ironic-rabbitmq"
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
           valueFrom:
@@ -76,9 +84,17 @@ spec:
           name: ironic-etc
           subPath: logging.ini
           readOnly: true
+        - mountPath: /etc/ironic-inspector/policy.json
+          name: ironic-etc
+          subPath: policy.json
+          readOnly: true
+        - mountPath: /etc/ironic-inspector/rootwrap.d/ironic-inspector.filters
+          name: ironic-etc
+          subPath: ironic-inspector.filters
+          readOnly: true
       {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
       - name: dhcp
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-staticdhcpd:{{.Values.imageVersionStaticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        image: {{ .Values.global.registry }}/ubuntu-source-staticdhcpd:{{.Values.imageVersionStaticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.dhcp | indent 10 }}
@@ -100,7 +116,27 @@ spec:
         volumeMounts:
         - mountPath: /conf
           name: dhcp-config
-        {{- end }}
+      {{- end }}
+      {{- if .Values.oslo_metrics.enabled }}
+      - name: oslo-exporter
+        image: prom/statsd-exporter
+        args:
+        - --web.listen-address=:9102
+        - --web.telemetry-path=/metrics
+        - --statsd.listen-udp=:8125
+        - --statsd.listen-tcp=
+        - --statsd.cache-size=1000
+        - --statsd.event-queue-size=10000
+        - --statsd.event-flush-threshold=1000
+        - --statsd.event-flush-interval=200ms
+        ports:
+        - name: web
+          containerPort: 9102
+          protocol: TCP
+        - name: statsd-udp
+          containerPort: 8125
+          protocol: UDP
+      {{- end }}
       volumes:
       - name: etcironic
         emptyDir: {}

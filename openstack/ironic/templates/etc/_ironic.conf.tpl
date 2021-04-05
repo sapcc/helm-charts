@@ -1,11 +1,17 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
-pybasedir = /ironic/ironic
+{{- if contains "train" .Values.imageVersion }}
+pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
+{{- else }}
+pybasedir = /var/lib/openstack/lib/python2.7/site-packages/ironic
+{{- end }}
+
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
 {{- if .Values.notification_level }}
 notification_level = {{ .Values.notification_level }}
+versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | default "ironic_versioned_notifications" | quote }}
 {{- end }}
 
 {{- include "ini_sections.default_transport_url" . }}
@@ -36,8 +42,18 @@ dhcp_provider = neutron
 [api]
 host_ip = 0.0.0.0
 public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
+{{- if .Values.api.api_workers }}
+api_workers = {{ .Values.api.api_workers }}
+{{- end }}
 
-{{- include "ini_sections.database" . }}
+[database]
+{{- if eq .Values.mariadb.enabled true }}
+connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
+{{- include "ini_sections.database_options_mysql" . }}
+{{- else }}
+connection = {{ tuple . "ironic" "ironic" .Values.global.dbPassword | include "db_url" }}
+{{- include "ini_sections.database_options" . }}
+{{- end }}
 
 [keystone]
 auth_section = keystone_authtoken
@@ -51,7 +67,7 @@ www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
+password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 region_name = {{ .Values.global.region }}
@@ -59,8 +75,8 @@ insecure = True
 service_token_roles_required = True
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 token_cache_time = 600
-
-{{- include "ini_sections.audit_middleware_notifications" . }}
+include_service_catalog = true
+service_type = baremetal
 
 [service_catalog]
 auth_section = service_catalog
@@ -73,7 +89,7 @@ www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.ironicServicePassword | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user")  | replace "$" "$$" }}
+password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 insecure = True
@@ -116,6 +132,17 @@ enabled = true
 service_type = baremetal
 config_file = /etc/ironic/watcher.yaml
 {{ end }}
+
+{{ if .Values.audit.enabled }}
+[audit]
+enabled = True
+audit_map_file = /etc/ironic/api_audit_map.yaml
+ignore_req_list = GET, HEAD
+record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
+metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
+
+{{- include "ini_sections.audit_middleware_notifications" . }}
+{{- end }}
 
 {{- include "osprofiler" . }}
 

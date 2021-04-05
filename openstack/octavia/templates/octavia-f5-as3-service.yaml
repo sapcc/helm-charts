@@ -1,0 +1,23 @@
+{{- if .Values.external_as3 }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: octavia-f5-as3
+  labels:
+    app.kubernetes.io/name: octavia-f5-as3
+    helm.sh/chart: {{ include "octavia.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    system: openstack
+    type: api
+    component: octavia
+spec:
+  ports:
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+  selector:
+    app.kubernetes.io/name: octavia-f5-as3
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

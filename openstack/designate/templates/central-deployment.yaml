@@ -1,8 +1,8 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
-  name: designate-central
+  name: {{ .Release.Name }}-central
   labels:
     system: openstack
     application: designate
@@ -29,39 +29,44 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
-{{ tuple . "designate" "central" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
 {{- end }}
+{{ tuple . "designate" "central" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: designate-central
-          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-designate-central:{{required ".Values.global.image_version_designate_central is missing" .Values.image_version_designate_central}}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
           imagePullPolicy: IfNotPresent
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+            - kubernetes-entrypoint
           resources:
-             requests:
-               memory: "256Mi"
-               cpu: "250m"
-             limits:
-               memory: "1024Mi"
-               cpu: "1000m"
+{{ toYaml .Values.resources.central | indent 12 }}
           env:
             - name: COMMAND
               value: "/container.init/designate-central-start"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: "designate-migration"
+              value: "{{ .Release.Name }}-migration"
             - name: DEPENDENCY_SERVICE
-              value: "designate-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- if .Values.percona_cluster.enabled }}
+              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq"
+{{- else }}
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- end }}
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: designate.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
           volumeMounts:
             - mountPath: /designate-etc

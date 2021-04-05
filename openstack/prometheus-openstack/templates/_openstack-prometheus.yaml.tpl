@@ -7,6 +7,8 @@
 # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
 # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the default of `9102`.
 - job_name: 'pods'
+  scrape_interval: 1m
+  scrape_timeout: 55s
   kubernetes_sd_configs:
   - role: pod
   relabel_configs:
@@ -53,6 +55,8 @@
 # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
 # * `prometheus.io/port_1`: Scrape the pod on the indicated port instead of the default of `9102`.
 - job_name: 'pods_metric_port_1'
+  scrape_interval: 1m
+  scrape_timeout: 55s
   kubernetes_sd_configs:
   - role: pod
   relabel_configs:

@@ -1,0 +1,74 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-swift-pod.alerts
+  rules:
+    - alert: OpenstackSwiftPodSchedulingFailedInsufficientCPU
+      expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"swift-.+"}[30m])) by (pod_name) > 0
+      for: 15m
+      labels:
+        severity: warning
+        tier: os
+        service: swift
+        context: cpu
+        meta: "{{ $labels.pod_name }}"
+        no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+      annotations:
+        summary: Scheduling failed due to insufficient cpu
+        description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
+
+    - alert: OpenstackSwiftPodCPUThrottling
+      expr: rate(container_cpu_cfs_throttled_seconds_total{namespace="swift"}[1h]) > 1
+      for: 15m
+      labels:
+        tier: os
+        service: swift
+        severity: info
+        context: cpu
+        meta: "{{ $labels.pod }}/{{ $labels.container }}"
+      annotations:
+        summary: Container is constantly CPU-throttled
+        description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
+          constantly. This is probably impacting performance, so check if we can increase the number
+          of replicas or the resource requests/limits.
+
+    - alert: OpenstackSwiftPodSchedulingInsufficientMemory
+      expr: sum(rate(kube_pod_failed_scheduling_memory_total{pod_name=~"swift-.+"}[30m])) by (pod_name) > 0
+      for: 15m
+      labels:
+        severity: warning
+        tier: os
+        service: swift
+        context: memory
+        meta: "{{ $labels.pod_name }}"
+        no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+      annotations:
+        summary: Scheduling failed due to insufficient memory
+        description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient memory!
+
+    - alert: OpenstackSwiftPodOOMKilled
+      expr: sum(rate(klog_pod_oomkill{pod_name=~"swift-.+"}[30m])) by (pod_name) > 0
+      for: 5m
+      labels:
+        tier: os
+        service: swift
+        severity: info
+        context: memory
+        meta: "{{ $labels.pod_name }}"
+        no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
+      annotations:
+        summary: Pod was oomkilled
+        description: The pod {{ $labels.pod_name }} was oomkilled recently
+
+    - alert: OpenstackSwiftPodOOMExceedingLimits
+      expr: swift_container_memory_usage_percent > 70 and predict_linear(swift_container_memory_usage_percent[1h], 7*3600) > 100
+      for: 30m
+      labels:
+        tier: os
+        service: swift
+        severity: info
+        context: memory
+        meta: "{{ $labels.pod }}/{{ $labels.container }}"
+      annotations:
+        summary: Exceeding memory limits in 8h
+        description: The container {{ $labels.pod }}/{{ $labels.container }} will exceed its memory limit in 8h.

@@ -4,7 +4,6 @@ metadata:
   name: manila-etc
   labels:
     app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: manila
@@ -20,8 +19,10 @@ data:
   logging.ini: |
 {{ include "loggerIni" .Values.logging | indent 4 }}
 {{- if .Values.audit.enabled }}
+{{- if not .Values.api_backdoor }}
   wsgi-manila.conf: |
 {{ include (print .Template.BasePath "/etc/_wsgi-manila.conf.tpl") . | indent 4 }}
+{{- end }}
   manila_audit_map.yaml: |
 {{ include (print .Template.BasePath "/etc/_manila_audit_map.yaml") . | indent 4 }}
 {{- end }}

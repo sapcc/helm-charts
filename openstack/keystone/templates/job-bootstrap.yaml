@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: keystone-job-bootstrap
+  name: {{ .Release.Name }}-job-bootstrap
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       labels:
-        name: keystone-job-bootstrap
+        name: {{ .Release.Name }}-job-bootstrap
         system: openstack
         component: keystone
         type: job
@@ -27,29 +27,28 @@ spec:
         "helm.sh/hook": post-install
     spec:
 {{- if .Values.rbac.enabled }}
-      serviceAccountName: keystone
+      serviceAccountName: {{ .Release.Name }}
 {{- end }}
       restartPolicy: OnFailure
       containers:
         - name: keystone-bootstrap
-          image: "{{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}"
+          image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.api.imagePullPolicy | quote }}
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+            - kubernetes-entrypoint
           env:
             - name: COMMAND
               value: "bash /scripts/bootstrap"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-{{- if eq .Values.global.database "postgres" }}
-              value: {{ .Release.Name }}-postgresql
-{{- end }}
-{{- if eq .Values.global.database "mariadb" }}
-              value: {{ .Release.Name }}-mariadb
+{{- if .Values.percona_cluster.enabled }}
+              value: "{{ .Release.Name }}-percona-pxc"
+{{- else }}
+              value: "{{ .Release.Name }}-mariadb"
 {{- end }}
             - name: DEPENDENCY_JOBS
-              value: keystone-job-migration
+              value: {{ .Release.Name }}-job-migration
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
@@ -58,7 +57,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: keystone.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
             {{- end }}
           volumeMounts:
@@ -68,7 +67,7 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
-{{- if eq .Values.release "stein" }}
+{{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
               subPath: policy.yaml

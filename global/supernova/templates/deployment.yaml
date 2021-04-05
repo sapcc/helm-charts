@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: supernova
@@ -16,30 +16,41 @@ spec:
     metadata:
       labels:
         name: supernova
+      annotations:
+        # Hash supernova configMap and save in in annotation so that a change to it triggers a pod recycle (to ensure the new config file is read)
+        supernova-config-hash: {{ include (print $.Template.BasePath "/supernova-config.yaml") $ | sha256sum }}
     spec:
       volumes:
-        - name: editors
+        - name: alertmanager-certs
+          secret:
+            secretName: alertmanager-sso-cert
+        - name: support-files
           configMap:
-            name: editors
+            name: supernova-config
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
       containers:
         - name: web
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.global.registry }}/supernova:{{ .Values.image.tag }}"
           imagePullPolicy: {{.Values.image.pullPolicy}}
           ports:
             - name: http
               containerPort: 80
 
           volumeMounts:
-            - name: editors
-              mountPath: '/home/app/webapp/config/users'
-              readOnly: true     
+            - name: alertmanager-certs
+              mountPath: '/home/app/webapp/config/certs'
+              readOnly: true  
+            - name: support-files
+              mountPath: '/home/app/webapp/config/support'
+              readOnly: true       
           env:
             - name: REGION
               value: {{ .Values.region }}
             - name: REACT_APP_ALERTMANAGER_API_ENDPOINT
               value: {{ .Values.alertmanager_api_endpoint }}
+            - name: REACT_APP_ALERTMANAGER_API_ENDPOINT_BACKUP
+              value: {{ .Values.alertmanager_api_endpoint_backup }}
             - name: REACT_APP_PAGERDUTY_API_ENDPOINT
               value: {{ .Values.pagerduty_api_endpoint }}
             - name: REACT_APP_PAGERDUTY_API_TOKEN
@@ -51,7 +62,13 @@ spec:
             - name: SILENCES_UPDATE_TIMEOUT_SEC
               value: {{ .Values.silences_update_timeout_sec | quote }}
             - name: ACKED_ALERTS_UPDATE_TIMEOUT_SEC
-              value: {{ .Values.acked_alerts_update_timeout_sec | quote }}              
+              value: {{ .Values.acked_alerts_update_timeout_sec | quote }}  
+            - name: OIDC_ENDPOINT
+              value: {{ .Values.oidc_endpoint | quote }}  
+            - name: OIDC_CLIENT_ID
+              value: {{ .Values.oidc_client_id | quote }}  
+            - name: PAGERDUTY_SERVICE_IDS
+              value: {{ .Values.pagerduty_service_ids | quote }}
 
           livenessProbe:
             httpGet:

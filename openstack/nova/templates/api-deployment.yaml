@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: nova-api
@@ -27,42 +27,41 @@ spec:
 {{ tuple . "nova" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
 {{- if .Values.pod.debug.api }}
       securityContext:
         runAsUser: 0
 {{- end }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
+      hostname: nova-api
       containers:
         - name: nova-api
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "{{ if not .Values.pod.debug.api }}{{ .Values.global.novaApi.executable }}{{ else }}sleep inf{{ end }}"
+              value: "{{ if .Values.api.use_uwsgi }}uwsgi --ini /etc/nova/api_uwsgi.ini{{ else }}nova-api{{ end }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
               value: "nova-migration"
             - name: DEPENDENCY_SERVICE
-              value: "nova-postgresql,{{ .Release.Name }}-rabbitmq"
-              # plus soft-dependency to nova-rabbitmq-notifications
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
 {{- if .Values.python_warnings }}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
@@ -85,15 +84,13 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 5
 {{- end }}
+          {{- if .Values.pod.resources.api }}
           resources:
-            requests:
-              cpu: "12000m"
-              memory: "13Gi"
+{{ toYaml .Values.pod.resources.api | indent 12 }}
+          {{- end }}
           ports:
             - name: nova-api
               containerPort: {{.Values.global.novaApiPortInternal}}
-            - name: nova-metdata
-              containerPort: {{.Values.global.novaApiMetadataPortInternal}}
           volumeMounts:
             - mountPath: /etc/nova
               name: etcnova
@@ -109,6 +106,12 @@ spec:
               name: nova-etc
               subPath: api-paste.ini
               readOnly: true
+           {{- if .Values.api.use_uwsgi }}
+            - mountPath: /etc/nova/api_uwsgi.ini
+              name: nova-etc
+              subPath: api_uwsgi.ini
+              readOnly: true
+           {{- end }}
 {{- if .Values.audit.enabled }}
             - mountPath: /etc/nova/nova_audit_map.yaml
               name: nova-etc

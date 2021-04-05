@@ -8,11 +8,17 @@
 worker:
   nameOverride: ""
   name: concourse-worker
-
+  env:
+  # default is 250
+  - name: CONCOURSE_GARDEN_MAX_CONTAINERS
+    value: "500"
+  # default is 10.254.0.0/22
+  - name: CONCOURSE_GARDEN_NETWORK_POOL
+    value: "10.254.0.0/16"
 concourse:
   image: concourse/concourse
   imageTag: "5.4.1"
-  pullPolicy: IfNotPresent
+  imagePullPolicy: IfNotPresent
 
   concourse:
     web:
@@ -101,6 +107,15 @@ concourse:
         maxSurge: 1
         maxUnavailable: 25%
 
+    nodeSelector:
+      ccloud.sap.com/nodepool: "ci-system"
+
+    tolerations:
+      - key: "ci"
+        operator: Equal
+        value: "system"
+        effect: "NoSchedule"
+
   worker:
     enabled: false
 
@@ -120,6 +135,21 @@ concourse:
         - ReadWriteOnce
       size: 50Gi
 
+    master:
+      nodeSelector:
+        ccloud.sap.com/nodepool: "ci-web-db"
+
+      tolerations:
+        - key: "ci"
+          operator: Equal
+          value: "system"
+          effect: "NoSchedule"
+
+    resources:
+      requests:
+        memory: 12Gi
+        cpu: 1
+
   rbac:
     create: true
     webServiceAccountName: concourse
@@ -131,13 +161,13 @@ concourse:
     create: true
 
 webhook-broadcaster:
-  image: sapcc/concourse-webhook-broadcaster
+  image: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/sapcc/concourse-webhook-broadcaster
   imageTag: "0.6.3"
   pullPolicy: IfNotPresent
 
 cleanup:
   enabled: false
-  image: sapcc/concourse-ci-cleanup
+  image: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/sapcc/concourse-ci-cleanup
   imageTag: "0.1.1"
   pullPolicy: IfNotPresent
   # worker_prefix:
@@ -152,8 +182,8 @@ alerts:
 
 backup:
   enabled: true
-  image: hub.global.cloud.sap/monsoon/backup-tools
-  imageTag: v0.6.2
+  image: keppel.eu-de-2.cloud.sap/ccloud/backup-tools
+  imageTag: v0.6.5
   interval_full: 1 hours
   #os_auth_url:
   #os_region_name:
@@ -163,12 +193,12 @@ backup:
   #os_project_name:
   #os_project_domain:
 gitResourceProxy:
-  replicas: 5
+  replicas: 10
   timeout: 60s
   enabled: true
   debug: true
-  image: sapcc/concourse-git-resource-proxy
-  imageTag: 0.4.5
+  image: keppel.eu-de-2.cloud.sap/ccloud-dockerhub-mirror/sapcc/concourse-git-resource-proxy
+  imageTag: 0.5.0
   imagePullPolicy: IfNotPresent
 
 nginx-ingress:

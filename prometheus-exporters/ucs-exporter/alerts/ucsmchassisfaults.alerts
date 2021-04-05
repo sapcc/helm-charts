@@ -1,0 +1,14 @@
+groups:
+- name: ucsmchassisfaults.alerts
+  rules:
+  - alert: UcsmChassisFault
+    expr: max_over_time(ucsm_chassis_faults{severity=~"major|critical|warning"}[20m])
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "ucs-exporter"
+      meta: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity as {{ $labels.severity }}"
+    annotations:
+      description: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }} description : {{ $labels.descr }}"
+      summary: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }} description : {{ $labels.descr }}"

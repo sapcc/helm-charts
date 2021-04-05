@@ -1,13 +1,14 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kibana
   namespace: elk
   labels:
-    system: openstack
-    service: logging
-
+    component: kibana
 spec:
+  selector:
+    matchLabels:
+      component: kibana
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -21,7 +22,6 @@ spec:
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}        
         checksum/kibana.yml.tpl: {{ include (print $.Template.BasePath "/_kibana.yml.tpl") . | sha256sum }}
-        checksum/kibana-start.tpl: {{ include (print $.Template.BasePath "/_kibana-start.tpl") . | sha256sum }}
     spec:
       nodeSelector:
         ccloud.sap.com/nodepool: payload
@@ -31,9 +31,9 @@ spec:
             name: kibana-etc
       containers:
         - name: kibana
-          image: {{.Values.global.docker_repo}}/elk-kibana:{{.Values.image_version_kibana}}
+          image: docker.elastic.co/kibana/kibana:{{.Values.image_version_kibana}}
           imagePullPolicy: IfNotPresent
-          command: ["/usr/local/bin/dumb-init", "/bin/bash", "/kibana-etc/kibana-start"]
+          command: ["/usr/share/kibana/bin/kibana", "--allow-root"]
           env:
             - name: NAMESPACE
               valueFrom:
@@ -45,5 +45,5 @@ spec:
             - name: nodejs
               containerPort: {{.Values.global.kibana_port_public}}
           volumeMounts:
-            - mountPath: /kibana-etc
+            - mountPath: /usr/share/kibana/config
               name: kibana-etc

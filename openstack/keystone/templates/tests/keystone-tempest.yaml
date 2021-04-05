@@ -24,10 +24,10 @@ spec:
   restartPolicy: Never
   containers:
     - name: keystone-tempest
-      image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.tempest.image }}:{{ .Values.tempest.imageTag }}
+      image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.tempest.image }}:{{ .Values.tempest.imageTag }}
       imagePullPolicy: {{ default "IfNotPresent" .Values.tempest.imagePullPolicy | quote }}
       command:
-        - /usr/local/bin/kubernetes-entrypoint
+        - kubernetes-entrypoint
       env:
         - name: COMMAND
           value: "/scripts/keystone-tempest.sh"

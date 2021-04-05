@@ -9,7 +9,11 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
+{{- if eq .Values.global_setup true }}
+    - {{.Values.global.keystoneNamespace}}/keystone-global-seed
+{{- else }}
     - {{.Values.global.keystoneNamespace}}/keystone-seed
+{{- end }}
     - domain-default-seed
 
   domains:
@@ -44,6 +48,12 @@ spec:
         role: admin
       - group: CCADMIN_BAME_ADMIN
         role: member
+      - user: TCC_D032408_WS
+        role: admin
+      - user: TCC_D032408_WS
+        role: automation_admin
+      - user: TCC_D032408_WS
+        role: securitygroup_admin
     - name: support
       description: 'Support Teams'
     - name: api_support

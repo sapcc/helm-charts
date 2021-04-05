@@ -4,6 +4,9 @@ metadata:
   name: {{ template "name" . }}
   namespace: {{ .Release.Namespace }}
 data:
-  {{- if .Values.metrics.config }}
-{{ toYaml .Values.metrics.config | indent 2 }}
-  {{ end }}
+  config.yaml: |
+    metrics:
+{{ .Values.metrics | toYaml | indent 4}}
+{{- if .Values.additional_metrics }}
+{{ .Values.additional_metrics | toYaml | indent 4}}
+{{- end }}

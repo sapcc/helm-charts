@@ -12,13 +12,19 @@ metadata:
 
 data:
   cloudprober.cfg: |
-    {{- range $i, $config := .Values.static_ping_targets }}
+    {{- range $i, $config := .Values.global.static_ping_targets }}
     probe {
       type: PING
       name: "ping-{{ $config.name }}"
       targets {
         host_names: "{{ $config.target }}"
       }
+      {{- if $config.zone }}
+      additional_label {
+        key: "dst_zone"
+        value: "{{ $config.zone }}"
+      }
+      {{- end }}
       ping_probe {
         use_datagram_socket: false
       }
@@ -40,7 +46,9 @@ data:
       }
       http_probe {
         port: {{ $config.port }}
-        relative_url: "/data_4096"
+      {{- if $config.relative_url }}
+        relative_url: {{ $config.relative_url | quote }}
+      {{- end }}
       }
       interval_msec: {{ $values.httpIntervalMsec }}
       timeout_msec: {{ $values.httpTimeoutMsec }}

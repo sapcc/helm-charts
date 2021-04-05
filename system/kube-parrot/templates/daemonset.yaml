@@ -1,0 +1,153 @@
+{{ if .Values.enabled -}}
+{{ if .Values.racks -}}
+{{- range $rackname, $rack := .Values.racks }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+  labels:
+    k8s-app: kube-parrot
+  name: kube-parrot-{{ $rackname }}
+spec:
+  selector:
+    matchLabels:
+      name: kube-parrot
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: kube-parrot
+        k8s-app: kube-parrot
+      annotations:
+    spec:
+      priorityClassName: system-node-critical
+      containers:
+      - name: parrot
+        image: "{{ $.Values.images.parrot.repository }}:{{ $.Values.images.parrot.tag }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /parrot
+          - --as={{ required ".Values.as" $.Values.as }}
+          - --nodename=$(NODE_NAME)
+          - --hostip=$(HOST_IP)
+          - --logtostderr
+{{- if $.Values.metricPort }}
+          - --metric-port={{ $.Values.metricPort }}
+{{- end }}
+{{- range $neighbor := $rack.neighbors }}
+          - --neighbor={{ $neighbor }}
+{{- end }}
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP 
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        volumeMounts:
+          - name: etc-kubernetes-kube-parrot
+            mountPath: /etc/kubernetes/kube-parrot
+        {{ if $.Values.metricPort -}}
+        ports:
+          - name: parrot-metrics
+            containerPort: {{ $.Values.metricPort }}
+            hostPort: {{ $.Values.metricPort }}
+        {{- end }}
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.cloud.sap/cp: nextgen
+        kubernetes.cloud.sap/rack: {{ $rackname }}
+      serviceAccountName: kube-parrot
+      terminationGracePeriodSeconds: 5
+      tolerations:
+{{- if $.Values.toleration }}
+        - key: "kubernetes.cloud.sap/unification"
+          operator: "Exists"
+          effect: "NoSchedule"
+{{- else }}
+        - operator: Exists
+      volumes:
+        - name: etc-kubernetes-kube-parrot
+          hostPath:
+            path: /etc/kubernetes/kube-parrot
+{{- end }}
+{{- end }}
+{{- end }}
+{{ if .Values.apod -}}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+  labels:
+    k8s-app: kube-parrot
+  name: kube-parrot
+spec:
+  selector:
+    matchLabels:
+      name: kube-parrot
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: kube-parrot
+        k8s-app: kube-parrot
+      annotations:
+    spec:
+      priorityClassName: system-node-critical
+      containers:
+      - name: parrot
+        image: "{{ $.Values.images.parrot.repository }}:{{ $.Values.images.parrot.tag }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /parrot
+          - --as={{ required ".Values.as" $.Values.as }}
+          - --nodename=$(NODE_NAME)
+          - --hostip=$(HOST_IP)
+          - --logtostderr
+          - --neighbor-count={{ $.Values.bgpNeighborCount }}
+{{- if $.Values.metricPort }}
+          - --metric-port={{ $.Values.metricPort }}
+{{- end }}
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP 
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        volumeMounts:
+          - name: etc-kubernetes-kube-parrot
+            mountPath: /etc/kubernetes/kube-parrot
+        {{ if $.Values.metricPort -}}
+        ports:
+          - name: parrot-metrics
+            containerPort: {{ $.Values.metricPort }}
+            hostPort: {{ $.Values.metricPort }}
+        {{- end }}
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.cloud.sap/cp-node: apod
+      serviceAccountName: kube-parrot
+      terminationGracePeriodSeconds: 5
+      tolerations:
+{{- if $.Values.toleration }}
+        - key: "kubernetes.cloud.sap/unification"
+          operator: "Exists"
+          effect: "NoSchedule"
+{{- else }}
+        - operator: Exists
+      volumes:
+        - name: etc-kubernetes-kube-parrot
+          hostPath:
+            path: /etc/kubernetes/kube-parrot
+{{- end }}
+{{- end }}
+{{- end }}

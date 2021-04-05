@@ -2,7 +2,7 @@
 {{- $volume := index . 1 -}}
 {{- with index . 0 -}}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: cinder-volume-netapp-{{$volume.name}}
   labels:
@@ -35,7 +35,7 @@ spec:
       hostname: cinder-volume-netapp-{{$volume.name}}
       containers:
       - name: cinder-volume-netapp-{{$volume.name}}
-        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-volume:{{.Values.imageVersionCinderVolume | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+        image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolume | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:
         - kubernetes-entrypoint

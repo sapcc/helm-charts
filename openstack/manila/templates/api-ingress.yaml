@@ -1,5 +1,6 @@
-apiVersion: extensions/v1beta1
 kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+
 
 metadata:
   name: manila-api
@@ -7,11 +8,11 @@ metadata:
     system: openstack
     type: api
     component: manila
-  {{- if .Values.vice_president }}
+  {{- if .Values.use_tls_acme }}
   annotations:
     ingress.kubernetes.io/proxy-read-timeout: "720"
     ingress.kubernetes.io/proxy-send-timeout: "720"
-    vice-president: "true"
+    kubernetes.io/tls-acme: "true"
   {{- end }}
 spec:
   tls:

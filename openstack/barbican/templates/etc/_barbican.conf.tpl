@@ -30,7 +30,7 @@ backlog = 4096
 #tcp_keepidle = 600
 
 # Maximum allowed http request size against the barbican-api
-max_allowed_secret_in_bytes = 10000
+max_allowed_secret_in_bytes = 20000
 max_allowed_request_size_in_bytes = 1000000
 
 {{ if eq .Values.postgresql.enabled false }}
@@ -55,7 +55,7 @@ auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.barbican_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "$$" }}
+password = {{ required ".Values.global.barbican_service_password is missing" .Values.global.barbican_service_password }}
 user_domain_id = default
 project_name = service
 project_domain_id = default
@@ -63,6 +63,20 @@ region_name = {{.Values.global.region}}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 service_token_roles_required = True
 token_cache_time = 600
-include_service_catalog = false
+include_service_catalog = true
+service_type = key-manager
+
+{{- if .Values.audit.enabled }}
+# Defines CADF Audit Middleware section
+[audit_middleware_notifications]
+topics = notifications
+driver = messagingv2
+transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@barbican-rabbitmq-notifications:5672/
+mem_queue_size = 1000
+{{- end }}
 
 {{- include "ini_sections.cache" . }}
+
+[oslo_policy]
+
+policy_file = /etc/barbican/policy.yaml

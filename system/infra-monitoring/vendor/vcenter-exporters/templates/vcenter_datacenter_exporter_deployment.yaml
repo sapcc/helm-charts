@@ -4,9 +4,10 @@
 {{- range $vcenter := .Values.vcenters }}
 {{- $vchostname := split "." $vcenter.hostname }}
 {{- range $exporter_type_values := $global_values.exporter_types }}
+{{- if $exporter_type_values.enabled }}
 ---
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: vcenter-exporter-{{ $vchostname._0 }}-{{ required ".Values<exporter_type>.name is missing" $exporter_type_values.name }}
   labels:
@@ -14,12 +15,16 @@ metadata:
     service: metrics
 
 spec:
+  revisionHistoryLimit: 5
   replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
+  selector:
+    matchLabels:
+      component: vcenter-exporter-{{ $vchostname._0 }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}
   template:
     metadata:
       labels:
@@ -32,7 +37,7 @@ spec:
       containers:
         - name: vcenter-exporter
           imagePullPolicy: IfNotPresent
-          image: {{ required ".Values.docker_repo is missing" $global_values.docker_repo }}/infrastructure-exporters:{{ $global_values.image_version | replace "string:" "" }}
+          image: "{{$global_values.global.registry}}/{{ $global_values.image.name }}:{{ $global_values.image.version }}"
           args:
             - -f
             - /maia-etc/config-{{ $vchostname._0 }}-{{ required ".Values.<exporter_type>.name is missing" $exporter_type_values.name }}.yaml
@@ -59,6 +64,7 @@ spec:
           ports:
             - name: metrics
               containerPort: {{ required ".Values.prometheus_port is missing" $global_values.prometheus_port }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

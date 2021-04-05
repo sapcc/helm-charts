@@ -1,8 +1,7 @@
-{{- if .Release.IsUpgrade }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: keystone-seed
+  name: {{ .Release.Name }}-seed
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -30,6 +29,10 @@ spec:
       implied_role: member
     - prior_role: member
       implied_role: reader
+    - prior_role: cloud_identity_viewer
+      implied_role: reader
+    - prior_role: role_admin
+      implied_role: role_viewer
 
   regions:
   - id: af
@@ -102,6 +105,9 @@ spec:
   - id: qa-de-1
     description: 'QA Germany - Walldorf/Rot'
     parent_region: eu
+  - id: qa-de-2
+    description: 'QA 2 Germany - Walldorf/Rot'
+    parent_region: eu
 
   services:
   - name: keystone
@@ -126,8 +132,10 @@ spec:
       region: {{ .Values.global.region }}
 {{- if .Values.global.clusterDomain }}
       url: http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3
+{{- else if .Values.global_setup }}
+      url: http://{{ .Values.global.keystone_internal_ip }}:5000/v3
 {{- else }}
-      url: http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
+      url: http://{{ .Release.Name }}.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
 {{- end }}
 
   domains:
@@ -173,4 +181,3 @@ spec:
       description: Administrator Project
     - name: service
       description: Services Project
-{{- end }}

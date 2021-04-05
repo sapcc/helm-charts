@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
     name: {{ include "atlas.fullname" . }}
@@ -10,6 +10,7 @@ metadata:
       system: infra_monitoring
       component: service_discovery
 spec:
+  revisionHistoryLimit: 5
   replicas: 1
   selector:
     matchLabels:
@@ -25,7 +26,7 @@ spec:
     spec:
       containers:
       - name: {{ include "atlas.name" . }}
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        image: "{{ .Values.global.registry }}/{{ .Values.image }}:{{ .Values.tag }}"
         ports:
         - name: metrics
           containerPort: 8080
@@ -48,8 +49,6 @@ spec:
           value: "{{ .Values.configmap.namespace }}"
         - name: K8S_REGION
           value: {{ .Values.global.region }}
-        - name: PROM_CONFIGMAP_NAME
-          value: "{{ .Values.configmap.name }}"
         - name: CONFIG_FILE
           value: "{{ .Values.config_file }}"
         - name: WRITE_TO

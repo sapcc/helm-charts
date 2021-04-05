@@ -1,13 +1,12 @@
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
 {{- if $values.sidecars.parrot }}
-{{- range $path, $bytes := .Files.Glob "alerts/*parrot.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "%s" $path | replace "/" "-" }}
+  name: alerts-kube-parrot.alerts
   labels:
     app: kube-parrot
     tier: k8s
@@ -15,8 +14,7 @@ metadata:
     prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
 
 spec:
-{{ printf "%s" $bytes | indent 2 }}
+{{ include (print .Template.BasePath "/alerts/_kube-parrot.alerts.tpl") . | indent 2 }}
 
-{{- end }}
 {{- end }}
 {{- end }}

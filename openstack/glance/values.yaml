@@ -2,7 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
-  imageNamespace: monsoon
   dbUser: glance
   master_password: ""
   pgbouncer:
@@ -44,15 +43,22 @@ upgrades:
     maxUnavailable: 1
     maxSurge: 3
 
+statsd:
+  resources:
+    enabled: true
+    requests:
+      cpu: 50m
+      memory: 32Mi
+
 api:
   debug: false
   resources:
     enabled: true
     limits:
-      memory: 1Gi
+      memory: 2Gi
       cpu: 500m
     requests:
-      memory: 1Gi
+      memory: 2Gi
       cpu: 300m
 
 registry:
@@ -103,7 +109,7 @@ unittest:
 db_name: glance
 
 mariadb:
-  enabled: false
+  enabled: true
   name: glance
   initdb_configmap: glance-initdb
   persistence_claim:
@@ -119,21 +125,83 @@ mysql_metrics:
       - "name"
       - "status"
       - "size"
-      - "owner"
+      - "project_id"
       - "visibility"
+      - "created_at"
+      - "updated_at"
       name: openstack_glance_image_gauge
       query: |
         SELECT
           id,
           name,
           status,
-          size,
-          owner,
+          COALESCE(size, "No Size") AS size,
+          owner AS project_id,
+          created_at,
+          updated_at,
           visibility,
           COUNT(*) AS gauge
         from images
         where
           deleted='false'
+        GROUP BY
+          id;
+      values:
+      - "gauge"
+
+    - help: Glance Image created in last 24hrs
+      labels:
+      - "id"
+      - "name"
+      - "status"
+      - "size"
+      - "project_id"
+      - "visibility"
+      - "created_at"
+      - "updated_at"
+      name: openstack_glance_image_created_gauge
+      query: |
+        SELECT
+          id,
+          name,
+          status,
+          COALESCE(size, "No Size") AS size,
+          owner AS project_id,
+          created_at,
+          visibility,
+          COUNT(*) AS in_24hrs_gauge
+        from images
+        where
+          created_at >= now() - INTERVAL 1 DAY
+        GROUP BY
+          id;
+      values:
+      - "gauge"
+
+    - help: Glance Image deleted in last 24hrs
+      labels:
+      - "id"
+      - "name"
+      - "status"
+      - "size"
+      - "project_id"
+      - "visibility"
+      - "created_at"
+      - "updated_at"
+      name: openstack_glance_image_deleted_gauge
+      query: |
+        SELECT
+          id,
+          name,
+          status,
+          COALESCE(size, "No Size") AS size,
+          owner AS project_id,
+          created_at,
+          visibility,
+          COUNT(*) AS in_24hrs_gauge
+        from images
+        where
+          deleted_at >= now() - INTERVAL 1 DAY
         GROUP BY
           id;
       values:
@@ -190,22 +258,7 @@ logging:
       handlers: stdout, sentry
       level: WARNING
 
-vice_president: true
-
-imageVersionGlanceNanny: null
-
-nanny:
-  enabled: false
-  # debug mode - no script run in the containers, just a sleep loop
-  debug: true
-  # run the nanny every n minutes
-  interval: 60
-  db_purge:
-    enabled: true
-    # purge deleted db entries older than n days
-    older_than: 14
-    # delete at max number of entries in one run
-    max_number: 50
+tlsacme: true
 
 # openstack-watcher-middleware
 watcher:

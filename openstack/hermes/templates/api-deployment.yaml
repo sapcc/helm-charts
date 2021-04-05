@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: hermes-api
@@ -7,6 +7,9 @@ metadata:
 
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: hermes-api
   template:
     metadata:
       labels:
@@ -39,22 +42,22 @@ spec:
             requests:
               memory: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_memory_api}}
               cpu: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_cpu_api}}
-          livenessProbe:
-            #exec: 
-            #  command:
-            #    - /bin/false
-            #  initialDelaySeconds: 21600
-            #  periodSeconds: 21600 # restart api every 6 hours
-            httpGet:
-              path: /v1/
-              port: 80
-            timeoutSeconds: 10
-            periodSeconds: 60
-            initialDelaySeconds: 60
-          readinessProbe:
-            httpGet:
-              path: /v1/
-              port: 80
-            timeoutSeconds: 5
-            periodSeconds: 5
+          # livenessProbe:
+          #   #exec: 
+          #   #  command:
+          #   #    - /bin/false
+          #   #  initialDelaySeconds: 21600
+          #   #  periodSeconds: 21600 # restart api every 6 hours
+          #   httpGet:
+          #     path: /v1/
+          #     port: 80
+          #   timeoutSeconds: 10
+          #   periodSeconds: 60
+          #   initialDelaySeconds: 60
+          #   readinessProbe:
+          #     httpGet:
+          #       path: /v1/
+          #       port: 80
+          #     timeoutSeconds: 5
+          #     periodSeconds: 5
 ---

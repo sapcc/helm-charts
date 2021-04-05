@@ -5,10 +5,10 @@ groups:
     expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='dc'}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping",interconnect_type='dc'}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='dc'}[5m]) > 0.9
     for: 5m
     labels:
-      severity: critical
+      severity: warning
       tier: net
       service: interconnect
-      context: interconnect
+      context: interconnect-dc
       dashboard: network-interconnect
       meta: 'Datacenter interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
       playbook: 'docs/devops/alert/network/interconnect_dc.html'
@@ -16,17 +16,110 @@ groups:
       description: 'Datacenter interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
       summary: 'Datacenter interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
 
-  - alert: NetworkRegionInterconnectDown
-    expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='region'}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping",interconnect_type='region'}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='region'}[5m]) > 0.9
+  - alert: NetworkDatacenterInterconnectDown
+    expr: sum(datacenter_interconnect:success_rate:ratio_rate5m) by (probed_from, probed_to) / count(datacenter_interconnect:success_rate:ratio_rate5m) by (probed_from, probed_to) == 0
     for: 5m
     labels:
       severity: critical
       tier: net
       service: interconnect
-      context: interconnect
+      context: interconnect-dc
+      dashboard: network-interconnect
+      meta: 'Datacenter interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+      playbook: 'docs/devops/alert/network/interconnect_dc.html'
+    annotations:
+      description: 'Datacenter interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+      summary: 'Datacenter interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+
+  - alert: NetworkDatacenterInterconnectTargetDown
+    expr: datacenter_interconnect:success_rate:ratio_rate5m == 0
+    for: 15m
+    labels:
+      severity: info
+      tier: net
+      service: interconnect
+      context: interconnect-dc-node
+      dashboard: network-interconnect
+      meta: 'Datacenter interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+      playbook: 'docs/devops/alert/network/interconnect_dc.html'
+    annotations:
+      description: 'Datacenter interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+      summary: 'Datacenter interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+
+  - alert: NetworkRegionInterconnectDown
+    expr: (rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='region'}[5m]) - rate(cloudprober_success{probed_to_type="master",ptype="ping",interconnect_type='region'}[5m])) / rate(cloudprober_total{probed_to_type="master",ptype="ping",interconnect_type='region'}[5m]) > 0.9
+    for: 5m
+    labels:
+      severity: warning
+      tier: net
+      service: interconnect
+      context: interconnect-region
       dashboard: network-interconnect
       meta: 'Region interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
       playbook: 'docs/devops/alert/network/interconnect_region.html'
     annotations:
       description: 'Region interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
       summary: 'Region interconnect from {{ $labels.src }} in {{ $labels.probed_from }} to {{ $labels.dst }} in {{ $labels.probed_to }} is down'
+
+  - alert: NetworkRegionInterconnectDown
+    expr: sum(region_interconnect:sucess_rate:ratio_rate5m) by (probed_from, probed_to) / count(region_interconnect:sucess_rate:ratio_rate5m) by (probed_from, probed_to) == 0
+    for: 5m
+    labels:
+      severity: critical
+      tier: net
+      service: interconnect
+      context: interconnect-region
+      dashboard: network-interconnect
+      meta: 'Region interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+      playbook: 'docs/devops/alert/network/interconnect_region.html'
+    annotations:
+      description: 'Region interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+      summary: 'Region interconnect from {{ $labels.probed_from }} to {{ $labels.probed_to }} is down'
+
+  - alert: NetworkRegionInterconnectTargetDown
+    expr: region_interconnect:sucess_rate:ratio_rate5m == 0
+    for: 15m
+    labels:
+      severity: info
+      tier: net
+      service: interconnect
+      context: interconnect-region-node
+      dashboard: network-interconnect
+      meta: 'Region interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+      playbook: 'docs/devops/alert/network/interconnect_region.html'
+    annotations:
+      description: 'Region interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+      summary: 'Region interconnect from {{ $labels.probed_from }} / {{ $labels.src }} to {{ $labels.probed_to }} / {{ $labels.probe }} / {{$labels.dst }} is down'
+
+  - alert: NetworkInterconnectPodHTTPServerNotResponding
+    expr: sum(network:dc_interconnect_po_availability_sli:ratio_rate5m) by (probed_to, probed_to_type, ptype, dst) < 1
+    for: 15m
+    labels:
+      severity: info
+      tier: net
+      meta: 'HTTP Server on cloudprober pod {{ $labels.dst }} in {{ $labels.probed_to }} is not responding'
+    annotations:
+      description: 'HTTP Server on cloudprober pod {{ $labels.dst }} in {{ $labels.probed_to }} is not responding'
+      summary: 'HTTP Server on cloudprober pod {{ $labels.dst }} in {{ $labels.probed_to }} is not responding'
+
+  - alert: NetworkInterconnectVirtualMachineHTTPServerNotResponding
+    expr: sum(network:dc_interconnect_vm_availability_sli:ratio_rate5m) by (probed_to, probed_to_type, ptype, dst) < 1
+    for: 15m
+    labels:
+      severity: info
+      tier: net
+      meta: 'HTTP Server on virtual machine {{ $labels.dst }} in {{ $labels.probed_to }} is not responding'
+    annotations:
+      description: 'HTTP Server on virtual machine {{ $labels.dst }} in {{ $labels.probed_to }} is not responding'
+      summary: 'HTTP Server on virtual machine {{ $labels.dst }} in {{ $labels.probed_to }} is not responding'
+
+  - alert: NetworkInterconnectLoadBalancerHTTPServerNotResponding
+    expr: sum(network:dc_interconnect_lb_availability_sli:ratio_rate5m) by (probed_to, probed_to_type, ptype, dst) < 1
+    for: 15m
+    labels:
+      severity: info
+      tier: net
+      meta: 'HTTP Server behind load balancer {{ $labels.dst }} in {{ $labels.probed_to }} is not responding'
+    annotations:
+      description: 'HTTP Server behind load balancer {{ $labels.dst }} in {{ $labels.probed_to }} is not responding'
+      summary: 'HTTP Server behind load balancer {{ $labels.dst }} in {{ $labels.probed_to }} is not responding'

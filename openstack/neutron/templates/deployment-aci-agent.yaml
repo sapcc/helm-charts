@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: neutron-aci-agent
@@ -24,32 +24,25 @@ spec:
         name: neutron-aci-agent
       annotations:
         pod.beta.kubernetes.io/hostname:  aci-agent-pet
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
+        configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       hostname:  aci-agent-pet
-      {{- end }}
       containers:
         - name: neutron-aci-agent
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionACI | default .Values.imageVersion | required "Please set neutron.imageVersionACI or similar"}}
+          image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionACI | default .Values.imageVersion | required "Please set neutron.imageVersionACI or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-aci-agent-start
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "neutron", "--config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
-          {{- if .Values.pod.resources.enabled }}
           resources:
-            # observed usage: CPU <= 10m, RAM = 260-310 MiB
-            limits:
-              cpu: '20m'
-              memory: '350MiB'
-            requests:
-              cpu: '10m'
-              memory: '256MiB'
-          {{- end }}
+{{ toYaml .Values.pod.resources.aci_agent | indent 12 }}
           env:
             - name: DEBUG_CONTAINER
               value: "false"

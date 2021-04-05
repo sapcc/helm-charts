@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: castellum-api
@@ -21,7 +21,8 @@ spec:
         name: castellum-api
         app: castellum-api
       annotations:
-        checksum: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
+        checksum/configmap: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
+        checksum/secret: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
     spec:
       volumes:
         - name: config

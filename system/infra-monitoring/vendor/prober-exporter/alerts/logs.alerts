@@ -1,0 +1,28 @@
+groups:
+  - name: octobus
+    rules:
+      - alert: ELKDown
+        expr: probe_success{target=~"https://logs.+"} == 0
+        for: 15m
+        labels:
+          severity: info
+          tier: os
+          service: elk
+          meta: "ELK down"
+          dashboard: elasticsearch
+        annotations:
+          description: "ELK is down"
+          summary: "ELK is down"
+
+      - alert: ELKElasticsearchDown
+        expr: probe_success{target=~"https://elk-elasticsearch.+"} == 0
+        for: 15m
+        labels:
+          severity: info
+          tier: os
+          service: elk
+          meta: "ELK elasticsearch down"
+          dashboard: elasticsearch
+        annotations:
+          description: "ELK elasticsearch is down"
+          summary: "ELK elasticsearch is down"

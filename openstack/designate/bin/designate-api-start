@@ -2,14 +2,15 @@
 
 set -ex
 
-function process_config {
-    cp /designate-etc/designate.conf /etc/designate/designate.conf
-    cp /designate-etc/api-paste.ini /etc/designate/api-paste.ini
-    cp /designate-etc/policy.json  /etc/designate/policy.json
-    cp /designate-etc/logging.conf /etc/designate/logging.conf
-    cp /designate-etc/designate_audit_map.yaml /etc/designate/designate_audit_map.yaml
-}
+#
+# to make agents named after the node
+#
+echo "[DEFAULT]" > /etc/designate/hostname.conf
+echo "host = $NODE_NAME" >> /etc/designate/hostname.conf
 
-process_config
+#
+# other configs
+#
+cp /designate-etc/* /etc/designate/
 
-exec /var/lib/kolla/venv/bin/designate-api
+exec designate-api --config-file /etc/designate/designate.conf --config-file /etc/designate/hostname.conf --log-config-append /etc/designate/logging.conf

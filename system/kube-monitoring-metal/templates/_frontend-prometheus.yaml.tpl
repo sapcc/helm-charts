@@ -7,6 +7,7 @@
 
   params:
     'match[]':
+      - '{__name__=~"^absent_metrics_operator.+"}'
       - '{__name__=~"^active_job_.+"}'
       - '{__name__=~"^aggregated:.+"}'
       - '{__name__=~"^alertmanager_.+"}'
@@ -15,6 +16,7 @@
       - '{__name__=~"^bind_.+"}'
       - '{__name__=~"^bird_.+"}'
       - '{__name__=~"^broker_.+"}'
+      - '{__name__=~"^certmanager_.+"}'
       - '{__name__=~"^concourse_.+"}'
       - '{__name__=~"^container_cpu_cfs_.+"}'
       - '{__name__=~"^container_fs.+"}'
@@ -56,17 +58,20 @@
       - '{__name__=~"^rest_client_.+"}'
       - '{__name__=~"^scheduler_.+"}'
       - '{__name__=~"^scrape_duration_seconds"}'
+      - '{__name__=~"^secrets_exporter_certificate_not_after"}'
       - '{__name__=~"^skydns_.+"}'
       - '{__name__=~"^unbound_.+"}'
       - '{__name__=~"^up"}'
       - '{__name__=~"^uwsgi_.+"}'
       - '{__name__=~"^vice_president_.+"}'
       - '{__name__=~"^webhook_.+"}'
+      - '{__name__=~"^watchcache_.+"}'
       - '{__name__=~"^admission|daemonset|deployment|disruption|endpoint|job|namespace|petset|replicaset|serviceaccount.+"}'
       - '{__name__=~"^ns_exporter.+"}'
       - '{__name__=~"^total"}'
       - '{__name__=~"^success"}'
       - '{__name__=~"^latency"}'
+      - '{__name__=~"^pvc_usage"}'
 
   # Add region label to all metrics, don't delete this without knowing what you are doing.
   relabel_configs:

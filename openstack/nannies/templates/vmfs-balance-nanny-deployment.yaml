@@ -1,0 +1,94 @@
+{{- if .Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1" }}
+{{- if .Values.vmfs_balance_nanny.enabled }}
+kind: VCenterTemplate
+apiVersion: vcenter-operator.stable.sap.cc/v1
+metadata:
+  name: 'vcenter-datacenter-vmfs-balance-deployment'
+options:
+  scope: 'datacenter'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  kind: Deployment
+  apiVersion: apps/v1
+  metadata:
+    name: vmfs-balance-nanny-{= name =}
+    namespace: monsoon3
+    labels:
+      system: openstack
+      service: vmfs-balance-nanny
+  
+  spec:
+    replicas: 1
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    selector:
+      matchLabels:
+          component: vmfs-balance-nanny-{= name =}
+    template:
+      metadata:
+        labels:
+          component: vmfs-balance-nanny-{= name =}
+      spec:
+        nodeSelector:
+          zone: farm
+        containers:
+          - name: vmfs-balance
+            image: {{.Values.global.registry}}/vmfs-balance-nanny:{{ .Values.vmfs_balance_nanny.image_version }}
+            imagePullPolicy: IfNotPresent
+            command:
+              - dumb-init
+              - kubernetes-entrypoint
+            env:
+              - name: COMMAND
+                value: "{{ if not .Values.vmfs_balance_nanny.debug }}/bin/bash /scripts/vmfs-balance.sh{{ else }}sleep inf{{ end }}"
+              - name: NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.namespace
+              - name: VMFS_BALANCE_DRY_RUN
+                value: {{ .Values.vmfs_balance_nanny.dry_run | quote }}
+              - name: VMFS_BALANCE_VCHOST
+                value: {= host | quote =}
+              - name: VMFS_BALANCE_VCUSER
+                {{- if .Values.nannies.vcenter_username | default "" }}
+                value: {{ .Values.nannies.vcenter_username | quote }}
+                {{- else }}
+                value: {= username | quote =}
+                {{- end }}
+              - name: VMFS_BALANCE_VCPASSWORD
+                {{- if .Values.nannies.vcenter_username | default "" }}
+                value: {= "{{ .Values.nannies.vcenter_username }}" | derive_password | quote =}
+                {{- else }}
+                value: {= password | quote =}
+                {{- end }}
+              - name: VMFS_BALANCE_MIN_USAGE
+                value: {{ int .Values.vmfs_balance_nanny.min_usage | quote }}
+              - name: VMFS_BALANCE_MAX_USAGE
+                value: {{ int .Values.vmfs_balance_nanny.max_usage | quote }}
+              - name: VMFS_BALANCE_MIN_MAX_DIFFERENCE
+                value: {{ int .Values.vmfs_balance_nanny.min_max_difference | quote }}
+              - name: VMFS_BALANCE_MIN_FREESPACE
+                value: {{ int .Values.vmfs_balance_nanny.min_freespace | quote }}
+              - name: VMFS_BALANCE_VOLUME_MIN_SIZE
+                value: {{ int .Values.vmfs_balance_nanny.volume_min_size | quote }}
+              - name: VMFS_BALANCE_VOLUME_MAX_SIZE
+                value: {{ int .Values.vmfs_balance_nanny.volume_max_size | quote }}
+              - name: VMFS_BALANCE_MAX_MOVE_VMS
+                value: {{ int .Values.vmfs_balance_nanny.max_move_vms | quote }}
+              - name: VMFS_BALANCE_INTERVAL
+                value: {{ int .Values.vmfs_balance_nanny.interval | quote }}
+              - name: VMFS_BALANCE_AUTOPILOT
+                value: {{ .Values.vmfs_balance_nanny.autopilot | quote }}
+              - name: VMFS_BALANCE_AUTOPILOT_RANGE
+                value: {{ int .Values.vmfs_balance_nanny.autopilot_range | quote }}
+              - name: VMFS_BALANCE_PRINT_MAX
+                value: {{ .Values.vmfs_balance_nanny.print_max | quote }}
+              - name: VMFS_BALANCE_REGION
+                value: {{ .Values.current_region | quote }}
+{{- end }}
+{{- end }}

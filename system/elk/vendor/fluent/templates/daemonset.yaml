@@ -1,33 +1,38 @@
 kind: DaemonSet
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: fluent
   namespace: elk
-  annotations:
-    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
+  labels:
+    component: fluent
 spec:
+  selector:
+    matchLabels:
+      component: fluent
   minReadySeconds: 15
   updateStrategy:
     type: RollingUpdate
-    maxUnavailable: 6
+    rollingUpdate:
+      maxUnavailable: 6
   template:
     metadata:
       labels:
         component: fluent
       annotations:
         checksum/fluent-bin-configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        checksum/fluent.conf.tpl: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
-        checksum/fluent-start.tpl: {{ include  (print $.Template.BasePath "/_fluent-start.tpl") . | sha256sum }}
-        checksum/pattern.tpl: {{ include  (print $.Template.BasePath "/_pattern.tpl") . | sha256sum }}
+        checksum/fluent.conf: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
+        checksum/prometheus.conf: {{ include  (print $.Template.BasePath "/_prometheus.conf.tpl") . | sha256sum }}
+        checksum/fluent-start: {{ include  (print $.Template.BasePath "/_fluent-start.tpl") . | sha256sum }}
+        checksum/pattern: {{ include  (print $.Template.BasePath "/_pattern.tpl") . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
+        prometheus.io/targets: infra-collector
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "24231"
     spec:
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
       - key: "species"
         operator: "Exists"
-        effect: "NoSchedule"
-      {{- end }}
       terminationGracePeriodSeconds: 30
       volumes:
         - name: fluent-bin
@@ -41,7 +46,7 @@ spec:
             path: /var/lib/docker/containers
       containers:
         - name: fluent
-          image: {{.Values.global.docker_repo}}/elk-fluent:{{.Values.image_version}}
+          image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/dumb-init", "/bin/bash", "/fluent-bin/fluent-start"]
           env:
@@ -49,12 +54,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           resources:
             limits:
               memory: 2000Mi
             requests:
               cpu: 100m
-              memory: 2000Mi
+              memory: 1000Mi
           volumeMounts:
             - name: fluent-bin
               mountPath: /fluent-bin

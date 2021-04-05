@@ -1,5 +1,5 @@
 {{- if .Values.maia.enabled }}
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: maia
@@ -11,6 +11,9 @@ metadata:
 spec:
   revisionHistoryLimit: 5
   replicas: 1
+  selector:
+    matchLabels:
+      component: maia
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -32,12 +35,12 @@ spec:
       containers:
         - name: maia
           # remove the "string:" prefix which is used to prevent helm's --set option from reformatting plain numbers into floats in scientific notation
-          image: {{ required "maia.docker_repo variable is missing" .Values.maia.docker_repo }}:{{ required "maia.image_version variable missing" .Values.maia.image_version | replace "string:" "" }}
+          image: {{ required "maia.docker_repo variable is missing" .Values.maia.docker_repo }}:{{ required "maia.image_version variable missing" .Values.maia.image_version }}
           imagePullPolicy: IfNotPresent
 #          command: ["sh"]
 #          args:
-#            - -c
-#            - "ls /etc/maia; sleep 10000"
+#           - -c
+#           - "ls /etc/maia; sleep 10000"
           args: ["serve"]
           env:
             - name: MAIA_DEBUG

@@ -1,7 +1,7 @@
 {{- if .Values.cinder_nanny.enabled }}
 {{- if or .Values.cinder_nanny.db_purge.enabled .Values.cinder_nanny.quota_sync.enabled .Values.cinder_nanny.db_cleanup.enabled }}
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: apps/v1
 metadata:
   name: cinder-nanny
   namespace: monsoon3
@@ -16,6 +16,9 @@ spec:
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
+  selector:
+    matchLabels:
+        component: cinder-nanny
   template:
     metadata:
       labels:
@@ -30,7 +33,7 @@ spec:
       containers:
 {{- if .Values.cinder_nanny.db_purge.enabled }}
         - name: db-consistency-and-purge
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/cinder-nanny:{{required ".Values.cinder_nanny.image_version is missing" .Values.cinder_nanny.image_version}}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/cinder-nanny:{{required ".Values.cinder_nanny.image_version is missing" .Values.cinder_nanny.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -67,14 +70,14 @@ spec:
             - name: OS_USER_DOMAIN_NAME
               value: "Default"
             - name: OS_PASSWORD
-              value: {{ derivePassword 1 "long" .Values.global.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+              value: {{ derivePassword 1 "long" .Values.nannies.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
           volumeMounts:
             - mountPath: /cinder-etc
               name: cinder-etc
 {{- end }}
 {{- if .Values.cinder_nanny.quota_sync.enabled }}
         - name: quota-sync
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/cinder-nanny:{{required ".Values.cinder_nanny.image_version is missing" .Values.cinder_nanny.image_version}}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/cinder-nanny:{{required ".Values.cinder_nanny.image_version is missing" .Values.cinder_nanny.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -100,7 +103,7 @@ spec:
 {{- end }}
 {{- if .Values.cinder_nanny.db_cleanup.enabled }}
         - name: db-cleanup
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/cinder-nanny:{{required ".Values.cinder_nanny.image_version is missing" .Values.cinder_nanny.image_version}}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/cinder-nanny:{{required ".Values.cinder_nanny.image_version is missing" .Values.cinder_nanny.image_version}}
           #imagePullPolicy: IfNotPresent
           imagePullPolicy: Always
           command:
@@ -134,7 +137,7 @@ spec:
             - name: OS_USER_DOMAIN_NAME
               value: "Default"
             - name: OS_PASSWORD
-              value: {{ derivePassword 1 "long" .Values.global.master_password "cinder_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+              value: {{ derivePassword 1 "long" .Values.nannies.master_password "cinder_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
 {{- end }}
 {{- end }}
 {{- end }}

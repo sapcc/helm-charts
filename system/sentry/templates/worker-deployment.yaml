@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-worker
@@ -6,6 +6,9 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 spec:
   replicas: {{ .Values.workerReplicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}-worker
   template:
     metadata:
       labels:
@@ -13,7 +16,7 @@ spec:
     spec:
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{required ".Values.image.repository is missing" .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args: [ run, worker ]
         env:

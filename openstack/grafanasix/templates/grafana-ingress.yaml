@@ -1,11 +1,11 @@
 {{- if .Values.ingress.enabled }}
-apiVersion: extensions/v1beta1
 kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
 
 metadata:
   name: grafana
   annotations:
-    vice-president: {{ default false .Values.grafana.vice_president | quote }}
+    kubernetes.io/tls-acme: {{ default false .Values.grafana.tls | quote }}
     disco: {{ default false .Values.grafana.disco | quote }}
   {{- if .Values.grafana.auth.tls_client_auth.enabled}}
     ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.grafana.auth.tls_client_auth.secret }}
@@ -27,13 +27,13 @@ spec:
             servicePort: {{.Values.grafana.endpoint.port.public}}
 {{- if .Values.ingress.global }}
 --- 
-apiVersion: extensions/v1beta1
 kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
 
 metadata:
   name: grafana-global
   annotations:
-    vice-president: {{ default false .Values.grafana.vice_president | quote }}
+    kubernetes.io/tls-acme: {{ default false .Values.grafana.tls | quote }}
     disco: {{ default false .Values.grafana.disco | quote }}
     disco/zone-name: "global.cloud.sap"
   {{- if .Values.grafana.auth.tls_client_auth.enabled}}

@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: backup-cleanup
@@ -22,6 +22,7 @@ spec:
         component: backup-cleanup
       annotations:
         checksum/check.bin: {{ include "backup-cleanup/templates/bin-configmap.yaml" . | sha256sum }}
+        checksum/check.secret: {{ include "backup-cleanup/templates/secret.yaml" . | sha256sum }}
     spec:
       volumes:
       - name: bin
@@ -30,7 +31,7 @@ spec:
           defaultMode: 0550
       containers:
       - name: cleanup
-        image: {{ $.Values.global.imageRegistry }}/{{ $.Values.global.image_namespace }}/swift:{{ $.Values.image_tag }}
+        image: {{ $.Values.global.registry }}/swift:{{ $.Values.image_tag }}
         imagePullPolicy: {{ $.Values.image_pull_policy | default "IfNotPresent" }}
         command:
           - /usr/bin/dumb-init
@@ -49,7 +50,10 @@ spec:
           - name: OS_USERNAME
             value: {{ $.Values.auth.username | quote }}
           - name: OS_PASSWORD
-            value: {{ $.Values.auth.password | quote }}
+            valueFrom:
+              secretKeyRef:
+                name: backup-cleanup-secret
+                key: auth_password
           - name: OS_PROJECT_DOMAIN_NAME
             value: {{ $.Values.auth.project_domain_name | quote }}
           - name: OS_PROJECT_NAME

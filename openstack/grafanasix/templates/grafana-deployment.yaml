@@ -1,5 +1,5 @@
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: apps/v1
 metadata:
   name: grafana
   labels:
@@ -8,6 +8,10 @@ metadata:
     component: grafana
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+        app: grafana
+        component: grafana
   template:
     metadata:
       labels:
@@ -75,7 +79,7 @@ spec:
             initialDelaySeconds: 120
             periodSeconds: 30
         - name: "gitsync"
-          image: hub.global.cloud.sap/monsoon/git-sync:v3_1_1__linux_amd64
+          image: {{.Values.global.registry}}/git-sync:v3.1.6
           imagePullPolicy: {{.Values.image.pullPolicy}}
           args:
             - "--repo={{.Values.grafana.gitsync.repository}}"
@@ -84,11 +88,15 @@ spec:
           env:
             - name: GIT_SSL_NO_VERIFY
               value: "true"
+            - name: GIT_SYNC_USERNAME
+              value: {{.Values.grafana.gitsync.username}}
+            - name: GIT_SYNC_PASSWORD
+              value: {{.Values.grafana.gitsync.password}}
           volumeMounts:
             - name: grafana-git
               mountPath: /tmp/git
         - name: "minitrue"
-          image: hub.global.cloud.sap/monsoon/grafana-minitrue:{{.Values.grafana.minitrue_version}}
+          image: {{.Values.global.registry}}/grafana-minitrue:{{.Values.grafana.minitrue_version}}
           imagePullPolicy: {{.Values.image.pullPolicy}}
           command:
             - /minitrue.sh

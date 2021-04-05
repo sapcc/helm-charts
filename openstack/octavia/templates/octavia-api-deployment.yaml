@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: octavia-api
@@ -8,7 +8,15 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.pod.replicas.api }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
+    {{ end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: octavia-api
@@ -18,12 +26,36 @@ spec:
       labels:
         app.kubernetes.io/name: octavia-api
         app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
     spec:
       containers:
         - name: {{ .Chart.Name }}-api
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
+          {{- if .Values.api_backdoor }}
           command: ["/var/lib/openstack/bin/octavia-api"]
+          {{- else }}
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          {{- end }}
+          env:
+            - name: COMMAND
+              value: "/usr/sbin/apachectl -D FOREGROUND"
+            - name: DEPENDENCY_JOBS
+              value: "{{ .Release.Name }}-migration"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
           ports:
             - name: http
               containerPort: {{.Values.api_port_internal}}
@@ -32,12 +64,16 @@ spec:
             httpGet:
               path: /
               port: http
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
           readinessProbe:
             httpGet:
               path: /
               port: http
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+{{ toYaml .Values.pod.resources.api | indent 12 }}
           volumeMounts:
             - name: octavia-etc
               mountPath: /etc/octavia/octavia.conf
@@ -47,6 +83,40 @@ spec:
               mountPath: /etc/octavia/policy.json
               subPath: policy.json
               readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia_api_audit_map.yaml
+              subPath: octavia_api_audit_map.yaml
+              readOnly: true
+            {{- if .Values.watcher.enabled }}
+            - name: octavia-etc
+              mountPath: /etc/octavia/watcher.yaml
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
+            {{- if not .Values.api_backdoor }}
+            - name: octavia-etc
+              mountPath: /etc/apache2/conf-enabled/octavia-api.conf
+              subPath: octavia-api.conf
+              readOnly: true
+            {{- end }}
+{{- include "jaeger_agent_sidecar" . | indent 8 }}
+{{- if .Values.watcher.enabled }}
+        - name: statsd
+          image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+          imagePullPolicy: IfNotPresent
+          resources:
+{{ toYaml .Values.pod.resources.statsd | indent 12 }}
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.statsd.port }}
+{{- end }}
       volumes:
         - name: octavia-etc
           configMap:

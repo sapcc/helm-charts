@@ -1,14 +1,20 @@
-- username: 'tempestuser1'
+- username: 'manila-tempestuser1'
+  domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
-  tenant_name: 'tempest1'
   project_name: 'tempest1'
-- username: 'tempestuser2'
+  resources:
+    network: share-service
+- username: 'manila-tempestuser2'
+  domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
-  tenant_name: 'tempest2'
   project_name: 'tempest2'
+  resources:
+    network: share-service
 - username: 'admin'
+  domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
-  tenant_name: 'admin'
   project_name: 'admin'
+  resources:
+    network: share-service
   types:
   - admin

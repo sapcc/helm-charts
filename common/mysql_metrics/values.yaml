@@ -2,14 +2,15 @@ global:
   tld: cloud.sap
   region: local
 
+db_type: maria
 #db_name: DEFINED-IN-COMPONENT-CHART
 #db_user: DEFINED-IN-COMPONENT-CHART
 #db_password: null
 
 port_metrics: '9237'
 loglevel: info
-image: hub.global.cloud.sap/monsoon/sql_exporter
-imageTag: 0.2.4
+image: sql-exporter
+imageTag: 0.3.0
 imagePullPolicy: IfNotPresent
 
 ## Affinity for pod assignment
@@ -17,6 +18,13 @@ imagePullPolicy: IfNotPresent
 ##
 nodeAffinity: {}
 
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 5m
+    memory: 32Mi
 customMetrics:
   - name: mysql_database_size
     help: Total database size

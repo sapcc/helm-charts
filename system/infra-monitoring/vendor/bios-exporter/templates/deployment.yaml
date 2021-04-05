@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "infraMonitoring.fullname" . }}
@@ -10,7 +10,11 @@ metadata:
     system: infra_monitoring
 
 spec:
+  revisionHistoryLimit: 5
   replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "infraMonitoring.name" . }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -25,7 +29,7 @@ spec:
     spec:
       containers:
          - name: {{ include "infraMonitoring.name" . }}
-           image: {{ .Values.global.imageRegistry }}/{{ required ".Values.docker_repo missing" .Values.docker_repo }}:{{ required ".Values.image_version missing" .Values.image_version }}
+           image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.image missing" .Values.image }}:{{ required ".Values.image_version missing" .Values.image_version }}
            imagePullPolicy: IfNotPresent
            ports:
              - name: metrics
@@ -40,6 +44,20 @@ spec:
                value: {{ .Values.user }}
              - name: REMOTEPW
                value: {{ .Values.userpw }}
+             - name: CISCOUSER
+               value: {{ .Values.cisco_user }}
+             - name: CISCOPW
+               value: {{ .Values.cisco_pw }}
+             - name: CISCOALTPWS
+               value: {{ .Values.cisco_alternative_pws }}
+             - name: REGION
+               value: {{ .Values.region }}
+             - name: SUPPORTUSER
+               value: {{ .Values.support_user }}
+             - name: SUPPORTPW
+               value: {{ .Values.support_password }}
+             - name: SUPPORTPWALT
+               value: {{ .Values.support_alt_pw }}
            livenessProbe:
              httpGet:
                path: /
@@ -47,4 +65,11 @@ spec:
              initialDelaySeconds: 5
              timeoutSeconds: 5
              periodSeconds: 10
-
+           volumeMounts:
+             - mountPath: /atlas
+               name: atlas-output
+               readOnly: true
+      volumes:
+        - configMap:
+            name: {{ .Values.atlas_configmap }}
+          name: atlas-output

@@ -1,13 +1,20 @@
-When passed via `helm upgrade --set`, the image version is misinterpreted as a float64. So special care is needed to render it correctly.
-
 {{- define "image_version" -}}
-  {{- if typeIs "string" .image_version -}}
+  {{- if contains "DEFINED" .image_version -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
-    {{- if typeIs "float64" .image_version -}}
-      {{.image_version | printf "%0.f"}}
-    {{- else -}}
-      {{.image_version}}
-    {{- end -}}
+    {{.image_version}}
   {{- end -}}
+{{- end -}}
+
+{{- define "secret_env_vars" -}}
+{{- range $key, $val := .Values.passwords }}
+{{- if contains "DEFINED" $val }}
+  {{ required "This release should be installed by the deployment pipeline!" "" }}
+{{- end }}
+- name: {{ $key | upper }}
+  valueFrom:
+    secretKeyRef:
+      name: swift-http-import
+      key: {{ $key }}
+{{- end }}
 {{- end -}}

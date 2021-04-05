@@ -3,13 +3,14 @@ apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
   name: 'vcenter-datacenter-cinder-deployment'
+options:
   scope: 'datacenter'
   jinja2_options:
     variable_start_string: '{='
     variable_end_string: '=}'
 template: |
   kind: Deployment
-  apiVersion: extensions/v1beta1
+  apiVersion: apps/v1
   metadata:
     name: cinder-volume-vmware-{= name =}
     labels:
@@ -33,13 +34,19 @@ template: |
           application: cinder
           component: volume-vmware
           name: cinder-volume-vmware-{= name =}
+        annotations:
+          configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+          configmap-cinder-volume-hash: {= "vcenter_datacenter/{{ .Release.Namespace }}/vcenter-datacenter-cinder-configmap.yaml.j2" | render | sha256sum =}
       spec:
         hostname: cinder-volume-vmware-{= name =}
 {{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
         containers:
         - name: cinder-volume-vmware-{= name =}
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-cinder-volume:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add: ["SYS_ADMIN"]
           command:
           - dumb-init
           - kubernetes-entrypoint
@@ -65,10 +72,10 @@ template: |
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
+          {{- if .Values.pod.resources.volume }}
           resources:
-            requests:
-              cpu: "500m"
-              memory: "1.5Gi"
+{{ toYaml .Values.pod.resources.volume | indent 12 }}
+          {{- end }}
           volumeMounts:
           - name: etccinder
             mountPath: /etc/cinder
@@ -95,6 +102,10 @@ template: |
           - name: volume-config
             mountPath: /etc/cinder/cinder-volume.conf
             subPath: cinder-volume.conf
+            readOnly: true
+          - name: cinder-etc
+            mountPath: /etc/sudoers
+            subPath: sudoers
             readOnly: true
         volumes:
         - name: etccinder

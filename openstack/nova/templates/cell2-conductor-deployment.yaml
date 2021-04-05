@@ -1,6 +1,6 @@
 {{- if .Values.cell2.enabled }}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: {{ .Release.Name }}-{{ .Values.cell2.name }}-conductor
@@ -28,19 +28,13 @@ spec:
 {{ tuple . "nova" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (lt .Capabilities.KubeVersion.Minor "5") }}
-        scheduler.alpha.kubernetes.io/affinity: >
-            {{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" }}
-{{- end }}
     spec:
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (ge .Capabilities.KubeVersion.Minor "7") }}
 {{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{- end }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
       initContainers:
         - name: nova-db-sync
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
           command: ['sh', '-c', 'nova-manage db sync --local_cell']
           volumeMounts:
             - mountPath: /etc/nova
@@ -51,7 +45,7 @@ spec:
               readOnly: true
       containers:
         - name: nova-conductor
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-conductor:{{.Values.imageVersionNovaConductor | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -62,7 +56,14 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-postgresql"
+              value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
 {{- if .Values.python_warnings}}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
@@ -77,10 +78,10 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
+          {{- if .Values.pod.resources.conductor }}
           resources:
-            requests:
-              cpu: "1500m"
-              memory: "7Gi"
+{{ toYaml .Values.pod.resources.conductor | indent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: /etc/nova
               name: etcnova

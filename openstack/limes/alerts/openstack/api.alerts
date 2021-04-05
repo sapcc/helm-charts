@@ -1,6 +1,27 @@
+# vim: set ft=yaml:
+
 groups:
 - name: openstack-limes.alerts
   rules:
+
+  - alert: OpenstackLimesDBConnectionPoolNearlyFull
+    expr: avg_over_time(go_sql_stats_connections_in_use{db_name="limes"}[1h]) > 8
+    for: 5m
+    labels:
+      context: dbconnpool
+      dashboard: limes-overview
+      service: limes
+      severity: info
+      tier: os
+      meta: 'DB connection pool nearly full on {{ $labels.pod }}'
+    annoatations:
+      summary: 'DB connection pool nearly full on {{ $labels.pod }}'
+      description: |
+        The DB connection pool on pod {{ $labels.pod }} is filling up. It can
+        go up to 16 connections, but during regular operations we should not go
+        over 3-5 connections to retain some budget for request spikes. Going
+        high on connections for a long time indicates that the pod might be
+        starved for CPU time, so try checking the CPU throttling metrics.
 
   - alert: OpenstackLimesHttpErrors
     expr: sum(increase(http_requests_total{kubernetes_namespace="limes",code=~"5.*"}[1h])) by (kubernetes_name) > 0
@@ -45,10 +66,14 @@ groups:
       summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
 
   - alert: OpenstackLimesMissingCapacity
-    # note: this ignores baremetal capacity ("compute/instances_<flavorname>")
+    # This ignores baremetal capacity ("compute/instances_<flavorname>")
     # since many of these are zero legitimately (we do not have all BM server
-    # types in all regions)
-    expr: limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0
+    # types in all regions).
+    #
+    # The check for non-zero domain quota skips resources that only report
+    # usage, not quota nor capacity (at the moment, those are
+    # "compute/{cores,ram}_{bigvm,regular}").
+    expr: global:limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0 and on (full_resource, os_cluster) global:limes_consolidated_domain_quota{full_resource!~"compute/instances_*"} > 0
     for: 1h
     labels:
       context: failedcapacityscrapes
@@ -73,7 +98,7 @@ groups:
       service: '{{ $labels.service_name }}'
       severity: warning
       tier: os
-      playbook: docs/support/playbook/limes/failed_scrapes
+      playbook: docs/support/playbook/limes/failed_scrapes.html
     annotations:
       description: Limes cannot scrape data from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
@@ -93,6 +118,40 @@ groups:
       tier: os
     annotations:
       description: Limes has suspended scraping from {{ title $labels.service_name }}
+        for more than an hour. Please check if the internal endpoint for
+        {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
+        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+      summary: Limes cannot find {{ title $labels.service_name }} endpoint
+
+  - alert: OpenstackLimesFailedRateScrapes
+    expr: sum(increase(limes_failed_rate_scrapes[5m])) BY (os_cluster, service, service_name) > 0
+    for: 1h
+    labels:
+      context: failedratescrapes
+      dashboard: limes-overview
+      service: '{{ $labels.service_name }}'
+      severity: warning
+      tier: os
+      playbook: docs/support/playbook/limes/failed_scrapes.html
+    annotations:
+      description: Limes cannot scrape rate data from {{ title $labels.service_name }}
+        for more than an hour. Please check if {{ title $labels.service_name }} is working.
+        The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
+      summary: Limes cannot scrape {{ title $labels.service_name }}
+
+  - alert: OpenstackLimesSuspendedRateScrapes
+    # this has [15m] instead of [5m] because suspensions last for 10 minutes,
+    # therefore the limes_suspended_rate_scrapes counter only increments that often
+    expr: sum(increase(limes_suspended_rate_scrapes[15m])) BY (os_cluster, service, service_name) > 0
+    for: 1h
+    labels:
+      context: failedratescrapes
+      dashboard: limes-overview
+      service: '{{ $labels.service_name }}'
+      severity: warning
+      tier: os
+    annotations:
+      description: Limes has suspended rate scraping from {{ title $labels.service_name }}
         for more than an hour. Please check if the internal endpoint for
         {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
         The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
@@ -181,21 +240,22 @@ groups:
       context: cpu
       dashboard: limes-overview
       meta: "{{ $labels.pod_name }}"
+      no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
     annotations:
       summary: Scheduling failed due to insufficient cpu
       description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
 
-  - alert: OpenstackLimesUnmatchedNovaHypervisors
-    expr: limes_unmatched_nova_hypervisors > 0
+  - alert: OpenstackLimesSeesHypervisorWithoutAZ
+    expr: max by (hypervisor, hostname) (limes_nova_hypervisor_has_az{region!~"qa-de-.*"}) == 0 # only active in prod regions
     for: 15m
     labels:
       severity: info
       tier: os
       service: limes
       context: nova-hypervisor
-      meta: "Cannot determine AZ for some Nova hypervisors."
+      meta: "Nova hypervisor {{$labels.hypervisor}} is not assigned to any AZ."
     annotations:
       summary: Unmatched Nova hypervisors
-      description: Limes cannot determine the AZ of some Nova hypervisors. Their
-        capacity will be reported in the AZ "unknown" in the resource management
-        UI until this issue is fixed.
+      description: Limes cannot determine the AZ of the hypervisor
+        {{$labels.hypervisor}}. Its capacity will be reported in the AZ
+        "unknown" in the resource management UI until this issue is fixed.

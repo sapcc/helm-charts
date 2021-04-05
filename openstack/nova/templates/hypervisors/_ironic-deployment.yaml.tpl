@@ -2,7 +2,7 @@
 {{- $hypervisor := index . 1 -}}
 {{- with index . 0 -}}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: nova-compute-{{$hypervisor.name}}
   labels:
@@ -33,7 +33,7 @@ spec:
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       containers:
         - name: nova-compute
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
@@ -43,8 +43,13 @@ spec:
               value: "nova-compute"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
 {{- if or $hypervisor.python_warnings .Values.python_warnings }}
             - name: PYTHONWARNINGS
               value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
@@ -53,10 +58,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          {{- if .Values.pod.resources.hv_ironic }}
           resources:
-            requests:
-              cpu: "150m"
-              memory: "200Mi"
+{{ toYaml .Values.pod.resources.hv_ironic | indent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: /etc/nova
               name: etcnova

@@ -31,6 +31,14 @@ hosts = [
       username = "{{.Values.global.admin_user}}"
       password = "{{.Values.global.admin_password}}"
     }
+  },
+  {
+    host = "http://elastiflow-master.elastiflow:9200"
+    name = "elastiflow cluster"
+    auth = {
+      username = "{{.Values.global.elastiflow_admin_user}}"
+      password = "{{.Values.global.elastiflow_admin_password}}"
+    }
   }
 ]
 
@@ -39,11 +47,14 @@ auth = {
   type: ldap
   settings: {
     url = "ldaps://{{.Values.global.ldap.host}}:{{.Values.global.ldap.port}}"
+    method = "simple"
     base-dn = "{{.Values.global.ldap.search_base_dbs}},{{.Values.global.ldap.suffix}}"
     bind-dn = "{{.Values.global.ldap.bind_dn}},{{.Values.global.ldap.suffix}}"
     bind-pw = "{{.Values.global.ldap.password}}"
-    user-domain = "{{.Values.global.ldap.userdomain}}"
-    userAttr = "sAMAccountName"
-    userGroup = "{{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
+    user-template = "%s@{{.Values.global.ldap.userdomain}}"
+    group-search {
+      user-attr = "sAMAccountName"
+      group = "{{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
+    }
   }
 }

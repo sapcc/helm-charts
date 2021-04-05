@@ -1,9 +1,5 @@
 {{- if .Values.prometheusOperator.enabled }}
-{{- if and (eq .Capabilities.KubeVersion.Major "1") (gt .Capabilities.KubeVersion.Minor "9") }}
 apiVersion: apps/v1
-{{ else }}
-apiVersion: extensions/v1beta1
-{{- end }}
 kind: Deployment
 metadata:
   name: {{ template "prometheus-operator.fullname" . }}-operator
@@ -42,7 +38,6 @@ spec:
           {{- if .Values.prometheusOperator.logLevel }}
             - --log-level={{ .Values.prometheusOperator.logLevel }}
           {{- end }}
-            - --logtostderr=true
             - --crd-apigroup={{ .Values.prometheusOperator.crdApiGroup | default "monitoring.coreos.com" }}
             - --localhost=127.0.0.1
             - --prometheus-config-reloader={{ .Values.prometheusOperator.prometheusConfigReloaderImage.repository }}:{{ .Values.prometheusOperator.prometheusConfigReloaderImage.tag }}

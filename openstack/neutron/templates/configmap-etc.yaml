@@ -28,8 +28,6 @@ data:
 {{ include (print .Template.BasePath "/etc/_ml2-conf.ini.tpl") . | indent 4 }}
   neutron.conf: |
 {{ include (print .Template.BasePath "/etc/_neutron.conf.tpl") . | indent 4 }}
-  neutron-lbaas.conf: |
-{{ include (print .Template.BasePath "/etc/_neutron-lbaas.conf.tpl") . | indent 4 }}
   neutron-policy.json: |
 {{ include (print .Template.BasePath "/etc/_neutron-policy.json.tpl") . | indent 4 }}
   rootwrap.conf: |
@@ -65,3 +63,13 @@ data:
   az-b.conf: |
     [agent]
     availability_zone = {{ .Values.global.region }}b
+  az-c.conf: |
+    [agent]
+    availability_zone = {{ .Values.global.region }}c
+  az-d.conf: |
+    [agent]
+    availability_zone = {{ .Values.global.region }}d
+{{- if .Values.policy_migration_image }}
+  ml2-nsx-policy-migration.ini: |
+{{ include (print .Template.BasePath "/etc/_ml2-nsx-policy-migration.ini.tpl") . | indent 4 }}
+{{- end }}

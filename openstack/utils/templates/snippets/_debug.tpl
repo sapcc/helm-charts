@@ -100,5 +100,5 @@ data:
 
 
 {{ define "utils.snippets.debug.eventlet_backdoor_ini" }}
-backdoor_socket=/var/lib/{{.}}/eventlet_backdoor.socket
+backdoor_socket=/var/lib/{{.}}/eventlet_backdoor-{pid}.socket
 {{ end }}

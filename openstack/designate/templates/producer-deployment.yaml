@@ -1,9 +1,9 @@
 {{- if .Values.worker_enabled }}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
-  name: designate-producer
+  name: {{ .Release.Name }}-producer
   labels:
     system: openstack
     type: backend
@@ -29,12 +29,15 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
       containers:
         - name: designate-producer
-          image: {{required ".Values.global.image_repository is missing" .Values.global.image_repository}}/{{.Values.global.image_namespace}}/ubuntu-source-designate-producer:{{required ".Values.global.image_version_designate_producer is missing" .Values.image_version_designate_producer}}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
           imagePullPolicy: IfNotPresent
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+            - kubernetes-entrypoint
           resources:
              requests:
                memory: "128Mi"
@@ -48,7 +51,11 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "designate-mariadb,{{ .Release.Name }}-rabbitmq"
+{{- if .Values.percona_cluster.enabled }}
+              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+{{- else }}
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+{{- end }}
             - name: DEBUG_CONTAINER
               value: "false"
             {{- if .Values.sentry.enabled }}
@@ -56,7 +63,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: designate.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
           volumeMounts:
             - mountPath: /designate-etc

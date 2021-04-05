@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+{{ include "helm3-helper.annotations" . | indent 4 }}
+  labels:
+    k8s-app: pmtud
+{{ include "helm3-helper.labels" . | indent 4 }}
+  name: pmtud
+spec:
+  selector:
+    matchLabels:
+      name: pmtud
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: pmtud
+        k8s-app: pmtud
+      annotations:
+        configmap-pmtud-hash: {{ include (print $.Template.BasePath "/go-pmtud-configmap.yaml") $ | sha256sum }}
+    spec:
+      initContainers:
+        - name: iptables-init
+          image: "{{ .Values.global.registry }}/ccloud/iptables:{{ .Values.images.iptables.tag }}"
+          command:
+            - /scripts/pmtud/iptables-init.sh
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: pmtud
+              mountPath: /scripts/pmtud
+      containers:
+      - name: pmtud
+        image: "{{ .Values.global.registry }}/ccloud/go-pmtud:{{ .Values.images.pmtud.tag }}"
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/scripts/pmtud/iptables-stop.sh"]
+        command:
+          - /go-pmtud
+          - --peers={{ required ".Values.pmtud.peers is required" .Values.pmtud.peers | join "," }}
+          - --iface-names={{ required ".Values.pmtud.ifaceNames is required" .Values.pmtud.ifaceNames | join "," }}
+          - --nodename=$(NODE_NAME)
+          - --ttl={{ required ".Values.pmtud.ttl is required" .Values.pmtud.ttl }}
+          - --nflog-group={{ required ".Values.pmtud.nflogGroup is required" .Values.iptables.nflogGroup }}
+          - --metrics-port={{ required ".Values.pmtud.metricsPort is required" .Values.pmtud.metricsPort }}
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        securityContext:
+           privileged: true
+        volumeMounts:
+          - name: pmtud
+            mountPath: /scripts/pmtud
+      hostNetwork: true
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      terminationGracePeriodSeconds: 5
+      tolerations:
+        - operator: "Exists"
+      volumes:
+        - name: pmtud
+          configMap:
+            name: pmtud
+            defaultMode: 0744

@@ -1,0 +1,32 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+
+metadata:
+  name: "{{ .Release.Namespace }}:node-problem-detector"
+  labels:
+    app: node-problem-detector
+
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - nodes/status
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+      - update
+{{- end }}

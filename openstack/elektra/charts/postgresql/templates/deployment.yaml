@@ -1,5 +1,6 @@
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: apps/v1
+
 metadata:
   name: {{ template "fullname" . }}
   labels:
@@ -8,6 +9,9 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
   revisionHistoryLimit: 5
   template:
     metadata:
@@ -16,7 +20,7 @@ spec:
     spec:
       containers:
       - name: {{ template "fullname" . }}
-        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        image: "{{ .Values.global.registry }}/postgres:{{ .Values.imageTag }}"
         imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
         env:
         - name: POSTGRES_USER
@@ -66,7 +70,7 @@ spec:
         - name: data
           mountPath: /postgresql
 {{- if .Values.backup.enabled }}
-      - image: {{.Values.backup.repository}}:{{.Values.backup.image_version}}
+      - image: "{{ .Values.global.registry }}/backup-tools:{{ .Values.backup.image_version }}"
         name: backup
         env:
           - name: MY_POD_NAME

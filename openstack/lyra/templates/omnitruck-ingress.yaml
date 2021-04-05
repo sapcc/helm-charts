@@ -1,13 +1,13 @@
 {{- if and .Values.omnitruck.enabled .Values.ingress.enabled }}
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}-omnitruck
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-  {{- if .Values.ingress.vice_president }}
+  {{- if .Values.ingress.cert_manager}}
   annotations:
-    vice-president: "true"
+    kubernetes.io/tls-acme: "true"
   {{- end }}
 spec:
   tls:

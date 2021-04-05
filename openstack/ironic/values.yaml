@@ -4,8 +4,6 @@
 # name: value
 #
 global:
-  #image_namespace: REQUIRED
-  #imageRegistry: REQUIRED
   ironicApiPortInternal: '6385'
   #ironic_tftp_ip: null
   ironictftpPortPublic: '69'
@@ -17,17 +15,23 @@ global:
   fernetRouter:
     image: "monsoon/fernet-router:latest"
 
+imageVersion: rocky-20200214123740
+imageVersionStaticdhcpd: rocky-20201012110713
+
 tempest:
   enabled: false
 
 osprofiler:
-    enabled: false
+  enabled: false
 
 statsd:
   port: 9102
   image:
     repository:  prom/statsd-exporter
     tag: v0.8.1
+
+oslo_metrics:
+  enabled: false
 
 pod:
   replicas:
@@ -92,15 +96,15 @@ pod:
         revisionHistory: 5
         podReplacementStrategy: RollingUpdate
         rollingupdate:
-           maxUnavailable: 0
-           maxSurge: 1
+          maxUnavailable: 0
+          maxSurge: 1
 
 #imageVersion: null
 #imageVersionIronicApi: null
 #imageVersionIronicConductor: null
 #imageVersionIronicInspector: null
 #imageVersionIronicPxe: null
-swift_multi_tenant: True
+swift_multi_tenant: true
 
 debug: "True"
 dbName: ironic
@@ -111,8 +115,10 @@ inspectordbUser: ironic_inspector
 
 api:
   override: {}
+  api_workers: 0
 
 inspector:
+  standalone: true
   port_internal: '5050'
   dhcp:
     port: '67'
@@ -133,9 +139,10 @@ conductor:
     conductor: {}
     dhcp: {}
     pxe:
-      ipxe_enabled: True
-      ipxe_use_swift: True
+      ipxe_enabled: true
+      ipxe_use_swift: true
       pxe_bootfile_name: "undionly.kpxe"
+      uefi_pxe_bootfile_name: "ipxe.efi"
 
 agent:
   deploy_logs:
@@ -150,6 +157,7 @@ console:
 tftp_ip: null
 tftp_files:
   undionly.kpxe: https://boot.ipxe.org/undionly.kpxe
+  ipxe.efi: https://boot.ipxe.org/ipxe.efi
 
 portmetrics: '9102'
 
@@ -161,95 +169,133 @@ neutron_port_setup_delay: 0
 #swift_account: null
 #swift_tempurl: null
 
-pgmetrics:
-  name: ironic
-  resources:
-    requests:
-      memory: 24Mi
-      cpu: 10m
-    limits:
-      memory: 64Mi
-      cpu: 50m
-  customMetrics:
-     openstack_ironic_nodes_list:
-      query: "SELECT uuid, name, instance_uuid, power_state, provision_state, coalesce(last_error,'error unknown') AS last_error, count(*) as gauge from nodes group by uuid, name, instance_uuid, power_state, provision_state, last_error"
-      metrics:
-        - uuid:
-            usage: "LABEL"
-            description: "Node UUID"
-        - name:
-            usage: "LABEL"
-            description: "Node name"
-        - instance_uuid:
-            usage: "LABEL"
-            description: "Instance UUID provisioned on the node"
-        - power_state:
-            usage: "LABEL"
-            description: "Power State of the node"
-        - provision_state:
-            usage: "LABEL"
-            description: "Current Node Provision status"
-        - last_error:
-            usage: "LABEL"
-            description: "Node last error"
-        - gauge:
-            usage: "GAUGE"
-            description: "Current Node count"
-     openstack_ironic_nodes_updated:
-       query: "SELECT uuid, name, provision_state, COUNT(*) AS in_24hrs FROM nodes WHERE (updated_at >= now() - interval '24 hours') GROUP BY uuid, provision_state, name"
-       metrics:
-         - uuid:
-             usage: "LABEL"
-             description: "Node UUID"
-         - name:
-             usage: "LABEL"
-             description: "Node name"
-         - provision_state:
-             usage: "LABEL"
-             description: "Current Node Provision status"
-         - in_24hrs_gauge:
-              usage: "GAUGE"
-              description: "Nodes created past 24hrs"
-     openstack_ironic_nodes:
-       query: "SELECT count(case when not maintenance then 1 end) as NodeNotInMaint, count(case when maintenance then 1 end) as NodeInMaint, uuid, name, coalesce(maintenance_reason,'reason unknown') AS maintenance_reason from nodes group by maintenance_reason, uuid, name"
-       metrics:
-         - uuid:
-             usage: "LABEL"
-             description: "Node UUID"
-         - name:
-             usage: "LABEL"
-             description: "Node name"
-         - maintenance_reason:
-             usage: "LABEL"
-             description: "Maintenance Reason of Node "
-         - NodeNotInMaint:
-             usage: "GAUGE"
-             description: "Node not in maintenance"
-         - NodeInMaint:
-              usage: "GAUGE"
-              description: "Nodes in maintenance"
-postgresql:
+mysql_metrics:
   enabled: true
-  imageTag: '9.4.21'
-  postgresDatabase: ironic
-  dbInit: ironic-db-init
-  dbMaintain: ironic-db-maintain
-  users:
-    ironic: {}
-    ironicInspector: {}
-  persistence:
-    enabled: true
-    existingClaim: db-ironic-pvclaim
+  db_name: ironic
+  db_user: ironic
+  customMetrics:
+    - name: openstack_ironic_nodes_list_gauge
+      help: Ironic Node list
+      labels:
+      - "uuid"
+      - "name"
+      - "instance_uuid"
+      - "power_state"
+      - "provision_state"
+      - "last_error"
+      query: |
+        SELECT
+          uuid,
+          name,
+          COALESCE(instance_uuid, "") AS instance_uuid,
+          power_state,
+          provision_state,
+          COALESCE(last_error, "no error") AS last_error,
+          COUNT(*) AS gauge
+        FROM nodes
+        GROUP BY uuid, name, instance_uuid, power_state, provision_state, last_error;
+      values:
+      - "gauge"
+    - name: openstack_ironic_nodes_updated_in_24hrs_gauge
+      help: Ironic updated nodes
+      labels:
+      - "uuid"
+      - "name"
+      - "provision_state"
+      query: |
+        SELECT 
+          uuid, 
+          name, 
+          provision_state,
+          COUNT(*) AS in_24hrs_gauge
+        FROM nodes 
+        WHERE updated_at >= NOW() - INTERVAL 1 DAY 
+        GROUP BY uuid, provision_state, name;
+      values:
+      - "in_24hrs_gauge"
+    - name: openstack_ironic_nodes_nodenotinmaint
+      help: Ironic nodes not in maintenance
+      labels:
+      - "maintenance_reason"
+      - "uuid"
+      - "name"
+      values:
+      - "node_not_in_maint"
+      query: |
+        SELECT 
+          COUNT(case when maintenance = 0 then 1 end) AS node_not_in_maint, 
+          uuid, 
+          name, 
+          COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
+        FROM nodes
+        GROUP BY
+          maintenance_reason,
+          uuid,
+          name;
+    - name: openstack_ironic_nodes_nodeinmaint
+      help: Ironic nodes in maintenance
+      labels:
+      - "maintenance_reason"
+      - "uuid"
+      - "name"
+      values:
+      - "node_in_maint"
+      query: |
+        SELECT 
+          COUNT(case when maintenance = 1 then 1 end) AS node_in_maint, 
+          uuid, 
+          name, 
+          COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
+        FROM nodes
+        GROUP BY
+          maintenance_reason,
+          uuid,
+          name;
+    - name: openstack_ironic_nodes_conductor_group
+      help: Ironic updated nodes
+      labels:
+      - "uuid"
+      - "name"
+      - "conductor_group"
+      query: |
+        SELECT 
+          uuid, 
+          name, 
+          conductor_group,
+          COUNT(conductor_group) AS groups
+        FROM nodes
+        GROUP BY 
+          name, 
+          uuid, 
+          conductor_group;
+      values:
+      - "groups"
+
+mariadb:
+  enabled: false
+  alerts:
+    service: ironic
+  backup_v2:
+    enabled: false
+    backup_dir: ./backup
+    databases:
+      - ironic
+      - ironic_inspector
+    verify_tables:
+      - ironic.nodes
+      - ironic_inspector.nodes
   backup:
-    enabled: true
-    metrics: true
-    #osPassword: null
-  resources:
-    requests:
-      cpu: "500m" # 1/2 cpu
-      memory: "500Mi" # 180Mi high recorded
-  shared_preload_libraries: pg_stat_statements
-  track_activity_query_size: 2048
+    enabled: false
+    metrics: false
+    image_version: v0.5.15
+    os_password: "AHardPa55w0rd!"
+  root_password: "AHardPa55w0rd!"
+  buffer_pool_size: "8192M"
+  log_file_size: "2048M"
+  name: ironic
+  initdb_configmap: ironic-mariadb-init
+  persistence_claim:
+    name: db-ironic-pvclaim
 
 sentry:
   enabled: true
@@ -286,6 +332,9 @@ logging:
       level: INFO
 
 watcher:
+  enabled: false
+
+audit:
   enabled: false
 
 # Deploy Ironic Prometheus alerts.

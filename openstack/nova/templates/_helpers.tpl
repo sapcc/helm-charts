@@ -1,9 +1,11 @@
 {{- define "cell0_db_path" -}}
-postgresql+psycopg2://{{.Values.cell0dbUser}}:{{.Values.cell0dbPassword | default (tuple . .Values.cell0dbUser | include "postgres.password_for_user") | urlquery }}@{{.Chart.Name}}-postgresql.{{include "svc_fqdn" .}}:5432/{{.Values.cell0dbName}}
+mysql+pymysql://{{.Values.cell0dbUser}}:{{ default .Values.cell0dbPassword .Values.global.dbPassword | urlquery }}@{{.Chart.Name}}-mariadb.{{include "svc_fqdn" .}}:3306/{{.Values.cell0dbName}}?charset=utf8
 {{- end -}}
 
 {{- define "cell2_db_path" -}}
-postgresql+psycopg2://{{.Values.cell2dbUser}}:{{ .Values.cell2dbPassword | default (tuple . .Values.cell2dbUser | include "postgres.password_for_user" | urlquery ) }}@{{.Chart.Name}}-{{.Values.cell2.name}}-postgresql.{{include "svc_fqdn" .}}:5432/{{.Values.cell2dbName}}
+{{- if eq .Values.cell2.enabled true -}}
+mysql+pymysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Values.global.dbPassword | urlquery }}@{{.Chart.Name}}-{{.Values.cell2.name}}-mariadb.{{include "svc_fqdn" .}}:3306/{{.Values.cell2dbName}}?charset=utf8
+{{- end -}}
 {{- end -}}
 
 {{- define "cell2_transport_url" -}}
@@ -17,7 +19,7 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
     {{- $version_name := printf "imageVersionNova%s" ($name | lower | replace "-" " " | title | nospace) -}}
     {{- $image_name := ( .Values.loci.nova | ternary .Values.imageNameNova (printf "ubuntu-source-nova-%s" ($name | lower)) ) -}}
 
-    {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersionNova or similar" }}
+    {{ required ".Values.global.registry is missing" .Values.global.registry}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersionNova or similar" }}
  
   {{- end -}}
 {{- end -}}
@@ -28,7 +30,7 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
     {{- $version_name := printf "imageVersionOpenvswitch%s" ($name | lower | replace "-" " " | title | nospace) -}}
     {{- $image_name := ( .Values.loci.nova | ternary .Values.imageNameNova (printf "ubuntu-source-openvswitch-%s" ($name | lower)) ) -}}
 
-    {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionOpenvswitch | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set imageVersionOpenvswitch or similar" }}
+    {{ required ".Values.global.registry is missing" .Values.global.registry}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionOpenvswitch | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set imageVersionOpenvswitch or similar" }}
 
   {{- end -}}
 {{- end -}}
@@ -40,7 +42,7 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
     {{- $version_name := printf "imageVersionNeutron%s" ($name | lower | replace "-" " " | title | nospace) -}}
     {{- $image_name := .Values.imageNameNeutron -}}
 
-    {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNeutron | required "Please set imageVersionNeutron or similar" }}
+    {{ required ".Values.global.registry is missing" .Values.global.registry}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNeutron | required "Please set imageVersionNeutron or similar" }}
 
   {{- end -}}
 {{- end -}}

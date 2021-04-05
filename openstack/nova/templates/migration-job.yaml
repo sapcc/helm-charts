@@ -16,7 +16,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: nova-migration
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         command:
         - kubernetes-entrypoint
@@ -26,7 +26,7 @@ spec:
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
-          value: "nova-postgresql"
+          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb{{ if eq .Values.cell2.enabled true }},{{ .Values.mariadb_cell2.name }}-mariadb{{ end }}"
         - name: PGAPPNAME
           valueFrom:
             fieldRef:

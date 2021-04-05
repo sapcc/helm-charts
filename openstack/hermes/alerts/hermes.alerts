@@ -1,19 +1,6 @@
 groups:
 - name: openstack-hermes.alerts
   rules:
-  - alert: OpenstackHermesResponsiveness
-    expr: hermes_request_duration_seconds{quantile="0.99"} > 3
-    for: 1h
-    labels:
-      context: latency
-      dashboard: hermes-details
-      service: hermes
-      severity: warning
-      tier: os
-    annotations:
-      description: Hermes API does not fulfill the responsiveness goals (99% responses within 3 seconds)
-      summary: Hermes API lags
-
   - alert: OpenstackHermesKeystoneAvail
     expr: hermes_logon_errors_count > 0
     for: 15m
@@ -72,19 +59,33 @@ groups:
       description: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
       summary: 'RabbitMQ unacknowledged messages count'
 
-  - alert: OpenstackElkPredictOutOfDiskSpace
-    expr: elasticsearch_data_diskspace_used_percentage{cluster="hermes",mount=~"/data \\(10.*"} > 65
-    for: 30m
+  - alert: OpenstackHermesRabbitMQReady
+    expr: sum(rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 2000
     labels:
-      context: elkdiskspace
+      context: rabbitmq
+      severity: warning
+      tier: os
+      service: hermes
+      dashboard: rabbitmq
+      meta: '{{ $labels.service }} {{ $labels.check }} has over 2000 ready messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
+      playbook: 'docs/devops/alert/rabbitmq/#ready'
+    annotations:
+      description: '{{ $labels.service }} {{ $labels.check }} has over 2000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
+      summary: 'RabbitMQ unacknowledged messages count'
+
+  - alert: OpenstackElkPredictOutOfDiskSpace
+    expr: elasticsearch_filesystem_data_free_bytes{name=~"hermes"} * 100 / elasticsearch_filesystem_data_size_bytes{name=~"hermes"} < 20
+    for: 60m
+    labels:
+      context: diskspace
       service: hermes
       severity: critical
       tier: os
-      playbook: docs/support/playbook/elk_kibana_issues.html
+      playbook: docs/support/playbook/elk_kibana_issues.html#elkpredictoutofdiskspace-alert
     annotations:
-      description: The disk usage on {{ $labels.host }}:{{ $labels.mount }} in the {{ $labels.cluster }} cluster is above 65% now.
-                   Elasticsearch will run out of disk space, and fail to start at 85%
-      summary: Elastic Search will soon run out of disk space
+      description: '{{ $labels.region }} The disk usage for Hermes {{ $labels.name }} is above 80% now.
+                   Please consider cleaning up hermes elasticsearch or lower the retention period for hermes.'
+      summary: 'Hermes in {{ $labels.region }} might run out of disk space'
 
   - alert: OpenstackClusterRed
     expr: elasticsearch_cluster_health_status{cluster="hermes",color="red"} == 1
@@ -147,7 +148,7 @@ groups:
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
 
   - alert: OpenstackHermesLogstashPlugins
-    expr: sum(increase(logstash_node_plugin_events_out_total[10m])) by (plugin) <= 0
+    expr: sum(increase(logstash_node_plugin_events_out_total[30m])) <= 0
     labels:
       context: logstash
       severity: warning

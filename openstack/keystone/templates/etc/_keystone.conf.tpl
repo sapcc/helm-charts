@@ -16,12 +16,30 @@ notification_format = {{ .Values.api.notifications.format | default "cadf" | quo
 notification_opt_out = {{ $message_type }}
 {{ end }}
 
+{{- if hasKey .Values.api "default_tags"}}
+{{- range $tag := .Values.api.default_tags }}
+default_tag = {{ $tag }}
+{{ end -}}
+{{- else}}
+{{- range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
+{{- $az := trimPrefix $.Values.global.region $az_long }}
+default_tag = vc-{{ $az }}-0
+{{ end -}}
+{{ end -}}
+
 {{- if .Values.api.auth }}
 [auth]
 methods = {{ .Values.api.auth.methods | default "password,token,application_credential" }}
 {{ if .Values.api.auth.external }}external = {{ .Values.api.auth.external }}{{ end }}
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
+{{- end }}
+
+{{- if hasKey .Values.global "api"}}
+{{- if hasKey .Values.global.api "cc_password"}}
+[cc_password]
+url = {{ required "missing global.api.cc_password.url" .Values.global.api.cc_password.url }}
+{{- end }}
 {{- end }}
 
 [cc_x509]
@@ -94,23 +112,24 @@ expiration_buffer = 3600
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 
-{{- if eq .Values.release "stein" }}
+{{- if ne .Values.release "rocky" }}
 [fernet_receipts]
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 {{- end }}
 
-{{- if eq .Values.release "stein" }}
+{{- if ne .Values.release "rocky" }}
 [access_rules_config]
 rules_file = /etc/keystone/access_rules.json
 permissive = true
 {{- end }}
 
 [database]
-{{- if eq .Values.global.database "postgres" }}
-connection = postgresql://{{ default .Release.Name .Values.global.dbUser }}:{{ .Values.global.dbPassword }}@{{include "db_host" .}}:5432/{{ default .Release.Name .Values.postgresql.postgresDatabase }}
-{{- end }}
-{{- if eq .Values.global.database "mariadb" }}
+# Database connection string - MariaDB for regional setup
+# and Percona Cluster for inter-regional setup:
+{{ if .Values.percona_cluster.enabled -}}
+connection = {{ include "db_url_pxc" . }}
+{{- else }}
 connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
 {{- end }}
 
@@ -138,8 +157,11 @@ domain_name_url_safe = new
 lockout_failure_attempts = 5
 lockout_duration = 300
 unique_last_password_count = 5
+{{- if hasKey .Values "disable_user_account_days_inactive" }}
+disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inactive }}
+{{- end }}
 
-{{- if ne .Values.release "stein" }}
+{{- if eq .Values.release "rocky" }}
 [oslo_messaging_rabbit]
 rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
 rabbit_password = {{ .Values.rabbitmq.users.default.password }}
@@ -154,7 +176,7 @@ rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
 {{- end }}
 
 [oslo_messaging_notifications]
-{{- if eq .Values.release "stein" }}
+{{- if ne .Values.release "rocky" }}
 {{- if .Values.rabbitmq.host }}
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
 {{ else }}
@@ -167,6 +189,21 @@ driver = messaging
 [oslo_middleware]
 enable_proxy_headers_parsing = true
 
+[oslo_policy]
+# This option controls whether or not to enforce scope when evaluating
+# policies. If ``True``, the scope of the token used in the request is compared
+# to the ``scope_types`` of the policy being enforced. If the scopes do not
+# match, an ``InvalidScope`` exception will be raised. If ``False``, a message
+# will be logged informing operators that policies are being invoked with
+# mismatching scope. (boolean value)
+enforce_scope = false
+
+{{- if ne .Values.api.policy "json" }}
+policy_file = /etc/keystone/policy.yaml
+{{- else }}
+policy_file = /etc/keystone/policy.json
+{{- end }}
+
 [lifesaver]
 enabled = {{ .Values.lifesaver.enabled }}
 {{- if .Values.memcached.host }}
@@ -174,9 +211,14 @@ memcached = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 112
 {{ else }}
 memcached = {{ include "memcached_host" . }}:{{ .Values.memcached.port | default 11211}}
 {{- end }}
-domain_whitelist = {{ .Values.lifesaver.domain_whitelist | default "Default, tempest" }}
-user_whitelist = {{ .Values.lifesaver.user_whitelist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
-user_blacklist = {{ .Values.lifesaver.user_blacklist | default "" }}
+# deprecated
+domain_whitelist = {{ .Values.lifesaver.domain_allowlist | default "Default, tempest" }}
+# deprecated
+user_whitelist = {{ .Values.lifesaver.user_allowlist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
+
+domain_allowlist = {{ .Values.lifesaver.domain_allowlist | default "Default, tempest" }}
+user_allowlist = {{ .Values.lifesaver.user_allowlist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
+user_blocklist = {{ .Values.lifesaver.user_blocklist | default "" }}
 # initial user credit
 initial_credit = {{ .Values.lifesaver.initial_credit | default 100 }}
 # how often do we refill credit
@@ -192,4 +234,8 @@ allowed_origin = {{ .Values.cors.allowed_origin | default "*"}}
 allow_credentials = true
 expose_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token
 allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token,X-Project-Id,X-Project-Name,X-Project-Domain-Id,X-Project-Domain-Name,X-Domain-Id,X-Domain-Name,X-User-Id,X-User-Name,X-User-Domain-name
+{{- end }}
+
+{{- if .Values.osprofiler.enabled }}
+{{- include "osprofiler" . }}
 {{- end }}

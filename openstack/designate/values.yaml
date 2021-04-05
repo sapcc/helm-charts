@@ -5,19 +5,22 @@
 #
 debug: "True"
 
-tempest:
-  enabled: false
+global_setup: false
+tempest_enabled: false
 
 sentry:
   enabled: true
 
 global:
   dbPassword: DEFINED-IN-REGION-CHART
-  image_repository: DEFINED-IN-OPENSTACK-CHART
+  db_region: ""
+  imageRegistry: DEFINED-IN-OPENSTACK-CHART
   image_namespace: DEFINED-IN-OPENSTACK-CHART
+  registry: DEFINED-IN-OPENSTACK-CHART
   designate_api_endpoint_protocol_admin: http
   designate_api_endpoint_protocol_internal: http
   designate_api_endpoint_protocol_public: https
+  designate_public_api: ""
   designate_api_port_internal: '9001'
   designate_api_port_admin: '9001'
   designate_api_port_public: '443'
@@ -46,9 +49,8 @@ pod:
           max_unavailable: 0
           max_surge: 1
 
-# image_version_designate_api:  DEFINED-IN-REGION-CHART
-# image_version_designate_central:  DEFINED-IN-REGION-CHART
-# image_version_designate_mdns:  DEFINED-IN-REGION-CHART
+# image_version_designate:  DEFINED-IN-REGION-CHART
+imageVersionTempest: "latest"
 
 bind_pools:
   - name: default
@@ -84,24 +86,43 @@ rndc_keys:
   algorithm: DEFINED-IN-REGION-CHART
   secret: DEFINED-IN-REGION-CHART
 
+db_name: designate
+pool_id: 794ccc2c-d751-44fe-b57f-8894c9f5c842
+scheduler_filters: attribute, pool_id_attribute, in_doubt_default_pool, fallback
+sink_enabled: False
+worker_enabled: True
+worker_notify: True
+worker_poll_timeout: '15'
+worker_poll_retry_interval: '10'
+worker_poll_max_retries: '80'
+worker_threshold_percentage: '100'
+worker_all_tcp: True
+
+percona_cluster:
+  enabled: false
+  db_name: designate
+  db_user: designate
+
 mariadb:
+  enabled: true
   name: designate
   initdb_configmap: designate-initdb
   persistence_claim:
     name: db-designate-pvclaim
-
-rabbitmq:
-  ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-  # host: rabbitmq
-  users:
-    default:
-      user: openstack
-      password: welcome
-    admin:
-      user: admin
-      password: secret
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    databases:
+      - designate
+    verify_tables:
+      - designate.zones
+      - designate.quotas
+    oauth:
+      client_id: "designate"
 
 mysql_metrics:
+  enabled: true
   db_name: designate
   db_user: root
   customMetrics:
@@ -143,7 +164,30 @@ mysql_metrics:
               GROUP BY
                 name,
                 tenant_id,
-                updated_at;
+                updated_at
+              UNION SELECT 'none' AS zone_name, 'none' AS project_id, 'none' AS updated_at, 0 AS count_gauge;
+
+    - name: openstack_designate_zones_stuck_max_duration
+      help: "max duration for zones that stuck in non active state"
+      labels:
+        - "zone_name"
+        - "project_id"
+        - "status"
+      values:
+        - "max_duration_gauge"
+      query:  |
+              SELECT
+                name AS zone_name,
+                tenant_id AS project_id,
+                status,
+                MAX(NOW() - updated_at) AS max_duration_gauge
+              FROM zones
+              WHERE deleted=False AND status in ('DELETING','CREATING','PENDING') AND (updated_at < DATE_SUB(now(), INTERVAL 10 MINUTE))
+              GROUP BY
+                name,
+                tenant_id,
+                status
+              UNION SELECT 'none' AS zone_name, 'none' AS project_id, 'none' AS status, 0 AS max_duration_gauge;
 
     - name: openstack_designate_records
       help: "records count grouped by status"
@@ -215,6 +259,15 @@ audit:
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
 
+rabbitmq:
+  users:
+    default:
+      user: openstack
+      password: welcome
+    admin:
+      user: admin
+      password: secret
+
 rabbitmq_notifications:
   name: designate
   users:
@@ -225,8 +278,41 @@ rabbitmq_notifications:
       user: admin
       password: DEFINED-IN-SECRETS
 
+resources:
+  api:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "2048Mi"
+      cpu: "2000m"
+  central:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "4000m"
+      memory: "2048Mi"
+  mdns:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "2048Mi"
+      cpu: "4000m"
+  worker:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "2048Mi"
+      cpu: "2000m"
+
 # openstack-watcher-middleware
 watcher:
+  enabled: true
+
+rbac:
   enabled: true
 
 # Deploy Designate Prometheus alerts.

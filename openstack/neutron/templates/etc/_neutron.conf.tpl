@@ -1,22 +1,14 @@
 # neutron.conf
 [DEFAULT]
 debug = {{.Values.debug}}
-verbose=True
+verbose = True
 
 log_config_append = /etc/neutron/logging.conf
-
-#lock_path = /var/lock/neutron
 api_paste_config = /etc/neutron/api-paste.ini
+{{ include "ini_sections.default_transport_url" . }}
 
-allow_pagination = true
-allow_sorting = true
 pagination_max_limit = 500
-
-# DEPRECATED
-max_fixed_ips_per_port = {{.Values.max_fixed_ips_per_port | default 50}}
-# is often used together with multiple fixed IPs per port, keep the values similar
 max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
-# Maximum number of routes per router (integer value)
 max_routes = {{.Values.max_routes | default 256}}
 
 allow_overlapping_ips = true
@@ -29,15 +21,10 @@ router_scheduler_driver = {{required "A valid .Values.router_scheduler_driver re
 router_auto_schedule = {{ .Values.router_auto_schedule | default "false" }}
 allow_automatic_l3agent_failover = {{ .Values.allow_automatic_l3agent_failover | default "false" }}
 
-# New DHCP Agent
-{{- if .Values.agent.multus }}
 network_scheduler_driver = neutron.scheduler.dhcp_agent_scheduler.AZAwareWeightScheduler
-{{- end }}
 allow_automatic_dhcp_failover = {{ .Values.allow_automatic_dhcp_failover | default "false" }}
 dhcp_agents_per_network = 2
 dhcp_lease_duration = {{ .Values.dhcp_lease_duration | default 86400 }}
-
-enable_new_agents = false
 
 # Designate configuration
 dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
@@ -54,10 +41,15 @@ rpc_state_report_workers = {{ .Values.rpc_state_workers | default .Values.global
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
-api_workers = {{ .Values.api_workers | default .Values.global.api_workers | default 8 }}
+api_workers = {{ .Values.api_workers | default .Values.global.api_workers | default 12 }}
 periodic_fuzzy_delay = 10
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
+
+{{- if contains ",f5" .Values.ml2_mechanismdrivers }}
+[octavia]
+base_url = http://{{include "octavia_api_endpoint_host_internal" .}}:9876
+{{- end }}
 
 [nova]
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
@@ -65,8 +57,8 @@ auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "h
 auth_plugin = v3password
 auth_type = v3password
 region_name = {{.Values.global.region}}
-username = {{ .Values.global.nova_service_user | default "nova" | replace "$" "$$" }}
-password = {{ .Values.global.nova_service_password | default "" | replace "$" "$$"}}
+username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
+password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
@@ -82,8 +74,8 @@ region_name = {{.Values.global.region}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = master
 project_domain_name = ccadmin
-username = {{ .Values.global.designate_service_user | default "designate" | replace "$" "$$"}}
-password = {{ .Values.global.designate_service_password | default "" | replace "$" "$$"}}
+username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
+password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
 insecure = True
 allow_reverse_dns_lookup = {{.Values.global.designate_allow_reverse_dns_lookup | default "False"}}
 ipv4_ptr_zone_prefix_size = 24
@@ -91,7 +83,8 @@ ipv4_ptr_zone_prefix_size = 24
 [oslo_concurrency]
 lock_path = /var/lib/neutron/tmp
 
-{{include "oslo_messaging_rabbit" .}}
+{{include "ini_sections.oslo_messaging_rabbit" .}}
+rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true
@@ -105,14 +98,8 @@ root_helper = neutron-rootwrap /etc/neutron/rootwrap.conf
 {{ end }}
 
 [database]
-connection = postgresql+psycopg2://{{ default .Release.Name .Values.global.dbUser }}:{{ required "A valid .Values.global.dbPassword required!" .Values.global.dbPassword }}@{{include "neutron_db_host" .}}:{{.Values.global.postgres_port_public | default 5432}}/{{ default .Release.Name .Values.postgresql.postgresDatabase}}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 5 }}
-{{- if or .Values.postgresql.pgbouncer.enabled .Values.global.pgbouncer.enabled }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default -1 }}
-{{- else }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 10 }}
-{{- end }}
-
+connection = {{ include "db_url_mysql" . }}
+{{- include "ini_sections.database_options_mysql" . }}
 
 [keystone_authtoken]
 auth_plugin = v3password
@@ -131,6 +118,8 @@ service_token_roles_required = True
 insecure = True
 token_cache_time = 600
 memcache_use_advanced_pool = True
+include_service_catalog = true
+service_type = network
 
 [oslo_messaging_notifications]
 driver = noop

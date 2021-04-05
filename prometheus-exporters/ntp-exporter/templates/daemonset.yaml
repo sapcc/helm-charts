@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: ntp-exporter
@@ -9,6 +9,10 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
+
+  selector:
+    matchLabels:
+      app: ntp-exporter
 
   template:
     metadata:
@@ -30,7 +34,6 @@ spec:
           ports:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
-              hostPort: {{ required ".Values.metrics.hostPort missing" .Values.metrics.hostPort }}
 
           {{- if .Values.resources }}
           resources:

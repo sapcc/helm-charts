@@ -1,0 +1,148 @@
+{{- if .Values.serviceDiscoveries.kubernikus.enabled }}
+{{- range $index, $secret := (lookup "v1" "Secret" "kubernikus" "").items }}
+  {{- if hasSuffix "-secret" $secret.metadata.name }}
+  {{- $kluster := $secret.metadata.name | trimSuffix "-secret" }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $kluster }}-api
+  namespace: {{ $.Values.serviceDiscoveries.kubernikus.namespace }}
+  labels:
+    prometheus: kubernetes
+spec:
+  jobLabel: {{ $kluster }}-kubernikus-apiserver
+
+  namespaceSelector:
+    matchNames:
+    - {{ $.Values.serviceDiscoveries.kubernikus.namespace }}
+
+  selector:
+    matchLabels:
+      component: apiserver
+      release: {{ $kluster }}
+
+  endpoints:
+  - port: apiserver
+    interval: 30s
+    scheme: https
+    tlsConfig:
+      cert:
+        secret:
+          key: apiserver-clients-cluster-admin.pem
+          name: {{ $secret.metadata.name }}
+      insecureSkipVerify: true
+      keySecret:
+        key: apiserver-clients-cluster-admin-key.pem
+        name: {{ $secret.metadata.name }}
+
+    relabelings:
+      - targetLabel: job
+        replacement: kubernikus-apiserver
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $kluster }}-cmanager
+  namespace: {{ $.Values.serviceDiscoveries.kubernikus.namespace }}
+  labels:
+    prometheus: kubernetes
+spec:
+  jobLabel: {{ $kluster }}-kubernikus-controller-manager
+
+  namespaceSelector:
+    matchNames:
+    - {{ $.Values.serviceDiscoveries.kubernikus.namespace }}
+
+  selector:
+    matchLabels:
+      component: controller-manager-metrics
+      release: {{ $kluster }}
+
+  endpoints:
+  - port: metrics
+    interval: 30s
+    scheme: https
+    tlsConfig:
+      cert:
+        secret:
+          key: apiserver-clients-cluster-admin.pem
+          name: {{ $secret.metadata.name }}
+      insecureSkipVerify: true
+      keySecret:
+        key: apiserver-clients-cluster-admin-key.pem
+        name: {{ $secret.metadata.name }}
+
+    relabelings:
+      - targetLabel: job
+        replacement: kubernikus-controller-manager
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $kluster }}-scheduler
+  namespace: {{ $.Values.serviceDiscoveries.kubernikus.namespace }}
+  labels:
+    prometheus: kubernetes
+spec:
+  jobLabel: {{ $kluster }}-kubernikus-scheduler
+
+  namespaceSelector:
+    matchNames:
+    - {{ $.Values.serviceDiscoveries.kubernikus.namespace }}
+
+  selector:
+    matchLabels:
+      component: scheduler-metrics
+      release: {{ $kluster }}
+
+  endpoints:
+  - port: metrics
+    interval: 30s
+    scheme: https
+    tlsConfig:
+      cert:
+        secret:
+          key: apiserver-clients-cluster-admin.pem
+          name: {{ $secret.metadata.name }}
+      insecureSkipVerify: true
+      keySecret:
+        key: apiserver-clients-cluster-admin-key.pem
+        name: {{ $secret.metadata.name }}
+
+    relabelings:
+      - targetLabel: job
+        replacement: kubernikus-scheduler
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $kluster }}-etcd
+  namespace: {{ $.Values.serviceDiscoveries.kubernikus.namespace }}
+  labels:
+    prometheus: kubernetes
+spec:
+  jobLabel: {{ $kluster }}-kubernikus-etcd
+  
+  namespaceSelector:
+    matchNames:
+    - {{ $.Values.serviceDiscoveries.kubernikus.namespace }}
+
+  selector:
+    matchLabels:
+      component: etcd-metrics
+      release: {{ $kluster }}
+
+  endpoints:
+  - port: metrics
+    interval: 30s
+
+    relabelings:
+      - targetLabel: job
+        replacement: kubernikus-etcd
+
+{{- end -}}
+{{- end -}}
+{{- end }}

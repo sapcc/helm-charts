@@ -6,23 +6,36 @@ metadata:
     system: openstack
     type: configuration
     component: barbican
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
     spec:
       restartPolicy: OnFailure
       containers:
         - name: barbican-migration
-          image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-barbican-api:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-barbican:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
             - kubernetes-entrypoint
           env:
             - name: COMMAND
-              value: "barbican-manage db upgrade"
+              value: "/var/lib/openstack/bin/barbican-status upgrade check"
+            - name: COMMAND
+              value: "/var/lib/openstack/bin/barbican-manage db upgrade"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
               value: "barbican-mariadb"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: barbican.DSN.python
+            {{- end }}
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican
@@ -31,8 +44,8 @@ spec:
               subPath: barbican.conf
               readOnly: true
             - name: barbican-etc
-              mountPath: /etc/barbican/policy.json
-              subPath: policy.json
+              mountPath: /etc/barbican/policy.yaml
+              subPath: policy.yaml
               readOnly: true
             - name: barbican-etc
               mountPath: /etc/barbican/logging.ini

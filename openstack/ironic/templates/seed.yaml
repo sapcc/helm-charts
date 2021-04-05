@@ -8,6 +8,7 @@ spec:
   - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-bs-seed
+  - monsoon3/domain-cis-seed
   - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
   - monsoon3/domain-hcm-seed
@@ -45,10 +46,26 @@ spec:
     - interface: public
       region: {{ .Values.global.region }}
       url: https://{{ include "ironic_api_endpoint_host_public" .}}
+  - name: ironic-inspector
+    type: baremetal-introspection
+    description: Openstack baremetal inspector service
+    endpoints:
+    - interface: admin
+      region: {{ .Values.global.region }}
+      url: http://ironic-inspector.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.inspector.port_internal }}
+    - interface: internal
+      region: {{ .Values.global.region }}
+      url: http://ironic-inspector.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.inspector.port_internal }}
+    - interface: public
+      region: {{ .Values.global.region }}
+      url: https://{{ include "ironic_inspector_endpoint_host_public" .}}
 
   quota_class_sets:
     flavors:
       instances_zg1bcm1.medium: 0
+      instances_zg1bcm1.1medium: 0
+      instances_zh0hpe1.large: 0
+      instances_zh1bcm1.large: 0
       instances_zh0hpe1.large: 0
       instances_zh1vic1.small: 0
       instances_zh1vic1.medium: 0
@@ -60,157 +77,215 @@ spec:
       instances_zh2mlx1.1xlarge: 0
       instances_zh2mlx1.2xlarge: 0
       instances_zh2mlx1.3xlarge: 0
+      instances_zhv1vic1.small: 0
+      instances_zhv1vic1.medium: 0
+      instances_zhv1mlx1.large: 0
 
   flavors:
   - name: "zg1bcm1.medium"
     id: "910"
-    vcpus: "32"
-    ram: "393216"
-    disk: "1966"
+    vcpus: 32
+    ram: 393216
+    disk: 1966
     extra_specs:
       "catalog:description": GPU Baremetal 2 Socket Skylake 3xNvidia Tesla V100
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZG1BCM1_MEDIUM": "1"
+      "resources:CUSTOM_ZG1BCM1_MEDIUM": "1"
+  - name: "zg1bcm1.1medium"
+    id: "915"
+    vcpus: 40
+    ram: 524288
+    disk: 1966
+    extra_specs:
+      "catalog:description": GPU Baremetal 2 Socket Skylake 3xNvidia Tesla V100
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_ZG1BCM1_1MEDIUM": "1"
+  - name: "zh1bcm1.large"
+    id: "920"
+    vcpus: 32
+    ram: 393216
+    disk: 400
+    extra_specs:
+      "catalog:description": HANA Baremetal 2 Socket 384GB Skylake
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_ZH1BCM1_LARGE": "1"
   - name: "zh0hpe1.large"
     id: "900"
-    vcpus: "60"
-    ram: "1048576"
-    disk: "900"
+    vcpus: 60
+    ram: 1048576
+    disk: 900
     extra_specs:
       "catalog:description": HANA Baremetal 4 socket 1TB Ivybridge
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH0HPE1_LARGE": "1"
+      "resources:CUSTOM_ZH0HPE1_LARGE": "1"
   - name: "zh1vic1.small"
     id: "1000"
-    vcpus: "8"
-    ram: "262144"
-    disk: "300"
+    vcpus: 8
+    ram: 262144
+    disk: 300
     extra_specs:
       "catalog:description": HANA Baremetal 2 socket 256GB Haswell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH1VIC1_SMALL": "1"
+      "resources:CUSTOM_ZH1VIC1_SMALL": "1"
   - name: "zh1vic1.medium"
     id: "1005"
-    vcpus: "24"
-    ram: "262144"
-    disk: "300"
+    vcpus: 24
+    ram: 262144
+    disk: 300
     extra_specs:
       "catalog:description": HANA Baremetal 2 socket 256GB Haswell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH1VIC1_MEDIUM": "1"
+      "resources:CUSTOM_ZH1VIC1_MEDIUM": "1"
+  - name: "zhv1vic1.small"
+    id: "2010"
+    vcpus: 12
+    ram: 262144
+    disk: 480
+    extra_specs:
+      "catalog:description": Hypervisor Host 2 socket 256GB Haswell
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_ZHV1VIC1_SMALL": "1"
+  - name: "zhv1vic1.medium"
+    id: "2000"
+    vcpus: 28
+    ram: 262144
+    disk: 480
+    extra_specs:
+      "catalog:description": Hypervisor Host 2 socket 256GB Haswell
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_ZHV1VIC1_MEDIUM": "1"
+  - name: "zhv1mlx1.large"
+    id: "2020"
+    vcpus: 96
+    ram: 3145728
+    disk: 240
+    extra_specs:
+      "catalog:description": Hypervisor Host 4 socket 3TB Cascade Lake
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_ZHV1MLX1_LARGE": "1"
   - name: "zh2vic1.medium"
     id: "1010"
-    vcpus: "28"
-    ram: "524288"
-    disk: "300"
+    vcpus: 28
+    ram: 524288
+    disk: 300
     extra_specs:
       "catalog:description": HANA Baremetal 2 socket 512GB Broadwell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH2VIC1_MEDIUM": "1"
+      "resources:CUSTOM_ZH2VIC1_MEDIUM": "1"
   - name: "zh2mlx1.large"
     id: "1020"
-    vcpus: "28"
-    ram: "1048576"
-    disk: "400"
+    vcpus: 28
+    ram: 1048576
+    disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 2 socket 1TB Broadwell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH2MLX1_LARGE": "1"
+      "resources:CUSTOM_ZH2MLX1_LARGE": "1"
   - name: "zh1emx1.large"
     id: "1029"
-    vcpus: "72"
-    ram: "1048576"
-    disk: "1228"
+    vcpus: 72
+    ram: 1048576
+    disk: 1228
     extra_specs:
       "catalog:description": HANA Baremetal 4 socket 1TB Haswell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH1EMX1_LARGE": "1"
+      "resources:CUSTOM_ZH1EMX1_LARGE": "1"
   - name: "zh1emx1.xlarge"
     id: "1030"
-    vcpus: "72"
-    ram: "2097152"
-    disk: "1228"
+    vcpus: 72
+    ram: 2097152
+    disk: 1228
     extra_specs:
       "catalog:description": HANA Baremetal 4 socket 2TB Haswell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH1EMX1_XLARGE": "1"
+      "resources:CUSTOM_ZH1EMX1_XLARGE": "1"
   - name: "zh2mlx1.xlarge"
     id: "1031"
-    vcpus: "88"
-    ram: "2097152"
-    disk: "400"
+    vcpus: 88
+    ram: 2097152
+    disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 4 socket 2TB Broadwell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH2MLX1_XLARGE": "1"
+      "resources:CUSTOM_ZH2MLX1_XLARGE": "1"
   - name: "zh2mlx1.1xlarge"
     id: "1032"
-    vcpus: "88"
-    ram: "4194304"
-    disk: "400"
+    vcpus: 88
+    ram: 4194304
+    disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 4 socket 4TB Broadwell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH2MLX1_1XLARGE": "1"
+      "resources:CUSTOM_ZH2MLX1_1XLARGE": "1"
   - name: "zh1emx1.1xlarge"
     id: "1033"
-    vcpus: "72"
-    ram: "4194304"
-    disk: "1228"
+    vcpus: 72
+    ram: 4194304
+    disk: 1228
     extra_specs:
       "catalog:description": HANA Baremetal 4 socket 4TB Haswell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH1EMX1_1XLARGE": "1"
+      "resources:CUSTOM_ZH1EMX1_1XLARGE": "1"
   - name: "zh2mlx1.2xlarge"
     id: "1040"
-    vcpus: "176"
-    ram: "4194304"
-    disk: "400"
+    vcpus: 176
+    ram: 4194304
+    disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 8 socket 4TB Broadwell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH2MLX1_2XLARGE": "1"
+      "resources:CUSTOM_ZH2MLX1_2XLARGE": "1"
   - name: "zh2mlx1.3xlarge"
     id: "1050"
-    vcpus: "176"
-    ram: "6291456"
-    disk: "400"
+    vcpus: 176
+    ram: 6291456
+    disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 8 socket 6TB Broadwell
       "capabilities:cpu_arch": "x86_64"
       "quota:separate": "true"
       "quota:instance_only": "true"
-#      "resources:CUSTOM_ZH2MLX1_3XLARGE": "1"
+      "resources:CUSTOM_ZH2MLX1_3XLARGE": "1"
 #not a real baremetal flavor, but we only need it when baremetal is present in a region. Belongs to ccadmin/BaremetalMonitoring project
   - name: "bame_xclarity"
     id: "90010"
-    vcpus: "8"
-    ram: "8192"
-    disk: "192"
+    vcpus: 8
+    ram: 8192
+    disk: 192
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Lenovo XCA
@@ -219,9 +294,9 @@ spec:
 
   - name: "bame_xclarity_big"
     id: "90011"
-    vcpus: "16"
-    ram: "30720"
-    disk: "192"
+    vcpus: 16
+    ram: 30720
+    disk: 192
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Lenovo XCA
@@ -230,9 +305,9 @@ spec:
 
   - name: "bame_openmanage"
     id: "90020"
-    vcpus: "4"
-    ram: "8192"
-    disk: "220"
+    vcpus: 4
+    ram: 8192
+    disk: 220
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Dell Openmanage Enterprise
@@ -241,9 +316,9 @@ spec:
 
   - name: "bame_imc"
     id: "90030"
-    vcpus: "4"
-    ram: "16384"
-    disk: "200"
+    vcpus: 4
+    ram: 16384
+    disk: 200
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Cisco IMC Supervisor
@@ -252,21 +327,45 @@ spec:
 
   - name: "bame_intersight"
     id: "90040"
-    vcpus: "12"
-    ram: "32768"
-    disk: "500"
+    vcpus: 12
+    ram: 32768
+    disk: 500
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Cisco Intersight
       "vmware:hv_enabled": "True"
       "hw_video:ram_max_mb": "16"
 
+  - name: "bame_hpe"
+    id: "90050"
+    vcpus: 8
+    ram: 24000
+    disk: 280
+    is_public: false
+    extra_specs:
+      "catalog:description": Baremetal Monitoring for HPe Openview
+      "vmware:hv_enabled": "True"
+      "hw_video:ram_max_mb": "16"
+
+# New Hypervisor Flavors
+  - name: "hv_s2_c20_m384"
+    id: "2021"
+    vcpus: 40
+    ram: 393216
+    disk: 240
+    extra_specs:
+      "catalog:description": Hypervisor Host 2 sockets, 20 cores, 384GB RAM
+      "capabilities:cpu_arch": "x86_64"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:CUSTOM_HV_S2_C20_M384": "1"
+
   domains:
   - name: Default
     users:
     - name: {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix | default "" }}
       description: Ironic Service
-      password: {{ .Values.global.ironic_service_password | default (tuple . .Values.global.ironicServiceUser | include "identity.password_for_user") | quote }}
+      password: {{ required ".Values.global.ironic_service_password is missing" .Values.global.ironic_service_password | quote }}
       role_assignments:
       - project: service
         role: service
@@ -282,7 +381,7 @@ spec:
         role: swiftreseller
     - name: ipmi_exporter
       description: IPMI Exporter for MB Monitoring
-      password: {{ .Values.global.ipmi_exporter_user_passwd | default (tuple . .Values.global.ipmi_exporter_user_passwd | include "identity.password_for_user") | quote }}
+      password: {{ required "ipmi_exporter_user_passwd is missing" .Values.global.ipmi_exporter_user_passwd | quote }}
 
 {{- if .Values.tempest_enabled }}
   - name: tempest
@@ -320,6 +419,8 @@ spec:
         role: cloud_baremetal_admin
       - user: ipmi_exporter@Default
         role: cloud_compute_admin
+      - user: ironic@Default
+        role: swiftoperator
     groups:
     - name: CCADMIN_CLOUD_ADMINS
       role_assignments:
@@ -372,6 +473,44 @@ spec:
       - project: service_desk
         role: baremetal_admin
       - domain: ccadmin
+        role: baremetal_viewer
+        inherited: true
+
+  - name: cis
+    groups:
+    - name: CIS_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: baremetal_admin
+      - domain: cis
+        role: baremetal_admin
+        inherited: true
+    - name: CIS_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: baremetal_admin
+      - domain: cis
+        role: baremetal_admin
+        inherited: true
+    - name: CIS_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: baremetal_admin
+      - domain: cis
+        role: baremetal_viewer
+        inherited: true
+    - name: CIS_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: baremetal_admin
+      - domain: cis
+        role: baremetal_viewer
+        inherited: true
+    - name: CIS_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: baremetal_admin
+      - domain: cis
         role: baremetal_viewer
         inherited: true
 

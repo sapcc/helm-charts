@@ -15,7 +15,8 @@ data:
       user_domain_name: {{ $.Values.target.user_domain_name }}
       project_name: {{ $.Values.target.project_name }}
       project_domain_name: {{ $.Values.target.project_domain_name }}
-      password: {{ $.Values.target.password }}
+      password:
+        fromEnv: {{ $.Values.global.region | upper }}_AUTH_PASSWORD
     statsd:
       hostname: statsd
       port: 9125
@@ -30,7 +31,8 @@ data:
           user_domain_name: {{ $source.user_domain_name }}
           project_name: {{ $source.project_name }}
           project_domain_name: {{ $source.project_domain_name }}
-          password: {{ $source.password }}
+          password:
+            fromEnv: {{ $source_region | upper }}_AUTH_PASSWORD
           container: {{ $job.from.container }}
           object_prefix: {{ $job.from.object_prefix }}
         to:

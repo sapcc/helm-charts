@@ -1,0 +1,38 @@
+{{- if .Values.mariadb.restore.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datahubdb-restore-config
+  namespace: datahub
+data:
+  config.yaml: |
+    swift:
+      identity_endpoint:  https://identity-3.{{ .Values.global.region }}.cloud.sap/v3
+      user_name: db_backup
+      user_domain_name: Default
+      project_name: "master"
+      project_domain_name: "ccadmin"
+      token: {{ .Values.mariadb.restore.swift_token }}
+    mariadb:
+      user_name: root
+      password: {{ .Values.mariadb.root_password }}
+      ip: {{ .Values.mariadb.name }}-mariadb
+      port: {{ .Values.mariadb.port_public }}
+    openstack_dbs:
+{{- range $backup := .Values.mariadb.restore.backups }}
+      -
+        name: {{ $backup.name }}
+        container_name: {{ $backup.container_name }}
+        backup_version: {{ $backup.backup_version }}
+{{- end }}
+    additional_sql_file: {{ .Values.mariadb.restore.additional_sql_file }}
+    download_dir: {{ .Values.mariadb.restore.backup_dir }}
+    debug: {{ .Values.mariadb.restore.debug.enabled }}
+    region: {{ .Values.global.region }}
+{{- end }}
+
+  openstack_view.sql: |
+    {{ .Values.mariadb.restore.openstack_view }}
+    ALTER USER 'root'@'localhost' IDENTIFIED BY '{{.Values.mariadb.root_password}}';
+    ALTER USER 'root'@'%' IDENTIFIED BY '{{.Values.mariadb.root_password}}';
+    GRANT SELECT on {{.Values.mariadb.dbName}}.* to '{{.Values.global.datahub.user}}'@'%' IDENTIFIED BY '{{.Values.global.datahub.password}}';

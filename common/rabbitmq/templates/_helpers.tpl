@@ -29,7 +29,7 @@ rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $host := index . 2 }}
-    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host }}
+    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host | replace "/" "" }}
 {{- end }}
 
 {{- define "rabbitmq.password_for_fixed_user"}}

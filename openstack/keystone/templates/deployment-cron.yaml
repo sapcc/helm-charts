@@ -1,7 +1,8 @@
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: apps/v1
+
 metadata:
-  name: keystone-cron
+  name: {{ .Release.Name }}-cron
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -17,11 +18,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      name: keystone-cron
+      name: {{ .Release.Name }}-cron
   template:
     metadata:
       labels:
-        name: keystone-cron
+        name: {{ .Release.Name }}-cron
         system: openstack
         component: keystone
         type: operations
@@ -31,39 +32,38 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
     spec:
 {{- if .Values.rbac.enabled }}
-      serviceAccountName: keystone
+      serviceAccountName: {{ .Release.Name }}
 {{- end }}
       initContainers:
       - name: kubernetes-entrypoint
         #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-        image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
         imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
         command:
-          - /usr/local/bin/kubernetes-entrypoint
+          - kubernetes-entrypoint
         env:
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
 {{- if .Release.IsInstall }}
         - name: DEPENDENCY_JOBS
-          value: keystone-job-migration,keystone-job-bootstrap
+          value: {{ .Release.Name }}-job-migration,{{ .Release.Name }}-job-bootstrap
 {{- else }}
   {{- if or .Values.run_db_migration }}
         - name: DEPENDENCY_JOBS
-          value: keystone-job-migration
+          value: {{ .Release.Name }}-job-migration
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
-{{- if eq .Values.global.database "postgres" }}
-          value: {{ .Release.Name }}-postgresql
-{{- end }}
-{{- if eq .Values.global.database "mariadb" }}
-          value: {{ .Release.Name }}-mariadb
+{{- if .Values.percona_cluster.enabled }}
+          value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-memcached"
+{{- else }}
+          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached"
 {{- end }}
         - name: COMMAND
           value: "true"
       containers:
         - name: keystone-cron
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
+          image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
           imagePullPolicy: {{ .Values.cron.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - bash
@@ -77,10 +77,23 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sentry
-                  key: keystone.DSN.python
+                  key: {{ .Release.Name }}.DSN.python
             {{- end }}
             {{- end }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           volumeMounts:
+{{- if ne .Values.api.policy "json" }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+{{- else }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.json
+              subPath: policy.json
+              readOnly: true
+{{- end }}
             - mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               name: keystone-etc

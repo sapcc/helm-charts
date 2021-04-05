@@ -1,3 +1,100 @@
+## 4.0.1
+* Change Thanos from dockerhub to keppel mirror
+
+## 4.0.0
+
+* **[Breaking]** ChartVersion is now v2.
+* Remove `vice-president` annotation from Ingress.
+* Bump Prometheus to `v2.23.0`.
+* Switch from sapcc fork to upstream and upgrade Thanos components to `v0.17.1`. 
+This includes the Thanos sidecar to the Prometheus server, resolving the memory leak.
+
+
+## 3.7.2
+
+* Fix deprecated apiVersions for Thanos components, Prometheus ingress.
+
+## 3.6.2
+
+* Added annotation triggering certificate automation: `kubernetes.io/tls-acme: "true"`.
+
+## 3.5.1
+
+* Allow scraping pods via https. Use `prometheus.io/scheme: "https"` annotation.
+
+## 3.5.0
+
+* Update prometheus-server to `v2.19.0`.
+
+## 3.4.2
+
+* Ensure mandatory labels are present on alerts.
+
+## 3.4.1
+
+* Fix `resource.requests.cpu`: It shall be a string.
+
+## 3.4.0
+
+* Bump Prometheus to `v2.17.2`.
+* Update `Prometheus.Spec.{rule|podMonitor|serviceMonitor}NamespaceSelector` to consider every namespace. (Behaviour didn't change but configuration in Prometheus CRD from `any` to `{}`)
+
+## 3.3.6
+
+* Standardize labels: Introduce labels `container`, `pod` in cAdvisor metrics.
+  These shall be used instead of `container_name`, `pod_name` to be consistent with kube-state-metrics, kubelet and avoid further `label_replace` in PromQL queries.
+  **Note**: The label `container_name`, `pod_name` might be dropped from cAdvisor metrics in the next major release.
+
+## 3.3.5
+
+* Standardize labels: Ensure the `node` label (node name) is present on cAdvisor, kubelet metrics. 
+
+## 3.3.4
+
+* Fix node label for kubelet job.
+* Upgrade Prometheus to `v2.15.2`.
+
+## 3.3.3
+
+* Unify labels (instance vs node).
+
+## 3.3.2
+
+* Allow configuring Alertmanagers which require authentication. The relevant `.Values.alertmanagers` section was exploded to:
+  ```yaml
+  # Alertmanager configuration.
+  alertmanagers:
+    # Configuration if the Alertmanager has client certificate authentication enabled.
+    authentication:
+      enabled: false
+      # The certificate used for authentication with the Alertmanager..
+      ssoCert: 
+      # The key used for authentication with the Alertmanager.
+      ssoKey:
+  
+    # List of Alertmanagers (AM) to send alerts to.
+    # If multiple AMs are used in an HA setup, alerts must be send to every AM.
+    hosts: []
+    # - alertmanager1.tld
+    # - alertmanager2.tld
+  ```
+* Fixed double scraping for service/endpoint service discovery when using `prometheus.io/port` annotation. 
+  A service has to declare the port(s) on which they expose metrics on in their spec. The service gets dropped otherwise.
+  Per default Prometheus tries to get metrics from service ports with the name `metrics`. 
+
+## 3.1.1
+
+* Fix SD config for `prometheus.io/port_1` as well.
+
+## 3.1.0
+
+* Potential **Breaking change** if the out-of-the-box pod service discovery is being used.
+  To avoid double scraping of metrics from pods with multiple containers, the containers have to explicitly declare the port(s) on which they expose metrics on in their spec.
+  They will no get scraped otherwise.
+  Per default Prometheus tries to get metrics from ports with number `9102` or name `metrics`. 
+* Bump Prometheus to `v2.14.0`.
+* Update Thanos components to `v0.8.1`.  
+
 ## 3.0.5
 
 * Allow setting additional annotations on the service via `.Values.service.annotations`.

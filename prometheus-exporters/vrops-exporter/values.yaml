@@ -1,13 +1,128 @@
 vrops:
-   enabled: false
-   image:
-      imageRegistry: DEFINED-IN-REGION-SECRETS
-      namespace: DEFINED-IN-REGION-SECRETS
-      name: vrops_exporter
-      tag: DEFINED-IN-REGION-SECRETS
-   port_number: 9160
-   alerts:
+  enabled: false
+  image:
+    name: vrops_exporter
+    tag: DEFINED-IN-REGION-SECRETS
+  inventory:
+    tag: DEFINED-IN-REGION-SECRETS
+    port_number: 80
+    sleep: 60
+    timeout: 120
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
+  inventory_exporter:
+    port_number: 9161
+  port_number: 9160
+  alerts:
+    enabled: false
+    prometheus: DEFINED-IN-REGION-SECRETS
+  user: DEFINED-IN-REGION-SECRETS
+  password: DEFINED-IN-REGION-SECRETS
+  debug: DEFINED-IN-REGION-SECRETS
+  atlas_configmap: atlas-netbox-sd
+  # list of targets
+  targets: DEFINED-IN-REGION-SECRETS
+  exporter_types:
+    default:
+      name: default
       enabled: false
-      prometheus: infra-frontend
-   user: DEFINED-IN-REGION-SECRETS
-   password: DEFINED-IN-REGION-SECRETS
+      collectors: []
+      resources:
+        limits:
+          memory: 200Mi
+          cpu: 100m
+        requests:
+          memory: 100Mi
+          cpu: 50m
+    host:
+      name: host
+      enabled: false
+      collectors:
+        - HostSystemStatsCollector
+        - HostSystemPropertiesCollector
+      resources:
+        limits:
+          memory: 200Mi
+          cpu: 100m
+        requests:
+          memory: 100Mi
+          cpu: 50m
+    vm-memory:
+      name: vm-memory
+      enabled: false
+      collectors:
+        - VMStatsMemoryCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-cpu:
+      name: vm-cpu
+      enabled: false
+      collectors:
+        - VMStatsCPUCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-network:
+      name: vm-network
+      enabled: false
+      collectors:
+        - VMStatsNetworkCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-virtualdisk:
+      name: vm-virtualdisk
+      enabled: false
+      collectors:
+        - VMStatsVirtualDiskCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-other:
+      name: vm-other
+      enabled: false
+      collectors:
+        - VMStatsDefaultCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+    vm-properties:
+      name: vm-properties
+      enabled: false
+      collectors:
+        - VMPropertiesCollector
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 200m
+        requests:
+          memory: 150Mi
+          cpu: 100m
+global:
+  registry: DEFINED-IN-GLOBAL-SECRETS

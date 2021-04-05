@@ -2,7 +2,6 @@
 {{- $cluster := index . 0 -}}
 {{- $context := index . 1 -}}
 {{- $helm_release := index . 2 -}}
-{{- $swift_release := include "swift_release" $context -}}
 [DEFAULT]
 bind_port = 8080
 # NOTE: value for prod, was 4 in staging before
@@ -28,20 +27,15 @@ log_custom_handlers = swift_sentry.sentry_logger
 {{- end }}
 
 [pipeline:main]
-{{- if le $swift_release "queens" }}
-# Queens pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not $context.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if and $context.s3api_enabled $cluster.seed }} swift3 s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
-{{- else }}
 # Rocky or higher pipeline
-pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not $context.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
-{{- end }}
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache listing_formats cname_lookup domain_remap bulk tempurl {{ if not $context.sapcc_ratelimit.enabled }}ratelimit {{ end }}authtoken{{ if and $context.s3api_enabled $cluster.seed }} s3api s3token {{ if not $context.sapcc_ratelimit.enabled }}ratelimit{{ end }}{{ end }} {{if $context.watcher_enabled }}watcher {{ end }}{{ if $context.sapcc_ratelimit.enabled }}sapcc_ratelimit {{ end }}keystoneauth sysmeta-domain-override staticweb copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
 
 [app:proxy-server]
 use = egg:swift#proxy
 allow_account_management = true
 account_autocreate = false
-node_timeout = 60
-recoverable_node_timeout = 10
+node_timeout = {{ $context.node_timeout }}
+recoverable_node_timeout = {{ $context.recoverable_node_timeout }}
 conn_timeout = 0.5
 sorting_method = shuffle
 {{- if $context.debug }}
@@ -55,7 +49,11 @@ disable_path = /etc/swift/healthcheck/proxy.disabled
 [filter:cache]
 use = egg:swift#memcache
 memcache_servers = memcached.{{$helm_release.Namespace}}.svc:11211
-memcache_max_connections = 10
+memcache_max_connections = 32
+
+# We only have one memcache, so the error suppression behavior is not useful for us.
+# See also commit message on <https://github.com/openstack/swift/commit/aff65242ff87b24d43d7a6ce2b1c33546363144b>.
+error_suppression_interval = 0
 
 [filter:catch_errors]
 use = egg:swift#catch_errors
@@ -106,12 +104,7 @@ auth_version = 3
 www_authenticate_uri = {{$cluster.keystone_auth_uri}}
 auth_url = {{$cluster.keystone_auth_url}}
 insecure = {{$cluster.keystone_insecure | default false}}
-{{- /* TODO: Workaround - need to be removed */ -}}
-{{- if $cluster.endpoint_override }}
-endpoint_override = {{$cluster.endpoint_override}}
-{{- else}}
 interface = {{$cluster.keystone_interface | default "admin"}}
-{{- end }}
 {{- if $cluster.token_memcached }}
 memcached_servers = {{ $cluster.token_memcached }}.{{ $helm_release.Namespace }}.svc:11211
 {{- else }}
@@ -161,6 +154,8 @@ storage_domain = {{tuple $cluster $context | include "swift_endpoint_host"}}
 [filter:versioned_writes]
 use = egg:swift#versioned_writes
 allow_versioned_writes = true
+# Enables Swift object-versioning API available since 2.24.0
+allow_object_versioning = true
 
 [filter:container_sync]
 use = egg:swift#container_sync
@@ -190,20 +185,6 @@ use = egg:swift#symlink
 [filter:listing_formats]
 use = egg:swift#listing_formats
 
-{{- if le $swift_release "queens" }}
-
-[filter:swift3]
-use = egg:swift3#swift3
-location = {{ $context.global.region }}
-# The standard swift proxy logging is needed
-force_swift_request_proxy_log = true
-
-[filter:s3token]
-use = egg:swift3#s3token
-auth_uri = {{$cluster.keystone_auth_uri}}
-auth_version = 3
-{{- else}}
-
 [filter:s3api]
 use = egg:swift#s3api
 location = {{ $context.global.region }}
@@ -213,7 +194,21 @@ force_swift_request_proxy_log = true
 [filter:s3token]
 use = egg:swift#s3token
 auth_uri = {{ $cluster.keystone_auth_url }}
-{{- end}}
+
+{{- if $cluster.s3_cred_cache_time }}
+secret_cache_duration = {{ $cluster.s3_cred_cache_time }}
+auth_plugin = v3password
+auth_version = 3
+auth_url = {{ $cluster.keystone_auth_url }}
+insecure = {{ $cluster.keystone_insecure | default false }}
+interface = {{ $cluster.keystone_interface | default "admin" }}
+region_name = {{ $cluster.region_name | default $context.global.region }}
+username = {{ $cluster.swift_service_user }}
+user_domain_name = {{ $cluster.swift_service_user_domain }}
+project_name = {{ $cluster.swift_service_project }}
+project_domain_name = {{ $cluster.swift_service_project_domain }}
+password = {{ $cluster.swift_service_password }}
+{{- end }}
 
 {{ if $context.watcher_enabled -}}
 [filter:watcher]

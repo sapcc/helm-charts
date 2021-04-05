@@ -53,12 +53,12 @@ groups:
     labels:
       severity: warning
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: ironic
+      context: ironic
       dashboard: ccloud-health-canary-details
       meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      playbook: 'docs/support/playbook/baremetal/failed_regression_tests.html'
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is down. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
@@ -70,8 +70,8 @@ groups:
     labels:
       severity: warning
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: ironic
+      context: ironic
       dashboard: ccloud-health-canary-details
       meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out. See Sentry for details'
       sentry: 'blackbox/?query=test_{{ $labels.check }}'
@@ -81,40 +81,45 @@ groups:
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
 
   - alert: OpenstackIronicNodeInErrorState
-    expr: count(openstack_ironic_nodes_list_gauge{provision_state='error'})by(name,last_error) > 0
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='error'}) by (exported_name, last_error) > 0
     for: 5m
     labels:
       severity: warning
       tier: os
       service: ironic
+      context: '{{ $labels.exported_name }}'
       dashboard: ironic-node-overview
-      meta: 'Node {{ $labels.name }} is in error due to {{ $labels.last_error }}'
+      meta: 'Node {{ $labels.exported_name }} is in error due to {{ $labels.last_error }}'
+      playbook: 'docs/support/playbook/baremetal/bm_node_error_state.html'
     annotations:
-      description: 'Node {{ $labels.name }} is in error due to {{ $labels.last_error }}'
+      description: 'Node {{ $labels.exported_name }} is in error due to {{ $labels.last_error }}'
       summary: 'Openstack Ironic Node In Error State'
 
   - alert: OpenstackIronicNodeInDeployFailedState
-    expr: count(openstack_ironic_nodes_list_gauge{provision_state='deploy failed'})by(name,last_error) > 0
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='deploy failed'}) by (exported_name, last_error) > 0
     for: 15m
     labels:
       severity: warning
       tier: os
       service: ironic
+      context: '{{ $labels.exported_name }}'
       dashboard: ironic-node-overview
-      meta: 'Node {{ $labels.name }} is in deploy failed state due to {{ $labels.last_error }}'
+      meta: 'Node {{ $labels.exported_name }} is in deploy failed state due to {{ $labels.last_error }}'
+      playbook: 'docs/support/playbook/baremetal/bm_node_deploy_fail_state.html'
     annotations:
-      description: 'Node {{ $labels.name }} is in deploy failed state due to {{ $labels.last_error }}'
+      description: 'Node {{ $labels.exported_name }} is in deploy failed state due to {{ $labels.last_error }}'
       summary: 'Openstack Ironic Node In Deploy Failed State'
 
   - alert: OpenstackIronicNodeInCleanFailedState
-    expr: count(openstack_ironic_nodes_list_gauge{provision_state='clean failed'})by(name,last_error) > 0
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='clean failed'}) by (exported_name, last_error) > 0
     for: 15m
     labels:
       severity: warning
       tier: os
       service: ironic
+      context: '{{ $labels.exported_name }}'
       dashboard: ironic-node-overview
-      meta: 'Node {{ $labels.name }} is in clean failed state due to {{ $labels.last_error }}'
+      meta: 'Node {{ $labels.exported_name }} is in clean failed state due to {{ $labels.last_error }}'
     annotations:
-      description: 'Node {{ $labels.name }} is in clean failed state due to {{ $labels.last_error }}'
+      description: 'Node {{ $labels.exported_name }} is in clean failed state due to {{ $labels.last_error }}'
       summary: 'Openstack Ironic Node In Clean Failed State'

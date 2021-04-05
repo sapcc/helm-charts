@@ -1,13 +1,24 @@
+global:
+  region: DEFINED-IN-SECRETS
+  tld: DEFINED-IN-SECRETS
+
 es_master:
   enabled: false
+  legacy_service_name: true
   master_dummy_port: '63062'
   client_replicas: '3'
+  qalogs:
+    enabled: false
 
 es_data:
   enabled: false
+  qalogs:
+    enabled: false
 
 es_client:
   enabled: false
+  qalogs:
+    enabled: false
 
 es_manager:
   enabled: false
@@ -22,34 +33,66 @@ logstash:
   enabled: false
   input_netflow_port: 2055
   input_syslog_port: 514
+  input_bigiplogs_port: 1513
+  input_alertmanager_port: 1515
+  input_deployments_port: 1516
 
 fluent:
   enabled: false
   port: 8885
+  logstash_shards: 3
+  indexname: logstash
+  alerts:
+    enabled: false
+    prometheus: infra-collector
+  datahub:
+    enabled: false
+    host: none
+    port: none
+    db: none
+    username: none
+    password: none
+
+fluent_octobus:
+  enabled: false
+  port: 8887
+  forwarding:
+    keystone:
+      host: none
+  alerts:
+    enabled: false
+    prometheus: infra-collector
 
 fluent_systemd:
   enabled: false
+  alerts:
+    enabled: false
+    prometheus: infra-collector
   port: 8886
 
 fluent_vcenter:
   enabled: false
+  prometheus: infra-collector
+  alerts:
+    enabled: false
+    prometheus: infra-collector
+
+fluent_scaleout:
+  enabled: false
+  prometheus: infra-frontend
+  port: 8885
+  logstash_shards: 3
+  indexname: logstash
+  datahub:
+    enabled: false
+    host: datahubdb
+    db: datahub
+    port: 443
 
 es_exporter:
   enabled: false
   version: '1.1.0rc1'
   listen_port: 9102
-  alerts:
-    enabled: false
-    prometheus: infra-frontend
-
-es_query_exporter:
-  enabled: false
-  version: '0.6.0'
-  listen_port: 9206
-  hostname: es-client.elk
-  protocol: http
-  port: 9200
-  log_level: 'ERROR'
   alerts:
     enabled: false
     prometheus: infra-frontend

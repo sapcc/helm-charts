@@ -1,10 +1,11 @@
 {{- if .Values.enabled }}
 {{- if .Values.exporter_types }}
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: apic-exporters-deployment
 spec:
+  revisionHistoryLimit: 5
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -33,6 +34,8 @@ spec:
             - /apic-exporters-etc/config-apic-exporters.yaml
             - -t
             - apichealth
+            - apicprocess
+            - apicip
           volumeMounts:
             - mountPath: /apic-exporters-etc
               name: apic-exporters-etc

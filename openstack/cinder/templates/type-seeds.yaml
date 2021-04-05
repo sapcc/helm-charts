@@ -1,0 +1,30 @@
+{{- if .Capabilities.APIVersions.Has "openstack.stable.sap.cc/v1" }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: cinder-type-seed
+  labels:
+    component: cinder
+    app: cinder
+    type: seed
+spec:
+  requires:
+  - monsoon3/cinder-seed
+
+  volume_types:
+  - name: vmware
+    is_public: true
+    description: "premium_ssd"
+    extra_specs:
+      volume_backend_name: "vmware"
+      "vmware:storage_profile": "cinder-vvol"
+
+  - name: standard_hdd
+    is_public: true
+    description: "standard_hdd"
+    extra_specs:
+      volume_backend_name: "standard_hdd"
+      "provisioning:min_vol_size": "500"
+      "vmware:storage_profile": "cinder-standard-hdd"
+      "vmware:vmdk_type": "thick"
+{{- end }}

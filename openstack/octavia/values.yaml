@@ -2,16 +2,17 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
-# Noop-driver doesn't need workers
-replicaCountWorker: 0
-
 api_port_internal: 9876
+api_backdoor: false
 
 global:
   imageNamespace: monsoon
-  master_password: ""
   dbUser: octavia
+  rpc_response_timeout: 60
+  osprofiler: {}
+
+osprofiler:
+  enabled: false
 
 db_name: octavia
 
@@ -21,15 +22,220 @@ mariadb:
   initdb_configmap: octavia-initdb
   persistence_claim:
     name: db-octavia-pvclaim
+  backup_v2:
+    enabled: true
+    databases:
+      - octavia
+    verify_tables:
+      # DB is locked for checksum verification, so don't use too many tables here
+      - octavia.load_balancer
+    oauth:
+      client_id: octavia
 
 ingress:
   annotations:
-    vice-president: "true"
+    kubernetes.io/tls-acme: "true"
     disco: "true"
 
 mysql_metrics:
-  db_name: barbican
-  db_user: barbican
+  db_name: octavia
+  db_user: octavia
+  customMetrics:
+    - help: Amount of ESD tags used
+      labels:
+        - "status"
+        - "octavia_host"
+      name: octavia_esd_tags_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge
+        FROM tags
+        WHERE tag='proxy_protocol_2edF_v1_0'
+          OR tag='proxy_protocol_V2_e8f6_v1_0'
+          OR tag='standard_tcp_a3de_v1_0'
+          OR tag='x_forward_5b6e_v1_0'
+          OR tag='one_connect_dd5c_v1_0'
+          OR tag='no_one_connect_3caB_v1_0'
+          OR tag='http_compression_e4a2_v1_0'
+          OR tag='cookie_encryption_b82a_v1_0'
+          OR tag='sso_22b0_v1_0'
+          OR tag='sso_required_f544_v1_0'
+          OR tag='http_redirect_a26c_v1_0';
+      values:
+        - "count_gauge"
+    - help: Amount of ESD L7policies used
+      labels:
+        - "status"
+        - "octavia_host"
+      name: octavia_esd_l7policies_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge
+        FROM l7policy
+        WHERE name='proxy_protocol_2edF_v1_0'
+          OR name='proxy_protocol_V2_e8f6_v1_0'
+          OR name='standard_tcp_a3de_v1_0'
+          OR name='x_forward_5b6e_v1_0'
+          OR name='one_connect_dd5c_v1_0'
+          OR name='no_one_connect_3caB_v1_0'
+          OR name='http_compression_e4a2_v1_0'
+          OR name='cookie_encryption_b82a_v1_0'
+          OR name='sso_22b0_v1_0'
+          OR name='sso_required_f544_v1_0'
+          OR name='http_redirect_a26c_v1_0';
+      values:
+        - "count_gauge"
+    - help: Total Load Balancer count
+      labels:
+        - "status"
+        - "octavia_host"
+      name: octavia_loadbalancers_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          provisioning_status AS status,
+          server_group_id as octavia_host
+        FROM load_balancer
+        GROUP BY octavia_host, provisioning_status;
+      values:
+        - "count_gauge"
+    - help: Load Balancer pending
+      labels:
+        - "status"
+        - "octavia_host"
+        - "loadbalancer_id"
+        - "loadbalancer_name"
+      name: octavia_loadbalancers_pending
+      query: |
+        (SELECT
+          '1' AS count_gauge,
+          name AS loadbalancer_name,
+          provisioning_status AS status,
+          id AS loadbalancer_id,
+          server_group_id AS octavia_host
+        FROM load_balancer
+        WHERE provisioning_status LIKE "PENDING_%")
+        UNION (select '0', '', '', '', '');
+      values:
+        - "count_gauge"
+    - help: Worker agent seconds since the last heartbeat
+      labels:
+        - "octavia_host"
+      name: octavia_monitor_agents_heartbeat_seconds
+      query: |
+        SELECT
+          compute_flavor AS octavia_host,
+          (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(updated_at))) AS heartbeat_seconds
+        FROM amphora
+        WHERE role = 'MASTER'
+        GROUP BY compute_flavor;
+      values:
+        - "heartbeat_seconds"
 
-resources: {}
+pod:
+  replicas:
+    api: 3
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+          max_unavailable: 0
+          max_surge: 1
+  resources:
+    api: null
+    housekeeping: null
+    worker: null
+    driver_agent: null
+    status_manager: null
+    statsd:
+      limits:
+        memory: 64Mi
+        cpu: 50m
+      requests:
+        memory: 24Mi
+        cpu: 10m
 
+providers: "noop_driver: 'The No-Op driver.', f5: 'F5 BigIP driver.'"
+default_provider: "f5"
+default_ciphers: DEFAULT:!DHE:!TLSv1:!TLSv1_1
+default_tls_1_0: "false"
+default_tls_1_1: "false"
+default_tls_1_3: "true"
+default_profiles:
+  profile_http: cc_http_profile
+  profile_http_compression: cc_httpcompression_profile
+  profile_l4: cc_fastL4_profile
+  profile_tcp: cc_tcp_profile
+  profile_udp: cc_udp_profile
+  profile_multiplex: cc_oneconnect_profile
+  profile_healthmonitor_tls: cc_serverssl_profile
+external_as3: false
+persist_every: -1
+async_mode: false
+unsafe_mode: false
+
+# Deploy Octavia Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+
+sentry:
+  enabled: true
+
+watcher:
+  enabled: false
+
+audit:
+  enabled: false
+
+statsd:
+  port: 9102
+  image:
+    repository: prom/statsd-exporter
+    tag: v0.16.0
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: "raven.handlers.logging.SentryHandler"
+      level: ERROR
+      transport: ThreadedRequestsHTTPTransport
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    octavia:
+      handlers: stdout, sentry
+      level: DEBUG
+    octavia.common.keystone:
+      handlers: stdout, sentry
+      level: WARNING
+    octavia_f5:
+      handlers: stdout, sentry
+      level: DEBUG
+    barbicanclient:
+      handlers: "null"
+      level: ERROR
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
+    sqlalchemy:
+      handlers: stdout, sentry
+      level: WARNING

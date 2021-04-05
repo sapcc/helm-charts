@@ -1,16 +1,31 @@
+# vim: set ft=yaml:
+
 groups:
 - name: openstack-content-repo.alerts
   rules:
-  - alert: OpenstackRepo
-    expr: floor((time()-repo_sync_last_run{kind="success_timestamp",repo!~"cbr|bame-monitoring|ironic-tftp|hw-firmware|quay-mirror"})/60/60) > 48
-    for: 10m
+  - alert: OpenstackContentRepoMetricsMissing
+    expr: absent(repo_sync_last_run) or absent(repo_sync_check_success) or absent(repo_sync_check_httpcode)
+    for: 24h
     labels:
       tier: os
       service: swift
       severity: info
       context: repo
+    annotations:
+      description: Some content repo metrics have been missing for 24h. Check the logs of the corresponding statsd pod.
+      summary: Some content repo metrics are missing
+
+  - alert: OpenstackRepo
+    # TODO Remove repo!~"rhel" when metrics are aged out of the system
+    expr: floor((time()-repo_sync_last_run{kind="success_timestamp",repo!~"rhel"})/60/60) > 48
+    for: 10m
+    labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
+      tier: os
+      service: swift
+      severity: info
+      context: repo
       meta: "repo {{ $labels.repo }} is outdated"
-      dashboard: repo-sync?var-repo={{ $labels.repo }}
     annotations:
       description: Content repo {{ $labels.repo }} was not successful updated for at least 48h. Check the logs
       summary: Content repo {{ $labels.repo }} outdated
@@ -19,13 +34,13 @@ groups:
     expr: repo_sync_check_success != 1 and repo_sync_check_httpcode == 403
     for: 1h
     labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
       tier: os
       service: swift
       severity: info
       context: repo-{{ $labels.repo }}-entitlement
       meta: "invalid entitlement for {{ $labels.repo }}"
-      dashboard: repo-sync?var-repo={{ $labels.repo }}
-      playbook: docs/support/playbook/repo_{{ $labels.repo }}_entitlement.html
+      playbook: 'docs/support/playbook/repo_rhel_entitlement.html'
     annotations:
       description: Repo {{ $labels.repo }} the entitlement became invalid
       summary: Repo {{ $labels.repo }} entitlement lost
@@ -34,12 +49,12 @@ groups:
     expr: repo_sync_check_success != 1 and repo_sync_check_httpcode != 403
     for: 1h
     labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
       tier: os
       service: swift
       severity: info
       context: repo-{{ $labels.repo }}-entitlement
       meta: "entitlement check failed for {{ $labels.repo }}"
-      dashboard: repo-sync?var-repo={{ $labels.repo }}
     annotations:
       description: Repo {{ $labels.repo }} entitlement check failed. Check the logs
       summary: Repo {{ $labels.repo }} entitlement check failed
@@ -54,5 +69,5 @@ groups:
       context: repo-swift-quota
       meta: "Swift usage for project ccadmin/master reached 95%"
     annotations:
-      description: Swift usage for project ccadmin/master reached 95%. Increase quota or clean up immediately.
+      description: Swift usage for project ccadmin/master reached 95%. Increase quota if possible, otherwise clean up immediately.
       summary: Swift usage reached 95% in ccadmin/master

@@ -6,7 +6,7 @@
 bind_ip = 0.0.0.0
 bind_port = 6000
 
-workers = 12
+workers = auto
 max_clients = 1024
 backlog = 8192
 client_timeout = {{ .Values.client_timeout }}
@@ -32,6 +32,7 @@ pipeline = healthcheck recon object-server
 
 [app:object-server]
 use = egg:swift#object
+set log_requests = {{ .Values.log_requests }}
 {{- if .Values.s3api_enabled }}
 allowed_headers = Cache-Control, Content-Disposition, Content-Encoding, Content-Language, Expires, X-Delete-At, X-Object-Manifest, X-Robots-Tag, X-Static-Large-Object
 {{- else}}

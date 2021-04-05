@@ -1,7 +1,7 @@
 {{- define "ironic_conductor_console_ingress" }}
     {{- $conductor := index . 1 }}
     {{- with index . 0 }}
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 
 metadata:
@@ -10,9 +10,9 @@ metadata:
     system: openstack
     type: api
     component: ironic
-  {{- if .Values.vice_president }}
+  {{- if .Values.tls_acme }}
   annotations:
-    vice-president: "true"
+    kubernetes.io/tls-acme: "true"
   {{- end }}
 spec:
   tls:

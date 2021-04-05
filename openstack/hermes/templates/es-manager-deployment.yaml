@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: es-manager
   namespace: hermes
@@ -13,6 +13,9 @@ metadata:
 
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      component: es-manager
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -41,6 +44,8 @@ spec:
         args:
           - /opt/cerebro/bin/cerebro
           - -Dconfig.file=/es-etc/elasticsearch-application.conf
+          - -Dlogback.configurationFile=/es-etc/logback.xml
+          - -Dlogger.file=/es-etc/logback.xml
           - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
           - -Des.networkaddress.cache.ttl=20
           - -Des.networkaddress.cache.negative.ttl=10

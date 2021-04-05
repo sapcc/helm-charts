@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Chart.Name }}
@@ -9,6 +9,9 @@ metadata:
 spec:
   revisionHistoryLimit: 5
   replicas: {{ required ".Values.replicaCount missing" .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "blackbox-exporter.name" . }}
   template:
     metadata:
       labels:

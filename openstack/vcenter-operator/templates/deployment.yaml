@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: vcenter-operator
 spec:
@@ -21,9 +21,10 @@ spec:
         name: vcenter-operator
 {{ tuple . "vcenter-operator" "operator" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
+      serviceAccountName: {{ .Chart.Name }}
       containers:
       - name: operator
-        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{required ".Values.global.image_namespace is missing" .Values.global.image_namespace}}/ubuntu-source-vcenter-operator:{{ .Values.imageVersionVcenterOperator | default .Values.imageVersion | required "Please set imageVersion or similar"}}
+        image: {{required ".Values.global.registry is missing" .Values.global.registry}}/vcenter-operator:{{ .Values.imageVersionVcenterOperator | default .Values.imageVersion | required "Please set imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init

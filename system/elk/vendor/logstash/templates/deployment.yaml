@@ -1,14 +1,14 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: logstash-external
   namespace: elk
   labels:
-    system: openstack
-    service: logging
-  annotations:
-    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
+    component: logstash-external
 spec:
+  selector:
+    matchLabels:
+      component: logstash-external
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -30,7 +30,7 @@ spec:
             name: logstash-etc
       containers:
         - name: logstash-external
-          image: hub.global.cloud.sap/monsoon/elk-logstash:{{.Values.image_version}}
+          image: {{.Values.global.registry}}/elk-logstash:{{.Values.image_version}}
           imagePullPolicy: IfNotPresent
           ports:
             - name: netflow
@@ -42,8 +42,17 @@ spec:
             - name: syslogtcp
               containerPort: {{.Values.input_syslog_port}}
               protocol: TCP
+            - name: bigiplogsudp
+              containerPort: {{.Values.input_bigiplogs_port}}
+              protocol: UDP
+            - name: alertmanagertcp
+              containerPort: {{.Values.input_alertmanager_port}}
+              protocol: TCP
+            - name: deploymentstcp
+              containerPort: {{.Values.input_deployments_port}}
+              protocol: TCP
           command:
-            - logstash
+            - /usr/share/logstash/bin/logstash
           args:
             - -f
             - /elk-etc/logstash.conf

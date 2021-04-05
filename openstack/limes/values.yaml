@@ -2,9 +2,14 @@ global:
   region: DEFINED_IN_VALUES_FILE
 
 limes:
-  image: sapcc/limes
-  image_tag: latest
-  image_pull_policy: Always
+  image_tag: DEFINED_IN_VALUES_FILE
+
+  # Map with entries like:
+  #
+  #   cluster_id:
+  #     auth_password: swordfish
+  #     rabbitmq_password: blowfish
+  passwords: DEFINED_IN_VALUES_FILE
 
   # This section of the YAML must be identical to the "clusters" section of the
   # Limes configuration file.
@@ -39,6 +44,11 @@ limes:
   # Whether to apply resource requests/limits to containers.
   resources:
     enabled: false
+
+postgresql:
+  log_min_duration_statement: 250
+  # less than the postgresql chart's default; I want to know early when connections start getting out of hand
+  max_connections: 64
 
 # Deploy limes Prometheus alerts.
 alerts:

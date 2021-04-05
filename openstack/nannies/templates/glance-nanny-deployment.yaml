@@ -1,7 +1,7 @@
 {{- if .Values.glance_nanny.enabled }}
 {{- if .Values.glance_nanny.db_purge.enabled }}
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: apps/v1
 metadata:
   name: glance-nanny
   namespace: monsoon3
@@ -16,6 +16,9 @@ spec:
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
+  selector:
+    matchLabels:
+        component: glance-nanny
   template:
     metadata:
       labels:
@@ -30,7 +33,7 @@ spec:
       containers:
 {{- if .Values.glance_nanny.db_purge.enabled }}
         - name: db-consistency-and-purge
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/glance-nanny:{{ .Values.glance_nanny.image_version }}
+          image: {{ required "Please set  .Values.global.registry is missing" .Values.global.registry }}/glance-nanny:{{ required "Please set .Values.glance_nanny.image_version" .Values.glance_nanny.image_version }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init

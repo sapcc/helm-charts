@@ -2,7 +2,7 @@
 
 [ml2_arista]
 {{- range $k,$v := .Values.arista }}
-  {{- if and (ne "switches" $k) (ne "physnet" $k) }}
+  {{- if and (ne "switches" $k) (ne "physnet" $k) (ne "disable_sec_group_support_on_device_ids" $k) }}
 {{ $k }} = {{ $v }}
   {{- end }}
 {{- end }}
@@ -15,4 +15,7 @@ region_name = {{ .Values.global.region }}
 switch_info = {{ range $i, $switch := .Values.arista.switches }}
   {{- $switch.host }}:{{ $switch.user }}:{{ $switch.password | urlquery -}}
   {{- if lt $i (sub (len $.Values.arista.switches) 1) }},{{ end -}}
+{{- end }}
+{{- if .Values.arista.disable_sec_group_support_on_device_ids }}
+disable_sec_group_support_on_device_ids = {{ .Values.arista.disable_sec_group_support_on_device_ids | join "," }}
 {{- end }}

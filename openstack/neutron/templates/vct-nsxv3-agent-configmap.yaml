@@ -3,6 +3,7 @@ apiVersion: vcenter-operator.stable.sap.cc/v1
 kind: VCenterTemplate
 metadata:
   name: 'neutron-ml2-nsxv3-configmap'
+options:
   scope: 'cluster'
   jinja2_options:
     variable_start_string: '{='
@@ -22,7 +23,6 @@ template: |
       [DEFAULT]
       # The agent binds only port with the same host
       host = nova-compute-{= name =}
-      backdoor_socket = /var/lib/neutron/eventlet_backdoor.socket
 
       [securitygroup]
       firewall_driver = nsxv3
@@ -31,7 +31,8 @@ template: |
       {{- range $k, $v := .Values.drivers.nsxv3.defaults.AGENT }}
       {{ $k }} = {{ $v }}
       {{- end }}
-      enable_runtime_migration_from_dvs_driver = {{ if contains ",dvs" .Values.ml2_mechanismdrivers }}True{{ else }}False{{ end }}
+      enable_runtime_migration_from_dvs_driver = False
+      logging_url = redis://neutron-logger-redis:6379/0
 
       [NSXV3]
       # nsx-t has only admin / audit user

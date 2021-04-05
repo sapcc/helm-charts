@@ -1,0 +1,20 @@
+{{ template "prometheus.alerts" . }}
+
+{{- $values := .Values -}}
+{{- if $values.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "px.alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "px-exporter-%s" $path | replace "/" "-" }}
+  labels:
+    app: snmp-exporter
+    prometheus: {{ required ".Values.global.alerts.prometheus missing" $values.global.alerts.prometheus }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}

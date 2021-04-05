@@ -5,7 +5,6 @@ global:
   keystoneNamespace: monsoon3
   imageNamespace: monsoon
   user_suffix: ""
-  master_password: ""
   pgbouncer:
     enabled: false
     prometheus: false
@@ -78,6 +77,11 @@ postgresUser: postgres
 hba_cidr: 0.0.0.0/0
 auth_method: password
 
+# Sets the option of the same name in the postgresql.conf. If set to a positive
+# integer value, logs statements that run for longer than this many
+# milliseconds.
+log_min_duration_statement: -1
+
 ## Persist data to a persitent volume
 persistence:
   enabled: false
@@ -103,16 +107,16 @@ pod:
 upgrades:
   revisionHistory: 3
   podReplacementStrategy: Recreate
-## Configure resource requests and limits	
-## ref: http://kubernetes.io/docs/user-guide/compute-resources/	
-##	
+## Configure resource requests and limits
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+##
 resources: {}
-#  limits:	
-#    memory: 256Mi	
-#    cpu: 500m	
-#  requests:	
-#    memory: 256Mi	
-#    cpu: 500m	
+#  limits:
+#    memory: 256Mi
+#    cpu: 500m
+#  requests:
+#    memory: 256Mi
+#    cpu: 500m
 metrics:
   enabled: false
   image: "wrouesnel/postgres_exporter"
@@ -152,6 +156,10 @@ backup:
   os_user_domain: Default
   os_project_name: master
   os_project_domain: ccadmin
+
+  # if custom repository is enabled, .Values.backup.image must be the full
+  # repository URL; .Values.global.imageRegistry is not prepended
+  custom_repository: false
 
 pgbouncer:
   config: {}

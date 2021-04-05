@@ -2,7 +2,7 @@
 {{- $hypervisor := index . 1 }}
 {{- with index . 0 }}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: nova-compute-{{$hypervisor.name}}
   labels:
@@ -24,9 +24,6 @@ spec:
         name: nova-compute-{{$hypervisor.name}}
         hypervisor: "kvm"
       annotations:
-        {{- if le .Capabilities.KubeVersion.Minor "6" }}
-        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
-        {{- end }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "kvm_configmap" | sha256sum }}
     spec:
@@ -36,13 +33,11 @@ spec:
       hostIPC: true
       nodeSelector:
         kubernetes.io/hostname: {{$hypervisor.node_name}}
-      {{- if ge .Capabilities.KubeVersion.Minor "7" }}
       tolerations:
       - key: "species"
         operator: "Equal"
         value: "hypervisor"
         effect: "NoSchedule"
-      {{- end }}
       initContainers:
         - name: fix-permssion-instance-volume
           image: busybox
@@ -52,7 +47,7 @@ spec:
               name: instances
       containers:
         - name: nova-compute
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{ .Values.imageVersionNovaCompute | default .Values.imageVersion | required "Please set .imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -63,8 +58,13 @@ spec:
               value: "nova-compute"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
 {{- if or $hypervisor.python_warnings .Values.python_warnings }}
             - name: PYTHONWARNINGS
               value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
@@ -104,7 +104,7 @@ spec:
               subPath: rootwrap.conf
               readOnly: true
         - name: nova-libvirt
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -115,8 +115,13 @@ spec:
               value: /container.init/nova-libvirt-start
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
@@ -150,7 +155,7 @@ spec:
             - mountPath: /container.init
               name: nova-container-init
         - name: nova-virtlog
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-libvirt:{{.Values.imageVersionNovaLibvirt | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -161,8 +166,13 @@ spec:
               value: /usr/sbin/virtlogd
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{ .Values.sentry_dsn | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
           volumeMounts:
             - mountPath: /var/lib/nova/instances
               name: instances
@@ -196,7 +206,7 @@ spec:
             - mountPath: /container.init
               name: nova-container-init
         - name: neutron-openvswitch-agent
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -213,7 +223,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-vswitchd:{{ .Values.imageVersionOpenvswitchVswitchd | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-openvswitch-vswitchd:{{ .Values.imageVersionOpenvswitchVswitchd | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -228,7 +238,7 @@ spec:
             - mountPath: /container.init
               name: neutron-container-init
         - name: ovs-db
-          image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-openvswitch-db-server:{{ .Values.imageVersionOpenvswitchDbServer | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-openvswitch-db-server:{{ .Values.imageVersionOpenvswitchDbServer | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

@@ -101,27 +101,85 @@
   static_configs:
     - targets: ['prometheus-infra-collector.infra-monitoring:9090']
   metric_relabel_configs:
-    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system"
+    - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region"
       action: labeldrop
     - action: drop
       source_labels: [vmware_name]
       regex: c_blackbox.*|c_regression.*
+    - action: drop
+      source_labels: [__name__]
+      regex: netapp_volume_saved_.*
+    - source_labels: [ltmVirtualServStatName]
+      regex: /Common.*
+      action: drop
     - source_labels: [ltmVirtualServStatName]
       target_label: project_id
       regex: /Project_(.*)/Project_.*
     - source_labels: [ltmVirtualServStatName]
       target_label: lb_id
       regex: /Project_.*/Project_(.*)
+    - source_labels: [ltmVirtualServStatName]
+      target_label: network_id
+      regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
+      replacement: $1-$2-$3-$4-$5
+    - source_labels: [ltmVirtualServStatName]
+      target_label: lb_id
+      regex: /net_.*/lb_(.*)/listener_.*
+    - source_labels: [ltmVirtualServStatName]
+      target_label: listener_id
+      regex: /net_.*/lb_.*/listener_(.*)
+    - source_labels: [__name__]
+      target_label: __name__
+      regex: netapp_volume_(.*)
+      replacement: openstack_manila_share_${1}
+    - source_labels: [__name__, project ]
+      regex: '^vrops_virtualmachine_.+;(.+)'
+      replacement: '$1'
+      target_label: project_id
+    - regex: 'project'
+      action: labeldrop
 
   metrics_path: '/federate'
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^snmp_f5_.+"}'
-      - '{__name__=~"^vcenter_cpu_.+"}'
-      - '{__name__=~"^vcenter_disk_.+"}'
-      - '{__name__=~"^vcenter_mem_.+"}'
-      - '{__name__=~"^vcenter_net_.+"}'
-      - '{__name__=~"^vcenter_virtualDisk_.+"}'
+#      - '{__name__=~"^vcenter_cpu_.+"}'
+#      - '{__name__=~"^vcenter_disk_.+"}'
+#      - '{__name__=~"^vcenter_mem_.+"}'
+#      - '{__name__=~"^vcenter_net_.+"}'
+#      - '{__name__=~"^vcenter_virtualDisk_.+"}'
       - '{__name__=~"^netapp_capacity_.+"}'
-      - '{__name__=~"^netapp_perf_.+"}'
+      - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
+      - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
+      - '{__name__=~"^vrops_virtualmachine_cpu_.+"}'
+      - '{__name__=~"^vrops_virtualmachine_disk_.+"}'
+      - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
+      - '{__name__=~"^vrops_virtualmachine_network_.+"}'
+      - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
+
+
+{{- if .Values.cronus.enabled }}
+- job_name: 'cronus-reputation-statistics'
+  scheme: https
+  scrape_interval: 5m
+  scrape_timeout: 55s
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+  static_configs:
+    - targets:
+      - "prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      - '{__name__="aws_ses_cronus_provider_bounce"}'
+      - '{__name__="aws_ses_cronus_provider_complaint"}'
+      - '{__name__="aws_ses_cronus_provider_delivery"}'
+      - '{__name__="aws_ses_cronus_provider_reputation_bouncerate"}'
+      - '{__name__="aws_ses_cronus_provider_reputation_complaintrate"}'
+      - '{__name__="aws_ses_cronus_provider_send"}'
+  metric_relabel_configs:
+    - action: labeldrop
+      regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id"
+{{ end }}

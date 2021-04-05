@@ -1,7 +1,7 @@
 {{- define "ironic_conductor_deployment" }}
     {{- $conductor := index . 1 }}
     {{- with index . 0 }}
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ironic-conductor-{{$conductor.name}}
@@ -35,7 +35,11 @@ spec:
     spec:
       containers:
       - name: ironic-conductor
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-conductor:{{.Values.imageVersionIronicConductor | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        {{- if .Values.oslo_metrics.enabled }}
+        image: {{ .Values.global.registry }}/test-ironic:oslo-metrics01
+        {{- else}}
+        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
+        {{- end }}
         imagePullPolicy: IfNotPresent
         {{- if $conductor.debug }}
         securityContext:
@@ -54,7 +58,7 @@ spec:
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_SERVICE
-          value: "ironic-api,rabbitmq"
+          value: "ironic-api,ironic-rabbitmq"
         {{- if .Values.logging.handlers.sentry }}
         - name: SENTRY_DSN
           valueFrom:
@@ -118,6 +122,10 @@ spec:
           name: ironic-conductor-etc
           subPath: ipxe_config.template
           readOnly: {{ not $conductor.debug }}
+        - mountPath: /etc/ironic/uefi_pxe_config.template
+          name: ironic-conductor-etc
+          subPath: uefi_pxe_config.template
+          readOnly: {{ not $conductor.debug }}
         - mountPath: /tftpboot
           name: ironic-tftp
         - mountPath: /shellinabox
@@ -152,6 +160,26 @@ spec:
             port: ironic-console
           initialDelaySeconds: 5
           periodSeconds: 3
+      {{- if .Values.oslo_metrics.enabled }}
+      - name: oslo-exporter
+        image: prom/statsd-exporter
+        args:
+        - --web.listen-address=:9102
+        - --web.telemetry-path=/metrics
+        - --statsd.listen-udp=:8125
+        - --statsd.listen-tcp=
+        - --statsd.cache-size=1000
+        - --statsd.event-queue-size=10000
+        - --statsd.event-flush-threshold=1000
+        - --statsd.event-flush-interval=200ms
+        ports:
+        - name: web
+          containerPort: 9102
+          protocol: TCP
+        - name: statsd-udp
+          containerPort: 8125
+          protocol: UDP
+      {{- end }}
       volumes:
       - name: etcironic
         emptyDir: {}

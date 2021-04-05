@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "name" . }}
@@ -22,6 +22,9 @@ spec:
       - name: {{ template "name" . }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - -logtostderr
+        - -v=5
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         ports:

@@ -23,10 +23,14 @@ function start_application {
   grafana-cli plugins install natel-discrete-panel
   grafana-cli plugins install vonage-status-panel
   grafana-cli plugins install blackmirror1-statusbygroup-panel
+  grafana-cli plugins install digrich-bubblechart-panel
+  grafana-cli plugins install briangann-datatable-panel
   # since grafana version 4.6.2 the histogram feature is part of the normal graph in the axes tab, so this plugin is no longer needed
   # grafana-cli plugins install mtanda-histogram-panel
   grafana-cli plugins install grafana-worldmap-panel
   grafana-cli plugins install yesoreyeram-boomtable-panel
+  grafana-cli plugins install jdbranham-diagram-panel
+  grafana-cli plugins install agenty-flowcharting-panel
   # install sapcc/grafana-prometheus-alertmanager-datasource
   grafana-cli --pluginUrl https://github.com/sapcc/grafana-prometheus-alertmanager-datasource/archive/master.zip plugins install prometheus-alertmanager
   # install sapcc/Grafana_Status_panel
@@ -35,8 +39,10 @@ function start_application {
   # wait a moment until grafana is up and write to stdout and logfile in parallel
   if [ -f /grafana-bin/grafana-initial-setup ]; then
   # no ss commnd in the new grafana container, so we have to use curl to check ...
-  #    (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
-       (while [ `curl -s http://localhost:3000 > /dev/null ; echo $?` != "0" ]; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
+  #  (while ss -lnt | awk '$4 ~ /:{{.Values.grafana.port.public}}$/ {exit 1}'; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
+  # no curl commnd in the new grafana container, so we have to use wget to check ...
+  #  (while [ `curl -s http://localhost:3000 > /dev/null ; echo $?` != "0" ]; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
+    (while ! wget -q -O /dev/null http://localhost:3000; do sleep 5; done; bash /grafana-bin/grafana-initial-setup ) 2>&1 | tee /var/log/grafana/initial-setup.log &
   fi
   while [ ! -d /git/grafana-content/datasources-config ]; do
     echo "waiting 5 more seconds for the grafana-content to be mounted and synced via git-sync ..."

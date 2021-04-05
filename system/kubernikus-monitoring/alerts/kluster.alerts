@@ -31,8 +31,9 @@ groups:
     labels:
       tier: kks
       service: ground
-      severity: warning
+      severity: info
       meta: "Investigate kubernikus control-plane {{ $labels.cluster }}"
+      playbook: docs/support/playbook/kubernikus/kubernikus_kluster_creation_broken.html
     annotations:
       description: Klusters can't be created within 10min. There is a problem with the kubernikus control-plane {{ $labels.cluster }}. Most likely because volumes don't attach in time. Login to {{ $labels.cluster }} and investiage why pods in the `kubernikus` namespace can't start.
       summary: Klusters can't be created within 10min. There is a problem with the kubernikus control-plane {{ $labels.cluster }}.
@@ -50,7 +51,7 @@ groups:
       summary: "{{ $labels.kubernetes_name }} is unavailable"
 
   - alert: KubernikusKlusterLowOnObjectStoreQuota
-    expr: label_replace(max(kubernikus_kluster_info{phase="Running"}) by (kluster_name, creator, project_id), "shortname", "$1", "kluster_name", "(.*)-[a-f0-9]{32}") * on(project_id) group_left(project, domain) (min(limes_project_quota{service="object-store"} - limes_project_usage{service="object-store"}) by (project_id, project, domain) < 90 * 1024 * 1024)
+    expr: label_replace(max(kubernikus_kluster_info{phase="Running"}) by (kluster_name, creator, project_id), "shortname", "$1", "kluster_name", "(.*)-[a-f0-9]{32}") * on(project_id) group_left(project, domain) (min(limes_project_backendquota{service="object-store"} - limes_project_usage{service="object-store"}) by (project_id, project, domain) < 90 * 1024 * 1024)
     for: 10m
     labels:
       tier: kks

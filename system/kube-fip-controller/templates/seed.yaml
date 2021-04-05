@@ -1,0 +1,36 @@
+{{- if .Values.seed.enabled }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: {{ template "name" . }}-seed
+
+spec:
+  requires:
+    - monsoon3/keystone-seed
+    - monsoon3/neutron-seed
+    - monsoon3/nova-seed
+
+  domains:
+    - name: {{ required ".Values.openstack.userDomainName missing" .Values.openstack.userDomainName }}
+      users:
+        - name: {{ required ".Values.openstack.username missing" .Values.openstack.username }}
+          description: kube-fip-controller
+          password: {{ required ".Values.openstack.password missing" .Values.openstack.password }}
+          role_assignments:
+            - project: service
+              role:    service
+
+    - name: {{ required ".Values.openstack.projectDomainName missing" .Values.openstack.projectDomainName }}
+      projects:
+        - name: {{ required ".Values.openstack.projectName missing" .Values.openstack.projectName }}
+          role_assignments:
+            # Permission to enumerate all projects and domains.
+            - user: {{ required ".Values.openstack.username missing" .Values.openstack.username }}@{{ required ".Values.openstack.userDomainName missing" .Values.openstack.userDomainName }}
+              role: admin
+            # Permissions to read networks; create, update and delete floating IPs.
+            - user: {{ required ".Values.openstack.username missing" .Values.openstack.username }}@{{ required ".Values.openstack.userDomainName missing" .Values.openstack.userDomainName }}
+              role: cloud_network_admin
+            # Permissions to read servers and associate floating IPs.
+            - user: {{ required ".Values.openstack.username missing" .Values.openstack.username }}@{{ required ".Values.openstack.userDomainName missing" .Values.openstack.userDomainName }}
+              role: cloud_compute_admin
+{{ end }}

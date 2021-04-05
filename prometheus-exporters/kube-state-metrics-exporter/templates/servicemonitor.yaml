@@ -1,0 +1,47 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: prometheus-{{ required ".Values.prometheusName missing" .Values.prometheusName }}-kube-state-metrics
+  labels:
+    prometheus: {{ required ".Values.prometheusName missing" .Values.prometheusName | quote }}
+    app: kube-state-metrics
+
+spec:
+  selector:
+    matchLabels:
+      {{ required ".Values.labelSelector missing" .Values.labelSelector | toYaml | nindent 6 }}
+
+  namespaceSelector:
+    any: true
+
+  endpoints:
+    - port: http
+      honorLabels: {{ default true .Values.honorLabels }}
+      relabelings:
+        - action: replace
+          targetLabel: prometheus
+          replacement: {{ required ".Values.prometheusName missing" .Values.prometheusName }}
+        - action: labelmap
+          regex: '__meta_kubernetes_service_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_service_name
+          targetLabel: kubernetes_name
+        {{ if .Values.global.region -}}
+        - action: replace
+          targetLabel: region
+          replacement: {{ .Values.global.region }}
+        {{- end }}
+        {{ if .Values.global.clusterType -}}
+        - action: replace
+          targetLabel: cluster_type
+          replacement: {{ .Values.global.clusterType }}
+        {{- end }}
+        {{ if or .Values.global.region .Values.global.cluster -}}
+        - action: replace
+          targetLabel: cluster
+          replacement: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+        {{- end }}

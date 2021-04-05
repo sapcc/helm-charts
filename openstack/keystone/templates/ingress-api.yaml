@@ -4,7 +4,7 @@ kind: Secret
 apiVersion: v1
 
 metadata:
-  name: keystone-x509-ca
+  name: {{ .Release.Name }}-x509-ca
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -16,7 +16,7 @@ data:
   ca.crt: {{ .Values.services.ingress.x509.ca | b64enc }}
 ---
 {{- end }}
-{{- if not .Values.services.ingress.vice_president }}
+{{- if not .Values.services.ingress.tlsacme }}
 {{- if .Values.services.public.tlsCertificate}}
 kind: Secret
 apiVersion: v1
@@ -36,10 +36,10 @@ data:
 ---
 {{- end }}
 {{- end }}
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: keystone
+  name: {{ .Release.Name }}
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
@@ -56,17 +56,17 @@ metadata:
     ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
     {{- end }}
     {{- if .Values.services.ingress.x509.ca }}
-    ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/keystone-x509-ca
+    ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Release.Name }}-x509-ca
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
-    {{- if .Values.services.ingress.vice_president }}
-    vice-president: "true"
+    {{- if .Values.services.ingress.tlsacme }}
+    kubernetes.io/tls-acme: "true"
     {{- end }}
 spec:
   tls:
-    {{- if .Values.services.ingress.vice_president }}
+    {{- if .Values.services.ingress.tlsacme }}
     - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
       hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
     {{ else }}
@@ -82,6 +82,10 @@ spec:
         paths:
         - path: /
           backend:
+{{- if .Values.global_setup }}
+            serviceName: keystone-global
+{{- else }}
             serviceName: keystone
+{{- end }}
             servicePort: 5000
 {{- end }}

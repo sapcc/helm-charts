@@ -8,6 +8,8 @@ preflights = VrfDefinition
 clean_orphans = {{$config_agent.clean_orphans | default "True"}}
 clean_orphan_interval = {{$config_agent.clean_orphan_interval | default 600}}
 init_mode = {{$config_agent.init_mode | default "False"}}
+trace_all_yang_calls = {{$config_agent.trace_all_yang_calls | default "False"}}
+trace_yang_call_failures = {{$config_agent.trace_yang_call_failures | default "True"}}
 
 [asr1k_l3]
 fabric_asn = {{required "A valid .Values.asr.fabric_asn entry required!" .Values.asr.fabric_asn}}
@@ -15,6 +17,7 @@ max_requeue_attempts = 1
 sync_active = {{$config_agent.l3_sync_active | default "True"}}
 sync_chunk_size = {{$config_agent.l3_sync_chunk_size | default 10}}
 sync_interval = {{$config_agent.l3_sync_interval | default 120}}
+stateless_nat = {{$config_agent.stateless_nat | default "True"}}
 
 # number of threads to spawn during router update, it must be < yang_connection_pool_size and if set higher
 # the driver will reduce to = yang_connection_pool_size
@@ -44,6 +47,7 @@ host = {{required "A valid $hosting_device required!" $hosting_device.ip}}
 user_name = {{required "A valid $hosting_device required!" $hosting_device.user_name}}
 password = {{required "A valid $hosting_device required!" $hosting_device.password}}
 nc_timeout = {{$hosting_device.nc_timeout | default 20}}
+use_bdvif = {{$hosting_device.use_bdvif | default "True"}}
 {{end}}
 
 [asr1k-address-scopes]

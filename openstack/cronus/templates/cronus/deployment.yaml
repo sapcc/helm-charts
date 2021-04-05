@@ -1,0 +1,76 @@
+{{- if .Values.cronus.enabled }}
+apiVersion: apps/v1
+{{- if .Values.cronus.statefulSet.enabled }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: cronus
+  {{- if .Values.cronus.annotations }}
+  annotations:
+    {{ toYaml .Values.cronus.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.cronus.labels }}
+  labels:
+    {{ toYaml .Values.cronus.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.cronus.replicas }}
+  {{- if .Values.cronus.statefulSet.enabled }}
+  podManagementPolicy: {{ .Values.cronus.statefulSet.podManagementPolicy }}
+  serviceName: cronus
+  updateStrategy:
+  {{- else }}
+  strategy:
+{{- if eq "RollingUpdate" .Values.cronus.updateStrategy }}
+    rollingUpdate:
+      maxSurge: {{ .Values.cronus.maxSurge }}
+      maxUnavailable: {{ .Values.cronus.maxUnavailable }}
+{{- end }}
+  {{- end }}
+    type: {{ .Values.cronus.updateStrategy }}
+  selector:
+    matchLabels:
+      name: cronus
+      instance: cronus
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/cronus/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        name: cronus
+        instance: cronus
+    spec:
+      serviceAccountName: cronus
+{{- if .Values.cronus.affinity }}
+      affinity: {{ toYaml .Values.cronus.affinity | nindent 8 }}
+{{- end }}
+      containers:
+        - name: cronus
+          image: "{{ .Values.cronus.image.name }}:{{ .Values.cronus.image.tag }}"
+          imagePullPolicy: {{ .Values.cronus.image.pullPolicy }}
+          args:
+            - "-config=/cronus/config.yaml"
+          volumeMounts:
+            - name: cronus
+              mountPath: "/cronus/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.cronus.http }}
+              protocol: TCP
+            - name: smtp
+              containerPort: {{ .Values.cronus.smtp }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+      terminationGracePeriodSeconds: {{ .Values.cronus.terminationGracePeriod | default 60 }}
+      volumes:
+        - name: cronus
+          secret:
+            secretName: cronus
+{{- end -}}

@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: designate-migration
+  name: {{ .Release.Name }}-migration
   labels:
     system: openstack
     type: configuration
@@ -9,20 +9,27 @@ metadata:
 spec:
   template:
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
       restartPolicy: OnFailure
       containers:
         - name: designate-migration
-          image: {{ required ".Values.global.image_repository is missing" .Values.global.image_repository }}/{{ required ".Values.global.image_registry missing" .Values.global.image_namespace }}/ubuntu-source-designate-central:{{ required ".Values.image_version_designate_central is missing" .Values.image_version_designate_central }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
           imagePullPolicy: IfNotPresent
           command:
-            - /usr/local/bin/kubernetes-entrypoint
+            - kubernetes-entrypoint
           env:
             - name: COMMAND
               value: "/container.init/db-migrate"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: designate-mariadb
+{{- if .Values.percona_cluster.enabled }}
+              value: {{ .Release.Name }}-percona-pxc
+{{- else }}
+              value: {{ .Release.Name }}-mariadb
+{{- end }}
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc

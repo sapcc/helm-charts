@@ -1,10 +1,13 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: node-problem-detector
 spec:
   updateStrategy:
     type: RollingUpdate
+  selector:
+    matchLabels:
+      app: node-problem-detector
   template:
     metadata:
       labels:
@@ -18,6 +21,9 @@ spec:
         {{ end }}
     spec:
       hostNetwork: true
+      {{ if .Values.rbac.create -}}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+      {{- end }}
       tolerations:
       - key: "species"
         operator: "Exists"
@@ -28,7 +34,7 @@ spec:
         - /node-problem-detector
         - --logtostderr
         {{- if .Values.prometheus.enabled }}
-        - --prometheus-address={{ required ".Values.prometheusAddress missing" .Values.prometheus.address }}
+        - --prometheus-address=0.0.0.0
         - --prometheus-port={{ required ".Values.prometheusPort missing " .Values.prometheus.port }}
         {{- end }}
         {{- if .Values.systemLogMonitors }}
@@ -37,7 +43,7 @@ spec:
         {{- if .Values.customPluginMonitors }}
         - --config.custom-plugin-monitor={{- range $index, $monitor := .Values.customPluginMonitors }}{{if ne $index 0}},{{end}}{{ printf "/config/%s" $monitor }}{{- end }}
         {{- end }}
-        image: {{ include "image" . }}
+        image: "{{ if .Values.global.registry }}{{.Values.global.registry}}/{{ end }}{{ required ".Values.image.repository missing" .Values.image.repository }}:{{ required ".Values.image.tag missing" .Values.image.tag }}"
         securityContext:
           privileged: true
         resources:

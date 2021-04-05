@@ -8,12 +8,29 @@ readonlyrest:
       # access for logstash to write to the logstash indexes
       - name: data
         actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
-        indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", ".kibana*", "kubernikus-*", "scaleout-*",  "virtual-*"]
+        indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", ".kibana*", "kubernikus-*", "scaleout-*", "virtual-*", "bigiplogs-*", "alerts-*", "deployments-*","nsxt-*"]
         auth_key: {{.Values.global.data_user}}:{{.Values.global.data_password}}
 
+{{- if .Values.qalogs.enabled }}
+      - name: qade2
+        actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+        indices: ["qade2-logstash-*"]
+        auth_key: {{.Values.global.qade2_user}}:{{.Values.global.qade2_password}}
+
+      - name: qade3
+        actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+        indices: ["qade3-logstash-*"]
+        auth_key: {{.Values.global.qade3_user}}:{{.Values.global.qade3_password}}
+
+      - name: qade5
+        actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+        indices: ["qade5-logstash-*"]
+        auth_key: {{.Values.global.qade5_user}}:{{.Values.global.qade5_password}}
+
+{{- end }}
       # access to write to the jump server log indexes
       - name: jump
-        actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+        actions: ["*"]
         indices: ["jump-*"]
         auth_key: {{.Values.global.jump_user}}:{{.Values.global.jump_password}}
 
@@ -23,14 +40,20 @@ readonlyrest:
         indices: ["jaeger-*"]
         auth_key: {{.Values.global.jaeger_user}}:{{.Values.global.jaeger_password}}
 
+      # access for winbeat
+      - name: winbeat
+        actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+        indices: ["winbeat-*", "winlogbeat-*"]
+        auth_key: {{.Values.global.winbeat_user}}:{{.Values.global.winbeat_password}}
+
       - name: Monsoon (read only, but can create dashboards)
         kibana_access: ro
         auth_key: {{.Values.global.monsoon_user}}:{{.Values.global.monsoon_password}}
         indices: [".kibana*", ".kibana-devnull", {{.Values.global.indexes}}]
       # access for logstash to write to the logstash indexes
-    
+
       - name: promuser
-        actions: ["indices:data/read/*"]
+        actions: ["indices:data/read/*", "cluster:monitor/state", "indices:admin/get", "indices:admin/mappings/fields/get", "indices:admin/mappings/get", "indices:admin/aliases/get", "indices:admin/template/get"]
         indices: ["logstash-*", "netflow", "systemd-*", "syslog-*", "jump-*", "kubernikus-*", "scaleout-*", "virtual-*"]
         auth_key: {{.Values.global.prom_user}}:{{.Values.global.prom_password}}
 
@@ -54,7 +77,7 @@ readonlyrest:
         ldap_authorization:
           name: "ldap1"
           groups: [{{.Values.global.ldap.es_user_groups}}]
-  
+
     # get the user from the x-remote-user header
     proxy_auth_configs:
     - name: ingress

@@ -12,18 +12,18 @@ data:
   tls.key: {{ .Values.api.ingress.tlsKey | b64enc }}
 ---
 {{- end }}
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: arc-api
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-  {{- if .Values.api.ingress.vice_president }}
+  {{- if .Values.api.ingress.cert_manager}}
   annotations:
-    vice-president: "true"
+    kubernetes.io/tls-acme: "true"
   {{- end }}
 spec:
-  {{- if or .Values.api.ingress.tlsCertificate .Values.api.ingress.vice_president }}
+  {{- if or .Values.api.ingress.tlsCertificate .Values.api.ingress.cert_manager}}
   tls:
      - secretName: arc-api-ingress
        hosts: [{{ .Values.api.ingress.host }}]

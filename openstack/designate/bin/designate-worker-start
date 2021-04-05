@@ -1,21 +1,17 @@
 #!/usr/bin/env bash
 
-set -e
-set -x
-
-function process_config {
-    cp /designate-etc/designate.conf /etc/designate/designate.conf
-    cp /designate-etc/logging.conf /etc/designate/logging.conf
-    cp /designate-etc/pools.yaml /etc/designate/pools.yaml
-    cp /designate-etc/rndc*.key /etc/designate/
-    cp /designate-etc/policy.json  /etc/designate/policy.json
-}
+set -ex
 
 
-function start_application {
-    exec /var/lib/kolla/venv/bin/designate-worker
-}
+#
+# to make agents named after the node
+#
+echo "[DEFAULT]" > /etc/designate/hostname.conf
+echo "host = $NODE_NAME" >> /etc/designate/hostname.conf
 
-process_config
+#
+# other configs
+#
+cp /designate-etc/* /etc/designate/
 
-start_application
+exec designate-worker --config-file /etc/designate/designate.conf --config-file /etc/designate/hostname.conf --log-config-append /etc/designate/logging.conf

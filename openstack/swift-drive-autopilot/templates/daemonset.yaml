@@ -1,7 +1,7 @@
 {{- range $suffix := list "" "-multipath" }}
 ---
 kind: DaemonSet
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: swift-drive-autopilot{{$suffix}}
@@ -12,6 +12,9 @@ spec:
   minReadySeconds: 15
   updateStrategy:
     type: RollingUpdate
+  selector:
+    matchLabels:
+      component: swift-drive-autopilot{{$suffix}}
   template:
     metadata:
       labels:
@@ -19,9 +22,13 @@ spec:
         from: daemonset
         release: "{{$.Release.Name}}"
       annotations:
+        checksum/configmap: {{ include "swift-drive-autopilot/templates/configmap.yaml" $ | sha256sum }}
+        checksum/secret: {{ include "swift-drive-autopilot/templates/secret.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9102"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus }}
     spec:
+      {{- if $.Values.use_taints }}
       tolerations:
       - key: "species"
         operator: "Equal"
@@ -33,10 +40,13 @@ spec:
         value: "{{$.Values.species}}-multipath"
         effect: "NoSchedule"
       {{- end }}
+      {{- end }}
       nodeSelector:
         species: {{quote $.Values.species}}
         {{- if eq $suffix "-multipath" }}
         multipath-disks: "true"
+        {{- else if not $.Values.use_taints }}
+        multipath-disks: "false"
         {{- end }}
       volumes:
         - name: config
@@ -47,12 +57,17 @@ spec:
             path: /
       containers:
         - name: boot
-          image: {{$.Values.global.imageRegistry}}/monsoon/swift-drive-autopilot:{{include "image_version" $}}
+          image: {{$.Values.global.registryAlternateRegion}}/swift-drive-autopilot:{{include "image_version" $}}
           securityContext:
             privileged: true
           args:
             - /etc/drive-autopilot/config{{$suffix}}.yaml
-          # env:
+          env:
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: swift-drive-autopilot-secret
+                  key: encryption_key
           #   - name: 'DEBUG'
           #     value: '1'
           volumeMounts:

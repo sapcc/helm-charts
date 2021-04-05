@@ -5,7 +5,7 @@
 {{ if ne $i 0 }}---{{ end }}
 
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: cloudprober-exporter-{{$prober.name}}
@@ -16,6 +16,9 @@ metadata:
 spec:
   revisionHistoryLimit: {{ $values.revisionHistoryLimit }}
   replicas: {{ $values.replicaCount }}
+  selector:
+    matchLabels:
+      name: cloudprober-exporter-{{$prober.name}}
   template:
     metadata:
       labels:
@@ -71,7 +74,7 @@ spec:
             periodSeconds: 15
 
         - name: iperf3-server
-          image: hub.global.cloud.sap/monsoon/iperf3
+          image: "{{ $values.global.registry }}/iperf3"
           imagePullPolicy: IfNotPresent
           command:
           - iperf3

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ccauth.fullname" . }}
+  labels:
+    {{- include "ccauth.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "ccauth.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ccauth.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: ccauth
+          image: "{{ .Values.image.repository }}:{{ .Values.image.version }}"
+          ports:
+            - containerPort: 4444
+          env:
+          - name: KEYSTONE_HOST
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ccauth.fullname" . }}
+                key: keystoneHost
+          - name: KEYSTONE_ADMIN_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ccauth.fullname" . }}
+                key: keystoneAdminUsername
+          - name: KEYSTONE_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ccauth.fullname" . }}
+                key: keystoneAdminPassword
+          - name: KEYSTONE_ADMIN_DOMAIN
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ccauth.fullname" . }}
+                key: keystoneAdminDomain
+          - name: KEYSTONE_ADMIN_PROJECT
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ccauth.fullname" . }}
+                key: keystoneAdminProject
+          - name: LDAP_HOST
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ccauth.fullname" . }}
+                key: ldapHost
+          - name: LDAP_BIND_DN
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ccauth.fullname" . }}
+                key: ldapBindDN
+          - name: LDAP_BIND_PW
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ccauth.fullname" . }}
+                key: ldapBindPW
+          - name: LDAP_BASE_DN
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ccauth.fullname" . }}
+                key: ldapBaseDN
+          livenessProbe:
+            httpGet:
+              path: /info
+              port: 4444
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /info
+              port: 4444
+            initialDelaySeconds: 5
+            periodSeconds: 30

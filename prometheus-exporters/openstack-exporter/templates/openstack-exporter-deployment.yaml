@@ -1,0 +1,53 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: openstack-exporter 
+  namespace: monsoon3
+spec:
+  selector:
+    matchLabels:
+      app: openstack-exporter 
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: openstack-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port | quote }}
+        prometheus.io/targets: {{ required ".Values.openstack.alerts.prometheus missing" .Values.openstack.alerts.prometheus }}
+    spec:
+      containers:
+         - name: openstack-exporter
+           image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.openstack.image.name missing" .Values.openstack.image.name }}:{{ required ".Values.openstack.image.tag missing" .Values.openstack.image.tag  }}
+           ports:
+             - name: metrics
+               containerPort: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port }}
+           command:
+             - /usr/bin/openstack_exporter 
+           args:
+             - -c
+             - /openstack-config/openstack-config.yaml
+           resources:
+             limits:
+                memory: {{ required ".Values.openstack.limits.memory missing" .Values.openstack.limits.memory }}
+                cpu: {{ required ".Values.openstack.limits.cpu missing" .Values.openstack.limits.cpu }}
+             requests:
+                memory: {{ required ".Values.openstack.resources.memory missing" .Values.openstack.resources.memory }}
+                cpu: {{ required ".Values.openstack.resources.cpu missing" .Values.openstack.resources.cpu }}
+           volumeMounts:
+             - mountPath: /openstack-config
+               name: openstack-config
+               readOnly: true
+           #livenessProbe:
+              #httpGet:
+                 #path: /metrics
+                 #port: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port }}
+              #initialDelaySeconds: 30
+              #periodSeconds: 300
+              #timeoutSeconds: 10
+      volumes:
+        - configMap:
+            name: openstack-exporter-openstack-config
+          name: openstack-config

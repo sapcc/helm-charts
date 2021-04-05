@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
@@ -24,7 +24,7 @@ spec:
     spec:
       hostPID: true
       containers:
-      - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+      - image: "{{ required ".Values.global.registry missing" .Values.global.registry }}/ns-exporter:{{ required ".Values.image.tag missing" .Values.image.tag }}"
         args:
           - -concurrency={{ default 1  .Values.concurrency }}
           - -interval={{ default "1m" .Values.interval }}
@@ -49,10 +49,11 @@ spec:
         name: exporter
         securityContext:
           privileged: true
+      {{- with .Values.nodeSelector }}
       nodeSelector:
-        species: network
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
       tolerations:
-      - effect: NoSchedule
-        key: species
-        operator: Equal
-        value: network
+{{ toYaml . | indent 8 }}
+      {{- end }}

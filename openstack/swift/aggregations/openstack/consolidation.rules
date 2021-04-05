@@ -1,0 +1,19 @@
+# vim: set ft=yaml:
+
+groups:
+- name: swift-usage
+  rules:
+  - record: global:swift_cluster_storage_used_percent_average
+    expr: avg(swift_cluster_storage_used_percent) by (kubernetes_namespace, system, component)
+
+  - record: swift_async_pendings_rate
+    expr: sum(increase(swift_object_server_async_pendings[5m])) by (kubernetes_namespace)
+
+  - record: swift_opm
+    expr: sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (action, target_type_uri)
+
+  - record: swift_opm_top10
+    expr: topk(10, sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (target_project_id) > 15)
+
+  - record: swift_opm_top10_by_action
+    expr: topk(10, sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (target_project_id, action) > 15)

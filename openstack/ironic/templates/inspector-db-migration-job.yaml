@@ -12,20 +12,24 @@ spec:
     spec:
       initContainers:
       - name: "kubernetes-entrypoint"
-        image: "{{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-inspector:{{.Values.imageVersionIronicInspector | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}"
+        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
         imagePullPolicy: "IfNotPresent"
         command: ["kubernetes-entrypoint"]
         env:
         - name: "NAMESPACE"
           value: {{ .Release.Namespace | quote }}
         - name: "DEPENDENCY_SERVICE"
+{{- if eq .Values.mariadb.enabled true }}
+          value: "ironic-mariadb"
+{{- else }}
           value: "ironic-postgresql"
+{{- end }}
         - name: "COMMAND"
           value: "true"
       restartPolicy: OnFailure
       containers:
       - name: dbsync
-        image: {{.Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-ironic-inspector:{{.Values.imageVersionIronicInspector | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
+        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init

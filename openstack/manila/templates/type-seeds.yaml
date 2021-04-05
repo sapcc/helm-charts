@@ -1,0 +1,43 @@
+{{- if .Release.IsUpgrade}}
+{{- if .Capabilities.APIVersions.Has "openstack.stable.sap.cc/v1"}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: manila-type-seed
+  labels:
+    component: manila
+    app: manila
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/manila-seed
+
+  share_types:
+  - name: default
+    is_public: true
+    description: "premium_ssd"
+    specs:
+    {{- include "manila_type_seed.specs" . | indent 6 }}
+    extra_specs:
+      share_backend_name: "netapp-multi"
+    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
+  - name: integration
+    is_public: false
+    specs:
+    {{- include "manila_type_seed.specs" . | indent 6 }}
+    extra_specs:
+      share_backend_name: "integration"
+    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
+{{- if .Values.share_types.hypervisor_storage }}
+  - name: hypervisor_storage
+    is_public: false
+    specs:
+    {{- include "manila_type_seed.specs" . | indent 6 }}
+    extra_specs:
+      share_backend_name: "hypervisor_storage"
+    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
+{{- end }}
+{{- end }}
+{{- end }}

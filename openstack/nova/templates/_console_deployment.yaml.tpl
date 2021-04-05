@@ -3,7 +3,7 @@
 {{- $config := index . 2 }}
 {{- with index . 0 }}
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: nova-console-{{ $name }}
@@ -42,7 +42,7 @@ spec:
           name: nova-etc
       containers:
       - name: nova-console-{{ $name }}
-        image: {{ .Values.global.imageRegistry}}/{{.Values.global.image_namespace}}/ubuntu-source-nova-{{ $name }}proxy:{{index .Values (print "imageVersionNova" (title $name) "proxy") | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-{{ $name }}proxy:{{index .Values (print "imageVersionNova" (title $name) "proxy") | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init

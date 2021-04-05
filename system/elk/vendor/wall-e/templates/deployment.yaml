@@ -1,15 +1,14 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wall-e
   namespace: elk
   labels:
-    system: openstack
-    service: logging
-  annotations:
-    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
-
+    component: elk-wall-e
 spec:
+  selector:
+    matchLabels:
+      component: elk-wall-e
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -34,7 +33,7 @@ spec:
             name: wall-e-etc
       containers:
         - name: wall-e
-          image: {{.Values.global.docker_repo}}/elk-wall-e:{{.Values.image_version_wall_e}}
+          image: {{.Values.global.registry}}/elk-wall-e:{{.Values.image_version_wall_e}}
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/dumb-init", "/bin/bash", "/wall-e-etc/wall-e-start"]
           env:

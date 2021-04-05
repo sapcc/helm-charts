@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.name }}
@@ -8,7 +8,6 @@ spec:
     metadata:
       labels:
         app: {{ .Values.name }}
-        component: designate
       annotations:
         checksum/bind.config: {{ include "bind/templates/config.yaml" . | sha256sum }}
     spec:
@@ -22,6 +21,8 @@ spec:
                     values:
                     {{ if eq .Values.name (printf "bind1-%s" (.Values.global.region)) }}- bind2-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind2-%s" (.Values.global.region)) }}- bind1-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind1-global-%s" (.Values.global.region)) }}- bind2-global-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
               topologyKey: "kubernetes.io/hostname"
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
@@ -33,6 +34,8 @@ spec:
                     values:
                     {{ if eq .Values.name (printf "bind1-%s" (.Values.global.region)) }}- bind2-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind2-%s" (.Values.global.region)) }}- bind1-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind1-global-%s" (.Values.global.region)) }}- bind2-global-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
               topologyKey: failure-domain.beta.kubernetes.io/zone
       containers:
       - name: {{ .Values.name }}

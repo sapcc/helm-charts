@@ -17,9 +17,28 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 ?connect_timeout=10&keepalives_idle=5&keepalives_interval=5&keepalives_count=10
 {{- end}}
 
-{{define "db_url_mysql" }}mysql+pymysql://root:{{.Values.mariadb.root_password}}@{{.Values.db_name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/{{.Values.db_name}}?charset=utf8{{end}}
+{{define "db_host_mysql"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
-{{define "nova_db_host"}}postgres-nova.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "db_url_mysql" }}
+    {{- if kindIs "map" . -}}
+mysql+pymysql://root:{{.Values.mariadb.root_password | default (include "utils.root_password" .)}}@{{include "db_host_mysql" .}}/{{.Values.db_name}}
+    {{- else }}
+        {{- $envAll := index . 0 }}
+        {{- $name := index . 1 }}
+        {{- $user := index . 2 }}
+        {{- $password := index . 3 }}
+        {{- with $envAll -}}
+mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{include "db_host_mysql" .}}/{{$name}}
+        {{- end }}
+    {{- end -}}
+?charset=utf8
+{{- end}}
+
+{{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}{{end}}
+
+{{define "db_url_pxc" }}mysql+pymysql://{{.Values.percona_cluster.db_user }}:{{.Values.percona_cluster.dbPassword }}@{{include "db_host_pxc" .}}/{{.Values.percona_cluster.db_name}}?charset=utf8{{end}}
+
+{{define "nova_db_host"}}nova-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "nova_api_endpoint_host_admin"}}nova-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "nova_api_endpoint_host_internal"}}nova-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "nova_api_endpoint_host_public"}}compute-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
@@ -36,7 +55,7 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $service := index . 2 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) | include "utils.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) ("long") | include "utils.password_for_fixed_user_and_host" }}
 {{- end }}
 
 {{define "nova_console_endpoint_host_public"}}compute-console-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
@@ -52,12 +71,12 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
 {{define "glance_api_endpoint_host_internal"}}glance.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "glance_api_endpoint_host_public"}}image-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
-{{define "neutron_db_host"}}neutron-postgresql.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "neutron_db_host"}}neutron-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "neutron_api_endpoint_host_admin"}}neutron-server.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "neutron_api_endpoint_host_internal"}}neutron-server.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "neutron_api_endpoint_host_public"}}network-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
-{{define "ironic_db_host"}}postgres-ironic.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+{{define "ironic_db_host"}}ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "ironic_api_endpoint_host_admin"}}ironic-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "ironic_api_endpoint_host_internal"}}ironic-api.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "ironic_api_endpoint_host_public"}}baremetal-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
@@ -107,11 +126,50 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $host := index . 2 }}
-    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host }}
+    {{- $template:= index . 3 }}
+    {{- derivePassword 1 $template $envAll.Values.global.master_password $user $host }}
 {{- end }}
 
 {{- define "identity.password_for_user" }}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) | include "utils.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) ("long")| include "utils.password_for_fixed_user_and_host" }}
+{{- end }}
+
+{{- define "utils.password_for_fixed_user_mysql"}}
+    {{- $envAll := index . 0 }}
+    {{- $user := index . 1 }}
+    {{- tuple $envAll $user ( include "db_host_mysql" $envAll ) ("basic") | include "utils.password_for_fixed_user_and_host" }}
+{{- end }}
+
+{{- define "utils.password_for_user_mysql"}}
+    {{- $envAll := index . 0 }}
+    {{- $user := index . 1 }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "utils.password_for_fixed_user_mysql" }}
+{{- end }}
+
+{{- define "utils.root_password" -}}
+{{- tuple . "root" | include "utils.password_for_user_mysql" }}
+{{- end -}}
+
+{{ define "f5_url" }}
+    {{- $host := index . 0 }}
+    {{- $user := index . 1 }}
+    {{- $password := index . 2 -}}
+https://{{ $user }}:{{ $password | urlquery }}@{{ $host }}
+{{- end }}
+
+{{- define "utils.bigip_url" }}
+    {{- $envAll := index . 0 }}
+    {{- $host := index . 1 }}
+    {{- tuple $host ( $envAll.Values.global.bigip_user | required ".Values.global.bigip_user required!") ( $envAll.Values.global.bigip_password | required ".Values.global.bigip_password required!") | include "f5_url" }}
+{{- end }}
+
+{{- define "utils.bigip_urls" }}
+    {{- $envAll := index . 0 }}
+    {{- $hosts := index . 1 }}
+    {{- range $i, $value := $hosts }}
+        {{- if ne $i 0 }}, {{ end -}}
+        {{- tuple $envAll $value | include "utils.bigip_url" -}}
+    {{- end }}
 {{- end }}

@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: neutron-server
@@ -33,7 +33,7 @@ spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: neutron-server
-          image: {{ default "hub.global.cloud.sap" .Values.global.imageRegistry }}/monsoon/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
 {{- if not .Values.pod.debug.server }}
           livenessProbe:
@@ -68,7 +68,7 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "neutron-migration"
             - name: DEPENDENCY_SERVICE
-              value: "neutron-postgresql,{{ .Release.Name }}-rabbitmq"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
@@ -84,6 +84,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          resources:
+{{ toYaml .Values.pod.resources.server | indent 12 }}
           ports:
             - name: neutron-api
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}
@@ -98,10 +100,6 @@ spec:
             - mountPath: /etc/neutron/uwsgi.ini
               name: neutron-etc
               subPath: uwsgi.ini
-              readOnly: true
-            - mountPath: /etc/neutron/neutron_lbaas.conf
-              name: neutron-etc
-              subPath: neutron-lbaas.conf
               readOnly: true
             - mountPath: /etc/neutron/policy.json
               name: neutron-etc
@@ -134,10 +132,6 @@ spec:
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf-manila.ini
               name: neutron-etc-vendor
               subPath: ml2-conf-manila.ini
-              readOnly: true
-            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-f5.ini
-              name: neutron-etc-vendor
-              subPath: ml2-conf-f5.ini
               readOnly: true
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini
               name: neutron-etc-vendor

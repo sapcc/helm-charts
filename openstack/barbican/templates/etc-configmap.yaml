@@ -11,13 +11,21 @@ data:
 {{ include (print .Template.BasePath "/etc/_barbican-api-paste.ini.tpl") . | indent 4 }}
   barbican.conf: |
 {{ include (print .Template.BasePath "/etc/_barbican.conf.tpl") . | indent 4 }}
-  policy.json: |
-{{ include (print .Template.BasePath "/etc/_barbican-policy.json.tpl") . | indent 4 }}
+  policy.yaml: |
+{{ include (print .Template.BasePath "/etc/_barbican-policy.yaml.tpl") . | indent 4 }}
   logging.ini: |
 {{ include "loggerIni" .Values.logging | indent 4 }}
 {{- if .Values.watcher.enabled }}
   watcher.yaml: |
 {{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
+{{- end }}
+{{- if .Values.audit.enabled }}
+  barbican_audit_map.yaml: |
+{{ include (print .Template.BasePath "/etc/_barbican_audit_map.yaml") . | indent 4 }}
+{{- end }}
+{{- if .Values.sapcc_rate_limit.enabled }}
+  ratelimit.yaml: |
+{{ include (print .Template.BasePath "/etc/_ratelimit.yaml.tpl") . | indent 4 }}
 {{- end }}
   statsd-exporter.yaml: |
     defaults:

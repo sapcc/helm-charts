@@ -3,6 +3,7 @@ apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
   name: cbr1-bridge
+  namespace: monsoon3
   annotations:
     "helm.sh/hook": crd-install
 spec:
@@ -11,7 +12,7 @@ spec:
       "type": "bridge",
       "name": "cbr1-bridge",
       "bridge": "cbr1",
-      "mtu": "{{.Values.global.default_mtu | default 9000}}",
+      "mtu": {{.Values.global.default_mtu | default 9000 | int}},
       "ipam": { }
     }'
 {{- end }}

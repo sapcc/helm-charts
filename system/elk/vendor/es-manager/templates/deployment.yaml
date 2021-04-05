@@ -1,17 +1,16 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: es-manager
   namespace: elk
   labels:
-    system: openstack
-    service: logging
     component: elasticsearch
     role: manager
-  annotations:
-    kubernetes.io/change-cause: {{.Values.global.cluster_deployment_reason}}
-
 spec:
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: manager
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -34,13 +33,14 @@ spec:
             name: es-manager-etc
       containers:
       - name: es-manager
-        image: {{.Values.global.docker_repo}}/elk-elasticsearch-manager:{{.Values.image_version_elasticsearch_manager}}
+        image: {{.Values.global.registry}}/elk-elasticsearch-manager:{{.Values.image_version_elasticsearch_manager}}
         imagePullPolicy: IfNotPresent
         command:
-          - /usr/local/bin/dumb-init
-        args:
           - /opt/cerebro/bin/cerebro
+        args:
           - -Dconfig.file=/es-etc/application.conf
+          - -Dlogback.configurationFile=/es-etc/logback.xml
+          - -Dlogger.file=/es-etc/logback.xml
           - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
           - -Des.networkaddress.cache.ttl=20
           - -Des.networkaddress.cache.negative.ttl=10

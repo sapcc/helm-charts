@@ -1,5 +1,5 @@
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: apps/v1
 metadata:
   name: {{ include "infraMonitoring.fullname" . }}
   labels:
@@ -9,6 +9,10 @@ metadata:
     heritage: {{ .Release.Service }}
     system: infra_monitoring
 spec:
+  selector:
+    matchLabels:
+     app: {{ include "infraMonitoring.name" . }}
+  revisionHistoryLimit: 5
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -24,7 +28,7 @@ spec:
     spec:
       containers:
       - name: {{ include "infraMonitoring.name" . }}
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        image: "{{ .Values.global.registry }}/{{ .Values.image }}:{{ .Values.tag }}"
         env:
         - name: APP_ENV
           value: "{{ .Values.app_env }}"

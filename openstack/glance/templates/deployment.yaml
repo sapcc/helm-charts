@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 
 metadata:
   name: glance
@@ -37,7 +37,7 @@ spec:
       - name: permissions
         securityContext:
           runAsUser: 0
-        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{ .Values.global.imageNamespace}}/ubuntu-source-glance-api:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - mountPath: /glance_store
@@ -52,7 +52,7 @@ spec:
       {{- end }}
       containers:
       - name: api
-        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-api:{{.Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar"}}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{.Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -71,7 +71,7 @@ spec:
         - kubernetes-entrypoint
         env:
         - name: COMMAND
-          value: "glance-api"
+          value: "/var/lib/openstack/bin/glance-api"
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_JOBS
@@ -112,6 +112,8 @@ spec:
         - name: api
           containerPort: {{.Values.api_port_internal}}
         volumeMounts:
+        - name: swift-buffer
+          mountPath: /upload
         - name: etcglance
           mountPath: /etc/glance
         - name: glance-etc
@@ -125,8 +127,8 @@ spec:
           readOnly: true
         {{- end }}
         - name: glance-etc
-          mountPath: /etc/glance/policy.json
-          subPath: policy.json
+          mountPath: /etc/glance/policy.yaml
+          subPath: policy.yaml
           readOnly: true
         - name: glance-etc
           mountPath: /etc/glance/glance-api-paste.ini
@@ -153,7 +155,7 @@ spec:
 
       {{- if .Values.imageVersionGlanceRegistry }}
       - name: registry
-        image: {{required ".Values.global.imageRegistry is missing" .Values.global.imageRegistry}}/{{.Values.global.imageNamespace}}/ubuntu-source-glance-registry:{{ .Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar" }}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/ubuntu-source-glance-registry:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
@@ -206,8 +208,8 @@ spec:
           readOnly: true
         {{- end }}
         - name: glance-etc
-          mountPath: /etc/glance/policy.json
-          subPath: policy.json
+          mountPath: /etc/glance/policy.yaml
+          subPath: policy.yaml
           readOnly: true
         - name: glance-etc
           mountPath: /etc/glance/glance-registry-paste.ini
@@ -246,9 +248,17 @@ spec:
             mountPath: /etc/statsd/statsd-exporter.yaml
             subPath: statsd-exporter.yaml
             readOnly: true
+        {{- if .Values.statsd.resources.enabled }}
+        resources:
+          requests:
+            cpu: {{ .Values.statsd.resources.requests.cpu | quote }}
+            memory: {{ .Values.statsd.resources.requests.memory | quote }}
+        {{- end }}
       {{- end }}
       volumes:
       - name: etcglance
+        emptyDir: {}
+      - name: swift-buffer
         emptyDir: {}
       - name: image-store
       {{- if .Values.file.persistence.enabled }}
