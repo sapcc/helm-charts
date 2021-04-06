@@ -94,7 +94,8 @@
       - '{__name__=~"^logstash_node_pipeline_.+"}'
       - '{__name__=~"^vcsa_service_status"}'
       - '{__name__=~"^windows_updates_.+"}'
-
+      - '{__name__=~"^aws_ses_cronus_provider_.+"}'
+      - '{__name__=~"^cronus_simulator_.+"}'
 
   relabel_configs:
     - action: replace
