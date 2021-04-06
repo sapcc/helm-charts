@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
 spec:
   replicas: 1
   selector:
@@ -20,7 +22,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchExpressions:
-                  - key: "name"
+                  - key: "app"
                     operator: In
                     values:
                     {{ if eq .Values.name (printf "bind1-%s" (.Values.global.region)) }}- bind2-{{.Values.global.region}}{{ end }}
@@ -33,7 +35,7 @@ spec:
             podAffinityTerm:
               labelSelector:
                 matchExpressions:
-                  - key: "name"
+                  - key: "app"
                     operator: In
                     values:
                     {{ if eq .Values.name (printf "bind1-%s" (.Values.global.region)) }}- bind2-{{.Values.global.region}}{{ end }}
