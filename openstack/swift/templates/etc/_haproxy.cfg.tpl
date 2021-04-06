@@ -26,6 +26,7 @@ defaults
   option forwardfor
   retries 3
   retry-on all-retryable-errors
+  option redispatch
 
   timeout connect 10s
   timeout client {{ add $context.client_timeout 5 }}s
