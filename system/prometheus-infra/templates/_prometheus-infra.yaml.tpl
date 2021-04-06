@@ -31,6 +31,7 @@
       - '{job="netbox"}'
       - '{job="firmware-exporter"}'      
       - '{job="windows-exporter"}'
+      - '{job="jumpserver"}'
       - '{__name__=~"^probe_success",job=~"infra-probe-.+"}'
       - '{__name__=~"^vcenter_.+",job!~"[a-z0-9-]*-vccustomervmmetrics$"}'
       - '{__name__=~"^network_apic_.+"}'
