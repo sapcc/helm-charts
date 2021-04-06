@@ -11,6 +11,7 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}
+        name: {{ .Release.Name }}
       annotations:
         checksum/bind.config: {{ include "bind/templates/config.yaml" . | sha256sum }}
     spec:
@@ -19,7 +20,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchExpressions:
-                  - key: "app"
+                  - key: "name"
                     operator: In
                     values:
                     {{ if eq .Values.name (printf "bind1-%s" (.Values.global.region)) }}- bind2-{{.Values.global.region}}{{ end }}
@@ -32,14 +33,14 @@ spec:
             podAffinityTerm:
               labelSelector:
                 matchExpressions:
-                  - key: "app"
+                  - key: "name"
                     operator: In
                     values:
                     {{ if eq .Values.name (printf "bind1-%s" (.Values.global.region)) }}- bind2-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind2-%s" (.Values.global.region)) }}- bind1-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind1-global-%s" (.Values.global.region)) }}- bind2-global-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
-              topologyKey: failure-domain.beta.kubernetes.io/zone
+              topologyKey: "topology.kubernetes.io/zone"
       containers:
       - name: {{ .Release.Name }}
         image: {{.Values.image_bind}}:{{ .Values.image_bind_tag}}
