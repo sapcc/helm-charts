@@ -20,7 +20,7 @@ global
 
 defaults
   log global
-  log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %{+Q}r %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc retries:%rc %sq/%bq %hr %hs"
+  log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta/%U %{+Q}r %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc retries:%rc %sq/%bq %hr %hs"
 
   mode http
   option forwardfor
