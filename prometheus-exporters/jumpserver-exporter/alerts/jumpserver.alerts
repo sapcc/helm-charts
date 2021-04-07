@@ -14,3 +14,82 @@ groups:
     annotations:
       description: 'RSA authentication on port {{ $labels.port }}/{{$labels.protocol }} is not working anymore.'
       summary: '{{ $labels.server }} RSA forwarding to RADIUS server down since 15m.'
+  - alert: JumpserverRootFSFillingUp
+    expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint="/"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint="/"}) > 90
+    for: 10m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: info
+      tier: os
+      meta: '{{ $labels.server_name }} root fs over 90% utilized for 10m.'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver.html#rootfs'
+    annotations:
+      description: '{{ $labels.server_name }} root fs over 90% utilized'
+      summary: 'Root fs needs to be taken care of to avoid 100% usage for 10m'
+  - alert: JumpserverRootFSFull
+    expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint="/",fstype!="rootfs"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint="/",fstype!="rootfs"}) >= 100
+    for: 10m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: info
+      tier: os
+      meta: '{{ $labels.server_name }} root fs is 100% utilized for 10m.'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver.html#rootfs'
+    annotations:
+      description: '{{ $labels.server_name }} root fs is 100% utilized for 10m.'
+      summary: 'Root fs needs to be freed'
+  - alert: JumpserverNonRootFSFillingUp
+    expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint!="/"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint!~"/"}) > 90%
+    for: 10m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: info
+      tier: os
+      meta: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is over 90% for 10m.'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver.html#rootfs'
+    annotations:
+      description: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is over 90% for 10m.'
+      summary: 'Check mentioned mount point for a possible cleanup'
+  - alert: JumpserverNonRootFSFull
+    expr: 100 - ((node_filesystem_avail_bytes{job="jumpserver",mountpoint!="/"} * 100) / node_filesystem_size_bytes{job="jumpserver",mountpoint!~"/"}) >= 100%
+    for: 10m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: info
+      tier: os
+      meta: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is 100% utilized for 10m.'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver.html#rootfs'
+    annotations:
+      description: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is 100% utilized for 10m.'
+      summary: 'Check mentioned mount point for a possible cleanup'
+  - alert: JumpserverDown
+    expr: up{job="jumpserver} == 0
+    for: 5m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: info
+      tier: os
+      meta: '{{ $labels.server_name }} is down for 5m.'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver.html#down'
+    annotations:
+      description: '{{ $labels.server_name }} is down for 5m.'
+      summary: 'Jumpserver either can\'t be reached from CP network anymore or went down.'
+  - alert: JumpserverCPUUsageVeryHigh
+    expr: 100 - (avg by (server_name) (rate(node_cpu_seconds_total{job="jumpserver",mode="idle"}[5m])) * 100) > 95
+    for: 15m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: info
+      tier: os
+      meta: '{{ $labels.server_name }} CPU usage over 95% for 15m'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver.html#rootfs'
+    annotations:
+      description: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is 100% utilized'
+      meta: '{{ $labels.server_name }} CPU usage over 95% for 15m'
+      summary: 'Check what is causing this high CPU usage'
