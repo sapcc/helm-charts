@@ -301,6 +301,54 @@ metrics:
     command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state)
     timeout_secs: 4
 
+  firewall_vrf_stats_total:
+    regex: >-
+      VRF: (\w+).*?Total Session Count\(estab \+ half-open\): (\d+), Exceed: (\d+)
+    multi_value: true
+    value: $2
+    labels:
+      vrf: $1
+    description: Indicates the total established connections in the firewalls connection table
+    metric_type_name: gauge
+    command: show policy-firewall stats vrf | in (VRF|Total|UDP|ICMP|TCP)
+    timeout_secs: 4
+
+  firewall_vrf_stats_half_open_udp:
+    regex: >-
+      VRF: (\w+).*?UDP\s+(\d+)\s+(\d+)
+    multi_value: true
+    value: $2
+    labels:
+      vrf: $1
+    description: Indicates the connections in a half open state
+    metric_type_name: gauge
+    command: show policy-firewall stats vrf | in (VRF|Total|UDP|ICMP|TCP)
+    timeout_secs: 4
+
+  firewall_vrf_stats_half_open_tcp:
+    regex: >-
+      VRF: (\w+).*?TCP\s+(\d+)\s+(\d+)
+    multi_value: true
+    value: $2
+    labels:
+      vrf: $1
+    description: Indicates the connections in a half open state
+    metric_type_name: gauge
+    command: show policy-firewall stats vrf | in (VRF|Total|UDP|ICMP|TCP)
+    timeout_secs: 4
+
+  firewall_vrf_stats_half_open_icmp:
+    regex: >-
+      VRF: (\w+).*?ICMP\s+(\d+)\s+(\d+)
+    multi_value: true
+    value: $2
+    labels:
+      vrf: $1
+    description: Indicates the connections in a half open state
+    metric_type_name: gauge
+    command: show policy-firewall stats vrf | in (VRF|Total|UDP|ICMP|TCP)
+    timeout_secs: 4
+
   nx_ntp_configured:
     regex: >-
       ^ntp server (\S+).*?$
@@ -352,6 +400,11 @@ batches:
     - qfp_nat_datapath_gateout
     - bgp_sessions
     - tcam_total
+    - firewall_vrf_stats_total
+    - firewall_vrf_stats_half_open_udp
+    - firewall_vrf_stats_half_open_tcp
+    - firewall_vrf_stats_half_open_icmp
+
 
   cisco-nx-os_core-router:
     - nx_ntp_configured
