@@ -88,7 +88,20 @@ groups:
       severity: info
       tier: os
       meta: '{{ $labels.server_name }} CPU usage over 95% for 15m'
-      playbook: 'docs/support/playbook/jumpserver/jumpserver.html#rootfs'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver.html#cpu'
     annotations:
       description: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is 100% utilized'
       summary: 'Check what is causing this high CPU usage'
+  - alert: JumpserverCriticalServiceFailed
+    expr: node_systemd_unit_state{job="jumpserver", exported_state="active", name=~"filebeataudit.service|auditd.service|filebeat.service|sssd.service|mcafee.ma.serice"} == 0
+    for: 10m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: info
+      tier: os
+      meta: '{{ $labels.server_name }} unit {{ $labels.name }} failed for 10m.'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver.html#systemd'
+    annotations:
+      description: '{{ $labels.server_name }} unit {{ $labels.name }} failed for 10m.'
+      summary: 'Check what went wrong an restart service'
