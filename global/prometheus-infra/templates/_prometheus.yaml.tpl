@@ -168,6 +168,8 @@
       - '{__name__=~"^vrops_hostsystem_summary_version_info"}'
       - '{__name__=~"^vrops_hostsystem_summary_number_vmotion_total"}'
       - '{__name__=~"^vrops_hostsystem_runtime_maintenancestate", state="inMaintenance"}'
+      - '{__name__=~"^vrops_hostsystem_runtime_connectionstate"}'
+      - '{__name__=~"^vrops_hostsystem_runtime_powerstate"}'
       - '{__name__=~"^vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost"}'
       - '{__name__=~"^vrops_virtualmachine_memory_usage_average"}'
       - '{__name__=~"^vrops_virtualmachine_memory_kilobytes"}'
