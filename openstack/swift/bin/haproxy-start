@@ -4,6 +4,19 @@ CFG_DIR=/usr/local/etc/haproxy
 cp -f /haproxy-etc-cluster/haproxy.cfg ${CFG_DIR}/haproxy.cfg
 cp -f /haproxy-etc-cluster/dhparam.pem ${CFG_DIR}/dhparam.pem
 
+# Remove the K8S Node hosting this HAProxy from the server list
+# Reason: Healthchecks against the NodePort on the local machine will use kube-proxy
+# and therefor end up on swift-proxy annouced by the Endpoint for the NodePort Service.
+# This leads to the situation that the server running this haproxy is considered healthy
+# and all subsequent request with that target will also use kube-proxy, which obfuscates
+# the real target for a request.
+# Worst case, the HAProxy looses one swift-proxy target to load balance to, if a
+# swift-proxy runs on the same K8S node as HAProxy does. Soft anti-affinity rules try
+# to avoid sceduling HAProxy to a node with swift-proxy and vice versa.
+#
+# All servers have a comment at the end with the FQDN --> delete complete line
+[ -n "$NODE_NAME" ] && sed -i "/# $NODE_NAME/d" ${CFG_DIR}/haproxy.cfg
+
 SSL_DIR=${CFG_DIR}/ssl
 mkdir -p ${SSL_DIR}
 cp -f /tls-secret/tls.crt ${SSL_DIR}
