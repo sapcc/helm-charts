@@ -138,6 +138,12 @@ spec:
             - key: {{ .Values.jdbc.configFile }}
               path: {{ .Values.jdbc.configFile }}
         {{- end }}
+        - name: elastiflow-template-config
+          configMap:
+            name: elastiflow-template
+            items:
+            - key: elastiflow.template.json
+              path: elastiflow.template.json
       {{- if .Values.extraVolumes }}
 {{ tpl .Values.extraVolumes . | indent 8 }}
       {{- end }}
@@ -207,6 +213,9 @@ spec:
             subPath: {{ $path }}
           {{- end -}}
           {{- range $path, $config := .Values.logstashPipeline }}
+          - name: elastiflow-template-config
+            mountPath: /etc/logstash/elastiflow/templates/elastiflow.template.json
+            subPath: elastiflow.template.json
           - name: logstashpipeline
             mountPath: /usr/share/logstash/pipeline/{{ $path }}
             subPath: {{ $path }}
