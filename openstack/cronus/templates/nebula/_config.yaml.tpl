@@ -61,7 +61,8 @@ nebula:
 {{ .Values.config.iamPolicy | indent 6 }}
     verifyEmailDomain: {{ .Values.config.verifyEmailDomain }}
     verifyEmailSecret: {{ .Values.config.verifyEmailSecret }}
-    useCaseDescription: {{ .Values.config.useCaseDescription }}
+    useCaseDescription: |
+{{ .Values.config.useCaseDescription | indent 6 }}
     websiteURL: {{ .Values.config.websiteURL }}
 {{- if .Values.config.sesAdditionalContactEmails }}
     sesAdditionalContactEmails:
@@ -88,6 +89,24 @@ nebula:
     contentTypePrefixes:
 {{- range $k, $v := .Values.config.nebulaAuditSink.contentTypePrefixes }}
       - {{ $v }}
+{{- end }}
+{{- end }}
+{{- if .Values.config.nebulaAuditSink.queryKeysToMask }}
+    queryKeysToMask:
+{{- range $svc, $list := .Values.config.nebulaAuditSink.queryKeysToMask }}
+      {{ $svc }}:
+{{- range $k, $v := $list }}
+      - {{ $v }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.config.nebulaAuditSink.jsonKeysToMask }}
+    jsonKeysToMask:
+{{- range $svc, $list := .Values.config.nebulaAuditSink.jsonKeysToMask }}
+      {{ $svc }}:
+{{- range $k, $v := $list }}
+      - {{ $v }}
+{{- end }}
 {{- end }}
 {{- end }}
     debug: {{ .Values.config.nebulaAuditSink.debug | default false }}

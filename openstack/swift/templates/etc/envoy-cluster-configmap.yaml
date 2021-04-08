@@ -1,3 +1,4 @@
+{{- if $.Values.envoy_external }}
 {{- range $cluster_id, $cluster := .Values.clusters }}
 apiVersion: v1
 kind: ConfigMap
@@ -13,4 +14,5 @@ data:
 {{ tuple $cluster $.Values (printf "swift-proxy-internal-%s.swift.svc" $cluster_id) | include "envoy.yaml" | indent 4 }}
 
 ---
+{{- end }}
 {{- end }}
