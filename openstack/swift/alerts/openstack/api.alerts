@@ -33,6 +33,20 @@ groups:
         token validation or overloaded object servers.
       summary: swift-service-unavailable
 
+  - alert: OpenstackSwiftHAProxyRedispatch
+    expr: sum(increase(haproxy_server_redispatch_warnings_total[10m])) by (os_cluster, server) > 20
+    for: 15m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: info
+      tier: os
+      meta: HAProxy redispatches for server {{ server }} in {{ $labels.os_cluster }}
+    annotations:
+      description: HAProxy is redispatching requests for the swift-proxy running on node {{ $labels.server }}. Try to delete the
+        swift-proxy-{{ $labels.os_cluster }}-xxxxx on node {{ $labels.server }} to resolve the alert.
+      summary: swift-service-haproxy-redispatch
+
   - alert: OpenstackSwiftHealthCheck
     expr: avg(swift_recon_task_exit_code) BY (region) > 0.2 or avg(swift_dispersion_task_exit_code) BY (region) > 0.2 or absent(swift_dispersion_task_exit_code)
     for: 5m
