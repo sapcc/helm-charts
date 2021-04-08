@@ -71,6 +71,8 @@ backend swift_proxy
 {{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | nindent 2 }}
 
 backend swift_proxy_s3
+  # No retries on 503, which is the rate limit repsonse from S3
+  retry-on conn-failure empty-response junk-response response-timeout 0rtt-rejected 500 502 504
 {{- tuple $cluster_id $cluster | include "swift_haproxy_backend" | nindent 2 }}
 
 {{- end }}
