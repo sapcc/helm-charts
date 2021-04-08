@@ -41,7 +41,7 @@ spec:
         app: "{{ template "logstash.fullname" . }}"
         chart: "{{ .Chart.Name }}"
         heritage: {{ .Release.Service | quote }}
-        release: {{ .Release.Name | quote }}
+        -elease: {{ .Release.Name | quote }}
         {{- range $key, $value := .Values.labels }}
         {{ $key }}: {{ $value | quote }}
         {{- end }}
@@ -61,7 +61,6 @@ spec:
         {{- if .Values.jdbc.enabled }}
         pipelinechecksum: {{ include (print .Template.BasePath "/configmap-jdbc-filter.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
-        pipelinechecksum: {{ include (print .Template.BasePath "/configmap-elastiflow-template.yaml") . | sha256sum | trunc 63 }}
     spec:
       {{- if .Values.schedulerName }}
       schedulerName: "{{ .Values.schedulerName }}"
@@ -139,12 +138,6 @@ spec:
             - key: {{ .Values.jdbc.configFile }}
               path: {{ .Values.jdbc.configFile }}
         {{- end }}
-        - name: elastiflow-template-config
-          configMap:
-            name: elastiflow-template
-            items:
-            - key: elastiflow.template.json
-              path: elastiflow.template.json
       {{- if .Values.extraVolumes }}
 {{ tpl .Values.extraVolumes . | indent 8 }}
       {{- end }}
@@ -223,9 +216,6 @@ spec:
             mountPath: /etc/logstash/elastiflow/conf.d/{{ .Values.jdbc.configFile }}
             subPath: {{ .Values.jdbc.configFile }}
           {{- end -}}
-          - name: elastiflow-template-config
-            mountPath: /etc/logstash/elastiflow/templates/elastiflow.template.json
-            subPath: elastiflow.template.json
         {{- if .Values.extraVolumeMounts }}
 {{ tpl .Values.extraVolumeMounts . | indent 10 }}
         {{- end }}
