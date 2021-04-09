@@ -40,7 +40,7 @@ CustomLog /dev/stdout proxy env=forwarded
     CustomLog /dev/stdout combined env=!forwarded
     CustomLog /dev/stdout proxy env=forwarded
 
-    KeepAliveTimeout 101
+    KeepAliveTimeout 61
 </VirtualHost>
 
 Alias /identity /var/www/cgi-bin/keystone/keystone-wsgi-public
