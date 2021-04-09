@@ -1,0 +1,25 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: gkdumpinput
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkDumpInput
+      validation:
+        openAPIV3Schema:
+          properties: {}
+
+  # NOTE: This constraint can be used for debugging. It always fails, and in
+  # doing so, dumps the entire input into the audit log. The input can then be
+  # taken somewhere else for testing Rego expressions on, e.g. into the Rego
+  # Playground website or the OPA CLI tool.
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package dumpinput
+
+        violation[{"msg": msg}] {
+          msg := json.marshal(input)
+        }
