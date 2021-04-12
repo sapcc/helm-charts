@@ -16,3 +16,19 @@ groups:
     annotations:
       description: 'The keystone ingress API endpoint is throwing 5xx for 5 min. Check if the keystone-api k8s pods are OK.'
       summary: 'Keystone API ingress endpoint is not healthy'
+
+  - alert: OpenstackKeystoneDatabaseSize
+    expr: predict_linear(pvc_usage{persistentvolumeclaim="db-keystone-pvclaim"}[1h], 24 * 3600) * 100 >= 90
+    expr: 
+    for: 5m
+    labels:
+      tier: os
+      service: keystone
+      severity: warning
+      context: availability
+      dashboard: mariadb-overview?var-host=keystone-mariadb
+      meta: "The keystone database is predicted to run out of space in the next 24h"
+      playbook: 'docs/devops/alert/keystone/#database_size'
+    annotations:
+      description: "The keystone database is predicted to exceed the PV size in the next 24h"
+      summary: Keystone database is running out of PV space

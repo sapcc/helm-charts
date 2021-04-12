@@ -216,18 +216,3 @@ groups:
     annotations:
       description: "Datapath keystone {{ $labels.check }} is flapping for 30 minutes. See Sentry for details"
       summary: "Datapath keystone {{ $labels.check }} is flapping"
-
-  - alert: OpenstackKeystoneDatabaseSize
-    expr: predict_linear(pg_database_size_bytes{datname="keystone"}[1h], 24 * 3600) >= 10 * 1024^3
-    for: 5m
-    labels:
-      tier: k8s
-      service: keystone
-      severity: warning
-      context: availability
-      dashboard: postgres?var-database=keystone
-      meta: "The keystone database is predicted to run out of space in the next 24h"
-      playbook: 'docs/devops/alert/keystone/#database_size'
-    annotations:
-      description: "The keystone database is predicted to exceed the PV size in the next 24h"
-      summary: Keystone database is running out of PV space
