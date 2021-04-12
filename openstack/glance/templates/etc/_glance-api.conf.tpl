@@ -14,6 +14,7 @@ admin_role = ''
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default 1 }}
+workers = {{ .Values.workers | default 4 }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default 100 }}
 
@@ -61,6 +62,7 @@ swift_store_create_container_on_put = True
 swift_buffer_on_upload = True
 swift_upload_buffer_dir = /upload
 swift_store_expire_soon_interval = 1800
+swift_store_thread_pool_size = 10
 {{- if .Values.swift.multi_tenant }}
 swift_store_multi_tenant = True
 # swift_store_large_object_size = 5120
