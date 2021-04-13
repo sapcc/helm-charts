@@ -28,7 +28,7 @@ spec:
           input.review.object.metadata.labels.status == "deployed"
         }
 
-        violation[{"msg": msg, "details": {"namespace": obj_namespace, "name": obj_name, "kind": obj_kind}}] {
+        violation[{"msg": msg, "details": {"name": obj_name, "kind": obj_kind}}] {
           helm_version := helm_versions[_]
 
           parser_url := sprintf("http://helm-manifest-parser.kube-system.svc/v%d", [helm_version])
@@ -38,8 +38,7 @@ spec:
           obj := parser_resp.body.items[_]
           regex.match("^(?:extensions|apps)/v1beta[12]$", obj.apiVersion)
 
-          obj_namespace := obj.metadata.namespace
           obj_name := obj.metadata.name
           obj_kind := obj.kind
-          msg := sprintf("%s %s/%s declared with deprecated API version %s", [obj_kind, obj_namespace, obj_name, obj.apiVersion])
+          msg := sprintf("%s %s declared with deprecated API version %s", [obj_kind, obj_name, obj.apiVersion])
         }
