@@ -95,7 +95,7 @@
       type counter
       desc The total number of outgoing records
       <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
+        node "#{ENV['K8S_NODE_NAME']}"
         container $.kubernetes.container_name
       </labels>
     </metric>
