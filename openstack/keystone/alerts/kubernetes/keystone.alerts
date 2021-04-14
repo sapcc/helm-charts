@@ -18,8 +18,8 @@ groups:
       summary: 'Keystone API ingress endpoint is not healthy'
 
   - alert: OpenstackKeystoneDatabaseSize
-    expr: predict_linear(pvc_usage{persistentvolumeclaim="db-keystone-pvclaim"}[1h], 24 * 3600) * 100 >= 90
-    for: 5m
+    expr: (pvc_usage{persistentvolumeclaim="db-keystone-pvclaim"} * 100 > 70) and (predict_linear(pvc_usage{persistentvolumeclaim="db-keystone-pvclaim"}[1d], 7 * 24 * 3600) * 100 > 90)
+    for: 1h
     labels:
       tier: os
       service: keystone
