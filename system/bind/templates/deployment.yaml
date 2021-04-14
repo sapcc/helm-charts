@@ -1,13 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.name }}
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.name }}
+        app: {{ .Release.Name }}
       annotations:
         checksum/bind.config: {{ include "bind/templates/config.yaml" . | sha256sum }}
     spec:
@@ -36,9 +41,9 @@ spec:
                     {{ if eq .Values.name (printf "bind2-%s" (.Values.global.region)) }}- bind1-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind1-global-%s" (.Values.global.region)) }}- bind2-global-{{.Values.global.region}}{{ end }}
                     {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
-              topologyKey: failure-domain.beta.kubernetes.io/zone
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
       containers:
-      - name: {{ .Values.name }}
+      - name: {{ .Release.Name }}
         image: {{.Values.image_bind}}:{{ .Values.image_bind_tag}}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         ports:
@@ -81,7 +86,7 @@ spec:
       volumes:
       - name: persistent-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.name }}
+          claimName: {{ .Release.Name }}
       - name: bind-conf
         configMap:
-          name: {{ .Values.name }}
+          name: {{ .Release.Name }}

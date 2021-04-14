@@ -87,16 +87,20 @@ spec:
             # observed usage: CPU <= 20m, RAM = 25-70 MiB
             #
             # However, we have some very significant spikes esp. when billing
-            # scrapes us, so we give some extra CPU headroom to stay performant.
-            #
-            # We also need some extra memory headroom because of the sheer size
-            # of some reports rendered by billing. In qa-de-1, the "tempest"
-            # domain has ~2000 projects in order to test the behavior of
-            # large-scale deployments. A full project report with `?detail` for
-            # that domain is about 160 MiB of pure JSON.
+            # scrapes us, so we give some extra headroom to stay performant.
             limits:
+              {{- if eq $.Values.global.region "qa-de-1" }}
+              # In qa-de-1, we also need some extra headroom because of the sheer size
+              # of some reports rendered by billing. The "tempest" domain has
+              # ~2000 projects in order to test the behavior of large-scale
+              # deployments. A full project report with `?detail` for that
+              # domain is about 160 MiB of pure JSON.
+              cpu: '1'
+              memory: '500Mi'
+              {{- else }}
               cpu: '50m'
               memory: '300Mi'
+              {{- end }}
             requests:
               cpu: '50m'
               memory: '300Mi'

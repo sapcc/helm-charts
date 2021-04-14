@@ -1,19 +1,6 @@
 groups:
 - name: thousandeyes.alerts
   rules:
-  - alert: ThousandeyesSTARGATEReachability
-    expr: count(label_replace(thousandeyes_alert{test_name=~".*Stargate.*"}, "region", "global", "test_name", ".*" )) by (rule_name, test_name, rule_expression, type, region) > 1
-    for: 5m
-    labels:
-      severity: warning
-      tier: os
-      context: "{{ $labels.type}} {{ $labels.test_name }}"
-      meta: "Thousandeyes Check: {{ $labels.type}} {{ $labels.rule_expression }} / {{ $labels.test_name }}."
-      playbook: /docs/devops/alert/network/thousandeyescheck.html#stargate
-    annotations:
-      description: "`{{ $labels.test_name }}` not reachable. *ThousandeyesAlert was fired separately!*"
-      summary: "Alert ACK via Slack is not possible in the moment!"
-
   - alert: ThousandeyesSuperNovaReachability
     expr: count(label_replace(thousandeyes_alert{test_name=~".*SuperNova.*"}, "region", "global", "test_name", ".*" )) by (rule_name, test_name, rule_expression, type, region) > 1
     for: 5m

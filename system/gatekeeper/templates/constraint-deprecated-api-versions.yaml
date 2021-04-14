@@ -1,0 +1,44 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: gkdeprecatedapiversions
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkDeprecatedApiVersions
+      validation:
+        openAPIV3Schema:
+          properties: {}
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package deprecatedapiversions
+
+        helm_versions[2] {
+          input.review.object.kind == "ConfigMap"
+          input.review.object.metadata.labels.OWNER == "TILLER"
+          input.review.object.metadata.labels.STATUS == "DEPLOYED"
+        }
+
+        helm_versions[3] {
+          input.review.object.kind == "Secret"
+          input.review.object.type == "helm.sh/release.v1"
+          input.review.object.metadata.labels.status == "deployed"
+        }
+
+        violation[{"msg": msg, "details": {"name": obj_name, "kind": obj_kind}}] {
+          helm_version := helm_versions[_]
+
+          parser_url := sprintf("http://helm-manifest-parser.kube-system.svc/v%d", [helm_version])
+          parser_resp := http.send({ "url": parser_url, "method": "POST", "raw_body": input.review.object.data.release })
+          parser_resp.status_code == 200
+
+          obj := parser_resp.body.items[_]
+          regex.match("^(?:extensions|apps)/v1beta[12]$", obj.apiVersion)
+
+          obj_name := obj.metadata.name
+          obj_kind := obj.kind
+          msg := sprintf("%s %s declared with deprecated API version %s", [obj_kind, obj_name, obj.apiVersion])
+        }

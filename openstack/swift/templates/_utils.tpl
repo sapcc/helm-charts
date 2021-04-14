@@ -398,7 +398,7 @@ limit_req_status 429;
 {{- define "swift_haproxy_backend" -}}
 {{- $cluster_id := index . 0 -}}
 {{- $cluster := index . 1 -}}
-option http-server-close
+#option http-server-close
 {{- if $cluster.upstreams }}
 balance roundrobin
 option httpchk HEAD /healthcheck

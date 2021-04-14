@@ -1,0 +1,30 @@
+global:
+  region: cc+ region
+  cronus_service_password: secrets
+  cronus_simulator_slack: secrets
+
+config:
+  ## keystone optional authentication methods, add in @SECRETS the relevant method
+  keystone:
+    projectName: master
+    projectDomainName: ccadmin
+    userDomainName: Default
+    username: cronus
+
+exporter:
+  enabled: true
+  replicas: 1
+  image:
+    name: cronus-exporter-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  duration: "10m"
+  period: 10
+  loopInterval: 10
+  pushgatewayUrl: http://localhost:9091
+  accountStatusTimeout: 5m
+
+alerts:
+  enabled: false
+  prometheus: infra-frontend

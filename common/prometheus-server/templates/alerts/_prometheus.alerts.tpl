@@ -17,6 +17,7 @@ groups:
 
   - alert: PrometheusRuleEvaluationFailed
     expr: increase(prometheus_rule_evaluation_failures_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+    for: 15m
     labels:
       context: availability
       service: prometheus
