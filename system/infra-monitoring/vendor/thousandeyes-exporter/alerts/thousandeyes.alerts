@@ -78,3 +78,39 @@ groups:
     annotations:
         description: "Scraping metrics from Thousandeyes via API takes too long"
         summary: "Scraping metrics from Thousandeyes via API takes too long"
+
+  - alert: ThousandeyesHTTPPacketLoss
+    expr: thousandeyes_test_html_loss_percentage{test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"} > 90
+    for: 15m
+    labels:
+        severity: info
+        tier: moni
+        context: thousandeyes
+        meta: "HTTP Package loss from {{ $labels.agent_name}} to {{ $labels.probed_to}} / {{ $labels.dst}} exceeds 90%"
+    annotations:
+        description: "Package loss from {{ $labels.agent_name}} to {{ $labels.probed_to}} / {{ $labels.dst}} exceeds 90%"
+        summary: "Package loss from {{ $labels.agent_name}} to {{ $labels.probed_to}} / {{ $labels.dst}} exceeds 90%"
+
+  - alert: ThousandeyesHTTPClientError
+    expr: thousandeyes_test_html_response_code{test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"} < 500 >= 400
+    for: 15m
+    labels:
+        severity: info
+        tier: moni
+        context: thousandeyes
+        meta: "Probe from {{ $labels.agent_name}} to {{ $labels.probed_to}} / {{ $labels.dst}} fails with HTTP ClientError"
+    annotations:
+        description: "Probe from {{ $labels.agent_name}} to {{ $labels.probed_to}} / {{ $labels.dst}} fails with HTTP ClientError"
+        summary: "Probe from {{ $labels.agent_name}} to {{ $labels.probed_to}} / {{ $labels.dst}} fails with HTTP ClientError"
+
+  - alert: ThousandeyesHTTPServerError
+    expr: thousandeyes_test_html_response_code{test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"} >= 500
+    for: 15m
+    labels:
+        severity: info
+        tier: moni
+        context: thousandeyes
+        meta: "Probe from {{ $labels.agent_name}} to {{ $labels.probed_to}} / {{ $labels.dst}} fails with HTTP ServerError"
+    annotations:
+        description: "Probe from {{ $labels.agent_name}} to {{ $labels.probed_to}} / {{ $labels.dst}} fails with HTTP ServerError"
+        summary: "Probe from {{ $labels.agent_name}} to {{ $labels.probed_to}} / {{ $labels.dst}} fails with HTTP ServerError"
