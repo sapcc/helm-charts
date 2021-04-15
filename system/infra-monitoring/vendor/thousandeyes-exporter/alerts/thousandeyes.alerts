@@ -39,3 +39,42 @@ groups:
     annotations:
       description: "`{{ $labels.test_name }}` is not reachable. *CIOC (for WAN Team/MIM) should be involved already by a direct ThousandeyesAlert.*"
       summary: "{{ $labels.type }} Alert fires!"
+
+  - alert: ThousandeyesAPIFailureRatio
+    expr: rate(thousandeyes_requests_fails[5m]) / rate(thousandeyes_requests_total[5m]) > 0
+    for: 15m
+    labels:
+        severity: info
+        tier: moni
+        context: thousandeyes
+        meta: "Thousandeyes API not reachable"
+        playbook: /docs/devops/alert/network/thousandeyescheck.html#failure-ratio
+    annotations:
+        description: "Thousandeyes API not reachable"
+        summary: "Thousandeyes API not reachable"
+
+  - alert: ThousandeyesAPILimit
+    expr: thousandeyes_api_request_limit_reached > 0
+    for: 15m
+    labels:
+        severity: info
+        tier: moni
+        context: thousandeyes
+        meta: "Thousandeyes API limit exceeded"
+        playbook: /docs/devops/alert/network/thousandeyescheck.html#api-limit
+    annotations:
+        description: "Thousandeyes API limit exceeded"
+        summary: "Thousandeyes API limit exceeded"
+
+  - alert: ThousandeyesAPIScrapeDuration
+    expr: rate(thousandeyes_scraping_seconds[5m]) > 1
+    for: 15m
+    labels:
+        severity: info
+        tier: moni
+        context: thousandeyes
+        meta: "Scraping metrics from Thousandeyes via API takes too long"
+        playbook: /docs/devops/alert/network/thousandeyescheck.html#scrape-duration
+    annotations:
+        description: "Scraping metrics from Thousandeyes via API takes too long"
+        summary: "Scraping metrics from Thousandeyes via API takes too long"
