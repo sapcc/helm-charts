@@ -4,8 +4,11 @@ groups:
 - name: openstack-limes.alerts
   rules:
 
+  # This alert is used for detecting unusually high API load before it becomes
+  # a problem. We don't care about the collector; it self-regulates by slowing
+  # down when its connection pool is exhausted.
   - alert: OpenstackLimesDBConnectionPoolNearlyFull
-    expr: avg_over_time(go_sql_stats_connections_in_use{db_name="limes"}[1h]) > 8
+    expr: avg_over_time(go_sql_stats_connections_in_use{db_name="limes",kubernetes_pod_name!~"limes-collect-.*"}[1h]) > 8
     for: 5m
     labels:
       context: dbconnpool
