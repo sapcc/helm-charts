@@ -1,0 +1,18 @@
+{{- $values := .Values }}
+{{- if $values.alerts.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: alerts-kube-parrot.alerts
+  labels:
+    app: pvc_exporter
+    tier: k8s
+    type: alerting-rules
+    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_pvc_usage.alerts.tpl") . | indent 2 }}
+
+{{- end }}
