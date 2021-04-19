@@ -9,7 +9,7 @@ groups:
       service: resources
       severity: info
       context: storage
-      meta: "PVC {{`{{ $labels.persistentvolumeclaim }}`}} is predicted to exceed 90% memory consumption in the next 7 days"
+      meta: "PVC {{`{{ $labels.persistentvolumeclaim }}`}} is predicted to exceed 90% storage consumption in the next 7 days"
     annotations:
-      description: "The PVC {{`{{ $labels.persistentvolumeclaim }}`}} mountedby {{`{{ $labels.mountedby }}`}} with volume name {{`{{ $labels.volumename }}`}} is predicted to exceed 90% memory consumption in the next 7 days"
-      summary: "PVC {{`{{ $labels.persistentvolumeclaim }}`}} is predicted to exceed 90% memory consumption in the next 7 days" 
+      description: "The PVC {{`{{ $labels.persistentvolumeclaim }}`}} mounted by {{`{{ $labels.mountedby }}`}} with volume name {{`{{ $labels.volumename }}`}} is predicted to exceed 90% storage consumption in the next 7 days"
+      summary: "PVC {{`{{ $labels.persistentvolumeclaim }}`}} is predicted to exceed 90% storage consumption in the next 7 days" 
