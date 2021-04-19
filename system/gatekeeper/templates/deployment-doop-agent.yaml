@@ -25,12 +25,13 @@ spec:
       enableServiceLinks: false
       containers:
         - name: parser
-          image: {{.Values.global.registry | required ".Values.global.registry"}}/doop-agent:{{.Values.doop_agent.image_tag}}
+          image: {{.Values.global.registry | required ".Values.global.registry not found"}}/doop-agent:{{.Values.doop_agent.image_tag}}
           imagePullPolicy: IfNotPresent
-          args: [ '-container', 'doop-agent', '-object', {{.Values.global.region | required ".Values.global.region" | quote}} ]
+          # TODO: replace `.Values.global.region` with a cluster identifier, to distinguish qa-de-1 from s-qa-de-1 etc.
+          args: [ '-container', 'doop-agent', '-object', {{.Values.global.region | required ".Values.global.region not found" | quote}} ]
           env:
             - name: OS_AUTH_URL
-              value: 'https://identity-3.{{.Values.doop_agent.target_region | required ".Values.doop_agent.target_region"}}.cloud.sap/v3'
+              value: 'https://identity-3.{{.Values.doop.swift_region | required ".Values.doop.swift_region not found"}}.cloud.sap/v3'
             - name: OS_AUTH_VERSION
               value: '3'
             - name: OS_IDENTITY_API_VERSION
@@ -40,16 +41,16 @@ spec:
             - name: OS_PROJECT_NAME
               value: master
             - name: OS_REGION_NAME
-              value: {{.Values.doop_agent.target_region | required ".Values.doop_agent.target_region" | quote}}
+              value: {{.Values.doop.swift_region | required ".Values.doop.swift_region not found" | quote}}
             - name: OS_USER_DOMAIN_NAME
-              value: {{.Values.doop_agent.upload_user_domain_name | required ".Values.doop_agent.upload_user_domain_name" | quote}}
+              value: Default
             - name: OS_USERNAME
-              value: {{.Values.doop_agent.upload_user_name | required ".Values.doop_agent.upload_user_name" | quote}}
+              value: doop
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: doop-agent
-                  key: upload_password
+                  key: swift_password
           ports:
             - name: metrics
               containerPort: 8080
