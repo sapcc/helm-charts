@@ -80,6 +80,7 @@
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_runs_counter_total"}'
       - '{__name__=~"^thousandeyes_test_html_loss_percentage", test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"}'
+      - '{__name__=~"^thousandeyes_test_html_avg_latency_milliseconds", test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"}'
       - '{__name__=~"^thousandeyes_test_html_response_code", test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"}'
       - '{__name__=~"^thousandeyes_requests_total"}'
       - '{__name__=~"^thousandeyes_requests_fails"}'
