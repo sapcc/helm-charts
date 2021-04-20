@@ -47,35 +47,35 @@ groups:
 
   - alert: EphemeralDataStoreCapacityWarning
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"Management|ephemeral"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >= 0.8
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >= 0.8
     for: 20m
     labels:
       severity: warning
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      meta: "Eph Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "Eph Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "Eph Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: EphemralDataStoreCapacityCritical
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"Management|ephemeral"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
     for: 20m
     labels:
       severity: critical
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      meta: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: VVolDataStoreCapacityWarning
     expr: >
@@ -90,8 +90,8 @@ groups:
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: VVolDataStoreCapacityCritical
     expr: >
@@ -106,8 +106,8 @@ groups:
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: VmfsDataStoreCapacityWarning
     expr: >
@@ -122,8 +122,8 @@ groups:
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "VMFS Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "VMFS Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: VmfsDataStoreCapacityCritical
     expr: >
@@ -138,38 +138,40 @@ groups:
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: DataStoreCapacityWarning
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"Management|ephemeral|vVOL|vfms.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.8
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.8
     for: 20m
     labels:
       severity: warning
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      meta: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: DataStoreCapacityCritical
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"Management|ephemeral|vVOL|vfms.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
     for: 20m
     labels:
       severity: critical
       tier: vmware
       service: storage
       context: "vrops-exporter"
-      meta: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      meta: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
-      description: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
