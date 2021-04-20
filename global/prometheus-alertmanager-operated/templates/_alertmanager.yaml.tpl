@@ -102,6 +102,7 @@ route:
   - receiver: slack_by_os_service
     continue: true
     match_re:
+      tier: os
       severity: info|warning|critical
       service: arc|backup|barbican|castellum|cinder|cfm|cronus|designate|elektra|elk|glance|hermes|ironic|keppel|keystone|limes|lyra|maia|manila|neutron|nova|octavia|sentry|swift
       region: qa-de-1|ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
@@ -325,8 +326,10 @@ receivers:
 
   - name: octobus
     webhook_configs:
-    - send_resolved: false
+    - send_resolved: true
       url: {{ required ".Values.octobus.gymInstance undefined" .Values.octobus.gymInstance | quote }}
+    - send_resolved: true
+      url: {{ required ".Values.octobus.gcpInstance undefined" .Values.octobus.gcpInstance | quote }}
 
   - name: awx
     webhook_configs:
@@ -588,7 +591,7 @@ receivers:
 
   - name: slack_qa
     slack_configs:
-      - channel: '#alert-qa-{{"{{ .CommonLabels.severity }}"}}'
+      - channel: '#alert-qa-{{"{{ .severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
@@ -772,6 +775,21 @@ receivers:
   - name: pagerduty_metal
     pagerduty_configs:
       - service_key: {{ required ".Values.pagerduty_sap.metal.serviceKey undefined" .Values.pagerduty_sap.metal.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+        details:
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty_sap.osd_mom_compute.serviceKey undefined" .Values.pagerduty_sap.osd_mom_compute.serviceKey | quote }}
         description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
         component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
         group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}

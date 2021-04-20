@@ -26,6 +26,23 @@ ep_retention_policy_net_internal = {{ .Values.aci.ep_retention_policy_net_intern
 {{- if .Values.aci.ep_retention_policy_net_external }}
 ep_retention_policy_net_external = {{ .Values.aci.ep_retention_policy_net_external }}
 {{- end }}
+{{- if .Values.aci.default_baremetal_pc_policy_group }}
+default_baremetal_pc_policy_group = {{ .Values.aci.default_baremetal_pc_policy_group }}
+{{ end }}
+
+{{- if .Values.aci.pc_policy_groups }}
+{{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}
+[pc-policy-group:{{ $pc_policy_group.name }}]
+lag_mode = {{ $pc_policy_group.lag_mode }}
+link_level_policy = {{ $pc_policy_group.link_level_policy }}
+cdp_policy = {{ $pc_policy_group.cdp_policy }}
+lldp_policy = {{ $pc_policy_group.lldp_policy }}
+lacp_policy = {{ $pc_policy_group.lacp_policy }}
+monitoring_policy = {{ $pc_policy_group.monitoring_policy }}
+mcp_policy = {{ $pc_policy_group.mcp_policy }}
+l2_policy = {{ $pc_policy_group.l2_policy }}
+{{ end -}}
+{{- end }}
 
 # Set up host specific configuration needs to be one for each host that physically connects
 # VMs or devices to the ACI fabric i.e. each hypervisor or L3 node.
@@ -39,6 +56,24 @@ physical_domain = {{ default $.Values.aci.aci_hostgroups.physical_domains $aci_h
 physical_network = {{ default $aci_hostgroup.name $aci_hostgroup.physical_network }}
 segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
 segment_range = {{ default $.Values.aci.aci_hostgroups.segment_ranges $aci_hostgroup.segment_ranges | join "," }}
+{{- range $i, $subgroup := $aci_hostgroup.subgroups }}
+
+[aci-hostgroup:{{ $subgroup.name }}]
+hosts = {{ default $subgroup.name $subgroup.hosts | join "," }}
+bindings = {{ $subgroup.bindings | join "," }}
+segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
+direct_mode = True
+port_selectors = {{ $subgroup.port_selectors | join "," }}
+{{- if and (empty $subgroup.infra_pc_policy_group) (eq (len $subgroup.bindings) 1) }}
+infra_pc_policy_group = {{ (split "/" (index $subgroup.bindings 0))._3 }}
+{{ else }}
+infra_pc_policy_group = {{ $subgroup.infra_pc_policy_group }}
+{{ end -}}
+{{- if or $aci_hostgroup.baremetal_pc_policy_group $subgroup.baremetal_pc_policy_group -}}
+baremetal_pc_policy_group = {{ default $aci_hostgroup.baremetal_pc_policy_group $subgroup.baremetal_pc_policy_group }}
+{{ end -}}
+parent_hostgroup = {{ $aci_hostgroup.name }}
+{{- end }}
 {{ end }}
 
 {{- range $i, $fixed_binding := .Values.aci.fixed_bindings }}

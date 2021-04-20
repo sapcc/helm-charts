@@ -7,8 +7,11 @@ bind_ip = 0.0.0.0
 bind_port = 6000
 
 workers = auto
+{{- if .Values.object_servers_per_port }}
+servers_per_port = {{ .Values.object_servers_per_port }}
+{{- end }}
 max_clients = 1024
-backlog = 8192
+backlog = 4096
 client_timeout = {{ .Values.client_timeout }}
 
 log_statsd_host = localhost
