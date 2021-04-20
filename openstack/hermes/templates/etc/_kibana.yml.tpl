@@ -52,7 +52,7 @@ elasticsearch.url: http://elasticsearch.hermes:9200/
 
 # Time in milliseconds to wait for responses from the back end or elasticsearch.
 # This must be > 0
-elasticsearch.requestTimeout: 60000
+elasticsearch.requestTimeout: 120000
 
 # Time in milliseconds for Elasticsearch to wait for responses from shards.
 # Set to 0 to disable.
