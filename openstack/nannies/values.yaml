@@ -1,5 +1,7 @@
 nannies:
-  vcenter_username: m3nannyapiuser
+  vcenter_username: DEFINED-IN-REGION-CHART
+  netapp_username: DEFINED-IN-REGION-CHART
+  netapp_password: DEFINED-IN-REGION-CHART
 
 vcenter_nanny:
   enabled: false
@@ -186,7 +188,7 @@ netapp_balance_nanny:
   debug: false
   # dry run mode - do not do anything potentially harmful
   dry_run: true
-  image_version: '20200826093617'
+  image_version: '20210421085521'
   # how many minutes to wait until the next nanny run
   interval: 120
   # max usage of an aggregate in percent to still move volumes to it
@@ -214,7 +216,7 @@ vmfs_balance_nanny:
   debug: false
   # dry run mode - do not do anything potentially harmful
   dry_run: true
-  image_version: '20210223115616'
+  image_version: '20210421121910'
   # min usage of a vmfs ds in percent to be below to still move volumes to it
   min_usage: 70
   # max usage of a vmfs ds in percent to be above to still move volumes away from it
@@ -223,10 +225,57 @@ vmfs_balance_nanny:
   min_max_difference: 2
   # always keep this amount of free space in gb on the target ds
   min_freespace: 2500
-  # do not move any volumes smaller than this size in gb
+  # do not move any volumes smaller than this size in gb (legacy value)
   volume_min_size: 20
-  # do not move any volumes larger than this size in gb
+  # do not move any volumes larger than this size in gb (legacy value)
   volume_max_size: 2500
+  # do not move any volumes smaller than this size in gb for aggr balancing
+  aggr_volume_min_size: 20
+  # do not move any volumes larger than this size in gb for aggr balancing
+  aggr_volume_max_size: 2500
+  # do not move any volumes smaller than this size in gb for ds balancing
+  ds_volume_min_size: 20
+  # do not move any volumes larger than this size in gb for ds balancing
+  ds_volume_max_size: 2500
+  # at max move this number of vms in one run
+  max_move_vms: 50
+  # how many minutes to wait until the next nanny run
+  interval: 120
+  # disable min_usage and max_usage and balance until they are in autopilot_range around the initial average usage across all ds
+  autopilot: true
+  autopilot_range: 5
+  # print that number of largest volumes per ds as debugging info
+  print_max: 3
+
+vvol_balance_nanny:
+  enabled: false
+  debug: false
+  # dry run mode - do not do anything potentially harmful
+  dry_run: true
+  image_version: '20210421121900'
+  # min usage of a vmfs ds in percent to be below to still move volumes to it
+  min_usage: 70
+  # max usage of a vmfs ds in percent to be above to still move volumes away from it
+  max_usage: 80
+  # stop balancing when min and max used ds are that close in usage in percent
+  min_max_difference: 2
+  # always keep this amount of free space in gb on the target ds
+  min_freespace: 2500
+  # do not move any volumes smaller than this size in gb (legacy value)
+  volume_min_size: 20
+  # do not move any volumes larger than this size in gb (legacy value)
+  volume_max_size: 2500
+  # do not move any volumes smaller than this size in gb for aggr balancing
+  aggr_volume_min_size: 20
+  # do not move any volumes larger than this size in gb for aggr balancing
+  aggr_volume_max_size: 2500
+  # do not move any volumes smaller than this size in gb for ds balancing
+  ds_volume_min_size: 20
+  # do not move any volumes larger than this size in gb for ds balancing
+  ds_volume_max_size: 2500
+  # min usage of a flexvol in gb to move volumes away from it
+  # about 90% of the typical flexvol size of 5tb to avoid it autoextending early on
+  flexvol_volume_max_size: 4600
   # at max move this number of vms in one run
   max_move_vms: 50
   # how many minutes to wait until the next nanny run

@@ -61,11 +61,17 @@ template: |
                 value: {= username | quote =}
                 {{- end }}
               - name: VMFS_BALANCE_VCPASSWORD
-                {{- if .Values.nannies.vcenter_username | default "" }}
-                value: {= "{{ .Values.nannies.vcenter_username }}" | derive_password | quote =}
-                {{- else }}
-                value: {= password | quote =}
-                {{- end }}
+                valueFrom:
+                  secretKeyRef:
+                    name: vmfs-balance-nanny-{= name =}
+                    key:  vmfs_balance_vcpassword
+              - name: VMFS_BALANCE_NAUSER
+                value: {{ .Values.nannies.netapp_username | quote }}
+              - name: VMFS_BALANCE_NAPASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: vmfs-balance-nanny-{= name =}
+                    key:  vmfs_balance_napassword
               - name: VMFS_BALANCE_MIN_USAGE
                 value: {{ int .Values.vmfs_balance_nanny.min_usage | quote }}
               - name: VMFS_BALANCE_MAX_USAGE
@@ -74,10 +80,14 @@ template: |
                 value: {{ int .Values.vmfs_balance_nanny.min_max_difference | quote }}
               - name: VMFS_BALANCE_MIN_FREESPACE
                 value: {{ int .Values.vmfs_balance_nanny.min_freespace | quote }}
-              - name: VMFS_BALANCE_VOLUME_MIN_SIZE
-                value: {{ int .Values.vmfs_balance_nanny.volume_min_size | quote }}
-              - name: VMFS_BALANCE_VOLUME_MAX_SIZE
-                value: {{ int .Values.vmfs_balance_nanny.volume_max_size | quote }}
+              - name: VMFS_BALANCE_AGGR_VOLUME_MIN_SIZE
+                value: {{ int .Values.vmfs_balance_nanny.aggr_volume_min_size | quote }}
+              - name: VMFS_BALANCE_AGGR_VOLUME_MAX_SIZE
+                value: {{ int .Values.vmfs_balance_nanny.aggr_volume_max_size | quote }}
+              - name: VMFS_BALANCE_DS_VOLUME_MIN_SIZE
+                value: {{ int .Values.vmfs_balance_nanny.ds_volume_min_size | quote }}
+              - name: VMFS_BALANCE_DS_VOLUME_MAX_SIZE
+                value: {{ int .Values.vmfs_balance_nanny.ds_volume_max_size | quote }}
               - name: VMFS_BALANCE_MAX_MOVE_VMS
                 value: {{ int .Values.vmfs_balance_nanny.max_move_vms | quote }}
               - name: VMFS_BALANCE_INTERVAL
@@ -90,5 +100,9 @@ template: |
                 value: {{ .Values.vmfs_balance_nanny.print_max | quote }}
               - name: VMFS_BALANCE_REGION
                 value: {{ .Values.current_region | quote }}
+              - name: VMFS_BALANCE_VOLUME_MIN_SIZE
+                value: {{ int .Values.vmfs_balance_nanny.volume_min_size | quote }}
+              - name: VMFS_BALANCE_VOLUME_MAX_SIZE
+                value: {{ int .Values.vmfs_balance_nanny.volume_max_size | quote }}
 {{- end }}
 {{- end }}
