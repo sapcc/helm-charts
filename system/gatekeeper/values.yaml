@@ -2,8 +2,13 @@
 gatekeeper-upstream:
   createNamespace: false
   constraintViolationsLimit: 100
-  disableValidatingWebhook: true # TODO enable
   logDenies: true
+
+  # We only use Gatekeeper for auditing, not as a validating webhook. Therefore
+  # we don't need multiple replicas for the controller manager: It only needs
+  # to validate templates and create/update/delete CRDs from them.
+  disableValidatingWebhook: true
+  replicas: 1
 
   audit:
     resources:
