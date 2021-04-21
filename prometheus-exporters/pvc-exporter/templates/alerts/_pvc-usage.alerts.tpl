@@ -1,5 +1,5 @@
 groups:
-- name: pvc_usage.alerts
+- name: pvc-usage.alerts
   rules:
   - alert: HighPVCUsagePredicted
     expr: sum((pvc_usage* 100 > 70) and (predict_linear(pvc_usage[1d], 7 * 24 * 3600) * 100 > 90 )) by (persistentvolumeclaim, mountedby, volumename)
