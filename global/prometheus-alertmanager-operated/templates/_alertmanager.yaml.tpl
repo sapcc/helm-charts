@@ -9,29 +9,13 @@ inhibit_rules:
       severity: 'critical'
     target_match:
       severity: 'warning'
-    equal: ['region', 'alertname', 'cluster']
+    equal: ['region', 'alertname', 'cluster', 'context']
 
   - source_match_re:
       severity: 'critical|warning'
     target_match:
       severity: 'info'
-    equal: ['region', 'alertname', 'cluster']
-
-  - source_match_re:
-      severity: 'critical'
-      context: '.+'
-    target_match_re:
-      severity: 'warning'
-      context: '.+'
-    equal: ['region', 'context', 'cluster']
-
-  - source_match_re:
-      severity: 'critical|warning'
-      context: '.+'
-    target_match_re:
-      severity: 'info'
-      context: '.+'
-    equal: ['region', 'context', 'cluster']
+    equal: ['region', 'alertname', 'cluster', 'context']
 
   - source_match_re:
       alertname: '.*KubeletDown'
