@@ -74,12 +74,10 @@ groups:
   - alert: NetworkWanInboundFailures
     expr: |
         sum by (agent_name, test_name, probed_from, probed_to, dst)
-            (thousandeyes_test_html_loss_percentage{test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"}) > 90
+            (thousandeyes_test_html_loss_percentage{test_name=~"[A-Z]{2}-[A-Z]{2}-[A-Z0-9]{2}.+"}) > 5
         and on (dst) (
-            sum by (dst) (rate(cloudprober_success{probe=~"http-lb.+"}[5m]) / rate(cloudprober_total{probe=~"http-lb.+"}[5m]))
-            /
-            count by (dst) (rate(cloudprober_success{probe=~"http-lb.+"}[5m]) / rate(cloudprober_total{probe=~"http-lb.+"}[5m]))
-        ) > 0.95
+            sum by (dst) (cloudprober_http_success_sli:ratio_rate5m) / count by (dst) (cloudprober_http_success_sli:ratio_rate5m)
+        ) > 0.98
     for: 15m
     labels:
       severity: info
