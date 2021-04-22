@@ -116,16 +116,47 @@
       - 'cronus-pushgateway.cronus:9091'
   scrape_interval: 5m
 
-{{ if .Values.cronus.enabled }}
-- job_name: cronus-health # To get metrics about the exporter’s targets
+{{ if .Values.docs.enabled }}
+- job_name: 'docs_urls'
   metrics_path: /probe
   params:
-    module: [http_2xx]
+    module: [docs_urls]
   static_configs:
     - targets:
-      {{- range .Values.cronus.regions }}
-      - https://nebula.{{ .region }}.cloud.sap/healthz
-      - https://cronus.{{ .region }}.cloud.sap/healthz
+      {{- range .Values.docs.docs_urls.targets }}
+      - {{ . }}
+      {{- end }}
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: blackbox-exporter.cronus:9115
+- job_name: 'docs_home'
+  metrics_path: /probe
+  params:
+    module: [docs_home]
+  static_configs:
+    - targets:
+      {{- range .Values.docs.docs_home.targets }} 
+      - {{ . }}
+      {{- end }}
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: blackbox-exporter.cronus:9115
+- job_name: 'docs_training'
+  metrics_path: /probe
+  params:
+    module: [docs_training]
+  static_configs:
+    - targets:
+      {{- range .Values.docs.docs_training.targets }} 
+      - {{ . }}
       {{- end }}
   relabel_configs:
     - source_labels: [__address__]
