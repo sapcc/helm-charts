@@ -28,7 +28,12 @@ spec:
         - name: parser
           image: {{.Values.global.registry | required ".Values.global.registry not found"}}/doop-agent:{{.Values.doop_agent.image_tag}}
           imagePullPolicy: IfNotPresent
-          args: [ '-container', 'doop-agent', '-object', {{.Values.cluster_name | required ".Values.cluster_name not found" | quote}} ]
+          args: [
+            '-container', 'doop-agent',
+            '-object', {{.Values.cluster_name | required ".Values.cluster_name not found" | quote}},
+            {{.Values.cluster_layer | required ".Values.cluster_layer not found" | quote}},
+            {{.Values.cluster_type | required ".Values.cluster_type not found" | quote}},
+          ]
           env:
             - name: OS_AUTH_URL
               value: 'https://identity-3.{{.Values.doop.swift_region | required ".Values.doop.swift_region not found"}}.cloud.sap/v3'
