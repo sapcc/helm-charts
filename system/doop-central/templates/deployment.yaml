@@ -1,0 +1,72 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: doop-central
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: doop-central
+  template:
+    metadata:
+      labels:
+        name: doop-central
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: web
+          image: {{.Values.global.registry | required ".Values.global.registry not found"}}/doop-central:{{.Values.image_tag}}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: OS_AUTH_URL
+              value: 'https://identity-3.{{.Values.doop.swift_region | required ".Values.doop.swift_region not found"}}.cloud.sap/v3'
+            - name: OS_AUTH_VERSION
+              value: '3'
+            - name: OS_IDENTITY_API_VERSION
+              value: '3'
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: ccadmin
+            - name: OS_PROJECT_NAME
+              value: master
+            - name: OS_REGION_NAME
+              value: {{.Values.doop.swift_region | required ".Values.doop.swift_region not found" | quote}}
+            - name: OS_USER_DOMAIN_NAME
+              value: Default
+            - name: OS_USERNAME
+              value: doop
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: doop-central
+                  key: swift_password
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "128Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
