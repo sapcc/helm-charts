@@ -27,6 +27,8 @@ spec:
           image: {{.Values.global.registry | required ".Values.global.registry not found"}}/doop-central:{{.Values.image_tag}}
           imagePullPolicy: IfNotPresent
           env:
+            - name: DOOP_CENTRAL_DEBUG
+              value: 'false'
             - name: OS_AUTH_URL
               value: 'https://identity-3.{{.Values.doop.swift_region | required ".Values.doop.swift_region not found"}}.cloud.sap/v3'
             - name: OS_AUTH_VERSION
@@ -48,6 +50,8 @@ spec:
                 secretKeyRef:
                   name: doop-central
                   key: swift_password
+            - name: REPORT_CONTAINER_NAME
+              value: doop-agent
           ports:
             - name: http
               containerPort: 8080
