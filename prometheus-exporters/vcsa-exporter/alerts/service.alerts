@@ -9,7 +9,7 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      context: "vcsa-service-critical"
+      context: "vcsa-critical-service"
       meta: "VCenter critical service {{ $labels.service }} health is {{ $labels.health }}. Service is {{ $labels.state }} in {{ $labels.vccluster }}." 
       playbook: docs/devops/alert/vcenter/
     annotations:
@@ -22,13 +22,13 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      context: "vcsa-service-critical"
+      context: "vcsa-critical-service"
       meta: "VCenter critical internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
       playbook: docs/devops/alert/vcenter/
     annotations:
       description: "VCenter critical internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
       summary: "VCenter critical internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
-  - alert: VCenterWarningServiceNotHealthy
+  - alert: VCenterServiceNotHealthy
     expr: >
       vcsa_service_status{service=~"cm|applmgmt|vsm|sca"} == 1
     for: 5m
@@ -36,22 +36,22 @@ groups:
       severity: warning
       tier: vmware
       service: compute
-      context: "vcsa-service-warning"
-      meta: "VCenter critical internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
+      context: "vcsa-service"
+      meta: "VCenter internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
       playbook: docs/devops/alert/vcenter/
     annotations:
-      description: "VCenter critical internal service {{ $labels.service }} is not healthy in {{ $labels.vccluster }}."
-      summary: "VCenter critical internal service {{ $labels.service }} is not healthy in {{ $labels.vccluster }}."
-  - alert: VCenterWarningServiceNotRunning
+      description: "VCenter internal service {{ $labels.service }} is not healthy in {{ $labels.vccluster }}."
+      summary: "VCenter internal service {{ $labels.service }} is not healthy in {{ $labels.vccluster }}."
+  - alert: VCenterServiceNotRunning
     expr: vcsa_service_status{service=~"cm|applmgmt|vsm|sca"} == 0
     for: 5m
     labels:
       severity: warning
       tier: vmware
       service: compute
-      context: "vcsa-service-warning"
-      meta: "VCenter warning internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
+      context: "vcsa-service"
+      meta: "VCenter internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
       playbook: docs/devops/alert/vcenter/
     annotations:
-      description: "VCenter warning internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
-      summary: "VCenter warning internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
+      description: "VCenter internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
+      summary: "VCenter internal service {{ $labels.service }} is stopped in {{ $labels.vccluster }}. Should be running."
