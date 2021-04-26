@@ -19,13 +19,20 @@ spec:
     metadata:
       labels:
         name: doop-central
+      annotations:
+        checksum/configmap: {{ include "doop-central/templates/configmap.yaml" $ | sha256sum }}
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
+      volumes:
+        - name: config
+          configMap:
+            name: doop-central
       containers:
         - name: web
           image: {{.Values.global.registry | required ".Values.global.registry not found"}}/doop-central:{{.Values.image_tag}}
           imagePullPolicy: IfNotPresent
+          args: [ ':8080', '/etc/doop-central/docs.html.yaml' ]
           env:
             - name: DOOP_CENTRAL_DEBUG
               value: 'false'
@@ -74,3 +81,6 @@ spec:
               memory: "128Mi"
           securityContext:
             allowPrivilegeEscalation: false
+          volumeMounts:
+            - mountPath: /etc/doop-central
+              name: config
