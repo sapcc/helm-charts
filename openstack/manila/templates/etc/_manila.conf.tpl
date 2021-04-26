@@ -52,8 +52,8 @@ quota_snapshot_gigabytes = 0
 quota_share_networks = 0
 quota_share_groups = 0
 quota_share_group_snapshots = 0
-quota_share_replicas = -1
-quota_replica_gigabytes = -1
+quota_share_replicas = 0
+quota_replica_gigabytes = 0
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 
