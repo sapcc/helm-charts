@@ -66,3 +66,27 @@ modules:
         - '"CeleryAppVersionCheck":true'
         - '"CeleryAliveCheck":true'
         - '"problems":\[\]'
+  docs_home_content:
+    prober: http
+    timeout: 10s
+    http:
+      valid_status_codes: [200]
+      method: GET
+      fail_if_body_not_matches_regexp:
+        - "SAP Converged Cloud"
+        - "From Playground to Production on one Infrastructure-as-a-Service"
+        - "powered by Kubernetes"
+        - "Getting Started"
+        - "Monsoon Automation"
+        - "Global distribution"
+        - "Email Service"
+  docs_training_content:
+    prober: http
+    timeout: 10s
+    http:
+      valid_status_codes: [200]
+      method: GET
+      fail_if_body_not_matches_regexp:
+        - "Welcome to the SAP Converged Cloud classroom Training"
+        - "Here you will find our three day course agenda and material"
+        - "The objective of the classroom training is to be as hands-on an experience as possible"

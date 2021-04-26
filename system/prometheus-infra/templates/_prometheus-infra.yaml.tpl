@@ -116,24 +116,4 @@
       - 'cronus-pushgateway.cronus:9091'
   scrape_interval: 5m
 
-{{ if .Values.cronus.enabled }}
-- job_name: cronus-health # To get metrics about the exporter’s targets
-  metrics_path: /probe
-  params:
-    module: [http_2xx]
-  static_configs:
-    - targets:
-      {{- range .Values.cronus.regions }}
-      - https://nebula.{{ .region }}.cloud.sap/healthz
-      - https://cronus.{{ .region }}.cloud.sap/healthz
-      {{- end }}
-  relabel_configs:
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: blackbox-exporter.cronus:9115
-{{ end }}
-
 
