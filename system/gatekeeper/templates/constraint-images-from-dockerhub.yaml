@@ -25,5 +25,8 @@ spec:
           # Docker Hub images have no dot in the first path element (e.g. "foo/bar:latest" vs. "quay.io/foo/bar:latest")
           regex.match("^[^/.]*/", image)
 
+          # we allow some very basic components (kube-network-helpers, kube-proxy, kube-system-nginx-ingress-*) to pull from Docker Hub to avoid circular dependencies
+          not regex.match("^sapcc/(?:defaultbackend|ip-masq-agent-amd64|k8s-conntrack-nanny|kube-externalip|kube-parrot|kube-proxy-amd64|nginx-ingress-controller):", image)
+
           msg := sprintf("container %q uses an image from Docker Hub: %s", [container_name, image])
         }
