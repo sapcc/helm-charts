@@ -66,6 +66,11 @@ spec:
         {{- end }}
       {{- if .Values.metrics.enabled }}
       - name: metrics
+        {{- if hasKey .Values.global "dockerHubMirror"}}
+        image: {{.Values.global.dockerHubMirror}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
+        {{- else }}
+        image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
+        {{- end }}
         image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
         ports:
