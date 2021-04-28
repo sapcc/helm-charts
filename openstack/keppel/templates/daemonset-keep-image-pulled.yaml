@@ -62,6 +62,17 @@ spec:
             limits:
               cpu: "1m"
               memory: "16Mi"
+        - name: redis # NOTE: redis-metrics is a separate pod, so we don't need to care about it
+          image: "{{.Values.redis.image.repository}}:{{.Values.redis.image.tag}}"
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "16Mi"
+            limits:
+              cpu: "1m"
+              memory: "16Mi"
       # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL
       terminationGracePeriodSeconds: 1
 
