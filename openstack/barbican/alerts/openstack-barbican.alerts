@@ -107,3 +107,16 @@ groups:
     annotations:
       description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
       summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
+
+  - alert: OpenstackBarbicanRateLimitActionIsAbove50
+    expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: barbican
+      meta: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations' 
+    annotations:
+      description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations' 
+      summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
