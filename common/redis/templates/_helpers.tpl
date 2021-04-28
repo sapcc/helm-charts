@@ -15,10 +15,27 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 -}}
 {{- end -}}
 
+{{/*
+  The (contains "." $repo) checks if the chart user has overridden the
+  repository to refer to a custom registry. If not, the default Docker Hub
+  mirror gets used.
+*/}}
 {{- define "redis.image" -}}
-{{- required ".Values.image.repository missing" .Values.image.repository -}}:{{- required ".Values.image.tag missing" .Values.image.tag -}}
+  {{- $repo := required ".Values.image.repository missing" .Values.image.repository -}}
+  {{- $tag := required ".Values.image.tag missing" .Values.image.tag -}}
+  {{- if contains "." $repo -}}
+    {{- $repo -}}:{{- $tag -}}
+  {{- else -}}
+    {{- required ".Values.global.dockerHubMirror missing" .Values.global.dockerHubMirror -}}/{{- $repo -}}:{{- $tag -}}
+  {{- end -}}
 {{- end -}}
 
 {{- define "redis.metrics.image" -}}
-{{- required ".Values.metrics.image.repository missing" .Values.metrics.image.repository -}}:{{- required ".Values.metrics.image.tag missing" .Values.metrics.image.tag -}}
+  {{- $repo := required ".Values.metrics.image.repository missing" .Values.metrics.image.repository -}}
+  {{- $tag := required ".Values.metrics.image.tag missing" .Values.metrics.image.tag -}}
+  {{- if contains "." $repo -}}
+    {{- $repo -}}:{{- $tag -}}
+  {{- else -}}
+    {{- required ".Values.global.dockerHubMirror missing" .Values.global.dockerHubMirror -}}/{{- $repo -}}:{{- $tag -}}
+  {{- end -}}
 {{- end -}}
