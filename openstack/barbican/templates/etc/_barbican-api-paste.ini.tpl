@@ -93,11 +93,11 @@ metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{
 use = egg:rate-limit-middleware#rate-limit
 config_file = /etc/barbican/ratelimit.yaml
 service_type = key-manager
-rate_limit_by: initiator_project_id
-max_sleep_time_seconds: 20
-clock_accuracy: 1ns
-log_sleep_time_seconds: 10
+rate_limit_by = initiator_project_id
+max_sleep_time_seconds = 20
+clock_accuracy = 1ns
+log_sleep_time_seconds = 10
 backend_host = {{ .Release.Name }}-sapcc-ratelimit-redis
-backend_port: 6379
-backend_timeout_seconds: 20
+backend_port = 6379
+backend_timeout_seconds = 20
 {{- end }}
