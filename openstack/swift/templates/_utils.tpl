@@ -264,7 +264,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
       name: swift-object-ring
 {{- end}}
 - name: statsd
-  image: prom/statsd-exporter:{{ $context.Values.image_version_auxiliary_statsd_exporter }}
+  image: {{ $context.Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ $context.Values.image_version_auxiliary_statsd_exporter }}
   args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
   resources:
     # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
