@@ -1,6 +1,6 @@
 # List of whitelisted scopes keys (domainName/projectName).
 whitelist:
-  - default/service
+  - Default/service
   - monsoon3/cc-demo
 
 # Override default ratelimit response.
