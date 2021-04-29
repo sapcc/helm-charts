@@ -1,0 +1,10 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "logstash.fullName" . }}-prometheus.alerts
+  labels:
+    prometheus: {{ required ".Values.logstash.alerts.prometheus missing" $values.logstash.alerts.prometheus }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_prometheus.alerts.tpl") . | indent 2 }}
