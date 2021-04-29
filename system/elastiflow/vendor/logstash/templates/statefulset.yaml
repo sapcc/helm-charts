@@ -232,6 +232,11 @@ spec:
         lifecycle:
 {{ toYaml .Values.lifecycle | indent 10 }}
 {{- end }}
+      - name: logstash-exporter
+        image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/bonniernews/logstash_exporter:v0.1.2
+        ports:
+          - name: metrics
+            containerPort: 9198
       {{- if .Values.extraContainers }}
 {{ tpl .Values.extraContainers . | indent 6 }}
       {{- end }}
