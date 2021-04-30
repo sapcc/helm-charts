@@ -9,7 +9,7 @@ mysql+pymysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Valu
 {{- end -}}
 
 {{- define "cell2_transport_url" -}}
-rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2.users.default.user }}:{{ .Values.rabbitmq_cell2.users.default.password | default (tuple . .Values.rabbitmq_cell2.users.default.user | include "rabbitmq.password_for_user")  | urlquery}}@{{.Chart.Name}}-{{.Values.cell2.name}}-rabbitmq.{{include "svc_fqdn" .}}:{{ .Values.rabbitmq_cell2.port | default 5672 }}{{ .Values.rabbitmq_cell2.virtual_host | default "/" }}
+rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2.users.default.user }}:{{ required ".Values.rabbitmq_cell2.users.default.password missing" .Values.rabbitmq_cell2.users.default.password  | urlquery}}@{{.Chart.Name}}-{{.Values.cell2.name}}-rabbitmq.{{include "svc_fqdn" .}}:{{ .Values.rabbitmq_cell2.port | default 5672 }}{{ .Values.rabbitmq_cell2.virtual_host | default "/" }}
 {{- end -}}
 
 
@@ -20,7 +20,7 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
     {{- $image_name := ( .Values.loci.nova | ternary .Values.imageNameNova (printf "ubuntu-source-nova-%s" ($name | lower)) ) -}}
 
     {{ required ".Values.global.registry is missing" .Values.global.registry}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersionNova or similar" }}
- 
+
   {{- end -}}
 {{- end -}}
 
@@ -46,4 +46,3 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
 
   {{- end -}}
 {{- end -}}
-

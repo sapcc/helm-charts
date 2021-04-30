@@ -32,27 +32,8 @@ If release name contains chart name it will be used as a full name.
 {{- define "rabbitmq._transport_url" -}}
 {{- $envAll := index . 0 -}}
 {{- $rabbitmq := index . 1 -}}
-rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ $rabbitmq.users.default.password | default (tuple $envAll $rabbitmq.users.default.user | include "rabbitmq.password_for_user")  | urlquery}}@{{ include "rabbitmq.release_host" $envAll }}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
+rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ $rabbitmq.users.default.password | urlquery}}@{{ include "rabbitmq.release_host" $envAll }}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
 {{- end}}
-
-{{- define "rabbitmq.password_for_fixed_user_and_host" }}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- $host := index . 2 }}
-    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host }}
-{{- end }}
-
-{{- define "rabbitmq.password_for_fixed_user"}}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- tuple $envAll $user ( include "rabbitmq.release_host" $envAll ) | include "rabbitmq.password_for_fixed_user_and_host" }}
-{{- end }}
-
-{{- define "rabbitmq.password_for_user"}}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "rabbitmq.password_for_fixed_user" }}
-{{- end }}
 
 {{- define "rabbitmq.plugins"}}{{- join "," .Values.plugins -}}{{- end }}
 
@@ -63,7 +44,7 @@ rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users
 {{- define "rabbitmq.pass" }}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
-    {{- $pass := index . 2 | default ( tuple $envAll $user | include "rabbitmq.password_for_user" ) }}
+    {{- $pass := index . 2 }}
 {{- $pass -}}
 {{- end }}
 
