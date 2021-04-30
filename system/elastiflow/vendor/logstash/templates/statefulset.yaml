@@ -61,7 +61,6 @@ spec:
         {{- if .Values.jdbc.enabled }}
         pipelinechecksum: {{ include (print .Template.BasePath "/configmap-jdbc-filter.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
-        pipelinechecksum: {{ include (print .Template.BasePath "/configmap-elastiflow-template.yaml") . | sha256sum | trunc 63 }}
     spec:
       {{- if .Values.schedulerName }}
       schedulerName: "{{ .Values.schedulerName }}"
@@ -222,7 +221,7 @@ spec:
           - name: {{ .Values.jdbc.configMap }}-config
             mountPath: /etc/logstash/elastiflow/conf.d/{{ .Values.jdbc.configFile }}
             subPath: {{ .Values.jdbc.configFile }}
-          {{- end -}}
+          {{- end }}
           - name: elastiflow-template-config
             mountPath: /etc/logstash/elastiflow/templates/elastiflow.template.json
             subPath: elastiflow.template.json
@@ -233,6 +232,11 @@ spec:
         lifecycle:
 {{ toYaml .Values.lifecycle | indent 10 }}
 {{- end }}
+      - name: logstash-exporter
+        image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/bonniernews/logstash_exporter:v0.1.2
+        ports:
+          - name: metrics
+            containerPort: 9198
       {{- if .Values.extraContainers }}
 {{ tpl .Values.extraContainers . | indent 6 }}
       {{- end }}

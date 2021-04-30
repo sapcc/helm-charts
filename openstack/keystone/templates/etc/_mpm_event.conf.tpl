@@ -18,6 +18,5 @@
   MinSpareThreads     32
   MaxSpareThreads     256
   ThreadsPerChild     25
-  MaxRequestsPerChild 128
   ThreadLimit         720
 </IfModule>

@@ -160,7 +160,7 @@
 
   "share_replica:get_all": "rule:context_is_sharedfilesystem_admin",
   "share_replica:show": "rule:context_is_viewer",
-  "share_replica:create" : "rule:context_is_admin",
+  "share_replica:create" : "rule:context_is_sharedfilesystem_admin",
   "share_replica:delete": "rule:context_is_sharedfilesystem_admin",
   "share_replica:promote": "rule:context_is_sharedfilesystem_admin",
   "share_replica:resync": "rule:context_is_sharedfilesystem_admin",

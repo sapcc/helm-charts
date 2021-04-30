@@ -1,0 +1,35 @@
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+  name: doop-central
+
+data:
+  # The format definition for this file is in the sapcc/gatekeeper-addons repository at <doop-central/README.md>.
+  docs.html.yaml: |
+    Header: |
+      <p>To perform automatic validations on Kubernetes objects, we run a deployment of <a href="https://github.com/open-policy-agent/gatekeeper">OPA Gatekeeper</a> in each cluster (in audit-only mode). This dashboard aggregates all policy violations reported by those Gatekeeper instances.</p>
+      <p>Each check consists of a constraint template in the <a href="https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper/templates"><code>gatekeeper</code> chart</a>, one or more constraint configurations in the <a href="https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper-config/templates"><code>gatekeeper-config</code> chart</a>, and a documentation string in the <a href="https://github.com/sapcc/helm-charts/blob/master/system/doop-central/templates/configmap.yaml">config for this dashboard</a>. For how to write constraint templates and configs, check out <a href="https://open-policy-agent.github.io/gatekeeper/website/docs/howto/">this guide from the Gatekeeper documentation</a>.</p>
+    GkDeprecatedApiVersions: |
+      <p>This check finds references to several deprecated API versions in Helm manifests.</p>
+      <dl>
+        <dt>Why is this a problem?</dt>
+        <dd>We cannot upgrade to Kubernetes 1.16 or newer before all such references are removed.</dd>
+        <dt>How to fix?</dt>
+        <dd>In your Helm chart templates, replace the deprecated API versions with their newer counterparts, <a href="https://kubernetes.io/blog/2019/07/18/api-deprecations-in-1-16/">as explained in this article</a>. After this change, <code>helm diff upgrade</code> will show a diff that deletes the object with the old API version and recreates it with the new API version, but <code>helm upgrade</code> will understand that we're still talking about the same object and not touch it. But regardless, it's recommended to perform the API version change when you do not have any other diffs in your pipeline, because those other diffs might be obscured by this fake diff.</dd>
+        <dt>There is a violation report for a Helm 2 release, but we have already migrated to Helm 3. What's going on?</dt>
+        <dd>
+          You probably forgot to cleanup your Helm 2 releases after migrating to Helm 3. Double-check with <code>helm3 ls</code> that you are really deploying with Helm 3, then cleanup the old Helm 2 releases manually. You can find them with:
+          <pre><code>kubectl get configmaps -n kube-system -l OWNER=TILLER | grep $RELEASE_NAME</code></pre>
+        </dd>
+      </dl>
+    GkImagesFromDockerhub: |
+      <p>This check finds containers that pull their image from Docker Hub.</p>
+      <dl>
+        <dt>Why is this a problem?</dt>
+        <dd>Docker Hub has rather severe rate limits for image pulls. If we need to pull several images at once, e.g. to recover from a region-wide outage, the recovery may be significantly slowed down by the rate limiting.</p>
+        <dt>How to fix?</dt>
+        <dd>We have set up a Docker Hub mirror at <code>keppel.$REGION.cloud.sap/ccloud-dockerhub-mirror</code>. The regional mirror is defined in globals.yaml and can be referenced as <code>$.Values.dockerHubMirror</code> in most Helm charts (<a href="https://github.com/sapcc/helm-charts/blob/409aa9940ecb600dafc0f9a20c973566af9eaf1f/openstack/backup-replication/templates/statsd-deployment.yaml#L29">example</a>).<br><br>If a particular image has not been mirrored yet, you need to <code>docker pull</code> it once from eu-de-1 with your logged-in Docker client. Afterwards, the image can be pulled from all regions without login.</dd>
+        <dt>What about circular dependencies?</dt>
+        <dd>If your pod pulls an image from Keppel, but Keppel needs that pod up and running to work, that's probably not a good idea. Get in touch with Stefan Majewsky and we'll figure out how to proceed.</dd>
+      </dl>

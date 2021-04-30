@@ -58,7 +58,7 @@ groups:
     expr: nsxv3_cluster_control_status == -2
     for: 5m
     labels:
-      severity: warning
+      severity: critical
       tier: vmware
       meta: 'NSX-T Cluster Control Status degraded: {{ $labels.nsxv3_manager_hostname }}'
       dashboard: nsx-t?var-cluster={{ $labels.name }}
@@ -108,10 +108,11 @@ groups:
     expr: label_replace(kube_pod_info{created_by_name=~'neutron-nsxv3-agent-bb.*'}, 'nsxv3_agent', '$1', 'created_by_name', '^(neutron-nsxv3-agent-bb[^-]+)-.*') unless on (nsxv3_agent) label_replace(nsxv3_cluster_management_last_successful_data_fetch{name=~"neutron-nsxv3-agent-bb.*"}, 'nsxv3_agent', '$1', 'name', '(.*)')
     for: 60m
     labels:
-      severity: info
+      severity: critical
       tier: vmware
       meta: 'NSX-T Exporter has no metrics'
       dashboard: nsx-t
+      playbook: docs/devops/alert/nsxt/#NSXT_ExporterScrapeOlder_OneHour
     annotations:
       description:  'NSX-T pod {{ $labels.nsxv3_agent }} is running, but we do not have metrics for it in prometheus.'
       summary:  'NSX-T Exporter has no metrics'

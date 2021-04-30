@@ -33,10 +33,8 @@
   value: {{ .Values.auth.queweb.username }}
 - name: QUEWEB_PASSWORD
   value: {{ .Values.auth.queweb.password }}
-{{- if .Values.omnitruck.enabled }}
 - name: OMNITRUCK_URL
-  value: https://{{ required ".Values.omnitruck.host missing" .Values.omnitruck.host }}
-{{- end }}
+  value: https://{{ default "omnitruck.chef.io" .Values.omnitruck.host }}
 {{- if .Values.sentryDSN }}
 - name: SENTRY_DSN
 {{- if eq .Values.sentryDSN "auto" }}

@@ -35,14 +35,14 @@ delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_s
 
 use_scheduler_creating_share_from_snapshot = {{ .Values.use_scheduler_creating_share_from_snapshot | default false }}
 
-scheduler_default_filters = AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter
+scheduler_default_filters = {{ .Values.scheduler_default_filters | default "AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter" }}
 # TODO: train does not have HostAffinityWeigher, add in victoria
 scheduler_default_weighers = CapacityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
 
 migration_ignore_scheduler = True
 # default time to wait for access rules to become active in migration cutover was 180 seconds
-migration_wait_access_rules_timeout = 600
+migration_wait_access_rules_timeout = 3600
 
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_shares = 0
@@ -52,8 +52,8 @@ quota_snapshot_gigabytes = 0
 quota_share_networks = 0
 quota_share_groups = 0
 quota_share_group_snapshots = 0
-quota_share_replicas = -1
-quota_replica_gigabytes = -1
+quota_share_replicas = 0
+quota_replica_gigabytes = 0
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "manila" }}
 

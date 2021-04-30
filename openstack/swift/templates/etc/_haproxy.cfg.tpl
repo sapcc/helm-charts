@@ -41,6 +41,7 @@ listen stats
   stats refresh 10s
 
 frontend api
+  maxconn 1800
   bind *:443 ssl crt /usr/local/etc/haproxy/ssl/tls.pem
 
   acl s3 hdr_beg(x-amz-date) -m found

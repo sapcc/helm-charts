@@ -27,6 +27,7 @@
       - '{__name__=~"^container_start_time_seconds"}'
       - '{__name__=~"^container_task_state"}'
       - '{__name__=~"^dnsmasq.+"}'
+      - '{__name__=~"^doop_agent_.+"}'
       - '{__name__=~"^etcd_.+"}'
       - '{__name__=~"^etcdbr_.+"}'
       - '{__name__=~"^go_.+"}'

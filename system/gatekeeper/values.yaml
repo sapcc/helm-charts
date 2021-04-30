@@ -2,5 +2,39 @@
 gatekeeper-upstream:
   createNamespace: false
   constraintViolationsLimit: 100
-  disableValidatingWebhook: true # TODO enable
   logDenies: true
+
+  # We only use Gatekeeper for auditing, not as a validating webhook. Therefore
+  # we don't need multiple replicas for the controller manager: It only needs
+  # to validate templates and create/update/delete CRDs from them.
+  disableValidatingWebhook: true
+  replicas: 1
+
+  audit:
+    resources:
+      limits:
+        cpu: 2
+        memory: 1024Mi
+      requests:
+        cpu: 500m
+        memory: 256Mi
+
+# Must be provided via --set-string; e.g. "qa-de-1" for QA controlplane or "s-qa-de-1" for QA scaleout.
+cluster_name: null
+# Must be provided via --set-string; e.g. "lab" or "qa" or "prod".
+cluster_layer: null
+# Must be provided via --set-string; e.g. "baremetal" or "scaleout".
+cluster_type: null
+
+helm_manifest_parser:
+  image_tag: 036432907d # Git commit for <https://github.com/sapcc/gatekeeper-addons>
+
+doop_agent:
+  enabled: true
+  image_tag: 8c1e0fa625 # Git commit for <https://github.com/sapcc/gatekeeper-addons>
+
+# NOTE: This section is shared with the `system/doop-central` chart.
+doop:
+  # values with default value null must be provided by values.yaml
+  swift_region: null
+  swift_password: null

@@ -1,15 +1,16 @@
 groups:
-  - name: octobus
+  - name: elk
     rules:
-      - alert: ELKDown
+      - alert: ELKLogsDashboardDown
         expr: probe_success{target=~"https://logs.+"} == 0
         for: 15m
         labels:
           severity: info
           tier: os
           service: elk
-          meta: "ELK down"
-          dashboard: elasticsearch
+          meta: "ELK logs dashboard down"
+          dashboard: elasticsearch?var-cluster=elkelasticsearch
+          playbook: docs/support/playbook/elk_kibana_issues.html
         annotations:
           description: "ELK is down"
           summary: "ELK is down"
@@ -21,8 +22,9 @@ groups:
           severity: info
           tier: os
           service: elk
-          meta: "ELK elasticsearch down"
-          dashboard: elasticsearch
+          meta: "ELK elasticsearch cluster down"
+          dashboard: elasticsearch?var-cluster=elkelasticsearch
+          playbook: docs/support/playbook/elk_kibana_issues.html
         annotations:
           description: "ELK elasticsearch is down"
           summary: "ELK elasticsearch is down"

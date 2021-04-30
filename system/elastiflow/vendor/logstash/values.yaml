@@ -1,10 +1,13 @@
 replicas: "2"
 # Allows you to add any config files in /usr/share/logstash/config/
 # such as logstash.yml and log4j2.properties
-logstashConfig: {}
-#  logstash.yml: |
-#    key:
-#      nestedkey: value
+logstashConfig:
+  logstash.yml: |
+    http:
+      host: "0.0.0.0"
+    pipeline:
+      workers: 8
+    
 #  log4j2.properties: |
 #    key = value
 
@@ -94,12 +97,7 @@ extraVolumeMounts: ""
   #   mountPath: /usr/share/extras
   #   readOnly: true
 
-extraContainers: |
-  - name: logstash-exporter
-    image: bonniernews/logstash_exporter:v0.1.2
-    ports:
-      - name: metrics
-        containerPort: 9198
+extraContainers: ""
 
 extraInitContainers: ""
   # - name: do-something
@@ -196,8 +194,3 @@ lifecycle: {}
   #     command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]
 
 service: {}
-
-
-elastic:
-  shards: 3
-  replicas: 1

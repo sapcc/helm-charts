@@ -177,6 +177,10 @@ logstash:
       cpu: 6000m
       memory: 8G
 
+  elastic:
+    shards: 3
+    replicas: 1
+
   jdbc:
     enabled: false
     configMap: "jdbc-filter"
@@ -216,12 +220,15 @@ logstash:
       #   targetPort: 9600
       #   protocol: TCP
 
+  alerts:
+    prometheus: infra-collector
+
   readinessProbe:
     # use beats port instead of http API to better check elastiflow specific status
     httpGet: null
     tcpSocket:
       port: 5044
-    initialDelaySeconds: 300
+    initialDelaySeconds: 180
     periodSeconds: 30
     failureThreshold: 20
     successThreshold: 1
