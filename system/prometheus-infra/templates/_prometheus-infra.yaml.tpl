@@ -32,7 +32,7 @@
       - '{job="firmware-exporter"}'      
       - '{job="windows-exporter"}'
       - '{job="jumpserver"}'
-      - '{__name__=~"^probe_success"}'
+      - '{__name__=~"^probe_success",job=~"(infra|cc3test)-probe-.+"}'
       - '{__name__=~"^vcenter_.+",job!~"[a-z0-9-]*-vccustomervmmetrics$"}'
       - '{__name__=~"^network_apic_.+"}'
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
