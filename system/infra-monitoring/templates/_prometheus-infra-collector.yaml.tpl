@@ -875,6 +875,7 @@
     'match[]':
       - '{__name__=~"(probe_.+_duration_seconds:avg|probe_success:avg)"}'
       - '{__name__=~".*probes_by_attributes"}'
+      - '{__name__=~"tcpgoon_.*"}'
   static_configs:
     - targets:
       - 'prometheus.asr1k-tests.c.{{ .Values.global.region }}.cloud.sap:9090'
