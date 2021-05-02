@@ -1,0 +1,63 @@
+groups:
+- name: DocsAlerts
+  rules:
+  - alert: UnhealthyPod
+    expr: sum(kube_pod_container_status_running{namespace="documentation"}) / count(kube_pod_container_status_running{namespace="documentation"}) < 1
+    for: 5m
+    labels:
+      meta: Documentation - unhealthy pod
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/documentation
+    annotations:
+      description: problem with converged cloud documentation
+      summary: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/C020NFB315Y
+  - alert: InvaldSSL
+    expr: probe_http_ssl{instance="https://documentation.global.cloud.sap", job="docs-urls"} == 0
+    for: 5m
+    labels:
+      meta: Documentation - invalid SSL
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/documentation
+    annotations:
+      description: Documentation - invalid SSL
+      summary: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/C020NFB315Y
+  - alert: DocumentationDown
+    expr: probe_success{instance="https://documentation.global.cloud.sap", job="docs-urls"} == 0
+    for: 5m
+    labels:
+      meta: Documentation - Converged Cloud documentation website is down
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/documentation
+    annotations:
+      description: Converged Cloud documentation website is down
+      summary: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/C020NFB315Y
+  - alert: DocumentationTrainingContentError
+    expr: probe_success{job="docs-training-content"} == 0
+    for: 5m
+    labels:
+      meta: Documentation - training content error
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/documentation
+    annotations:
+      description: Converged Cloud documentation training content doesn't match expected
+      summary: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/C020NFB315Y
+  - alert: DocumentationHomeContentError
+    expr: probe_success{job="docs-home-content"} == 0
+    for: 5m
+    labels:
+      meta: Documentation - home content error
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/documentation
+    annotations:
+      description: Converged Cloud documentation home content doesn't match expected
+      summary: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/C020NFB315Y
