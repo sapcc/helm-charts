@@ -23,6 +23,8 @@ spec:
       annotations:
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "swift-utils/templates/secret.yaml" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
     spec:
       volumes:
         - name: caretaker-etc
@@ -64,5 +66,28 @@ spec:
             limits:
               cpu: '100m'
               memory: '128Mi'
+          {{- end }}
+        - name: statsd
+          image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
+          args:
+            - --statsd.mapping-config=/caretaker-etc/statsd-exporter.yaml
+            - --statsd.listen-udp=:8125
+          ports:
+            - name: statsd
+              containerPort: 8125
+              protocol: UDP
+            - name: metrics
+              containerPort: 9102
+          volumeMounts:
+            - mountPath: /caretaker-etc
+              name: caretaker-etc
+          {{- if .Values.resources.enabled }}
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "100Mi"
+            limits:
+              cpu: "50m"
+              memory: "100Mi"
           {{- end }}
 {{- end }}

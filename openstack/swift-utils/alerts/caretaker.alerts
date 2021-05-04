@@ -1,0 +1,17 @@
+groups:
+- name: openstack-swift-caretaker.alerts
+  rules:
+  - alert: OpenstackSwiftOrphanAccounts
+    expr: max(swift_cluster_accounts_orphan) > 10
+    for: 15m
+    labels:
+      context: orphanaccounts
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      tier: os
+      meta: more than 10 Swift Accounts are orphan
+    annotations:
+      description: An in proper project deletion can cause this. Check the logs of pod
+        swift-account-caretaker-mergify-XXX.
+      summary: More than 10 Swift Accounts are orphan
