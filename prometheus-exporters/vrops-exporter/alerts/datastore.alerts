@@ -143,7 +143,7 @@ groups:
 
   - alert: DataStoreCapacityWarning
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.8
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+", datastore!~".+swap"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.8
     for: 20m
     labels:
       severity: warning
@@ -159,7 +159,7 @@ groups:
 
   - alert: DataStoreCapacityCritical
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+", datastore!~".+swap"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
     for: 20m
     labels:
       severity: critical
@@ -172,6 +172,22 @@ groups:
     annotations:
       description: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: NVMeDataStoreCapacityWarning
+    expr: >
+      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{datastore=~".+swap"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.85
+    for: 20m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      context: "NVMe-Datastore"
+      meta: "NVMe datastore {{ $labels.datastore }} utilization >= 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
+    annotations:
+      description: "NVMe datastore {{ $labels.datastore }} utilization >= 85%. Consider to move VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "NVMe datastore {{ $labels.datastore }} utilization >= 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
