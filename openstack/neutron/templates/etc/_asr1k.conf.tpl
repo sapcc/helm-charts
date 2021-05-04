@@ -55,5 +55,10 @@ use_bdvif = {{$hosting_device.use_bdvif | default "True"}}
 {{required "A valid address-scope required!" $address_scope.name}} = {{required "A valid address-scope required!" $address_scope.rd}}
 {{end}}
 
+{{- if $config_agent.availability_zone }}
+[AGENT]
+availability_zone = {{$config_agent.availability_zone}}
+{{ end }}
+
 {{- end -}}
 {{- end }}
