@@ -93,7 +93,7 @@ groups:
       description: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is 100% utilized'
       summary: 'Check what is causing this high CPU usage'
   - alert: JumpserverCriticalServiceFailed
-    expr: node_systemd_unit_state{job="jumpserver", exported_state="active", name=~"filebeataudit.service|auditd.service|filebeat.service|sssd.service|mcafee.ma.serice"} == 0
+    expr: node_systemd_unit_state{job="jumpserver", exported_state="active", name=~"filebeataudit.service|auditd.service|filebeat.service|sssd.service|mcafee.ma.service"} == 0
     for: 10m
     labels:
       context: availability
@@ -104,4 +104,22 @@ groups:
       playbook: 'docs/support/playbook/jumpserver/jumpserver_general_issues.html#systemd'
     annotations:
       description: '{{ $labels.server_name }} unit {{ $labels.name }} failed for 10m.'
+      summary: 'Check what went wrong and restart service'
+  - alert: JumpserverCriticalServiceAbsent
+    expr: |
+      node_systemd_unit_state{job="jumpserver", name="filebeataudit.service} == 1 or
+      node_systemd_unit_state{job="jumpserver", name="auditd.service} == 1 or
+      node_systemd_unit_state{job="jumpserver", name="filebeat.service} == 1 or
+      node_systemd_unit_state{job="jumpserver", name="sssd.service} == 1 or
+      node_systemd_unit_state{job="jumpserver", name="mcafee.ma.service} == 1
+    for: 10m
+    labels:
+      context: availability
+      service: jumpserver
+      severity: warning
+      tier: os
+      meta: '{{ $labels.name }} is not running, systemd has no status'
+      playbook: 'docs/support/playbook/jumpserver/jumpserver_general_issues.html#systemdabsent'
+    annotations:
+      description: '{{ $labels.name }} is not running, systemd has no status'
       summary: 'Check what went wrong and restart service'
