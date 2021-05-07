@@ -1,0 +1,37 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: {{ include "infraMonitoring.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "infraMonitoring.name" . }}
+    spec:
+      containers:
+      - name: {{ include "infraMonitoring.name" . }}
+        image: "{{ .Values.global.registry }}/{{ .Values.image }}:{{ .Values.tag }}"
+        env:
+        - name: APP_ENV
+          value: "{{ .Values.app_env }}"
+        - name: LISTEN_PORT
+          value: "{{ .Values.listen_port }}"
+        - name: DB_USER
+          value: "{{ .Values.global.datahub.user }}"
+        - name: DB_PASSWORD
+          value: "{{ .Values.global.datahub.password }}"
