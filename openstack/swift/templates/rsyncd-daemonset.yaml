@@ -22,6 +22,7 @@ spec:
         restart: directly
       annotations:
         {{- include "swift_conf_annotations" . | indent 8 }}
+        checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
     spec:
       {{- include "swift_daemonset_tolerations" . | indent 6 }}
       hostNetwork: true
@@ -51,6 +52,11 @@ spec:
           env:
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: DISPERSION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: swift-secret
+                  key: dispersion_password
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc

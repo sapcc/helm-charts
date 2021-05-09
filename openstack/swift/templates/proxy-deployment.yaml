@@ -39,6 +39,7 @@ spec:
         {{- include "swift_conf_annotations" $ | indent 8 }}
         checksum/nginx.bin: {{ include "swift/templates/nginx-bin-configmap.yaml" $ | sha256sum }}
         checksum/nginx-cluster.etc: {{ include "swift/templates/etc/nginx-cluster-configmap.yaml" $ | sha256sum }}
+        checksum/swift.secret: {{ include "swift/templates/secret.yaml" $ | sha256sum }}
         checksum/swift.tls-secret: {{ include "swift/templates/tls-secret.yaml" $ | sha256sum }}
         {{- include "swift_ring_annotations" $ | indent 8 }}
         {{- if $.Values.health_exporter }}
@@ -81,7 +82,7 @@ spec:
       volumes:
         {{- tuple $cluster_id | include "swift_proxy_volumes" | indent 8 }}
       containers:
-        {{- tuple "deployment" $cluster $ | include "swift_proxy_containers" | indent 8 }}
+        {{- tuple "deployment" $cluster_id $cluster $ | include "swift_proxy_containers" | indent 8 }}
 
 ---
 {{- end }}

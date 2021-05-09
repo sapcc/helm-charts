@@ -23,6 +23,7 @@ spec:
       annotations:
         {{- include "swift_prometheus_annotations" . | indent 8 }}
         checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
+        checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
     spec:
       {{- include "swift_daemonset_tolerations" . | indent 6 }}
       hostNetwork: true
@@ -36,6 +37,12 @@ spec:
         - name: statsd
           image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
           args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+          env:
+            - name: DISPERSION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: swift-secret
+                  key: dispersion_password
           ports:
             - name: statsd
               containerPort: 9125

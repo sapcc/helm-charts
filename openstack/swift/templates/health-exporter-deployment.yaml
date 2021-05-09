@@ -25,6 +25,7 @@ spec:
       annotations:
         {{- include "swift_ring_annotations" $ | indent 8 }}
         {{- include "swift_conf_annotations" $ | indent 8 }}
+        checksum/swift.secret: {{ include "swift/templates/secret.yaml" $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "9520"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
@@ -61,6 +62,12 @@ spec:
             - --collector.recon.unmounted
             - --collector.recon.updater_sweep_time
             - --recon.timeout-host=2
+          env:
+            - name: DISPERSION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: swift-secret
+                  key: dispersion_password
           ports:
             - name: metrics
               containerPort: 9520
