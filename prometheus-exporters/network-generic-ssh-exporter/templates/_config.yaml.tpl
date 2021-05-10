@@ -303,7 +303,7 @@ metrics:
 
   firewall_vrf_stats_total:
     regex: >-
-      VRF: (\w+).*?Total Session Count\(estab \+ half-open\): (\d+), Exceed: (\d+)
+      VRF: (\S+).*?Total Session Count\(estab \+ half-open\): (\d+), Exceed: (\d+)
     multi_value: true
     value: $2
     labels:
@@ -315,7 +315,7 @@ metrics:
 
   firewall_vrf_stats_half_open_udp:
     regex: >-
-      VRF: (\w+).*?UDP\s+(\d+)\s+(\d+)
+      VRF: (\S+).*?UDP\s+(\d+)\s+(\d+)
     multi_value: true
     value: $2
     labels:
@@ -327,7 +327,7 @@ metrics:
 
   firewall_vrf_stats_half_open_tcp:
     regex: >-
-      VRF: (\w+).*?TCP\s+(\d+)\s+(\d+)
+      VRF: (\S+).*?TCP\s+(\d+)\s+(\d+)
     multi_value: true
     value: $2
     labels:
@@ -339,7 +339,7 @@ metrics:
 
   firewall_vrf_stats_half_open_icmp:
     regex: >-
-      VRF: (\w+).*?ICMP\s+(\d+)\s+(\d+)
+      VRF: (\S+).*?ICMP\s+(\d+)\s+(\d+)
     multi_value: true
     value: $2
     labels:
