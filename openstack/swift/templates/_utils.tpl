@@ -89,10 +89,9 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_nginx_containers" }}
-{{- $local      := index . 0 -}}
-{{- $cluster_id := index . 1 -}}
-{{- $cluster    := index . 2 -}}
-{{- $context    := index . 3 }}
+{{- $local   := index . 0 -}}
+{{- $cluster := index . 1 -}}
+{{- $context := index . 2 }}
 - name: nginx
   image: {{ $context.Values.global.registryAlternateRegion }}/swift-nginx:{{ $context.Values.image_version_nginx }}
   command:
@@ -105,16 +104,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
       value: "false"
     - name: LOCAL_NGINX
       value: {{ $local | quote }}
-    - name: DISPERSION_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: swift-secret
-          key: dispersion_password
-    - name: {{ $cluster_id | upper }}_SERVICE_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: swift-secret
-          key: {{ $cluster_id }}_service_password
   resources:
     # observed usage: CPU = 10m-500m, RAM = 50-100 MiB
     requests:
@@ -206,11 +195,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   env:
     - name: DEBUG_CONTAINER
       value: "false"
-    - name: DISPERSION_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: swift-secret
-          key: dispersion_password
     - name: {{ $cluster_id | upper }}_SERVICE_PASSWORD
       valueFrom:
         secretKeyRef:
@@ -251,7 +235,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     initialDelaySeconds: 10
     timeoutSeconds: 1
     periodSeconds: 10
-{{- tuple "true" $cluster_id $cluster $context | include "swift_nginx_containers" -}}
+{{- tuple "true" $cluster $context | include "swift_nginx_containers" -}}
 {{- if $context.Values.health_exporter }}
 - name: collector
   image: {{ include "swift_image" $context }}
@@ -294,12 +278,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 - name: statsd
   image: {{ $context.Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ $context.Values.image_version_auxiliary_statsd_exporter }}
   args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
-  env:
-    - name: DISPERSION_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: swift-secret
-          key: dispersion_password
   resources:
     # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
     requests:
