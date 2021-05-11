@@ -195,7 +195,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   env:
     - name: DEBUG_CONTAINER
       value: "false"
-    - name: {{ $cluster_id | upper }}_SERVICE_PASSWORD
+    - name: SWIFT_SERVICE_PASSWORD
       valueFrom:
         secretKeyRef:
           name: swift-secret

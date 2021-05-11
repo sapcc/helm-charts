@@ -1,8 +1,7 @@
 {{- define "proxy-server.conf" -}}
-{{- $cluster_id := index . 0 -}}
-{{- $cluster := index . 1 -}}
-{{- $context := index . 2 -}}
-{{- $helm_release := index . 3 -}}
+{{- $cluster := index . 0 -}}
+{{- $context := index . 1 -}}
+{{- $helm_release := index . 2 -}}
 [DEFAULT]
 bind_port = 8080
 # NOTE: value for prod, was 4 in staging before
@@ -115,7 +114,7 @@ token_cache_time = {{$cluster.token_cache_time | default 600}}
 region_name = {{$cluster.region_name | default $context.global.region}}
 user_domain_name = {{$cluster.swift_service_user_domain}}
 username = {{$cluster.swift_service_user}}
-password = "{ fromEnv: {{ $cluster_id | upper }}_SERVICE_PASSWORD }"
+password = "{ fromEnv: SWIFT_SERVICE_PASSWORD }"
 project_domain_name = {{$cluster.swift_service_project_domain}}
 project_name = {{$cluster.swift_service_project}}
 service_token_roles_required = true
@@ -209,7 +208,7 @@ username = {{ $cluster.swift_service_user }}
 user_domain_name = {{ $cluster.swift_service_user_domain }}
 project_name = {{ $cluster.swift_service_project }}
 project_domain_name = {{ $cluster.swift_service_project_domain }}
-password = "{ fromEnv: {{ $cluster_id | upper }}_SERVICE_PASSWORD }"
+password = "{ fromEnv: SWIFT_SERVICE_PASSWORD }"
 {{- end }}
 
 {{ if $context.watcher_enabled -}}
