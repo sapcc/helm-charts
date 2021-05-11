@@ -39,6 +39,7 @@ prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing"
 {{- /**********************************************************************************/ -}}
 {{- define "swift_conf_annotations" }}
 checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
+checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
 {{- end -}}
 
 {{- /**********************************************************************************/ -}}
@@ -195,6 +196,16 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   env:
     - name: DEBUG_CONTAINER
       value: "false"
+    - name: HASH_PATH_PREFIX
+      valueFrom:
+        secretKeyRef:
+          name: swift-secret
+          key: hash_path_prefix
+    - name: HASH_PATH_SUFFIX
+      valueFrom:
+        secretKeyRef:
+          name: swift-secret
+          key: hash_path_suffix
     - name: SWIFT_SERVICE_PASSWORD
       valueFrom:
         secretKeyRef:
@@ -248,6 +259,16 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     - --recon.timeout=20
     - --recon.timeout-host=2
   env:
+    - name: HASH_PATH_PREFIX
+      valueFrom:
+        secretKeyRef:
+          name: swift-secret
+          key: hash_path_prefix
+    - name: HASH_PATH_SUFFIX
+      valueFrom:
+        secretKeyRef:
+          name: swift-secret
+          key: hash_path_suffix
     - name: DISPERSION_PASSWORD
       valueFrom:
         secretKeyRef:
@@ -316,6 +337,16 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   env:
     - name: DEBUG_CONTAINER
       value: "false"
+    - name: HASH_PATH_PREFIX
+      valueFrom:
+        secretKeyRef:
+          name: swift-secret
+          key: hash_path_prefix
+    - name: HASH_PATH_SUFFIX
+      valueFrom:
+        secretKeyRef:
+          name: swift-secret
+          key: hash_path_suffix
   volumeMounts:
     - mountPath: /swift-etc
       name: swift-etc
