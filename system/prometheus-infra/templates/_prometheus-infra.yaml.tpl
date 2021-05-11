@@ -79,6 +79,12 @@
       target_label: region
       regex: prometheus-infra-collector.(.+).cloud.sap
       replacement: $1
+    - source_labels: [__name__, cluster]
+      regex: "^elasticsearch_.+;(.+)"
+      target_label: elastic_cluster
+    - source_labels: [__name__, cluster]
+      regex: "^es_.+;(.+)"
+      target_label: elastic_cluster
 
   metric_relabel_configs:
     - source_labels: [__name__, prometheus]
