@@ -98,7 +98,6 @@
       action: replace
     - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash|instance"
       action: labeldrop
-      action: replace
     - source_labels: [__name__, cluster]
       regex: '^elasticsearch_.+;(.*)'
       replacement: '$1'
