@@ -114,7 +114,7 @@ token_cache_time = {{$cluster.token_cache_time | default 600}}
 region_name = {{$cluster.region_name | default $context.global.region}}
 user_domain_name = {{$cluster.swift_service_user_domain}}
 username = {{$cluster.swift_service_user}}
-password = "{ fromEnv: SWIFT_SERVICE_PASSWORD }"
+password = { fromEnv: SWIFT_SERVICE_PASSWORD }
 project_domain_name = {{$cluster.swift_service_project_domain}}
 project_name = {{$cluster.swift_service_project}}
 service_token_roles_required = true
@@ -208,7 +208,7 @@ username = {{ $cluster.swift_service_user }}
 user_domain_name = {{ $cluster.swift_service_user_domain }}
 project_name = {{ $cluster.swift_service_project }}
 project_domain_name = {{ $cluster.swift_service_project_domain }}
-password = "{ fromEnv: SWIFT_SERVICE_PASSWORD }"
+password = { fromEnv: SWIFT_SERVICE_PASSWORD }
 {{- end }}
 
 {{ if $context.watcher_enabled -}}
