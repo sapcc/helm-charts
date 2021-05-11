@@ -10,7 +10,7 @@ mysql+pymysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Valu
 
 {{- define "cell2_db_path_for_exporter" -}}
 {{- if eq .Values.cell2.enabled true -}}
-mysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Values.global.dbPassword | urlquery }}@tcp({{.Chart.Name}}-{{.Values.cell2.name}}-mariadb.{{include "svc_fqdn" .}}:3306)/{{.Values.cell2dbName}}
+mysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Values.global.dbPassword | urlquery }}@tcp(nova-{{.Values.cell2.name}}-mariadb.{{include "svc_fqdn" .}}:3306)/{{.Values.cell2dbName}}
 {{- end -}}
 {{- end -}}
 
