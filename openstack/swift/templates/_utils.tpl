@@ -89,7 +89,7 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_nginx_containers" }}
-{{- $local    := index . 0 -}}
+{{- $local   := index . 0 -}}
 {{- $cluster := index . 1 -}}
 {{- $context := index . 2 }}
 - name: nginx
@@ -180,9 +180,10 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
 
 {{- /**********************************************************************************/ -}}
 {{- define "swift_proxy_containers" }}
-{{- $kind    := index . 0 -}}
-{{- $cluster := index . 1 -}}
-{{- $context := index . 2 }}
+{{- $kind       := index . 0 -}}
+{{- $cluster_id := index . 1 -}}
+{{- $cluster    := index . 2 -}}
+{{- $context    := index . 3 }}
 - name: proxy
   image: {{ include "swift_image" $context }}
   command:
@@ -194,6 +195,11 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   env:
     - name: DEBUG_CONTAINER
       value: "false"
+    - name: SWIFT_SERVICE_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: swift-secret
+          key: {{ $cluster_id }}_service_password
     {{- if $context.Values.sentry.enabled }}
     - name: SENTRY_DSN
       valueFrom:
@@ -241,6 +247,12 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
     - health-exporter
     - --recon.timeout=20
     - --recon.timeout-host=2
+  env:
+    - name: DISPERSION_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: swift-secret
+          key: dispersion_password
   ports:
     - name: metrics
       containerPort: 9520
