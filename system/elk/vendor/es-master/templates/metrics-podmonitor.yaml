@@ -36,4 +36,9 @@ spec:
           regex: '__meta_kubernetes_pod_label_(.+)'
         - targetLabel: job
           replacement: elk-elastic-exporter
+      metricRelabelings:
+        - source_labels: [__name__, cluster]
+          regex: '^elasticsearch_.+;(.*)'
+          replacement: '$1'
+          target_label: elastic_cluster
 {{- end }}
