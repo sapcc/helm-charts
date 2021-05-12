@@ -74,3 +74,16 @@ groups:
         them to Sentry. Please have a look at the list of unresolved issues
         at <https://sentry.{{ $labels.region }}.cloud.sap/monsoon/glance/>.
       summary: glance has reported issues to Sentry
+
+  - alert: OpenstackGlanceRateLimitActionIsAbove50
+    expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="api"}[2m]) * 60) > 50
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: glance
+      meta: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations' 
+    annotations:
+      description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations' 
+      summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
