@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TOOLBOX_DOCKER_IMAGE=( {{ required ".Values.global.registry is missing" .Values.global.registry }}/ccloud/toolbox )
+TOOLBOX_DOCKER_IMAGE=( {{ required ".Values.global.registry is missing" .Values.global.registry }}/toolbox )
 TOOLBOX_DOCKER_TAG=( {{ required ".Values.images.toolbox.tag is missing" .Values.images.toolbox.tag }} )
 TOOLBOX_DIRECTORY=( {{ required ".Values.toolbox.toolboxDir is missing" .Values.toolbox.toolboxDir }} )
 TOOLBOX_IMAGE_NAME=( {{ required ".Values.toolbox.toolboxName is missing" .Values.toolbox.toolboxName }} )
@@ -11,7 +11,7 @@ mkdir -p "${TOOLBOX_PATH}"
 
 # Needed to trigger keppel replication
 : <<'END_COMMENT'
-image: "{{ required ".Values.global.registry is missing" .Values.global.registry }}/ccloud/toolbox:{{ required ".Values.images.toolbox.tag is missing" .Values.images.toolbox.tag }}"
+image: "{{ required ".Values.global.registry is missing" .Values.global.registry }}/toolbox:{{ required ".Values.images.toolbox.tag is missing" .Values.images.toolbox.tag }}"
 END_COMMENT
 
 docker pull ${TOOLBOX_DOCKER_IMAGE}:${TOOLBOX_DOCKER_TAG}

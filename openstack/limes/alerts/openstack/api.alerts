@@ -160,6 +160,22 @@ groups:
         The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
       summary: Limes cannot find {{ title $labels.service_name }} endpoint
 
+  - alert: OpenstackLimesMissingSwiftMetrics
+    expr: (limes_project_usage{service="object-store",resource="capacity"} > 0) unless on(project_id) (limes_plugin_metrics_ok{service="object-store"} == 1)
+    for: 5m
+    labels:
+      context: swiftmetrics
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      tier: os
+      meta: "project {{ $labels.project_id }}"
+    annotations:
+      description: The project {{ $labels.domain }}/{{ $labels.project }} (UUID {{ $labels.project_id }})
+        has Swift containers, but Limes does not submit Swift usage metrics to Maia.
+        Check the `kubectl logs` for limes-collect-{{ $labels.os_cluster }} for additional info.
+      summary: Limes cannot submit Swift usage metrics
+
   - alert: OpenstackLimesFailedDomainDiscoveries
     expr: sum(increase(limes_failed_domain_discoveries[5m])) BY (os_cluster) > 0
     for: 30m
@@ -184,7 +200,7 @@ groups:
       severity: warning
       tier: os
     annotations:
-      description: Limes cannot discover project in domain {{ $labels.domain }}
+      description: Limes cannot discover projects in domain {{ $labels.domain }}
         of cluster {{ $labels.os_cluster }}. Please check if "openstack project
         list --domain {{ $labels.domain }}" is working.
       summary: Limes cannot discover projects.

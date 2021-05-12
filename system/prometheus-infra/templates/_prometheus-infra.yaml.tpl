@@ -33,6 +33,7 @@
       - '{job="windows-exporter"}'
       - '{job="jumpserver"}'
       - '{__name__=~"^probe_success",job=~"(infra|cc3test)-probe-.+"}'
+      - '{__name__=~"^probe_success",job="docs-urls"}'
       - '{__name__=~"^vcenter_.+",job!~"[a-z0-9-]*-vccustomervmmetrics$"}'
       - '{__name__=~"^network_apic_.+"}'
       - '{__name__=~"^ipmi_sensor_state$",type=~"Memory|Drive Slot|Processor|Power Supply|Critical Interrupt|Version Change|Event Logging Disabled|System Event"}'
@@ -97,6 +98,16 @@
       action: replace
     - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash|instance"
       action: labeldrop
+    - source_labels: [__name__, cluster]
+      regex: '^elasticsearch_.+;(.*)'
+      replacement: '$1'
+      target_label: elastic_cluster
+      action: replace
+    - source_labels: [__name__, cluster]
+      regex: '^es_.+;(.*)'
+      replacement: '$1'
+      target_label: elastic_cluster
+      action: replace
 
   {{ if .Values.authentication.enabled }}
   tls_config:

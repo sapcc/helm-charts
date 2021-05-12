@@ -9,7 +9,7 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      context: "vVOL datastore"
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_1
     annotations:
@@ -24,7 +24,7 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      context: "vVOL datastore"
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
       dashboard: vcenter-datastore-utilization
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_4
@@ -40,7 +40,7 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      context: "vVOL datastore"
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
       dashboard: vcenter-datastore-utilization
       playbook: docs/devops/alert/vcenter/vvol_datastore.html#vvol_3
@@ -50,13 +50,13 @@ groups:
 
   - alert: EphemeralDataStoreCapacityWarning
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >= 0.8
+      vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.8
     for: 20m
     labels:
       severity: warning
       tier: vmware
       service: storage
-      context: "Eph datastore"
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "Eph Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
@@ -64,15 +64,15 @@ groups:
       description: "Eph Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: EphemralDataStoreCapacityCritical
+  - alert: EphemeralDataStoreCapacityCritical
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+      vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
     for: 20m
     labels:
       severity: critical
       tier: vmware
       service: storage
-      context: "Eph datastore"
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
@@ -82,13 +82,13 @@ groups:
 
   - alert: VVolDataStoreCapacityWarning
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >= 0.8
+      vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.8
     for: 20m
     labels:
       severity: warning
       tier: os
       service: storage
-      context: "vVOL datastore"
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
@@ -98,13 +98,13 @@ groups:
 
   - alert: VVolDataStoreCapacityCritical
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+      vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
     for: 20m
     labels:
       severity: critical
       tier: os
       service: storage
-      context: "vVOL datastore"
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
@@ -114,13 +114,13 @@ groups:
 
   - alert: VmfsDataStoreCapacityWarning
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >= 0.8
+      vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs.+"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.8
     for: 20m
     labels:
       severity: warning
       tier: os
       service: storage
-      context: "VMFS datastore"
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "VMFS Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
@@ -130,13 +130,13 @@ groups:
 
   - alert: VmfsDataStoreCapacityCritical
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+      vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs.+"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
     for: 20m
     labels:
       severity: critical
       tier: os
       service: storage
-      context: "VMFS datastore"
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert.html
@@ -146,12 +146,13 @@ groups:
 
   - alert: DataStoreCapacityWarning
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.8
+      vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.8
     for: 20m
     labels:
       severity: warning
       tier: vmware
       service: storage
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
@@ -161,12 +162,13 @@ groups:
 
   - alert: DataStoreCapacityCritical
     expr: >
-      max_over_time(vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+"}[10m]) / max_over_time(vrops_datastore_diskspace_capacity_gigabytes[10m]) >=  0.9
+      vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vfms.+", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
     for: 20m
     labels:
       severity: critical
       tier: vmware
       service: storage
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
@@ -174,15 +176,32 @@ groups:
       description: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
+  - alert: NVMeDataStoreCapacityWarning
+    expr: >
+      vrops_datastore_diskspace_total_usage_gigabytes{datastore=~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.85
+    for: 20m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      context: "vrops-exporter {{ $labels.datastore }}"
+      meta: "NVMe datastore {{ $labels.datastore }} utilization >= 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
+    annotations:
+      description: "NVMe datastore {{ $labels.datastore }} utilization >= 85%. Consider to move VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "NVMe datastore {{ $labels.datastore }} utilization >= 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
-      max_over_time(vrops_datastore_summary_total_number_vms[10m]) > 0
-      and on (datastore) max_over_time(vrops_datastore_summary_datastore_accessible{type!~"local", state="PoweredOff"}[10m])
+      vrops_datastore_summary_total_number_vms > 0
+      and on (datastore) vrops_datastore_summary_datastore_accessible{type!~"local", state="PoweredOff"}
     for: 20m
     labels:
       severity: critical
       tier: vmware
       service: storage
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "Datastore {{ $labels.datastore }} is disconnected and has virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       playbook: docs/devops/alert/vcenter/#test_eph_ds_1
     annotations:
@@ -191,13 +210,14 @@ groups:
 
   - alert: DatastoreDisconnectedWithoutVmsOnIt
     expr: >
-      max_over_time(vrops_datastore_summary_total_number_vms[10m]) == 0
-      and on (datastore) max_over_time(vrops_datastore_summary_datastore_accessible{type!~"local", state="PoweredOff"}[10m])
+      vrops_datastore_summary_total_number_vms == 0
+      and on (datastore) vrops_datastore_summary_datastore_accessible{type!~"local", state="PoweredOff"}
     for: 20m
     labels:
       severity: warning
       tier: vmware
       service: storage
+      context: "vrops-exporter {{ $labels.datastore }}"
       meta: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       playbook: docs/devops/alert/vcenter/#test_eph_ds_2
     annotations:

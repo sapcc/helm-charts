@@ -8,8 +8,14 @@ mysql+pymysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Valu
 {{- end -}}
 {{- end -}}
 
+{{- define "cell2_db_path_for_exporter" -}}
+{{- if eq .Values.cell2.enabled true -}}
+mysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Values.global.dbPassword | urlquery }}@tcp(nova-{{.Values.cell2.name}}-mariadb.{{include "svc_fqdn" .}}:3306)/{{.Values.cell2dbName}}
+{{- end -}}
+{{- end -}}
+
 {{- define "cell2_transport_url" -}}
-rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2.users.default.user }}:{{ .Values.rabbitmq_cell2.users.default.password | default (tuple . .Values.rabbitmq_cell2.users.default.user | include "rabbitmq.password_for_user")  | urlquery}}@{{.Chart.Name}}-{{.Values.cell2.name}}-rabbitmq.{{include "svc_fqdn" .}}:{{ .Values.rabbitmq_cell2.port | default 5672 }}{{ .Values.rabbitmq_cell2.virtual_host | default "/" }}
+rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2.users.default.user }}:{{ required "rabbitmq_cell2.users.default.password required" .Values.rabbitmq_cell2.users.default.password | urlquery }}@{{.Chart.Name}}-{{.Values.cell2.name}}-rabbitmq.{{include "svc_fqdn" .}}:{{ .Values.rabbitmq_cell2.port | default 5672 }}{{ .Values.rabbitmq_cell2.virtual_host | default "/" }}
 {{- end -}}
 
 

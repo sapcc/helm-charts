@@ -2,7 +2,7 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: doop-central
+  name: {{ .Release.Name }}
 
 spec:
   revisionHistoryLimit: 5
@@ -14,11 +14,11 @@ spec:
       maxSurge: 2
   selector:
     matchLabels:
-      name: doop-central
+      name: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        name: doop-central
+        name: {{ .Release.Name }}
       annotations:
         checksum/configmap: {{ include "doop-central/templates/configmap.yaml" $ | sha256sum }}
     spec:
@@ -27,7 +27,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: doop-central
+            name: {{ .Release.Name }}
       containers:
         - name: web
           image: {{.Values.global.registry | required ".Values.global.registry not found"}}/doop-central:{{.Values.image_tag}}
@@ -55,10 +55,14 @@ spec:
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: doop-central
+                  name: {{ .Release.Name }}
                   key: swift_password
             - name: REPORT_CONTAINER_NAME
+              {{- if .Values.kubernikus }}
+              value: doop-agent-kubernikus
+              {{- else }}
               value: doop-agent
+              {{- end }}
           ports:
             - name: http
               containerPort: 8080

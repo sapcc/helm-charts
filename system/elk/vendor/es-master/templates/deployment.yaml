@@ -72,10 +72,12 @@ spec:
             value: "false"
           - name: NODE_INGEST
             value: "false"
+          - name: HTTP_ENABLE
+            value: "true"
           - name: ES_JAVA_OPTS
             value: "-XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000"
           - name: READONLYREST_ENABLE
-            value: "false"
+            value: "true"
         volumeMounts:
           - mountPath: /es-etc
             name: es-etc
@@ -89,6 +91,9 @@ spec:
             hostPort: {{.Values.master_dummy_port}}
             hostIP: 127.0.0.1
             containerPort: {{.Values.master_dummy_port}}
+          - name: http
+            containerPort: {{.Values.global.http_port}}
+            protocol: TCP
   volumeClaimTemplates:
   - metadata:
       name: es
