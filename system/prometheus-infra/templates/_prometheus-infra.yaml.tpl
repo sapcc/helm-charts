@@ -79,6 +79,10 @@
       target_label: region
       regex: prometheus-infra-collector.(.+).cloud.sap
       replacement: $1
+    - source_labels: [__name__, cluster]
+      regex: '^(es|elasticsearch)_.+;(.*)'
+      replacement: '$1'
+      target_label: elastic_cluster
 
   metric_relabel_configs:
     - source_labels: [__name__, prometheus]
@@ -98,16 +102,6 @@
       action: replace
     - regex: "prometheus_replica|kubernetes_namespace|kubernetes_name|namespace|pod|pod_template_hash|instance"
       action: labeldrop
-    - source_labels: [__name__, cluster]
-      regex: '^elasticsearch_.+;(.*)'
-      replacement: '$1'
-      target_label: elastic_cluster
-      action: replace
-    - source_labels: [__name__, cluster]
-      regex: '^es_.+;(.*)'
-      replacement: '$1'
-      target_label: elastic_cluster
-      action: replace
 
   {{ if .Values.authentication.enabled }}
   tls_config:
