@@ -138,6 +138,12 @@ spec:
             - key: {{ .Values.jdbc.configFile }}
               path: {{ .Values.jdbc.configFile }}
         {{- end }}
+        - name: elastiflow-template-config
+          configMap:
+            name: elastiflow-template
+            items:
+            - key: elastiflow.template.json
+              path: elastiflow.template.json
       {{- if .Values.extraVolumes }}
 {{ tpl .Values.extraVolumes . | indent 8 }}
       {{- end }}
@@ -173,6 +179,22 @@ spec:
 {{- if .Values.extraEnvs }}
 {{ toYaml .Values.extraEnvs | indent 10 }}
 {{- end }}        
+          - name: ELASTIFLOW_ES_HOST
+            value: "{{ .Values.elastic.host }}"
+          - name: ELASTIFLOW_ES_SSL_ENABLE
+            value: "{{ .Values.elastic.ssl }}"
+          - name: ELASTIFLOW_ES_USER
+            value: "{{ .Values.elastic.user }}"
+          - name: ELASTIFLOW_ES_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: elastiflow-logstash-secret
+                key: ELASTIFLOW_ES_PASSWD
+          - name: DATAHUB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elastiflow-logstash-secret
+                key: DATAHUB_PASSWORD
         volumeMounts:
           {{- if .Values.persistence.enabled }}
           - name: "{{ template "logstash.fullname" . }}"
@@ -199,7 +221,10 @@ spec:
           - name: {{ .Values.jdbc.configMap }}-config
             mountPath: /etc/logstash/elastiflow/conf.d/{{ .Values.jdbc.configFile }}
             subPath: {{ .Values.jdbc.configFile }}
-          {{- end -}}
+          {{- end }}
+          - name: elastiflow-template-config
+            mountPath: /etc/logstash/elastiflow/templates/elastiflow.template.json
+            subPath: elastiflow.template.json
         {{- if .Values.extraVolumeMounts }}
 {{ tpl .Values.extraVolumeMounts . | indent 10 }}
         {{- end }}
@@ -207,6 +232,11 @@ spec:
         lifecycle:
 {{ toYaml .Values.lifecycle | indent 10 }}
 {{- end }}
+      - name: logstash-exporter
+        image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/bonniernews/logstash_exporter:v0.1.2
+        ports:
+          - name: metrics
+            containerPort: 9198
       {{- if .Values.extraContainers }}
 {{ tpl .Values.extraContainers . | indent 6 }}
       {{- end }}

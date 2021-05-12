@@ -112,6 +112,8 @@ spec:
         - name: api
           containerPort: {{.Values.api_port_internal}}
         volumeMounts:
+        - name: swift-buffer
+          mountPath: /upload
         - name: etcglance
           mountPath: /etc/glance
         - name: glance-etc
@@ -125,8 +127,8 @@ spec:
           readOnly: true
         {{- end }}
         - name: glance-etc
-          mountPath: /etc/glance/policy.json
-          subPath: policy.json
+          mountPath: /etc/glance/policy.yaml
+          subPath: policy.yaml
           readOnly: true
         - name: glance-etc
           mountPath: /etc/glance/glance-api-paste.ini
@@ -150,16 +152,13 @@ spec:
           subPath: glance_audit_map.yaml
           readOnly: true
         {{- end }}
-        - name: glance-etc
-          mountPath: /etc/glance/glance-protection.pp
-          subPath: glance-protection.pp
-          readOnly: true
         {{- if .Values.sapcc_rate_limit.enabled }}
         - name: glance-etc
           mountPath: /etc/glance/ratelimit.yaml
           subPath: ratelimit.yaml
           readOnly: true
         {{- end }}
+
       {{- if .Values.imageVersionGlanceRegistry }}
       - name: registry
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/ubuntu-source-glance-registry:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
@@ -215,8 +214,8 @@ spec:
           readOnly: true
         {{- end }}
         - name: glance-etc
-          mountPath: /etc/glance/policy.json
-          subPath: policy.json
+          mountPath: /etc/glance/policy.yaml
+          subPath: policy.yaml
           readOnly: true
         - name: glance-etc
           mountPath: /etc/glance/glance-registry-paste.ini
@@ -255,9 +254,17 @@ spec:
             mountPath: /etc/statsd/statsd-exporter.yaml
             subPath: statsd-exporter.yaml
             readOnly: true
+        {{- if .Values.statsd.resources.enabled }}
+        resources:
+          requests:
+            cpu: {{ .Values.statsd.resources.requests.cpu | quote }}
+            memory: {{ .Values.statsd.resources.requests.memory | quote }}
+        {{- end }}
       {{- end }}
       volumes:
       - name: etcglance
+        emptyDir: {}
+      - name: swift-buffer
         emptyDir: {}
       - name: image-store
       {{- if .Values.file.persistence.enabled }}

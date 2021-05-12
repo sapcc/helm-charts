@@ -22,11 +22,18 @@
 - name:  KEPPEL_API_PUBLIC_URL
   value: 'https://keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
 - name:  KEPPEL_AUDIT_SILENT
-  value: "{{ ne $.Values.keppel.rabbitmq.uri "" }}"
-- name:  KEPPEL_AUDIT_RABBITMQ_URI
-  value: "{{ $.Values.keppel.rabbitmq.uri }}"
+  value: "{{ ne $.Values.keppel.rabbitmq.queue_name "" }}"
 - name:  KEPPEL_AUDIT_RABBITMQ_QUEUE_NAME
   value: "{{ $.Values.keppel.rabbitmq.queue_name }}"
+- name: KEPPEL_AUDIT_RABBITMQ_USERNAME
+  value: "{{ $.Values.keppel.rabbitmq.username }}"
+- name: KEPPEL_AUDIT_RABBITMQ_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: rabbitmq_password
+- name: KEPPEL_AUDIT_RABBITMQ_HOSTNAME
+  value: "{{ $.Values.keppel.rabbitmq.hostname }}"
 - name:  KEPPEL_AUTH_LOCAL_ROLE
   value: 'swiftoperator'
 - name:  KEPPEL_BURST_ANYCAST_BLOB_PULL_BYTES
@@ -39,20 +46,57 @@
   value: '300'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
-- name:  KEPPEL_DB_URI
-  value: 'postgres://postgres:{{$.Values.postgresql.postgresPassword}}@{{.Release.Name}}-postgresql/keppel?sslmode=disable'
+{{- if .Values.keppel.clair.hostname }}
+- name:  KEPPEL_CLAIR_PRESHARED_KEY
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: clair_preshared_key
+- name:  KEPPEL_CLAIR_URL
+  value: "https://{{ .Values.keppel.clair.hostname }}"
+{{- end }}
+- name:  KEPPEL_DB_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: postgres_password
+- name: KEPPEL_DB_HOSTNAME
+  value: "{{ .Release.Name }}-postgresql"
+- name: KEPPEL_DB_CONNECTION_OPTIONS
+  value: "sslmode=disable"
 - name:  KEPPEL_DRIVER_AUTH
   value: 'keystone'
 - name:  KEPPEL_DRIVER_FEDERATION
-  value: 'redis'
+  value: 'swift'
 - name:  KEPPEL_DRIVER_RATELIMIT
   value: 'basic'
 - name:  KEPPEL_DRIVER_STORAGE
   value: 'swift'
-- name:  KEPPEL_FEDERATION_REDIS_URI
-  value: 'redis://:{{$.Values.dynomite.password}}@{{$.Values.dynomite.host}}/{{$.Values.dynomite.database}}'
-- name:  KEPPEL_FEDERATION_REDIS_PREFIX
-  value: {{ quote $.Values.dynomite.prefix }}
+- name:  KEPPEL_FEDERATION_OS_AUTH_URL
+  value: "https://identity-3.{{ $.Values.federation.leader_region }}.{{ $.Values.global.tld }}/v3"
+- name:  KEPPEL_FEDERATION_OS_AUTH_VERSION
+  value: '3'
+- name:  KEPPEL_FEDERATION_OS_IDENTITY_API_VERSION
+  value: '3'
+- name:  KEPPEL_FEDERATION_OS_INTERFACE
+  value: public
+- name:  KEPPEL_FEDERATION_OS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: federation_service_user_password
+- name:  KEPPEL_FEDERATION_OS_PROJECT_DOMAIN_NAME
+  value: 'ccadmin'
+- name:  KEPPEL_FEDERATION_OS_PROJECT_NAME
+  value: 'master'
+- name:  KEPPEL_FEDERATION_OS_REGION_NAME
+  value: {{ quote $.Values.federation.leader_region }}
+- name:  KEPPEL_FEDERATION_OS_USER_DOMAIN_NAME
+  value: 'Default'
+- name:  KEPPEL_FEDERATION_OS_USERNAME
+  value: 'keppel'
+- name:  KEPPEL_FEDERATION_SWIFT_CONTAINER
+  value: 'keppel_federation_db'
 - name:  KEPPEL_GUI_URI
   value: {{ quote $.Values.keppel.dashboard_url_pattern }}
 - name:  KEPPEL_ISSUER_KEY
@@ -62,7 +106,7 @@
 - name:  KEPPEL_OSLO_POLICY_PATH
   value: '/etc/keppel/policy.json'
 - name:  KEPPEL_PEERS
-  value: {{ $.Values.keppel.peer_hostnames | join "," | quote }}
+  value: "{{ range .Values.keppel.peers }}{{ .hostname }},{{ end }}"
 - name:  KEPPEL_RATELIMIT_ANYCAST_BLOB_PULL_BYTES
   value: '5242880 B/s' # 5 MiB/s per account (very small to discourage continuous use of anycast, but
                        # the burst budget is very large to enable anycast pulling of large images; the
@@ -77,8 +121,17 @@
                     # actually pulling the image contents)
 - name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
   value: '10r/m'   # per account
-- name:  KEPPEL_REDIS_URI
-  value: 'redis://:{{$.Values.redis.redisPassword}}@{{.Release.Name}}-redis/1'
+- name: KEPPEL_REDIS_ENABLE
+  value: '1'
+- name: KEPPEL_REDIS_HOSTNAME
+  value: "{{ .Release.Name }}-redis"
+- name: KEPPEL_REDIS_DB_NUM
+  value: '1'
+- name: KEPPEL_REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: redis_password
 - name:  OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name:  OS_AUTH_VERSION
@@ -88,7 +141,10 @@
 - name:  OS_INTERFACE
   value: internal
 - name:  OS_PASSWORD
-  value: {{ quote $.Values.keppel.service_password }}
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: service_user_password
 - name:  OS_PROJECT_DOMAIN_NAME
   value: 'Default'
 - name:  OS_PROJECT_NAME

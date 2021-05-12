@@ -112,6 +112,9 @@ imageName: 'monsoon/loci-neutron'
 # imageVersionNetworkAgentL3:
 # imageVersionNetworkAgentOVS:
 # imageVersionIronicAgent:
+imageVersionRedis: 6.0.9-alpine
+imageVersionLogstash: 7.10.1
+imageVersionNSXTNanny: "1.4"
 
 service_plugins: asr1k_l3_routing
 default_router_type: ASR1k_router
@@ -167,6 +170,9 @@ sftp:
   enabled: false
   externalIPs: []
   user: db_backup
+  logins:
+    db_backup: nsx-t-backup
+    vcsa_backup: vcsa-backups
 
 drivers:
   nsxv3:
@@ -175,13 +181,17 @@ drivers:
         polling_interval: 240
         quitting_rpc_timeout: 120
         db_max_records_per_query: 1000
+        retry_on_failure_max: 3
+        retry_on_failure_delay: 3
       NSXV3:
-        nsxv3_connection_retry_count: 10
-        nsxv3_connection_retry_sleep: 5
+        nsxv3_connection_retry_count: 2
+        nsxv3_connection_retry_sleep: 2
         nsxv3_login_port: 443
         nsxv3_suppress_ssl_wornings: true
         nsxv3_max_records_per_query: 1000
         nsxv3_requests_per_second: 80
+        nsxv3_policy_migration_limit: 6
+
 # cisco_ucsm_bm:
 #  example.com:
 #    user:
@@ -422,7 +432,8 @@ audit:
 rabbitmq:
   persistence:
     enabled: false
-
+  default:
+    user: openstack
   resources:
     requests:
       memory: 2Gi
@@ -445,3 +456,15 @@ alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+
+logger:
+  enabled: false
+  logstash: {}
+
+logger-redis:
+  persistence:
+    enabled: false
+
+dnsmasq:
+  dhcp_options:
+  - "option:ntp-server,147.204.9.202,147.204.9.203,147.204.9.204"

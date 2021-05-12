@@ -97,3 +97,16 @@ groups:
         annotations:
           description: Big-IP device {{ $labels.devicename }} reports major drop in memory utilization, usually caused by API failure. Proceed with playbook instructions.
           summary: Possible API failure.
+      - alert: NetworkF5PoolsFlapping
+        expr: (ceil((count by (devicename) (changes(snmp_f5_ltmPoolStatusAvailState[10m]) > 5) / sum by (devicename) (snmp_f5_ltmPoolNumber)) * 100)) > 50
+        for: 5m
+        labels:
+          context: f5
+          meta: "Big-IP device {{ $labels.devicename }} reports that {{ $value }}% of all pools on the device are flapping."
+          playbook: 'docs/devops/alert/network/f5.html#f5_pool_flapping'
+          service: f5
+          severity: critical
+          tier: net
+        annotations:
+          description: "Big-IP device {{ $labels.devicename }} reports {{ $value }}% of pools are flapping."
+          summary: Load balancing pools are flapping.

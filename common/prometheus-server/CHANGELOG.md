@@ -1,3 +1,15 @@
+## 4.0.1
+* Change Thanos from dockerhub to keppel mirror
+
+## 4.0.0
+
+* **[Breaking]** ChartVersion is now v2.
+* Remove `vice-president` annotation from Ingress.
+* Bump Prometheus to `v2.23.0`.
+* Switch from sapcc fork to upstream and upgrade Thanos components to `v0.17.1`. 
+This includes the Thanos sidecar to the Prometheus server, resolving the memory leak.
+
+
 ## 3.7.2
 
 * Fix deprecated apiVersions for Thanos components, Prometheus ingress.

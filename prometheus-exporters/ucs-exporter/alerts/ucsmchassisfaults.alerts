@@ -2,11 +2,15 @@ groups:
 - name: ucsmchassisfaults.alerts
   rules:
   - alert: UcsmChassisFault
-    expr: ucsm_chassis_faults{severity=~"major|critical|warning"}
+    expr: max_over_time(ucsm_chassis_faults{severity=~"major|critical|warning"}[20m])
     labels:
       severity: info
+      tier: metal
+      service: baremetal
       context: "ucs-exporter"
       meta: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity as {{ $labels.severity }}"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs.html#ucsmchassisfault
     annotations:
       description: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }} description : {{ $labels.descr }}"
       summary: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }} description : {{ $labels.descr }}"

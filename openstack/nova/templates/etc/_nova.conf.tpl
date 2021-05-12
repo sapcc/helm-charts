@@ -40,12 +40,8 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 compute_link_prefix = https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
 
 [api_database]
-{{- if eq .Values.postgresql.enabled false }}
 connection = mysql+pymysql://{{.Values.apidbUser}}:{{.Values.apidbPassword | urlquery}}@nova-api-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/nova_api?charset=utf8
 {{- include "ini_sections.database_options_mysql" . }}
-{{- else }}
-connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword | include "db_url" }}
-{{- end }}
 
 {{ include "ini_sections.database" . }}
 
@@ -109,12 +105,14 @@ metadata_proxy_shared_secret = {{ .Values.global.nova_metadata_secret }}
 service_metadata_proxy = true
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
 auth_type = v3password
-username = {{ .Values.global.neutron_service_user | default "neutron" }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.neutron_service_password | default (tuple . .Values.global.neutron_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
+password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project | default "service" }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
+http_retries = {{.Values.neutron_http_retries}}
+timeout = {{.Values.neutron_timeout}}
 
 [keystone_authtoken]
 auth_type = v3password
@@ -123,7 +121,7 @@ auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.nova_service_password | default (tuple . .Values.global.nova_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
@@ -149,7 +147,7 @@ auth_type = v3password
 auth_version = v3
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
 username = {{.Values.global.placement_service_user}}
-password = {{ .Values.global.placement_service_password | default (tuple . .Values.global.placement_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+password = {{ required ".Values.global.placement_service_password is missing" .Values.global.placement_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = service
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
@@ -171,7 +169,7 @@ auth_version = v3
 auth_interface = internal
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.nova_service_password | default (tuple . .Values.global.nova_service_user | include "identity.password_for_user") | replace "$" "$$" }}
+password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"

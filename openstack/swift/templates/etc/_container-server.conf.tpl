@@ -31,6 +31,7 @@ pipeline = healthcheck recon container-server
 
 [app:container-server]
 use = egg:swift#container
+set log_requests = {{ .Values.log_requests }}
 allow_versions = true
 
 [container-replicator]

@@ -4,6 +4,28 @@ groups:
 - name: openstack-limes.alerts
   rules:
 
+  # This alert is used for detecting unusually high API load before it becomes
+  # a problem. We don't care about the collector; it self-regulates by slowing
+  # down when its connection pool is exhausted.
+  - alert: OpenstackLimesDBConnectionPoolNearlyFull
+    expr: avg_over_time(go_sql_stats_connections_in_use{db_name="limes",kubernetes_pod_name!~"limes-collect-.*"}[1h]) > 8
+    for: 5m
+    labels:
+      context: dbconnpool
+      dashboard: limes-overview
+      service: limes
+      severity: info
+      tier: os
+      meta: 'DB connection pool nearly full on {{ $labels.kubernetes_pod_name }}'
+    annotations:
+      summary: 'DB connection pool nearly full on {{ $labels.kubernetes_pod_name }}'
+      description: |
+        The DB connection pool on pod {{ $labels.kubernetes_pod_name }} is filling up. It can
+        go up to 16 connections, but during regular operations we should not go
+        over 3-5 connections to retain some budget for request spikes. Going
+        high on connections for a long time indicates that the pod might be
+        starved for CPU time, so try checking the CPU throttling metrics.
+
   - alert: OpenstackLimesHttpErrors
     expr: sum(increase(http_requests_total{kubernetes_namespace="limes",code=~"5.*"}[1h])) by (kubernetes_name) > 0
     for: 5m
@@ -47,10 +69,14 @@ groups:
       summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
 
   - alert: OpenstackLimesMissingCapacity
-    # note: this ignores baremetal capacity ("compute/instances_<flavorname>")
+    # This ignores baremetal capacity ("compute/instances_<flavorname>")
     # since many of these are zero legitimately (we do not have all BM server
-    # types in all regions)
-    expr: global:limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0
+    # types in all regions).
+    #
+    # The check for non-zero domain quota skips resources that only report
+    # usage, not quota nor capacity (at the moment, those are
+    # "compute/{cores,ram}_{bigvm,regular}").
+    expr: global:limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0 and on (full_resource, os_cluster) global:limes_consolidated_domain_quota{full_resource!~"compute/instances_*"} > 0
     for: 1h
     labels:
       context: failedcapacityscrapes
@@ -75,7 +101,7 @@ groups:
       service: '{{ $labels.service_name }}'
       severity: warning
       tier: os
-      playbook: docs/support/playbook/limes/failed_scrapes
+      playbook: docs/support/playbook/limes/failed_scrapes.html
     annotations:
       description: Limes cannot scrape data from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
@@ -109,7 +135,7 @@ groups:
       service: '{{ $labels.service_name }}'
       severity: warning
       tier: os
-      playbook: docs/support/playbook/limes/failed_scrapes
+      playbook: docs/support/playbook/limes/failed_scrapes.html
     annotations:
       description: Limes cannot scrape rate data from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
@@ -133,6 +159,22 @@ groups:
         {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
         The `kubectl logs` for limes-collect-{{ $labels.os_cluster }} contain additional info.
       summary: Limes cannot find {{ title $labels.service_name }} endpoint
+
+  - alert: OpenstackLimesMissingSwiftMetrics
+    expr: (limes_project_usage{service="object-store",resource="capacity"} > 0) unless on(project_id) (limes_plugin_metrics_ok{service="object-store"} == 1)
+    for: 5m
+    labels:
+      context: swiftmetrics
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      tier: os
+      meta: "project {{ $labels.project_id }}"
+    annotations:
+      description: The project {{ $labels.domain }}/{{ $labels.project }} (UUID {{ $labels.project_id }})
+        has Swift containers, but Limes does not submit Swift usage metrics to Maia.
+        Check the `kubectl logs` for limes-collect-{{ $labels.os_cluster }} for additional info.
+      summary: Limes cannot submit Swift usage metrics
 
   - alert: OpenstackLimesFailedDomainDiscoveries
     expr: sum(increase(limes_failed_domain_discoveries[5m])) BY (os_cluster) > 0
@@ -158,7 +200,7 @@ groups:
       severity: warning
       tier: os
     annotations:
-      description: Limes cannot discover project in domain {{ $labels.domain }}
+      description: Limes cannot discover projects in domain {{ $labels.domain }}
         of cluster {{ $labels.os_cluster }}. Please check if "openstack project
         list --domain {{ $labels.domain }}" is working.
       summary: Limes cannot discover projects.

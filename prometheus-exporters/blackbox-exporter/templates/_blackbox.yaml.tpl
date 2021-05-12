@@ -66,3 +66,19 @@ modules:
         - '"CeleryAppVersionCheck":true'
         - '"CeleryAliveCheck":true'
         - '"problems":\[\]'
+  docs_home_content:
+    prober: http
+    timeout: 10s
+    http:
+      valid_status_codes: [200]
+      method: GET
+      fail_if_body_not_matches_regexp:
+        - "SAP Converged Cloud"
+  docs_training_content:
+    prober: http
+    timeout: 10s
+    http:
+      valid_status_codes: [200]
+      method: GET
+      fail_if_body_not_matches_regexp:
+        - "Welcome to the SAP Converged Cloud classroom Training"

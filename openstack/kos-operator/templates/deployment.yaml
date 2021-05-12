@@ -33,3 +33,12 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
         - kos-operator
+        {{- if .Values.sentry.enabled }}
+        env:
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN
+        {{- end }}
+

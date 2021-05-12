@@ -9,7 +9,11 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
-  - {{.Values.global.keystoneNamespace}}/keystone-seed
+{{- if eq .Values.global_setup true }}
+    - {{.Values.global.keystoneNamespace}}/keystone-global-seed
+{{- else }}
+    - {{.Values.global.keystoneNamespace}}/keystone-seed
+{{- end }}
 
   domains:
   - name: cc3test
@@ -45,6 +49,15 @@ spec:
       - user: {{ .Values.cc3testAdminUser }}
         role: admin
       - user: {{ .Values.cc3testAdminUser }}
+        role: member
+    - name: rally
+      description: 'Rally Benchmark Project'
+      role_assignments:
+      - user: {{ .Values.cc3testAdminUser }}
+        role: admin
+      - user: {{ .Values.cc3testAdminUser }}
+        role: member
+      - user: {{ .Values.cc3testMemberUser }}
         role: member
 
     - name: support
@@ -137,6 +150,10 @@ spec:
         role: admin
       - project: regression
         role: member
+      - project: rally
+        role: member
+      - project: rally
+        role: admin
 
     - name: CC3TEST_DOMAIN_MEMBERS
       role_assignments:

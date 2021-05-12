@@ -89,8 +89,12 @@ groups:
         This could hint at the manifests or their metadata being corrupted.
         The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM manifests`.
 
+  # This alert is less sensitive than the other "janitor task is running behind
+  # schedule" checks, since this task quite often gets stuck on Docker Hub's
+  # restrictive rate limits, and those short-lived alerts just generate useless
+  # noise.
   - alert: OpenstackKeppelNotSyncingReplicatedManifests
-    expr: keppel_replicated_repos_count > 0 and time() - keppel_replicated_repos_min_next_manifest_sync_at > 600
+    expr: keppel_replicated_repos_count > 0 and time() - keppel_replicated_repos_min_next_manifest_sync_at > 3600
     for: 5m
     labels:
       context: janitor
@@ -120,6 +124,22 @@ groups:
         In each repository, blob mounts should be sweeped once per hour.
         However, some repos have not been sweeped on schedule, so it looks like blob mount sweeping is having issues.
         In some cases, invalid manifests in the repo could be blocking the blob mount sweep.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotGarbageCollectingImages
+    expr: keppel_repos_count > 0 and time() - keppel_repos_min_next_gc_at > 600
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'GC policies are not being executed'
+      description: |
+        In each repository, customers' GC policies should be executed once per hour.
+        However, some repos have not been garbage-collected on schedule, so it looks like the GC is having issues.
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingBlobMounts
@@ -232,4 +252,20 @@ groups:
       description: |
         Each existing account should be announced to the Dynomite database once every hour.
         However, some accounts have not been announced on schedule, so it looks like Dynomite is having issues.
+        Check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotCheckingVulnerabilities
+    expr: keppel_manifests_count > 0 and time() - keppel_manifests_min_next_vuln_check_at > 7200
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+    annotations:
+      summary: 'Manifests are not being checked for vulnerabilities'
+      description: |
+        Keppel should check the vulnerability status of each manifest once per hour.
+        However, some manifests have not had their vulnerability status checked on schedule, so it looks like vulnerability checking is having issues.
         Check the logs of keppel-janitor for details.

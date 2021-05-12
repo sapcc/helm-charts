@@ -6,8 +6,27 @@ global:
   rbac:
     create: true
 
-prometheus-operator:
+kube-prometheus-stack:
+  nameOverride: prometheus
+  fullnameOverride: prometheus
+  # Never manage CRDs. They are deployed via prometheus-crds Helm chart.
+  manageCrds: false
+
   prometheusOperator:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-operator
+      tag: v0.44.0
+
+    prometheusConfigReloaderImage:
+      repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-config-reloader
+      tag: v0.44.0
+
+    # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
+    admissionWebhooks:
+      enabled: false
+    tls:
+      enabled: false
+
     createCustomResource: false
     service:
       annotations:
@@ -16,6 +35,41 @@ prometheus-operator:
         prometheus.io/port: "8080"
     serviceAccount:
       create: true
+    tlsProxy:
+      enabled: false
+
+  operator:
+    serviceAccountName: default
+  # Disable creation of default aggregation and alerting rules.
+  defaultRules:
+    create: false
+  # Disable the Prometheus instance. We deploy our own Prometheis.
+  prometheus:
+    enabled: false
+  # Disable the Alertmanager instance. We deploy our own Alertmanagers.
+  alertmanager:
+    enabled: false
+  # Disable all exporters.
+  kubeApiServer:
+    enabled: false
+  kubelet:
+    enabled: false
+  kubeControllerManager:
+    enabled: false
+  coreDns:
+    enabled: false
+  kubeDns:
+    enabled: false
+  kubeEtcd:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+  kubeStateMetrics:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  grafana:
+    enabled: false
 
 absent-metrics-operator:
   enabled: true
@@ -152,15 +206,6 @@ prometheus-node-exporter:
       cpu: 100m
 
 kube-state-metrics:
-  image:
-    repository: sapcc/kube-state-metrics
-    # Newer versions of kube-state-metrics use k8s.io/api/apps/v1 for DaemonSet, Deployment and StatefulSet.
-    # Thus we need to stick with v1.5.0 until our k8s clusters were updated.
-    tag: v1.5.0
-
-  rbac:
-    create: true
-
   customLabels:
     app: kube-state-metrics
 
@@ -172,6 +217,8 @@ kube-state-metrics:
     secrets: false
     cronjobs: false
     horizontalpodautoscalers: false
+    verticalpodautoscalers: false
+    validatingwebhookconfigurations: false
     certificatesigningrequests: false
     ingresses: false
 

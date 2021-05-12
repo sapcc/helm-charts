@@ -17,6 +17,22 @@
 - name: SENTRY_EMAIL_HOST
   value: {{ .Values.emailHost | squote }}
 {{- end }}
+{{- if .Values.emailPort }}
+- name: SENTRY_EMAIL_PORT
+  value: {{ .Values.emailPort | squote }}
+{{- end }}
+{{- if .Values.emailUser }}
+- name: SENTRY_EMAIL_USER
+  value: {{ .Values.emailUser | squote }}
+{{- end }}
+{{- if .Values.emailPassword }}
+- name: SENTRY_EMAIL_PASSWORD
+  value: {{ .Values.emailPassword | squote }}
+{{- end }}
+{{- if .Values.emailUseSSL }}
+- name: SENTRY_EMAIL_USE_SSL
+  value: {{ .Values.emailUseSSL | squote }}
+{{- end }}
 {{- if .Values.serverEmail }}
 - name: SENTRY_SERVER_EMAIL
   value: {{ .Values.serverEmail | squote }}

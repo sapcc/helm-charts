@@ -196,10 +196,12 @@ spec:
         - name: CONCOURSE_GARDEN_DNS_PROXY_ENABLE
           value: "false"
 {{- if $.Values.worker.env }}
-{{ toYaml $.Values.worker.env | indent 12 }}
+{{ toYaml $.Values.worker.env | indent 8 }}
 {{- end }}
+{{- if $.Values.worker.resources }}
         resources:
-{{ toYaml $.Values.worker.resources | indent 12 }}
+{{ toYaml $.Values.worker.resources | indent 10 }}
+{{- end }}
         securityContext:
           privileged: true
         volumeMounts:
@@ -212,7 +214,7 @@ spec:
           mountPath: /usr/local/share/ca-certificates
         - name: pre-stop
           mountPath: /land-worker
-      terminationGracePeriodSeconds: 1800
+      terminationGracePeriodSeconds: 180
       volumes:
       - name: sap-root-certs
         secret:

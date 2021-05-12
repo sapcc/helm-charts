@@ -1,5 +1,4 @@
 {{ if .Values.enabled -}}
-{{- range $rackname, $rack := .Values.racks }}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -7,7 +6,7 @@ metadata:
   annotations:
   labels:
     k8s-app: kube-parrot
-  name: kube-parrot-{{ $rackname }}
+  name: kube-parrot
 spec:
   selector:
     matchLabels:
@@ -32,11 +31,9 @@ spec:
           - --nodename=$(NODE_NAME)
           - --hostip=$(HOST_IP)
           - --logtostderr
+          - --neighbor-count={{ $.Values.bgpNeighborCount }}
 {{- if $.Values.metricPort }}
           - --metric-port={{ $.Values.metricPort }}
-{{- end }}
-{{- range $neighbor := $rack.neighbors }}
-          - --neighbor={{ $neighbor }}
 {{- end }}
         env:
           - name: NODE_NAME
@@ -59,7 +56,6 @@ spec:
       hostNetwork: true
       nodeSelector:
         kubernetes.cloud.sap/cp: nextgen
-        kubernetes.cloud.sap/rack: {{ $rackname }}
       serviceAccountName: kube-parrot
       terminationGracePeriodSeconds: 5
       tolerations:
@@ -73,6 +69,5 @@ spec:
         - name: etc-kubernetes-kube-parrot
           hostPath:
             path: /etc/kubernetes/kube-parrot
-{{- end }}
 {{- end }}
 {{- end }}

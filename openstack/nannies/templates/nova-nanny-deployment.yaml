@@ -46,7 +46,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
+              {{- if .Values.nova.mariadb.enabled }}
+              value: "nova-mariadb,nova-api"
+              {{- else }}
               value: "nova-postgresql,nova-api"
+              {{- end }}
             - name: NOVA_DB_PURGE_ENABLED
               value: {{ .Values.nova_nanny.db_purge.enabled | quote }}
             - name: NOVA_DB_PURGE_DRY_RUN
@@ -84,7 +88,7 @@ spec:
             - name: OS_USER_DOMAIN_NAME
               value: "Default"
             - name: OS_PASSWORD
-              value: {{ derivePassword 1 "long" .Values.global.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+              value: {{ derivePassword 1 "long" .Values.nannies.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
           volumeMounts:
             - mountPath: /nova-etc
               name: nova-etc
@@ -103,7 +107,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
+              {{- if .Values.nova.mariadb.enabled }}
+              value: "nova-mariadb,nova-api"
+              {{- else }}
               value: "nova-postgresql,nova-api"
+              {{- end }}
             - name: NOVA_DB_PURGE_ENABLED
               value: {{ .Values.nova_nanny.db_purge.enabled | quote }}
             - name: NOVA_DB_PURGE_DRY_RUN
@@ -139,7 +147,7 @@ spec:
             - name: OS_USER_DOMAIN_NAME
               value: "Default"
             - name: OS_PASSWORD
-              value: {{ derivePassword 1 "long" .Values.global.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+              value: {{ derivePassword 1 "long" .Values.nannies.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
           volumeMounts:
             - mountPath: /nova-etc
               name: nova-etc
@@ -160,7 +168,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
+              {{- if .Values.nova.mariadb.enabled }}
+              value: "nova-mariadb,nova-api"
+              {{- else }}
               value: "nova-postgresql,nova-api"
+              {{- end }}
             - name: NOVA_QUOTA_SYNC_ENABLED
               value: {{ .Values.nova_nanny.quota_sync.enabled | quote }}
             - name: NOVA_QUOTA_SYNC_DRY_RUN
@@ -186,7 +198,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
+              {{- if .Values.nova.mariadb.enabled }}
+              value: "nova-mariadb,nova-api"
+              {{- else }}
               value: "nova-postgresql,nova-api"
+              {{- end }}
             - name: NOVA_DB_CLEANUP_ENABLED
               value: {{ .Values.nova_nanny.db_cleanup.enabled | quote }}
             - name: NOVA_DB_CLEANUP_DRY_RUN
@@ -206,7 +222,7 @@ spec:
             - name: OS_USER_DOMAIN_NAME
               value: "Default"
             - name: OS_PASSWORD
-              value: {{ derivePassword 1 "long" .Values.global.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+              value: {{ derivePassword 1 "long" .Values.nannies.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
 {{- end }}
 {{- if .Values.nova_nanny.sync_neutron_cache.enabled }}
         - name: sync-neutron-cache
@@ -223,7 +239,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
+              {{- if .Values.nova.mariadb.enabled }}
+              value: "nova-mariadb,nova-api,neutron-server"
+              {{- else }}
               value: "nova-postgresql,nova-api,neutron-server"
+              {{- end }}
             - name: NOVA_SYNC_NEUTRON_CACHE_ENABLED
               value: {{ .Values.nova_nanny.sync_neutron_cache.enabled | quote }}
             - name: NOVA_SYNC_NEUTRON_CACHE_DRY_RUN
@@ -252,7 +272,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: DEPENDENCY_SERVICE
+              {{- if .Values.nova.mariadb.enabled }}
+              value: "nova-mariadb,nova-api,neutron-server"
+              {{- else }}
               value: "nova-postgresql,nova-api,neutron-server"
+              {{- end }}
             - name: NOVA_SYNC_NEUTRON_CACHE_ENABLED
               value: {{ .Values.nova_nanny.sync_neutron_cache.enabled | quote }}
             - name: NOVA_SYNC_NEUTRON_CACHE_DRY_RUN

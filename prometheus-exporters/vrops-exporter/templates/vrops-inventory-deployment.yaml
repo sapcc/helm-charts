@@ -1,5 +1,5 @@
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: vrops-inventory
   namespace: infra-monitoring
@@ -14,12 +14,20 @@ spec:
         app: vrops-inventory
         type: inventorycollector
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: vrops-collector-target
+                    operator: Exists
+              topologyKey: kubernetes.io/hostname
       containers:
          - name: vrops-inventory
            image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" .Values.vrops.image.name }}:{{ required ".Values.vrops.inventory.tag variable missing" .Values.vrops.inventory.tag }}
            ports:
              - name: metrics
-               containerPort: {{ required ".Values.vrops.inventory_port missing" .Values.vrops.inventory_port_number }}
+               containerPort: {{ required ".Values.vrops.inventory.port_number missing" .Values.vrops.inventory.port_number }}
            command:
              - ./inventory.py
            args:
@@ -31,9 +39,13 @@ spec:
            - name: PASSWORD
              value: {{ required ".Values.vrops.password variable is missing" .Values.vrops.password | quote }}
            - name: PORT
-             value: {{ required ".Values.vrops.inventory_port_number missing" .Values.vrops.inventory_port_number | quote }}
+             value: {{ required ".Values.vrops.inventory.port_number missing" .Values.vrops.inventory.port_number | quote }}
            - name: DEBUG
              value: {{ .Values.vrops.debug | quote }}
+           - name: SLEEP
+             value: {{ .Values.vrops.inventory.sleep | quote }}
+           - name: TIMEOUT
+             value: {{ .Values.vrops.inventory.timeout | quote }}
            resources:
              limits:
                memory: 240Mi
@@ -41,6 +53,12 @@ spec:
              requests:
                memory: 120Mi
                cpu: 150m
+             limits:
+               memory: {{ required ".Values.vrops.inventory.resources.limits.memory missing" .Values.vrops.inventory.resources.limits.memory }}
+               cpu: {{ required ".Values.vrops.inventory.resources.limits.cpu missing" .Values.vrops.inventory.resources.limits.cpu }}
+             requests:
+               memory: {{ required ".Values.vrops.inventory.resources.requests.memory missing" .Values.vrops.inventory.resources.requests.memory }}
+               cpu: {{ required ".Values.vrops.inventory.resources.requests.cpu missing" .Values.vrops.inventory.resources.requests.cpu }}
            volumeMounts:
              - mountPath: /atlas
                name: atlas-output
@@ -48,14 +66,14 @@ spec:
            livenessProbe:
              httpGet:
                path: /vrops_list
-               port: {{ required ".Values.vrops.inventory_port_number missing" .Values.vrops.inventory_port_number }}
+               port: {{ required ".Values.vrops.inventory.port_number missing" .Values.vrops.inventory.port_number }}
              initialDelaySeconds: 5
              timeoutSeconds: 10
              periodSeconds: 15
            # startupProbe:
            #   httpGet:
            #     path: /iteration
-           #     port: {{ required ".Values.vrops.inventory_port_number missing" .Values.vrops.inventory_port_number }}
+           #     port: {{ required ".Values.vrops.inventory.port_number missing" .Values.vrops.inventory.port_number }}
            #   failureThreshold: 30
            #   periodSeconds: 10
       volumes:

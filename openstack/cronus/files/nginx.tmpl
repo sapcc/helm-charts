@@ -693,6 +693,14 @@ stream {
         tcp_udp_balancer.init_worker()
     }
 
+    {{/* Enable the real_ip module only if we use Proxy Protocol. */}}
+    {{/* we use the value of the real IP for the geo_ip module */}}
+    {{ if or $cfg.UseProxyProtocol $cfg.EnableRealIp }}
+    {{ range $trusted_ip := $cfg.ProxyRealIPCIDR }}
+    set_real_ip_from    {{ $trusted_ip }};
+    {{ end }}
+    {{ end }}
+
     lua_add_variable $proxy_upstream_name;
 
     log_format log_stream '{{ $cfg.LogFormatStream }}';
@@ -723,9 +731,30 @@ stream {
         }
     }
 
+    # TCP services
+    {{ range $tcpServer := .TCPBackends }}
     server {
-        listen                465 ssl;
-        proxy_pass            cronus-service:1025;
+        preread_by_lua_block {
+            ngx.var.proxy_upstream_name="tcp-{{ $tcpServer.Backend.Namespace }}-{{ $tcpServer.Backend.Name }}-{{ $tcpServer.Backend.Port }}";
+        }
+
+        {{ range $address := $all.Cfg.BindAddressIpv4 }}
+        listen                  {{ $address }}:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }} ssl;
+        {{ else }}
+        listen                  {{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }} ssl;
+        {{ end }}
+        {{ if $IsIPV6Enabled }}
+        {{ range $address := $all.Cfg.BindAddressIpv6 }}
+        listen                  {{ $address }}:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }} ssl;
+        {{ else }}
+        listen                  [::]:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }} ssl;
+        {{ end }}
+        {{ end }}
+        proxy_timeout           {{ $cfg.ProxyStreamTimeout }};
+        proxy_pass              upstream_balancer;
+        {{ if $tcpServer.Backend.ProxyProtocol.Encode }}
+        proxy_protocol          on;
+        {{ end }}
 
         ssl_certificate         /etc/ingress-controller/ssl/cronus/tls.crt;
         ssl_certificate_key     /etc/ingress-controller/ssl/cronus/tls.key;
@@ -751,32 +780,6 @@ stream {
         {{ end }}
 
         ssl_ecdh_curve {{ $cfg.SSLECDHCurve }};
-    }
-
-    # TCP services
-    {{ range $tcpServer := .TCPBackends }}
-    server {
-        preread_by_lua_block {
-            ngx.var.proxy_upstream_name="tcp-{{ $tcpServer.Backend.Namespace }}-{{ $tcpServer.Backend.Name }}-{{ $tcpServer.Backend.Port }}";
-        }
-
-        {{ range $address := $all.Cfg.BindAddressIpv4 }}
-        listen                  {{ $address }}:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }};
-        {{ else }}
-        listen                  {{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }};
-        {{ end }}
-        {{ if $IsIPV6Enabled }}
-        {{ range $address := $all.Cfg.BindAddressIpv6 }}
-        listen                  {{ $address }}:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }};
-        {{ else }}
-        listen                  [::]:{{ $tcpServer.Port }}{{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }};
-        {{ end }}
-        {{ end }}
-        proxy_timeout           {{ $cfg.ProxyStreamTimeout }};
-        proxy_pass              upstream_balancer;
-        {{ if $tcpServer.Backend.ProxyProtocol.Encode }}
-        proxy_protocol          on;
-        {{ end }}
     }
     {{ end }}
 

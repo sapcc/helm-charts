@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elastic-query-exporter
+  labels:
+    system: openstack
+    service: logging
+    component: configuration
+
+data:
+{{- if eq .Values.global.region "qa-de-1" }}
+{{ (.Files.Glob "files/qa/*.cfg").AsConfig | indent 4 }}
+{{ else }}
+{{ (.Files.Glob "files/*.cfg").AsConfig | indent 4 }}
+{{ end }}

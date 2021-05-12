@@ -11,5 +11,5 @@ data:
   netapp-filers.yaml: |
   {{- .manilaFilerYaml | nindent 4 }}
   {{- else }}
-  netapp-filers.yaml: "TO BE POPULATED BY SIDECAR"
+  netapp-filers.yaml: ""
   {{- end }}

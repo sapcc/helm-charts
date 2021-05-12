@@ -9,6 +9,9 @@ metadata:
     service: audit
 
 spec:
+  selector:
+    matchLabels:
+      component: query-exporter-{{ .Values.queryExporter.name }}
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -21,14 +24,19 @@ spec:
         component: query-exporter-{{ .Values.queryExporter.name }}
     spec:
       nodeSelector:
-        zone: farm
+        ccloud.sap.com/nodepool: elastiflow
+      tolerations:
+      - key: "dedicated"
+        operator: Equal
+        value: "elastiflow"
+        effect: "NoSchedule"
       restartPolicy: Always
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
       containers:
         - name: elasticsearch-exporter
-          image: "{{ .Values.queryExporter.image.repo }}:{{ .Values.queryExporter.image.tag }}"
+          image: "{{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/{{ .Values.queryExporter.image.repo }}:{{ .Values.queryExporter.image.tag }}"
           imagePullPolicy: IfNotPresent
           #command: [ "--es-cluster", "{{ .Values.queryExporter.es.uri }}", "--config-file", "/tmp/exporter/exporter.cfg" ]
           command: ["/bin/sh", "-c"]

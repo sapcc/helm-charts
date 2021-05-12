@@ -25,7 +25,8 @@ spec:
         name: limes-api-{{$cluster_id}}
         app: limes-api
       annotations:
-        checksum: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
+        checksum/configmap: {{ include "limes/templates/configmap.yaml" $ | sha256sum }}
+        checksum/secret: {{ include "limes/templates/secret.yaml" $ | sha256sum }}
     spec:
       volumes:
         - name: config
@@ -40,6 +41,23 @@ spec:
             - /etc/limes/limes.yaml
             - {{$cluster_id}}
           env:
+            - name: LIMES_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: limes-secret
+                  key: postgres_password
+{{- range $inner_cluster_id, $inner_cfg := $.Values.limes.clusters }}
+            - name: {{ $inner_cluster_id | upper }}_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: limes-secret
+                  key: {{$inner_cluster_id}}_auth_password
+            - name: {{ $inner_cluster_id | upper }}_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: limes-secret
+                  key: {{$inner_cluster_id}}_rabbitmq_password
+{{- end }}
             - name: LIMES_DEBUG
               value: '0'
             - name: LIMES_DEBUG_SQL
@@ -66,13 +84,26 @@ spec:
             periodSeconds: 5
           {{- if $.Values.limes.resources.enabled }}
           resources:
-            # observed usage: CPU <= 10m, RAM = 25-70 MiB
+            # observed usage: CPU <= 20m, RAM = 25-70 MiB
+            #
+            # However, we have some very significant spikes esp. when billing
+            # scrapes us, so we give some extra headroom to stay performant.
             limits:
-              cpu: '20m'
-              memory: '200Mi'
+              {{- if eq $.Values.global.region "qa-de-1" }}
+              # In qa-de-1, we also need some extra headroom because of the sheer size
+              # of some reports rendered by billing. The "tempest" domain has
+              # ~2000 projects in order to test the behavior of large-scale
+              # deployments. A full project report with `?detail` for that
+              # domain is about 160 MiB of pure JSON.
+              cpu: '1'
+              memory: '500Mi'
+              {{- else }}
+              cpu: '50m'
+              memory: '300Mi'
+              {{- end }}
             requests:
-              cpu: '10m'
-              memory: '50Mi'
+              cpu: '50m'
+              memory: '300Mi'
           {{- end }}
 ---
 {{end}}

@@ -12,25 +12,9 @@ groups:
       severity: warning
       tier: vmware
       service: compute
-      context: "vrops-exporter"
-      meta: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      context: "vrops-exporter {{ $labels.virtualmachine }}"
+      meta: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       playbook: docs/devops/alert/vcenter/#test_vvol_ds_7
     annotations:
-      description: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-      summary: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.datacenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-  - alert: VROpsDiskpaceUsageCritical
-    expr: >
-      vrops_virtualmachine_diskspace_virtual_machine_used_gigabytes{virtualmachine =~ "vrops.+"} offset 5m
-      / ignoring (statkey) vrops_virtualmachine_diskspace_gigabytes{virtualmachine =~ "vrops.+"} offset 5m
-      > 0.9
-    for: 20m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      context: "vrops-exporter"
-      meta: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
-      playbook: docs/devops/alert/vcenter/
-    annotations:
-      description: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
-      summary: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
+      description: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"

@@ -25,18 +25,15 @@ resources:
   requests:
     cpu: 5m
     memory: 32Mi
-customMetrics:
-  - name: mysql_database_size
-    help: Total database size
-    labels:
-    - "schema_name"
-    query: |
-        SELECT table_schema AS schema_name,
-          ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) AS size_in_mb
-        FROM information_schema.tables
-        GROUP BY table_schema
-    values:
-    - "size_in_mb"
+
+customMetrics: {}
+
+## can be used to add additional metric sources, e.g. a nova cell database in the format:
+## mysql://user:pass@tcp(host:3306)/db_name
+customSources: []
+
+## nova-only switch for adding cell2 db as another source for exporter:
+queryCell2: false
 
 # Default Prometheus alerts and rules.
 alerts:

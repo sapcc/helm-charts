@@ -38,6 +38,7 @@ template: |
           configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
           prometheus.io/scrape: "true"
           prometheus.io/port: "9191"
+          prometheus.io/port_1: "8000"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
       spec:
         containers:
@@ -60,7 +61,7 @@ template: |
             value: ""
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini", "--agent-type", "NSXv3 Agent"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -94,7 +95,7 @@ template: |
             - name: SCRAP_PORT
               value: "9191"
             - name: SCRAP_SCHEDULE_SECONDS
-              values: "300"
+              value: "300"
         volumes:
         - name: etc-neutron
           projected:

@@ -1,19 +1,39 @@
 curator:
+  enabled: false
   retention: "92"
   env:
     DATA_RETENTION: "$(RETENTION)"
+    ELASTIC_CREDS: "$(USERNAME):$(PASSWORD)"
   envFromSecrets:
     RETENTION:
       from:
         secret: curator-secrets
         key: retention
+    USERNAME:
+      from:
+        secret: curator-secrets
+        key: username
+    PASSWORD:
+      from:
+        secret: curator-secrets
+        key: password
+  nodeSelector:
+    ccloud.sap.com/nodepool: elastiflow
+  tolerations:
+  - key: "dedicated"
+    operator: Equal
+    value: "elastiflow"
+    effect: "NoSchedule"
   configMaps:
     config_yml: |-
       ---
       client:
         hosts:
-          - elasticsearch-data
+          - elastiflow-data
         port: 9200
+        http_auth: ${ELASTIC_CREDS}
+      logging:
+        loglevel: INFO
     # Delete indices older than 3 months
     action_file_yml: |-
       ---
@@ -49,34 +69,35 @@ curator:
 
 # master node configs
 elasticsearch:
-  enabled: true
+  enabled: false
   image: "docker.elastic.co/elasticsearch/elasticsearch"
+  annotations:
+    kubernetes.io/tls-acme: true
+    disco: true
 
   roles:
     master: "true"
     ingest: "false"
     data: "false"
-    
-  esJavaOpts: "-Xmx4G -Xms4G"
+  replicas: 3
+  esJavaOpts: "-Xmx2G -Xms2G"
   esConfig:
     elasticsearch.yml: |
       indices.query.bool.max_clause_count: 8192
       search.max_buckets: 250000
+      xpack.security.enabled: false
+
+    log4j2.properties: |
+      logger.rorignore.name = tech.beshu.ror.es.request.queries
+      logger.rorignore.level = error
+      logger.rorignore.additivity = false
 
   volumeClaimTemplate:
-    accessModes: ["ReadWriteMany"]
+    accessModes: ["ReadWriteOnce"]
     resources:
       requests:
         storage: 1G
-
-  resources:
-    requests:
-      cpu: 2000m
-      memory: "4G"
-    limits:
-      cpu: 2000m
-      memory: "6G"
-
+        
   extraInitContainers: |
     - name: configure-ownership
       securityContext:
@@ -90,8 +111,9 @@ elasticsearch:
           mountPath: /usr/share/elasticsearch/data
 
 elasticsearch-data:
+  enabled: false
   nodeGroup: data
-  masterService: elasticsearch-master
+  masterService: elastiflow-master
   roles:
     master: "false"
     ingest: "true"
@@ -102,19 +124,19 @@ elasticsearch-data:
     elasticsearch.yml: |
       indices.query.bool.max_clause_count: 8192
       search.max_buckets: 250000
+      xpack.security.enabled: false
+
+    log4j2.properties: |
+      logger.rorignore.name = tech.beshu.ror.es.request.queries
+      logger.rorignore.level = error
+      logger.rorignore.additivity = false
+
   volumeClaimTemplate:
-    accessModes: ["ReadWriteMany"]
+    accessModes: ["ReadWriteOnce"]
     resources:
       requests:
         storage: 500G
-  resources:
-    requests:
-      cpu: 8000m
-      memory: "10G"
-    limits:
-      cpu: 8000m
-      memory: "14G"
-    
+
   extraInitContainers: |
     - name: configure-ownership
       securityContext:
@@ -129,16 +151,17 @@ elasticsearch-data:
 
 elasticsearchExporter:
   name: elastiflow
-  enabled: true
+  enabled: false
   image: 
     repo: justwatch/elasticsearch_exporter
     tag: 1.1.0
   es:
-    uri: http://elasticsearch-master:9200
+    uri: http://elastiflow-master:9200
   listen_port: 9102
-  targets: infra-collector
+  targets: infra-frontend
   
 logstash:
+  enabled: false
   image: "elastiflow-logstash"
   imageTag: "DEFINED-IN-PIPELINE"
   logstashJavaOpts: "-Xmx4G -Xms4G"
@@ -154,48 +177,58 @@ logstash:
       cpu: 6000m
       memory: 8G
 
-  extraEnvs:
-    - name: ELASTIFLOW_ES_HOST
-      value: "elasticsearch-master:9200"
+  elastic:
+    shards: 3
+    replicas: 1
+
   jdbc:
     enabled: false
     configMap: "jdbc-filter"
     configFile: "20_filter_95_enrich_ips.conf"
+    schedule: "30 1 * * *"
   service:
-    type: NodePort
-    externalTrafficPolicy: Local
+    # type: NodePort
+    # externalTrafficPolicy: Local
+    clusterIP: None
     ports:
-      - name: netflow-udp
-        port: 2055
-        targetPort: 2055
-        nodePort: 30055
-        protocol: UDP
-      - name: sflow-udp
-        port: 6343
-        targetPort: 6343
-        nodePort: 30343
-        protocol: UDP
-      - name: ipfix-udp
-        port: 4739
-        targetPort: 4739
-        nodePort: 30739
-        protocol: UDP
-      - name: ipfix-tcp
-        port: 4739
-        targetPort: 4739
-        nodePort: 30740
+      - name: beat-tcp
+        port: 5044
         protocol: TCP
-      - name: http
-        port: 9600
-        targetPort: 9600
-        protocol: TCP
+        targetPort: 5044
+      # - name: netflow-udp
+      #   port: 2055
+      #   targetPort: 2055
+      #   nodePort: 30055
+      #   protocol: UDP
+      # - name: sflow-udp
+      #   port: 6343
+      #   targetPort: 6343
+      #   nodePort: 30343
+      #   protocol: UDP
+      # - name: ipfix-udp
+      #   port: 4739
+      #   targetPort: 4739
+      #   nodePort: 30739
+      #   protocol: UDP
+      # - name: ipfix-tcp
+      #   port: 4739
+      #   targetPort: 4739
+      #   nodePort: 30740
+      #   protocol: TCP
+      # - name: http
+      #   port: 9600
+      #   targetPort: 9600
+      #   protocol: TCP
+
+  alerts:
+    prometheus: infra-collector
 
   readinessProbe:
-    # use ipfix-tcp port instead of http API to better check elastiflow specific status
+    # use beats port instead of http API to better check elastiflow specific status
     httpGet: null
     tcpSocket:
-      port: 4739
-    initialDelaySeconds: 300
+      port: 5044
+    initialDelaySeconds: 180
     periodSeconds: 30
     failureThreshold: 20
     successThreshold: 1
@@ -203,7 +236,7 @@ logstash:
   livenessProbe:
     httpGet: null
     tcpSocket:
-      port: 4739
+      port: 5044
     initialDelaySeconds: 600
     periodSeconds: 20
     failureThreshold: 5
@@ -218,35 +251,65 @@ logstashExporter:
   ls:
     uri: http://elastiflow-logstash:9600
   listen_port: 9198
-  targets: prometheus-openstack
+  targets: infra-collector
 
-kibana:
-  image: "docker.elastic.co/kibana/kibana"
-  elasticsearchHosts: "http://elasticsearch-master:9200"
+filebeat:
+  enabled: false
+  image: "elastiflow-filebeat"
+  imageTag: "20210323100448"
+  externalIPs:
+  netflow:
+    buffer: 1024
+    queue: 4096
+  logstash:
+    workers: 2
+    loadbalance: true
+    ttl: 0
+    pipelining: 2
+    bulk: 1024
+
+  service:
+    type: NodePort
+    externalTrafficPolicy: Local
+    ports:
+      - name: netflow-udp
+        port: 2055
+        targetPort: 2055
+        protocol: UDP
   resources:
     requests:
-      cpu: "4000m"
-      memory: "4Gi"
+      cpu: "6000m"
+      memory: "6G"
     limits:
-      cpu: "4000m"
-      memory: "5Gi"
+      cpu: "8000m"
+      memory: "12G"
+
+kibana:
+  enabled: false
+  image: "docker.elastic.co/kibana/kibana"
+  elasticsearchHosts: "http://elastiflow-master:9200"
+  # resources:
+  #   requests:
+  #     memory: 4Gi
+  #   limits:
+  #     memory: 5Gi
 
 # Deploy Prometheus alerts.
 alerts:
-  enabled: true
+  enabled: false
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+  prometheus: infra-frontend
 
 queryExporter:
   name: elastiflow
-  enabled: true
+  enabled: false
   image:
     repo: braedon/prometheus-es-exporter
     tag: 0.9.0
   es:
     uri: "http://elasticsearch-master:9200"
   listen_port: 9206
-  targets: prometheus-openstack
+  targets: infra-frontend
   config:
     exporter.cfg: |
       [DEFAULT]

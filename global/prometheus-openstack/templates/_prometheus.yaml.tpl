@@ -24,6 +24,10 @@
       - '{__name__=~"^blackbox_integrity_status_gauge", check=~"esxi_hs-.+"}'
       - '{__name__=~"^octavia_as3_version_info$"}'
       - '{__name__=~"^cinder_.+"}'
+      - '{__name__=~"^nginx_ingress_controller_requests", ingress=~".+-api$"}'
+      - '{__name__=~"^nginx_ingress_controller_requests", ingress=~"keystone"}'
+      - '{__name__=~"^nginx_ingress_controller_requests", ingress=~"neutron-server"}'
+      - '{__name__=~"^nginx_ingress_controller_requests", ingress=~"elektra"}'
 
   relabel_configs:
     - action: replace

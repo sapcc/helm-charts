@@ -1,1 +1,0 @@
-{{ .Values.webapi_exporter.os | indent 0 }}

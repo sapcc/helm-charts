@@ -1,0 +1,29 @@
+groups:
+- name: CronusAlerts
+  rules:
+  - alert: CronusSendEmail
+    expr: sum(sum_over_time(aws_ses_cronus_provider_send[5m])) < 50
+    for: 5m
+    labels:
+      meta: Cronus - sending emails is below expected in region {{ $labels.region }}
+      service: '{{ $labels.component }}'
+      severity: critical
+      tier: os
+      playbook: docs/devops/alert/cronus/#send_emails
+    annotations:
+      description: problem with sending emails in region {{ $labels.region }}
+      summary: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
+- name: NebulaAlerts
+  rules:
+  - alert: NebulaReconcile
+    expr: cronus_simulator_event_test_passed{action="reconcile"} == 0
+    for: 10m
+    labels:
+      meta: Nebula - reconcile account fails in {{ $labels.region }} with message {{ $labels.message }}
+      service: '{{ $labels.component }}'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/nebula/#reconcile_account
+    annotations:
+      description: multicloud-api -  https://db.multicloud.int.sap , multicloud-jira - https://jira.multicloud.int.sap , slack-cc-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
+      summary: problem with creating or deleting an account , log - https://sentry.{{ $labels.region }}.cloud.sap/monsoon/nebula/?query=requestID:{{ $labels.request_id }}

@@ -17,6 +17,21 @@ groups:
         summary: Scheduling failed due to insufficient cpu
         description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
 
+    - alert: OpenstackSwiftPodCPUThrottling
+      expr: rate(container_cpu_cfs_throttled_seconds_total{namespace="swift"}[1h]) > 1
+      for: 15m
+      labels:
+        tier: os
+        service: swift
+        severity: info
+        context: cpu
+        meta: "{{ $labels.pod }}/{{ $labels.container }}"
+      annotations:
+        summary: Container is constantly CPU-throttled
+        description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
+          constantly. This is probably impacting performance, so check if we can increase the number
+          of replicas or the resource requests/limits.
+
     - alert: OpenstackSwiftPodSchedulingInsufficientMemory
       expr: sum(rate(kube_pod_failed_scheduling_memory_total{pod_name=~"swift-.+"}[30m])) by (pod_name) > 0
       for: 15m

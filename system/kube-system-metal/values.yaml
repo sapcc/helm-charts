@@ -35,6 +35,19 @@ container-linux-update-operator:
     serviceAccountName: container-linux-update-operator
 
 cert-manager:
+  image:
+    repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-controller
+    tag: v0.15.2
+  webhook:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-webhook
+      tag: v0.15.2
+  cainjector:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud/cert-manager-cainjector
+      tag: v0.15.2
+    extraArgs:
+    - --leader-elect=false
   ingressShim:
     defaultIssuerName: digicert-issuer
     defaultIssuerKind: DigicertIssuer
@@ -43,9 +56,6 @@ cert-manager:
     enabled: true
   podAnnotations:
     prometheus.io/targets: kubernetes
-  cainjector:
-    extraArgs:
-    - --leader-elect=false
 
 digicert-issuer:
   enableLeaderElection: "false"
@@ -110,7 +120,7 @@ nginx-ingress:
       serviceMonitor:
         enabled: true
         additionalLabels:
-          prometheus: "kubernetes"
+          prometheus: "collector-kubernetes"
 
     config:
       http-snippet: |
@@ -144,7 +154,7 @@ nginx-ingress:
                   operator: In
                   values:
                     - nginx-ingress
-                - key: component
+                - key: app.kubernetes.io/component
                   operator: In
                   values:
                     - controller
@@ -178,7 +188,12 @@ nginx-ingress:
                   operator: In
                   values:
                     - nginx-ingress
-                - key: component
+                - key: app.kubernetes.io/component
                   operator: In
                   values:
                     - default-backend
+pull-secret-injector:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi

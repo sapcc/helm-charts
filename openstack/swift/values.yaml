@@ -18,6 +18,13 @@ image_version: DEFINED_BY_PIPELINE
 
 # image version of auxiliary nginx bundled with dumb-init
 image_version_nginx: '1.18.0-alpine'
+image_version_nginx_exporter: '0.8.0'
+
+# image version of haproxy bundled with dumb-init
+image_version_haproxy: '2.3.6-20210316081242'
+
+# image version of envoy bundled with dumb-init
+image_version_envoy: 'v1.17.1-20210317124712'
 
 # image versions of auxiliary images from other sources
 image_version_auxiliary_memcached: '1.5.10-alpine'
@@ -28,6 +35,13 @@ image_version_auxiliary_statsd_exporter: 'v0.8.1'
 hash_path_prefix: DEFINED_IN_REGION_CHART
 hash_path_suffix: DEFINED_IN_REGION_CHART
 
+# BEGIN Temporary Flags, to be removed
+haproxy_external: false
+envoy_external: false
+for_service_daemonset: true
+for_service_deployment: true
+# END Temporary Flags, to be removed
+
 # S3 API Emulation for seed cluster
 s3api_enabled: true
 
@@ -37,6 +51,9 @@ watcher_enabled: true
 # health check only
 dispersion_auth_url: DEFINED_IN_REGION_CHART
 dispersion_password: DEFINED_IN_REGION_CHART
+
+# Enable nginx exporter: https://github.com/nginxinc/nginx-prometheus-exporter
+nginx_exporter: true
 
 # Enable cluster health checks: https://github.com/sapcc/swift-health-exporter
 health_exporter: true
@@ -52,11 +69,26 @@ object_updater_concurrency: 2
 object_updater_workers: 2              # Availably since Rocky
 
 # Prevent disks getting 100% full
-fallocate_reserve: 1%                  # Availably since Rocky for all servers
+fallocate_reserve: 2%                  # Availably since Rocky for all servers
 
 # Swift client timeout in seconds.
-# Allows to avoid 408 client timeout occurred by VMware snapshot creation process
-client_timeout: 420 # 7 minutes, default is 60 seconds
+client_timeout: 60 # same as default, but also sets nginx timeout to a similar value
+
+# Swift node timeout in seconds, default 10
+node_timeout: 60
+
+# Swift node timeout in seconds for GET and HEAD, default 10
+recoverable_node_timeout: 10
+
+# Retry container delete in case of bulk deletes, default 0
+bulk_delete_container_retry_count: 3
+
+# Don't log requests to object, container or account servers
+log_requests: false
+
+# Local to advertise the ExternalIP only on nodes that run the pod
+# Only works with ServiceType NodePort
+external_traffic_policy_local: false
 
 # Add additional memcached deployments here
 memcached_servers:
@@ -65,9 +97,6 @@ memcached_servers:
 
 sentry:
   enabled: false
-
-resources:
-  enabled: true
 
 # Deploy Swift Prometheus alerts.
 alerts:
@@ -94,7 +123,21 @@ alerts:
 #     swift_service_project: service
 #     swift_service_project_domain: Default
 #     swift_service_password: DEFINED_IN_REGION_CHART
-#     replicas: 2
+
+#     svc_node_port: expose swift internal proxy svc via NodePort, can be used to loadbalance between k8s nodes
+#     upstreams:
+#       -target: xxx.xxx.xxx.xxx
+#        name: node1
+
+#     Swift proxies can be deployed as Deployment, Daemonset or both
+#     proxy_deployment_enabled: true
+#     proxy_deployment_replicas_az-b: 2           # replicas in availability zone, default 0
+#     proxy_deployment_resources_cpu: "2500m"
+#     proxy_deployment_resources_memory: "1500Mi"
+
+#     proxy_daemonset_enabled: true
+#     proxy_daemonset_resources_cpu: "2500m"
+#     proxy_daemonset_resources_memory: "1500Mi"
 
     # The default is using the cache.swift for token caching
     # Specifing a memcached server name here will overrule that, see .Values.memcached_servers
@@ -104,6 +147,10 @@ alerts:
     # S3 Credential caching will be enabled by specifying the seconds for cache validity
     # swift service user requires read access to all EC2 credentials in keystone
     # s3_cred_cache_time: 0
+    #
+    # To enable <https://github.com/sapcc/swift-s3-cache-prewarmer>, give a non-empty list of "userid:accesskey" credentials.
+    # s3_cred_cache_prewarm_credentials: []
+
 
     # If there is a need to rate limit the nginx per cluster, that can be reached here
     # The limits apply to every replica within the deployment

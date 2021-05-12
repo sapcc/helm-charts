@@ -1,0 +1,91 @@
+groups:
+  - name: logs
+    rules:
+      - alert: OctobusKeystoneLogShipping
+        expr: elasticsearch_octobus_keystone_logs_doc_count{logs="keystone-api"} == 0
+        for: 15m
+        labels:
+          severity: warning
+          tier: os
+          service: audit
+          meta: "No keystone logs shipping to Octobus"
+          playbook: 'docs/support/playbook/elastic_kibana_issues.html#keystone-logs-missing-in-octobus'
+          dashboard: octobus-logshipping
+        annotations:
+          description: "Keystone logs shipping to Octobus not working"
+          summary: "KeystoneLogs3Octobus not working"
+      - alert: OctobusKeystoneLogshipperEndpointDown
+        expr: elasticsearch_octobus_keystone_logs_doc_count{logs="keystone-api"} == 0 and on  (region) {target=~"in-https.*"} == 0
+        for: 15m
+        labels:
+          severity: critical
+          tier: os
+          service: audit
+          meta: "Keystone to Octobus Endpoint in-https is down"
+          playbook: 'docs/support/playbook/elastic_kibana_issues.html#involve-octobus-team'
+          dashboard: octobus-logshipping
+        annotations:
+          description: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
+          summary: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
+      - alert: OctobusJumpserverLogShipping
+        expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0
+        for: 15m
+        labels:
+          severity: warning
+          tier: os
+          service: audit
+          meta: "No Jumpserver logs shipping to Octobus"
+          playbook: 'docs/support/playbook/elastic_kibana_issues.html#jumpserver-logs-missing-in-octobus'
+          dashboard: octobus-logshipping
+        annotations:
+          description: "Jumpserver logs shipping to Octobus not working"
+          summary: "JumpserverLogs2Octobus not working"
+      - alert: OctobusJumpserverLogshipperEndpointDown
+        expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0 and on  (region) {target=~"in-beats.*"} == 0
+        for: 15m
+        labels:
+          severity: critical
+          tier: os
+          service: audit
+          meta: "Jumpserver to Octobus Endpoint in-beats is down"
+          playbook: 'docs/support/playbook/elastic_kibana_issues.html#involve-octobus-team'
+          dashboard: octobus-logshipping
+        annotations:
+          description: "Octobus Jumpserver endpoint: `in-beats` is down in region `{{ $labels.region }}`"
+          summary: "Octobus Jumpserver  endpoint: `in-beats` is down in region `{{ $labels.region }}`"
+      - alert: OctobusESXiHostLogShippingNotWorking
+        expr: vrops_hostsystem_runtime_connectionstate{state="connected"} unless on(hostsystem) elasticsearch_octobus_esx_hostsystem_doc_count
+        for: 15m
+        labels:
+          severity: critical
+          tier: vmware
+          service: audit
+          meta: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
+          playbook: docs/devops/alert/vcenter/#Missing_Logs_in_Octobus
+        annotations:
+          description: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
+          summary: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
+      - alert: OctobusVCSALogShippingNotWorking
+        expr: vrops_vcenter_vc_fullname_info unless on(vcenter) elasticsearch_octobus_vcsa_vcenter_doc_count
+        for: 15m
+        labels:
+          severity: critical
+          tier: vmware
+          service: audit
+          meta: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
+          playbook: docs/devops/alert/vcenter/#Missing_Logs_in_Octobus
+        annotations:
+          description: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
+          summary: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
+      - alert: VMPoweredDownDuringFailedHostMigration
+        expr: elasticsearch_octobus_vmdown_hit
+        labels:
+          severity: critical
+          tier: vmware
+          service: compute
+          no_alert_on_absence: "true"
+          meta: "A VM unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."
+          playbook: docs/devops/alert/vcenter/#VM%20powered%20off%20during%20vMotion
+        annotations:
+          description: "A VM unexpectedly powered down during a failed host migration: {{ $labels.message }}"
+          summary: "A VM unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."

@@ -23,6 +23,7 @@ spec:
         app: {{ .Release.Name }}-keep-image-pulled
     spec:
       containers:
+{{- if eq .Values.mariadb.enabled true }}
         - name: mariadb
           image: {{ .Values.mariadb.image }}
           imagePullPolicy: IfNotPresent
@@ -46,7 +47,7 @@ spec:
               cpu: "1m"
               memory: "16Mi"
         - name: metrics
-          image: "{{ .Values.mariadb.metrics.image }}:{{ .Values.mariadb.metrics.image_version }}"
+          image: "{{.Values.global.dockerHubMirror}}/{{ .Values.mariadb.metrics.image }}:{{ .Values.mariadb.metrics.image_version }}"
           imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', 'inf' ]
           resources:
@@ -56,6 +57,7 @@ spec:
             limits:
               cpu: "1m"
               memory: "16Mi"
+{{- end }}
         - name: keystone
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
           imagePullPolicy: IfNotPresent

@@ -53,6 +53,13 @@ spec:
         configchecksum: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
     spec:
+      tolerations:
+      - key: "dedicated"
+        operator: Equal
+        value: "elastiflow"
+        effect: "NoSchedule"
+      nodeSelector:
+        ccloud.sap.com/nodepool: elastiflow
       {{- if .Values.schedulerName }}
       schedulerName: "{{ .Values.schedulerName }}"
       {{- end }}
@@ -173,6 +180,21 @@ spec:
 
           cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /tmp/keystore/
         env: {{ toYaml .Values.extraEnvs | nindent 10 }}
+          - name: ELASTIFLOW_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "elasticsearch.uname" . }}-secret
+                key: ELASTIFLOW_PASSWORD
+          - name: ELASTIFLOW_ADMIN_PW
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "elasticsearch.uname" . }}-secret
+                key: ELASTIFLOW_ADMIN_PW
+          - name: LDAP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "elasticsearch.uname" . }}-secret
+                key: LDAP_PASSWORD
         resources: {{ toYaml .Values.initResources | nindent 10 }}
         volumeMounts:
           - name: keystore
@@ -261,6 +283,21 @@ spec:
             value: "{{ .Values.networkHost }}"
           - name: ES_JAVA_OPTS
             value: "{{ .Values.esJavaOpts }}"
+          - name: ELASTIFLOW_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "elasticsearch.uname" . }}-secret
+                key: ELASTIFLOW_PASSWORD
+          - name: ELASTIFLOW_ADMIN_PW
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "elasticsearch.uname" . }}-secret
+                key: ELASTIFLOW_ADMIN_PW
+          - name: LDAP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "elasticsearch.uname" . }}-secret
+                key: LDAP_PASSWORD
           {{- range $role, $enabled := .Values.roles }}
           - name: node.{{ $role }}
             value: "{{ $enabled }}"
@@ -289,7 +326,10 @@ spec:
           - name: esconfig
             mountPath: /usr/share/elasticsearch/config/{{ $path }}
             subPath: {{ $path }}
-          {{- end -}}
+          {{- end }}
+          - name: esconfig
+            mountPath: /usr/share/elasticsearch/config/readonlyrest.yml
+            subPath: readonlyrest.yml
         {{- if .Values.extraVolumeMounts }}
 {{ tpl .Values.extraVolumeMounts . | indent 10 }}
         {{- end }}

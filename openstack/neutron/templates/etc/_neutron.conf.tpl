@@ -26,6 +26,8 @@ allow_automatic_dhcp_failover = {{ .Values.allow_automatic_dhcp_failover | defau
 dhcp_agents_per_network = 2
 dhcp_lease_duration = {{ .Values.dhcp_lease_duration | default 86400 }}
 
+filter_validation = false
+
 # Designate configuration
 dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
 {{- if .Values.dns_external_driver }}
@@ -57,8 +59,8 @@ auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "h
 auth_plugin = v3password
 auth_type = v3password
 region_name = {{.Values.global.region}}
-username = {{ .Values.global.nova_service_user | default "nova" | replace "$" "$$" }}
-password = {{ .Values.global.nova_service_password | default "" | replace "$" "$$"}}
+username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
+password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
@@ -74,8 +76,8 @@ region_name = {{.Values.global.region}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = master
 project_domain_name = ccadmin
-username = {{ .Values.global.designate_service_user | default "designate" | replace "$" "$$"}}
-password = {{ .Values.global.designate_service_password | default "" | replace "$" "$$"}}
+username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
+password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
 insecure = True
 allow_reverse_dns_lookup = {{.Values.global.designate_allow_reverse_dns_lookup | default "False"}}
 ipv4_ptr_zone_prefix_size = 24

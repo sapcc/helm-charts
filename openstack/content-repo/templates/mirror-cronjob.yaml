@@ -25,14 +25,15 @@ spec:
             name: swift-http-import
         - name: secret
           secret:
-            secretName: swift-http-import
+            secretName: swift-http-import-certs
       containers:
       - name: swift-http-import
         image: {{$.Values.global.registry}}/swift-http-import:{{ include "image_version" $.Values }}
         args:
           - /etc/http-import/config/{{$repo}}.yaml
-        {{- if or $.Values.debug $config.debug }}
         env:
+        {{ include "secret_env_vars" $ | indent 10 }}
+        {{- if or $.Values.debug $config.debug }}
           - name: 'DEBUG'
             value: '1'
         {{- end}}
