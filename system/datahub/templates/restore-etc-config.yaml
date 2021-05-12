@@ -20,10 +20,7 @@ data:
       port: {{ .Values.mariadb.port_public }}
     openstack_dbs:
 {{- range $backup := .Values.mariadb.restore.backups }}
-      -
-        name: {{ $backup.name }}
-        container_name: {{ $backup.container_name }}
-        backup_version: {{ $backup.backup_version }}
+      - {{$backup | toYaml | nindent 8}}
 {{- end }}
     additional_sql_file: {{ .Values.mariadb.restore.additional_sql_file }}
     download_dir: {{ .Values.mariadb.restore.backup_dir }}
@@ -36,3 +33,4 @@ data:
     ALTER USER 'root'@'localhost' IDENTIFIED BY '{{.Values.mariadb.root_password}}';
     ALTER USER 'root'@'%' IDENTIFIED BY '{{.Values.mariadb.root_password}}';
     GRANT SELECT on {{.Values.mariadb.dbName}}.* to '{{.Values.global.datahub.user}}'@'%' IDENTIFIED BY '{{.Values.global.datahub.password}}';
+    GRANT SELECT on 'glance'.* to '{{.Values.global.datahub.user}}'@'%' IDENTIFIED BY '{{.Values.global.datahub.password}}';
