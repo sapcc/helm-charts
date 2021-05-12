@@ -2,25 +2,27 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: swift-proxy-{{$cluster_id}}
+  name: swift-proxy-{{ $cluster_id }}
   labels:
-    release: "{{$.Release.Name}}"
-    os-cluster: {{$cluster_id}}
-  annotations:
-    {{- include "swift_prometheus_annotations" $ | indent 4 }}
+    release: "{{ $.Release.Name }}"
+    os-cluster: {{ $cluster_id }}
 spec:
+  {{- if $.Values.external_traffic_policy_local }}
+  type: NodePort
+  externalTrafficPolicy: Local
+  {{- end }}
   selector:
-    component: swift-proxy-{{$cluster_id}}
+    for-service: swift-proxy-{{ $cluster_id }}
   ports:
     - name: api
-      port: {{$cluster.proxy_public_port}}
+      port: {{ $cluster.proxy_public_port }}
       targetPort: 443
     {{- if and $cluster.proxy_public_http_port $cluster.sans_http }}
     - name: api-http
-      port: {{$cluster.proxy_public_http_port}}
+      port: {{ $cluster.proxy_public_http_port }}
       targetPort: 80
-    {{- end}}
+    {{- end }}
   externalIPs:
-    - {{$cluster.proxy_public_ip}}
+    - {{ $cluster.proxy_public_ip }}
 ---
 {{- end }}

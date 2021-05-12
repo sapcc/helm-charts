@@ -181,7 +181,11 @@ auth_type = v3password
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
+{{- if .Values.global_setup }}
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{ .Values.global.keystone_internal_ip }}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+{{- else }}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+{{- end }}
 username = {{ .Values.global.designate_service_user }}
 password = {{ .Values.global.designate_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
@@ -200,30 +204,32 @@ service_type = dns
 
 #-----------------------
 
+{{- if .Values.cors.enabled }}
 # CORS Middleware
 #-----------------------
 [cors]
 
 # Indicate whether this resource may be shared with the domain received in the
 # requests "origin" header. (list value)
-#allowed_origin = <None>
+allowed_origin = {{ .Values.cors.allowed_origin | default "*" }}
 
 # Indicate that the actual request can include user credentials (boolean value)
-#allow_credentials = true
+allow_credentials = true
 
 # Indicate which headers are safe to expose to the API. Defaults to HTTP Simple
 # Headers. (list value)
-#expose_headers = X-OpenStack-Request-ID,Host
+expose_headers = X-OpenStack-Request-ID,Host
 
 # Maximum cache age of CORS preflight requests. (integer value)
-#max_age = 3600
+max_age = 3600
 
 # Indicate which methods can be used during the actual request. (list value)
-#allow_methods = GET,PUT,POST,DELETE,PATCH,HEAD
+allow_methods = GET,PUT,POST,DELETE,PATCH,HEAD
 
 # Indicate which header field names may be used during the actual request.
 # (list value)
-#allow_headers = X-Auth-Token,X-Auth-Sudo-Tenant-ID,X-Auth-Sudo-Project-ID,X-Auth-All-Projects,X-Designate-Edit-Managed-Records
+allow_headers = X-Auth-Token,X-Auth-Sudo-Tenant-ID,X-Auth-Sudo-Project-ID,X-Auth-All-Projects,X-Designate-Edit-Managed-Records
+{{- end }}
 
 [cors.subdomain]
 

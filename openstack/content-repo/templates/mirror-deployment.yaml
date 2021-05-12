@@ -26,7 +26,8 @@ spec:
       annotations:
         checksum/check.bin: {{ include "content-repo/templates/bin-configmap.yaml" $ | sha256sum }}
         checksum/check.etc: {{ include "content-repo/templates/configmap.yaml" $ | sha256sum }}
-        checksum/check.secrets: {{ include "content-repo/templates/secrets.yaml" $ | sha256sum }}
+        checksum/check.secrets: {{ include "content-repo/templates/secret.yaml" $ | sha256sum }}
+        checksum/check.secrets-certs: {{ include "content-repo/templates/secret-certs.yaml" $ | sha256sum }}
     spec:
       volumes:
       - name: bin
@@ -38,7 +39,7 @@ spec:
           name: swift-http-import
       - name: secret
         secret:
-          secretName: swift-http-import
+          secretName: swift-http-import-certs
       containers:
       - name: swift-http-import
         image: {{$.Values.global.registry}}/swift-http-import:{{ include "image_version" $.Values }}
@@ -56,6 +57,7 @@ spec:
           - /usr/bin/swift-http-import
           - /etc/http-import/config/{{$repo}}.yaml
         env:
+        {{ include "secret_env_vars" $ | indent 10 }}
           - name: 'LOG_TRANSFERS'
             value: 'true'
         {{- if $.Values.timezone }}

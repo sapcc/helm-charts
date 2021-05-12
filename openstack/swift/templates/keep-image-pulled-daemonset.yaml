@@ -13,7 +13,7 @@ spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 10 # allow updating all pods at once
+      maxUnavailable: 1000 # allow updating all pods at once
   selector:
     matchLabels:
       app: keep-image-pulled
@@ -39,9 +39,31 @@ spec:
               cpu: "1m"
               memory: "16Mi"
         - name: nginx
-          image: {{$.Values.global.registryAlternateRegion}}/swift-nginx:{{$.Values.image_version_nginx}}
+          image: {{ $.Values.global.registryAlternateRegion}}/swift-nginx:{{ $.Values.image_version_nginx }}
           imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', 'inf' ]
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "16Mi"
+            limits:
+              cpu: "1m"
+              memory: "16Mi"
+        - name: haproxy
+          image: {{ $.Values.global.registryAlternateRegion}}/swift-haproxy:{{ $.Values.image_version_haproxy }}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "16Mi"
+            limits:
+              cpu: "1m"
+              memory: "16Mi"
+        - name: statsd
+          image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/tail', '-f', '/dev/null' ] # does not support "sleep inf" in the image version currently in use
           resources:
             requests:
               cpu: "1m"

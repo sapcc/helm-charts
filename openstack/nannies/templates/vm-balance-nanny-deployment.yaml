@@ -53,9 +53,17 @@ template: |
               - name: VM_BALANCE_VCHOST
                 value: {= host | quote =}
               - name: VM_BALANCE_VCUSER
+                {{- if .Values.nannies.vcenter_username | default "" }}
+                value: {{ .Values.nannies.vcenter_username | quote }}
+                {{- else }}
                 value: {= username | quote =}
+                {{- end }}
               - name: VM_BALANCE_VCPASSWORD
+                {{- if .Values.nannies.vcenter_username | default "" }}
+                value: {= "{{ .Values.nannies.vcenter_username }}" | derive_password | quote =}
+                {{- else }}
                 value: {= password | quote =}
+                {{- end }}
               - name: VM_BALANCE_INTERVAL
                 value: "{{ .Values.vm_balance_nanny.interval }}"
               - name: VM_BALANCE_AUTO
@@ -75,7 +83,7 @@ template: |
               - name: OS_USER_DOMAIN_NAME
                 value: "Default"
               - name: OS_PASSWORD
-                value: {= "vcenter_nanny" | derive_password("identity-3." + availability_zone[:-1] + ".cloud.sap") | quote =}
+                value: {{ derivePassword 1 "long" .Values.nannies.master_password "vcenter_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
 
 {{- end }}
 {{- end }}

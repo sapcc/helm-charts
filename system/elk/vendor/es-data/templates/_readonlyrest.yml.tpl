@@ -30,7 +30,7 @@ readonlyrest:
 {{- end }}
       # access to write to the jump server log indexes
       - name: jump
-        actions: ["indices:admin/types/exists","indices:data/read/*","indices:data/write/*","indices:admin/template/*","indices:admin/create","cluster:monitor/*"]
+        actions: ["*"]
         indices: ["jump-*"]
         auth_key: {{.Values.global.jump_user}}:{{.Values.global.jump_password}}
 

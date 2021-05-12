@@ -1,0 +1,30 @@
+groups:
+  - name: elk
+    rules:
+      - alert: ELKLogsDashboardDown
+        expr: probe_success{target=~"https://logs.+"} == 0
+        for: 15m
+        labels:
+          severity: info
+          tier: os
+          service: elk
+          meta: "ELK logs dashboard down"
+          dashboard: elasticsearch?var-cluster=elkelasticsearch
+          playbook: docs/support/playbook/elastic_kibana_issues.html
+        annotations:
+          description: "ELK is down"
+          summary: "ELK is down"
+
+      - alert: ELKElasticsearchDown
+        expr: probe_success{target=~"https://elk-elasticsearch.+"} == 0
+        for: 15m
+        labels:
+          severity: info
+          tier: os
+          service: elk
+          meta: "ELK elasticsearch cluster down"
+          dashboard: elasticsearch?var-cluster=elkelasticsearch
+          playbook: docs/support/playbook/elastic_kibana_issues.html
+        annotations:
+          description: "ELK elasticsearch is down"
+          summary: "ELK elasticsearch is down"

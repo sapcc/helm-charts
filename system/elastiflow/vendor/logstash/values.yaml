@@ -1,12 +1,13 @@
----
-replicas: 2
-
+replicas: "2"
 # Allows you to add any config files in /usr/share/logstash/config/
 # such as logstash.yml and log4j2.properties
-logstashConfig: {}
-#  logstash.yml: |
-#    key:
-#      nestedkey: value
+logstashConfig:
+  logstash.yml: |
+    http:
+      host: "0.0.0.0"
+    pipeline:
+      workers: 8
+    
 #  log4j2.properties: |
 #    key = value
 
@@ -47,13 +48,13 @@ labels: {}
 
 logstashJavaOpts: "-Xmx1g -Xms1g"
 
-resources:
-  requests:
-    cpu: "100m"
-    memory: "1536Mi"
-  limits:
-    cpu: "1000m"
-    memory: "1536Mi"
+# resources:
+#   requests:
+#     cpu: "100m"
+#     memory: "1536Mi"
+#   limits:
+#     cpu: "1000m"
+#     memory: "1536Mi"
 
 volumeClaimTemplate:
   accessModes: [ "ReadWriteOnce" ]
@@ -96,12 +97,7 @@ extraVolumeMounts: ""
   #   mountPath: /usr/share/extras
   #   readOnly: true
 
-extraContainers: |
-  - name: logstash-exporter
-    image: bonniernews/logstash_exporter:v0.1.2
-    ports:
-      - name: metrics
-        containerPort: 9198
+extraContainers: ""
 
 extraInitContainers: ""
   # - name: do-something
@@ -131,9 +127,10 @@ podManagementPolicy: "Parallel"
 httpPort: 9600
 
 # Custom ports to add to logstash
-extraPorts: []
-  # - name: beats
-  #   containerPort: 5001
+extraPorts:
+  - name: beats-tcp
+    containerPort: 5044
+    protocol: TCP
 
 updateStrategy: RollingUpdate
 
@@ -197,14 +194,3 @@ lifecycle: {}
   #     command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]
 
 service: {}
-#  annotations: {}
-#  type: ClusterIP
-#  ports:
-#    - name: beats
-#      port: 5044
-#      protocol: TCP
-#      targetPort: 5044
-#    - name: http
-#      port: 8080
-#      protocol: TCP
-#      targetPort: 8080

@@ -1,3 +1,15 @@
+## 1.4.2
+
+* Remove `vice-president: "true"` annotation. Replaced by `kubernetes.io/tls-acme: "true"`.
+
+## 1.4.1
+
+* Ingress API version `extensions/v1beta1` -> `networking.k8s.io/v1beta1`.
+
+## 1.4.0
+
+* Upgrade alertmanager to `0.21.0`.
+
 ## 1.3.0
 
 * Allow disabling default notification templates.

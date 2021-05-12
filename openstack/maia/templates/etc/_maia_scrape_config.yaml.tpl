@@ -93,7 +93,8 @@
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
-      - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
+      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage)$"}'
+      - '{__name__=~"^limes_swift_.+",project_id!=""}'
 
 - job_name: 'prometheus-infra-collector'
   scrape_interval: 1m
@@ -144,11 +145,11 @@
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^snmp_f5_.+"}'
-      - '{__name__=~"^vcenter_cpu_.+"}'
-      - '{__name__=~"^vcenter_disk_.+"}'
-      - '{__name__=~"^vcenter_mem_.+"}'
-      - '{__name__=~"^vcenter_net_.+"}'
-      - '{__name__=~"^vcenter_virtualDisk_.+"}'
+#      - '{__name__=~"^vcenter_cpu_.+"}'
+#      - '{__name__=~"^vcenter_disk_.+"}'
+#      - '{__name__=~"^vcenter_mem_.+"}'
+#      - '{__name__=~"^vcenter_net_.+"}'
+#      - '{__name__=~"^vcenter_virtualDisk_.+"}'
       - '{__name__=~"^netapp_capacity_.+"}'
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
@@ -157,3 +158,29 @@
       - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
       - '{__name__=~"^vrops_virtualmachine_network_.+"}'
       - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
+
+
+{{- if .Values.cronus.enabled }}
+- job_name: 'cronus-reputation-statistics'
+  scheme: https
+  scrape_interval: 5m
+  scrape_timeout: 55s
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.key
+  static_configs:
+    - targets:
+      - "prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      - '{__name__="aws_ses_cronus_provider_bounce"}'
+      - '{__name__="aws_ses_cronus_provider_complaint"}'
+      - '{__name__="aws_ses_cronus_provider_delivery"}'
+      - '{__name__="aws_ses_cronus_provider_reputation_bouncerate"}'
+      - '{__name__="aws_ses_cronus_provider_reputation_complaintrate"}'
+      - '{__name__="aws_ses_cronus_provider_send"}'
+  metric_relabel_configs:
+    - action: labeldrop
+      regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id"
+{{ end }}

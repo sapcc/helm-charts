@@ -270,11 +270,11 @@
     "remove_subports": "rule:context_is_network_admin",
 
     "get_loggable_resources": "rule:context_is_admin",
-    "create_log": "rule:context_is_admin",
-    "update_log": "rule:context_is_admin",
-    "delete_log": "rule:context_is_admin",
-    "get_logs": "rule:context_is_admin",
-    "get_log": "rule:context_is_admin",
+    "create_log": "rule:context_is_network_admin",
+    "update_log": "rule:context_is_network_admin",
+    "delete_log": "rule:context_is_network_admin",
+    "get_logs": "rule:context_is_network_viewer",
+    "get_log": "rule:context_is_network_viewer",
 
     "create_bgpvpn": "rule:context_is_admin",
     "update_bgpvpn": "rule:context_is_admin",

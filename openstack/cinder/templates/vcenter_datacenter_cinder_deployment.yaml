@@ -34,13 +34,16 @@ template: |
           application: cinder
           component: volume-vmware
           name: cinder-volume-vmware-{= name =}
+        annotations:
+          configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+          configmap-cinder-volume-hash: {= "vcenter_datacenter/{{ .Release.Namespace }}/vcenter-datacenter-cinder-configmap.yaml.j2" | render | sha256sum =}
       spec:
         hostname: cinder-volume-vmware-{= name =}
 {{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
         containers:
         - name: cinder-volume-vmware-{= name =}
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ required ".Values.global.imagePullPolicy is missing" .Values.global.imagePullPolicy }}
           securityContext:
             capabilities:
               add: ["SYS_ADMIN"]

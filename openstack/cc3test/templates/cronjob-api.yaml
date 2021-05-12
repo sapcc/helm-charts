@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Values.cc3test.namespace }}
 spec:
   schedule: "*/2 * * * *"
-  concurrencyPolicy: Forbid
+  concurrencyPolicy: Replace
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
   jobTemplate:
@@ -17,12 +17,18 @@ spec:
             - name: cc3test-config
               configMap:
                 name: cc3test-config
+            - name: cc3test-secrets
+              secret:
+                secretName: cc3test-secrets
           containers:
           - name: cc3test-api
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
-            args: ['pytest', '--disable-pytest-warnings', '--variables', 'config/config.yaml', '-r', 'ap', '-m', 'api', 'tests']
+            args: ['pytest', '--disable-pytest-warnings', '--no-header', '--color=yes', '--variables', 'config/config.yaml', '--variables', 'secrets/secrets.yaml', '-r', 'ap', '-m', 'api', 'tests']
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config
+                readOnly: true
+              - name: cc3test-secrets
+                mountPath: /cc3test/secrets
                 readOnly: true
           restartPolicy: Never

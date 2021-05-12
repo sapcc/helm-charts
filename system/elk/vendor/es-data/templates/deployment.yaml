@@ -1,4 +1,4 @@
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: es-data
@@ -9,7 +9,7 @@ metadata:
     component: elasticsearch
     role: data
 spec:
-  serviceName: "es-data"
+  serviceName: es-data
   replicas: {{.Values.data_replicas}}
   selector:
     matchLabels:
@@ -67,11 +67,11 @@ spec:
             - name: NODE_DATA
               value: "true"
             - name: HTTP_ENABLE
-              value: "false"
+              value: "true"
             - name: ES_JAVA_OPTS
               value: "-XX:MaxRAM=7g -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
             - name: READONLYREST_ENABLE
-              value: "false"
+              value: "true"
           securityContext:
             capabilities:
               add:
@@ -90,6 +90,9 @@ spec:
               hostPort: {{.Values.data_dummy_port}}
               hostIP: 127.0.0.1
               containerPort: {{.Values.data_dummy_port}}
+            - name: http
+              containerPort: {{.Values.global.http_port}}
+              protocol: TCP
   volumeClaimTemplates:
   - metadata:
       name: es

@@ -34,6 +34,7 @@ spec:
         runAsUser: 0
 {{- end }}
 {{ tuple . "nova" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      hostname: nova-api
       containers:
         - name: nova-api
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-api:{{.Values.imageVersionNovaApi | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
@@ -49,17 +50,18 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "nova-migration"
             - name: DEPENDENCY_SERVICE
-            {{- if eq .Values.mariadb.enabled true }}
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
-            {{- else }}
-              value: "{{ .Release.Name }}-postgresql,{{ .Release.Name }}-rabbitmq"
-            {{- end }}
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
+            {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
-              value: {{.Values.sentry_dsn | quote}}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
 {{- if .Values.python_warnings }}
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}

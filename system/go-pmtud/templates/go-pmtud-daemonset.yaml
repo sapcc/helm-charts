@@ -23,7 +23,7 @@ spec:
     spec:
       initContainers:
         - name: iptables-init
-          image: "{{ .Values.global.registry }}/ccloud/iptables:{{ .Values.images.iptables.tag }}"
+          image: "{{ .Values.global.registry }}/iptables:{{ .Values.images.iptables.tag }}"
           command:
             - /scripts/pmtud/iptables-init.sh
           securityContext:
@@ -33,7 +33,7 @@ spec:
               mountPath: /scripts/pmtud
       containers:
       - name: pmtud
-        image: "{{ .Values.global.registry }}/ccloud/go-pmtud:{{ .Values.images.pmtud.tag }}"
+        image: "{{ .Values.global.registry }}/go-pmtud:{{ .Values.images.pmtud.tag }}"
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -41,14 +41,11 @@ spec:
               command: ["/scripts/pmtud/iptables-stop.sh"]
         command:
           - /go-pmtud
-          - --peers={{ required ".Values.pmtud.peers is required" .Values.pmtud.peers }}
-{{- if .Values.pmtud.interface }}
-          - --iface={{ .Values.pmtud.interface }}
-{{- end }}
+          - --iface_names={{ required ".Values.pmtud.ifaceNames is required" .Values.pmtud.ifaceNames | join "," }}
           - --nodename=$(NODE_NAME)
-          - --ttl={{ .Values.pmtud.ttl }}
-          - --nflog-group={{ .Values.iptables.nflogGroup }}
-          - --metrics-port={{ .Values.pmtud.metricsPort }}
+          - --ttl={{ required ".Values.pmtud.ttl is required" .Values.pmtud.ttl }}
+          - --nflog_group={{ required ".Values.pmtud.nflogGroup is required" .Values.iptables.nflogGroup }}
+          - --metrics_port={{ required ".Values.pmtud.metricsPort is required" .Values.pmtud.metricsPort }}
         env:
         - name: NODE_NAME
           valueFrom:

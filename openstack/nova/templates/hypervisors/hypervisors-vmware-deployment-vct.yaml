@@ -55,8 +55,13 @@ template: |
             value: "nova-compute"
           - name: NAMESPACE
             value: {{ .Release.Namespace }}
+          {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
-            value: {{ .Values.sentry_dsn | quote }}
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
           - name: STATSD_HOST
             value: "localhost"
           - name: STATSD_PORT
@@ -111,8 +116,13 @@ template: |
           command: ["dumb-init"]
           args: ["neutron-dvs-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-vmware.ini"]
           env:
+          {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
-            value: {{ .Values.neutron.sentry_dsn | quote }}
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
           - name: STATSD_HOST
             value: "localhost"
           - name: STATSD_PORT

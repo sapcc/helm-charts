@@ -121,6 +121,12 @@ route:
   - receiver: elastic
     continue: true
 
+  - receiver: octobus
+    continue: true
+    match_re:
+      severity: critical
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+
   - receiver: awx
     continue: true
     match_re:
@@ -196,27 +202,19 @@ route:
       severity: info
       region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-2|qa-de-3|qa-de-5
 
-  - receiver: slack_vpod_critical
+  - receiver: slack_ad_warning
     continue: false
     match_re:
-      tier: vpod
-      severity: critical
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
-  - receiver: slack_vpod_warning
-    continue: false
-    match_re:
-      tier: vpod
+      tier: ad
       severity: warning
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
-  - receiver: slack_vpod_info
+  - receiver: slack_ad_info
     continue: false
     match_re:
-      tier: vpod
+      tier: ad
       severity: info
-      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3
-
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
   - receiver: pagerduty_vmware
     continue: true
@@ -326,6 +324,13 @@ receivers:
     - send_resolved: true
       url: {{ required ".Values.elastic.logstashURL undefined" .Values.elastic.logstashURL | quote }}
 
+  - name: octobus
+    webhook_configs:
+    - send_resolved: true
+      url: {{ required ".Values.octobus.gymInstance undefined" .Values.octobus.gymInstance | quote }}
+    - send_resolved: true
+      url: {{ required ".Values.octobus.gcpInstance undefined" .Values.octobus.gcpInstance | quote }}
+
   - name: awx
     webhook_configs:
     - send_resolved: true
@@ -387,9 +392,9 @@ receivers:
             text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
             value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
-  - name: slack_vpod_info
+  - name: slack_ad_info
     slack_configs:
-      - channel: '#alert-vpod-info'
+      - channel: '#alert-ad-info'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
@@ -401,10 +406,10 @@ receivers:
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
 
-  - name: slack_vpod_warning
+  - name: slack_ad_warning
     slack_configs:
-      - channel: '#alert-vpod-warning'
-        api_url: {{ required ".Values.slack.metal.warningWebhookURL undefined" .Values.slack.vpod.warningWebhookURL | quote }}
+      - channel: '#alert-ad-warning'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
         title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
@@ -414,30 +419,6 @@ receivers:
         callback_id: "alertmanager"
         color: {{`'{{template "slack.sapcc.color" . }}'`}}
         send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
-
-  - name: slack_vpod_critical
-    slack_configs:
-      - channel: '#alert-vpod-critical'
-        api_url: {{ required ".Values.slack.metal.criticalWebhookURL undefined" .Values.slack.vpod.criticalWebhookURL | quote }}
-        username: "Pulsar"
-        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
-        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
-        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
-        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
-        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
-        callback_id: "alertmanager"
-        color: {{`'{{template "slack.sapcc.color" . }}'`}}
-        send_resolved: true
-        actions:
-          - name: {{"'{{template \"slack.sapcc.actionName\" . }}'"}}
-            type: {{"'{{template \"slack.sapcc.actionType\" . }}'"}}
-            text: {{"'{{template \"slack.sapcc.acknowledge.actionText\" . }}'"}}
-            value: {{"'{{template \"slack.sapcc.acknowledge.actionValue\" . }}'"}}
 
   - name: slack_net_info
     slack_configs:
@@ -808,6 +789,21 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
+      - service_key: {{ required ".Values.pagerduty_sap.osd_mom_compute.serviceKey undefined" .Values.pagerduty_sap.osd_mom_compute.serviceKey | quote }}
+        description: {{"'{{ template \"pagerduty.sapcc.description\" . }}'"}}
+        component: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+        group: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+        details:
+          Details: {{"'{{template \"pagerduty.sapcc.details\" . }}'"}}
+          Region: {{"'{{template \"pagerduty.sapcc.region\" . }}'"}}
+          Tier: {{"'{{template \"pagerduty.sapcc.tier\" . }}'"}}
+          Service: {{"'{{template \"pagerduty.sapcc.service\" . }}'"}}
+          Context: {{"'{{template \"pagerduty.sapcc.context\" . }}'"}}
+          Prometheus: {{"'{{template \"pagerduty.sapcc.prometheus\" . }}'"}}
+          Dashboard: {{"'{{template \"pagerduty.sapcc.dashboard\" . }}'"}}
+          Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
+          Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
+          firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
 
   - name: pagerduty_network
     pagerduty_configs:
@@ -892,4 +888,3 @@ receivers:
           Sentry: {{"'{{template \"pagerduty.sapcc.sentry\" . }}'"}}
           Playbook: {{"'{{template \"pagerduty.sapcc.playbook\" . }}'"}}
           firing: {{"'{{ template \"pagerduty.sapcc.firing\" . }}'"}}
-

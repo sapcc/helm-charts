@@ -1,18 +1,20 @@
-replicaCount: 1
+global:
+  region: RegionOne
+  tld: openstack.local
 cronus:
   enabled: true
   cacheSize: 256
   http: 5000
   smtp: 1025
+  listenProxyProtocol: false
   debug: true
   tls: tls-secret
   image:
     name: cronus-repository
     pullPolicy: IfNotPresent
     tag: latest
-    imagePullSecrets: []
   statefulSet:
-    enabled: true
+    enabled: false
     podManagementPolicy: OrderedReady
     annotations: {}
     labels: {}
@@ -21,7 +23,32 @@ cronus:
       labels: {}
       servicePort: 80
   updateStrategy: RollingUpdate
-  replicas: 1
+  terminationGracePeriod: 60
+  affinity:
+    # don't co-locate cronus replicas on the same node
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchExpressions:
+          - key: name
+            operator: In
+            values:
+              - cronus
+              - usage
+          - key: instance
+            operator: In
+            values:
+              - cronus
+  replicas: 3
+  # all below can be used only with a deployment style
+  maxSurge: 1
+  maxUnavailable: 0
+  usage:
+    replicas: 1
+    maxSurge: 1
+    maxUnavailable: 0
+
 nebula:
   enabled: true
   cacheSize: 512
@@ -31,9 +58,8 @@ nebula:
     name: nebula-repository
     pullPolicy: IfNotPresent
     tag: latest
-    imagePullSecrets: []
   statefulSet:
-    enabled: true
+    enabled: false
     podManagementPolicy: OrderedReady
     annotations: {}
     labels: {}
@@ -43,6 +69,9 @@ nebula:
       servicePort: 80
   updateStrategy: RollingUpdate
   replicas: 1
+  # all below can be used only with a deployment style
+  maxSurge: 1
+  maxUnavailable: 0
   ingressAnnotations:
     nginx.ingress.kubernetes.io/proxy-read-timeout: 1800
 
@@ -67,6 +96,7 @@ config:
     # userID: user-id
   group: service-group
   jira:
+    endpoint: http://url-to
     username: jira-username
     password: jira-password
     serviceDeskID: 1
@@ -76,6 +106,10 @@ config:
       Delete {{ $accountID }} account ID
     ticketDescriptionTemplate: |
       Please delete the {{ $accountID }} account ID
+  multiCloud:
+    endpoint: http://url-to
+    username: service-username
+    password: service-password
   serviceUsername: service-username
   servicePassword: service-password
   awsAccess: aws-access
@@ -97,8 +131,9 @@ config:
     }
   forwardUserAgent: false
   billingCacheTTL: 24h
+  barbicanCacheTTL: 15m
   technicalResponsible: technical-responsible@example
-  accountStatusTimeout: 5m
+  accountStatusTimeout: 300 # 5m
   accountStatusPollDelay: 10s
   verifyEmailDomain: example.com
   verifyEmailSecret: domainkey
@@ -106,9 +141,16 @@ config:
   websiteURL: https://example.com
   allowedServices:
     email: email-region
+  # the list of domains to be blocked by a proxy server on ses email identity create/delete actions
+  blockedDomains:
+    - example.com # the exact domain
+    - .example.com # all subdomains
+    - sub.example.com # the exact subdomain
   cronusPolicy:
     project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user)
     domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user)
+    # a policy to trigger a cache warmup
+    warmup_projects_cache: role:resource_service
     cronus:usage_viewer: rule:project_scope or rule:domain_scope or role:cloud_email_admin or role:resource_service
     cronus:aws_proxy: rule:project_scope
     cronus:smtp_proxy: rule:project_scope
@@ -119,6 +161,33 @@ config:
     cluster_or_domain_scope: rule:cluster_scope or rule:domain_scope
     nebula:admin: rule:project_scope or rule:cluster_or_domain_scope
     nebula:cloud_admin: rule:cluster_or_domain_scope
+  cronusAuditSink:
+    internalQueueSize: 20
+    contentTypePrefixes:
+      - application/x-www-form-urlencoded
+      - application/json
+      - application/x-amz-json-
+      - text/xml
+    queryKeysToMask:
+      ses:
+      - Message.Subject.Charset
+      - Message.Subject.Data
+      - Message.Body.Text.Charset
+      - Message.Body.Text.Data
+      - Message.Body.Html.Charset
+      - Message.Body.Html.Data
+      - RawMessage
+    jsonKeysToMask:
+      ses:
+      - Content
+    maxContentLen: 102400 # 100Kb max
+    debug: false
+  nebulaAuditSink:
+    internalQueueSize: 20
+    contentTypePrefixes:
+      - application/json
+    maxContentLen: 102400 # 100Kb max
+    debug: false
 
 service:
   type: ClusterIP
@@ -126,8 +195,11 @@ service:
 # nginx values
 ingress-nginx:
   tcp:
-    465: ""
+    465: cronus/cronus:1025
   controller:
+    # pod annotations are needed to recreate nginx pods on template update
+    podAnnotations:
+      recreate: enableRealIP
     containerPort:
       http: 80
       https: 443
@@ -141,10 +213,6 @@ ingress-nginx:
       targetPorts:
         http: http
         https: https
-      nodePorts:
-        http: ""
-        https: ""
-        465-tcp: ""
     ingressClass: cronus-nginx
     admissionWebhooks:
       enabled: false
@@ -159,3 +227,59 @@ ingress-nginx:
     - name: tls-secret-cronus
       secret:
         secretName: tls-secret-cronus
+    affinity:
+      # don't co-locate ingress controller replicas on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - controller
+            - key: app.kubernetes.io/instance
+              operator: In
+              values:
+                - cronus
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - ingress-nginx
+
+simulator:
+  enabled: true
+  image:
+    name: cronus-exporter-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  statefulSet:
+    enabled: true
+    podManagementPolicy: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  replicas: 1
+  nebula: 
+  cronus:
+  remote: 
+  remoteRegion:
+  remotePassword:
+  slack: slack-url
+  recipient: recipient-email
+  cronuscli: cronuscli
+  timeWaitInterval: 60
+  shellToUse: bash
+  projectDomainName: project-domain
+  projectName: project-name
+
+exporter:
+  duration: "10m"
+  period: 10
+  loopInterval: 10
+  pushgatewayUrl: http://localhost:9091

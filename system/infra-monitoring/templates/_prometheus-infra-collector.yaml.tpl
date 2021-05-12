@@ -189,6 +189,25 @@
       replacement: '$1'
       target_label: probed_to_type
 
+- job_name: 'jumpserver'
+  params:
+    job: [jumpserver]
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: jumpserver
+      action: keep
+    - source_labels: [__address__]
+      target_label: __address__
+      regex:       '(.*)'
+      replacement: $1:9100
+  metric_relabel_configs:
+    - regex: "role|server_id|state"
+      action: labeldrop
+
 {{- $values := .Values.arista_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'arista'
@@ -312,11 +331,6 @@
       regex: 'snmp_n7k_sysDescr;(?s)(.*)(Version )([0-9().a-z]*)(,.*)'
       replacement: '$3'
       target_label: image_version
-# hack to mitigate some false-positive snmp_asr_ alerts due to netbox naming pattern devicename="LA-BR-1-ASR11a"
-    - source_labels: [__name__, devicename]
-      regex: 'snmp_asr_RedundancyGroup;(\w*-\w*-\w*)-(\S*).$'
-      replacement: '$2'
-      target_label: device
     - source_labels: [__name__, cucsEtherErrStatsDn]
       regex: 'snmp_ucs_cucsEtherErrStats.+;.+(lan).+'
       action: drop
@@ -472,8 +486,8 @@
 - job_name: 'redfish/bm'
   params:
     job: [redfish/bm]
-  scrape_interval: {{$values.bm_scrapeInterval}}
-  scrape_timeout: {{$values.bm_scrapeTimeout}}
+  scrape_interval: {{$values.redfish_scrapeInterval}}
+  scrape_timeout: {{$values.redfish_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
@@ -492,8 +506,8 @@
 - job_name: 'redfish/cp'
   params:
     job: [redfish/cp]
-  scrape_interval: {{$values.cp_scrapeInterval}}
-  scrape_timeout: {{$values.cp_scrapeTimeout}}
+  scrape_interval: {{$values.redfish_scrapeInterval}}
+  scrape_timeout: {{$values.redfish_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
@@ -514,8 +528,8 @@
 - job_name: 'redfish/bb'
   params:
     job: [redfish/bb]
-  scrape_interval: {{$values.bb_scrapeInterval}}
-  scrape_timeout: {{$values.bb_scrapeTimeout}}
+  scrape_interval: {{$values.redfish_scrapeInterval}}
+  scrape_timeout: {{$values.redfish_scrapeTimeout}}
   file_sd_configs:
       - files :
         - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
@@ -532,6 +546,28 @@
       replacement: redfish-exporter:{{$values.listen_port}}
 {{- end }}
 
+{{- $values := .Values.windows_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'windows-exporter'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /metrics
+  relabel_configs:
+    - source_labels: [job]
+      regex: windows-exporter
+      action: keep
+    - source_labels: [__address__]
+      replacement: $1:{{$values.listen_port}}
+      target_label: __address__
+  metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: '^go_.+'
+      action: drop
+{{- end }}
+        
 {{- $values := .Values.vasa_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'vasa'
@@ -629,6 +665,10 @@
       regex: (vrops.*)(.infra?.*[c])(:.*)
       target_label: __address__
       replacement: ${1}${3}
+    - source_labels: [__meta_kubernetes_service_name]
+      regex: (vrops-exporter-)(vrops-vc-.+)
+      target_label: collector
+      replacement: ${2}
   metric_relabel_configs:
     - action: labeldrop
       regex: "instance"
@@ -672,6 +712,26 @@
       target_label: __param_target
     - target_label: __address__
       replacement: esxi-exporter-criticalservicecollector:9203
+{{- end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.esxi_syslog_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'esxi-logforwarding'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: vcenter
+      action: keep
+    - source_labels: [server_name]
+      target_label: __param_target
+    - target_label: __address__
+      replacement: esxi-exporter-syslogconnectioncollector:9203
 {{- end }}
 
 {{- $values := .Values.firmware_exporter -}}
@@ -805,19 +865,23 @@
 
 {{ if .Values.ask1k_tests.enabled }}
 - job_name: 'asr1k_tests'
-  scrape_interval: 60s
-  scrape_timeout: 45s
+  scrape_interval: 30s
+  scrape_timeout: 25s
 
   honor_labels: true
   metrics_path: '/federate'
 
   params:
     'match[]':
-      - '{job=~"^asr1k_tests.*"}'
-
+      - '{__name__=~"(probe_.+_duration_seconds:avg|probe_success:avg)"}'
+      - '{__name__=~".*probes_by_attributes"}'
+      - '{__name__=~"tcpgoon_.*"}'
   static_configs:
     - targets:
-      - '10.236.40.28:9090'
+      - 'prometheus.asr1k-tests.c.{{ .Values.global.region }}.cloud.sap:9090'
+{{- if eq .Values.global.region "qa-de-1" }}
+      - 'prometheus.asr1k-tests-monsoon.c.{{ .Values.global.region }}.cloud.sap:9090'
+{{- end }}
 {{ end }}
 
 #exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
@@ -837,3 +901,32 @@
       source_labels: [__meta_kubernetes_service_name]
       regex: ucs-exporter
 {{- end }}
+
+{{ if .Values.network_generic_ssh_exporter.enabled }}
+- job_name: 'network/ssh'
+  scrape_interval: 120s
+  scrape_timeout: 60s
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /ssh
+  relabel_configs:
+    - source_labels: [job]
+      regex: network/ssh
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [credential]
+      target_label: __param_credential
+    - source_labels: [batch]
+      target_label: __param_batch
+    - source_labels: [device]
+      target_label: __param_device
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: network-generic-ssh-exporter:9116
+  metric_relabel_configs:
+    - action: labeldrop
+      regex: "metrics_label"
+{{ end }}

@@ -1,0 +1,66 @@
+{{- if contains "DEFINED" .Values.clair.image_tag -}}
+  {{- required "This release should be installed by the deployment pipeline!" "" -}}
+{{- end -}}
+
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: clair
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: clair
+  template:
+    metadata:
+      labels:
+        name: clair
+      annotations:
+        checksum/configmap: {{ include "clair/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "clair/templates/secret.yaml" . | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: clair-etc
+      containers:
+        - name: clair
+          image: {{.Values.global.registry}}/clair:{{.Values.clair.image_tag}}
+          imagePullPolicy: IfNotPresent
+          command: [ /bin/sh, /etc/clair/start.sh ]
+          env:
+            - name: AUTH_PRESHARED_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: clair
+                  key: auth_preshared_key
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: clair
+                  key: postgres_password
+          volumeMounts:
+            - mountPath: /etc/clair
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources: {} # TODO: configure once we have some data

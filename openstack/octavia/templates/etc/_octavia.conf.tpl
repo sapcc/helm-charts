@@ -9,6 +9,9 @@ octavia_plugins = f5_plugin
 # AMQP Transport URL
 {{ include "ini_sections.default_transport_url" . }}
 
+# Tracing
+{{- include "osprofiler" . }}
+
 [api_settings]
 bind_host = 0.0.0.0
 bind_port = {{.Values.global.octavia_port_internal | default 9876}}
@@ -34,6 +37,12 @@ network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
 
 [status_manager]
 health_check_interval = 60
+
+{{ if .Values.house_keeping }}
+[house_keeping]
+cleanup_interval = {{ .Values.house_keeping.cleanup_interval }}
+load_balancer_expiry_age = {{ .Values.house_keeping.expiry_age }}
+{{- end }}
 
 {{ if .Values.network_segment_physical_network }}
 [networking]
@@ -64,7 +73,7 @@ project_name = service
 project_domain_id = default
 user_domain_id = default
 username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.octavia_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "" }}
+password = {{ .Values.global.octavia_service_password | replace "$" "" }}
 
 [keystone_authtoken]
 auth_type = v3password
@@ -73,7 +82,7 @@ auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ .Values.global.octavia_service_password | default (tuple . .Release.Name | include "identity.password_for_user") | replace "$" "" }}
+password = {{ .Values.global.octavia_service_password | replace "$" "" }}
 user_domain_id = default
 project_name = service
 project_domain_id = default

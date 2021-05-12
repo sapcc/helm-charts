@@ -61,16 +61,30 @@ spec:
             - --collector.recon.unmounted
             - --collector.recon.updater_sweep_time
             - --recon.timeout-host=2
+          env:
+            - name: HASH_PATH_PREFIX
+              valueFrom:
+                secretKeyRef:
+                  name: swift-secret
+                  key: hash_path_prefix
+            - name: HASH_PATH_SUFFIX
+              valueFrom:
+                secretKeyRef:
+                  name: swift-secret
+                  key: hash_path_suffix
+            - name: DISPERSION_PASSWORD # needed for swift-dispersion-report
+              valueFrom:
+                secretKeyRef:
+                  name: swift-secret
+                  key: dispersion_password
           ports:
             - name: metrics
               containerPort: 9520
-          {{- if $.Values.resources.enabled }}
           resources:
             # observed usage: CPU = ~70m, RAM = 80-110 MiB
             requests:
               cpu: "100m"
               memory: "200Mi"
-          {{- end }}
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc

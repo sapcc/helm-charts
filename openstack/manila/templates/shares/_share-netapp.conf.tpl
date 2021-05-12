@@ -9,10 +9,11 @@ host = manila-share-netapp-{{$enabled_share.name}}
 enabled_share_backends = {{$enabled_share.name}}
 
 {{- range $i, $share := $context.Values.global.netapp.filers }}
+{{- $share_backend := $share.backend_name | default $share.vserver | default "netapp-multi"}}
 
 [{{$share.name}}]
-share_backend_name={{$share.backend_name | default $share.vserver | default "netapp-multi"}}
-replication_domain={{ $share.replication_domain | default $share.physical_network }}
+share_backend_name={{ $share_backend }}
+replication_domain={{ $share.replication_domain | default $share_backend }}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
 {{- if $share.vserver }}
 driver_handles_share_servers = false
@@ -60,6 +61,11 @@ netapp_delete_retention_hours = {{ $context.Values.delete_retention_hours | defa
 # exceed the total physical capacity. A ratio lower than 1.0 is
 # invalid. (floating point value)
 max_over_subscription_ratio = {{ $share.max_over_subscription_ratio | default $context.Values.max_over_subscription_ratio | default 3.0 }}
+
+# maximum number of volumes created in a SVM
+max_shares_per_share_server = {{ $share.max_shares_per_share_server | default $context.Values.max_shares_per_share_server | default 100 }}
+# maximum sum of gigabytes a SVM can have considering all its share instances and snapshots
+max_share_server_size  = {{ $share.max_share_server_size | default $context.Values.max_share_server_size | default 10240 }}
 
 filter_function = {{ $share.filter_function | default "stats.provisioned_capacity_gb / stats.total_capacity_gb <= 0.7" }}
 

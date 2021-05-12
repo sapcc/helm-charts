@@ -1,15 +1,16 @@
 {{- range $i, $config := .Values.elasticsearch_config -}}
 {{ if ne $i 0 }}---{{ end }}
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: es-exporter-{{$config.name}}
   namespace: elk
   labels:
-    system: openstack
-    service: logging
-
+    component: es-exporter-{{$config.name}}
 spec:
+  selector:
+    matchLabels:
+      component: es-exporter-{{$config.name}}
   replicas: 1
   strategy:
     type: RollingUpdate

@@ -52,15 +52,6 @@ spec:
           ports:
             - name: prometheus
               containerPort: {{ $.Values.prometheus.port }}
-          {{- if ne $shortAppName "manila" }}
-          livenessProbe:
-            httpGet:
-              port: 8086
-              path: /live
-            initialDelaySeconds: 30
-            periodSeconds: 5
-            failureThreshold: 3
-          {{- end }}
           resources:
             {{- if hasKey $app "resources" }}
             {{- toYaml $app.resources | nindent 12 }}
@@ -76,7 +67,7 @@ spec:
           args:
             - -configmap
             - {{ $configmapName }}
-            - -key
+            - -filename
             - netapp-filers.yaml
             - -namespace
             - {{ $.Release.Namespace }}
@@ -90,13 +81,6 @@ spec:
             - {{ required ".Values.apps[].netappsd.query" $app.netappsd.query }}
           image: "{{ required ".Values.netappsd.image.repository" $.Values.netappsd.image.repository }}:{{ required ".Values.netappsd.image.tag" $.Values.netappsd.image.tag }}"
           imagePullPolicy: {{ $.Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
-          livenessProbe:
-            httpGet:
-              port: 8086
-              path: /live
-            initialDelaySeconds: 30
-            periodSeconds: 5
-            failureThreshold: 6
           resources:
             {{- toYaml $.Values.netappsd.resources | nindent 12 }}
         {{- end }}

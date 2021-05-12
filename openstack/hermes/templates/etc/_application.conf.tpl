@@ -27,10 +27,6 @@ hosts = [
   {
     host = "http://elasticsearch.hermes:9200"
     name = "hermes cluster"
-  },
-  {
-    host = "http://elasticsearch-data.elastiflow:9200"
-    name = "elastiflow cluster"
   }
 ]
 

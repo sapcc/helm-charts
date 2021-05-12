@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: nebula-ingress
+  name: nebula
   annotations:
     disco: "true"
     disco/record: {{ index .Values "ingress-nginx" "controller" "service" "annotations" "disco/record" }}
@@ -15,15 +15,15 @@ metadata:
     app: nebula
 spec:
   rules:
-    - host: nebula.{{ .Values.global.region }}.cloud.sap
+    - host: nebula.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
           - backend:
-              serviceName: nebula-service
+              serviceName: nebula
               servicePort: {{ .Values.nebula.http }}
             path: /
   tls:
     - hosts:
-      - nebula.{{ .Values.global.region }}.cloud.sap
+      - nebula.{{ .Values.global.region }}.{{ .Values.global.tld }}
       secretName: tls-secret-nebula
 {{- end -}}

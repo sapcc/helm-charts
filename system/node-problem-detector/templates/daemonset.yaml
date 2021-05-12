@@ -34,7 +34,7 @@ spec:
         - /node-problem-detector
         - --logtostderr
         {{- if .Values.prometheus.enabled }}
-        - --prometheus-address={{ required ".Values.prometheusAddress missing" .Values.prometheus.address }}
+        - --prometheus-address=0.0.0.0
         - --prometheus-port={{ required ".Values.prometheusPort missing " .Values.prometheus.port }}
         {{- end }}
         {{- if .Values.systemLogMonitors }}
@@ -43,7 +43,7 @@ spec:
         {{- if .Values.customPluginMonitors }}
         - --config.custom-plugin-monitor={{- range $index, $monitor := .Values.customPluginMonitors }}{{if ne $index 0}},{{end}}{{ printf "/config/%s" $monitor }}{{- end }}
         {{- end }}
-        image: "{{ .Values.global.registry }}/ccloud-dockerhub-mirror/sapcc/node-problem-detector:{{ .Values.image.tag }}"
+        image: "{{ if .Values.global.dockerHubMirror }}{{.Values.global.dockerHubMirror}}/{{ end }}{{ required ".Values.image.repository missing" .Values.image.repository }}:{{ required ".Values.image.tag missing" .Values.image.tag }}"
         securityContext:
           privileged: true
         resources:

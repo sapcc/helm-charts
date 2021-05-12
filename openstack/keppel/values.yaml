@@ -3,7 +3,19 @@ keppel:
 
   slim: false # set to true for deployments to the small QA regions
 
-  peer_hostnames: []
+  replicas:
+    api: 4
+
+  # contains objects like:
+  # ```
+  #   peers:
+  #     - hostname: registry-1.example.com
+  #       healthcheck_account: healthcheck-1
+  #     - hostname: registry-2.example.com
+  #       healthcheck_account: healthcheck-2
+  # ```
+  # The `healthcheck_account` is only needed for anycast monitoring.
+  peers: []
 
   # anycast domain name shared between all Keppel instances in the same peer group
   # (Keppel does not care about how the anycasting works exactly; it just means
@@ -24,16 +36,21 @@ keppel:
 
   # Set to non-empty values to enable audit logging to Hermes.
   rabbitmq:
-    uri: ""
     queue_name: ""
+    username: ""
+    password: ""
+    hostname: ""
 
-# Dynomite (the interregional distributed Redis cluster) is used for tracking
-# account name claims, using Keppel's "redis" federation driver.
-dynomite:
-  host:     DEFINED_IN_VALUES_FILE
-  password: DEFINED_IN_VALUES_FILE
-  database: 0
-  prefix:   keppel # prepended to all keys in Redis, to disambiguate clusters (e.g. QA vs. Prod)
+  # credentials for Clair (vulnerability scanning service)
+  clair:
+    hostname: "" # set to non-empty value to enable
+    auth_preshared_key: DEFINED_IN_VALUES_FILE
+
+# This refers to the region holding the shared Swift container where the
+# "swift" federation driver tracks account name claims.
+federation:
+  leader_region:    DEFINED_IN_VALUES_FILE
+  service_password: DEFINED_IN_VALUES_FILE
 
 # Redis is used for caching user's Keystone tokens and for tracking the
 # consumption of rate limits. Both usecases are ephemeral, so we don't need
@@ -96,7 +113,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled blob mount deletion, or 0 if no blob mounts are currently marked for deletion"
     keppel_repos:
-      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(next_blob_mount_sweep_at)), 0) AS min_next_blob_mount_sweep_at FROM repos'
+      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(next_blob_mount_sweep_at)), 0) AS min_next_blob_mount_sweep_at, COALESCE(EXTRACT(epoch FROM MIN(next_gc_at)), 0) AS min_next_gc_at FROM repos'
       metrics:
         - count:
             usage: "GAUGE"
@@ -104,6 +121,9 @@ pgmetrics:
         - min_next_blob_mount_sweep_at:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled blob mount sweep, or 0 if no repos have ever been sweeped"
+        - min_next_gc_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of next scheduled image GC, or 0 if no repos have ever been garbage-collected"
     keppel_replicated_repos:
       query: "SELECT COUNT(r.id) AS count, COALESCE(EXTRACT(epoch FROM MIN(r.next_manifest_sync_at)), 0) AS min_next_manifest_sync_at FROM repos r JOIN accounts a ON r.account_name = a.name WHERE a.upstream_peer_hostname != ''"
       metrics:
@@ -114,7 +134,7 @@ pgmetrics:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled manifest sync, or 0 if no replica repos have ever been synced"
     keppel_manifests:
-      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM manifests"
+      query: "SELECT COUNT(*) AS count, EXTRACT(epoch FROM MIN(validated_at)) AS min_validated_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors, COALESCE(EXTRACT(epoch FROM MIN(next_vuln_check_at)), 0) AS min_next_vuln_check_at FROM manifests"
       metrics:
         - count:
             usage: "GAUGE"
@@ -125,6 +145,9 @@ pgmetrics:
         - validation_errors:
             usage: "GAUGE"
             description: "Number of manifests stored in Keppel that failed their last validation"
+        - min_next_vuln_check_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of next scheduled vulnerability check, or 0 if no manifests have ever been checked for vulnerabilities"
     keppel_unknown_blobs:
       query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM unknown_blobs'
       metrics:

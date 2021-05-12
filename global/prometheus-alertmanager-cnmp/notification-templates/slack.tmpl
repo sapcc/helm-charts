@@ -7,7 +7,7 @@
 {{ define "slack.sapcc.text" }}
 {{ if .Alerts.Firing }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 | or .Alerts.Resolved }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
 {{ if .Alerts.Resolved }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 | or .Alerts.Firing }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
-  *[{{ .CommonLabels.cluster | toUpper }}]* {{ if .CommonLabels.dashboard }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }}
+  *[{{ .CommonLabels.cluster | toUpper }}]* {{ if and .ExternalURL .Receiver }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}&filter=%7Balertname%3D"{{ .GroupLabels.alertname }}"%7D|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }}
 
 {{- $generatorURL := "" }}
 {{ range .Alerts.Firing -}}
@@ -22,5 +22,6 @@
 {{- if not $generatorURL }}{{ $generatorURL = .GeneratorURL }}{{ end }}
 {{ end -}}
 
+*<{{ $generatorURL }}|Prometheus>*
 {{ if .CommonLabels.dashboard }}*<https://grafana.{{ .CommonLabels.cluster }}.{{ .CommonLabels.region }}.cloud.sap/d/{{ .CommonLabels.dashboard }}|Grafana>* {{ end -}}
 {{ end }}

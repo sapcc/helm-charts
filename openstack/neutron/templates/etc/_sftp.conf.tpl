@@ -1,6 +1,3 @@
-# Container name
-container = "nsx-t-backup"
-
 # Create container if not exist
 create_container = true
 
@@ -14,7 +11,7 @@ server_key = "/etc/ssh_host_id_ec"
 authorized_keys = "/dev/null"
 
 # File name of password list.
-# password_file = "/etc/passwd"
+password_file = "/etc/sftp_passwd"
 
 # Timeout for the connection of Swift (second)
 swift_timeout = 180

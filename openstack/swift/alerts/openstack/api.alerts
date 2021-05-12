@@ -19,7 +19,7 @@ groups:
         increased
 
   - alert: OpenstackSwiftServiceUnavailable
-    expr: sum(irate(swift_proxy_sum{policy="all",status="503"}[5m])) BY (os_cluster) > 100
+    expr: sum(increase(swift_proxy_count{policy="all", status="503", method!~"PUT|DELETE|POST"}[5m])) by (os_cluster) > 100
     for: 5m
     labels:
       context: serviceunavailable
@@ -27,11 +27,25 @@ groups:
       service: swift
       severity: warning
       tier: os
-      meta: 503 responses from Swift in {{ $labels.os_cluster }} (check Keystone availability)
+      meta: 503 responses from Swift in {{ $labels.os_cluster }}
     annotations:
       description: Swift is responding with 503 in {{ $labels.os_cluster }}. Usually the root cause is a broken
-        token validation
+        token validation or overloaded object servers.
       summary: swift-service-unavailable
+
+  - alert: OpenstackSwiftHAProxyRedispatch
+    expr: sum(increase(haproxy_server_redispatch_warnings_total[10m])) by (os_cluster, server) > 20
+    for: 15m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: info
+      tier: os
+      meta: HAProxy redispatches for server {{ $labels.server }} in {{ $labels.os_cluster }}
+    annotations:
+      description: HAProxy is redispatching requests for the swift-proxy running on node {{ $labels.server }}. Try to delete the
+        swift-proxy-{{ $labels.os_cluster }}-xxxxx on node {{ $labels.server }} to resolve the alert.
+      summary: swift-service-haproxy-redispatch
 
   - alert: OpenstackSwiftHealthCheck
     expr: avg(swift_recon_task_exit_code) BY (region) > 0.2 or avg(swift_dispersion_task_exit_code) BY (region) > 0.2 or absent(swift_dispersion_task_exit_code)
@@ -48,8 +62,22 @@ groups:
       description: Swift health check failures. Run kubectl log (swift-proxy-... / swift-health-exporter-...) collector to get details
       summary: swift-health-check
 
+  - alert: OpenstackSwiftDispersionErrors
+    expr: swift_dispersion_errors > 0
+    for: 5m
+    labels:
+      context: health
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      tier: os
+      meta: 'Swift dispersion is reporting {{ $value }} errors'
+    annotations:
+      description: Swift dispersion report tool is reporting errors. Run kubectl log (swift-proxy-... / swift-health-exporter-...) collector to get details
+      summary: swift-dispersion-errors
+
   - alert: OpenstackSwiftMismatchedRings
-    expr: (swift_cluster_md5_not_matched{kind="ring"} - swift_cluster_md5_errors{kind="ring"}) > 0
+    expr: (sum(swift_cluster_md5_not_matched{kind="ring"}) - sum(swift_cluster_md5_errors{kind="ring"})) > 0
     for: 15m
     labels:
       context: mismatchedrings
@@ -64,7 +92,7 @@ groups:
       summary: swift-mismatched-rings
 
   - alert: OpenstackSwiftMismatchedConfig
-    expr: (swift_cluster_md5_not_matched{kind="swiftconf"} - swift_cluster_md5_errors{kind="swiftconf"}) > 0
+    expr: (sum(swift_cluster_md5_not_matched{kind="swiftconf"}) - sum(swift_cluster_md5_errors{kind="swiftconf"})) > 0
     for: 15m
     labels:
       context: mismatchedconf
@@ -78,7 +106,7 @@ groups:
       summary: swift-mismatched-config
 
   - alert: OpenstackSwiftNodeError
-    expr: max(swift_cluster_md5_errors{kind="ring"}) by (region) > 0
+    expr: sum(swift_cluster_md5_errors{kind="ring"}) > 0
     for: 15m
     labels:
       context: nodeerror
@@ -122,7 +150,8 @@ groups:
       summary: swift disk failures on the server IP {{ $labels.storage_ip }}
 
   - alert: OpenstackSwiftAsyncPendings
-    expr: sum(increase(swift_object_server_async_pendings[5m])) > 5000
+    # Exclude the Top1 Project from the expression, to not alert on single containers causing high Async Pendings
+    expr: floor(sum(increase(swift_object_server_async_pendings[5m])) - ignoring(project_id) topk(1, sum(increase(swift_async_pendings_detail[5m]) > 0) by (project_id))) > 5000
     for: 15m
     labels:
       context: asyncpendings

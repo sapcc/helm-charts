@@ -3,6 +3,22 @@
 groups:
 - name: openstack-keppel-pod.alerts
   rules:
+      - alert: OpenstackKeppelPodCPUThrottling
+        expr: rate(container_cpu_cfs_throttled_seconds_total{namespace="keppel"}[1h]) > 1
+        for: 15m
+        labels:
+          tier: os
+          service: keppel
+          severity: info
+          context: cpu
+          dashboard: keppel-overview
+          meta: "{{ $labels.pod }}/{{ $labels.container }}"
+        annotations:
+          summary: Container is constantly CPU-throttled
+          description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
+            constantly. This is probably impacting performance, so check if we can increase the number
+            of replicas or the resource requests/limits.
+
       - alert: OpenstackKeppelPodSchedulingInsufficientMemory
         expr: sum(rate(kube_pod_failed_scheduling_memory_total{namespace="keppel"}[30m])) by (pod_name) > 0
         for: 15m

@@ -33,6 +33,13 @@ spec:
         configchecksum: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
     spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: elastiflow
+      tolerations:
+      - key: "dedicated"
+        operator: Equal
+        value: "elastiflow"
+        effect: "NoSchedule"
 {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
 {{- end }}

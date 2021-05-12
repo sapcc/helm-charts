@@ -49,7 +49,7 @@ The following tables lists the configurable parameters of the PostgresSQL chart 
 | `imageTag`                 | `postgres` image tag                       | `9.5.4`                                                    |
 | `imagePullPolicy`          | Image pull policy                          | `Always` if `imageTag` is `latest`, else `IfNotPresent`    |
 | `postgresUser`             | Username of new user to create.            | `postgres`                                                 |
-| `postgresPassword`         | Password for the new user.                 | random 10 characters                                       |
+| `postgresPassword`         | Password for the new user.                 | none (must be supplied)                                    |
 | `postgresDatabase`         | Name for new database to create.           | `postgres`                                                 |
 | `persistence.enabled`      | Use a PVC to persist data                  | `true`                                                     |
 | `persistence.storageClass` | Storage class of backing PVC               | `generic`                                                  |

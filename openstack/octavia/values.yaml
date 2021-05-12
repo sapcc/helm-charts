@@ -9,6 +9,10 @@ global:
   imageNamespace: monsoon
   dbUser: octavia
   rpc_response_timeout: 60
+  osprofiler: {}
+
+osprofiler:
+  enabled: false
 
 db_name: octavia
 
@@ -18,9 +22,15 @@ mariadb:
   initdb_configmap: octavia-initdb
   persistence_claim:
     name: db-octavia-pvclaim
-  backup:
+  backup_v2:
     enabled: true
-    os_password: null # use dbBackupServicePassword from globals
+    databases:
+      - octavia
+    verify_tables:
+      # DB is locked for checksum verification, so don't use too many tables here
+      - octavia.load_balancer
+    oauth:
+      client_id: octavia
 
 ingress:
   annotations:
@@ -33,8 +43,8 @@ mysql_metrics:
   customMetrics:
     - help: Amount of ESD tags used
       labels:
-      - "status"
-      - "octavia_host"
+        - "status"
+        - "octavia_host"
       name: octavia_esd_tags_count_gauge
       query: |
         SELECT
@@ -51,12 +61,13 @@ mysql_metrics:
           OR tag='sso_22b0_v1_0'
           OR tag='sso_required_f544_v1_0'
           OR tag='http_redirect_a26c_v1_0';
+          OR name='hcm_rmk_restrict_internal';
       values:
-      - "count_gauge"
+        - "count_gauge"
     - help: Amount of ESD L7policies used
       labels:
-      - "status"
-      - "octavia_host"
+        - "status"
+        - "octavia_host"
       name: octavia_esd_l7policies_count_gauge
       query: |
         SELECT
@@ -73,12 +84,36 @@ mysql_metrics:
           OR name='sso_22b0_v1_0'
           OR name='sso_required_f544_v1_0'
           OR name='http_redirect_a26c_v1_0';
+          OR name='hcm_rmk_restrict_internal';
       values:
-      - "count_gauge"
+        - "count_gauge"
+    - help: Amount of non-ESD L7policies used
+      labels:
+        - "status"
+        - "octavia_host"
+      name: octavia_normal_l7policies_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge
+        FROM l7policy
+        WHERE name!='proxy_protocol_2edF_v1_0'
+          AND name!='proxy_protocol_V2_e8f6_v1_0'
+          AND name!='standard_tcp_a3de_v1_0'
+          AND name!='x_forward_5b6e_v1_0'
+          AND name!='one_connect_dd5c_v1_0'
+          AND name!='no_one_connect_3caB_v1_0'
+          AND name!='http_compression_e4a2_v1_0'
+          AND name!='cookie_encryption_b82a_v1_0'
+          AND name!='sso_22b0_v1_0'
+          AND name!='sso_required_f544_v1_0'
+          AND name!='http_redirect_a26c_v1_0'
+          AND name!='hcm_rmk_restrict_internal';
+      values:
+        - "count_gauge"
     - help: Total Load Balancer count
       labels:
-      - "status"
-      - "octavia_host"
+        - "status"
+        - "octavia_host"
       name: octavia_loadbalancers_count_gauge
       query: |
         SELECT
@@ -88,13 +123,13 @@ mysql_metrics:
         FROM load_balancer
         GROUP BY octavia_host, provisioning_status;
       values:
-      - "count_gauge"
+        - "count_gauge"
     - help: Load Balancer pending
       labels:
-      - "status"
-      - "octavia_host"
-      - "loadbalancer_id"
-      - "loadbalancer_name"
+        - "status"
+        - "octavia_host"
+        - "loadbalancer_id"
+        - "loadbalancer_name"
       name: octavia_loadbalancers_pending
       query: |
         (SELECT
@@ -107,10 +142,10 @@ mysql_metrics:
         WHERE provisioning_status LIKE "PENDING_%")
         UNION (select '0', '', '', '', '');
       values:
-      - "count_gauge"
+        - "count_gauge"
     - help: Worker agent seconds since the last heartbeat
       labels:
-      - "octavia_host"
+        - "octavia_host"
       name: octavia_monitor_agents_heartbeat_seconds
       query: |
         SELECT
@@ -120,7 +155,7 @@ mysql_metrics:
         WHERE role = 'MASTER'
         GROUP BY compute_flavor;
       values:
-      - "heartbeat_seconds"
+        - "heartbeat_seconds"
 
 pod:
   replicas:
@@ -147,7 +182,7 @@ pod:
         memory: 24Mi
         cpu: 10m
 
-providers: "noop_driver: 'The No-Op driver.', f5: 'F5 BigIP driver.'"
+providers: "noop_driver: 'The No-Op driver.', f5: 'F5 BigIP driver.', F5Networks: 'F5 BigIP driver'"
 default_provider: "f5"
 default_ciphers: DEFAULT:!DHE:!TLSv1:!TLSv1_1
 default_tls_1_0: "false"
@@ -184,7 +219,7 @@ audit:
 statsd:
   port: 9102
   image:
-    repository:  prom/statsd-exporter
+    repository: prom/statsd-exporter
     tag: v0.16.0
 
 logging:

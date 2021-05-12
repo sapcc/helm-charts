@@ -8,6 +8,7 @@ spec:
   - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-bs-seed
+  - monsoon3/domain-cis-seed
   - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
   - monsoon3/domain-hcm-seed
@@ -24,6 +25,7 @@ spec:
   - name: cloud_compute_admin
   - name: cloud_network_admin
   - name: cloud_volume_admin
+  - name: cloud_baremetal_admin
 
   services:
   - name: nova
@@ -78,7 +80,7 @@ spec:
         role: cloud_compute_admin
     - name: {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix | default "" }}
       description: Nova Service
-      password: {{ .Values.global.nova_service_password | default (tuple . .Values.global.nova_service_user | include "identity.password_for_user") | quote }}
+      password: {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
       role_assignments:
       - project: service
         role: service
@@ -88,12 +90,11 @@ spec:
         role: cloud_network_admin
       - project: service
         role: cloud_compute_admin
-    - name: nova_nanny{{ .Values.global.user_suffix | default "" }}
-      description: Nova Nanny
-      password: {{ tuple . "nova_nanny" | include "identity.password_for_user" | quote }}
+      - project: service
+        role: cloud_baremetal_admin
     - name: placement
       description: Placement API Service User
-      password: {{ .Values.global.placement_service_password | default (tuple . .Values.global.placement_service_user | include "identity.password_for_user") | quote }}
+      password: {{ required ".Values.global.placement_service_password is missing" .Values.global.placement_service_password }}
       role_assignments:
       - project: service
         role: service
@@ -113,14 +114,6 @@ spec:
       role_assignments:
       - user: admin@Default
         role: cloud_compute_admin
-      # permission to enumerate all projects and domains
-      - user: nova_nanny{{ .Values.global.user_suffix | default "" }}@Default
-        role: admin
-      # permission to manage all ressources checked by the nanny
-      - user: nova_nanny{{ .Values.global.user_suffix | default "" }}@Default
-        role: cloud_compute_admin
-      - user: nova_nanny{{ .Values.global.user_suffix | default "" }}@Default
-        role: cloud_volume_admin
     groups:
     - name: CCADMIN_CLOUD_ADMINS
       role_assignments:
@@ -205,6 +198,44 @@ spec:
       - project: service_desk
         role: compute_admin
       - domain: bs
+        role: compute_viewer
+        inherited: true
+        
+  - name: cis
+    groups:
+    - name: CIS_API_SUPPORT
+      role_assignments:
+      - project: api_support
+        role: compute_admin
+      - domain: cis
+        role: compute_admin
+        inherited: true
+    - name: CIS_COMPUTE_SUPPORT
+      role_assignments:
+      - project: compute_support
+        role: compute_admin
+      - domain: cis
+        role: compute_admin
+        inherited: true
+    - name: CIS_NETWORK_SUPPORT
+      role_assignments:
+      - project: network_support
+        role: compute_admin
+      - domain: cis
+        role: compute_viewer
+        inherited: true
+    - name: CIS_STORAGE_SUPPORT
+      role_assignments:
+      - project: storage_support
+        role: compute_admin
+      - domain: cis
+        role: compute_viewer
+        inherited: true
+    - name: CIS_SERVICE_DESK
+      role_assignments:
+      - project: service_desk
+        role: compute_admin
+      - domain: cis
         role: compute_viewer
         inherited: true
 

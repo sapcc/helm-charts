@@ -8,7 +8,7 @@ function cleanup_tempest_leftovers() {
 
   echo "Run cleanup"
 
-  export OS_USERNAME='tempestuser1'
+  export OS_USERNAME='manila-tempestuser1'
   export OS_TENANT_NAME='tempest1'
   export OS_PROJECT_NAME='tempest1'
 

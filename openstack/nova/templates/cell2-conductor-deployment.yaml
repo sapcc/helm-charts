@@ -56,10 +56,13 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-            {{- if eq .Values.mariadb_cell2.enabled true }}
               value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb"
-            {{- else }}
-              value: "{{ .Release.Name }}-{{ .Values.cell2.name }}-rabbitmq,{{ .Release.Name }}-{{ .Values.cell2.name }}-postgresql"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
             {{- end }}
 {{- if .Values.python_warnings}}
             - name: PYTHONWARNINGS

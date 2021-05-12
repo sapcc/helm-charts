@@ -1,0 +1,61 @@
+groups:
+- name: elastic.alerts
+  rules:
+  - alert: ElasticPredictOutOfDiskSpace
+    expr: elasticsearch_filesystem_data_free_bytes{es_data_node="true"} * 100 / elasticsearch_filesystem_data_size_bytes{es_data_node="true"} < 10
+    for: 60m
+    labels:
+      context: diskspace
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html#elasticpredictoutofdiskspace-alert
+      dashboard: elasticsearch?var-cluster={{ $labels.cluster }}
+    annotations:
+      description: '{{ $labels.region }} The disk usage for node {{ $labels.name }} in cluster {{ $labels.cluster }} is above 90% now.
+                   Please consider cleaning up elasticsearch or lower the retention period for the logs.'
+      summary: '{{ $labels.cluster }} in {{ $labels.region }} might run out of disk space'
+
+  - alert: ElasticClusterRed
+    expr: elasticsearch_cluster_health_status{color="red"} == 1
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html
+      dashboard: elasticsearch?var-cluster={{ $labels.cluster }}
+    annotations:
+      description: 'Elastic cluster {{ $labels.cluster }} in {{ $labels.region }} is RED. Please check all nodes.'
+      summary: 'Elastic {{ $labels.cluster }} cluster in {{ $labels.region }} is RED'
+
+  - alert: ElasticClusterYellow
+    expr: elasticsearch_cluster_health_status{color="yellow"}
+      == 1
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html
+      dashboard: elasticsearch?var-cluster={{ $labels.cluster }}
+    annotations:
+      description: 'Elastic cluster {{ $labels.cluster }} in {{ $labels.region }} is YELLOW. Please check all nodes.
+        nodes one or more are missing.'
+      summary: 'Elastic {{ $labels.cluster }} cluster in {{ $labels.region }} is YELLOW'
+
+  - alert: ElasticExporterMissing
+    expr: up{job=~"es-exporter.*"} == 0
+    for: 30m
+    labels:
+      context: nodes
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html
+      dashboard: elasticsearch?var-cluster={{ $labels.cluster }}
+    annotations:
+      description: 'cluster: {{ $labels.cluster }} es-exporter in {{ $labels.region }} is missing.'
+      summary: 'cluster: {{ $labels.cluster }} es-exporter in {{ $labels.region }} is missing.'

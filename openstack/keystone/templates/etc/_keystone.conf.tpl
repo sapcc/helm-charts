@@ -211,9 +211,14 @@ memcached = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 112
 {{ else }}
 memcached = {{ include "memcached_host" . }}:{{ .Values.memcached.port | default 11211}}
 {{- end }}
-domain_whitelist = {{ .Values.lifesaver.domain_whitelist | default "Default, tempest" }}
-user_whitelist = {{ .Values.lifesaver.user_whitelist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
-user_blacklist = {{ .Values.lifesaver.user_blacklist | default "" }}
+# deprecated
+domain_whitelist = {{ .Values.lifesaver.domain_allowlist | default "Default, tempest" }}
+# deprecated
+user_whitelist = {{ .Values.lifesaver.user_allowlist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
+
+domain_allowlist = {{ .Values.lifesaver.domain_allowlist | default "Default, tempest" }}
+user_allowlist = {{ .Values.lifesaver.user_allowlist | default "admin, keystone, nova, neutron, cinder, glance, designate, barbican, dashboard, manila, swift" }}
+user_blocklist = {{ .Values.lifesaver.user_blocklist | default "" }}
 # initial user credit
 initial_credit = {{ .Values.lifesaver.initial_credit | default 100 }}
 # how often do we refill credit
