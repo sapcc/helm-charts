@@ -1,11 +1,12 @@
 # List of whitelisted scopes keys (domainName/projectName).
 whitelist:
-  - default/service
+  - Default/service
+  - monsoon3/cc-demo
 
 # Override default ratelimit response.
 ratelimit_response:
-  status: 498 Rate Limited
-  status_code: 498
+  status: 429 Rate Limited
+  status_code: 429
   body: "Rate Limit Exceeded"
 
 # Override default blacklist response.
@@ -44,7 +45,7 @@ rates:
       - action: read
         limit: 200r/m
       - action: update
-        limit: 100r/m
+        limit: 200r/m
     images/image/file:
       - action: read
         limit: 200r/m
