@@ -49,14 +49,3 @@ Selector labels
 {{- define "image-usage-exporter.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "image-usage-exporter.name" . }}
 {{- end }}
-
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "image-usage-exporter.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "image-usage-exporter.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}
