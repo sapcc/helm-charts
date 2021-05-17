@@ -37,7 +37,11 @@ spec:
     spec:
       containers:
       - name: metrics
+        {{- if hasKey .Values.global "dockerHubMirror"}}
+        image: {{.Values.global.dockerHubMirror}}/{{ .Values.image }}:{{ .Values.imageTag }}
+        {{- else }}
         image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        {{- end }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         env:
         - name: DATA_SOURCE_NAME
