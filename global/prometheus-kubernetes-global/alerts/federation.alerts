@@ -2,7 +2,7 @@ groups:
 - name: federation.alerts
   rules:
   - alert: KubernetesAdminPrometheusFederationDown
-    expr: count by(region) (up{job="admin-federation"}) unless count by(region) (up{job="prometheus-kubernetes", cluster_type="admin"})
+    expr: count by(cluster) (up{job="admin-federation"}) unless count by(cluster) (up{job="prometheus-kubernetes", cluster_type="admin"})
     for: 15m
     labels:
       context: availability
@@ -13,7 +13,22 @@ groups:
       tier: k8s
       playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: Global Prometheus cannot federate from Prometheus Frontend in region {{ $labels.region }}. Alerting and dashboards are unavailable.
+      description: Global Prometheus cannot federate from Prometheus in admin cluster {{ $labels.cluster }}. Alerting and dashboards are unavailable. This could mean the region {{ $labels.region }} or cluster {{ $labels.cluster }} is partly down!
+      summary: Prometheus Frontend is DOWN
+
+  - alert: KubernetesVirtualPrometheusFederationDown
+    expr: count by(cluster) (up{job="virtual-federation"}) unless count by(cluster) (up{job="prometheus-kubernetes", cluster_type="virtual"})
+    for: 15m
+    labels:
+      context: availability
+      dashboard: kubernetes-prometheus?var-instance=frontend
+      meta: Prometheus frontend is down
+      service: prometheus
+      severity: critical
+      tier: k8s
+      playbook: docs/support/playbook/prometheus/federation.html
+    annotations:
+      description: Global Prometheus cannot federate from Prometheus in virtual cluster {{ $labels.cluster }}. Alerting and dashboards are unavailable. This could mean the region {{ $labels.region }} or cluster {{ $labels.cluster }} is partly down!
       summary: Prometheus Frontend is DOWN
 
   - alert: KubernetesControlPlanePrometheusFederationDown
@@ -28,7 +43,7 @@ groups:
       tier: k8s
       playbook: docs/support/playbook/prometheus/federation.html
     annotations:
-      description: Global Prometheus cannot federate from Prometheus Frontend in region {{ $labels.region }}. Alerting and dashboards are unavailable.
+      description: Global Prometheus cannot federate from Prometheus Frontend in region {{ $labels.region }}. Alerting and dashboards are unavailable. This could mean the region {{ $labels.region }} is partly down!
       summary: Prometheus Frontend federation is down
 
   - alert: KubernetesControlplanePrometheusFederationCollectorDown

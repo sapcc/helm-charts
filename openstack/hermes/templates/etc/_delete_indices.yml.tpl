@@ -72,3 +72,31 @@ actions:
       timestring: '%Y.%m'
       unit: months
       unit_count: 6
+  4:
+    action: delete_indices
+    description: >-
+      Delete closed indices older than 6 months. The oldest
+      indices will be deleted first. Ignore the error if the filter does not result in an
+      actionable list of indices (ignore_empty_list) and exit cleanly.
+    options:
+      ignore_empty_list: True
+      timeout_override: 300
+      continue_if_exception: False
+      disable_action: False
+    filters:
+    - filtertype: pattern
+      kind: prefix
+      value: .kibana
+      exclude: True
+    - filtertype: pattern
+      kind: prefix
+      value: .task
+      exclude: True
+    - filtertype: age
+      source: name
+      direction: older
+      timestring: '%Y.%m'
+      unit: months
+      unit_count: 6
+    - filtertype: kibana
+      exclude: True

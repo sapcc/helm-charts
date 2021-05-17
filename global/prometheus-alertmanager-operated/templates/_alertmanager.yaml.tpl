@@ -591,7 +591,7 @@ receivers:
 
   - name: slack_qa
     slack_configs:
-      - channel: '#alert-qa-{{"{{ .severity }}"}}'
+      - channel: '#alert-qa-{{"{{ .CommonLabels.severity }}"}}'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}

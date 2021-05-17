@@ -210,11 +210,13 @@ groups:
         severity: info
         tier: os
         dashboard: castellum
+        meta: '{{ $labels.asset }}'
       annotations:
         description: |
           Resize operations for `{{ $labels.asset }}` are not getting executed in a timely manner.
           Either the Castellum workers are not doing their job, or resizing is taking too long.
           The `kubectl logs` for castellum-worker may contain additional info.
+        summary: Resize operations are not getting executed in a timely manner
 
     - alert: OpenstackCastellumErroredAssetResizes
       expr: sum(increase(castellum_aggregated_errored_asset_resizes[5m])) BY (asset) > 0

@@ -62,8 +62,22 @@ groups:
       description: Swift health check failures. Run kubectl log (swift-proxy-... / swift-health-exporter-...) collector to get details
       summary: swift-health-check
 
+  - alert: OpenstackSwiftDispersionErrors
+    expr: swift_dispersion_errors > 0
+    for: 5m
+    labels:
+      context: health
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      tier: os
+      meta: 'Swift dispersion is reporting {{ $value }} errors'
+    annotations:
+      description: Swift dispersion report tool is reporting errors. Run kubectl log (swift-proxy-... / swift-health-exporter-...) collector to get details
+      summary: swift-dispersion-errors
+
   - alert: OpenstackSwiftMismatchedRings
-    expr: (swift_cluster_md5_not_matched{kind="ring"} - swift_cluster_md5_errors{kind="ring"}) > 0
+    expr: (sum(swift_cluster_md5_not_matched{kind="ring"}) - sum(swift_cluster_md5_errors{kind="ring"})) > 0
     for: 15m
     labels:
       context: mismatchedrings
@@ -78,7 +92,7 @@ groups:
       summary: swift-mismatched-rings
 
   - alert: OpenstackSwiftMismatchedConfig
-    expr: (swift_cluster_md5_not_matched{kind="swiftconf"} - swift_cluster_md5_errors{kind="swiftconf"}) > 0
+    expr: (sum(swift_cluster_md5_not_matched{kind="swiftconf"}) - sum(swift_cluster_md5_errors{kind="swiftconf"})) > 0
     for: 15m
     labels:
       context: mismatchedconf
@@ -92,7 +106,7 @@ groups:
       summary: swift-mismatched-config
 
   - alert: OpenstackSwiftNodeError
-    expr: max(swift_cluster_md5_errors{kind="ring"}) by (region) > 0
+    expr: sum(swift_cluster_md5_errors{kind="ring"}) > 0
     for: 15m
     labels:
       context: nodeerror

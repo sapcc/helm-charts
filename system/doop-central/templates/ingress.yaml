@@ -2,19 +2,24 @@ kind: Ingress
 apiVersion: networking.k8s.io/v1beta1
 
 metadata:
-  name: doop-central
+  name: {{ .Release.Name }}
   annotations:
     kubernetes.io/tls-acme: "true"
 
+{{- $domain := "doop" }}
+{{- if .Values.kubernikus }}
+  {{- $domain = "doop-kubernikus" }}
+{{- end }}
+
 spec:
   tls:
-    - secretName: tls-doop-central
-      hosts: [ doop.global.{{ $.Values.global.tld | required ".Values.global.tld not found" }} ]
+    - secretName: tls-{{ .Release.Name }}
+      hosts: [ {{ $domain }}.global.{{ $.Values.global.tld | required ".Values.global.tld not found" }} ]
   rules:
-    - host: doop.global.{{ $.Values.global.tld | required ".Values.global.tld not found" }}
+    - host: {{ $domain }}.global.{{ $.Values.global.tld | required ".Values.global.tld not found" }}
       http:
         paths:
           - path: /
             backend:
-              serviceName: doop-central
+              serviceName: {{ .Release.Name }}
               servicePort: 80

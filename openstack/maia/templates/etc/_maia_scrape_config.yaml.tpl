@@ -93,7 +93,8 @@
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
-      - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
+      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage)$"}'
+      - '{__name__=~"^limes_swift_.+",project_id!=""}'
 
 - job_name: 'prometheus-infra-collector'
   scrape_interval: 1m

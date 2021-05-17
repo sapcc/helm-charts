@@ -22,8 +22,10 @@ groups:
         "keppel-health-monitor" pod in the Kubernetes namespace "keppel" is
         running, and if so, check its log for error messages.
 
+  # This alert is disabled for QA because the lab regions are literal testbeds
+  # and therefore have connectivity issues all the time.
   - alert: OpenstackKeppelAnycastDown
-    expr: keppel_anycastmonitor_result != 1
+    expr: keppel_anycastmonitor_result{region!~"qa-.*"} != 1
     for: 10m
     labels:
       context: anycast-api
