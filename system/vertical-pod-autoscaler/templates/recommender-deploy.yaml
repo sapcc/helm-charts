@@ -14,7 +14,9 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8942"
-        prometheus.io/targets: "collector-kubernetes"
+        {{- if .Values.additionalPodAnnotations }}
+        {{- toYaml .Values.additionalPodAnnotations | nindent 8 -}}
+        {{ end }}
     spec:
       serviceAccountName: vpa-recommender
       securityContext:
