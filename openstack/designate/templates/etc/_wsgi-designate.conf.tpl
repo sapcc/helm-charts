@@ -23,4 +23,6 @@ CustomLog /dev/stdout proxy env=forwarded
     SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
     CustomLog /dev/stdout combined env=!forwarded
     CustomLog /dev/stdout proxy env=forwarded
+
+    KeepAliveTimeout 61
 </VirtualHost>
