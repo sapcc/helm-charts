@@ -40,7 +40,7 @@ rates:
       - action: read/list
         limit: 200r/m
       - action: create
-        limit: 20r/m
+        limit: 200r/m
     images/image:
       - action: read
         limit: 200r/m
