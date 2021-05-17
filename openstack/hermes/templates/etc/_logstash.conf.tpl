@@ -7,12 +7,12 @@ rabbitmq {
     id => {{ printf "logstash_hermes_%s" $key | quote }}
     host => {{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) | quote }}
     user => {{ $user | quote }}
-    password => {{ $value.password | default (tuple $ $user $host | include "rabbitmq.password_for_fixed_user_and_host") | quote }}
+    password => {{ $value.password | quote }}
     port => {{ $.Values.hermes.rabbitmq.port }}
     queue => {{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name | quote }}
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
-    heartbeat => 30 
+    heartbeat => 30
     connect_retry_interval => 60
     durable => {{ $value.durable | default false }}
   }
@@ -39,7 +39,7 @@ filter {
   }
   # remove all the oslo stuff
   mutate {
-    remove_field => [ "oslo.message", "oslo.version", "publisher_id", "event_type", "message_id", "priority", "timestamp" ] 
+    remove_field => [ "oslo.message", "oslo.version", "publisher_id", "event_type", "message_id", "priority", "timestamp" ]
   }
 
   # KEYSTONE TRANSFORMATIONS
@@ -70,7 +70,7 @@ filter {
   # rename initiator user_id into the 'id' field for consistency
   if [initiator][user_id] {
     mutate {
-      replace => { "[initiator][id]" => "%{[initiator][user_id]}" } 
+      replace => { "[initiator][id]" => "%{[initiator][user_id]}" }
       remove_field => ["[initiator][user_id]"]
     }
   }
@@ -156,10 +156,10 @@ filter {
 
   kv { source => "_source" }
 
-  # The following line will create 2 additional 
-  # copies of each document (i.e. including the 
-  # original, 3 in total). 
-  # Each copy will automatically have a "type" field added 
+  # The following line will create 2 additional
+  # copies of each document (i.e. including the
+  # original, 3 in total).
+  # Each copy will automatically have a "type" field added
   # corresponding to the name given in the array.
   clone {
     clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc']

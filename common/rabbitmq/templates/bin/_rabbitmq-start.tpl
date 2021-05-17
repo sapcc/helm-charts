@@ -23,15 +23,15 @@ function bootstrap {
    rabbitmqctl trace_on
 {{- end }}
 
-   upsert_user {{ .Values.users.default.user | include "rabbitmq.shell_quote" }} {{ .Values.users.default.password | default (tuple . .Values.users.default.user | include "rabbitmq.password_for_user") | include "rabbitmq.shell_quote" }}
+   upsert_user {{ .Values.users.default.user | include "rabbitmq.shell_quote" }} {{ required ".Values.users.default.password missing" .Values.users.default.password | include "rabbitmq.shell_quote" }}
 
-   upsert_user {{ .Values.users.admin.user | include "rabbitmq.shell_quote" }} {{ .Values.users.admin.password | default (tuple . .Values.users.admin.user | include "rabbitmq.password_for_user") | include "rabbitmq.shell_quote" }} administrator
+   upsert_user {{ .Values.users.admin.user | include "rabbitmq.shell_quote" }} {{ required ".Values.users.admin.password missing" .Values.users.admin.password | include "rabbitmq.shell_quote" }} administrator
 
 {{- if .Values.metrics.enabled }}
-   upsert_user {{ .Values.metrics.user | include "rabbitmq.shell_quote" }} {{ .Values.metrics.password | default (tuple . .Values.metrics.user | include "rabbitmq.password_for_user") | include "rabbitmq.shell_quote" }} monitoring
+   upsert_user {{ .Values.metrics.user | include "rabbitmq.shell_quote" }} {{ required ".Values.metrics.password missing" .Values.metrics.password | include "rabbitmq.shell_quote" }} monitoring
 {{- end }}
 
-   rabbitmqctl change_password guest {{ .Values.users.default.password | default (tuple . .Values.users.default.user | include "rabbitmq.password_for_user") | include "rabbitmq.shell_quote" }} || true
+   rabbitmqctl change_password guest {{ required ".Values.users.default.password missing" .Values.users.default.password | include "rabbitmq.shell_quote" }} || true
    rabbitmqctl set_user_tags guest monitoring || true
    /etc/init.d/rabbitmq-server stop
 }

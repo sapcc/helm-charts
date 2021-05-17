@@ -26,7 +26,7 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
     {{- $image_name := ( .Values.loci.nova | ternary .Values.imageNameNova (printf "ubuntu-source-nova-%s" ($name | lower)) ) -}}
 
     {{ required ".Values.global.registry is missing" .Values.global.registry}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersionNova or similar" }}
- 
+
   {{- end -}}
 {{- end -}}
 
@@ -52,4 +52,3 @@ rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2
 
   {{- end -}}
 {{- end -}}
-
