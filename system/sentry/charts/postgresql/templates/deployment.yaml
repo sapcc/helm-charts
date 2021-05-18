@@ -100,7 +100,11 @@ spec:
 {{- end }}
 {{- if .Values.metrics.enabled }}
       - name: metrics
+        {{- if hasKey .Values.global "dockerHubMirror"}}
+        image: {{.Values.global.dockerHubMirror}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
+        {{- else }}
         image: "{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}"
+        {{- end }}
         imagePullPolicy: {{ default "" .Values.metrics.imagePullPolicy | quote }}
         env:
         - name: DATA_SOURCE_NAME
