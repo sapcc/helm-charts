@@ -170,8 +170,8 @@
     @type elasticsearch
     host {{.Values.global.endpoint_host_internal}}
     port {{.Values.global.http_port}}
-    user {{.Values.global.elk_elasticsearch_data_user}}
-    password {{.Values.global.elk_elasticsearch_data_password}}
+    user {{.Values.global.data_user}}
+    password {{.Values.global.data_password}}
     ssl_verify false
     ssl_version TLSv1_2
     logstash_prefix {{.Values.indexname}}
