@@ -240,7 +240,11 @@ spec:
       {{- end }}
       {{- if .Values.metrics.enabled }}
       - name: statsd
-        image: prom/statsd-exporter:v0.8.1
+        {{- if hasKey .Values.global "dockerHubMirror"}}
+        image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}
+        {{- else }}
+        image: "{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}"
+        {{- end }}
         imagePullPolicy: {{ .Values.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
         args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         ports:

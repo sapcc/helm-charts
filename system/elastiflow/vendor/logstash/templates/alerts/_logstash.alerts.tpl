@@ -2,7 +2,7 @@ groups:
 - name: elastiflow-logstash.alerts
   rules:
   - alert: ElastiflowLogstashPodMissing
-    expr: {{ .Values.replicas }} - count(logstash_info_node{app="elastiflow-logstash"}) by (app) > 0
+    expr: {{ .Values.replicas }} - kube_statefulset_status_replicas_ready{statefulset="elastiflow-logstash"}  > 0
     for: 15m
     labels:
       context: logstash

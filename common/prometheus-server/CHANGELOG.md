@@ -1,5 +1,11 @@
+## 4.1.0
+
+* Upgrade Prometheus to `v2.27.0`.
+* Upgrade Thanos components to `v0.20.1`.
+
 ## 4.0.1
-* Change Thanos from dockerhub to keppel mirror
+
+* Change Thanos from dockerhub to keppel mirror.
 
 ## 4.0.0
 

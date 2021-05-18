@@ -22,27 +22,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "rabbitmq._transport_url" -}}
 {{- $envAll := index . 0 -}}
 {{- $rabbitmq := index . 1 -}}
-rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ $rabbitmq.users.default.password | default (tuple $envAll $rabbitmq.users.default.user | include "rabbitmq.password_for_user")  | urlquery}}@{{ include "rabbitmq.release_host" $envAll }}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
+rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password | urlquery}}@{{ include "rabbitmq.release_host" $envAll }}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
 {{- end}}
-
-{{- define "rabbitmq.password_for_fixed_user_and_host" }}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- $host := index . 2 }}
-    {{- derivePassword 1 "long" $envAll.Values.global.master_password $user $host | replace "/" "" }}
-{{- end }}
-
-{{- define "rabbitmq.password_for_fixed_user"}}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- tuple $envAll $user ( include "rabbitmq.release_host" $envAll ) | include "rabbitmq.password_for_fixed_user_and_host" }}
-{{- end }}
-
-{{- define "rabbitmq.password_for_user"}}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) | include "rabbitmq.password_for_fixed_user" }}
-{{- end }}
 
 {{- define "rabbitmq.shell_quote" -}}
 "{{- replace `"` `\"`  . | replace `$` `\$` | replace "`" (print `\` "`") -}}"

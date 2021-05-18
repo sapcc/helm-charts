@@ -30,7 +30,7 @@ prometheus-{{- (include "prometheus.name" .) -}}
 
 {{/* Prometheus image. */}}
 {{- define "prometheus.image" -}}
-{{- required ".Values.image.repository missing" .Values.image.repository -}}:{{- required ".Values.image.tag missing" .Values.image.tag -}}
+{{- required ".Values.image.repository missing" .Values.image.repository -}}:{{- required ".Chart.appVersion missing" .Chart.AppVersion -}}
 {{- end -}}
 
 {{/* Name of the PVC. */}}
