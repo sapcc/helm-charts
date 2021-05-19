@@ -8,10 +8,10 @@ fi
 
 if [ $1 = "all" ]; then
 
-   export modules=`ls  ../_snmp-ntp-exporter-*|awk -F- '{ print $3}'|awk -F. '{ print $1}'`
+   export modules=`ls  ../_snmp-ntp-exporter-*|awk -F- '{ print $4}'|awk -F. '{ print $1}'`
 
 else
-   export modules=`ls  ../_snmp-ntp-exporter-*|awk -F- '{ print $3}'|awk -F. '{ print $1}'`
+   export modules=`ls  ../_snmp-ntp-exporter-*|awk -F- '{ print $4}'|awk -F. '{ print $1}'`
    echo $modules |grep -qw $1
 
    if [ $? -eq 0 ] ; then
