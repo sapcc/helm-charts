@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snmp-exporter
+  name: snmp-ntp-exporter
   namespace: infra-monitoring
   labels:
-    app: snmp-exporter
+    app: snmp-ntp-exporter
     type: exporter
 spec:
   selector:
     matchLabels:
-      app: snmp-exporter
+      app: snmp-ntp-exporter
       type: exporter
   revisionHistoryLimit: 5
   replicas: {{ .Values.snmp_exporter.replicas }}
@@ -21,7 +21,7 @@ spec:
   template:
     metadata:
       labels:
-        app: snmp-exporter
+        app: snmp-ntp-exporter
         type: exporter
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
@@ -32,20 +32,20 @@ spec:
       nodeSelector:
         zone: farm
       volumes:
-        - name: snmp-exporter-etc
+        - name: snmp-ntp-exporter-etc
           configMap:
-            name: snmp-exporter
+            name: snmp-ntp-exporter
       containers:
-        - name: snmp-exporter
+        - name: snmp-ntp-exporter
           image: {{ required "docker_repo variable is missing" .Values.docker_repo}}:{{ required "image_version variable is missing" .Values.image_version }}
           imagePullPolicy: IfNotPresent
           command:
             - /bin/snmp_exporter
           args:
-            - --config.file=/snmp-exporter-etc/snmp-exporter.yaml
+            - --config.file=/snmp-ntp-exporter-etc/snmp-exporter.yaml
           volumeMounts:
-            - mountPath: /snmp-exporter-etc
-              name: snmp-exporter-etc
+            - mountPath: /snmp-ntp-exporter-etc
+              name: snmp-ntp-exporter-etc
           ports:
             - name: metrics
               containerPort: {{ .Values.snmp_exporter.listen_port }}
