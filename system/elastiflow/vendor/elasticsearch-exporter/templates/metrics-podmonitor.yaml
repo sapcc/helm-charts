@@ -3,16 +3,16 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: es-exporter-logs
+  name: es-exporter-elastiflow
   labels:
     prometheus: {{ .Values.exporter.prometheus }}
 
 spec:
-  jobLabel: es-exporter-logs
+  jobLabel: es-exporter-elastiflow
 
   selector:
     matchLabels:
-      component: es-exporter-logs
+      component: es-exporter-elastiflow
 
   # Find pods in any namespace.
   namespaceSelector:
@@ -28,7 +28,7 @@ spec:
         - action: labelmap
           regex: '__meta_kubernetes_pod_label_(.+)'
         - targetLabel: job
-          replacement: elk-elastic-exporter
+          replacement: es-exporter-elastiflow
       metricRelabelings:
         - sourceLabels: [__name__, cluster]
           regex: '^(es|elasticsearch)_.+;(.*)'
