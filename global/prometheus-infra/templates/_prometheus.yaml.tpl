@@ -96,6 +96,7 @@
       - '{__name__=~"^windows_updates_.+"}'
       - '{__name__=~"^aws_ses_cronus_provider_.+"}'
       - '{__name__=~"^cronus_simulator_.+"}'
+      - '{__name__=~"^cronus_updater_.+"}'
 
   relabel_configs:
     - action: replace
