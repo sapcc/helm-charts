@@ -10,7 +10,7 @@ log_custom_handlers = swift_sentry.sentry_logger
 
 [object-expirer]
 concurrency = {{ .Values.object_expirer_concurrency }}
-# auto_create_account_prefix = .
+tasks_per_second = {{ .Values.object_expirer_tasks_per_second }}
 
 [pipeline:main]
 pipeline = catch_errors cache proxy-server
