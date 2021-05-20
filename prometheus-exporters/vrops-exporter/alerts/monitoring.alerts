@@ -39,3 +39,15 @@ groups:
     annotations:
       description: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
       summary: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
+  - alert: VROpsReportingZeroVMs
+    expr: sum by (target) (vrops_inventory_vms) <= 1
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: vrops-exporter
+      meta: "The vROps API for {{ $labels.target}} no longer reports virtual machines."
+      playbook: "."
+    annotations:
+      description: "The vROps API for {{ $labels.target}} no longer reports virtual machines. Revalidating the connection to vCenter might help."
+      summary: "The vROps API for {{ $labels.target}} no longer reports virtual machines. Revalidating the connection to vCenter might help."
