@@ -40,6 +40,9 @@ template: |
           - name: vm-balance
             image: {{.Values.global.registry}}/vm-balance-nanny:{{ .Values.vm_balance_nanny.image_version }}
             imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - name: secret-volume
+                mountPath: /etc/secret-volume
             command:
               - dumb-init
               - kubernetes-entrypoint
@@ -59,11 +62,10 @@ template: |
                 value: {= username | quote =}
                 {{- end }}
               - name: VM_BALANCE_VCPASSWORD
-                {{- if .Values.nannies.vcenter_username | default "" }}
-                value: {= "{{ .Values.nannies.vcenter_username }}" | derive_password | quote =}
-                {{- else }}
-                value: {= password | quote =}
-                {{- end }}
+                valueFrom:
+                  secretKeyRef:
+                    name: vm-balance-nanny-{= name =}
+                    key:  vm_balance_vcpassword
               - name: VM_BALANCE_INTERVAL
                 value: "{{ .Values.vm_balance_nanny.interval }}"
               - name: VM_BALANCE_AUTO
@@ -84,6 +86,9 @@ template: |
                 value: "Default"
               - name: OS_PASSWORD
                 value: {{ derivePassword 1 "long" .Values.nannies.master_password "vcenter_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
-
+        volumes:
+          - name: secret-volume
+            secret:
+              secretName: vm-balance-nanny-{= name =}
 {{- end }}
 {{- end }}
