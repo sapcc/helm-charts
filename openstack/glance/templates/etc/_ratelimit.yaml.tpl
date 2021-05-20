@@ -1,7 +1,7 @@
 # List of whitelisted scopes keys (domainName/projectName).
 whitelist:
   - Default/service
-  - monsoon3/cc-demo
+  # - monsoon3/cc-demo
 
 # Override default ratelimit response.
 ratelimit_response:
@@ -36,8 +36,19 @@ rates:
 
   # default local rate limits applied to each project
   default:
-    images/*:
+    images:
       - action: read/list
         limit: 300r/m
       - action: create
+        limit: 300r/m
+    images/image:
+      - action: read
+        limit: 300r/m
+      - action: update
+        limit: 300r/m
+    images/image/file:
+      - action: read
+        limit: 300r/m
+    schemas/schema:
+      - action: read
         limit: 300r/m
