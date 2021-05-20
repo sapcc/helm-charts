@@ -1,7 +1,7 @@
 groups:
 - name: elastic.alerts
   rules:
-  - alert: ElasticPredictOutOfDiskSpace
+  - alert: ElasticOutOfDiskSpace
     expr: elasticsearch_filesystem_data_free_bytes{es_data_node="true"} * 100 / elasticsearch_filesystem_data_size_bytes{es_data_node="true"} < 10
     for: 60m
     labels:
@@ -10,11 +10,26 @@ groups:
       severity: info
       tier: os
       playbook: docs/support/playbook/elastic_kibana_issues.html#elasticpredictoutofdiskspace-alert
-      dashboard: elasticsearch?var-cluster={{ $labels.cluster }}
+      dashboard: elasticsearch?var-cluster={{ $labels.elastic_cluster }}
     annotations:
-      description: '{{ $labels.region }} The disk usage for node {{ $labels.name }} in cluster {{ $labels.cluster }} is above 90% now.
+      description: '{{ $labels.region }} The disk usage for node `{{ $labels.name }}` in cluster `{{ $labels.cluster }}` is above 90% now.
                    Please consider cleaning up elasticsearch or lower the retention period for the logs.'
-      summary: '{{ $labels.cluster }} in {{ $labels.region }} might run out of disk space'
+      summary: '`{{ $labels.elastic_cluster }}` in `{{ $labels.region }}` is out of disk space'
+
+  - alert: ElasticPredictOutOfDiskSpace
+    expr: elasticsearch_filesystem_data_free_bytes{es_data_node="true"} * 100 / elasticsearch_filesystem_data_size_bytes{es_data_node="true"} < 20
+    for: 60m
+    labels:
+      context: diskspace
+      service: elk
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/elastic_kibana_issues.html#elasticpredictoutofdiskspace-alert
+      dashboard: elasticsearch?var-cluster={{ $labels.elastic_cluster }}
+    annotations:
+      description: '{{ $labels.region }} The disk usage for node `{{ $labels.name }}` in cluster `{{ $labels.cluster }}` is above 80% now.
+                   Please consider cleaning up elasticsearch or lower the retention period for the logs.'
+      summary: '`{{ $labels.elastic_cluster }}` in `{{ $labels.region }}` is out of disk space'
 
   - alert: ElasticClusterRed
     expr: elasticsearch_cluster_health_status{color="red"} == 1
@@ -25,10 +40,10 @@ groups:
       severity: info
       tier: os
       playbook: docs/support/playbook/elastic_kibana_issues.html
-      dashboard: elasticsearch?var-cluster={{ $labels.cluster }}
+      dashboard: elasticsearch?var-cluster={{ $labels.elastic_cluster }}
     annotations:
-      description: 'Elastic cluster {{ $labels.cluster }} in {{ $labels.region }} is RED. Please check all nodes.'
-      summary: 'Elastic {{ $labels.cluster }} cluster in {{ $labels.region }} is RED'
+      description: 'Elastic cluster `{{ $labels.elastic_cluster }}` in `{{ $labels.region }}` is RED. Please check all nodes.'
+      summary: 'Elastic `{{ $labels.elastic_cluster }}` cluster in `{{ $labels.region }}` is RED'
 
   - alert: ElasticClusterYellow
     expr: elasticsearch_cluster_health_status{color="yellow"}
@@ -40,11 +55,11 @@ groups:
       severity: info
       tier: os
       playbook: docs/support/playbook/elastic_kibana_issues.html
-      dashboard: elasticsearch?var-cluster={{ $labels.cluster }}
+      dashboard: elasticsearch?var-cluster={{ $labels.elastic_cluster }}
     annotations:
-      description: 'Elastic cluster {{ $labels.cluster }} in {{ $labels.region }} is YELLOW. Please check all nodes.
+      description: 'Elastic cluster `{{ $labels.elastic_cluster }}` in `{{ $labels.region }}` is YELLOW. Please check all nodes.
         nodes one or more are missing.'
-      summary: 'Elastic {{ $labels.cluster }} cluster in {{ $labels.region }} is YELLOW'
+      summary: 'Elastic `{{ $labels.elastic_cluster }}` cluster in `{{ $labels.region }}` is YELLOW'
 
   - alert: ElasticExporterMissing
     expr: up{job=~"es-exporter.*"} == 0
@@ -55,7 +70,7 @@ groups:
       severity: info
       tier: os
       playbook: docs/support/playbook/elastic_kibana_issues.html
-      dashboard: elasticsearch?var-cluster={{ $labels.cluster }}
+      dashboard: elasticsearch?var-cluster={{ $labels.elastic_cluster }}
     annotations:
-      description: 'cluster: {{ $labels.cluster }} es-exporter in {{ $labels.region }} is missing.'
-      summary: 'cluster: {{ $labels.cluster }} es-exporter in {{ $labels.region }} is missing.'
+      description: 'cluster `{{ $labels.elastic_cluster }}` es-exporter in `{{ $labels.region }}` is missing.'
+      summary: 'cluster: `{{ $labels.elastic_cluster }}` es-exporter in `{{ $labels.region }}` is missing.'
