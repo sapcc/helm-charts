@@ -36,19 +36,10 @@ rates:
 
   # default local rate limits applied to each project
   default:
-    images:
-      - action: read/list
+    images/*:
+      - action: read
+        limit: 300r/m
+      - action: list
         limit: 300r/m
       - action: create
-        limit: 300r/m
-    images/image:
-      - action: read
-        limit: 300r/m
-      - action: update
-        limit: 300r/m
-    images/image/file:
-      - action: read
-        limit: 300r/m
-    schemas/schema:
-      - action: read
         limit: 300r/m
