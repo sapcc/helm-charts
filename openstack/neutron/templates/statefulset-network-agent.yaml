@@ -67,6 +67,21 @@ spec:
       nodeSelector:
         multus: bond1
         failure-domain.beta.kubernetes.io/zone: {{ $az_long }}
+      initContainers:
+        - name: init
+          image: {{$.Values.global.dockerHubMirror}}/library/{{$.Values.imageNameNetworkAgentDHCPInit | required "Please set neutron.imageNameNetworkAgentDHCPInit or similar"}}:{{$.Values.imageVersionNetworkAgentDHCPInit | required "Please set neutron.imageVersionNetworkAgentDHCPInit or similar"}}
+          securityContext:
+            privileged: true
+          command:
+            - sh
+            - -c
+          args:
+            - |-
+              set -xe
+              chroot /host modprobe ebtable_nat
+          volumeMounts:
+            - name: host
+              mountPath: "/host"
       containers:
         - name: neutron-dhcp-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
@@ -262,5 +277,8 @@ spec:
         - name: logvol
           hostPath:
             path: /dev/log
+        - name: host
+          hostPath:
+              path: "/"
 {{- end }}
 {{- end }}
