@@ -1,3 +1,8 @@
+## 1.5.0
+
+* Bump Alertmanager to `v0.22.0`.
+* Move image to keppel dockerhub mirror.
+
 ## 1.4.2
 
 * Remove `vice-president: "true"` annotation. Replaced by `kubernetes.io/tls-acme: "true"`.
