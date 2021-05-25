@@ -338,3 +338,18 @@ groups:
     annotations:
       description: '{{ $labels.service }} db row locks'
       summary: '{{ $labels.service }} db row locks'
+
+  - alert: OpenstackManilaUnresolvedSentryIssues
+    expr: deriv(sentry_unresolved_issues_count{project="manila"}[1d]) > 0
+    for: 10m
+    labels:
+      context: sentry-metrics
+      service: manila
+      severity: info
+      tier: os
+      sentry: 'manila/'
+    annotations:
+      description: manila has encountered new unexpected errors and reported
+        them to Sentry. Please have a look at the list of unresolved issues,
+        it has been growing in the last 24 hours.
+      summary: manila has reported new issues to Sentry
