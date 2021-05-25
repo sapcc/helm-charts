@@ -19,7 +19,7 @@ alertmanager-{{- (include "alertmanager.name" .) -}}
 
 {{/* Prometheus Alertmanager image. */}}
 {{- define "alertmanager.image" -}}
-{{- required ".Values.image.repository missing" .Values.image.repository -}}:{{- required ".Values.image.tag missing" .Values.image.tag -}}
+{{- required ".Values.image.repository missing" .Values.image.repository -}}:{{- required ".Chart.AppVersion missing" .Chart.AppVersion -}}
 {{- end -}}
 
 {{/* Name of the PVC. */}}
