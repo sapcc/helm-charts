@@ -354,7 +354,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+      replacement: snmp-ntp-exporter:{{.Values.snmp_exporter.listen_port}}
     - source_labels: [module]
       target_label: __param_module
   metric_relabel_configs:
