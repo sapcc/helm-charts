@@ -7,7 +7,7 @@ groups:
       expr: probe_success{job="k8s-apiserver-probe-https"} == 0
       for: 15m
       labels:
-        severity: info
+        severity: warning
         tier: k8s
         service: k8s
         context: apiserver
