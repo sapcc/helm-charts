@@ -21,6 +21,7 @@ use = egg:swift#proxy
 [filter:cache]
 use = egg:swift#memcache
 memcache_servers = memcached.{{.Release.Namespace}}.svc:11211
+memcache_max_connections = 32
 
 [filter:catch_errors]
 use = egg:swift#catch_errors
