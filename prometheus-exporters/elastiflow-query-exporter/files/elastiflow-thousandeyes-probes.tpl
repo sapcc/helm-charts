@@ -18,11 +18,12 @@ QueryJson = {
                       "bool": {
                         "should": [
                           {{- range $index, $element := .Values.probes.port443 }}
+                          {{if $index}},{{end}}
                           {
                             "match": {
                               "destination.ip": {{ $element | quote}}
                             }
-                          }{{if $index}},{{end}}
+                          }
                           {{- end }}
                         ],
                         "minimum_should_match": 1
@@ -78,7 +79,10 @@ QueryJson = {
                     }
                   ]
                 }
-              },
+              }
+{{- end }}
+{{- if .Values.probes.port443 }}
+  {{- if .Values.probes.port1080 }}, {{ end }}
 {{- end }}
 {{- if .Values.probes.port1080  -}}
               {
@@ -88,6 +92,7 @@ QueryJson = {
                       "bool": {
                         "should": [
                         {{- range $index, $element := .Values.probes.port1080 }}
+                        {{if $index}},{{end}}
                           {
                             "bool": {
                               "should": [
@@ -99,7 +104,7 @@ QueryJson = {
                               ],
                               "minimum_should_match": 1
                             }
-                          }{{if $index}},{{end}}
+                          }
                         {{- end }}
                         ],
                         "minimum_should_match": 1
