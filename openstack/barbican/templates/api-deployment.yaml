@@ -123,7 +123,11 @@ spec:
               memory: 1Gi
               cpu: 300m
         - name: statsd
-          image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+          {{- if hasKey .Values.global "dockerHubMirror"}}
+          image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}
+          {{- else }}
+          image: "{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}"
+          {{- end }}          
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
