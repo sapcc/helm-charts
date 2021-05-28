@@ -126,13 +126,6 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
         secretKeyRef:
           name: swift-secret
           key: {{ $cluster_id }}_service_password
-    {{- if $context.Values.sentry.enabled }}
-    - name: SENTRY_DSN
-      valueFrom:
-        secretKeyRef:
-          name: sentry
-          key: swift.DSN.public
-    {{- end }}
   {{- $resources_cpu := index $cluster (printf "proxy_%s_resources_cpu" $kind) }}
   {{- $resources_memory := index $cluster (printf "proxy_%s_resources_memory" $kind) }}
   resources:
