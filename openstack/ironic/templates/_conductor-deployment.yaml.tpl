@@ -162,7 +162,7 @@ spec:
           periodSeconds: 3
       {{- if .Values.oslo_metrics.enabled }}
       - name: oslo-exporter
-        image: prom/statsd-exporter
+        image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
         args:
         - --web.listen-address=:9102
         - --web.telemetry-path=/metrics

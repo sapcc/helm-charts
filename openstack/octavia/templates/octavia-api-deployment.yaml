@@ -106,7 +106,7 @@ spec:
 {{- include "jaeger_agent_sidecar" . | indent 8 }}
 {{- if .Values.watcher.enabled }}
         - name: statsd
-          image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}
           imagePullPolicy: IfNotPresent
           resources:
 {{ toYaml .Values.pod.resources.statsd | indent 12 }}

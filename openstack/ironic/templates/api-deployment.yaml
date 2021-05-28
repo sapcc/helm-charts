@@ -111,7 +111,7 @@ spec:
           readOnly: true
         {{- end }}
       - name: statsd
-        image:  "{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+        image:  "{{.Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
         imagePullPolicy: IfNotPresent
         args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         resources:
@@ -130,7 +130,7 @@ spec:
 {{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 6 }}
       {{- if .Values.oslo_metrics.enabled }}
       - name: oslo-exporter
-        image: prom/statsd-exporter
+        image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter
         args:
         - --web.listen-address=:9102
         - --web.telemetry-path=/metrics
