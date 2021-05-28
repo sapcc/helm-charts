@@ -10,10 +10,7 @@ metadata:
     os-cluster: {{ $cluster_id }}
 spec:
   revisionHistoryLimit: 5
-  {{- $replicas_az := 0.0 }}
-  {{- if $.Values.haproxy_external }}
   {{- $replicas_az = default 2.0 (index $cluster (printf "haproxy_deployment_replicas_%s" $az)) }}
-  {{- end }}
   replicas: {{ $replicas_az }}
   strategy:
     type: RollingUpdate
