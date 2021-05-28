@@ -4,9 +4,6 @@ log_level = DEBUG
 {{- else -}}
 log_level = INFO
 {{- end }}
-{{- if .Values.sentry.enabled }}
-log_custom_handlers = swift_sentry.sentry_logger
-{{- end }}
 
 [object-expirer]
 concurrency = {{ .Values.object_expirer_concurrency }}

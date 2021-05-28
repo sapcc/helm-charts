@@ -22,9 +22,6 @@ log_level = DEBUG
 {{- else -}}
 log_level = INFO
 {{- end }}
-{{- if $context.sentry.enabled }}
-log_custom_handlers = swift_sentry.sentry_logger
-{{- end }}
 
 [pipeline:main]
 # Rocky or higher pipeline
