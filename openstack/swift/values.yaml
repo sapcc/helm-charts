@@ -16,10 +16,6 @@ imageRegistry_repo: swift
 # e.g. rocky-12345
 image_version: DEFINED_BY_PIPELINE
 
-# image version of auxiliary nginx bundled with dumb-init
-image_version_nginx: '1.18.0-alpine'
-image_version_nginx_exporter: '0.8.0'
-
 # image version of haproxy bundled with dumb-init
 image_version_haproxy: '2.3.6-20210316081242'
 
@@ -52,9 +48,6 @@ watcher_enabled: true
 dispersion_auth_url: DEFINED_IN_REGION_CHART
 dispersion_password: DEFINED_IN_REGION_CHART
 
-# Enable nginx exporter: https://github.com/nginxinc/nginx-prometheus-exporter
-nginx_exporter: true
-
 # Enable cluster health checks: https://github.com/sapcc/swift-health-exporter
 health_exporter: true
 
@@ -75,7 +68,7 @@ object_updater_workers: 2              # Availably since Rocky
 fallocate_reserve: 2%                  # Availably since Rocky for all servers
 
 # Swift client timeout in seconds.
-client_timeout: 60 # same as default, but also sets nginx timeout to a similar value
+client_timeout: 60 # same as default, but also sets haproxy/envoy timeout to a similar value
 
 # Swift node timeout in seconds, default 10
 node_timeout: 60
@@ -153,13 +146,6 @@ alerts:
     #
     # To enable <https://github.com/sapcc/swift-s3-cache-prewarmer>, give a non-empty list of "userid:accesskey" credentials.
     # s3_cred_cache_prewarm_credentials: []
-
-
-    # If there is a need to rate limit the nginx per cluster, that can be reached here
-    # The limits apply to every replica within the deployment
-    #rate_limit_connections: 1000
-    #rate_limit_requests: 1000
-    #rate_limit_burst: 1500
 
     # If not defined - vice president takes over
     #tls_key: "" # DEFINED_IN_REGION_CHART
