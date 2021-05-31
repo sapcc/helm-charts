@@ -1,6 +1,6 @@
 [query_elastiflow_thousandeyes_probes]
-QueryIntervalSecs = 300
-QueryTimeoutSecs = 150
+QueryIntervalSecs = 900
+QueryTimeoutSecs = 850
 QueryIndices = elastiflow-*
 QueryJson = {
    "query": {
@@ -151,7 +151,7 @@ QueryJson = {
         {
           "range": {
             "@timestamp": {
-              "gte": "now-5m"
+              "gte": "now-16m"
             }
           }
         }
