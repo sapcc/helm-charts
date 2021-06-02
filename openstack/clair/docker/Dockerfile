@@ -4,7 +4,8 @@ RUN mkdir -p /pkg/bin/
 ENV GOBIN=/pkg/bin/ GO111MODULE=on
 
 ARG CLAIR_VERSION=4.1.0
-RUN go get -ldflags "-s -w -X main.Version=${CLAIR_VERSION}" "github.com/quay/clair/v4/cmd/clair@v${CLAIR_VERSION}"
+# RUN go get -ldflags "-s -w -X main.Version=${CLAIR_VERSION}" "github.com/quay/clair/v4/cmd/clair@v${CLAIR_VERSION}"
+RUN go get -ldflags "-s -w -X main.Version=${CLAIR_VERSION}" "github.com/sapcc/clair/v4/cmd/clair@sapcc-${CLAIR_VERSION}"
 RUN go get -ldflags "-s -w"                                  "github.com/quay/clair/v4/cmd/clairctl@v${CLAIR_VERSION}"
 
 ################################################################################
