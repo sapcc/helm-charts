@@ -11,19 +11,31 @@ groups:
       tier: os
       playbook: docs/devops/alert/cronus/#send_emails
     annotations:
-      description: problem with sending emails in region {{ $labels.region }}
-      summary: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
+      description: grafana - https://grafana.global.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
+      summary: problem with sending emails in region {{ $labels.region }}
 - name: NebulaAlerts
   rules:
   - alert: NebulaReconcile
     expr: cronus_simulator_event_test_passed{action="reconcile"} == 0
     for: 10m
     labels:
-      meta: Nebula - reconcile account fails in {{ $labels.region }} with message {{ $labels.message }}
+      meta: Nebula - reconcile account fails in {{ $labels.region }} with message {{ $labels.message }} 
       service: '{{ $labels.component }}'
       severity: warning
       tier: os
       playbook: docs/devops/alert/nebula/#reconcile_account
     annotations:
-      description: multicloud-api -  https://db.multicloud.int.sap , multicloud-jira - https://jira.multicloud.int.sap , slack-cc-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
-      summary: problem with creating or deleting an account , log - https://sentry.{{ $labels.region }}.cloud.sap/monsoon/nebula/?query=requestID:{{ $labels.request_id }}
+      description: multicloud-api -  https://db.multicloud.int.sap , multicloud-jira - https://jira.multicloud.int.sap , slack-cc-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5, log - https://sentry.{{ $labels.region }}.cloud.sap/monsoon/nebula/?query=requestID:{{ $labels.request_id }}
+      summary: problem with reconciling an account 
+  - alert: NebulaProductionReady24h
+    expr: ((cronus_updater_production_ready{} offset 24h) + cronus_updater_production_ready{}) == 0
+    for: 10m
+    labels:
+      meta: Nebula - the SES accounts are still in Sandbox for more than 24 hours in region {{ $labels.region }}
+      service: '{{ $labels.component }}'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/nebula/#reconcile_account
+    annotations:
+      description: multicloud-api -  https://db.multicloud.int.sap , multicloud-jira - https://jira.multicloud.int.sap , slack-cc-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5, log - https://sentry.{{ $labels.region }}.cloud.sap/monsoon/nebula/?query=requestID:{{ $labels.request_id }}
+      summary: account is still in sandbox after 24 hours
