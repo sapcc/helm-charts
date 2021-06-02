@@ -12,7 +12,8 @@ RUN go get -ldflags "-s -w"                                  "github.com/quay/cl
 FROM alpine:3.13
 LABEL source_repository="https://github.com/sapcc/keppel"
 
-RUN apk add --no-cache ca-certificates
+# We also add some utilities here since user `nobody` will not be able to `apk add` in the running container.
+RUN apk add --no-cache ca-certificates curl
 USER nobody:nobody
 
 COPY --from=builder /pkg/ /usr/
