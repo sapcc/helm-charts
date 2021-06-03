@@ -67,11 +67,7 @@
   reserve_data true
   <parse>
     @type grok
-<<<<<<< HEAD
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp}(.%{NUMBER})? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?%{NOTSPACE:requestid} (greq-%{UUID:global_requestid})?
-=======
     grok_pattern (%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} (\[)?(req-)?%{NOTSPACE:requestid} (greq-%{UUID:global_requestid})?
->>>>>>> [elk] fix timestamp parsing fluent
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
