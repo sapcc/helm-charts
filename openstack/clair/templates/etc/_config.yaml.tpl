@@ -22,6 +22,10 @@ matcher:
   indexer_addr: "" # ignored since we're running in combo mode
   migrations: true
 
+matchers:
+  # do NOT enable the crda matcher; it tries to make API calls that fail with 403 errors left and right
+  names: [ alpine, debian, rhel, suse, ubuntu ]
+
 updaters:
   sets: [ alpine, debian, rhel, suse, ubuntu ]
   config: {} # no special config options for updaters yet

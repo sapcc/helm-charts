@@ -7,8 +7,10 @@ metadata:
     system: openstack
     type: api
     component: nova
-  {{- if .Values.use_tls_acme }}
   annotations:
+    ingress.kubernetes.io/configuration-snippet: |
+      {{- include "utils.snippets.set_openstack_request_id" . | indent 6 }}
+  {{- if .Values.use_tls_acme }}
     kubernetes.io/tls-acme: "true"
   {{- end }}
 spec:
