@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "image-usage-exporter.fullname" . }}
-  labels:
-    {{- include "image-usage-exporter.labels" . | nindent 4 }}
 spec:
 {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -26,7 +24,7 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.global.registry }}/{{ .Values.image }}:{{ .Chart.AppVersion }}"
+          image: "{{ .Values.registry }}/{{ .Values.image }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.pullPolicy }}
           ports:
             - name: metrics
