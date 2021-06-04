@@ -265,7 +265,8 @@ groups:
       description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
 
   - alert: OpenstackLimesSeesHypervisorWithoutAZ
-    expr: max by (hypervisor, hostname) (limes_nova_hypervisor_has_az{region!~"qa-de-.*"}) == 0 # only active in prod regions
+    # The max_over_time() is used to avoid alert flapping when the collector restarts e.g. after an OOM kill.
+    expr: max by (hypervisor, hostname) (max_over_time(limes_nova_hypervisor_has_az{region!~"qa-de-.*"}[10m])) == 0 # only active in prod regions
     for: 15m
     labels:
       severity: info
