@@ -338,6 +338,37 @@
       regex: 'snmp_ucs_cucsFcErrStats.+;.+(port)-([3-9]|\d{2}).+'
       action: drop
 
+- job_name: 'snmp-ntp'
+  scrape_interval: {{.Values.snmp_exporter.scrapeInterval}}
+  scrape_timeout: {{.Values.snmp_exporter.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /snmp
+  relabel_configs:
+    - source_labels: [job]
+      regex: snmp-ntp
+      action: keep
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: snmp-ntp-exporter:{{.Values.snmp_exporter.listen_port}}
+    - source_labels: [module]
+      target_label: __param_module
+  metric_relabel_configs:
+    - source_labels: [server_name]
+      target_label:  devicename
+    - source_labels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$1'
+      target_label: availability_zone
+    - source_labels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$2'
+      target_label: device
+
 {{- $values := .Values.bios_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'bios/ironic'
