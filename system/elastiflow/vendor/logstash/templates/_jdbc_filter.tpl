@@ -66,82 +66,82 @@ filter {
           if [client] and [client][0] {
               if [client][0][port] and [client][0][port] != "NULL" {
                   mutate {
-                      add_field => { cc_port => "%{[client][0][port]}" }
+                      add_field => { "[client][cc_port]" => "%{[client][0][port]}" }
                   }
               }
               if [client][0][domain] and [client][0][domain] != "NULL" {
                   mutate {
-                      add_field => { cc_domain => "%{[client][0][domain]}" }
+                      add_field => { "[client][cc_domain]" => "%{[client][0][domain]}" }
                   }
               }
               if [client][0][project] and [client][0][project] != "NULL" { 
                   mutate {
-                      add_field => { cc_project => "%{[client][0][project]}" }
+                      add_field => { "[client][cc_project]" => "%{[client][0][project]}" }
                   }
               }
               if [client][0][project_id] and [client][0][project_id] != "NULL" { 
                   mutate {
-                      add_field => { cc_project_id => "%{[client][0][project_id]}" }
+                      add_field => { "[client][cc_project_id]" => "%{[client][0][project_id]}" }
                   }
               }
               if [client][0][network] and [client][0][network] != "NULL" {
                   mutate {
-                      add_field => {  cc_network => "%{[client][0][network]}" }
+                      add_field => {  "[client][cc_network]" => "%{[client][0][network]}" }
                   }
               }
               if [client][0][network_id] and [client][0][network_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_network_id => "%{[client][0][network_id]}" }
+                      add_field => {  "[client][cc_network_id]" => "%{[client][0][network_id]}" }
                   }
               }
                if [client][0][subnet] and [client][0][subnet] != "NULL" {
                   mutate {
-                      add_field => {  cc_subnet => "%{[client][0][subnet]}" }
+                      add_field => {  "[client][cc_subnet]" => "%{[client][0][subnet]}" }
                   }
               }
                if [client][0][subnet_id] and [client][0][subnet_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_subnet_id => "%{[client][0][subnet_id]}" }
+                      add_field => {  "[client][cc_subnet_id]" => "%{[client][0][subnet_id]}" }
                   }
               }
               if [client][0][subnetpool] and [client][0][subnetpool] != "NULL" {
                   mutate {
-                      add_field => {  cc_subnetpool => "%{[client][0][subnetpool]}" }
+                      add_field => {  "[client][cc_subnetpool]" => "%{[client][0][subnetpool]}" }
                   }
               }
               if [client][0][subnetpool_id] and [client][0][subnetpool_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_subnetpool_id => "%{[client][0][subnetpool_id]}" }
+                      add_field => {  "[client][cc_subnetpool_id]" => "%{[client][0][subnetpool_id]}" }
                   }
               }
               if [client][0][router] and [client][0][router] != "NULL" {
                   mutate {
-                      add_field => {  cc_router => "%{[client][0][router]}" }
+                      add_field => {  "[client][cc_router]" => "%{[client][0][router]}" }
                   }
               }
               if [client][0][router_id] and [client][0][router_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_router_id => "%{[client][0][router_id]}" }
+                      add_field => {  "[client][cc_router_id]" => "%{[client][0][router_id]}" }
                   }
               }
               if [client][0][instance_id] and [client][0][instance_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_instance_id => "%{[client][0][instance_id]}" }
+                      add_field => {  "[client][cc_instance_id]" => "%{[client][0][instance_id]}" }
                   }
               }
               if [client][0][instance_name] and [client][0][instance_name] != "NULL" {
                   mutate {
-                      add_field => {  cc_instance_name => "%{[client][0][instance_name]}" }
+                      add_field => {  "[client][cc_instance_name]" => "%{[client][0][instance_name]}" }
                   }
               }
               if [client][0][host] and [client][0][host] != "NULL" {
                   mutate {
-                      add_field => {  cc_host => "%{[client][0][host]}" }
+                      add_field => {  "[client][cc_host]" => "%{[client][0][host]}" }
                   }
               }
               if [client][0][availability_zone] and [client][0][availability_zone] != "NULL" {
                   mutate {
-                      add_field => {  cc_availability_zone => "%{[client][0][availability_zone]}" }
+                      add_field => {  "[client][cc_availability_zone]" => "%{[client][0][availability_zone]}" }
                   }
               }
           }
@@ -152,82 +152,82 @@ filter {
           if [destination] and [destination][0] {
               if [destination][0][port] and [destination][0][port] != "NULL" {
                   mutate {
-                      add_field => { cc_port => "%{[destination][0][port]}" }
+                      add_field => { "[destination][cc_port]" => "%{[destination][0][port]}" }
                   }
               }
               if [destination][0][domain] and [destination][0][domain] != "NULL" {
                   mutate {
-                      add_field => { cc_domain => "%{[destination][0][domain]}" }
+                      add_field => { "[destination][cc_domain]" => "%{[destination][0][domain]}" }
                   }
               }
               if [destination][0][project] and [destination][0][project] != "NULL" { 
                   mutate {
-                      add_field => { cc_project => "%{[destination][0][project]}" }
+                      add_field => { "[destination][cc_project]" => "%{[destination][0][project]}" }
                   }
               }
               if [destination][0][project_id] and [destination][0][project_id] != "NULL" { 
                   mutate {
-                      add_field => { cc_project_id => "%{[destination][0][project_id]}" }
+                      add_field => { "[destination][cc_project_id]" => "%{[destination][0][project_id]}" }
                   }
               }
               if [destination][0][network] and [destination][0][network] != "NULL" {
                   mutate {
-                      add_field => {  cc_network => "%{[destination][0][network]}" }
+                      add_field => {  "[destination][cc_network]" => "%{[destination][0][network]}" }
                   }
               }
               if [destination][0][network_id] and [destination][0][network_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_network_id => "%{[destination][0][network_id]}" }
+                      add_field => {  "[destination][cc_network_id]" => "%{[destination][0][network_id]}" }
                   }
               }
                 if [destination][0][subnet] and [destination][0][subnet] != "NULL" {
                   mutate {
-                      add_field => {  cc_subnet => "%{[destination][0][subnet]}" }
+                      add_field => {  "[destination][cc_subnet]" => "%{[destination][0][subnet]}" }
                   }
               }
                 if [destination][0][subnet_id] and [destination][0][subnet_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_subnet_id => "%{[destination][0][subnet_id]}" }
+                      add_field => {  "[destination][cc_subnet_id]" => "%{[destination][0][subnet_id]}" }
                   }
               }
               if [destination][0][subnetpool] and [destination][0][subnetpool] != "NULL" {
                   mutate {
-                      add_field => {  cc_subnetpool => "%{[destination][0][subnetpool]}" }
+                      add_field => {  "[destination][cc_subnetpool]" => "%{[destination][0][subnetpool]}" }
                   }
               }
               if [destination][0][subnetpool_id] and [destination][0][subnetpool_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_subnetpool_id => "%{[destination][0][subnetpool_id]}" }
+                      add_field => {  "[destination][cc_subnetpool_id]" => "%{[destination][0][subnetpool_id]}" }
                   }
               }
               if [destination][0][router] and [destination][0][router] != "NULL" {
                   mutate {
-                      add_field => {  cc_router => "%{[destination][0][router]}" }
+                      add_field => {  "[destination][cc_router]" => "%{[destination][0][router]}" }
                   }
               }
               if [destination][0][router_id] and [destination][0][router_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_router_id => "%{[destination][0][router_id]}" }
+                      add_field => {  "[destination][cc_router_id]" => "%{[destination][0][router_id]}" }
                   }
               }
               if [destination][0][instance_id] and [destination][0][instance_id] != "NULL" {
                   mutate {
-                      add_field => {  cc_instance_id => "%{[destination][0][instance_id]}" }
+                      add_field => {  "[destination][cc_instance_id]" => "%{[destination][0][instance_id]}" }
                   }
               }
               if [destination][0][instance_name] and [destination][0][instance_name] != "NULL" {
                   mutate {
-                      add_field => {  cc_instance_name => "%{[destination][0][instance_name]}" }
+                      add_field => {  "[destination][cc_instance_name]" => "%{[destination][0][instance_name]}" }
                   }
               }
               if [destination][0][host] and [destination][0][host] != "NULL" {
                   mutate {
-                      add_field => {  cc_host => "%{[destination][0][host]}" }
+                      add_field => {  "[destination][cc_host]" => "%{[destination][0][host]}" }
                   }
               }
               if [destination][0][availability_zone] and [destination][0][availability_zone] != "NULL" {
                   mutate {
-                      add_field => {  cc_availability_zone => "%{[destination][0][availability_zone]}" }
+                      add_field => {  "[destination][cc_availability_zone]" => "%{[destination][0][availability_zone]}" }
                   }
               }
           }
