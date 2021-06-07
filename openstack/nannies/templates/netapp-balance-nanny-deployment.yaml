@@ -61,15 +61,17 @@ template: |
                 value: {= username | quote =}
                 {{- end }}
               - name: NETAPP_BALANCE_VCPASSWORD
-                {{- if .Values.nannies.vcenter_username | default "" }}
-                value: {= "{{ .Values.nannies.vcenter_username }}" | derive_password | quote =}
-                {{- else }}
-                value: {= password | quote =}
-                {{- end }}
+                valueFrom:
+                  secretKeyRef:
+                    name: netapp-balance-nanny-{= name =}
+                    key:  netapp_balance_vcpassword
               - name: NETAPP_BALANCE_NETAPPUSER
                 value: {{ .Values.netapp_balance_nanny.netappuser | quote }}
               - name: NETAPP_BALANCE_NETAPPPASSWORD
-                value: {{ .Values.netapp_balance_nanny.netapppassword | quote }}
+                valueFrom:
+                  secretKeyRef:
+                    name: netapp-balance-nanny-secret
+                    key:  netapp_balance_napassword
               - name: NETAPP_BALANCE_REGION
                 value: {{ .Values.current_region | quote }}
               - name: NETAPP_BALANCE_FLEXVOLSIZELIMIT
@@ -103,6 +105,9 @@ template: |
               - name: OS_USER_DOMAIN_NAME
                 value: "Default"
               - name: OS_PASSWORD
-                value: {{ derivePassword 1 "long" .Values.nannies.master_password "vcenter_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+                valueFrom:
+                  secretKeyRef:
+                    name: netapp-balance-nanny-secret
+                    key:  vcenter_nanny_os_password
 {{- end }}
 {{- end }}

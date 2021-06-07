@@ -70,7 +70,10 @@ spec:
             - name: OS_USER_DOMAIN_NAME
               value: "Default"
             - name: OS_PASSWORD
-              value: {{ derivePassword 1 "long" .Values.nannies.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: cinder-nanny-secret
+                  key:  nova_nanny_os_password
           volumeMounts:
             - mountPath: /cinder-etc
               name: cinder-etc
@@ -137,7 +140,10 @@ spec:
             - name: OS_USER_DOMAIN_NAME
               value: "Default"
             - name: OS_PASSWORD
-              value: {{ derivePassword 1 "long" .Values.nannies.master_password "cinder_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: cinder-nanny-secret
+                  key:  cinder_nanny_os_password
 {{- end }}
 {{- end }}
 {{- end }}
