@@ -146,7 +146,7 @@ filter {
               }
           }
           mutate {
-                  remove_field => [ "client" ]
+                  remove_field => [ "client_data" ]
         }
 
           if [destination_data] and [destination_data][0] {
