@@ -309,8 +309,8 @@
     "create_bgpvpn_router_association": "rule:context_is_editor",
     "update_bgpvpn_router_association": "rule:context_is_editor",
     "delete_bgpvpn_router_association": "rule:context_is_editor",
-    "get_bgpvpn_router_association": "rule:context_is_editor",
-    "get_bgpvpn_router_association:tenant_id": "rule:context_is_editor"
+    "get_bgpvpn_router_association": "rule:context_is_viewer",
+    "get_bgpvpn_router_association:tenant_id": "rule:context_is_viewer"
 
 
 }
