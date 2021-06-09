@@ -1,6 +1,6 @@
 service_type: loadbalancer
 service_name: octavia
-prefix: '/v2(\.0)?(/lbaas|/octavia)?'
+prefix: '/v2(\.0)?(/lbaas)?'
 
 resources:
   healthmonitors:
@@ -48,12 +48,15 @@ resources:
         singleton: true
       availability_zone_capabilities:
         singleton: true
-  amphorae:
-    type_uri: network/loadbalancer/amphorae
+  octavia:
+    singleton: true
     children:
-      stats:
-        singleton: true
-      config:
-        singleton: true
-      failover:
-        singleton: true
+      amphorae:
+        type_uri: network/loadbalancer/amphorae
+        children:
+          stats:
+            singleton: true
+          config:
+            singleton: true
+          failover:
+            singleton: true
