@@ -1,5 +1,5 @@
 filter {
-        if [client][domain] and [destination][domain] {
+        if [source][domain] and [destination][domain] {
             jdbc_static {
               id => "jdbc"
               loaders =>[
@@ -40,10 +40,10 @@ filter {
 
               local_lookups => [
                   {
-                  id => "lookup_client"
+                  id => "lookup_source"
                   query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone from fips where floating_ip_address = ?"
-                  prepared_parameters => ["[client][domain]"]
-                  target => "client_data"
+                  prepared_parameters => ["[source][domain]"]
+                  target => "source_data"
                   },
                   {
                   id => "lookup_destination"
@@ -63,90 +63,90 @@ filter {
               }
           }
 
-          if [client_data] and [client_data][0] {
-              if [client_data][0][port] and [client_data][0][port] != "NULL" {
+          if [source_data] and [source_data][0] {
+              if [source_data][0][port] and [source_data][0][port] != "NULL" {
                   mutate {
-                      add_field => { "[client][cc_port]" => "%{[client_data][0][port]}" }
+                      add_field => { "[source][cc_port]" => "%{[source_data][0][port]}" }
                   }
               }
-              if [client_data][0][domain] and [client_data][0][domain] != "NULL" {
+              if [source_data][0][domain] and [source_data][0][domain] != "NULL" {
                   mutate {
-                      add_field => { "[client][cc_domain]" => "%{[client_data][0][domain]}" }
+                      add_field => { "[source][cc_domain]" => "%{[source_data][0][domain]}" }
                   }
               }
-              if [client_data][0][project] and [client_data][0][project] != "NULL" { 
+              if [source_data][0][project] and [source_data][0][project] != "NULL" { 
                   mutate {
-                      add_field => { "[client][cc_project]" => "%{[client_data][0][project]}" }
+                      add_field => { "[source][cc_project]" => "%{[source_data][0][project]}" }
                   }
               }
-              if [client_data][0][project_id] and [client_data][0][project_id] != "NULL" { 
+              if [source_data][0][project_id] and [source_data][0][project_id] != "NULL" { 
                   mutate {
-                      add_field => { "[client][cc_project_id]" => "%{[client_data][0][project_id]}" }
+                      add_field => { "[source][cc_project_id]" => "%{[source_data][0][project_id]}" }
                   }
               }
-              if [client_data][0][network] and [client_data][0][network] != "NULL" {
+              if [source_data][0][network] and [source_data][0][network] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_network]" => "%{[client_data][0][network]}" }
+                      add_field => {  "[source][cc_network]" => "%{[source_data][0][network]}" }
                   }
               }
-              if [client_data][0][network_id] and [client_data][0][network_id] != "NULL" {
+              if [source_data][0][network_id] and [source_data][0][network_id] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_network_id]" => "%{[client_data][0][network_id]}" }
+                      add_field => {  "[source][cc_network_id]" => "%{[source_data][0][network_id]}" }
                   }
               }
-               if [client_data][0][subnet] and [client_data][0][subnet] != "NULL" {
+               if [source_data][0][subnet] and [source_data][0][subnet] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_subnet]" => "%{[client_data][0][subnet]}" }
+                      add_field => {  "[source][cc_subnet]" => "%{[source_data][0][subnet]}" }
                   }
               }
-               if [client_data][0][subnet_id] and [client_data][0][subnet_id] != "NULL" {
+               if [source_data][0][subnet_id] and [source_data][0][subnet_id] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_subnet_id]" => "%{[client_data][0][subnet_id]}" }
+                      add_field => {  "[source][cc_subnet_id]" => "%{[source_data][0][subnet_id]}" }
                   }
               }
-              if [client_data][0][subnetpool] and [client_data][0][subnetpool] != "NULL" {
+              if [source_data][0][subnetpool] and [source_data][0][subnetpool] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_subnetpool]" => "%{[client_data][0][subnetpool]}" }
+                      add_field => {  "[source][cc_subnetpool]" => "%{[source_data][0][subnetpool]}" }
                   }
               }
-              if [client_data][0][subnetpool_id] and [client_data][0][subnetpool_id] != "NULL" {
+              if [source_data][0][subnetpool_id] and [source_data][0][subnetpool_id] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_subnetpool_id]" => "%{[client_data][0][subnetpool_id]}" }
+                      add_field => {  "[source][cc_subnetpool_id]" => "%{[source_data][0][subnetpool_id]}" }
                   }
               }
-              if [client_data][0][router] and [client_data][0][router] != "NULL" {
+              if [source_data][0][router] and [source_data][0][router] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_router]" => "%{[client_data][0][router]}" }
+                      add_field => {  "[source][cc_router]" => "%{[source_data][0][router]}" }
                   }
               }
-              if [client_data][0][router_id] and [client_data][0][router_id] != "NULL" {
+              if [source_data][0][router_id] and [source_data][0][router_id] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_router_id]" => "%{[client_data][0][router_id]}" }
+                      add_field => {  "[source][cc_router_id]" => "%{[source_data][0][router_id]}" }
                   }
               }
-              if [client_data][0][instance_id] and [client_data][0][instance_id] != "NULL" {
+              if [source_data][0][instance_id] and [source_data][0][instance_id] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_instance_id]" => "%{[client_data][0][instance_id]}" }
+                      add_field => {  "[source][cc_instance_id]" => "%{[source_data][0][instance_id]}" }
                   }
               }
-              if [client_data][0][instance_name] and [client_data][0][instance_name] != "NULL" {
+              if [source_data][0][instance_name] and [source_data][0][instance_name] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_instance_name]" => "%{[client_data][0][instance_name]}" }
+                      add_field => {  "[source][cc_instance_name]" => "%{[source_data][0][instance_name]}" }
                   }
               }
-              if [client_data][0][host] and [client_data][0][host] != "NULL" {
+              if [source_data][0][host] and [source_data][0][host] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_host]" => "%{[client_data][0][host]}" }
+                      add_field => {  "[source][cc_host]" => "%{[source_data][0][host]}" }
                   }
               }
-              if [client_data][0][availability_zone] and [client_data][0][availability_zone] != "NULL" {
+              if [source_data][0][availability_zone] and [source_data][0][availability_zone] != "NULL" {
                   mutate {
-                      add_field => {  "[client][cc_availability_zone]" => "%{[client_data][0][availability_zone]}" }
+                      add_field => {  "[source][cc_availability_zone]" => "%{[source_data][0][availability_zone]}" }
                   }
               }
           }
           mutate {
-                  remove_field => [ "client_data" ]
+                  remove_field => [ "source_data" ]
         }
 
           if [destination_data] and [destination_data][0] {
