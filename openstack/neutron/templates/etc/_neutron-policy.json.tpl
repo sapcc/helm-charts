@@ -94,6 +94,8 @@
     "create_port:device_owner": "(not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "create_port:mac_address": "rule:context_is_network_editor",
     "create_port:fixed_ips": "rule:default",
+    "create_port:fixed_ips:ip_address": "rule:default",
+    "create_port:fixed_ips:subnet_id": "rule:default",
     "create_port:port_security_enabled": "rule:context_is_network_editor",
     "create_port:binding:host_id": "rule:context_is_network_admin",
     "create_port:binding:profile": "rule:context_is_network_admin",
