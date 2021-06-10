@@ -1,0 +1,18 @@
+groups:
+  - name: sentry
+    rules:
+      - alert: SentryDashboardIsDown
+        expr: probe_success{target=~"https://sentry.+"} == 0
+        for: 15m
+        labels:
+          severity: info
+          tier: os
+          service: sentry
+          context: sentry
+          meta: "Sentry dashboard is down"
+          dashboard: sentry
+          playbook: docs/support/playbook/sentry.html
+          no_alert_on_absence: "true"
+        annotations:
+          description: "Sentry is down"
+          summary: "Sentry is down"
