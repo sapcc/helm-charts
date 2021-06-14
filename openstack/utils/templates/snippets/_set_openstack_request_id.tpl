@@ -1,6 +1,6 @@
 {{ define "utils.snippets.set_openstack_request_id" }}
 set_by_lua_block $global_request_id {
-    local global_request_id = ngx.header["X-OpenStack-Request-ID"]
+    local global_request_id = ngx.req.get_headers()["X-OpenStack-Request-ID"]
 
     if not global_request_id then
         -- req_id is a uuid without hyphens, but openstack needs a certain format
