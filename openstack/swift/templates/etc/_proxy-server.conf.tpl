@@ -95,7 +95,8 @@ allow_overrides = true
 [filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 delay_auth_decision = true
-include_service_catalog = false
+include_service_catalog = true
+service_type = object-store
 auth_plugin = v3password
 auth_version = 3
 www_authenticate_uri = {{$cluster.keystone_auth_uri}}
