@@ -82,3 +82,18 @@ groups:
         description: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
         summary: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
     
+    - alert: NetworkAsrRedundancyReplicationErrors
+      expr: >-
+        (rate(ssh_redundancy_send_fails_add[5m]) + rate(ssh_redundancy_send_fails_add[5m])) > 0
+      for: 20m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Redundancy synchronization errors on `{{ $labels.devicename }}`."
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrRedundancyReplicationErrors'
+        dashboard: neutron-router
+      annotations:
+        description: "Redundancy synchronization errors on `{{ $labels.devicename }}`."
+        summary: "Redundancy synchronization errors on `{{ $labels.devicename }}`."
