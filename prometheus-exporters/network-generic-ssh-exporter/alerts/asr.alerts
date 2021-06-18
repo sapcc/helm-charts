@@ -97,3 +97,20 @@ groups:
       annotations:
         description: "Redundancy synchronization errors on `{{ $labels.devicename }}`."
         summary: "Redundancy synchronization errors on `{{ $labels.devicename }}`."
+    
+    - alert: NetworkAsrNatGatekeeperCacheOverflow
+      expr: >-
+        (sum (ssh_qfp_nat_datapath_gatein {type=~"Active"}) by (server_name))*100/(sum (ssh_qfp_nat_datapath_gatein {type=~"Size"}) by (server_name)) >90
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Gatekeeper cache on `{{ $labels.devicename }}` is almost full."
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrNatGatekeeperCacheOverflow'
+        dashboard: neutron-router
+      annotations:
+        description: "Gatekeeper cache on `{{ $labels.devicename }}` is almost full."
+        summary: "Gatekeeper cache on `{{ $labels.devicename }}` is almost full."
+    
