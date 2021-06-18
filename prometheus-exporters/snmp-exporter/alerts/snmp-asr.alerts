@@ -16,7 +16,38 @@ groups:
       annotations:
         description: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` experiencing high bandwidth utilization.Immediate action required"
         summary: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` crossed bandwidth threshold"
+    
+    - alert: NetworkAsrHighIosdCpuUtilization
+      expr: >-
+        snmp_asr_cpmProcExtUtil1Min{cpmProcessName=~".*iosd.*"} >= 80
+      for: 20m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "IOSD process on `{{ $labels.devicename }}` is using a lot of CPU."
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrHighIosdCpuUtilization'
+        dashboard: neutron-router
+      annotations:
+        description: "IOSD process on `{{ $labels.devicename }}` is using a lot of CPU."
+        summary: "IOSD process on `{{ $labels.devicename }}` is using a lot of CPU."
 
+    - alert: NetworkAsrHighCpuUtilization
+      expr: >-
+        snmp_asr_cpmCPULoadAvg1min > 300
+      for: 20m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "The Control Processor CPU on `{{ $labels.devicename }}` is very busy."
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrHighCpuUtilization'
+        dashboard: neutron-router
+      annotations:
+        description: "The Control Processor CPU on `{{ $labels.devicename }}` is very busy."
+        summary: "The Control Processor CPU on `{{ $labels.devicename }}` is very busy."
 #    - alert: OpenstackNeutronPredictOutOfFIP
 #      expr: predict_linear(ssh_nat_static[1d], 3600 * 24 * 4) > 800
 #      for: 10m
