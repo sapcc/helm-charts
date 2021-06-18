@@ -43,6 +43,7 @@ processing_hooks = $default_processing_hooks,local_link_connection
 
 [discovery]
 enroll_node_driver = ipmitool
+enroll_node_fields = conductor_group:testing
 
 [pxe_filter]
 driver = noop
