@@ -16,20 +16,7 @@ groups:
         description: "Neutron Router `{{ $labels.model }}` `{{ $labels.name }}` is reporting ARP punt policer drops"
         summary: "Neutron Router  `{{ $labels.name }}` is reporting ARP punt policer drops"
         
-    - alert: NetworkAsrNatSpike
-      expr: increase(((ssh_redundancy_send_queue ==bool 1 ) * ssh_redundancy_send_fails_delete)[5m:]) > 0
-      for: 5m
-      labels:
-        severity: critical
-        tier: net
-        service: asr
-        context: asr
-        playbook: 'docs/devops/alert/network/router.html#asr_nat_spike'
-        dashboard: network-asr-nat-table 
-      annotations:
-        description: "ASR devicename `{{ $labels.devicename }}` is experiencing a stuck queue-full bit. Risk of outage is present, peer-sync is not working. Immediate action required"
-        summary: "ASR devicename `{{ $labels.devicename }}` risk of NAT spikes and table overflow."
-        
+
     - alert: NetworkAsrDeviceIsDown
       expr: (ssh_nat_static + ssh_nat_dynamic) > 3500000
       for: 15m
@@ -46,7 +33,7 @@ groups:
         summary: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
 
     - alert: NetworkAsrNatTableIsNearlyFull
-      expr: (ssh_nat_static + ssh_nat_dynamic) > 2000000
+      expr: (ssh_nat_static + ssh_nat_dynamic) > 3000000
       for: 15m
       labels:
         severity: critical
@@ -104,7 +91,7 @@ groups:
         service: asr
         context: asr
         meta: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
-        playbook: 'docs/devops/alert/network/router.html##asr-nat-class-diff-datapath-drops'
+        playbook: 'docs/devops/alert/network/router.html#asr-nat-class-diff-datapath-drops'
         dashboard: neutron-router
       annotations:
         description: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
