@@ -17,22 +17,7 @@ groups:
         summary: "Neutron Router  `{{ $labels.name }}` is reporting ARP punt policer drops"
         
 
-    - alert: NetworkAsrDeviceIsDown
-      expr: (ssh_nat_static + ssh_nat_dynamic) > 3500000
-      for: 15m
-      labels:
-        severity: critical
-        tier: net
-        service: asr
-        context: asr
-        meta: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
-        playbook: 'docs/devops/alert/network/router.html#asr_nat_table_overflow'
-        dashboard: neutron-router
-      annotations:
-        description: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
-        summary: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
-
-    - alert: NetworkAsrNatTableIsNearlyFull
+    - alert: NetworkAsrNatTableFull
       expr: (ssh_nat_static + ssh_nat_dynamic) > 3000000
       for: 15m
       labels:
@@ -40,13 +25,13 @@ groups:
         tier: net
         service: asr
         context: asr
-        meta: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+        meta: "NAT table on Neutron Router `{{ $labels.devicename }}` has 3M translations for 15 mins. The device will stop creating new sessions soon."
         playbook: 'docs/devops/alert/network/router.html#asr_nat_table_overflow'
         dashboard: neutron-router
         spc: "ServiceAreaCode=04&TicketType=01&Priority=1&ServiceName=NW_CLOUD_CC&ServiceUnit=10&Subject=NetworkAsrNatTableIsNearlyFull+-+devicename%3A+{{ $labels.devicename }}&Description=NAT+table+on+ASR+devicename+{{ $labels.devicename }}+is+nearly+full+for+15+min+with+more+than+2M+NAT+translations.+This+will+stop+creating+new+NAT+sessions+soon."
       annotations:
-        description: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
-        summary: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+        description: "NAT table on Neutron Router `{{ $labels.devicename }}` has 3M translations for 15 mins. The device will stop creating new sessions soon."
+        summary: "NAT table on Neutron Router `{{ $labels.devicename }}` has 3M translations for 15 mins. The device will stop creating new sessions soon."
 
     - alert: NetworkAsrRedundancyGroupBothDevicesDown
       expr: >-
@@ -96,3 +81,4 @@ groups:
       annotations:
         description: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
         summary: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
+    
