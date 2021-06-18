@@ -30,6 +30,7 @@
     "shared_firewall_policies": "field:firewall_policies:shared=True",
     "shared_subnetpools": "field:subnetpools:shared=True",
     "shared_address_scopes": "field:address_scopes:shared=True",
+    "shared_security_groups": "field:security_groups:shared=True",
     "dhcp_enabled": "field:subnets:enable_dhcp=True",
     "default": "rule:context_is_editor or rule:shared",
     "default_viewer": "rule:context_is_viewer or rule:shared",
@@ -148,8 +149,8 @@
     "update_router:external_gateway_info:external_fixed_ips": "rule:context_is_network_admin",
 
     "create_security_group": "rule:context_is_securitygroup_admin",
-    "get_security_group": "rule:context_is_securitygroup_viewer",
-    "get_security_groups": "rule:context_is_securitygroup_viewer",
+    "get_security_group": "rule:context_is_securitygroup_viewer or rule:shared_security_groups",
+    "get_security_groups": "rule:context_is_securitygroup_viewer or rule:shared_security_groups",
     "update_security_group": "rule:context_is_securitygroup_admin",
     "delete_security_group": "rule:context_is_securitygroup_admin",
 
