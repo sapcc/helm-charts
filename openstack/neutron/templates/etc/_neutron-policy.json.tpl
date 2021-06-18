@@ -121,7 +121,7 @@
     "update_port:binding:vnic_type": "rule:context_is_network_admin",
     "update_port:mac_learning_enabled": "rule:context_is_network_editor",
     "update_port:allowed_address_pairs": "rule:context_is_network_editor",
-    "update_port:allowed_address_pairs:ip_address": "rule:context_is_network_editor"
+    "update_port:allowed_address_pairs:ip_address": "rule:context_is_network_editor",
     "delete_port": "(not rule:network_device and not rule:share_device and rule:context_is_network_editor) or rule:context_is_admin",
 
     "get_router:ha": "rule:context_is_admin",
