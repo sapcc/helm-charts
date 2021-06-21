@@ -114,3 +114,60 @@ groups:
         description: "Gatekeeper cache on `{{ $labels.devicename }}` is almost full."
         summary: "Gatekeeper cache on `{{ $labels.devicename }}` is almost full."
     
+    - alert: NetworkAsrBgpFabricPeerDown
+      expr: >-
+        # Filter on active devices
+        ((ssh_redundancy_state == 3 ) * 0)
+        # Join the BGP state on them
+        + on (server_name) group_right() ssh_bgp_sessions{vrf!=""} != 8
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "BGP on `{{ $labels.devicename }}` to `{{ $labels.peer_ip }}` in VRF `{{ $labels.vrf }}` went down. DAPnets in this VRF are at risk."
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrBgpFabricPeerDown'
+        dashboard: neutron-router-bgp
+      annotations:
+        description: "BGP on `{{ $labels.devicename }}` to `{{ $labels.peer_ip }}` in VRF `{{ $labels.vrf }}` went down. DAPnets in this VRF are at risk."
+        summary: "BGP on `{{ $labels.devicename }}` to `{{ $labels.peer_ip }}` in VRF `{{ $labels.vrf }}` went down. DAPnets in this VRF are at risk."
+
+    
+    - alert: NetworkAsrBgpNeutronPeerDown
+      expr: >-
+        # Filter on active devices
+        ((ssh_redundancy_state == 3 ) * 0)
+        # Join the BGP state on them
+        + on (server_name) group_right() ssh_bgp_sessions{vrf="", peer_type="internal"} != 8
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Neutron Router mesh BGP peering on `{{ $labels.devicename }}` to `{{ $labels.peer_ip }}` went down. L3VPN outage!" 
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrBgpNeutronPeerDown'
+        dashboard: neutron-router-bgp
+      annotations:
+        description: "Neutron Router mesh BGP peering on `{{ $labels.devicename }}` to `{{ $labels.peer_ip }}` went down. L3VPN outage!" 
+        summary: "Neutron Router mesh BGP peering on `{{ $labels.devicename }}` to `{{ $labels.peer_ip }}` went down. L3VPN outage!" 
+    
+    - alert: NetworkAsrBgpCorePeerDown
+      expr: >-
+        # Filter on active devices
+        ((ssh_redundancy_state == 3 ) * 0)
+        # Join the BGP state on them
+        + on (server_name) group_right() ssh_bgp_sessions{vrf="", peer_type="external"} != 8
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "BGP peering on `{{ $labels.devicename }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted.
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrBgpCorePeerDown'
+        dashboard: neutron-router-bgp
+      annotations:
+        description: "BGP peering on `{{ $labels.devicename }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted.
+        summary: "BGP peering on `{{ $labels.devicename }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted.
