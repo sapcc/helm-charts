@@ -12,6 +12,8 @@ resources:
         singleton: true
       status:
         singleton: true
+      migrate:
+        singleton: true
       failover:
         singleton: true
   listeners:
