@@ -117,7 +117,7 @@
   honor_labels: false
   static_configs:
     - targets: 
-      {{ if or .Values.pushgateway_infra.enabled }}
+      {{ if .Values.pushgateway_infra.enabled }}
       - 'pushgateway-infra:9091'
       {{ end }}
       {{ if .Values.cronus.enabled }}
