@@ -55,7 +55,7 @@ mysql+pymysql://{{$user}}:{{$password | urlquery}}@{{include "db_host_mysql" .}}
     {{- $envAll := index . 0 }}
     {{- $user := index . 1 }}
     {{- $service := index . 2 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) ("long") | include "utils.password_for_fixed_user_and_host" }}
+    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( tuple $envAll $service | include "internal_service" ) ("long") }}
 {{- end }}
 
 {{define "nova_console_endpoint_host_public"}}compute-console-3.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
