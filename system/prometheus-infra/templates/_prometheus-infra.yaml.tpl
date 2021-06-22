@@ -112,12 +112,16 @@
     - targets:
       - "prometheus-infra-collector.{{ .Values.global.region }}.cloud.sap"
 
+{{ if or .Values.pushgateway_infra.enabled .Values.cronus.enabled }}
 - job_name: pushgateway
   honor_labels: false
   static_configs:
     - targets: 
+      {{ if or .Values.pushgateway_infra.enabled }}
       - 'pushgateway-infra:9091'
+      {{ end }}
+      {{ if .Values.cronus.enabled }}
       - 'cronus-pushgateway.cronus:9091'
+      {{ end }}
   scrape_interval: 5m
-
-
+{{ end }}
