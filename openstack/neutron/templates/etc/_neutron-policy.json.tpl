@@ -1,7 +1,7 @@
 {
     "context_is_cloud_admin":  "role:cloud_network_admin",
     "context_is_admin":  "rule:context_is_cloud_admin",
-    "owner": "tenant_id:%(tenant_id)s",
+    "owner": "tenant_id:%(tenant_id)s or project_id:%(project_id)s",
     "member": "role:member and rule:owner",
     "viewer": "role:network_viewer and rule:owner",
     "admin": "role:network_admin and rule:owner",
@@ -284,13 +284,13 @@
     "create_bgpvpn": "rule:context_is_admin",
     "update_bgpvpn": "rule:context_is_admin",
     "delete_bgpvpn": "rule:context_is_admin",
-    "get_bgpvpn": "rule:context_is_admin",
-    "get_bgpvpn:tenant_id": "rule:context_is_admin",
-    "get_bgpvpn:route_targets": "rule:context_is_admin",
-    "get_bgpvpn:import_targets": "rule:context_is_admin",
-    "get_bgpvpn:export_targets": "rule:context_is_admin",
-    "get_bgpvpn:route_distinguishers": "rule:context_is_admin",
-    "get_bgpvpn:vni": "rule:context_is_admin",
+    "get_bgpvpn": "rule:context_is_viewer",
+    "get_bgpvpn:tenant_id": "rule:context_is_viewer",
+    "get_bgpvpn:route_targets": "rule:context_is_viewer",
+    "get_bgpvpn:import_targets": "rule:context_is_viewer",
+    "get_bgpvpn:export_targets": "rule:context_is_viewer",
+    "get_bgpvpn:route_distinguishers": "rule:context_is_viewer",
+    "get_bgpvpn:vni": "rule:context_is_viewer",
     "update_bgpvpn:tenant_id": "rule:context_is_admin",
     "update_bgpvpn:route_targets": "rule:context_is_admin",
     "update_bgpvpn:import_targets": "rule:context_is_admin",
@@ -311,11 +311,11 @@
     "get_bgpvpn_port_association": "rule:context_is_admin",
     "get_bgpvpn_port_association:tenant_id": "rule:context_is_admin",
 
-    "create_bgpvpn_router_association": "rule:context_is_admin",
-    "update_bgpvpn_router_association": "rule:context_is_admin",
-    "delete_bgpvpn_router_association": "rule:context_is_admin",
-    "get_bgpvpn_router_association": "rule:context_is_admin",
-    "get_bgpvpn_router_association:tenant_id": "rule:context_is_admin"
+    "create_bgpvpn_router_association": "rule:context_is_editor",
+    "update_bgpvpn_router_association": "rule:context_is_editor",
+    "delete_bgpvpn_router_association": "rule:context_is_editor",
+    "get_bgpvpn_router_association": "rule:context_is_viewer",
+    "get_bgpvpn_router_association:tenant_id": "rule:context_is_viewer"
 
 
 }
