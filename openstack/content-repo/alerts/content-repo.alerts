@@ -30,6 +30,20 @@ groups:
       description: Content repo {{ $labels.repo }} was not successful updated for at least 48h. Check the logs
       summary: Content repo {{ $labels.repo }} outdated
 
+  - alert: OpenstackRepoSkippedJobs
+    expr: repo_sync_last_run{kind="jobs_skipped"} > 0
+    for: 10m
+    labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
+      tier: os
+      service: swift
+      severity: info
+      context: repo
+      meta: "repo {{ $labels.repo }} has skipped some sync jobs"
+    annotations:
+      description: Content repo {{ $labels.repo }} has skipped some sync jobs. Check the logs.
+      summary: Content repo {{ $labels.repo }} outdated
+
   - alert: OpenstackRepoEntitlementForbidden
     expr: repo_sync_check_success != 1 and repo_sync_check_httpcode == 403
     for: 1h
