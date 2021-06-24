@@ -20,7 +20,7 @@ groups:
     - alert: NetworkAsrHighIosdCpuUtilization
       expr: >-
         snmp_asr_cpmProcExtUtil1Min{cpmProcessName=~".*iosd.*"} >= 80
-      for: 20m
+      for: 10m
       labels:
         severity: critical
         tier: net
@@ -36,7 +36,7 @@ groups:
     - alert: NetworkAsrHighCpuUtilization
       expr: >-
         snmp_asr_cpmCPULoadAvg1min > 300
-      for: 20m
+      for: 10m
       labels:
         severity: critical
         tier: net
@@ -60,3 +60,19 @@ groups:
 #      annotations:
 #        description: 'STILL IN TEST MODE: The Floating IP''s on {{ $labels.devicename }} might possibly get exhausted soon. This is not an exact warning, but a heads up to check the current FIP situation.'
 #        summary: 'STILL IN TEST MODE: Floating IP''s possibly soon exhausted'
+    
+    - alert: NetworkAsrHighQfpCpuUtilization
+      expr: >-
+        snmp_asr_ceqfpUtilProcessingLoad{ceqfpUtilTimeInterval="2"} >= 80
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "A high QFP utilization is seen on `{{ $labels.devicename }}`. This may impact forwarding.
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrHighQfpCpuUtilization'
+        dashboard: neutron-router
+      annotations:
+        description: "A high QFP utilization is seen on `{{ $labels.devicename }}`. This may impact forwarding.
+        summary: "A high QFP utilization is seen on `{{ $labels.devicename }}`. This may impact forwarding.
