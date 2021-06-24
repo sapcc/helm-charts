@@ -28,21 +28,21 @@
 - name: PULUMI_CONFIG_PASSPHRASE
   valueFrom:
     secretKeyRef:
-      name: vcf-secrets
+      name: vcf-secret
       key: pulumi_config_passphrase
 - name: AUTOMATION_OS_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: vcf-secrets
+      name: vcf-secret
       key: os_password
 - name: AUTOMATION_OS_USERNAME
   valueFrom:
     secretKeyRef:
-      name: vcf-secrets
+      name: vcf-secret
       key: os_username
 - name: AUTOMATION_VMWARE_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: vcf-secrets
+      name: vcf-secret
       key: vmware_password
 {{- end -}}
