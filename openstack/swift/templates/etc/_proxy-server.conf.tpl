@@ -95,8 +95,7 @@ allow_overrides = true
 [filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 delay_auth_decision = true
-# TODO this needs to false after that https://bugs.launchpad.net/keystonemiddleware/+bug/1933356 is fixed
-#      also revert the patch in keystonemiddleware: https://github.com/sapcc/swift/commit/9456e54e2e2449699c20f5b311bb6bcbaa2e2544
+# TODO this can be set to false after that https://bugs.launchpad.net/keystonemiddleware/+bug/1933356 is fixed
 include_service_catalog = true
 service_type = object-store
 auth_plugin = v3password
