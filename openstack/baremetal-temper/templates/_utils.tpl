@@ -19,51 +19,26 @@
     secretKeyRef:
       name: baremetal-temper-secret
       key: redfish_password
-- name: redfish_user
-  valueFrom:
-    secretKeyRef:
-      name: baremetal-temper-secret
-      key: redfish_user
 - name: netbox_token
   valueFrom:
     secretKeyRef:
       name: baremetal-temper-secret
       key: netbox_token
-- name: openstack_user
-  valueFrom:
-    secretKeyRef:
-      name: baremetal-temper-secret
-      key: openstack_user
 - name: openstack_password
   valueFrom:
     secretKeyRef:
       name: baremetal-temper-secret
       key: openstack_password
-- name: arista_user
-  valueFrom:
-    secretKeyRef:
-      name: baremetal-temper-secret
-      key: arista_user
 - name: arista_password
   valueFrom:
     secretKeyRef:
       name: baremetal-temper-secret
       key: arista_password
-- name: aci_user
-  valueFrom:
-    secretKeyRef:
-      name: baremetal-temper-secret
-      key: aci_user
 - name: aci_password
   valueFrom:
     secretKeyRef:
       name: baremetal-temper-secret
       key: aci_password
-- name: deployment_openstack_user
-  valueFrom:
-    secretKeyRef:
-      name: baremetal-temper-secret
-      key: deployment_openstack_user
 - name: deployment_openstack_password
   valueFrom:
     secretKeyRef:
