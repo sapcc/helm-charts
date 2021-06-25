@@ -158,8 +158,13 @@
       - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
       - '{__name__=~"^vrops_virtualmachine_network_.+"}'
       - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_model"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_sockets_number"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage"}'
+      - '{__name__=~"^vrops_hostsystem_memory_ballooning_kilobytes"}'
+      - '{__name__=~"^vrops_hostsystem_memory_contention_percentage"}'
 
-
+# For cronus reputation dashboard https://documentation.global.cloud.sap/services/email-howto-reputation
 {{- if .Values.cronus.enabled }}
 - job_name: 'cronus-reputation-statistics'
   scheme: https
