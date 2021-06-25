@@ -140,6 +140,12 @@ quota_security_group = 1
 # need 4 secgrouprule quota for "default" secgroup
 quota_security_group_rule = 4
 
+[privsep]
+# The number of threads available for privsep to concurrently run processes.
+# Defaults to the number of CPU cores in the system (integer value)
+# Minimum value: 1
+thread_pool_size = 1
+
 {{- include "osprofiler" . }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
