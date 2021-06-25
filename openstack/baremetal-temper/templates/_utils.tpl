@@ -12,7 +12,7 @@
 - name:  config-path
   value: '/etc/config/temper.yaml'
 - name:  number-workers
-  value: 20
+  value: '20'
 
 - name: redfish_password
   valueFrom:
