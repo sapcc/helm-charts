@@ -168,7 +168,7 @@
 {{- if .Values.cronus.enabled }}
 - job_name: 'cronus-reputation-statistics'
   scheme: https
-  scrape_interval: 5m
+  scrape_interval: 1m
   scrape_timeout: 55s
   tls_config:
     cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt
