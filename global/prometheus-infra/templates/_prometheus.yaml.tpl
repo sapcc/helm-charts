@@ -187,7 +187,7 @@
       - '{__name__=~"^vrops_virtualmachine_runtime_connectionstate",state="disconnected"}'
       - '{__name__=~"^vrops_virtualmachine_runtime_powerstate"}'
       - '{__name__=~"^vrops_datastore_.+", type!~"local"}'
-      - '{__name__=~"^vrops_nsxt_product_version"}'
+      - '{__name__=~"^vrops_nsxt.*"}'
 
   relabel_configs:
     - action: replace
