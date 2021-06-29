@@ -27,7 +27,9 @@ spec:
     - monsoon3/domain-s4-seed
     - monsoon3/domain-wbs-seed
     - monsoon3/domain-cc3test-seed
+    {{- if hasPrefix "qa" .Values.global.region }}
     - monsoon3/domain-tempest-seed
+    {{- end }}
 
   domains:
     - name: Default
@@ -67,8 +69,10 @@ spec:
             role: admin
           - domain: cc3test
             role: admin
+          {{- if hasPrefix "qa" .Values.global.region }}
           - domain: tempest
             role: admin
+          {{- end }}
       {{- if $.Values.velero_backup_password }}
       - name: velero_backup
         description: 'Velero Backup'
