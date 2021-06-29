@@ -61,7 +61,6 @@ spec:
         # - user limes@Default                 in project cloud_admin@ccadmin (TODO: looks unnecessary, remove?)
         # - user kubernikus@Default            in project cloud_admin@ccadmin
         # - user kubernikus-terraform@Default  in project cloud_admin@ccadmin
-        # ONLY QA-DE-1 AND EU-DE-1:
         # - user TCC_BM_ANSL@ccadmin           in project cloud_admin@ccadmin
         # - user TCC_BM_TMPR@ccadmin           in project cloud_admin@ccadmin
         # ONLY EU-DE-1 AND EU-NL-1:
@@ -71,7 +70,7 @@ spec:
         # - user kubernikus-master@Default     in project cloud_admin@ccadmin
         - alert: OpenstackLimesUnexpectedCloudAdminRoleAssignments
           {{- $r := .Values.global.region }}
-          expr: absent(openstack_assignments_per_role{role_name="cloud_resource_admin"}) or max(openstack_assignments_per_role{role_name="cloud_resource_admin"}) > {{if eq $r "eu-nl-1"}} 9 {{else if eq $r "eu-de-1" }} 9 {{else if eq $r "qa-de-1" }} 8 {{else}} 6 {{end}}
+          expr: absent(openstack_assignments_per_role{role_name="cloud_resource_admin"}) or max(openstack_assignments_per_role{role_name="cloud_resource_admin"}) > {{if eq $r "eu-nl-1"}} 11 {{else if eq $r "eu-de-1" }} 9 {{else}} 8 {{end}}
           for: 10m
           labels:
             tier: os
