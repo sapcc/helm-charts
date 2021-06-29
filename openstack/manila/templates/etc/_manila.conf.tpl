@@ -33,7 +33,7 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 
 delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_share | default false }}
 
-use_scheduler_creating_share_from_snapshot = {{ .Values.use_scheduler_creating_share_from_snapshot | default false }}
+use_scheduler_creating_share_from_snapshot = {{ .Values.use_scheduler_creating_share_from_snapshot | default true }}
 
 scheduler_default_filters = {{ .Values.scheduler_default_filters | default "AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter" }}
 # TODO: train does not have HostAffinityWeigher, add in victoria
