@@ -150,6 +150,8 @@ spec:
             - name: logvol
               mountPath: /dev/log
               readOnly: false
+            - name: network-namespace
+              mountPath: /var/run/netns
 {{- if $.Values.agent.neutron_l3 | default false }}
         - name: neutron-l3-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
@@ -218,6 +220,8 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
+          - name: PYTHONWARNINGS
+            value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
               command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -264,10 +268,14 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
+            - name: network-namespace
+              mountPath: /var/run/netns
       volumes:
         - name: metadata-proxy
           hostPath:
             path: /run/metadata-proxy
+        - name: network-namespace
+          emptyDir: {}
         - name : modules
           hostPath:
             path: /lib/modules
