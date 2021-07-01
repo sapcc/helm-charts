@@ -169,7 +169,7 @@ url_base = https:
 [filter:bulk]
 use = egg:swift#bulk
 delete_container_retry_count = {{ $context.bulk_delete_container_retry_count }}
-delete_concurrency = {{ $context.delete_concurrency }}
+delete_concurrency = {{ $context.bulk_delete_concurrency }}
 
 [filter:container-quotas]
 use = egg:swift#container_quotas
