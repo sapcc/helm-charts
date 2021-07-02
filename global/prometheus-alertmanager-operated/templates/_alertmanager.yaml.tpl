@@ -39,6 +39,12 @@ inhibit_rules:
       alertname: 'PodNotReady|ManyPodsNotReadyOnNode'
     equal: ['node']
 
+  - source_match_re:
+      context: "inhibition"
+    target_match_re:
+      alertname: '.*'
+    equal: ['tier', 'inhibition_host']
+
 route:
   group_by: ['region', 'service', 'alertname', 'cluster']
   group_wait: 1m
