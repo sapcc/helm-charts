@@ -146,7 +146,7 @@ quota_security_group_rule = 4
 # The number of threads available for privsep to concurrently run processes.
 # Defaults to the number of CPU cores in the system (integer value)
 # Minimum value: 1
-thread_pool_size = 1
+thread_pool_size = 2
 
 {{- include "osprofiler" . }}
 
