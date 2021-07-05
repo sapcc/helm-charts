@@ -143,7 +143,7 @@
     - source_labels: [__name__]
       target_label: domain_id
       regex: ^vrops_hostsystem_.+
-      replacement: "{{ .Values.neo.domain_id}}"
+      replacement: "{{ .Values.neo.domain_id  }}"
 {{- end }}
 
   metrics_path: '/federate'
