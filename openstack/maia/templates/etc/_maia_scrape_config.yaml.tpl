@@ -139,6 +139,12 @@
       target_label: project_id
     - regex: 'project'
       action: labeldrop
+{{- if .Values.neo.enabled }}
+    - source_labels: __name__
+      regex: ^vrops_hostsystem_.+
+      target_label: domain_id
+      replacement: '{{ .Values.neo.domain_id}}'
+{{- end }}
 
   metrics_path: '/federate'
   params:
@@ -158,11 +164,13 @@
       - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
       - '{__name__=~"^vrops_virtualmachine_network_.+"}'
       - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
+{{- if .Values.neo.enabled }}
       - '{__name__=~"^vrops_hostsystem_cpu_model"}'
       - '{__name__=~"^vrops_hostsystem_cpu_sockets_number"}'
       - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage"}'
       - '{__name__=~"^vrops_hostsystem_memory_ballooning_kilobytes"}'
       - '{__name__=~"^vrops_hostsystem_memory_contention_percentage"}'
+{{- end }}
 
 # For cronus reputation dashboard https://documentation.global.cloud.sap/services/email-howto-reputation
 {{- if .Values.cronus.enabled }}
