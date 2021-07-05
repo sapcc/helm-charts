@@ -140,7 +140,7 @@
     - regex: 'project'
       action: labeldrop
 {{- if .Values.neo.enabled }}
-    - source_labels: __name__
+    - source_labels: [__name__]
       regex: ^vrops_hostsystem_.+
       target_label: domain_id
       replacement: '{{ .Values.neo.domain_id}}'
