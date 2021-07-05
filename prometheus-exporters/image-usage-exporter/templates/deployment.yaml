@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "image-usage-exporter.fullname" . }}
+  namespace: infra-monitoring
 spec:
   replicas: 1
   selector:
@@ -34,7 +35,7 @@ spec:
           - name: DB_PASSWORD
             value: {{ .Values.global.datahub.password }}
           - name: DB_HOST
-            value: "datahubdb-mariadb.datahub.svc.kubernetes.{{ .Values.global.region }}.cloud.sap"
+            value: "datahubdb-mariadb.datahub"
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
