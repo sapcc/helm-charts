@@ -26,6 +26,7 @@ spec:
   - name: cloud_network_admin
   - name: cloud_volume_admin
   - name: cloud_baremetal_admin
+  - name: swiftoperator
 
   services:
   - name: nova
@@ -116,6 +117,10 @@ spec:
       role_assignments:
       - user: admin@Default
         role: cloud_compute_admin
+    - name: master
+      role_assignments:
+      - user: {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix | default "" }}@Default
+        role: swiftoperator
     groups:
     - name: CCADMIN_CLOUD_ADMINS
       role_assignments:
