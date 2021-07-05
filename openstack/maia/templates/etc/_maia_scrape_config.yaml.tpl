@@ -141,9 +141,9 @@
       action: labeldrop
 {{- if .Values.neo.enabled }}
     - source_labels: [__name__]
-      regex: ^vrops_hostsystem_.+
       target_label: domain_id
-      replacement: '{{ .Values.neo.domain_id}}'
+      regex: ^vrops_hostsystem_.+
+      replacement: "{{ .Values.neo.domain_id}}"
 {{- end }}
 
   metrics_path: '/federate'
@@ -151,11 +151,6 @@
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^snmp_f5_.+"}'
-#      - '{__name__=~"^vcenter_cpu_.+"}'
-#      - '{__name__=~"^vcenter_disk_.+"}'
-#      - '{__name__=~"^vcenter_mem_.+"}'
-#      - '{__name__=~"^vcenter_net_.+"}'
-#      - '{__name__=~"^vcenter_virtualDisk_.+"}'
       - '{__name__=~"^netapp_capacity_.+"}'
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
