@@ -96,7 +96,7 @@ enable_proxy_headers_parsing = true
 [agent]
 {{ if .Values.agent.rootwrap_daemon }}
 root_helper = sudo
-# root_helper_daemon = neutron-rootwrap-daemon /etc/neutron/rootwrap.conf
+root_helper_daemon = neutron-rootwrap-daemon /etc/neutron/rootwrap.conf
 {{ else }}
 root_helper = neutron-rootwrap /etc/neutron/rootwrap.conf
 {{ end }}
@@ -147,7 +147,6 @@ quota_security_group_rule = 4
 # Defaults to the number of CPU cores in the system (integer value)
 # Minimum value: 1
 thread_pool_size = 3
-helper_command = privsep-helper --config-file=/etc/neutron/neutron.conf
 
 {{- include "osprofiler" . }}
 
