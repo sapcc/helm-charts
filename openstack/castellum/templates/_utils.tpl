@@ -10,7 +10,7 @@
 - name: CASTELLUM_DEBUG
   value: "false"
 - name: CASTELLUM_ASSET_MANAGERS
-  value: "nfs-shares,project-quota"
+  value: "nfs-shares,project-quota,server-groups"
 - name: CASTELLUM_DB_PASSWORD
   valueFrom:
     secretKeyRef:
