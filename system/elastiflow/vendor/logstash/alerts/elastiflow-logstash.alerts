@@ -13,8 +13,11 @@ groups:
     annotations:
       description: '{{`{{ $labels.app }}`}} node(s) in controlplane cluster missing, please check'
       summary: '{{`{{ $labels.app }}`}} node(s) missing'
+
   - alert: ElastiflowIncreasedPipelineEvents
-    expr: rate(logstash_node_pipeline_events_filtered_total{app="elastiflow-logstash"}[10m]) - rate(logstash_node_pipeline_events_filtered_total{app="elastiflow-logstash"}[1h]) > 300
+    expr: |
+        rate(logstash_node_pipeline_events_filtered_total{app="elastiflow-logstash"}[10m]) -
+        rate(logstash_node_pipeline_events_filtered_total{app="elastiflow-logstash"}[1h]) > 300
     for: 5m
     labels:
       severity: info
