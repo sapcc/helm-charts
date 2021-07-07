@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: {{ include "image-usage-exporter.fullname" . }}
+  namespace: infra-monitoring
+  labels:
+    prometheus: {{ .Values.exporter.prometheus }}
+
+spec:
+  jobLabel: {{ include "image-usage-exporter.fullname" . }}
+
+  selector:
+    matchLabels:
+      app: {{ include "image-usage-exporter.fullname" . }}
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    any: true
+
+  podMetricsEndpoints:
+    - interval: 86400s
+      scrapeTimeout: 50s
+      port: metrics
