@@ -20,7 +20,7 @@ groups:
       severity: info
       tier: net
       service: elastiflow
-      context: "{{ $labels.component }}"
+      context: logstash
       meta: "Controller `{{ $labels.controller_revision_hash }}` in region `{{ $labels.region }}` has an increased number of pipeline events."
       playbook: /docs/devops/alert/network/increased_pipeline_events_todo.html
     annotations:
