@@ -179,6 +179,8 @@
       - '{__name__=~"^vrops_hostsystem_runtime_connectionstate"}'
       - '{__name__=~"^vrops_hostsystem_runtime_powerstate"}'
       - '{__name__=~"^vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost"}'
+      - '{__name__=~"^vrops_hostsystem_hardware_bios_version"}'
+      - '{__name__=~"^vrops_hostsystem_hardware_model"}'
       - '{__name__=~"^vrops_virtualmachine_memory_usage_average"}'
       - '{__name__=~"^vrops_virtualmachine_memory_kilobytes"}'
       - '{__name__=~"^vrops_virtualmachine_number_vcpus_total"}'
@@ -188,8 +190,6 @@
       - '{__name__=~"^vrops_virtualmachine_runtime_powerstate"}'
       - '{__name__=~"^vrops_datastore_.+", type!~"local"}'
       - '{__name__=~"^vrops_nsxt.*"}'
-      - '{__name__=~"^vrops_hostsystem_hardware_bios_version"}'
-      - '{__name__=~"^vrops_hostsystem_hardware_model"}'
 
   relabel_configs:
     - action: replace
