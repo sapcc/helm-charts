@@ -1,7 +1,14 @@
 groups:
-- name: test
+- name: elastiflow-logstash.alerts
   rules:
-  - alert: hugo
+  - alert: ElastiflowLogstashPodMissing
     expr: 1 > 0
+    for: 15m
+    labels:
+      context: logstash
+      service: elastiflow
+      severity: info
+      tier: os
     annotations:
-      description: 'test'
+      description: {{ $labels.app }} node(s) in controlplane cluster missing, please check
+      summary: {{ $labels.app }} node(s) missing
