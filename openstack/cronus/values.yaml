@@ -141,23 +141,31 @@ config:
   websiteURL: https://example.com
   allowedServices:
     email: email-region
+  # extra SMTP backends and a list of recipient domains
+  smtpBackends:
+    int:
+      # backend hostname. scheme specifies the encryption method: none, tls, starttls
+      host: scheme://server:port
+      # a list of recipient domains, which will be redirected to this backend
+      domains:
+        - corp.int
+        - int
   # the list of domains to be blocked by a proxy server on ses email identity create/delete actions
   blockedDomains:
     - example.com # the exact domain
     - .example.com # all subdomains
     - sub.example.com # the exact subdomain
   cronusPolicy:
-    project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user)
-    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user)
-    # a policy to trigger a cache warmup
-    warmup_projects_cache: role:resource_service
-    cronus:usage_viewer: rule:project_scope or rule:domain_scope or role:cloud_email_admin or role:resource_service
+    project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
+    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
+    cronus:usage_viewer: rule:project_scope or rule:domain_scope or role:resource_service
     cronus:aws_proxy: rule:project_scope
     cronus:smtp_proxy: rule:project_scope
+    warmup_projects_cache: role:resource_service
   nebulaPolicy:
-    project_scope: project_id:%(project_id)s and role:email_admin
-    domain_scope: domain_id:%(target.project.domain.id)s and role:cloud_email_admin
-    cluster_scope: project_domain_name:ccadmin and project_name:cloud_admin
+    project_scope: project_id:%(project_id)s and (role:email_admin or role:cloud_email_admin)
+    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:cloud_email_admin)
+    cluster_scope: (project_domain_name:ccadmin and project_name:cloud_admin) or role:cloud_email_admin
     cluster_or_domain_scope: rule:cluster_scope or rule:domain_scope
     nebula:admin: rule:project_scope or rule:cluster_or_domain_scope
     nebula:cloud_admin: rule:cluster_or_domain_scope

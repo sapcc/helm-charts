@@ -42,6 +42,20 @@ cronus:
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
+{{- if .Values.config.smtpBackends }}
+  # extra SMTP backends and a list of recipient domains
+  smtpBackends:
+{{- range $k, $v := .Values.config.smtpBackends }}
+    {{ $k }}:
+      host: {{ $v.host }}
+{{- if $v.domains }}
+      domains:
+{{- range $kd, $vd := $v.domains }}
+        - {{ $vd }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
   # blocked sender domains
   blockedDomains:
 {{- range $k, $v := .Values.config.blockedDomains }}
