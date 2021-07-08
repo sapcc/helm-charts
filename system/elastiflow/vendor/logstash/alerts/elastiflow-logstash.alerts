@@ -1,7 +1,7 @@
 groups:
 - name: elastiflow-logstash.alerts
   rules:
-  - alert: ElastiflowIncreasedPipelineEvents
+  - alert: ElastiflowIncreasePipelineEvents
     expr: |
         rate(logstash_node_pipeline_events_filtered_total{app="elastiflow-logstash"}[10m]) -
         rate(logstash_node_pipeline_events_filtered_total{app="elastiflow-logstash"}[1h]) > 300
@@ -11,8 +11,8 @@ groups:
       tier: net
       service: elastiflow
       context: '{{ $labels.component }}'
-      meta: 'Controller `{{ $labels.controller_revision_hash }}` in region `{{ $labels.region }}` has an increased number of pipeline events.'
+      meta: "Controller {{ $labels.controller_revision_hash }} in region {{ $labels.region }} has an increased number of pipeline events."
       playbook: /docs/devops/alert/network/increased_pipeline_events_todo.html
     annotations:
-      description: 'Controller `{{ $labels.controller_revision_hash }}` in region `{{ $labels.region }}` has an increased number of pipeline events.'
-      summary: 'Controller `{{ $labels.controller_revision_hash }}` in region `{{ $labels.region }}` has an increased number of pipeline events.'
+      description: "Controller {{ $labels.controller_revision_hash }} in region {{ $labels.region }} has an increased number of pipeline events."
+      summary: "Controller {{ $labels.controller_revision_hash }} in region {{ $labels.region }} has an increased number of pipeline events."
