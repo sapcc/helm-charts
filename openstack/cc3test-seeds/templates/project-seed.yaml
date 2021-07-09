@@ -1,5 +1,5 @@
 {{ $values := .Values }}
-{{- range $i, $project := .Values.projects_config }}
+{{- range $i, $project := .Values.projects }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -88,18 +88,20 @@ spec:
           cidr: 10.180.0.0/16
           ip_version: 4
       {{- end }}
+      {{- range $i, $router := $project.routers }}
       routers:
-      - name: private_canary_test_cc3test_router
+      - name: {{ $router.name }}
         external_gateway_info:
-          network: dump
+          network: {{ $router.gateway.network }}
           external_fixed_ips:
-          - subnet: dump
+            - subnet: {{ $router.gateway.subnet }}
         interfaces:
-        - subnet: private_canary_test_cc3test_sub
+          - subnet: {{ $router.interface.subnet }}
+      {{- end }}
 
   rbac_policies:
     - object_type: network
-      object_name: dump
+      object_name: {{ $project.rbac.object_name }}
       action: access_as_shared
       target_tenant_name: {{ $project.name }}@cc3test
 
