@@ -1,0 +1,106 @@
+{{ $values := .Values }}
+{{- range $i, $project := .Values.projects_config }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: cc3test-{{ $project.name }}-seed
+  labels:
+    component: cc3test
+
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-cc3test-seed
+
+  domains:
+  - name: cc3test
+    description: 'Converged Cloud Testing'
+
+    groups:
+    - name: CC3TEST_DOMAIN_ADMINS
+      role_assignments:
+      - project: {{ $project.name }}
+        role: admin
+      - project: {{ $project.name }}
+        role: automation_admin
+      - project: {{ $project.name }}
+        role: compute_admin
+      - project: {{ $project.name }}
+        role: keymanager_admin
+      - project: {{ $project.name }}
+        role: kubernetes_admin
+      - project: {{ $project.name }}
+        role: network_admin
+      - project: {{ $project.name }}
+        role: resource_admin
+      - project: {{ $project.name }}
+        role: sharedfilesystem_admin
+      - project: {{ $project.name }}
+        role: swiftoperator
+      - project: {{ $project.name }}
+        role: volume_admin
+      - project: {{ $project.name }}
+        role: member
+      - project: {{ $project.name }}
+        role: audit_viewer
+
+    projects:
+    - name: {{ $project.name }}
+      role_assignments:
+      - user: {{ $values.users.admin.username }}
+        role: admin
+      - user: {{ $values.users.admin.username }}
+        role: automation_admin
+      - user: {{ $values.users.admin.username }}
+        role: compute_admin
+      - user: {{ $values.users.admin.username }}
+        role: keymanager_admin
+      - user: {{ $values.users.admin.username }}
+        role: kubernetes_admin
+      - user: {{ $values.users.admin.username }}
+        role: network_admin
+      - user: {{ $values.users.admin.username }}
+        role: resource_admin
+      - user: {{ $values.users.admin.username }}
+        role: sharedfilesystem_admin
+      - user: {{ $values.users.admin.username }}
+        role: swiftoperator
+      - user: {{ $values.users.admin.username }}
+        role: volume_admin
+      - user: {{ $values.users.admin.username }}
+        role: member
+      - user: {{ $values.users.admin.username }}
+        role: audit_viewer
+      - user: {{ $values.users.member.username }}
+        role: member
+      network_quota:
+        subnetpool: 5
+        subnet: 5
+        network: 5
+        rbac_policy: 10
+        router: 3
+      networks:
+      {{- range $i, $network := $project.networks }}
+      - name: {{ $network.name }}
+        subnets:
+        - name: {{ $network.subnet }}
+          cidr: 10.180.0.0/16
+          ip_version: 4
+      {{- end }}
+      routers:
+      - name: private_canary_test_cc3test_router
+        external_gateway_info:
+          network: dump
+          external_fixed_ips:
+          - subnet: dump
+        interfaces:
+        - subnet: private_canary_test_cc3test_sub
+
+  rbac_policies:
+    - object_type: network
+      object_name: dump
+      action: access_as_shared
+      target_tenant_name: {{ $project.name }}@cc3test
+
+{{- end }}
