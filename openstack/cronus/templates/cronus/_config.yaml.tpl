@@ -1,5 +1,6 @@
 {{- if .Values.cronus.enabled -}}
 cronus:
+  hostname: cronus.{{ .Values.global.region }}.{{ .Values.global.tld }}
   cacheSize: {{ .Values.cronus.cacheSize }}
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
   barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
