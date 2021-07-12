@@ -4,6 +4,7 @@ cronus:
   cacheSize: {{ .Values.cronus.cacheSize }}
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
   barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
+  awsSignV2TTL: {{ .Values.config.awsSignV2TTL }}
 {{- if .Values.config.retry }}
   retry:
 {{- if .Values.config.retry.maxConnectionRetries }}
