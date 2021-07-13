@@ -108,6 +108,3 @@ region_name = {{.Values.global.region}}
 
 [coordination]
 backend_url = memcached://{{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
-
-[nova]
-interface = admin
