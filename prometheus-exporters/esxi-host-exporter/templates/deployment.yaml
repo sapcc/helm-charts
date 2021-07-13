@@ -20,7 +20,7 @@ spec:
       containers:
         - name: esxi-host-exporter
           imagePullPolicy: IfNotPresent
-          image: {{ Values.docker_repo }}/esxi-host-exporter:{{ Values.image_version | replace "string:" "" }}
+          image: {{ $.Values.docker_repo }}/esxi-host-exporter:{{ $.Values.image_version | replace "string:" "" }}
           command:
             - python3 exporter.py
           ports:
@@ -28,15 +28,22 @@ spec:
               containerPort: {{ $.Values.listen_port }}
           env:
             - name: VCENTER_USER
-              value: {{ Values.vcenter_user | quote }}
+              value: {{ $.Values.vcenter_user | quote }}
             - name: VCENTER_PASSWORD
-              value: {{ Values.vcenter_password }}
+              value: {{ $.Values.vcenter_password }}
             - name: ESXI_USER
-              value: {{ Values.esxi_user | quote }}
+              value: {{ $.Values.esxi_user | quote }}
             - name: ESXI_PASSWORD
-              value: {{ Values.esxi_password | quote }}
+              value: {{ $.Values.esxi_password | quote }}
             - name: ATLAS_FILE
               value: /atlas/netbox.json
+          resources:
+            limits:
+              memory: {{ required ".Values.resources.limits.memory missing" $.Values.resources.limits.memory }}
+              cpu: {{ required ".Values.resources.limits.cpu missing" $.Values.resources.limits.cpu }}
+            requests:
+              memory: {{ required ".Values.resources.requests.memory missing" $.Values.resources.requests.memory }}
+              cpu: {{ required ".Values.resources.requests.cpu missing" $.Values.resources.requests.cpu }}
           volumeMounts:
             - mountPath: /atlas
               name: atlas-output
@@ -46,7 +53,7 @@ spec:
               readOnly: true
       volumes:
         - configMap:
-            name: {{ .Values.atlas_configmap }}
+            name: {{ $.Values.atlas_configmap }}
           name: atlas-output
         - configMap:
             name: esxi-host-exporter-config
