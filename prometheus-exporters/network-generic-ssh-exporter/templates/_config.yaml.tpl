@@ -40,6 +40,54 @@ metrics:
     command: show ip nat statistics | incl Misses
     timeout_secs: 3
 
+  nat_portblock_tcp_start:
+    regex: >-
+      ( {0,2}(\d+) {0,2}-(\d+) {1,4}rfcnt (\d+))
+    multi_value: true
+    value: $2
+    labels:
+      start: $2
+    description: show portblock start handed out to NAT 
+    metric_type_name: gauge
+    command: show ip nat portblock dynamic global | sec tcp
+    timeout_secs: 4
+
+  nat_portblock_tcp_end:
+    regex: >-
+      ( {0,2}(\d+) {0,2}-(\d+) {1,4}rfcnt (\d+))
+    multi_value: true
+    value: $3
+    labels:
+      start: $2
+    description: show portblock start handed out to NAT 
+    metric_type_name: gauge
+    command: show ip nat portblock dynamic global | sec tcp
+    timeout_secs: 4
+
+  nat_portblock_udp_start:
+    regex: >-
+      ( {0,2}(\d+) {0,2}-(\d+) {1,4}rfcnt (\d+))
+    multi_value: true
+    value: $2
+    labels:
+      start: $2
+    description: show portblock start handed out to NAT 
+    metric_type_name: gauge
+    command: show ip nat portblock dynamic global | sec udp
+    timeout_secs: 4
+
+  nat_portblock_udp_end:
+    regex: >-
+      ( {0,2}(\d+) {0,2}-(\d+) {1,4}rfcnt (\d+))
+    multi_value: true
+    value: $3
+    labels:
+      start: $2
+    description: show portblock start handed out to NAT 
+    metric_type_name: gauge
+    command: show ip nat portblock dynamic global | sec udp
+    timeout_secs: 4
+
   redundancy_state:
     regex: "My Role: ([A-Z]+)"
     value: $1
@@ -210,6 +258,42 @@ metrics:
     metric_type_name: counter
     command: show platform software punt-policer
     timeout_secs: 10
+  
+  software_nat_counter_received_nat:
+    regex: >-
+      ((\d+) (.+?)\n)+
+    multi_value: true
+    value: $2
+    labels:
+      message_type: $3
+    description: Shows messages received from NAT
+    metric_type_name: counter
+    command: show platform software nat counter | sec NAT
+    timeout_secs: 4
+
+  software_nat_counter_sent_fman:
+    regex: >-
+      ((\d+) (.+?)\n)+
+    multi_value: true
+    value: $2
+    labels:
+      message_type: $3
+    description: Shows messages sent to fman from NAT
+    metric_type_name: counter
+    command: show platform software nat counter | sec Forwarding
+    timeout_secs: 4
+
+  software_nat_counter_received_rp:
+    regex: >-
+      ((\d+) (.+?)\n)+
+    multi_value: true
+    value: $2
+    labels:
+      message_type: $3
+    description: Shows messages received from RP FMAN
+    metric_type_name: counter
+    command: show platform software nat counter | sec RP
+    timeout_secs: 4
 
   qfp_classification_ce_data_nat_1001_classes:
     regex: >-
@@ -379,6 +463,10 @@ batches:
     - nat_static
     - nat_misses
     - nat_hits
+    - nat_portblock_tcp_start
+    - nat_portblock_tcp_end
+    - nat_portblock_udp_start
+    - nat_portblock_udp_end
     - redundancy_state
     - redundancy_send_fails_delete
     - redundancy_send_fails_add
@@ -393,6 +481,9 @@ batches:
     - software_punt_polcier_conform_high
     - software_punt_polcier_drop_normal
     - software_punt_polcier_drop_high
+    - software_nat_counter_received_nat
+    - software_nat_counter_sent_fman
+    - software_nat_counter_received_rp
     - qfp_classification_ce_data_nat_1001_classes
     - qfp_classification_client_nat_1001_classes
     - qfp_nat_datapath_stats
