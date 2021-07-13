@@ -29,6 +29,16 @@ spec:
         prometheus.io/port: "9479"
         prometheus.io/targets: "infra-collector"
     spec:
+      affinity:
+        podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - elastiflow-logstash
+                topologyKey: kubernetes.io/hostname
       containers:
       - name: filebeat
         image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.filebeat.image variable missing" .Values.filebeat.image }}:{{ required ".Values.filebeat.imageTag variable missing" .Values.filebeat.imageTag }}
