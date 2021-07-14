@@ -27,7 +27,7 @@ spec:
     metadata:
       labels:
         name: neutron-asr1k-{{ $config_agent.name }}
-{{ tuple . "neutron" "asr1k-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ tuple $context "neutron" "asr1k-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         pod.beta.kubernetes.io/hostname:  {{ $config_agent.hostname }}
         prometheus.io/scrape: "true"
