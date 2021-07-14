@@ -125,25 +125,6 @@ mysql_metrics:
         GROUP BY octavia_host, provisioning_status;
       values:
         - "count_gauge"
-    - help: Load Balancer pending
-      labels:
-        - "status"
-        - "octavia_host"
-        - "loadbalancer_id"
-        - "loadbalancer_name"
-      name: octavia_loadbalancers_pending
-      query: |
-        (SELECT
-          '1' AS count_gauge,
-          name AS loadbalancer_name,
-          provisioning_status AS status,
-          id AS loadbalancer_id,
-          server_group_id AS octavia_host
-        FROM load_balancer
-        WHERE provisioning_status LIKE "PENDING_%")
-        UNION (select '0', '', '', '', '');
-      values:
-        - "count_gauge"
     - help: Seconds since last non-pending state of LB
       labels:
         - "current_status"
