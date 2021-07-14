@@ -108,3 +108,15 @@ region_name = {{.Values.global.region}}
 
 [coordination]
 backend_url = memcached://{{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
+
+[nova]
+auth_type = v3password
+auth_version = v3
+auth_interface = internal
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+username = {{ .Values.global.cinder_service_user | default "cinder" }}{{ .Values.global.user_suffix }}
+password = {{ required ".Values.global.cinder_service_password is missing" .Values.global.cinder_service_password }}
+user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
+project_name = "{{.Values.global.keystone_service_project | default "service" }}"
+project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
+region_name = {{.Values.global.region}}
