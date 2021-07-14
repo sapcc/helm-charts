@@ -1,4 +1,4 @@
-{{- if .Values.wsgi }}
+{{- if .Values.api.uwsgi }}
 kind: Deployment
 apiVersion: apps/v1
 
@@ -25,13 +25,13 @@ spec:
     metadata:
       labels:
         name: neutron-rpc-server
-{{ tuple . "neutron" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ tuple . "neutron" "rpc" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
     spec:
-{{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+{{ tuple . "neutron" "rpc" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
         - name: neutron-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerRPC | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
@@ -39,7 +39,7 @@ spec:
           command: ['dumb-init', 'kubernetes-entrypoint']
           env:
             - name: COMMAND
-              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini"
+              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
@@ -61,6 +61,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+          resources:
+{{ toYaml .Values.pod.resources.rpc_server | indent 12 }}
           volumeMounts:
             - mountPath: /etc/neutron
               name: empty-dir
@@ -92,6 +96,18 @@ spec:
               name: neutron-etc-vendor
               subPath: ml2-conf-asr1k.ini
               readOnly: true
+            {{- if .Values.bgp_vpn.enabled }}
+            - mountPath: /etc/neutron/networking-bgpvpn.conf
+              name: neutron-etc
+              subPath: networking-bgpvpn.conf
+              readOnly: true
+            {{- end}}
+            {{- if .Values.fwaas.enabled }}
+            - mountPath: /etc/neutron/neutron-fwaas.ini
+              name: neutron-etc
+              subPath: neutron-fwaas.ini
+              readOnly: true
+            {{- end}}
         - name: statsd
           image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
