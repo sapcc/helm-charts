@@ -2,28 +2,28 @@ groups:
 - name: snmp-ntp-asr04.alerts
   rules:
   - alert: NetworkAsr04NtpRootDispersion
-    expr: snmp_asr04_ntpEntStatusDispersion > 5000
-    for: 15m
+    expr: avg_over_time(snmp_asr04_ntpEntStatusDispersion[10m]) > 3000
+    for: 10m
     labels:
-      severity: info
+      severity: warning
       tier: net
       service: asr04
       context: "{{ $labels.component }}"
       meta: "Cisco ASR04 device `{{ $labels.devicename }}` has a high root dispersion."
-      playbook: /docs/devops/alert/network/ntp_todo.html
+      playbook: /docs/devops/alert/network/ntp.html
     annotations:
       description: "Cisco ASR04 device `{{ $labels.devicename }}` has a high root dispersion."
       summary: "Cisco ASR04  device `{{ $labels.devicename }}` has a high root dispersion."
   - alert: NetworkAsr04NtpOffset
-    expr: snmp_asr04_ntpEntStatusActiveOffset > 300
-    for: 15m
+    expr: avg_over_time(snmp_asr04_ntpEntStatusActiveOffset[10m]) < -200 or avg_over_time(snmp_asr04_ntpEntStatusActiveOffset[10m]) > 200 
+    for: 10m
     labels:
-      severity: info
+      severity: warning
       tier: net
       service: asr04
       context: "{{ $labels.component }}"
       meta: "Cisco ASR04 device `{{ $labels.devicename }}` has a high NTP offset."
-      playbook: /docs/devops/alert/network/ntp_todo.html
+      playbook: /docs/devops/alert/network/ntp.html
     annotations:
       description: "Cisco ASR04 device `{{ $labels.devicename }}` has a high NTP offset."
       summary: "Cisco ASR04  device `{{ $labels.devicename }}` has a high NTP offset."
