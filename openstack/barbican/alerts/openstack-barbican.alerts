@@ -34,15 +34,16 @@ groups:
 
   - alert: OpenstackBarbicanUserCertificateExpiresIn30days
     expr: 'openstack_barbican_certificate_expiration_date - time() <= 60 * 60 * 24 * 30'
+    for: 1d
     labels:
       severity: info
       tier: os
       service: 'barbican'
       context: 'barbican'
       dashboard: barbican
-      meta: 'Certificate {{ $labels.name }} will expire in {{ $value | humanizeDuration }}'
+      meta: 'Certificate {{ $labels.certificate_name }} will expire in {{ $value | humanizeDuration }}'
     annotations:
-      description: 'Certificate {{ $labels.name }} created by user_id {{ $labels.creator_id }} in Project_id {{ $labels.project_id }} will expire in {{ $value | humanizeDuration }}'
+      description: 'Certificate {{ $labels.certificate_name }} created by user_id {{ $labels.creator_id }} in Project_id {{ $labels.project_id }} will expire in {{ $value | humanizeDuration }}'
       summary: 'Certificate will expire soon'
 
   - alert: OpenstackBarbicanUnresolvedSentryIssues
