@@ -32,18 +32,18 @@ groups:
       description: '{{ $labels.check }} API is flapping for 30 minutes.'
       summary: '{{ $labels.check }} API flapping'
 
-#  - alert: OpenstackBarbicanCertificateExpiringIn5days
-#    expr: 'openstack_barbican_certificate_expiration_date - time() < 60 * 60 *24 * 5'
-#    labels:
-#      severity: warning
-#      tier: os
-#      service: 'barbican'
-#      context: 'barbican'
-#      dashboard: barbican
-#      meta: 'Certificate {{ $labels.name }} will expire in {{ $value | humanizeDuration }}'
-#    annotations:
-#      description: 'Certificate {{ $labels.name }} part of Project_ID {{ $labels.project_id }} will expire in {{ $value | humanizeDuration }}'
-#      summary: 'Certificate will expire soon'
+  - alert: OpenstackBarbicanUserCertificateExpiresIn30days
+    expr: 'openstack_barbican_certificate_expiration_date - time() < 60 * 60 * 24 * 30'
+    labels:
+      severity: info
+      tier: os
+      service: 'barbican'
+      context: 'barbican'
+      dashboard: barbican
+      meta: 'Certificate {{ $labels.name }} will expire in {{ $value | humanizeDuration }} days'
+    annotations:
+      description: 'Certificate {{ $labels.name }} created by user_id {{ $labels.creator_id }} in Project_id {{ $labels.project_id }} will expire in {{ $value | humanizeDuration }}'
+      summary: 'Certificate will expire soon'
 
   - alert: OpenstackBarbicanUnresolvedSentryIssues
     expr: sentry_unresolved_issues_count{project="barbican"} > 0
