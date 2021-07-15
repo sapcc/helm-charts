@@ -98,9 +98,16 @@ spec:
 {{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
 
       metricRelabelings:
+        # Ensure pod, pod_name, container, container_name labels are present.
+        - sourceLabels: [ container ]
+          regex: (.+)
+          targetLabel: container_name
         - sourceLabels: [ container_name ]
           regex: (.+)
           targetLabel: container
+        - sourceLabels: [ pod ]
+          regex: (.+)
+          targetLabel: pod_name
         - sourceLabels: [ pod_name ]
           regex: (.+)
           targetLabel: pod

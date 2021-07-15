@@ -1,3 +1,7 @@
+## 4.2.1
+
+* Ensure kubelet and cAdvisor metrics have labels `pod`, `pod_name`, `container`, `container_name` present for compatibility reasons.   
+
 ## 4.2.0
 
 * Upgrade Prometheus to `v2.28.1`.
