@@ -1,0 +1,32 @@
+groups:
+- name: ucsmcrcerrors.alerts
+  rules:
+  - alert: UcsmFaultCritical
+    expr: max_over_time(ucsm_fault[20m]) == 4
+    for: 20m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      context: "ucs-exporter"
+      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs.html
+    annotations:
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
+      summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
+
+  - alert: UcsmCRCErrorMajor
+    expr: max_over_time(ucsm_fault[20m]) == 3
+    for: 20m
+    labels:
+      severity: info
+      tier: metal
+      service: baremetal
+      context: "ucs-exporter"
+      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs.html
+    annotations:
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
+      summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
