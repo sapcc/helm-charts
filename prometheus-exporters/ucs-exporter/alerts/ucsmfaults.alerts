@@ -2,18 +2,18 @@ groups:
 - name: ucsmfaults.alerts
   rules:
   - alert: UcsmFaultCritical
-    expr: max_over_time(ucsm_faults{severity="critical"}[20m])
+    expr: sum(max_over_time(ucsm_faults{severity="critical"}[20m])) > 0 by 
     for: 20m
     labels:
       severity: warning
       tier: metal
       service: baremetal
       context: "{{ $labels.server }}"
-      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html
     annotations:
-      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
       summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
 
   - alert: UcsmFaultMajor
@@ -24,9 +24,9 @@ groups:
       tier: metal
       service: baremetal
       context: "{{ $labels.server }}"
-      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html
     annotations:
-      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
       summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
