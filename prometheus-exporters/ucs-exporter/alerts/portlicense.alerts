@@ -3,13 +3,29 @@ groups:
   rules:
   - alert: UcsServerPortLicenseExpired
     expr: >
-      max_over_time(ucs_server_license{port_name=~".+"}[20m]) == 0
+      max_over_time(ucsm_server_license{port_name=~".+"}[20m]) == 0
+    for: 15m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server }}_{{ $labels.port_name }}"
+      meta: "ucs server {{ $labels.server }} port {{ $labels.port_name }} license is expired."
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs.html#ucsserverportlicenseexpired
+    annotations:
+      description: "ucs server {{ $labels.server }} port {{ $labels.port_name }} license is expired."
+      summary: "ucs server {{ $labels.server }} port {{ $labels.port_name }} license is expired. vpod traffic won't be affected but to be compliant, apply new license."
+
+  - alert: UcsServerPortLicenseGrace
+    expr: >
+      max_over_time(ucsm_server_license{port_name=~".+"}[20m]) == 1
     for: 15m
     labels:
       severity: info
       tier: metal
       service: baremetal
-      context: "ucs-exporter"
+      context: "{{ $labels.server }}_{{ $labels.port_name }}"
       meta: "ucs server {{ $labels.server }} port {{ $labels.port_name }} license is expired."
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html#ucsserverportlicenseexpired
