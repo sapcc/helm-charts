@@ -66,3 +66,11 @@ data:
         <dt>How to fix?</dt>
         <dd>Add the missing labels and annotations, as reported. Note that <code>severity</code> only accepts the values <code>critical</code>, <code>warning</code> and <code>info</code>.</dd>
       </dl>
+    GkResourceLimits: |
+      <p>This check finds containers that do not have CPU and memory limits configured.
+      <dl>
+        <dt>Why is this a problem?</dt>
+        <dd>Such containers could use an unbounded amount of resources (for example, because of a memory leak). Those resources would then not be available to other (potentially more important) containers running on the same node. We have already had API outages because of this.</dd>
+        <dt>How to fix?</dt>
+        <dd>Configure requests and limits for &quot;cpu&quot; and &quot;memory&quot; as described in <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">this article</a>. Choose values based on historical usage, by looking at the <code>container_cpu_usage_seconds_total</code> and <code>container_memory_working_set_bytes</code> metrics in prometheus-kubernetes.</dd>
+      </dl>
