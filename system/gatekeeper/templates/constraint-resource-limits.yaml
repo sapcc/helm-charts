@@ -19,12 +19,16 @@ spec:
         resource_types["cpu"]
         resource_types["memory"]
 
-        violation[{"msg": msg}] {
-            input.review.object.kind == "Pod"
+        missing_limits[{"container": container.name, "type": resource_type}] {
             container := input.review.object.spec.containers[_]
             limits := object.get(container.resources, "limits", {})
             resource_type := resource_types[_]
             object.get(limits, resource_type, "") == ""
+        }
+
+        violation[{"msg": msg}] {
+            input.review.object.kind == "Pod"
+            count(missing_limits) > 0
 
             msg := "cpu and memory limits not set on some or all containers"
             # msg := sprintf("no %s limit set for container %q", [resource_type, container.name])
