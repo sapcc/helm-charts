@@ -14,29 +14,53 @@ spec:
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
-        package resourcelimits
+        # We have such a bafflingly large amount of violations that
+        # Gatekeeper cannot report them all at once. I'd rather have
+        # *something* reported for as many things as possible, even if it
+        # means sacrificing accuracy, so we report only one violation for
+        # each offending pod, and we report on the deployment/daemonset level
+        # if possible to avoid useless duplication of violations.
 
         resource_types["cpu"]
         resource_types["memory"]
 
-        missing_limits[{"container": container.name, "type": resource_type}] {
+        missing_limits_on_pod[{"container": container.name, "type": resource_type}] {
             container := input.review.object.spec.containers[_]
             limits := object.get(container.resources, "limits", {})
             resource_type := resource_types[_]
             object.get(limits, resource_type, "") == ""
         }
 
+        missing_limits_on_pod_template[{"container": container.name, "type": resource_type}] {
+            container := input.review.object.spec.template.spec.containers[_]
+            limits := object.get(container.resources, "limits", {})
+            resource_type := resource_types[_]
+            object.get(limits, resource_type, "") == ""
+        }
+
+        pod_owners["ReplicaSet"]
+        pod_owners["DaemonSet"]
+        pod_owners["StatefulSet"]
+
+        pod_belongs_to[kind] {
+            ref := input.review.object.metadata.ownerReferences[_]
+            kind := ref.kind
+            kind == pod_owners[_]
+        }
+
         violation[{"msg": msg}] {
             input.review.object.kind == "Pod"
-            count(missing_limits) > 0
-
+            count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment
+            count(missing_limits_on_pod) > 0
             msg := "cpu and memory limits not set on some or all containers"
-            # msg := sprintf("no %s limit set for container %q", [resource_type, container.name])
-            #
-            # ^ I would like to have this detailed message, but right now, this
-            # would generate such a bafflingly large amount of violations that
-            # Gatekeeper would not be able to report them all. I'd rather have
-            # *something* reported for as many pods as possible, even if it
-            # means sacrificing accuracy.
-            # TODO: enable the more detailed message once we are down to 100 violations or less
+        }
+
+        violation_owners["Deployment"]
+        violation_owners["DaemonSet"]
+        violation_owners["StatefulSet"]
+
+        violation[{"msg": msg}] {
+            input.review.object.kind == violation_owners[_]
+            count(missing_limits_on_pod_template) > 0
+            msg := "cpu and memory limits not set on some or all containers"
         }
