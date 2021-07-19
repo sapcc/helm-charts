@@ -1,0 +1,30 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: gkresourcelimits
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkResourceLimits
+      validation:
+        openAPIV3Schema:
+          properties: {}
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package resourcelimits
+
+        resource_types["cpu"]
+        resource_types["memory"]
+
+        violation[{"msg": msg}] {
+            input.review.object.kind == "Pod"
+            container := input.review.object.spec.containers[_]
+            limits := object.get(container.resources, "limits", {})
+            resource_type := resource_types[_]
+            object.get(limits, resource_type, "") == ""
+
+            msg := sprintf("no %s limit set for container %q", [resource_type, container.name])
+        }
