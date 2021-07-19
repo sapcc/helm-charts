@@ -1,0 +1,15 @@
+groups:
+- name: cc3test-absent.alerts
+  rules:
+  - alert: CCloudOpenstackApiDown
+    expr: rate(cc3test_finished_seconds{type=~"api|datapath"}[10m]) < 0.7
+    labels:
+      severity: critical
+      tier: monitor
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: cc3test-overview
+      meta: '{{ $labels.type }} test for {{ $labels.service }} is not running for more than 10 minutes'
+    annotations:
+      description: '{{ $labels.type }} test for {{ $labels.service }} is not running for more than 10 minutes'
+      summary: '{{ $labels.type }} test for {{ $labels.service }} is down'
