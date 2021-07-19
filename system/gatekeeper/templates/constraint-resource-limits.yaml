@@ -26,5 +26,13 @@ spec:
             resource_type := resource_types[_]
             object.get(limits, resource_type, "") == ""
 
-            msg := sprintf("no %s limit set for container %q", [resource_type, container.name])
+            msg := "cpu and memory limits not set on some or all containers"
+            # msg := sprintf("no %s limit set for container %q", [resource_type, container.name])
+            #
+            # ^ I would like to have this detailed message, but right now, this
+            # would generate such a bafflingly large amount of violations that
+            # Gatekeeper would not be able to report them all. I'd rather have
+            # *something* reported for as many pods as possible, even if it
+            # means sacrificing accuracy.
+            # TODO: enable the more detailed message once we are down to 100 violations or less
         }
