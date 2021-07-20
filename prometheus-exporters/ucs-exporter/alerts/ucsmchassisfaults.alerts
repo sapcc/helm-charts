@@ -1,8 +1,22 @@
 groups:
 - name: ucsmchassisfaults.alerts
   rules:
-  - alert: UcsmChassisFault
-    expr: count(max_over_time(ucsm_chassis_faults{severity=~"warning"}[30m])) by (server, chassi, severity, type, fault, description)
+  - alert: UcsmChassisFaultCritical
+    expr: count(max_over_time(ucsm_chassis_faults{severity=~"major"}[30m])) by (server, chassi, severity, type, fault, description)
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server }}_{{ $labels.chassi }}"
+      meta: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity {{ $labels.severity }}"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs.html#ucsmchassisfault
+    annotations:
+      description: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }}, description : {{ $labels.description }}"
+      summary: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity {{ $labels.severity }}"
+
+  - alert: UcsmChassisFaultWarn
+    expr: count(max_over_time(ucsm_chassis_faults{severity=~"critical"}[30m])) by (server, chassi, severity, type, fault, description)
     labels:
       severity: warning
       tier: metal
@@ -15,10 +29,10 @@ groups:
       description: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }}, description : {{ $labels.description }}"
       summary: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity{{ $labels.severity }}"
 
-  - alert: UcsmChassisFault
-    expr: (max_over_time(ucsm_chassis_faults{severity=~"major|critical"}[30m])) by (server, chassi, severity, type, fault, description)
+  - alert: UcsmChassisFaultInfo
+    expr: count(max_over_time(ucsm_chassis_faults{severity=~"warning"}[30m])) by (server, chassi, severity, type, fault, description)
     labels:
-      severity: critical
+      severity: info
       tier: metal
       service: baremetal
       context: "{{ $labels.server }}_{{ $labels.chassi }}"
@@ -27,4 +41,4 @@ groups:
       playbook: docs/devops/alert/baremetal/ucs.html#ucsmchassisfault
     annotations:
       description: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }}, description : {{ $labels.description }}"
-      summary: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity {{ $labels.severity }}"
+      summary: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity{{ $labels.severity }}"
