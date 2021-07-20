@@ -2,7 +2,7 @@ groups:
 - name: cc3test-datapath.alerts
   rules:
   - alert: CCloudOpenstackDatapathDown
-    expr: cc3test_status{type="datapath"} == 0
+    expr: cc3test_status{type="datapath", name!~"TestDnsLookup_public_dns.+"} == 0
     for: 5m
     labels:
       severity: warning
@@ -18,7 +18,7 @@ groups:
       summary: '{{ $labels.name }} datapath is down'
 
   - alert: CCloudOpenstackDatapathFlapping
-    expr: changes(cc3test_status{type="datapath"}[30m]) > 8
+    expr: changes(cc3test_status{type="datapath", name!~"TestDnsLookup_public_dns.+"}[30m]) > 8
     labels:
       severity: warning
       tier: monitor
@@ -31,3 +31,22 @@ groups:
     annotations:
       description: '{{ $labels.name }} datapath is flapping'
       summary: '{{ $labels.name }} datapath is flapping'
+
+  - alert: CCloudOpenstackDatapathToPublicDnsDown
+    expr: |
+        sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"})
+        /
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"}) < 0.5
+    for: 5m
+    labels:
+      severity: warning
+      tier: monitor
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: cc3test-overview
+      meta: 'More than 50% of the public dns are not responding for more than 5 minutes'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: 'More than 50% of the public dns targets are responding for more than 5 minutes'
+      summary: 'Publkic dns targets not responding'
