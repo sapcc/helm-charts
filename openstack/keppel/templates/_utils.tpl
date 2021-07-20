@@ -102,7 +102,7 @@
 - name:  KEPPEL_GUI_URI
   value: {{ quote $.Values.keppel.dashboard_url_pattern }}
 - name:  KEPPEL_INBOUND_CACHE_EXCEPT_HOSTS
-  value: "keppel\..+"
+  value: "keppel\\..+"
 - name:  KEPPEL_INBOUND_CACHE_OS_AUTH_URL
   value: "https://identity-3.{{ $.Values.federation.leader_region }}.{{ $.Values.global.tld }}/v3"
 - name:  KEPPEL_INBOUND_CACHE_OS_AUTH_VERSION
