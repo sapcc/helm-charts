@@ -10,7 +10,7 @@
     'match[]':
       - '{app="cloudprober-exporter"}'
       - '{app="thousandeyes-exporter"}'
-      - '{app="image-usage-exporter"}'
+      - '{job="infra-monitoring/image-usage-exporter"}'
       - '{app="ping-exporter"}'
       - '{app="vcsa-exporter"}'
       - '{job="asw-eapi"}'
