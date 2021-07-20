@@ -2,29 +2,29 @@ groups:
 - name: ucsmchassisfaults.alerts
   rules:
   - alert: UcsmChassisFault
-    expr: max_over_time(ucsm_chassis_faults{severity=~"warning"}[30m])
+    expr: count(max_over_time(ucsm_chassis_faults{severity=~"warning"}[30m])) by (server, chassi, severity, type, fault, description)
     labels:
       severity: warning
       tier: metal
       service: baremetal
       context: "{{ $labels.server }}_{{ $labels.chassi }}"
-      meta: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity as {{ $labels.severity }}"
+      meta: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity {{ $labels.severity }}"
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html#ucsmchassisfault
     annotations:
       description: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }}, description : {{ $labels.description }}"
-      summary: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }}, description : {{ $labels.description }}"
+      summary: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity{{ $labels.severity }}"
 
   - alert: UcsmChassisFault
-    expr: max_over_time(ucsm_chassis_faults{severity=~"major|critical"}[30m])
+    expr: (max_over_time(ucsm_chassis_faults{severity=~"major|critical"}[30m])) by (server, chassi, severity, type, fault, description)
     labels:
       severity: critical
       tier: metal
       service: baremetal
       context: "{{ $labels.server }}_{{ $labels.chassi }}"
-      meta: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity as {{ $labels.severity }}"
+      meta: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity {{ $labels.severity }}"
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html#ucsmchassisfault
     annotations:
       description: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }}, description : {{ $labels.description }}"
-      summary: "Server {{ $labels.server }} has chassis fault : {{ $labels.fault }}, description : {{ $labels.description }}"
+      summary: "Server {{ $labels.server }} has chassis fault {{ $labels.fault }} with severity {{ $labels.severity }}"

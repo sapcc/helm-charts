@@ -2,7 +2,7 @@ groups:
 - name: ucsmfaults.alerts
   rules:
   - alert: UcsmFaultCritical
-    expr: sum(max_over_time(ucsm_faults{severity="critical"}[30m])) > 0
+    expr: count(max_over_time(ucsm_faults{severity="critical"}[30m])) by (server, severity, type, description)
     for: 20m
     labels:
       severity: warning
@@ -13,11 +13,11 @@ groups:
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html
     annotations:
-      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }} for type {{ $labels.type }}: {{ $labels.description }}"
       summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
 
   - alert: UcsmFaultMajor
-    expr: max_over_time(ucsm_faults{severity="major"}[30m])
+    expr: count(max_over_time(ucsm_faults{severity="major"}[30m])) by (server, severity, type, description)
     for: 20m
     labels:
       severity: info
@@ -28,5 +28,5 @@ groups:
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html
     annotations:
-      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }} for type {{ $labels.type }}: {{ $labels.description }}"
       summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
