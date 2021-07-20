@@ -36,7 +36,7 @@ groups:
     expr: |
         sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"})
         /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"}) < 0.5
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"}) < 0.4
     for: 5m
     labels:
       severity: warning
@@ -44,9 +44,9 @@ groups:
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: cc3test-overview
-      meta: 'More than 50% of the public dns are not responding for more than 5 minutes'
+      meta: 'Most public dns are not responding for more than 5 minutes'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
       playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
-      description: 'More than 50% of the public dns targets are responding for more than 5 minutes'
-      summary: 'Publkic dns targets not responding'
+      description: 'Most public dns are not responding for more than 5 minutes'
+      summary: 'Most public dns not responding'
