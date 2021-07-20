@@ -18,7 +18,8 @@ template: |
     labels:
       system: openstack
       service: netapp-balance-nanny
-  
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
   spec:
     replicas: 1
     strategy:
@@ -28,11 +29,13 @@ template: |
         maxSurge: 1
     selector:
       matchLabels:
-          component: netapp-balance-nanny-{= name =}
+        component: netapp-balance-nanny-{= name =}
     template:
       metadata:
         labels:
           component: netapp-balance-nanny-{= name =}
+          vcenter: {= host =}
+          datacenter: {= availability_zone =}
       spec:
         nodeSelector:
           zone: farm

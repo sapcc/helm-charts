@@ -17,6 +17,9 @@ template: |
       system: openstack
       type: backend
       component: nova
+      vcenter: {= vcenter_name =}
+      datacenter: {= availability_zone =}
+      vccluster: {= cluster_name =}
   spec:
     replicas: 1
     revisionHistoryLimit: 5
@@ -34,6 +37,9 @@ template: |
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
           name: nova-compute-{= name =}
           hypervisor: "vmware"
+          vcenter: {= vcenter_name =}
+          datacenter: {= availability_zone =}
+          vccluster: {= cluster_name =}
         annotations:
           prometheus.io/scrape: "true"
           prometheus.io/port: "9102"

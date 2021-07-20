@@ -17,6 +17,8 @@ template: |
       system: openstack
       type: backend
       component: cinder
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
   spec:
     replicas: 1
     revisionHistoryLimit: 5
@@ -34,6 +36,8 @@ template: |
           application: cinder
           component: volume-vmware
           name: cinder-volume-vmware-{= name =}
+          vcenter: {= host =}
+          datacenter: {= availability_zone =}
         annotations:
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
           configmap-cinder-volume-hash: {= "vcenter_datacenter/{{ .Release.Namespace }}/vcenter-datacenter-cinder-configmap.yaml.j2" | render | sha256sum =}
