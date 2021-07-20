@@ -961,3 +961,21 @@
     - action: labeldrop
       regex: "metrics_label"
 {{ end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.esxi_host_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'esxi-host'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  file_sd_configs:
+      - files :
+        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [job]
+      regex: esxi
+      action: keep
+    - target_label: __address__
+      replacement: esxi-host-exporter:9666
+{{- end }}
