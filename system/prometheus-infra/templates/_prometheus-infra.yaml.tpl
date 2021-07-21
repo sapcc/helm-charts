@@ -16,6 +16,7 @@
       - '{job="bios/ironic"}'
       - '{job="bios/cisco_cp"}'
       - '{job="bios/vpod"}'
+      - '{job="infra-monitoring/image-usage-exporter"}'
       - '{job="ipmi/ironic"}'
       - '{job="vmware-esxi"}'
       - '{job="snmp"}'
@@ -31,7 +32,7 @@
       - '{job="vrops",__name__=~"vrops_api_response"}'
       - '{job="ucs"}'
       - '{job="netbox"}'
-      - '{job="firmware-exporter"}'      
+      - '{job="firmware-exporter"}'
       - '{job="windows-exporter"}'
       - '{job="jumpserver"}'
       - '{__name__=~"^probe_success",job=~"(infra|cc3test)-probe-.+"}'
@@ -116,7 +117,7 @@
 - job_name: pushgateway
   honor_labels: false
   static_configs:
-    - targets: 
+    - targets:
       {{ if .Values.pushgateway_infra.enabled }}
       - 'pushgateway-infra:9091'
       {{ end }}
