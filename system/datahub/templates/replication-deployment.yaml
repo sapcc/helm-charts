@@ -1,0 +1,78 @@
+{{- if $.Values.backup_v2.enabled }}
+{{- $common := $.Values.backup_v2 }}
+{{- $global := $.Values.global }}
+{{- range $backup := $.Values.backup_v2.backups }}
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $backup.name }}-mariadb-replication
+  namespace: datahub
+  labels:
+    system: openstack
+    type: database
+    component: datahub
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ $backup.name }}-replication
+  template:
+    metadata:
+      labels:
+        app: {{ $backup.name }}-replication
+        name: {{ $backup.name }}-replication
+      annotations:
+{{- if $backup.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8082"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
+    spec:
+      affinity:
+{{- if $backup.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- else }}
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: "failure-domain.beta.kubernetes.io/zone"
+                  operator: In
+                  values:
+                  - {{$global.region}}a
+{{- end }}
+      containers:
+      - name: backup
+        image: "{{ required ".Values.global.registry variable missing" $global.registry }}/{{ $common.image }}:{{ $common.image_version }}"
+        command:
+          - backup
+        ports:
+          - containerPort: 8081
+            name: http
+            protocol: TCP
+          - containerPort: 8082
+            name: metrics
+            protocol: TCP
+        env:
+        - name: CONFIG_FILE
+          value: "/etc/config/config.yaml"
+        volumeMounts:
+        - name: mariadb-backup-etc
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+        - name: mariadb-backup-etc
+          configMap:
+            name:  mariadb-backup-{{$backup.name}}-etc
+
+{{- end }}
+{{- end }}

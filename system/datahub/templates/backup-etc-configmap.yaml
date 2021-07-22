@@ -1,0 +1,53 @@
+{{- if .Values.backup_v2.enabled }}
+{{ $common := $.Values.backup_v2 }}
+{{ $mariadb := $.Values.mariadb }}
+{{- range $backup := $.Values.backup_v2.backups }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  mariadb-backup-{{$backup.name}}-etc
+  namespace: datahub
+  labels:
+    app: mariadb
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+    component: database
+data:
+  config.yaml: |
+    namespace: {{ $.Release.Namespace }}
+    service_name: {{ $backup.name }}
+    sidecar: false
+    backup:
+      full_backup_cron_schedule: {{ $backup.full_backup_cron_schedule }}
+      incremental_backup_in_minutes: {{ $backup.incremental_backup_in_minutes }}
+      backup_dir: {{ $backup.backup_dir }}
+      enable_init_restore: {{ $common.enable_init_restore }}
+    database:
+      type: "mariadb"
+      user: root
+      version: {{ $backup.maria_db.version }}
+      password: {{ $backup.root_password }}
+      host: {{ $backup.name }}-mariadb.{{$backup.namespace}}
+      port: 3306
+      data_dir: /var/lib/mysql
+      log_name_format: mysqld-bin
+      databases:
+      {{- range $db := $backup.databases }}
+        - "{{$db}}"
+      {{- end }}
+    storages:
+      maria_db:
+        -   name: datahub
+            host: {{ $mariadb.name }}-mariadb
+            port: {{ $mariadb.port_public }}
+            user: root
+            password: {{ $mariadb.root_password }}
+            databases:
+            {{- range $db := $backup.databases }}
+              - "{{$db}}"
+            {{- end }}
+
+{{- end }}
+{{- end }}
