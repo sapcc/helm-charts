@@ -1,7 +1,7 @@
 groups:
 - name: cc3test-datapath.alerts
   rules:
-  - alert: 'CCTest{{ $labels.name }}DatapathDown'
+  - alert: 'CCTest{{ $labels.service }}DatapathDown'
     expr: cc3test_status{type="datapath", name!~"TestDnsLookup_public_dns.+"} == 0
     for: 5m
     labels:
@@ -17,7 +17,7 @@ groups:
       description: '{{ $labels.name }} datapath is not responding for more than 5 minutes'
       summary: '{{ $labels.name }} datapath is down'
 
-  - alert: 'CCTest{{ $labels.name }}DatapathFlapping'
+  - alert: 'CCTest{{ $labels.service }}DatapathFlapping'
     expr: changes(cc3test_status{type="datapath", name!~"TestDnsLookup_public_dns.+"}[30m]) > 8
     labels:
       severity: warning
@@ -32,7 +32,7 @@ groups:
       description: '{{ $labels.name }} datapath is flapping'
       summary: '{{ $labels.name }} datapath is flapping'
 
-  - alert: 'CCTest{{ $labels.name }}DatapathDown'
+  - alert: CCTestPublicDnsLookupDown'
     expr: |
         sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"})
         /
