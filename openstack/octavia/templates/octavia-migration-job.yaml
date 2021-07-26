@@ -1,7 +1,15 @@
+{{/*
+   With Helm3, we don't force the replacements of job specs anymore, which
+   causes deployment issues since kuberentes job specs are immutable by default.
+   We solve this by generating an image specific name for every deployment,
+   therefor no job will be replaced. Instead, a new job will be spawned while
+   the old one will be deleted.
+*/}}
+{{- $jobSuffix := trimPrefix "octavia-" .Values.imageVersion -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: octavia-migration
+  name: octavia-migration-{{$jobSuffix}}
   labels:
     system: openstack
     type: configuration
