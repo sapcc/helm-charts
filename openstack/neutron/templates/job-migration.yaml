@@ -1,3 +1,11 @@
+{{/*
+   With Helm3, we don't force the replacements of job specs anymore, which
+   causes deployment issues since kuberentes job specs are immutable by default.
+   We solve this by generating an image specific name for every deployment,
+   therefor no job will be replaced. Instead, a new job will be spawned while
+   the old one will be deleted.
+*/}}
+{{- $jobSuffix := trimPrefix "neutron-" .Values.imageVersion -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -11,7 +19,7 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: neutron-migration
+        - name: neutron-migration-{{$jobSuffix}}
           image: {{.Values.global.registry}}/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
           command:
