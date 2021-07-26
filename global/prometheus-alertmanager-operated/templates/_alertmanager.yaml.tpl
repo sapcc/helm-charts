@@ -47,6 +47,14 @@ route:
   receiver: dev-null
 
   routes:
+  - receiver: slack_barbican_certificate
+    continue: false
+    match_re:
+      service: barbican
+      context: certificate
+      severity: info
+      region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
+
   - receiver: slack_nannies
     continue: false
     match_re:
@@ -293,14 +301,6 @@ route:
 
   - receiver: dev-null
     continue: false
-
-  - receiver: slack_barbican_certificate
-      continue: false
-      match_re:
-        service: barbican
-        context: certificate
-        severity: info
-        region: ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|eu-de-1|eu-de-2|eu-nl-1|eu-ru-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1
 
 receivers:
   - name: dev-null
