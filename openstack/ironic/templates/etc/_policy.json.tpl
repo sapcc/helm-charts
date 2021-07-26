@@ -61,7 +61,7 @@
 
     "introspection": "rule:public_api",
     "introspection:version": "rule:public_api",
-    "introspection:continue": "rule:context_is_admin",
+    "introspection:continue": "rule:public_api",
     "introspection:status": "rule:context_is_admin",
     "introspection:start": "rule:context_is_admin",
     "introspection:abort": "rule:context_is_admin",

@@ -86,6 +86,8 @@ spec:
               value: "false"
             - name: SPT_NOENV
               value: "yes,please"
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
               command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -112,6 +114,8 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
+            - name: network-namespace
+              mountPath: /var/run/netns
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
@@ -124,6 +128,8 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
               command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -153,26 +159,25 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
+            - name: network-namespace
+              mountPath: /var/run/netns
         - name: neutron-metadata-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "bash", "-c", "echo -e \"[DEFAULT]\\nhost = $NODE_NAME\\n\" > /run/hostname.conf && exec neutron-metadata-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/metadata-agent.ini --config-file /run/hostname.conf"]
+          command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/metadata-agent.ini"]
           env:
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
                   name: sentry
                   key: neutron.DSN.python
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
             - name: DEBUG_CONTAINER
               value: "false"
-            - name: NODE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/hostname.conf", "--agent-type", "Metadata agent"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--agent-type", "Metadata agent"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -186,6 +191,8 @@ spec:
               readOnly: true
       volumes:
         - name: metadata-proxy
+          emptyDir: {}
+        - name: network-namespace
           emptyDir: {}
         - name: modules
           hostPath:

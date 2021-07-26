@@ -29,6 +29,9 @@ ep_retention_policy_net_external = {{ .Values.aci.ep_retention_policy_net_extern
 {{- if .Values.aci.default_baremetal_pc_policy_group }}
 default_baremetal_pc_policy_group = {{ .Values.aci.default_baremetal_pc_policy_group }}
 {{ end }}
+{{- if .Values.aci.baremetal_reserved_vlan_ids }}
+baremetal_reserved_vlan_ids = {{ .Values.aci.baremetal_reserved_vlan_ids }}
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}

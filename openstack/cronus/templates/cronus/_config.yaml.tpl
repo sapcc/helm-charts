@@ -1,8 +1,10 @@
 {{- if .Values.cronus.enabled -}}
 cronus:
+  hostname: cronus.{{ .Values.global.region }}.{{ .Values.global.tld }}
   cacheSize: {{ .Values.cronus.cacheSize }}
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
   barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
+  awsSignV2TTL: {{ .Values.config.awsSignV2TTL }}
 {{- if .Values.config.retry }}
   retry:
 {{- if .Values.config.retry.maxConnectionRetries }}
@@ -41,6 +43,20 @@ cronus:
     applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
+{{- end }}
+{{- if .Values.config.smtpBackends }}
+  # extra SMTP backends and a list of recipient domains
+  smtpBackends:
+{{- range $k, $v := .Values.config.smtpBackends }}
+    {{ $k }}:
+      host: {{ $v.host }}
+{{- if $v.domains }}
+      domains:
+{{- range $kd, $vd := $v.domains }}
+        - {{ $vd }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
   # blocked sender domains
   blockedDomains:

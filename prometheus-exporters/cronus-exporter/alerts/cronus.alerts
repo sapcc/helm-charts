@@ -6,7 +6,7 @@ groups:
     for: 5m
     labels:
       meta: Cronus - sending emails is below expected in region {{ $labels.region }}
-      service: '{{ $labels.component }}'
+      service: cronus
       severity: critical
       tier: os
       playbook: docs/devops/alert/cronus/#send_email
@@ -18,13 +18,26 @@ groups:
     for: 5m
     labels:
       meta: Cronus cluster - pods fails in region {{ $labels.region }} pod {{ $labels.pod }}
-      service: '{{ $labels.container }}'
+      service: cronus
       severity: critical
       tier: os
       playbook: docs/devops/alert/cronus/#cronus_health
     annotations:
       description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
       summary: problem with sending emails in region {{ $labels.region }}
+  - alert: CronusMaiaDown
+    expr: (count(aws_ses_cronus_provider_send) OR on() vector(0)) == 0
+    for: 5m
+    labels:
+      meta: cronus maia metrics system is down
+      service: cronus
+      severity: critical
+      tier: os
+      playbook: docs/devops/alert/cronus/#maia_down
+    annotations:
+      description: grafana - https://grafana.{{ $labels.region }}.cloud.sap/d/cronushealth/cronushealth?orgId=1 , slack-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5
+      summary: cronus maia metrics system is down
+
 - name: NebulaAlerts
   rules:
   - alert: NebulaReconcile
@@ -32,7 +45,7 @@ groups:
     for: 10m
     labels:
       meta: Nebula - reconcile account fails in {{ $labels.region }} with message {{ $labels.message }} 
-      service: '{{ $labels.component }}'
+      service: cronus
       severity: warning
       tier: os
       playbook: docs/devops/alert/cronus/#nebula_reconcile
@@ -40,11 +53,11 @@ groups:
       description: multicloud-api -  https://db.multicloud.int.sap , multicloud-jira - https://jira.multicloud.int.sap , slack-cc-cronus-dev - https://convergedcloud.slack.com/archives/G01SLHXERL5, log - https://sentry.{{ $labels.region }}.cloud.sap/monsoon/nebula/?query=requestID:{{ $labels.request_id }}
       summary: problem with reconciling an account 
   - alert: NebulaProductionReady24h
-    expr: ((cronus_updater_production_ready{status="active"} offset 24h) + cronus_updater_production_ready{status="active"}) == 0
+    expr: sum by (account_id, project_id) (cronus_updater_production_ready{status="active"} offset 24h)  ==  sum by (account_id, project_id) (cronus_updater_production_ready{status="active"}) == 0
     for: 10m
     labels:
       meta: Nebula - the SES accounts are still in Sandbox for more than 24 hours in the region {{ $labels.region }}
-      service: '{{ $labels.component }}'
+      service: cronus
       severity: warning
       tier: os
       playbook: docs/devops/alert/cronus/#production_ready
@@ -56,7 +69,7 @@ groups:
     for: 10m
     labels:
       meta: Nebula - Multicloud fails to delete accounts for more than 24 hours in a region {{ $labels.region }}
-      service: '{{ $labels.component }}'
+      service: cronus
       severity: warning
       tier: os
       playbook: docs/devops/alert/cronus/#delete_account

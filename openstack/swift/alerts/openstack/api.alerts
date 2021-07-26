@@ -135,7 +135,8 @@ groups:
       summary: swift disks unmounted on the server IP {{ $labels.storage_ip }}
 
   - alert: OpenstackSwiftDiskFailures
-    expr: max(swift_cluster_drives_audit_errors) BY (storage_ip) > 0
+    # Exclude regions qa-de-2 to qa-de-6 as they use iscsi attached disks and no metal tier routing needed
+    expr: max(swift_cluster_drives_audit_errors{region!~"qa-de-[2-6]"}) BY (storage_ip) > 0
     for: 3m
     labels:
       context: drivefailures

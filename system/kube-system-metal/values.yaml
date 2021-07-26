@@ -128,6 +128,11 @@ nginx-ingress:
             default "anonymous";
             ~CN=(?<CN>[^/,\"]+) $CN;
         }
+
+        # Ensure there is a global_request_id for logging
+        map '' $global_request_id {
+            default '-';
+        }
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
       proxy-send-timeout: "300"
@@ -141,7 +146,8 @@ nginx-ingress:
       worker-shutdown-timeout: "18000s"
       worker-processes: "8"
       use-forwarded-headers: "false"
-
+      log-format-upstream: >-
+        $remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time [$proxy_upstream_name] $upstream_addr $upstream_response_length $upstream_response_time $upstream_status $req_id $global_request_id
 
     affinity:
       # don't co-locate replicas of the ingress controller on the same node
@@ -252,6 +258,11 @@ nginx-ingress-external:
             default "anonymous";
             ~CN=(?<CN>[^/,\"]+) $CN;
         }
+
+        # Ensure there is a global_request_id for logging
+        map '' $global_request_id {
+            default '-';
+        }
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
       proxy-send-timeout: "300"
@@ -265,8 +276,8 @@ nginx-ingress-external:
       worker-shutdown-timeout: "18000s"
       worker-processes: "8"
       use-forwarded-headers: "false"
-
-
+      log-format-upstream: >-
+        $remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time [$proxy_upstream_name] $upstream_addr $upstream_response_length $upstream_response_time $upstream_status $req_id $global_request_id
     affinity:
       # don't co-locate replicas of the ingress controller on the same node
       podAntiAffinity:

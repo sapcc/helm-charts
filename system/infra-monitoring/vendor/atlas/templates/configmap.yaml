@@ -36,7 +36,8 @@ data:
           project_name: "{{ .Values.os_project_name }}"
           domain_name: "{{ .Values.os_project_domain_name }}"
       netbox:
-        refresh_interval: 3600
+        refresh_interval: {{ .Values.refresh_interval }}
+        rate_limit: {{ .Values.rate_limit }}
         targets_file_name: "netbox.json"
         configmap_name: {{ .Values.configmap.netbox }}
         {{- if eq .Values.global.region "qa-de-2" }}
@@ -174,7 +175,6 @@ data:
               manufacturer: "f5"
               region: "{{ .Values.global.region }}"
               tag: "cc-net-f5-guest-lbaas"
-              q: "f5"
               status: "active"
 
             - custom_labels: 
@@ -185,7 +185,6 @@ data:
               manufacturer: "f5"
               region: "{{ .Values.global.region }}"
               tag: "cc-net-f5-guest-mgmt"
-              q: "f5"
               status: "active"
 
             - custom_labels: 
@@ -196,7 +195,6 @@ data:
               manufacturer: "f5"
               region: "{{ .Values.global.region }}"
               tag: "cc-net-f5-host"
-              q: "f5"
               status: "active"
 
             - custom_labels: 
@@ -516,4 +514,14 @@ data:
               q: "jump"
               platform: "vmware-esxi"
               status: "active"
+              region: "{{ .Values.global.region }}"
+            # AD Nodes for Windows Exporter 
+            - custom_labels: 
+                job: "windows-exporter"
+              metrics_label: "windows-exporter"
+              target: 1
+              status: "active"
+              role: server
+              platform: "windows-server"
+              tag: "active-directory-domain-controller"
               region: "{{ .Values.global.region }}"
