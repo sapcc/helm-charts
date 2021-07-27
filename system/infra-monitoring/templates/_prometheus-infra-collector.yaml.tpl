@@ -532,7 +532,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
+      replacement: redfish-exporter:{{$values.redfish.listen_port}}
 
 - job_name: 'redfish/cp'
   params:
@@ -552,7 +552,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
+      replacement: redfish-exporter:{{$values.redfish.listen_port}}
     - source_labels: [__meta_serial]
       target_label: server_serial
 
@@ -574,7 +574,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
+      replacement: redfish-exporter:{{$values.redfish.listen_port}}
 {{- end }}
 
 {{- $values := .Values.windows_exporter -}}
