@@ -52,9 +52,11 @@ groups:
       description: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute. Please provide detailed information in the Custom Attribute HW field."
       summary: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute."
   - alert: VMsOnFailoverHost
+    #  Excluding vCLS agent VMs. vCLS ensures that if vCenter Server becomes unavailable, cluster services remain available
+    #  to maintain the resources and health of the workloads that run in the clusters.
     expr: |
       vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost == 1
-      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{state="Powered On"}) by (hostsystem) > 0
+      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state="Powered On"}) by (hostsystem) > 0
     for: 10m
     labels:
       severity: warning
