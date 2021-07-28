@@ -76,6 +76,18 @@ spec:
             name: config
           - mountPath: /etc/http-import/secret
             name: secret
+        resources:
+          # observed usage in qa-de-1:
+          # - during active sync: CPU = 300-400m, RAM = 200-500 MiB
+          # - while sitting idle: CPU = 0, RAM = 50-100 MiB
+          # Note that we can live with the job running throttled since it's a background job anyway.
+          limits:
+            cpu: '300m'
+            memory: '1Gi'
+          requests:
+            cpu: '50m'
+            memory: '100Mi'
+
 ---
 {{end}}
 {{end}}
