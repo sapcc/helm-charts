@@ -15,6 +15,7 @@ groups:
     annotations:
       description: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
   - alert: VcsaSslCertificateExpiryCritical
     expr: vrops_vcenter_vcsa_certificate_remaining_days < 16
     for: 20m
@@ -28,6 +29,7 @@ groups:
     annotations:
       description: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in {{ $value }} days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
   - alert: VCenterCPUUsageWarning
     expr: vrops_vcenter_cpu_used_percent > 75
     for: 30m
@@ -40,6 +42,7 @@ groups:
     annotations:
       description: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
       summary: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
+
   - alert: VCenterCPUUsageCritical
     expr: vrops_vcenter_cpu_used_percent > 90
     for: 30m
@@ -52,6 +55,7 @@ groups:
     annotations:
       description: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
       summary: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
+
   - alert: VCenterMemoryUsageWarning
     expr: vrops_vcenter_memory_used_percent > 75
     for: 30m
@@ -64,6 +68,7 @@ groups:
     annotations:
       description: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
       summary: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
+
   - alert: VCenterMemoryUsageCritical
     expr: vrops_vcenter_memory_used_percent > 90
     for: 30m
@@ -76,6 +81,7 @@ groups:
     annotations:
       description: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
       summary: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
+
   - alert: VCenterDiskSpaceUsageWarning
     expr: vrops_vcenter_diskspace_usage_gigabytes / vrops_vcenter_diskspace_total_gigabytes > 0.7
     for: 30m
@@ -88,6 +94,7 @@ groups:
     annotations:
       description: "Disk space usage of vCSA {{ $labels.vcenter}} is above 70%"
       summary: "Disk space usage of vCSA {{ $labels.vcenter}} is above 70%"
+
   - alert: VCenterDiskSpaceUsageCritical
     expr: vrops_vcenter_diskspace_usage_gigabytes / vrops_vcenter_diskspace_total_gigabytes > 0.9
     for: 15m
@@ -100,3 +107,17 @@ groups:
     annotations:
       description: "Disk space usage of vCSA {{ $labels.vcenter}} is above 90%"
       summary: "Disk space usage of vCSA {{ $labels.vcenter}} is above 90%"
+
+  - alert: VASAProvider(s)Disconnected
+    expr: vrops_vcenter_alert_info{alert_name="VASA Provider(s) disconnected"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter {{ $labels.vcenter }}"
+      meta: "VASA Provider disconnected from {{ $labels.vcenter}}."
+      playbook: docs/devops/alert/vcenter/#vasa_provider_down
+      no_alert_on_absence: "true"
+    annotations:
+      description: "VASA Provider disconnected from {{ $labels.vcenter}}."
+      summary: "VASA Provider disconnected from {{ $labels.vcenter}}."
