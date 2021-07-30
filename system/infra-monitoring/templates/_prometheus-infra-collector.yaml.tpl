@@ -982,7 +982,7 @@
   metrics_path: /
   relabel_configs:
     - source_labels: [job]
-      regex: esxi
+      regex: vmware-esxi
       action: keep
     - target_label: __address__
       replacement: esxi-host-exporter:9666
