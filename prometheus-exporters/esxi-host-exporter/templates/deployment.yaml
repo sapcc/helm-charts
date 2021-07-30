@@ -39,6 +39,8 @@ spec:
               value: {{ $.Values.esxi_password | quote }}
             - name: ATLAS_FILE
               value: /atlas/netbox.json
+            - name: CONFIG_FILE
+              value: {{ $.Values.configmap_path }}config.yaml
           resources:
             limits:
               memory: {{ required ".Values.resources.limits.memory missing" $.Values.resources.limits.memory }}
@@ -50,7 +52,7 @@ spec:
             - mountPath: /atlas
               name: atlas-output
               readOnly: true
-            - mountPath: /exporter/
+            - mountPath: {{ $.Values.configmap_path }}
               name: esxi-exporter-config
               readOnly: true
       volumes:
