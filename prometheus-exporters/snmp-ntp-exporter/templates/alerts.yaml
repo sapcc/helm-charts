@@ -1,7 +1,7 @@
 {{- $values := .Values -}}
 {{- if $values.snmp_exporter.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
-{{- if contains $values.snmp_exporter.alerts.routerModel $path }}
+{{- if contains $values.snmp_ntp_exporter.alerts.routerModel $path }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -11,7 +11,6 @@ metadata:
   labels:
     app: snmp-ntp-exporter
     prometheus: {{ required ".Values.snmp_exporter.alerts.prometheus missing" $values.snmp_exporter.alerts.prometheus }}
-    absent-metrics-operator/disable: "true"
     
 spec:
 {{ printf "%s" $bytes | indent 2 }}
