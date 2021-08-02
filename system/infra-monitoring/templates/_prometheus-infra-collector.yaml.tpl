@@ -983,6 +983,7 @@
       - infra-monitoring
   metrics_path: /
   relabel_configs:
-    - target_label: __address__
-      replacement: esxi-host-exporter:9666
+    - source_labels: [__meta_kubernetes_service_name]
+      regex: esxi-host-exporter
+      action: keep
 {{- end }}
