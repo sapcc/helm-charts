@@ -7,7 +7,7 @@ image_member_quota = 500
 
 log_config_append = /etc/glance/logging.ini
 
-node_staging_uri = file:///upload
+node_staging_uri = file:///tmp/staging
 
 show_image_direct_url = True
 
