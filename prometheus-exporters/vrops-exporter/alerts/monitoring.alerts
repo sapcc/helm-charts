@@ -1,30 +1,19 @@
 groups:
 - name: monitoring.alerts
   rules:
-  - alert: VRopsCollectorDown
-    expr: count by(target) (vrops_api_response != 200) == 1
+  - alert: VRopsAPIDown
+    expr: sum by (target)(vrops_api_response == 200) / count by (target) (vrops_api_response == 200) > 500
     for: 10m
     labels:
       severity: info
       tier: vmware
       service: vrops-exporter
-      meta: "API response is not 200 as expected, check collector logs and kick pod."
+      meta: "`{{ $labels.target }}` API is down. Monitoring of the vCenter is no longer available."
       playbook: "."
     annotations:
-      description: "API response is not 200 as expected, check collector logs and kick pod."
-      summary: "vrops-exporter: solely collector {{ $labels.collector}} talking to {{ $labels.target }} is not working."
-  - alert: VRopsMultipleCollectorsDown
-    expr: count by(target) (vrops_api_response != 200) > 1
-    for: 10m
-    labels:
-      severity: info
-      tier: vmware
-      service: vrops-exporter
-      meta: "Multiple pods are not getting expected API answers. Check vrops-inventory logs and general vROps availability."
-      playbook: "."
-    annotations:
-      description: "Multiple pods are not getting expected API answers. Check vrops-inventory logs and general vROps availability."
-      summary: "vrops-exporter: multiple collectors talking to {{ $labels.target }} are not working."
+      description: "`{{ $labels.target }}` API is down. Monitoring of the vCenter is no longer available."
+      summary: "`{{ $labels.target }}` API is down. Monitoring of the vCenter is no longer available."
+
   - alert: VROpsDiskpaceUsageCritical
     expr: >
       vrops_virtualmachine_guestfilesystem_storage_db_percentage{virtualmachine=~"vrops-vc.*"} > 90
@@ -39,15 +28,27 @@ groups:
     annotations:
       description: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
       summary: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
-  - alert: VROpsReportingZeroVMs
-    expr: sum by (target) (vrops_inventory_vms) <= 1
-    for: 10m
+
+  - alert: VCenterAdapterNotReceivingData
+    expr: vrops_vcenter_alert_info{alert_name="Adapter instance is not receiving data"}
     labels:
       severity: info
       tier: vmware
-      service: vrops-exporter
-      meta: "The vROps API for {{ $labels.target}} no longer reports virtual machines."
-      playbook: "."
+      service: vcenter adapter
+      meta: "vCenter adapter {{ $labels.vcenter }} not receiving data. {{ $labels.recommendation_2 }}"
+      no_alert_on_absence: "true"
     annotations:
-      description: "The vROps API for {{ $labels.target}} no longer reports virtual machines. Revalidating the connection to vCenter might help."
-      summary: "The vROps API for {{ $labels.target}} no longer reports virtual machines. Revalidating the connection to vCenter might help."
+      description: "vCenter adapter {{ $labels.nsxt_adapter }} not receiving data."
+      summary: "vCenter adapter {{ $labels.nsxt_adapter }} not receiving data."
+
+  - alert: NSXTAdapterNotReceivingData
+    expr: vrops_nsxt_adapter_alert_info{alert_name="Adapter instance is not receiving data"}
+    labels:
+      severity: info
+      tier: vmware
+      service: nsxt adapter
+      meta: "NSX-T adapter {{ $labels.nsxt_adapter }} not receiving data. {{ $labels.recommendation_2 }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "NSX-T adapter {{ $labels.nsxt_adapter }} not receiving data."
+      summary: "NSX-T adapter {{ $labels.nsxt_adapter }} not receiving data."
