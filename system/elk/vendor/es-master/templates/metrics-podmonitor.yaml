@@ -52,4 +52,22 @@ spec:
         - action: replace
           targetLabel: cluster
           replacement: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+        - action: drop
+          regex: 'es_index_shards_number;elk-elastic-exporter'
+          sourceLabels: [__name__, job]
+        - action: drop
+          regex: '(es_index_.+);(.kibana.+)'
+          sourceLabels: [__name__, index]
+        - action: drop
+          regex: '(es_index_.+);(.apm.+)'
+          sourceLabels: [__name__, index]
+        - action: drop
+          regex: 'es_index_shards_number;(es-master-[1-9])'
+          sourceLabels: [__name__, pod]
+        - action: drop
+          regex: '(es_index_fielddata_.+|es_index_get_.+|es_index_indexing_.+|es_index_merges_.+|es_index_search_.+|es_index_querycache_.+|es_index_recovery_.+|es_index_refresh_.+|es_index_requestcache_.+|es_index_search_scroll_.+|es_index_segments_.+|es_index_suggest_.+|es_index_translog_.+|es_index_warmer_.+)'
+          sourceLabels: [__name__]
+        - action: drop
+          regex: '(es_indices_indexing_.+|es_indices_merges_.+|es_indices_percolate_.+|es_indices_recovery_.+|es_indices_refresh.+|es_indices_search_.+|es_indices_suggest_.+|es_indices_segments_.+|es_indices_suggest_.+|es_ingest_pipeline_.+|es_indices_search_.+|es_indices_f.+)'
+          sourceLabels: [__name__]
 {{- end }}
