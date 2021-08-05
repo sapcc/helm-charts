@@ -22,5 +22,4 @@ discovery.seed_hosts: es-master
 
 xpack.ml.enabled: false
 xpack.security.enabled: false
-xpack.monitoring.enabled: false
 xpack.watcher.enabled: false
