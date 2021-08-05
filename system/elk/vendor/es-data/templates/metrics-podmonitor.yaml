@@ -3,12 +3,12 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: elk-master-exporter
+  name: elk-data-exporter
   labels:
     prometheus: {{ .Values.exporter.prometheus }}
 
 spec:
-  jobLabel: elk-master-exporter
+  jobLabel: elk-data-exporter
 
   selector:
     matchLabels:
@@ -35,7 +35,7 @@ spec:
         - action: labelmap
           regex: '__meta_kubernetes_pod_label_(.+)'
         - targetLabel: job
-          replacement: elk-master-exporter
+          replacement: elk-data-exporter
       metricRelabelings:
         - sourceLabels: [__name__, cluster]
           regex: '^(es|elasticsearch)_.+;(.*)'
