@@ -54,9 +54,18 @@ spec:
           replacement: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
         - action: drop
           regex: 'es_index_shards_number;elk-data-exporter'
+          sourceLabels: [__name__, type]
+        - action: drop
+          regex: 'es_index_shards_number;(unassigned|relocating|initializing)'
           sourceLabels: [__name__, job]
         - action: drop
+          regex: 'es_index_shards_number;(filebeat.+|systemd.+|jump.+')'
+          sourceLabels: [__name__, index]
+        - action: drop
           regex: '(es_index_.+);(.kibana.+)'
+          sourceLabels: [__name__, index]
+        - action: drop
+          regex: '(es_index_.+);(.async-search.+)'
           sourceLabels: [__name__, index]
         - action: drop
           regex: '(es_index_.+);(.apm.+)'
