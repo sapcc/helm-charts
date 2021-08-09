@@ -3,7 +3,7 @@ apiVersion: apps/v1
 
 metadata:
   name: validation
-  namespace: cc3test
+  namespace: {{ .Values.validation.namespace }}
 
 spec:
   replicas: 1
@@ -28,7 +28,7 @@ spec:
             secretName: cc3test-secrets
       containers:
         - name: validation
-          image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
+          image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.validation.image.name variable missing" .Values.validation.image.name }}:{{ required ".Values.validation.image.tag variable missing" .Values.validation.image.tag }}
           command: ["/bin/sh"]
           args: ["-c", "while true; do date; sleep 5; done"]
           volumeMounts:
