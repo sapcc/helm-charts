@@ -3,8 +3,8 @@ groups:
   rules:
   - alert: NSXTDistributedFirewallSectionUsageLimitExceeded
     expr: |
-        vrops_nsxt_mgmt_cluster_sys_capacity_distributed_firewall_section_usage_count >
-        vrops_nsxt_mgmt_cluster_sys_capacity_distributed_firewall_section_max_supported_count
+        vrops_nsxt_mgmt_cluster_sys_capacity_distributed_firewall_section_usage_count /
+        vrops_nsxt_mgmt_cluster_sys_capacity_distributed_firewall_section_max_supported_count > 0.9
     for: 10m
     labels:
       severity: warning
@@ -20,8 +20,8 @@ groups:
 
   - alert: NSXTDistributedFirewallRulesUsageLimitExceeded
     expr: |
-        vrops_nsxt_mgmt_cluster_sys_capacity_distributed_firewall_rules_usage_count >
-        vrops_nsxt_mgmt_cluster_sys_capacity_distributed_firewall_rules_max_supported_count
+        vrops_nsxt_mgmt_cluster_sys_capacity_distributed_firewall_rules_usage_count /
+        vrops_nsxt_mgmt_cluster_sys_capacity_distributed_firewall_rules_max_supported_count > 0.9
     for: 10m
     labels:
       severity: warning
@@ -37,8 +37,8 @@ groups:
 
   - alert: NSXTLogicalSwitchesUsageLimitExceeded
     expr: |
-        vrops_nsxt_mgmt_cluster_sys_capacity_logical_switches_usage_count >
-        vrops_nsxt_mgmt_cluster_sys_capacity_logical_switches_max_supported_count
+        vrops_nsxt_mgmt_cluster_sys_capacity_logical_switches_usage_count /
+        vrops_nsxt_mgmt_cluster_sys_capacity_logical_switches_max_supported_count > 0.9
     for: 10m
     labels:
       severity: warning
@@ -54,8 +54,8 @@ groups:
 
   - alert: NSXTLogicalSwitchPortsUsageWarningLimitExceeded
     expr: |
-        vrops_nsxt_mgmt_cluster_sys_capacity_logical_switch_ports_usage_count >
-        vrops_nsxt_mgmt_cluster_sys_capacity_logical_switch_ports_max_supported_count
+        vrops_nsxt_mgmt_cluster_sys_capacity_logical_switch_ports_usage_count /
+        vrops_nsxt_mgmt_cluster_sys_capacity_logical_switch_ports_max_supported_count > 0.9
     for: 10m
     labels:
       severity: warning
@@ -71,8 +71,8 @@ groups:
 
   - alert: NSXTGroupsUsageLimitExceeded
     expr: |
-        vrops_nsxt_mgmt_cluster_sys_capacity_nsgroups_max_usage_count >
-        vrops_nsxt_mgmt_cluster_sys_capacity_nsgroups_max_supported_count
+        vrops_nsxt_mgmt_cluster_sys_capacity_nsgroups_max_usage_count /
+        vrops_nsxt_mgmt_cluster_sys_capacity_nsgroups_max_supported_count > 0.9
     for: 10m
     labels:
       severity: warning
@@ -88,8 +88,8 @@ groups:
 
   - alert: NSXTIPSetsUsageLimitExceeded
     expr: |
-        vrops_nsxt_mgmt_cluster_sys_capacity_ip_sets_usage_count >
-        vrops_nsxt_mgmt_cluster_sys_capacity_ip_sets_max_supported_count
+        vrops_nsxt_mgmt_cluster_sys_capacity_ip_sets_usage_count /
+        vrops_nsxt_mgmt_cluster_sys_capacity_ip_sets_max_supported_count > 0.9
     for: 10m
     labels:
       severity: warning
@@ -105,8 +105,8 @@ groups:
 
   - alert: NSXTGroupsBasedInIPUsageLimitExceeded
     expr: |
-        vrops_nsxt_mgmt_cluster_sys_capacity_groups_based_in_ip_usage_count >
-        vrops_nsxt_mgmt_cluster_sys_capacity_groups_based_in_ip_max_supported_count
+        vrops_nsxt_mgmt_cluster_sys_capacity_groups_based_in_ip_usage_count /
+        vrops_nsxt_mgmt_cluster_sys_capacity_groups_based_in_ip_max_supported_count > 0.9
     for: 10m
     labels:
       severity: warning
@@ -120,26 +120,70 @@ groups:
       description: "NSX-T cluster {{ $labels.nsxt_mgmt_cluster }} count of groups based in IP exceeded the supported limit."
       summary: "NSX-T cluster {{ $labels.nsxt_mgmt_cluster }} count of groups based in IP exceeded the supported limit."
 
+  - alert: NSXTMgmtNodeImageDiskSpaceCapacityCritical
+    expr: |
+        vrops_nsxt_mgmt_node_filesystems_image_usedpercentage > 80
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: "NSX-T management node {{ $labels.nsxt_mgmt_node }} filesystem usage `/image` > 80%. {{ $labels.nsxt_adapter}}"
+      playbook: "."
+    annotations:
+      description: "NSX-T management node {{ $labels.nsxt_mgmt_node }} filesystem usage `/image` > 80%. {{ $labels.nsxt_adapter}}"
+      summary: "NSX-T management node {{ $labels.nsxt_mgmt_node }} filesystem usage `/image` > 80%. {{ $labels.nsxt_adapter}}"
+
+  - alert: NSXTMgmtNodeLogDiskSpaceCapacityCritical
+    expr: |
+        vrops_nsxt_mgmt_node_filesystems_var_log_usedpercentage > 80
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: "NSX-T management node {{ $labels.nsxt_mgmt_node }} filesystem usage `/var/log` > 80%. {{ $labels.nsxt_adapter}}"
+      playbook: "."
+    annotations:
+      description: "NSX-T management node {{ $labels.nsxt_mgmt_node }} filesystem usage `/var/log` > 80%. {{ $labels.nsxt_adapter}}"
+      summary: "NSX-T management node {{ $labels.nsxt_mgmt_node }} filesystem usage `/var/log` > 80%. {{ $labels.nsxt_adapter}}"
+
+  - alert: NSXTMgmtClusterStatusNotStable
+    expr: |
+        vrops_nsxt_mgmt_cluster_controller_cluster_connectivity_status{state!~"STABLE"}
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      meta: "NSX-T management cluster {{ $labels.nsxt_adapter }} has connectivity status `{{ $labels.state }}`"
+      playbook: "."
+    annotations:
+      description: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
+      summary: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
+
   - alert: NSXTManagementServiceHasFailed
     expr: |
-        vrops_nsxt_mgmt_service_alert_info{alert_name="NSX-T Management service has failed", nsxt_mgmt_service!~"migration-coordinator|liagent|snmp|nsx-message-bus"}
+        vrops_nsxt_mgmt_service_alert_info{alert_name="NSX-T Management service has failed|Management service monitor runtime state has failed",
+        nsxt_mgmt_service!~"cluster-boot-manager|cm-inventory|controller|http|manager"}
     labels:
       severity: info
       tier: vmware
-      meta: "NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})."
+      meta: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})."
       no_alert_on_absence: "true"
     annotations:
-      description: "NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) {{ $labels.recommendation_1}}"
-      summary: "NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})."
+      description: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})"
+      summary: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})."
 
-  - alert: NSXTManagementServiceMonitorRuntimeStateHasFailed
+  - alert: NSXTManagementServiceHasFailed
     expr: |
-        vrops_nsxt_mgmt_service_alert_info{alert_name="Management service monitor runtime state has failed", nsxt_mgmt_service!~"migration-coordinator|liagent|snmp|nsx-message-bus"}
+        vrops_nsxt_mgmt_service_alert_info{alert_name="NSX-T Management service has failed|Management service monitor runtime state has failed",
+        nsxt_mgmt_service!~"mgmt-plane-bus|node-mgmt|ntp|ssh|search|syslog|nsx-ui"}
     labels:
       severity: info
       tier: vmware
-      meta: "NSX-T management service `{{ $labels.nsxt_mgmt_service }}` monitor runtime state has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})."
+      meta: "WARNING: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})."
       no_alert_on_absence: "true"
     annotations:
-      description: "NSX-T management service `{{ $labels.nsxt_mgmt_service }}` monitor runtime state has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) {{ $labels.recommendation_1}}"
-      summary: "NSX-T management service `{{ $labels.nsxt_mgmt_service }}` monitor runtime state has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})."
+      description: "WARNING: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})"
+      summary: "WARNING: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})."
