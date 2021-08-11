@@ -71,6 +71,10 @@ spec:
           regex: '(es_circuitbreaker_.+)'
           sourceLabels: [__name__]
         - action: drop
-          regex: '(es_indices_indexing_.+|es_indices_merges_.+|es_indices_percolate_.+|es_indices_recovery_.+|es_indices_refresh.+|es_indices_search_.+|es_indices_suggest_.+|es_indices_segments_.+|es_indices_suggest_.+|es_ingest_pipeline_.+|es_indices_search_.+|es_indices_f.+)'
+          regex: '(es_indices_indexing_.+|es_indices_merges_.+|es_indices_percolate_.+|es_indices_recovery_.+|es_indices_refresh.+|es_indices_search_.+|es_indices_suggest_.+|es_indices_segments_.+|es_indices_suggest_.+|es_ingest_pipeline_.+|es_indices_search_.+|es_indices_f.+|es_threadpool_threads_count|es_threadpool_threads_number|es_jvm_threads_peak_number)'
           sourceLabels: [__name__]
+        - source_labels: [__name__, index]
+          regex: 'es_index_doc_number;([a-z0-9]*)-(.*)'
+          replacement: '$1'
+          target_label: es_index_docs
 {{- end }}
