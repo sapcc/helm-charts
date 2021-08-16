@@ -1,18 +1,21 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: container-linux-update-agent
+  name: flatcar-linux-update-agent
   namespace: kube-system
 spec:
   updateStrategy:
     type: RollingUpdate
+  selector:
+    matchLabels:
+      app: flatcar-linux-update-agent
   template:
     metadata:
       labels:
-        app: container-linux-update-agent
-        container-linux-update.v1.coreos.com/agent-version: v0.7.0
+        app: flatcar-linux-update-agent
+        agent-version: v0.7.3
       annotations:
-        container-linux-update.v1.coreos.com/agent-version: v0.7.0
+        agent-version: v0.7.3
     spec:
       tolerations:
       - key: "species"
@@ -20,16 +23,16 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: update-agent
-        image: quay.io/coreos/container-linux-update-operator:v0.7.0
+        image: quay.io/kinvolk/flatcar-linux-update-operator:v0.7.3
         command:
         - "/bin/update-agent"
         volumeMounts:
           - mountPath: /var/run/dbus
             name: var-run-dbus
-          - mountPath: /etc/coreos
-            name: etc-coreos
-          - mountPath: /usr/share/coreos
-            name: usr-share-coreos
+          - mountPath: /etc/flatcar
+            name: etc-flatcar
+          - mountPath: /usr/share/flatcar
+            name: usr-share-flatcar
           - mountPath: /etc/os-release
             name: etc-os-release
         env:
@@ -42,16 +45,21 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        # Update agent must run with a UID that is allowed to reboot nodes via logind using the D-Bus interface.
+        # FLUO Docker image runs as 65534 (nobody) by default, so we need to escalate the privileges here,
+        # as we cannot ensure, that host configuration of PolicyKit and D-Bus allows UID 65534 to execute that.
+        securityContext:
+          runAsUser: 0
       volumes:
       - name: var-run-dbus
         hostPath:
           path: /var/run/dbus
-      - name: etc-coreos
+      - name: etc-flatcar
         hostPath:
-          path: /etc/coreos
-      - name: usr-share-coreos
+          path: /etc/flatcar
+      - name: usr-share-flatcar
         hostPath:
-          path: /usr/share/coreos
+          path: /usr/share/flatcar
       - name: etc-os-release
         hostPath:
           path: /etc/os-release
