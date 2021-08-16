@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: maintenance-controller-config
+  namespace: kube-system
+type: Opaque
+stringData:
+{{ tpl (.Files.Glob "maintenance.yaml").AsConfig . | indent 2 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintenance-controller
+  namespace: kube-system
+  labels:
+    app: maintenance-controller
+spec:
+  selector:
+    matchLabels:
+      app: maintenance-controller
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: maintenance-controller
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - maintenance-controller
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - command:
+        - /manager
+        args:
+        - --enable-leader-election
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: manager
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 3
+          periodSeconds: 3
+      volumes:
+      - name: config
+        secret:
+          secretName: maintenance-controller-config
+      terminationGracePeriodSeconds: 10
+      {{- if .Values.rbac.create }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+      {{- end }}
