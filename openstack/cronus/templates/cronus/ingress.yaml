@@ -11,7 +11,10 @@ metadata:
     {{- range $key, $value := .Values.cronus.ingressAnnotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
-    nginx.ingress.kubernetes.io/proxy-body-size: 20m # base64 overhead (10*(4/3)^2 ~= 18 + 2Mb extra)
+    {{- if .Values.cronus.maxEmailBodySize }}
+    # base64 overhead for HTTP AWS SES API val*(4/3) + 10% extra
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ div (mul (div (mul .Values.cronus.maxEmailBodySize 4) 3) 11) 10 | quote }}
+    {{- end }}
   labels:
     name: cronus
 spec:
