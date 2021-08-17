@@ -121,8 +121,7 @@ groups:
       summary: "NSX-T cluster {{ $labels.nsxt_mgmt_cluster }} count of groups based in IP exceeded the supported limit."
 
   - alert: NSXTMgmtNodeImageFilesystemCapacityCritical
-    expr: |
-        vrops_nsxt_mgmt_node_filesystems_image_usedpercentage > 80
+    expr: vrops_nsxt_mgmt_node_filesystems_image_usedpercentage > 80
     for: 10m
     labels:
       severity: info
@@ -135,8 +134,7 @@ groups:
       summary: "NSX-T management node {{ $labels.nsxt_mgmt_node }} filesystem usage `/image` > 80%. {{ $labels.nsxt_adapter}}"
 
   - alert: NSXTMgmtNodeLogFilesystemCapacityCritical
-    expr: |
-        vrops_nsxt_mgmt_node_filesystems_var_log_usedpercentage > 80
+    expr: vrops_nsxt_mgmt_node_filesystems_var_log_usedpercentage > 80
     for: 10m
     labels:
       severity: info
@@ -148,19 +146,69 @@ groups:
       description: "NSX-T management node {{ $labels.nsxt_mgmt_node }} filesystem usage `/var/log` > 80%. {{ $labels.nsxt_adapter}}"
       summary: "NSX-T management node {{ $labels.nsxt_mgmt_node }} filesystem usage `/var/log` > 80%. {{ $labels.nsxt_adapter}}"
 
-  - alert: NSXTMgmtClusterStatusNotStable
-    expr: |
-        vrops_nsxt_mgmt_cluster_controller_cluster_connectivity_status{state!~"STABLE"}
-    for: 10m
+  - alert: NSXTClusterControlStatusNoControllers
+    expr: vrops_nsxt_mgmt_cluster_controller_cluster_connectivity_status{state="NO_CONTROLLERS"}
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      meta: "NSX-T management cluster {{ $labels.nsxt_adapter }} has connectivity status `{{ $labels.state }}`"
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_no_controllers
+    annotations:
+      description: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
+      summary: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
+
+  - alert: NSXTClusterControlStatusUnstable
+    expr: vrops_nsxt_mgmt_cluster_controller_cluster_connectivity_status{state="UNSTABLE"}
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      meta: "NSX-T management cluster {{ $labels.nsxt_adapter }} has connectivity status `{{ $labels.state }}`"
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_unstable
+    annotations:
+      description: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
+      summary: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
+
+  - alert: NSXTClusterControlStatusDegraded
+    expr: vrops_nsxt_mgmt_cluster_controller_cluster_connectivity_status{state="DEGRADED"}
+    for: 5m
     labels:
       severity: info
       tier: vmware
       service: compute
       meta: "NSX-T management cluster {{ $labels.nsxt_adapter }} has connectivity status `{{ $labels.state }}`"
-      playbook: "."
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_degraded
     annotations:
       description: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
       summary: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
+
+  - alert: NSXTClusterControlStatusUnkown
+    expr: vrops_nsxt_mgmt_cluster_controller_cluster_connectivity_status{state="UNKNOWN"}
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      meta: "NSX-T management cluster {{ $labels.nsxt_adapter }} has connectivity status `{{ $labels.state }}`"
+      playbook: docs/devops/alert/nsxt/#cluster_control_status_unkown
+    annotations:
+      description: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
+      summary: "NSX-T management cluster {{ $labels.nsxt_adapter }} connectivity status is `{{ $labels.state }}`"
+
+  - alert: NSXTNodeMemoryUsageOver95
+    expr: vrops_nsxt_mgmt_node_memory_used / vrops_nsxt_mgmt_node_memory_total > 0.95
+    for: 5m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      meta: "NSX-T Node {{ $labels.nsxt_mgmt_node }} of cluster {{ $labels.nsxt_adapter }} has memory usage of over 95%"
+    annotations:
+      description: "NSX-T Node {{ $labels.nsxt_mgmt_node }} of cluster {{ $labels.nsxt_adapter }} has memory usage of over 95%`"
+      summary: "NSX-T Node {{ $labels.nsxt_mgmt_node }} of cluster {{ $labels.nsxt_adapter }} has memory usage of over 95%`"
 
   - alert: NSXTManagementServiceHasFailed
     expr: |
