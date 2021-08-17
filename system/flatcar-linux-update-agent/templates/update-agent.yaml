@@ -13,9 +13,6 @@ spec:
     metadata:
       labels:
         app: flatcar-linux-update-agent
-        agent-version: v0.7.3
-      annotations:
-        agent-version: v0.7.3
     spec:
       tolerations:
       - key: "species"
@@ -23,7 +20,8 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: update-agent
-        image: quay.io/kinvolk/flatcar-linux-update-operator:v0.7.3
+        image: "quay.io/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         command:
         - "/bin/update-agent"
         volumeMounts:
