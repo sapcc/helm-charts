@@ -161,6 +161,7 @@
       - '{__name__=~"^vrops_cluster_configuration_drsconfig_targetbalance"}'
       - '{__name__=~"^vrops_cluster_cpu_capacity_mhz"}'
       - '{__name__=~"^vrops_cluster_cpu_capacity_usage_percentage"}'
+      - '{__name__=~"^vrops_cluster_cpu_contention_percentage"}'
       - '{__name__=~"^vrops_cluster_memory_capacity_kilobytes"}'
       - '{__name__=~"^vrops_cluster_memory_usage_percentage"}'
       - '{__name__=~"^vrops_cluster_services_totalimbalance"}'
