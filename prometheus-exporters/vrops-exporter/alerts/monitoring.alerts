@@ -1,8 +1,8 @@
 groups:
 - name: monitoring.alerts
   rules:
-  - alert: VRopsAPIDown
-    expr: sum by (target)(vrops_api_response == 200) / count by (target) (vrops_api_response == 200) > 500
+  - alert: VROpsAPIDown
+    expr: sum by (target) (vrops_api_response) / count by (target) (vrops_api_response) > 500
     for: 10m
     labels:
       severity: info
@@ -11,12 +11,35 @@ groups:
       meta: "`{{ $labels.target }}` API is down. Monitoring of the vCenter is no longer available."
       playbook: "."
     annotations:
-      description: "`{{ $labels.target }}` API is down. Monitoring of the vCenter is no longer available."
-      summary: "`{{ $labels.target }}` API is down. Monitoring of the vCenter is no longer available."
+      description: "`{{ $labels.target }}` API is down. Monitoring of vCenter and NSX-T is no longer available."
+      summary: "`{{ $labels.target }}` API is down. Monitoring of vCenter and NSX-T is no longer available."
+
+  - alert: VROpsExporterDegraded
+    expr: sum by (target) (vrops_api_response) / count by (target) (vrops_api_response) >= 400
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: vrops-exporter
+      meta: "One or more collectors of the vrops-exporter for {{ $labels.target }} are degraded. Monitoring of vCenter and NSX-T is no longer available."
+      playbook: "."
+    annotations:
+      description: "One or more collectors of the vrops-exporter for {{ $labels.target }} are degraded. Monitoring of vCenter and NSX-T is no longer available."
+      summary: "One or more collectors of the vrops-exporter for {{ $labels.target }} are degraded. Monitoring of vCenter and NSX-T is no longer available."
+
+  - alert: VROpsExporterInventoryDown
+    expr: absent(vrops_inventory_iteration_total)
+    labels:
+      severity: info
+      tier: vmware
+      service: vrops-exporter inventory
+      meta: "vrops-exporter inventory for this region is not available. Collectors do not getting resources for monitoring."
+    annotations:
+      description: "vrops-exporter inventory for this region is not available. Collectors do not getting resources for monitoring."
+      summary: "vrops-exporter inventory for this region is not available. Collectors do not getting resources for monitoring."
 
   - alert: VROpsDiskpaceUsageCritical
-    expr: >
-      vrops_virtualmachine_guestfilesystem_storage_db_percentage{virtualmachine=~"vrops-vc.*"} > 90
+    expr: vrops_virtualmachine_guestfilesystem_storage_db_percentage{virtualmachine=~"vrops.*-vc-.+"} > 90
     for: 20m
     labels:
       severity: info
@@ -29,26 +52,38 @@ groups:
       description: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
       summary: "Disk almost full with over 90% for {{ $labels.virtualmachine }}. Please increase disk size."
 
-  - alert: VROpsNotReceivingDataFromVCenter
-    expr: vrops_vcenter_alert_info{alert_name=~"Adapter instance is not receiving data|Objects are not receiving data from adapter instance"}
+  - alert: VROpsVCenterAdapterNotReceivingData
+    expr: vrops_vcenter_alert_info{alert_name="Adapter instance is not receiving data"}
     labels:
       severity: info
       tier: vmware
       service: vcenter adapter
-      meta: "vROPs is not receiving data for {{ $labels.vcenter }}. Check the connection of the vcenter adapter."
+      meta: "vROPs vCenter adapter is not receiving data for {{ $labels.vcenter }}. {{ $labels.recommendation_2 }}"
       no_alert_on_absence: "true"
     annotations:
-      description: "vROPs is not receiving data for {{ $labels.vcenter }}. Check the connection of the vcenter adapter."
-      summary: "vROPs is not receiving data for {{ $labels.vcenter }}. Check the connection of the vcenter adapter."
+      description: "vROPs vCenter adapter is not receiving data for {{ $labels.vcenter }}. {{ $labels.recommendation_2 }}"
+      summary: "vROPs vCenter adapter is not receiving data for {{ $labels.vcenter }}. {{ $labels.recommendation_2 }}"
 
-  - alert: NSXTAdapterNotReceivingData
+  - alert: VROpsVCenterObjectsNotReceivingData
+    expr: vrops_vcenter_alert_info{alert_name="Objects are not receiving data from adapter instance"}
+    labels:
+      severity: info
+      tier: vmware
+      service: vcenter adapter
+      meta: "vROPs vCenter adapter is not receiving data for some objects. ({{ $labels.vcenter }}). {{ $labels.recommendation_2 }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "vROPs vCenter adapter is not receiving data for some objects. ({{ $labels.vcenter }}). {{ $labels.recommendation_2 }}"
+      summary: "vROPs vCenter adapter is not receiving data for some objects. ({{ $labels.vcenter }}). {{ $labels.recommendation_2 }}"
+
+  - alert: VROpsNSXTAdapterNotReceivingData
     expr: vrops_nsxt_adapter_alert_info{alert_name="Adapter instance is not receiving data"}
     labels:
       severity: info
       tier: vmware
       service: nsxt adapter
-      meta: "NSX-T adapter {{ $labels.nsxt_adapter }} not receiving data. {{ $labels.recommendation_2 }}"
+      meta: "vROPs is not receiving data for NSX-T adapter {{ $labels.nsxt_adapter }} not receiving data. {{ $labels.recommendation_2 }}"
       no_alert_on_absence: "true"
     annotations:
-      description: "NSX-T adapter {{ $labels.nsxt_adapter }} not receiving data."
-      summary: "NSX-T adapter {{ $labels.nsxt_adapter }} not receiving data."
+      description: "vROPs is not receiving data for NSX-T adapter {{ $labels.nsxt_adapter }} not receiving data. {{ $labels.recommendation_2 }}"
+      summary: "vROPs is not receiving data for NSX-T adapter {{ $labels.nsxt_adapter }} not receiving data. {{ $labels.recommendation_2 }}"
