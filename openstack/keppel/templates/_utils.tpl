@@ -34,8 +34,6 @@
       key: rabbitmq_password
 - name: KEPPEL_AUDIT_RABBITMQ_HOSTNAME
   value: "{{ $.Values.keppel.rabbitmq.hostname }}"
-- name:  KEPPEL_AUTH_LOCAL_ROLE
-  value: 'swiftoperator'
 - name:  KEPPEL_BURST_ANYCAST_BLOB_PULL_BYTES
   value: '4718592000' # 4500 MiB per account (see below, near the corresponding ratelimit, for rationale)
 - name:  KEPPEL_BURST_BLOB_PULLS # burst budgets for regular pull/push are all ~30% of the rate limit per minute
@@ -175,9 +173,9 @@
       name: keppel-secret
       key: service_user_password
 - name:  OS_PROJECT_DOMAIN_NAME
-  value: 'Default'
+  value: 'ccadmin'
 - name:  OS_PROJECT_NAME
-  value: 'service'
+  value: 'cloud_admin'
 - name:  OS_REGION_NAME
   value: {{ quote $.Values.global.region }}
 - name:  OS_USER_DOMAIN_NAME
