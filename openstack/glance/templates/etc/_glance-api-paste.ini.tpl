@@ -120,5 +120,5 @@ clock_accuracy = 1ns
 log_sleep_time_seconds = 10
 backend_host = {{ .Release.Name }}-sapcc-rate-limit
 backend_port = 6379
-backend_timeout_seconds = 20
+backend_timeout_seconds = 1
 {{- end }}

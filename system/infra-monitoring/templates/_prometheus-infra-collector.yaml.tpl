@@ -532,7 +532,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
+      replacement: redfish-exporter:9220
 
 - job_name: 'redfish/cp'
   params:
@@ -552,7 +552,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
+      replacement: redfish-exporter:9220
     - source_labels: [__meta_serial]
       target_label: server_serial
 
@@ -574,7 +574,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
+      replacement: redfish-exporter:9220
 {{- end }}
 
 {{- $values := .Values.windows_exporter -}}
@@ -597,6 +597,14 @@
     - source_labels: [__name__]
       regex: '^go_.+'
       action: drop
+    - target_label: 'service_name'
+      source_labels: [__name__, name]
+      regex: 'windows_service_state; (.*)'
+      replacement: $1
+    - target_label: 'service_state'
+      source_labels: [__name__, state]
+      regex: 'windows_service_state; (.*)'
+      replacement: $1
 {{- end }}
         
 {{- $values := .Values.vasa_exporter -}}
@@ -961,3 +969,21 @@
     - action: labeldrop
       regex: "metrics_label"
 {{ end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.esxi_host_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'esxi-host'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  kubernetes_sd_configs:
+  - role: service
+    namespaces:
+      names:
+      - infra-monitoring
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [__meta_kubernetes_service_name]
+      regex: esxi-host-exporter
+      action: keep
+{{- end }}

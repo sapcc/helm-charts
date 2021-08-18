@@ -120,7 +120,8 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}] "%{WORD:method} %{IMAGE_METHOD:path}%{GREEDYDATA}1" %{NUMBER:response} %{GREEDYDATA}
+    grok_pattern
+%{IPORHOST:remote_addr} - %{USERNAME:remote_user} \[%{HTTPDATE:time_local}\] \"%{DATA:request}\" %{INT:status} %{NUMBER:bytes_sent} \"%{DATA:http_referer}\" \"%{DATA:http_user_agent}\" %{NUMBER:request_length} %{NUMBER:request_time} \[%{DATA:proxy_upstream_name}\] %{IPORHOST:upstream_addr}:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NUMBER:upstream_response_time} %{INT:upstream_status} %{WORD:req_id} ?(?:(?:req-)?%{GREEDYDATA:global_request_id})?
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>

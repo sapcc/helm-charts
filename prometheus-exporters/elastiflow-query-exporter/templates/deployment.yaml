@@ -23,7 +23,12 @@ spec:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       nodeSelector:
-        ccloud.sap.com/nodepool: payload
+        ccloud.sap.com/nodepool: elastiflow
+      tolerations:
+      - key: "dedicated"
+        operator: Equal
+        value: "elastiflow"
+        effect: "NoSchedule"
       restartPolicy: Always
       securityContext:
         runAsNonRoot: true

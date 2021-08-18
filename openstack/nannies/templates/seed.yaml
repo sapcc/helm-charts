@@ -12,22 +12,13 @@ spec:
     users:
     - name: vcenter_nanny
       description: Vcenter Nanny
-      valueFrom:
-        secretKeyRef:
-           name: vcenter-nanny-secret
-           key:  vcenter_nanny_os_password
+      password: {{ derivePassword 1 "long" .Values.nannies.master_password "vcenter_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
     - name: nova_nanny{{ .Values.global.user_suffix | default "" }}
       description: Nova Nanny
-      valueFrom:
-        secretKeyRef:
-           name: nova-nanny-secret
-           key:  nova_nanny_os_password
+      password: {{ derivePassword 1 "long" .Values.nannies.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
     - name: cinder_nanny{{ .Values.global.user_suffix | default "" }}
       description: Cinder Nanny
-      valueFrom:
-        secretKeyRef:
-           name: cinder-nanny-secret
-           key:  cinder_nanny_os_password
+      password: {{ derivePassword 1 "long" .Values.nannies.master_password "cinder_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
 
   - name: ccadmin
     projects:

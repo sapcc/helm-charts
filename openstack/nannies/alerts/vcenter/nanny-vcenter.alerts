@@ -128,17 +128,17 @@ groups:
       description: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with all attachments missing - this problem should be gone automatically in the next nanny run"
       summary: "The {{ $labels.kubernetes_name }} discovered a volume, which is for too long in the state 'in-use' with some attachments missing - should fix itself"
 
-  - alert: OpenstackVcenterNannyConsistencyTooMuchToFix
-    expr: vcenter_nanny_consistency_cinder_volume_attachment_fix_count > vcenter_nanny_consistency_cinder_volume_attachment_max_fix_count
-    for: 30m
-    labels:
-      context: nanny
-      service: nanny
-      severity: info
-      tier: os
-    annotations:
-      description: "The {{ $labels.kubernetes_name }} denied to fix some problems as there are too many of them - this should be investigated ..."
-      summary: "The {{ $labels.kubernetes_name }} denied to fix some problems - should be investigated ..."
+#  - alert: OpenstackVcenterNannyConsistencyTooMuchToFix
+#    expr: vcenter_nanny_consistency_cinder_volume_attachment_fix_count > vcenter_nanny_consistency_cinder_volume_attachment_max_fix_count
+#    for: 30m
+#    labels:
+#      context: nanny
+#      service: nanny
+#      severity: info
+#      tier: os
+#    annotations:
+#      description: "The {{ $labels.kubernetes_name }} denied to fix some problems as there are too many of them - this should be investigated ..."
+#      summary: "The {{ $labels.kubernetes_name }} denied to fix some problems - should be investigated ..."
 
   - alert: OpenstackVcenterNannyConsistencyTooMuchToFixByHand
     expr: sum(vcenter_nanny_consistency_cinder_volume_in_use_without_some_attachments) > vcenter_nanny_consistency_cinder_volume_attachment_max_fix_count
@@ -190,51 +190,27 @@ groups:
       description: "The {{ $labels.kubernetes_name }} discovered an increase of the number of instances with gray status, please keep in mind that this actually happened around 6 hours ago due to alert smooting - should be investigated ..."
       summary: "The {{ $labels.kubernetes_name }} discovered an increase of the number of instances with gray status - should be investigated ..."
 
-#  - alert: OpenstackVcenterNannyConsistencyVolumeBackingUuidMissing
-#    expr: vcenter_nanny_consistency_vcenter_volume_uuid_missing > 0
-#    for: 5m
+#  - alert: OpenstackVcenterNannyConsistencyVolumeExtraConfigWithoutBackingUuid
+#    expr: vcenter_nanny_consistency_vcenter_extraconfig_backinguuid_missing > 0
+#    for: 90m
 #    labels:
 #      context: nanny
 #      service: nanny
 #      severity: info
 #      tier: os
 #    annotations:
-#      description: "The {{ $labels.kubernetes_name }} discovered a volume with a missing backing uuid - should be investigated ..."
-#      summary: "The {{ $labels.kubernetes_name }} discovered a volume with a missing backing uuid - should be investigated ..."
+#      description: "The {{ $labels.kubernetes_name }} discovered a volume with a missing extraConfig entry for a backing uuid - should be investigated ..."
 
-  - alert: OpenstackVcenterNannyConsistencyVolumeFsBackingUuidMissing
-    expr: vcenter_nanny_consistency_vcenter_volume_fs_uuid_missing > 0
-    for: 5m
-    labels:
-      context: nanny
-      service: nanny
-      severity: info
-      tier: os
-    annotations:
-      description: "The {{ $labels.kubernetes_name }} discovered a volume with a missing backing uuid and a ds filename without a uuid in it - should be investigated ..."
-      summary: "The {{ $labels.kubernetes_name }} discovered a volume with a missing backing uuid and a ds filename without a uuid in it - should be investigated ..."
-
-  - alert: OpenstackVcenterNannyConsistencyVolumeExtraConfigWithoutBackingUuid
-    expr: vcenter_nanny_consistency_vcenter_extraconfig_backinguuid_missing > 0
-    for: 90m
-    labels:
-      context: nanny
-      service: nanny
-      severity: info
-      tier: os
-    annotations:
-      description: "The {{ $labels.kubernetes_name }} discovered a volume with a missing extraConfig entry for a backing uuid - should be investigated ..."
-
-  - alert: OpenstackVcenterNannyConsistencyVolumeBackingUuidWithoutExtraconfig
-    expr: vcenter_nanny_consistency_vcenter_backinguuid_extraconfig_missing > 0
-    for: 90m
-    labels:
-      context: nanny
-      service: nanny
-      severity: info
-      tier: os
-    annotations:
-      description: "The {{ $labels.kubernetes_name }} discovered a volume with a missing backing uuid for an extraConfig entry - should be investigated ..."
+#  - alert: OpenstackVcenterNannyConsistencyVolumeBackingUuidWithoutExtraconfig
+#    expr: vcenter_nanny_consistency_vcenter_backinguuid_extraconfig_missing > 0
+#    for: 90m
+#    labels:
+#      context: nanny
+#      service: nanny
+#      severity: info
+#      tier: os
+#    annotations:
+#      description: "The {{ $labels.kubernetes_name }} discovered a volume with a missing backing uuid for an extraConfig entry - should be investigated ..."
 
 #  - alert: OpenstackVcenterNannyConsistencyVolumeBackingUuidMismatch
 #    expr: vcenter_nanny_consistency_vcenter_volume_backing_uuid_mismatch > 0
@@ -296,6 +272,33 @@ groups:
     annotations:
       description: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host => suggestion: VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} "
       summary: "ESXi host {{ $labels.kubernetes_name }} physical memory not enough to host all VMs >= 256GB which are placed on the host"
+
+  - alert: ESXiHostOverbookedAutomation
+    expr: vm_balance_vmotion_status > 0
+    for: 5m
+    labels:
+      context: nanny-automation
+      service: nanny
+      severity: info
+      tier: vmware
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
+    annotations:
+      description: "ESXi host {{ $labels.kubernetes_name }} VMotion Big_vm {{ $labels.big_vm_name}} from source {{ $labels.source_node}} to target {{ $labels.target_node}} successful "
+      summary: "Overbooked ESXi host cleared successfully for below host by automatic nannies"
+
+  - alert: ESXiHostOverbookedNoSuitableVM
+    expr: vm_balance_no_suitable_vm > 0
+    for: 5m
+    labels:
+      service: compute
+      severity: warning
+      tier: vmware
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/vcenter/#test_esxi_hs_4
+    annotations:
+      description: "ESXi host {{ $labels.kubernetes_name }} and source {{ $labels.source_node}} is overbooked dont find any large VM till 512GB for movement after considering considering vm_readiness and host_contention metrics"
+      summary: "ESXi host {{ $labels.kubernetes_name }} and source {{ $labels.source_node}} is overbooked"
 
   - alert: ESXiHostOverbookedAutomationError
     expr: vm_balance_error_count > 0

@@ -26,12 +26,12 @@ groups:
       summary: Unusually many launchctl failures
 
   - alert: KubernikusLaunchHanging
-    expr: sum(kubernikus_launch_operation_total) == 0
+    expr: sum(kubernikus_launch_operation_total{cluster_type != "virtual"}) == 0
     for: 15m
     labels:
       tier: kks
       service: launchctl
-      severity: critical
+      severity: warning
       context: operator
     annotations:
       description: Launchctl operations dropped to 0. The operator might be hanging.

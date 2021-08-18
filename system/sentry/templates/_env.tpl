@@ -33,6 +33,10 @@
 - name: SENTRY_EMAIL_USE_SSL
   value: {{ .Values.emailUseSSL | squote }}
 {{- end }}
+{{- if .Values.emailUseTLS }}
+- name: SENTRY_EMAIL_USE_TLS
+  value: {{ .Values.emailUseTLS | squote }}
+{{- end }}
 {{- if .Values.serverEmail }}
 - name: SENTRY_SERVER_EMAIL
   value: {{ .Values.serverEmail | squote }}

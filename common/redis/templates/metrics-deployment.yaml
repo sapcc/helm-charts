@@ -6,7 +6,7 @@ metadata:
   name: {{ template "redis.fullname" . }}-metrics
   labels:
     app: {{ template "redis.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    chart: "{{ .Chart.Name }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 
@@ -14,7 +14,8 @@ spec:
   selector:
     matchLabels:
       app: {{ template "redis.fullname" . }}
-      chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+      chart: "{{ .Chart.Name }}-1.0.1"
+      # ^ this is a lie, same reason as below
       release: "{{ .Release.Name }}"
       heritage: "Tiller"
       # ^ this is not true when deploying with Helm 3, but existing matchLabels
@@ -24,13 +25,13 @@ spec:
     metadata:
       labels:
         app: {{ template "redis.fullname" . }}
-        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        chart: "{{ .Chart.Name }}-1.0.1"
         release: "{{ .Release.Name }}"
         heritage: "Tiller"
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
-        promtheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
       containers:

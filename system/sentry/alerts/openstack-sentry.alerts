@@ -15,3 +15,19 @@ groups:
     annotations:
       description: 'Current sentry-postgresql size is {{ $value }} will reach 50Gi shortly'
       summary: 'sentry postgresql size is above 40Gi'
+
+  - alert: OpenstackSentryApiAvailabilityInfo
+    expr: (1 - sum(global:api_errors_per_request_sli:ratio_rate1h{ingress="sentry-sentry"}) by (ingress,region)) * 100 < 100
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: sentry
+      context: sentry
+      dashboard: sentry
+      meta: 'Sentry API Availability is less than 100%'
+      playbook: 'docs/support/playbook/sentry.html'
+      no_alert_on_absence: "true"
+    annotations:
+      description: 'Sentry API Availability is less is {{ $value }}'
+      summary: 'Sentry API Availability is less than 100%'

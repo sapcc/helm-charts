@@ -95,6 +95,7 @@ spec:
                 operator: In
                 values:
                 - "{{ template "logstash.fullname" .}}"
+                - "elastiflow-filebeat"
             topologyKey: {{ .Values.antiAffinityTopologyKey }}
       {{- else if eq .Values.antiAffinity "soft" }}
         podAntiAffinity:
@@ -207,10 +208,10 @@ spec:
             subPath: {{ .subPath }}
             {{- end }}
           {{- end }}
-          {{- range $path, $config := .Values.logstashConfig }}
+          {{if .Values.logstashConfig }}
           - name: logstashconfig
-            mountPath: /usr/share/logstash/config/{{ $path }}
-            subPath: {{ $path }}
+            mountPath: /usr/share/logstash/config/logstash.yml
+            subPath: logstash.yml
           {{- end -}}
           {{- range $path, $config := .Values.logstashPipeline }}
           - name: logstashpipeline

@@ -29,6 +29,16 @@ spec:
         prometheus.io/port: "9479"
         prometheus.io/targets: "infra-collector"
     spec:
+      affinity:
+        podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - elastiflow-logstash
+                topologyKey: kubernetes.io/hostname
       containers:
       - name: filebeat
         image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.filebeat.image variable missing" .Values.filebeat.image }}:{{ required ".Values.filebeat.imageTag variable missing" .Values.filebeat.imageTag }}
@@ -38,20 +48,52 @@ spec:
         env:
           - name: LOGSTASH_HOSTS
             value: "[{{- range $i, $e := until (( int .Values.logstash.replicas )) }}\"elastiflow-logstash-{{$i}}.elastiflow-logstash\", {{- end}}]"
+          {{- if .Values.filebeat.logstash }}
+          {{- if .Values.filebeat.logstash.workers }}
           - name: NUM_WORKERS
             value: {{ .Values.filebeat.logstash.workers | quote}}
+          {{- end }}
+          {{- if .Values.filebeat.logstash.loadbalance }}
           - name: LOGSTASH_LB
             value: {{ .Values.filebeat.logstash.loadbalance | quote }}
+          {{- end }}
+          {{- if .Values.filebeat.logstash.ttl }}
           - name: LOGSTASH_TTL
             value: {{ .Values.filebeat.logstash.ttl | quote }}
+          {{- end }}
+          {{- if .Values.filebeat.logstash.pipelining }}
           - name: LOGSTASH_PIPELINING
             value: {{ .Values.filebeat.logstash.pipelining | quote }}
-          - name: LOGSTASH_PIPELINING
+          {{- end }}
+          {{- if .Values.filebeat.logstash.bulk }}
+          - name: LOGSTASH_BULK_SIZE
             value: {{ .Values.filebeat.logstash.bulk | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.filebeat.netflow }}
+          {{- if .Values.filebeat.netflow.buffer }}
           - name: NETFLOW_BUFFER
-            value : {{.Values.filebeat.netflow.buffer | quote}}
+            value : {{.Values.filebeat.netflow.buffer | quote }}
+          {{- end }}
+          {{- if .Values.filebeat.netflow.queue }}
           - name: NETFLOW_QUEUE
-            value : {{.Values.filebeat.netflow.queue | quote}}
+            value : {{.Values.filebeat.netflow.queue | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.filebeat.queue }}
+          {{- if .Values.filebeat.queue.events }}
+          - name: QUEUE_EVENTS
+            value : {{.Values.filebeat.queue.events | quote }}
+          {{- end }}
+          {{- if .Values.filebeat.queue.min_events }}
+          - name: QUEUE_MIN_EVENTS
+            value : {{.Values.filebeat.queue.min_events | quote }}
+          {{- end }}
+          {{- if .Values.filebeat.queue.fush_timeout }}
+          - name: QUEUE_FLUSH_TIMEOUT
+            value : {{.Values.filebeat.queue.flush_timeout | quote }}
+          {{- end }}
+          {{- end }}
         resources:
 {{ toYaml .Values.filebeat.resources | indent 10 }}
 

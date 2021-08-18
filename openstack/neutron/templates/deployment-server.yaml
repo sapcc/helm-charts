@@ -66,7 +66,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: "neutron-migration"
+              value: "neutron-migration-{{ .Values.imageVersion }}"
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: STATSD_HOST
@@ -84,6 +84,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           resources:
 {{ toYaml .Values.pod.resources.server | indent 12 }}
           ports:
@@ -143,7 +145,12 @@ spec:
               subPath: networking-bgpvpn.conf
               readOnly: true
             {{- end}}
-
+            {{- if .Values.fwaas.enabled }}
+            - mountPath: /etc/neutron/neutron-fwaas.ini
+              name: neutron-etc
+              subPath: neutron-fwaas.ini
+              readOnly: true
+            {{- end}}
             {{- if .Values.audit.enabled }}
             - mountPath: /etc/neutron/neutron_audit_map.yaml
               name: neutron-etc

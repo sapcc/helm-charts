@@ -47,6 +47,8 @@ spec:
       affinity:
         podAntiAffinity:
           # Prefere to be scheduled on nodes not yet running this proxy from a deplyoment
+          # kubernetes.io/hostname legacy control plane
+          # kubernetes.cloud.sap/host aPod bases control plane
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
             podAffinityTerm:
@@ -61,6 +63,19 @@ spec:
                   values:
                   - deployment
               topologyKey: "kubernetes.io/hostname"
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - swift-envoy-{{ $cluster_id }}
+                - key: from
+                  operator: In
+                  values:
+                  - deployment
+              topologyKey: "kubernetes.cloud.sap/host"
       volumes:
         - name: tls-secret
           secret:

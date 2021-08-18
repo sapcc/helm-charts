@@ -139,17 +139,18 @@
       target_label: project_id
     - regex: 'project'
       action: labeldrop
+{{- if .Values.neo.enabled }}
+    - source_labels: [__name__]
+      target_label: domain_id
+      regex: ^vrops_hostsystem_.+
+      replacement: "{{ .Values.neo.domain_id  }}"
+{{- end }}
 
   metrics_path: '/federate'
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^snmp_f5_.+"}'
-#      - '{__name__=~"^vcenter_cpu_.+"}'
-#      - '{__name__=~"^vcenter_disk_.+"}'
-#      - '{__name__=~"^vcenter_mem_.+"}'
-#      - '{__name__=~"^vcenter_net_.+"}'
-#      - '{__name__=~"^vcenter_virtualDisk_.+"}'
       - '{__name__=~"^netapp_capacity_.+"}'
       - '{__name__=~"^netapp_volume_.+", app="netapp-capacity-exporter-manila"}'
       - '{__name__=~"^openstack_manila_share_.+", project_id!=""}'
@@ -158,12 +159,19 @@
       - '{__name__=~"^vrops_virtualmachine_memory_.+"}'
       - '{__name__=~"^vrops_virtualmachine_network_.+"}'
       - '{__name__=~"^vrops_virtualmachine_virtual_disk_.+"}'
+{{- if .Values.neo.enabled }}
+      - '{__name__=~"^vrops_hostsystem_cpu_model"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_sockets_number"}'
+      - '{__name__=~"^vrops_hostsystem_cpu_usage_average_percentage"}'
+      - '{__name__=~"^vrops_hostsystem_memory_ballooning_kilobytes"}'
+      - '{__name__=~"^vrops_hostsystem_memory_contention_percentage"}'
+{{- end }}
 
-
+# For cronus reputation dashboard https://documentation.global.cloud.sap/services/email-howto-reputation
 {{- if .Values.cronus.enabled }}
 - job_name: 'cronus-reputation-statistics'
   scheme: https
-  scrape_interval: 5m
+  scrape_interval: 1m
   scrape_timeout: 55s
   tls_config:
     cert_file: /etc/prometheus/secrets/prometheus-infra-sso-cert/sso.crt

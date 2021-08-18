@@ -1,0 +1,65 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esxi-host-exporter
+  namespace: infra-monitoring
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: esxi-host-exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: esxi-host-exporter
+        type: exporter
+    spec:
+      containers:
+        - name: esxi-host-exporter
+          imagePullPolicy: IfNotPresent
+          image: {{ $.Values.registry }}/esxi-host-exporter:{{ $.Values.image_version | replace "string:" "" }}
+          command:
+            - python3
+          args:
+            - exporter.py
+          ports:
+            - name: metrics
+              containerPort: {{ $.Values.listen_port }}
+          env:
+            - name: VCENTER_USER
+              value: {{ $.Values.vcenter_user | quote }}
+            - name: VCENTER_PASSWORD
+              value: {{ $.Values.vcenter_password }}
+            - name: ESXI_USER
+              value: {{ $.Values.esxi_user | quote }}
+            - name: ESXI_PASSWORD
+              value: {{ $.Values.esxi_password | quote }}
+            - name: ATLAS_FILE
+              value: /atlas/netbox.json
+            - name: CONFIG_FILE
+              value: {{ $.Values.configmap_path }}config.yaml
+          resources:
+            limits:
+              memory: {{ required ".Values.resources.limits.memory missing" $.Values.resources.limits.memory }}
+              cpu: {{ required ".Values.resources.limits.cpu missing" $.Values.resources.limits.cpu }}
+            requests:
+              memory: {{ required ".Values.resources.requests.memory missing" $.Values.resources.requests.memory }}
+              cpu: {{ required ".Values.resources.requests.cpu missing" $.Values.resources.requests.cpu }}
+          volumeMounts:
+            - mountPath: /atlas
+              name: atlas-output
+              readOnly: true
+            - mountPath: {{ $.Values.configmap_path }}
+              name: esxi-exporter-config
+              readOnly: true
+      volumes:
+        - configMap:
+            name: {{ $.Values.atlas_configmap }}
+          name: atlas-output
+        - configMap:
+            name: esxi-host-exporter-config
+          name: esxi-exporter-config
+{{- end }}

@@ -20,5 +20,3 @@ xpack.ml.enabled: false
 xpack.security.enabled: false
 xpack.monitoring.enabled: false
 xpack.watcher.enabled: false
-
-prometheus.indices: false

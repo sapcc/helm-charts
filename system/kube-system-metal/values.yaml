@@ -128,6 +128,11 @@ nginx-ingress:
             default "anonymous";
             ~CN=(?<CN>[^/,\"]+) $CN;
         }
+
+        # Ensure there is a global_request_id for logging
+        map '' $global_request_id {
+            default '-';
+        }
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
       proxy-send-timeout: "300"
@@ -141,7 +146,8 @@ nginx-ingress:
       worker-shutdown-timeout: "18000s"
       worker-processes: "8"
       use-forwarded-headers: "false"
-
+      log-format-upstream: >-
+        $remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time [$proxy_upstream_name] $upstream_addr $upstream_response_length $upstream_response_time $upstream_status $req_id $global_request_id
 
     affinity:
       # don't co-locate replicas of the ingress controller on the same node
@@ -192,6 +198,136 @@ nginx-ingress:
                   operator: In
                   values:
                     - default-backend
+
+nginx-ingress-external:
+  enabled: false
+  fullnameOverride: kube-system-nginx-ingress-external
+  releaseLabelOverride: kube-system
+
+  revisionHistoryLimit: 5
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true
+
+  controller:
+    image:
+      repository: sapcc/nginx-ingress-controller
+      tag: "0.21.0"
+      runAsUser: 33
+
+    minReadySeconds: 60
+    ingressClass: nginx-external
+    electionID: external-ingress-controller-leader
+
+    extraArgs:
+      annotations-prefix: ingress.kubernetes.io
+      # On upgrade to 0.26.1.
+      # enable-dynamic-certificates: true
+      # enable-ssl-chain-completion: false
+
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+
+    livenessProbe:
+      initialDelaySeconds: 30
+
+    replicaCount: 3
+
+    service:
+      externalTrafficPolicy: "Local"
+      omitClusterIP: false
+      # clusterIP: ""
+
+    metrics:
+      enabled: true
+      service:
+        omitClusterIP: true
+      serviceMonitor:
+        enabled: true
+        additionalLabels:
+          prometheus: "collector-kubernetes"
+
+    config:
+      http-snippet: |
+        map $ssl_client_s_dn $ssl_client_s_dn_cn {
+            default "anonymous";
+            ~CN=(?<CN>[^/,\"]+) $CN;
+        }
+
+        # Ensure there is a global_request_id for logging
+        map '' $global_request_id {
+            default '-';
+        }
+      location-snippet: |
+        proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
+      proxy-send-timeout: "300"
+      proxy-read-timeout: "300"
+      proxy-body-size: "0k"
+      server-name-hash-bucket-size: "128"
+      map-hash-bucket-size: "128"
+      disable-ipv6: "true"
+      ssl-redirect: "true"
+      enable-underscores-in-headers: "true"
+      worker-shutdown-timeout: "18000s"
+      worker-processes: "8"
+      use-forwarded-headers: "false"
+      log-format-upstream: >-
+        $remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time [$proxy_upstream_name] $upstream_addr $upstream_response_length $upstream_response_time $upstream_status $req_id $global_request_id
+    affinity:
+      # don't co-locate replicas of the ingress controller on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - nginx-ingress-external
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - controller
+
+  defaultBackend:
+    enabled: true
+
+    image:
+      repository: sapcc/defaultbackend
+      tag: "1.5"
+
+    service:
+      omitClusterIP: true
+
+    resources:
+      limits:
+        cpu: 10m
+        memory: 20Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
+
+    affinity:
+      # don't co-locate replicas of the ingress backend on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - nginx-ingress-external
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - default-backend
+
 pull-secret-injector:
   resources:
     limits:
