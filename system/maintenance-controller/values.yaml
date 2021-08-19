@@ -26,7 +26,8 @@ config: |
         name: maintenance_started
         config:
           hook: {{ required "a slack webhook should be definied" .Values.slack.webhook }}
-          channel: {{ required "a slack channel should be definied" .Values.slack.channel }}
+          # the quotes here are relevant as slack channel names starting with # would render to YAML comment otherwise
+          channel: "{{ required "a slack channel should be definied" .Values.slack.channel }}"
           # the maintenance controller uses go templates as well so we need to quote here
           message: |
             Maintenance Controller: Maintenace for node {{ "{{ .Node.Name }}" }} has started.
@@ -34,7 +35,8 @@ config: |
         name: notify_operational
         config:
           hook: {{ required "a slack webhook should be definied" .Values.slack.webhook }}
-          channel: {{ required "a slack channel should be definied" .Values.slack.channel }}
+          # the quotes here are relevant as slack channel names starting with # would render to YAML comment otherwise
+          channel: "{{ required "a slack channel should be definied" .Values.slack.channel }}"
           # the maintenance controller uses go templates as well so we need to quote here
           message: |
             Maintenance Controller: Node {{ "{{ .Node.Name }}" }} is operational again.
