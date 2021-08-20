@@ -2,7 +2,11 @@ groups:
 - name: cc3test-datapath.alerts
   rules:
   - alert: CCloudDatapathDown
-    expr: cc3test_status{type="datapath", name!~"TestDnsLookup_(bind|public).+", name!~"TestF5_(datapath|mcp).+"} == 0
+    expr: |
+        cc3test_status{type="datapath",
+            name!~"TestDnsLookup_(bind|public).+",
+            name!~"TestF5_(datapath|mcp).+"
+        } == 0
     for: 10m
     labels:
       severity: critical
@@ -18,7 +22,11 @@ groups:
       summary: '{{ $labels.name }} datapath is down'
 
   - alert: CCloudDatapathFlapping
-    expr: changes(cc3test_status{type="datapath", name!~"TestDnsLookup_(bind|public).+", name!~"TestF5_(datapath|mcp).+"}[30m]) > 8
+    expr: |
+        changes(cc3test_status{type="datapath",
+            name!~"TestDnsLookup_(bind|public).+",
+            name!~"TestF5_(datapath|mcp).+"
+        }[30m]) > 8
     labels:
       severity: critical
       tier: os
