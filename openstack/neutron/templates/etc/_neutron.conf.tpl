@@ -89,6 +89,7 @@ lock_path = /var/lib/neutron/tmp
 
 {{include "ini_sections.oslo_messaging_rabbit" .}}
 rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
+heartbeat_in_pthread = true
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true
