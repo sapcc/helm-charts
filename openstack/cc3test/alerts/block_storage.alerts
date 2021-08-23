@@ -1,10 +1,10 @@
 groups:
-- name: cc3test-baremetal.alerts
+- name: cc3test-block-storage.alerts
   rules:
-  - alert: OpenstackIronicApiDown
+  - alert: OpenstackCinderApiDown
     expr: |
         cc3test_status{type="api",
-            name=~"TestBaremetalApi_.+"
+            name=~"TestBlockStorageApi_.+"
         } == 0
     for: 10m
     labels:
@@ -12,28 +12,28 @@ groups:
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'Openstack Ironic API is down'
+      meta: 'Openstack Cinder API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/ironic'
+      playbook: 'docs/devops/alert/cinder'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'Openstack Ironic API is down'
-      summary: 'Openstack Ironic API is down'
+      description: 'Openstack Cinder API is down'
+      summary: 'Openstack Cinder API is down'
 
-  - alert: OpenstackIronicApiFlapping
+  - alert: OpenstackCinderApiFlapping
     expr: |
         changes(cc3test_status{type="api",
-            name=~"TestBaremetalApi_.+"
+            name=~"TestBlockStorageApi_.+"
         }[30m]) > 8
     labels:
       severity: warning
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'Openstack Ironic API is flapping'
+      meta: 'Openstack Cinder API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/ironic'
+      playbook: 'docs/devops/alert/cinder'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'Openstack Ironic API is flapping'
-      summary: 'Openstack Ironic API is flapping'
+      description: 'Openstack Cinder API is flapping'
+      summary: 'Openstack Cinder API is flapping'

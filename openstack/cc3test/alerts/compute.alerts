@@ -1,10 +1,10 @@
 groups:
-- name: cc3test-baremetal.alerts
+- name: cc3test-compute.alerts
   rules:
-  - alert: OpenstackIronicApiDown
+  - alert: OpenstackNovaApiDown
     expr: |
         cc3test_status{type="api",
-            name=~"TestBaremetalApi_.+"
+            name=~"TestComputeApi_.+"
         } == 0
     for: 10m
     labels:
@@ -12,28 +12,28 @@ groups:
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'Openstack Ironic API is down'
+      meta: 'Openstack Nova API is down'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/ironic'
+      playbook: 'docs/devops/alert/nova'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'Openstack Ironic API is down'
-      summary: 'Openstack Ironic API is down'
+      description: 'Openstack Nova API is down'
+      summary: 'Openstack Nova API is down'
 
-  - alert: OpenstackIronicApiFlapping
+  - alert: OpenstackNovaApiFlapping
     expr: |
         changes(cc3test_status{type="api",
-            name=~"TestBaremetalApi_.+"
+            name=~"TestComputeApi_.+"
         }[30m]) > 8
     labels:
       severity: warning
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'Openstack Ironic API is flapping'
+      meta: 'Openstack Nova API is flapping'
       dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/ironic'
+      playbook: 'docs/devops/alert/nova'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
     annotations:
-      description: 'Openstack Ironic API is flapping'
-      summary: 'Openstack Ironic API is flapping'
+      description: 'Openstack Nova API is flapping'
+      summary: 'Openstack Nova API is flapping'
