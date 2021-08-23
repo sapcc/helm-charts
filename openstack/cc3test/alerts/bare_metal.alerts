@@ -1,0 +1,37 @@
+groups:
+- name: cc3test-baremetal.alerts
+  rules:
+  - alert: OpenstackIronicApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestBaremetalApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      meta: 'Openstack Ironic API is down'
+      playbook: 'docs/devops/alert/ironic'
+    annotations:
+      description: 'Openstack Ironic API is down'
+      summary: 'Openstack Ironic API is down'
+
+  - alert: OpenstackIronicApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestBaremetalApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      meta: 'Openstack Ironic API is flapping'
+      playbook: 'docs/devops/alert/ironic'
+    annotations:
+      description: 'Openstack Ironic API is flapping'
+      summary: 'Openstack Ironic API is flapping'
