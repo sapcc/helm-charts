@@ -106,16 +106,16 @@
   </exclude>
 </filter>
 
-#<filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.horizon**>
-#  @type parser
-#  key_name log
-#  reserve_data true
-#  <parse>
-#    @type grok
-#    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}\"?( )?(%{NOTSPACE:request_time})
-#    custom_pattern_path /fluent-bin/pattern
-#  </parse>
-#</filter>
+<filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.horizon**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}\"?( )?(%{NOTSPACE:request_time})
+    custom_pattern_path /fluent-bin/pattern
+  </parse>
+</filter>
 
 
 <filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
@@ -124,8 +124,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern
-%{IPORHOST:remote_addr} - %{USERNAME:remote_user} \[%{HTTPDATE:time_local}\] \"%{DATA:request}\" %{INT:status} %{NUMBER:bytes_sent} \"%{DATA:http_referer}\" \"%{DATA:http_user_agent}\" %{NUMBER:request_length} %{NUMBER:request_time} \[%{DATA:proxy_upstream_name}\] %{IPORHOST:upstream_addr}:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NUMBER:upstream_response_time} %{INT:upstream_status} %{WORD:req_id} ?(?:(?:req-)?%{GREEDYDATA:global_request_id})?
+    grok_pattern %{IPORHOST:remote_addr} - %{USERNAME:remote_user} \[%{HTTPDATE:time_local}\] \"%{DATA:request}\" %{INT:status} %{NUMBER:bytes_sent} \"%{DATA:http_referer}\" \"%{DATA:http_user_agent}\" %{NUMBER:request_length} %{NUMBER:request_time} \[%{DATA:proxy_upstream_name}\] %{IPORHOST:upstream_addr}:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NUMBER:upstream_response_time} %{INT:upstream_status} %{WORD:req_id} ?(?:(?:req-)?%{GREEDYDATA:global_request_id})?
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
