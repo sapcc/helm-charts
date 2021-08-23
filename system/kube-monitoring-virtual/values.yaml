@@ -11,12 +11,27 @@ kubeStateMetrics:
 nodeExporter:
   enabled: false
 
-prometheus-operator:
-  # Just `prometheus`. The operator appends `-operator`.
+kube-prometheus-stack:
   nameOverride: prometheus
   fullnameOverride: prometheus
+  # Never manage CRDs. They are deployed via prometheus-crds Helm chart.
+  manageCrds: false
 
   prometheusOperator:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-operator
+      tag: v0.47.0
+
+    prometheusConfigReloaderImage:
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-config-reloader
+      tag: v0.44.0
+
+    # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
+    admissionWebhooks:
+      enabled: false
+    tls:
+      enabled: false
+
     createCustomResource: false
     service:
       annotations:
@@ -25,8 +40,6 @@ prometheus-operator:
         prometheus.io/port: "8080"
     serviceAccount:
       create: false
-    admissionWebhooks:
-      enabled: false
     tlsProxy:
       enabled: false
 

@@ -27,3 +27,11 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- .Release.Name -}}
 {{- end -}}
 {{- end -}}
+
+{{/* Generate the name prefix for the templated Prometheus alerts. */}}
+{{- define "alerts.name_prefix" -}}
+{{- if .Values.alerts.service -}}
+{{- .Values.alerts.service | title -}}
+{{- end -}}
+{{- .Release.Name | title -}}
+{{- end -}}

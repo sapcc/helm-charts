@@ -64,6 +64,9 @@ pipeline = http_proxy_to_wsgi healthcheck neutronversionsapp
 [filter:osprofiler]
 paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
 
+[filter:debug]
+paste.filter_factory = oslo_middleware:Debug.factory
+
 {{- if .Values.sentry.enabled }}
 [filter:raven]
 use = egg:raven#raven

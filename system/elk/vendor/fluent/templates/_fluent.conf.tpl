@@ -56,8 +56,12 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+    <grok>
+      pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
+    </grok>
+    <grok>
+      pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+    </grok>
   </parse>
 </filter>
 
@@ -114,14 +118,13 @@
 </filter>
 
 
-<filter	kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
-    grok_pattern
-%{IPORHOST:remote_addr} - %{USERNAME:remote_user} \[%{HTTPDATE:time_local}\] \"%{DATA:request}\" %{INT:status} %{NUMBER:bytes_sent} \"%{DATA:http_referer}\" \"%{DATA:http_user_agent}\" %{NUMBER:request_length} %{NUMBER:request_time} \[%{DATA:proxy_upstream_name}\] %{IPORHOST:upstream_addr}:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NUMBER:upstream_response_time} %{INT:upstream_status} %{WORD:req_id} ?(?:(?:req-)?%{GREEDYDATA:global_request_id})?
+    grok_pattern %{IPORHOST:remote_addr} - %{USERNAME:remote_user} \[%{HTTPDATE:time_local}\] \"%{DATA:request}\" %{INT:status} %{NUMBER:bytes_sent} \"%{DATA:http_referer}\" \"%{DATA:http_user_agent}\" %{NUMBER:request_length} %{NUMBER:request_time} \[%{DATA:proxy_upstream_name}\] %{IPORHOST:upstream_addr}:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NUMBER:upstream_response_time} %{INT:upstream_status} %{WORD:req_id} ?(?:(?:req-)?%{GREEDYDATA:global_request_id})?
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
@@ -149,9 +152,15 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern \[%{NOTSPACE:request}\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:timestamp}
-    grok_pattern \[%{NOTSPACE:request}\] %{WORD} %{NUMBER:response}
-    grok_pattern \[%{NOTSPACE:request}\]
+    <grok>
+      pattern \[%{NOTSPACE:request}\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:timestamp}
+    </grok>
+    <grok>
+      pattern \[%{NOTSPACE:request}\] %{WORD} %{NUMBER:response}
+    </grok>
+    <grok>
+      pattern \[%{NOTSPACE:request}\]
+    </grok>
   </parse>
 </filter>
 
@@ -191,8 +200,12 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel}
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
+    <grok>
+      pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel}
+    </grok>
+    <grok>
+      pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
+    </grok>
   </parse>
 </filter>
 
@@ -216,16 +229,16 @@
   </parse>
 </filter>
 
-#<filter kubernetes.var.log.containers.ingress-controller**>
-#  @type parser
-#  key_name log
-#  reserve_data true
-#  <parse>
-#    @type grok
-#    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
-#    custom_pattern_path /fluent-bin/pattern
-#  </parse>
-#</filter>
+<filter kubernetes.var.log.containers.ingress-controller**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
+    custom_pattern_path /fluent-bin/pattern
+  </parse>
+</filter>
 
 <filter kubernetes.var.log.containers.elk-fluent**>
   @type parser

@@ -2,51 +2,40 @@ groups:
 - name: cc3test-datapath.alerts
   rules:
   - alert: CCloudDatapathDown
-    expr: cc3test_status{type="datapath", name!~"TestDnsLookup_public_dns.+"} == 0
-    for: 5m
+    expr: |
+        cc3test_status{type="datapath",
+            name!~"TestDnsLookup_(bind|public).+",
+            name!~"TestF5_(datapath|mcp).+"
+        } == 0
+    for: 10m
     labels:
-      severity: warning
-      tier: monitor
+      severity: critical
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      dashboard: cc3test-overview
-      meta: '{{ $labels.name }} datapath is not responding for more than 5 minutes'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      meta: '{{ $labels.name }} datapath is not responding'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
       playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
-      description: '{{ $labels.name }} datapath is not responding for more than 5 minutes'
+      description: '{{ $labels.name }} datapath is not responding'
       summary: '{{ $labels.name }} datapath is down'
 
   - alert: CCloudDatapathFlapping
-    expr: changes(cc3test_status{type="datapath", name!~"TestDnsLookup_public_dns.+"}[30m]) > 8
+    expr: |
+        changes(cc3test_status{type="datapath",
+            name!~"TestDnsLookup_(bind|public).+",
+            name!~"TestF5_(datapath|mcp).+"
+        }[30m]) > 8
     labels:
-      severity: warning
-      tier: monitor
+      severity: critical
+      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      dashboard: cc3test-overview
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
       meta: '{{ $labels.name }} datapath is flapping'
       report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
       playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: '{{ $labels.name }} datapath is flapping'
       summary: '{{ $labels.name }} datapath is flapping'
-
-  - alert: CCloudPublicDnsLookupDown
-    expr: |
-        sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"})
-        /
-        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"}) < 0.4
-    for: 5m
-    labels:
-      severity: warning
-      tier: monitor
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: cc3test-overview
-      meta: 'Most public dns are not responding for more than 5 minutes'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Most public dns are not responding for more than 5 minutes'
-      summary: 'Most public dns not responding'

@@ -3,23 +3,20 @@ kind: Deployment
 metadata:
   name: redfish-exporter
   namespace: infra-monitoring
-  annotations:
-    meta.helm.sh/release-name: {{ .Release.Name }}
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
   labels:
     app: redfish-exporter
     type: exporter
 spec:
+  selector:
+    matchLabels:
+      app: redfish-exporter 
+      type: exporter
   replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
-  selector:
-    matchLabels:
-      app: redfish-exporter 
-      type: exporter
   template:
     metadata:
       labels:
@@ -29,6 +26,8 @@ spec:
       containers:
       - name: redfish-exporter
         image: "{{ .Values.global.registry }}/{{ .Values.redfish.image }}:{{ .Values.redfish.tag }}"
+        ports:
+        - containerPort: {{ .Values.redfish.listen_port }}
         env:
         - name: APP_ENV
           value: "{{ .Values.redfish.app_env }}"
@@ -54,5 +53,10 @@ spec:
         - name: REDFISH_BB_PASSWORD
           value: {{ required "redfish_bb_password needs to be defined in global values" .Values.global.redfish_bb_password }}
         {{- end }}
-        ports:
-        - containerPort: {{ .Values.redfish.listen_port }}
+        resources:
+          limits:
+            memory: {{ required ".Values.redfish.limits.memory missing" .Values.redfish.limits.memory }}
+            cpu: {{ required ".Values.redfish.limits.cpu missing" .Values.redfish.limits.cpu }}
+          requests:
+            memory: {{ required ".Values.redfish.resources.memory missing" .Values.redfish.resources.memory }}
+            cpu: {{ required ".Values.redfish.resources.cpu missing" .Values.redfish.resources.cpu }}

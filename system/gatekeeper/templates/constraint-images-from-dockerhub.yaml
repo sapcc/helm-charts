@@ -22,8 +22,10 @@ spec:
           container_name := container.name
           image := container.image
 
-          # Docker Hub images have no dot in the first path element (e.g. "foo/bar:latest" vs. "quay.io/foo/bar:latest")
-          regex.match("^[^/.]*/", image)
+          # Docker Hub images have either:
+          # - a path with slashes, but no dot in the first path element (e.g. "foo/bar:latest" vs. "quay.io/foo/bar:latest"), or
+          # - no path at all (e.g. "alpine:latest")
+          regex.match("^[^/.]*/|^[^/]*(?::|$)", image)
 
           # we allow some very basic components (kube-network-helpers, kube-proxy, kube-system-nginx-ingress-*, sysctl) to pull from Docker Hub to avoid circular dependencies
           not regex.match("^sapcc/(?:defaultbackend|ip-masq-agent-amd64|k8s-conntrack-nanny|kube-externalip|kube-parrot|kube-proxy-amd64|nginx-ingress-controller|sysctl):", image)

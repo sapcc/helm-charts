@@ -976,14 +976,14 @@
 - job_name: 'esxi-host'
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+  kubernetes_sd_configs:
+  - role: service
+    namespaces:
+      names:
+      - infra-monitoring
   metrics_path: /
   relabel_configs:
-    - source_labels: [job]
-      regex: esxi
+    - source_labels: [__meta_kubernetes_service_name]
+      regex: esxi-host-exporter
       action: keep
-    - target_label: __address__
-      replacement: esxi-host-exporter:9666
 {{- end }}

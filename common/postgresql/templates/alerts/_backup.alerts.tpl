@@ -1,7 +1,7 @@
 groups:
 - name: backup.alerts
   rules:
-  - alert: {{ include "alerts.service" . | title }}PostgresDatabaseBackupMissing
+  - alert: {{ include "alerts.name_prefix" . }}PostgresDatabaseBackupMissing
     expr: absent(backup_last_success{app=~"{{ template "fullname" . }}"})
     for: 1h
     labels:
@@ -13,7 +13,7 @@ groups:
       description: {{ template "fullname" . }} Backup missing. Please check backup container.
       summary: {{ template "fullname" . }} Backup missing
 
-  - alert: {{ include "alerts.service" . | title }}PostgresDatabaseBackupAge2Hours
+  - alert: {{ include "alerts.name_prefix" . }}PostgresDatabaseBackupAge2Hours
     expr: floor((time() - backup_last_success{app=~"{{ template "fullname" . }}"}) / 60 / 60) >= 2
     for: 10m
     labels:
@@ -27,7 +27,7 @@ groups:
       description: The last successful database backup for {{`{{ $labels.app }}`}} is {{`{{ $value }}`}} hours old.
       summary: Database Backup too old
 
-  - alert: {{ include "alerts.service" . | title }}PostgresDatabaseBackupAge4Hours
+  - alert: {{ include "alerts.name_prefix" . }}PostgresDatabaseBackupAge4Hours
     expr: floor((time() - backup_last_success{app=~"{{ template "fullname" . }}"}) / 60 / 60) >= 4
     for: 10m
     labels:
