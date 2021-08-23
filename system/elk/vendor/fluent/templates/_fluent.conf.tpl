@@ -102,19 +102,19 @@
   </exclude>
 </filter>
 
-<filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.horizon**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}\"?( )?(%{NOTSPACE:request_time})
-    custom_pattern_path /fluent-bin/pattern
-  </parse>
-</filter>
+#<filter kubernetes.var.log.containers.documentation** kubernetes.var.log.containers.arc** kubernetes.var.log.containers.operations** kubernetes.var.log.containers.sentry** kubernetes.var.log.containers.horizon**>
+#  @type parser
+#  key_name log
+#  reserve_data true
+#  <parse>
+#    @type grok
+#    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}\"?( )?(%{NOTSPACE:request_time})
+#    custom_pattern_path /fluent-bin/pattern
+#  </parse>
+#</filter>
 
 
-<filter	kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
   @type parser
   key_name log
   reserve_data true
