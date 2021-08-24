@@ -1,0 +1,39 @@
+groups:
+- name: cc3test-billing.alerts
+  rules:
+  - alert: CCloudBillingApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestBilling_api.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud Billing API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/billing/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CCloud Billing API is down'
+      summary: 'CCloud Billing API is down'
+
+  - alert: CCloudBillingApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestBilling_api.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud Billing API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/billing/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CCloud Billing API is flapping'
+      summary: 'CCloud Billing API is flapping'

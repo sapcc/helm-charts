@@ -27,11 +27,19 @@ spec:
     - monsoon3/domain-s4-seed
     - monsoon3/domain-wbs-seed
     - monsoon3/domain-cc3test-seed
+    {{- if eq "qa-de-1" .Values.global.region }}
     - monsoon3/domain-tempest-seed
+    {{- end }}
 
   domains:
     - name: Default
       users:
+      - name: repo # used by content-repo (but seeded here since content-repo runs in scaleout)
+        description: Repo Service User
+        password: {{ .Values.content_repo.service_user_password }}
+        role_assignments:
+          - project: service
+            role: service
       - name: swift_caretaker
         description: 'Swift Account Caretaker'
         password: {{ $.Values.swift_account_caretaker.password }}
@@ -67,27 +75,38 @@ spec:
             role: admin
           - domain: cc3test
             role: admin
+          {{- if eq "qa-de-1" .Values.global.region }}
           - domain: tempest
             role: admin
+          {{- end }}
       {{- if $.Values.velero_backup_password }}
       - name: velero_backup
         description: 'Velero Backup'
         password: {{ .Values.velero_backup_password }}
       {{- end}}
 
-    # TODO: move this to the Glance/image-build/Ironic/Backup/whatever chart
     - name: ccadmin
       projects:
         - name: master
-          {{- if .Values.velero_backup_password }}
           role_assignments:
+            - user: repo@Default
+              role: swiftoperator # required for repo sync (but seeded here because content-repo runs in scaleout)
+          {{- if .Values.velero_backup_password }}
             - user: velero_backup@Default
               role: service
           {{- end }}
           swift:
             enabled: true
-            {{- if .Values.velero_backup_password }}
             containers:
+              - name: repo
+                metadata:
+                  meta-web-listings: 'true'
+                  meta-web-listings-label: repo.{{ .Values.global.region }}.{{ .Values.global.tld }}
+                  read: .r:*,.rlistings
+              - name: repo_segments
+                metadata:
+                  read: .r:*,.rlistings
+            {{- if .Values.velero_backup_password }}
               - name: velero-backup
             {{- end }}
 

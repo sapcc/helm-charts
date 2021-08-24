@@ -74,6 +74,9 @@ elasticsearch:
   annotations:
     kubernetes.io/tls-acme: true
     disco: true
+  exporter:
+    enabled: true
+    prometheus: infra-frontend
 
   roles:
     master: "true"
@@ -120,6 +123,13 @@ elasticsearch-data:
     data: "true"
   replicas: 2
   esJavaOpts: "-Xmx10G -Xms10G"
+  resources:
+    requests:
+      cpu: "4000m"
+      memory: "16Gi"
+    limits:
+      cpu: "6000m"
+      memory: "20Gi"
   esConfig:
     elasticsearch.yml: |
       indices.query.bool.max_clause_count: 8192
@@ -148,42 +158,35 @@ elasticsearch-data:
       volumeMounts:
         - name: "{{ template "elasticsearch.uname" . }}"
           mountPath: /usr/share/elasticsearch/data
-
-elasticsearchExporter:
-  name: elastiflow
-  enabled: false
-  image: 
-    repo: justwatch/elasticsearch_exporter
-    tag: 1.1.0
-  es:
-    uri: http://elastiflow-master:9200
-  listen_port: 9102
-  targets: infra-frontend
   exporter:
     enabled: true
     prometheus: infra-frontend
-  
+
 logstash:
   enabled: false
   image: "elastiflow-logstash"
   imageTag: "DEFINED-IN-PIPELINE"
-  logstashJavaOpts: "-Xmx4G -Xms4G"
+  logstashJavaOpts: "-Xmx8G -Xms8G"
 
   persistence:
     enabled: false
 
   resources:
     requests:
-      cpu: 6000m
-      memory: 6G
-    limits:
-      cpu: 6000m
+      cpu: 4000m
       memory: 8G
+    limits:
+      cpu: 4000m
+      memory: 10G
 
   elastic:
     shards: 3
     replicas: 1
-
+  extraEnvs:
+    - name: ELASTIFLOW_DNS_HIT_CACHE_TTL
+      value: "604800"
+    - name: ELASTIFLOW_RESOLVE_IP2HOST
+      value: "exporters"
   jdbc:
     enabled: false
     configMap: "jdbc-filter"
@@ -222,8 +225,8 @@ logstash:
       #   port: 9600
       #   targetPort: 9600
       #   protocol: TCP
-
   alerts:
+    enabled: false
     prometheus: infra-collector
 
   readinessProbe:
@@ -259,21 +262,8 @@ logstashExporter:
 filebeat:
   enabled: false
   image: "elastiflow-filebeat"
-  imageTag: "20210610095217"
+  imageTag: "20210709141141"
   externalIPs:
-  netflow:
-    buffer: 1024
-    queue: 8192
-  logstash:
-    workers: 2
-    loadbalance: true
-    ttl: 0
-    pipelining: 2
-    bulk: 1024
-  queue:
-    events: 16384
-    min_events: 2048
-    flush_timeout: 1s
 
   service:
     type: NodePort
@@ -285,11 +275,11 @@ filebeat:
         protocol: UDP
   resources:
     requests:
-      cpu: "6000m"
+      cpu: "2000m"
       memory: "6G"
     limits:
-      cpu: "8000m"
-      memory: "12G"
+      cpu: "4000m"
+      memory: "16G"
 
 kibana:
   enabled: false

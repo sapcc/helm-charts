@@ -1,5 +1,5 @@
 {{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
-{{- if .Values.agent.multus | default false }}
+{{- if and (.Values.agent.multus | default false) .Values.agent.controlplane }}
 {{- $az_count := len .Values.global.availability_zones -}}
 {{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
 {{- $az := trimPrefix $.Values.global.region $az_long }}
@@ -95,6 +95,10 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: SPT_NOENV
+              value: "yes,please"
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
               command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -150,6 +154,8 @@ spec:
             - name: logvol
               mountPath: /dev/log
               readOnly: false
+            - name: network-namespace
+              mountPath: /var/run/netns
 {{- if $.Values.agent.neutron_l3 | default false }}
         - name: neutron-l3-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
@@ -218,6 +224,8 @@ spec:
                   key: neutron.DSN.python
             - name: DEBUG_CONTAINER
               value: "false"
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
           readinessProbe:
             exec:
               command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
@@ -264,10 +272,14 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
+            - name: network-namespace
+              mountPath: /var/run/netns
       volumes:
         - name: metadata-proxy
           hostPath:
             path: /run/metadata-proxy
+        - name: network-namespace
+          emptyDir: {}
         - name : modules
           hostPath:
             path: /lib/modules

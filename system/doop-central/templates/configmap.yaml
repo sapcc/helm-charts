@@ -35,6 +35,19 @@ data:
           <pre><code>kubectl get configmaps -n kube-system -l OWNER=TILLER | grep $RELEASE_NAME</code></pre>
         </dd>
       </dl>
+    GkHelm2Releases: |
+      <p>This check finds Helm 2 releases.</p>
+      <dl>
+        <dt>Why is this a problem?</dt>
+        <dd>Helm 2 does not support Kubernetes 1.17 or newer. We have to migrate all Helm 2 releases to Helm 3 before upgrading.</dd>
+        <dt>How to migrate from Helm 2 to Helm 3?</dt>
+        <dd>There is a detailed presentation in SharePoint in the folder for the July 2020 Demo Day.</dd>
+        <dt>My release is listed here, but we have already migrated to Helm 3. What's going on?</dt>
+        <dd>
+          You probably forgot to cleanup your Helm 2 releases after migrating to Helm 3. Double-check with <code>helm3 ls</code> that you are really deploying with Helm 3, then cleanup the old Helm 2 releases manually. You can find them with:
+          <pre><code>kubectl get configmaps -n kube-system -l OWNER=TILLER | grep $RELEASE_NAME</code></pre>
+        </dd>
+      </dl>
     GkImagesFromDockerhub: |
       <p>This check finds containers that pull their image from Docker Hub.</p>
       <dl>
@@ -52,4 +65,12 @@ data:
         <dd>Without the <code>severity</code> and <code>tier</code> label, alerts cannot be routed to the right Slack channels. Without the <code>summary</code> and <code>description</code> annotations, operators will not know how to fix the alert.</dd>
         <dt>How to fix?</dt>
         <dd>Add the missing labels and annotations, as reported. Note that <code>severity</code> only accepts the values <code>critical</code>, <code>warning</code> and <code>info</code>.</dd>
+      </dl>
+    GkResourceLimits: |
+      <p>This check finds containers that do not have CPU and memory limits configured.
+      <dl>
+        <dt>Why is this a problem?</dt>
+        <dd>Such containers could use an unbounded amount of resources (for example, because of a memory leak). Those resources would then not be available to other (potentially more important) containers running on the same node. We have already had API outages because of this.</dd>
+        <dt>How to fix?</dt>
+        <dd>Configure requests and limits for &quot;cpu&quot; and &quot;memory&quot; as described in <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">this article</a>. Choose values based on historical usage, by looking at the <code>container_cpu_usage_seconds_total</code> and <code>container_memory_working_set_bytes</code> metrics in prometheus-kubernetes. The Grafana dashboard <a href="https://grafana.eu-de-1.cloud.sap/d/kubernetes-container-resources/kubernetes-container-resources">Container Resources</a> shows these metrics in the &quot;CPU Usage&quot; and &quot;Memory Usage&quot; panels. <strong>Set the memory request equal to the memory limit to avoid unexpected scheduling behavior.</strong> For CPU, request and limit can and should diverge: The request represents the baseline load, the limit encompasses all expected spikes.</dd>
       </dl>

@@ -32,6 +32,14 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "dockerHubMirror" -}}
+{{- if .Values.use_alternate_registry -}}
+{{- .Values.global.dockerHubMirrorAlternateRegion -}}
+{{- else -}}
+{{- .Values.global.dockerHubMirror -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Needed for testing purposes only. */}}
 {{define "RELEASE-NAME_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "testRelease_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}

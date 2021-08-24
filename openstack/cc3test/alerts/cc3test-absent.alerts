@@ -1,0 +1,16 @@
+groups:
+- name: cc3test-absent.alerts
+  rules:
+  - alert: CCloudTestDown
+    expr: increase(cc3test_finished_seconds{type=~"api|datapath"}[10m]) == 0
+    for: 5m
+    labels:
+      severity: info
+      tier: monitor
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: cc3test-overview
+      meta: 'cc3test {{ $labels.type }} for {{ $labels.service }} is not running for more than 10 minutes'
+    annotations:
+      description: 'cc3test {{ $labels.type }} for {{ $labels.service }} is not running for more than 10 minutes'
+      summary: 'cc3test {{ $labels.type }} for {{ $labels.service }} is down'

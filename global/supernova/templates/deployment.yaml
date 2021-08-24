@@ -1,3 +1,5 @@
+# prettier-ignore
+
 kind: Deployment
 apiVersion: apps/v1
 
@@ -5,6 +7,10 @@ metadata:
   name: supernova
 
 spec:
+  selector:
+    matchLabels:
+      app: supernova
+
   revisionHistoryLimit: 3
   replicas: {{ .Values.replica_count }}
   strategy:
@@ -15,7 +21,7 @@ spec:
   template:
     metadata:
       labels:
-        name: supernova
+        app: supernova
       annotations:
         # Hash supernova configMap and save in in annotation so that a change to it triggers a pod recycle (to ensure the new config file is read)
         supernova-config-hash: {{ include (print $.Template.BasePath "/supernova-config.yaml") $ | sha256sum }}

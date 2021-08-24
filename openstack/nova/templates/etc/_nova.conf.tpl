@@ -99,6 +99,14 @@ num_retries = 10
 [cinder]
 os_region_name = {{.Values.global.region}}
 cross_az_attach={{.Values.cross_az_attach}}
+auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
+auth_type = v3password
+username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
+password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
+region_name = {{.Values.global.region}}
+project_name = {{.Values.global.keystone_service_project | default "service" }}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
 http_retries = {{.Values.cinder_http_retries}}
 
 [neutron]

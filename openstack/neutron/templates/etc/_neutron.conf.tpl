@@ -4,6 +4,8 @@ debug = {{.Values.debug}}
 verbose = True
 
 log_config_append = /etc/neutron/logging.conf
+logging_context_format_string = %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
+
 api_paste_config = /etc/neutron/api-paste.ini
 {{ include "ini_sections.default_transport_url" . }}
 
@@ -87,6 +89,7 @@ lock_path = /var/lib/neutron/tmp
 
 {{include "ini_sections.oslo_messaging_rabbit" .}}
 rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
+heartbeat_in_pthread = true
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true
@@ -139,6 +142,12 @@ quota_rbac_policy = 0
 quota_security_group = 1
 # need 4 secgrouprule quota for "default" secgroup
 quota_security_group_rule = 4
+
+[privsep]
+# The number of threads available for privsep to concurrently run processes.
+# Defaults to the number of CPU cores in the system (integer value)
+# Minimum value: 1
+thread_pool_size = 3
 
 {{- include "osprofiler" . }}
 

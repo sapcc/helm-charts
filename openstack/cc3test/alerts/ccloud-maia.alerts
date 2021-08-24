@@ -1,0 +1,39 @@
+groups:
+- name: cc3test-maia.alerts
+  rules:
+  - alert: CCloudMaiaApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestMaia_api.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud Maia API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/maia/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CCloud Maia API is down'
+      summary: 'CCloud Maia API is down'
+
+  - alert: CCloudMaiaApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestMaia_api.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud Maia API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/maia/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CCloud Maia API is flapping'
+      summary: 'CCloud Maia API is flapping'

@@ -9,7 +9,11 @@ path.repo: /data/snapshots
 
 network.host: 0.0.0.0
 transport.host: 0.0.0.0
-http.enabled: true
 http.max_content_length: 500mb
 
 discovery.zen.minimum_master_nodes: 1
+discovery.type: single-node
+
+xpack.ml.enabled: false
+xpack.security.enabled: false
+xpack.watcher.enabled: false

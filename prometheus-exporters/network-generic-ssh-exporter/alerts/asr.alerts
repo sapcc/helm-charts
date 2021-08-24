@@ -16,54 +16,26 @@ groups:
         description: "Neutron Router `{{ $labels.model }}` `{{ $labels.name }}` is reporting ARP punt policer drops"
         summary: "Neutron Router  `{{ $labels.name }}` is reporting ARP punt policer drops"
         
-    - alert: NetworkAsrNatSpike
-      expr: increase(((ssh_redundancy_send_queue ==bool 1 ) * ssh_redundancy_send_fails_delete)[5m:]) > 0
-      for: 5m
-      labels:
-        severity: critical
-        tier: net
-        service: asr
-        context: asr
-        playbook: 'docs/devops/alert/network/router.html#asr_nat_spike'
-        dashboard: network-asr-nat-table 
-      annotations:
-        description: "ASR devicename `{{ $labels.devicename }}` is experiencing a stuck queue-full bit. Risk of outage is present, peer-sync is not working. Immediate action required"
-        summary: "ASR devicename `{{ $labels.devicename }}` risk of NAT spikes and table overflow."
-        
-    - alert: NetworkAsrDeviceIsDown
-      expr: (ssh_nat_static + ssh_nat_dynamic) > 3500000
-      for: 15m
-      labels:
-        severity: critical
-        tier: net
-        service: asr
-        context: asr
-        meta: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
-        playbook: 'docs/devops/alert/network/router.html#asr_nat_table_overflow'
-        dashboard: neutron-router
-      annotations:
-        description: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
-        summary: "ASR devicename `{{ $labels.devicename }}` is DOWN for 15 min. Immediate devicename failure-over required."
 
-    - alert: NetworkAsrNatTableIsNearlyFull
-      expr: (ssh_nat_static + ssh_nat_dynamic) > 2000000
+    - alert: NetworkAsrNatTableFull
+      expr: (ssh_nat_static + ssh_nat_dynamic) > 3000000
       for: 15m
       labels:
         severity: critical
         tier: net
         service: asr
         context: asr
-        meta: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+        meta: "NAT table on Neutron Router `{{ $labels.server_name }}` has 3M translations for 15 mins. The device will stop creating new sessions soon."
         playbook: 'docs/devops/alert/network/router.html#asr_nat_table_overflow'
         dashboard: neutron-router
-        spc: "ServiceAreaCode=04&TicketType=01&Priority=1&ServiceName=NW_CLOUD_CC&ServiceUnit=10&Subject=NetworkAsrNatTableIsNearlyFull+-+devicename%3A+{{ $labels.devicename }}&Description=NAT+table+on+ASR+devicename+{{ $labels.devicename }}+is+nearly+full+for+15+min+with+more+than+2M+NAT+translations.+This+will+stop+creating+new+NAT+sessions+soon."
+        spc: "ServiceAreaCode=04&TicketType=01&Priority=1&ServiceName=NW_CLOUD_CC&ServiceUnit=10&Subject=NetworkAsrNatTableIsNearlyFull+-+devicename%3A+{{ $labels.server_name }}&Description=NAT+table+on+ASR+devicename+{{ $labels.server_name }}+is+nearly+full+for+15+min+with+more+than+2M+NAT+translations.+This+will+stop+creating+new+NAT+sessions+soon."
       annotations:
-        description: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
-        summary: "NAT table on ASR devicename `{{ $labels.devicename }}` is nearly full for 15 min with more than 2M NAT translations. This will stop creating new NAT sessions soon."
+        description: "NAT table on Neutron Router `{{ $labels.server_name }}` has 3M translations for 15 mins. The device will stop creating new sessions soon."
+        summary: "NAT table on Neutron Router `{{ $labels.server_name }}` has 3M translations for 15 mins. The device will stop creating new sessions soon."
 
     - alert: NetworkAsrRedundancyGroupBothDevicesDown
       expr: >-
-        sum(label_replace(ssh_redundancy_state, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]{2}).") ==bool 3) by (cluster) == 0
+        sum(label_replace(ssh_redundancy_state, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]?[0-9]{2}).") ==bool 3) by (cluster) == 0
       for: 5m
       labels:
         severity: critical
@@ -79,7 +51,7 @@ groups:
 
     - alert: NetworkAsrRedundancyGroupBothDevicesUp
       expr: >-
-        sum(label_replace(ssh_redundancy_state, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]{2}).") ==bool 3) by (cluster)  == 2
+        sum(label_replace(ssh_redundancy_state, "cluster", "$1", "server_name", "(.*-(rt|asr)[0-9]?[0-9]{2}).") ==bool 3) by (cluster)  == 2
       for: 5m
       labels:
         severity: critical
@@ -103,9 +75,93 @@ groups:
         tier: net
         service: asr
         context: asr
-        meta: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
-        playbook: 'docs/devops/alert/network/router.html##asr-nat-class-diff-datapath-drops'
+        meta: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.server_name }}`."
+        playbook: 'docs/devops/alert/network/router.html#asr-nat-class-diff-datapath-drops'
         dashboard: neutron-router
       annotations:
-        description: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
-        summary: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.devicename }}`."
+        description: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.server_name }}`."
+        summary: "Policy download failure, Dynamic Interface NAT stops working for `{{ $labels.server_name }}`."
+    
+    - alert: NetworkAsrRedundancyReplicationErrors
+      expr: >-
+        (rate(ssh_redundancy_send_fails_add[5m]) + rate(ssh_redundancy_send_fails_del[5m])) > 0
+      for: 20m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Redundancy synchronization errors on `{{ $labels.server_name }}`."
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrRedundancyReplicationErrors'
+        dashboard: neutron-router
+      annotations:
+        description: "Redundancy synchronization errors on `{{ $labels.server_name }}`."
+        summary: "Redundancy synchronization errors on `{{ $labels.server_name }}`."
+    
+    - alert: NetworkAsrNatGatekeeperCacheOverflow
+      expr: >-
+        (sum (ssh_qfp_nat_datapath_gatein {type=~"Active"}) by (server_name))*100/(sum (ssh_qfp_nat_datapath_gatein {type=~"Size"}) by (server_name)) >90
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "Gatekeeper cache on `{{ $labels.server_name }}` is almost full."
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrNatGatekeeperCacheOverflow'
+        dashboard: neutron-router
+      annotations:
+        description: "Gatekeeper cache on `{{ $labels.server_name }}` is almost full."
+        summary: "Gatekeeper cache on `{{ $labels.server_name }}` is almost full."
+    
+    - alert: NetworkAsrBgpFabricPeerDown
+      expr: >-
+        ((ssh_redundancy_state == 3 ) * 0)
+        + on (server_name) group_right() ssh_bgp_sessions{vrf!="", vrf=~"CC-CLOUD(0[1-9]|10)"} != 8
+      for: 5m
+      labels:
+        severity: critical
+        tier: net
+        service: asr
+        context: asr
+        meta: "BGP on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` in VRF `{{ $labels.vrf }}` went down. DAPnets in this VRF are at risk."
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrBgpFabricPeerDown'
+        dashboard: neutron-router-bgp
+      annotations:
+        description: "BGP on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` in VRF `{{ $labels.vrf }}` went down. DAPnets in this VRF are at risk."
+        summary: "BGP on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` in VRF `{{ $labels.vrf }}` went down. DAPnets in this VRF are at risk."
+
+    
+    - alert: NetworkAsrBgpNeutronPeerDown
+      expr: >-
+        ((ssh_redundancy_state == 3 ) * 0)
+        + on (server_name) group_right() ssh_bgp_sessions{vrf="", peer_type="internal"} != 8
+      for: 5m
+      labels:
+        severity: info
+        tier: net
+        service: asr
+        context: asr
+        meta: "Neutron Router mesh BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` went down. L3VPN outage!" 
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrBgpNeutronPeerDown'
+        dashboard: neutron-router-bgp
+      annotations:
+        description: "Neutron Router mesh BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` went down. L3VPN outage!" 
+        summary: "Neutron Router mesh BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` went down. L3VPN outage!" 
+    
+    - alert: NetworkAsrBgpCorePeerDown
+      expr: >-
+        ((ssh_redundancy_state == 3 ) * 0)
+        + on (server_name) group_right() ssh_bgp_sessions{vrf="", peer_type="external"} != 8
+      for: 5m
+      labels:
+        severity: info
+        tier: net
+        service: asr
+        context: asr
+        meta: "BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted."
+        playbook: 'docs/devops/alert/network/router.html#NetworkAsrBgpCorePeerDown'
+        dashboard: neutron-router-bgp
+      annotations:
+        description: "BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted."
+        summary: "BGP peering on `{{ $labels.server_name }}` to `{{ $labels.peer_ip }}` ) (core) went down. L3VPN impacted."

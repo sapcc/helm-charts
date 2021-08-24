@@ -56,8 +56,12 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+    <grok>
+      pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
+    </grok>
+    <grok>
+      pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+    </grok>
   </parse>
 </filter>
 
@@ -114,7 +118,7 @@
 </filter>
 
 
-<filter	kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
   @type parser
   key_name log
   reserve_data true
@@ -148,9 +152,15 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern \[%{NOTSPACE:request}\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:timestamp}
-    grok_pattern \[%{NOTSPACE:request}\] %{WORD} %{NUMBER:response}
-    grok_pattern \[%{NOTSPACE:request}\]
+    <grok>
+      pattern \[%{NOTSPACE:request}\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:timestamp}
+    </grok>
+    <grok>
+      pattern \[%{NOTSPACE:request}\] %{WORD} %{NUMBER:response}
+    </grok>
+    <grok>
+      pattern \[%{NOTSPACE:request}\]
+    </grok>
   </parse>
 </filter>
 
@@ -190,8 +200,12 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel}
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
+    <grok>
+      pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel}
+    </grok>
+    <grok>
+      pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
+    </grok>
   </parse>
 </filter>
 

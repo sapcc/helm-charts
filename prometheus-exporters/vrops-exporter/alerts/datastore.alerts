@@ -50,19 +50,19 @@ groups:
 
   - alert: EphemeralDataStoreCapacityWarning
     expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.8
+      vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.85
     for: 20m
     labels:
       severity: warning
       tier: vmware
       service: storage
       context: "vrops-exporter {{ $labels.datastore }}"
-      meta: "Eph Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      meta: "Eph Datastore {{ $labels.datastore }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
-      description: "Eph Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Eph Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "Eph Datastore {{ $labels.datastore }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "Eph Datastore {{ $labels.datastore }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: EphemeralDataStoreCapacityCritical
     expr: >
@@ -176,21 +176,21 @@ groups:
       description: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
-  - alert: NVMeDataStoreCapacityWarning
+  - alert: NVMeDataStoreFullyUtilised
     expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{datastore=~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.85
-    for: 20m
+      vrops_datastore_diskspace_total_usage_gigabytes{datastore=~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes ==  1
+    for: 10m
     labels:
       severity: warning
       tier: vmware
       service: storage
       context: "vrops-exporter {{ $labels.datastore }}"
-      meta: "NVMe datastore {{ $labels.datastore }} utilization >= 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      meta: "NVMe datastore {{ $labels.datastore }} is full. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       dashboard: vcenter-datastore-utilization
       playbook: docs/support/playbook/datastore/datastorediskusagealarm.html
     annotations:
-      description: "NVMe datastore {{ $labels.datastore }} utilization >= 85%. Consider to move VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "NVMe datastore {{ $labels.datastore }} utilization >= 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "NVMe datastore {{ $labels.datastore }} is full. Consider to move VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "NVMe datastore {{ $labels.datastore }} is full. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
@@ -223,3 +223,18 @@ groups:
     annotations:
       description: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Datastore {{ $labels.datastore }} is disconnected without virtual machines on it. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: DatastoreHasLostConnectivityToAStorageDevice
+    expr: >
+      vrops_datastore_alert_info{alert_name="Datastore has lost connectivity to a storage device"}
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      context: "vrops-exporter {{ $labels.datastore }}"
+      meta: "Datastore {{ $labels.datastore }} has lost connectivity to a storage device. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      playbook: docs/devops/alert/vcenter/#datastore_has_lost_connectivity_to_a_storage_device
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Datastore {{ $labels.datastore }} has lost connectivity to a storage device. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "Datastore {{ $labels.datastore }} has lost connectivity to a storage device. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"

@@ -48,6 +48,8 @@ cronus:
     replicas: 1
     maxSurge: 1
     maxUnavailable: 0
+  # maximum email body size in bytes
+  maxEmailBodySize: 10485760 # 10MiB
 
 nebula:
   enabled: true
@@ -132,6 +134,7 @@ config:
   forwardUserAgent: false
   billingCacheTTL: 24h
   barbicanCacheTTL: 15m
+  awsSignV2TTL: 5m
   technicalResponsible: technical-responsible@example
   accountStatusTimeout: 300 # 5m
   accountStatusPollDelay: 10s
@@ -141,23 +144,31 @@ config:
   websiteURL: https://example.com
   allowedServices:
     email: email-region
+  # extra SMTP backends and a list of recipient domains
+  smtpBackends:
+    int:
+      # backend hostname. scheme specifies the encryption method: none, tls, starttls
+      host: scheme://server:port
+      # a list of recipient domains, which will be redirected to this backend
+      domains:
+        - corp.int
+        - int
   # the list of domains to be blocked by a proxy server on ses email identity create/delete actions
   blockedDomains:
     - example.com # the exact domain
     - .example.com # all subdomains
     - sub.example.com # the exact subdomain
   cronusPolicy:
-    project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user)
-    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user)
-    # a policy to trigger a cache warmup
-    warmup_projects_cache: role:resource_service
-    cronus:usage_viewer: rule:project_scope or rule:domain_scope or role:cloud_email_admin or role:resource_service
+    project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
+    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
+    cronus:usage_viewer: rule:project_scope or rule:domain_scope or role:resource_service
     cronus:aws_proxy: rule:project_scope
     cronus:smtp_proxy: rule:project_scope
+    warmup_projects_cache: role:resource_service
   nebulaPolicy:
-    project_scope: project_id:%(project_id)s and role:email_admin
-    domain_scope: domain_id:%(target.project.domain.id)s and role:cloud_email_admin
-    cluster_scope: project_domain_name:ccadmin and project_name:cloud_admin
+    project_scope: project_id:%(project_id)s and (role:email_admin or role:cloud_email_admin)
+    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:cloud_email_admin)
+    cluster_scope: (project_domain_name:ccadmin and project_name:cloud_admin) or role:cloud_email_admin
     cluster_or_domain_scope: rule:cluster_scope or rule:domain_scope
     nebula:admin: rule:project_scope or rule:cluster_or_domain_scope
     nebula:cloud_admin: rule:cluster_or_domain_scope
@@ -180,6 +191,7 @@ config:
     jsonKeysToMask:
       ses:
       - Content
+      - SigningAttributes
     maxContentLen: 102400 # 100Kb max
     debug: false
   nebulaAuditSink:
@@ -197,6 +209,42 @@ ingress-nginx:
   tcp:
     465: cronus/cronus:1025
   controller:
+    image:
+      # custom image built from https://github.com/kayrus/ingress-nginx/tree/mail-module
+      # commands to build:
+      # PLATFORMS=linux/amd64 REGISTRY=keppel.eu-de-1.cloud.sap/ccloud TAG=v1.20.1-helo make push -C images/nginx
+      # ARCH=amd64 PLATFORMS=amd64 REGISTRY=keppel.eu-de-1.cloud.sap/ccloud TAG="$(cat TAG)-helo" BASE_IMAGE=keppel.eu-de-1.cloud.sap/ccloud/nginx:v1.20.1-helo make release
+      registry: keppel.eu-de-1.cloud.sap/ccloud
+      image: controller
+      tag: "v0.47.0-helo"
+      digest: ""
+    config:
+      http-snippet: |
+        server {
+          listen 127.0.0.1:8025;
+          server_name _;
+          access_log off;
+
+          set $proxy_upstream_name "cronus-cronus-http";
+          location / {
+            content_by_lua_block {
+              local bal = balancer:get_balancer()
+              if not bal then
+                return
+              end
+              local peer = bal:balance()
+              if not peer then
+                return
+              end
+              local strend = string.find(peer, ":")
+              if strend > 1 then
+                ngx.header['Auth-Server'] = string.sub(peer, 0, strend - 1)
+                ngx.header['Auth-Port'] = '1025'
+                ngx.exit(ngx.HTTP_OK)
+              end
+            }
+          }
+        }
     # pod annotations are needed to recreate nginx pods on template update
     podAnnotations:
       recreate: enableRealIP

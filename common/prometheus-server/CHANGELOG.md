@@ -1,3 +1,14 @@
+## 4.2.1
+
+* Ensure kubelet and cAdvisor metrics have labels `pod`, `pod_name`, `container`, `container_name` present for compatibility reasons.   
+
+## 4.2.0
+
+* Upgrade Prometheus to `v2.28.1`.
+* cAdvisor ServiceMonitor ready for Kubernetes `>=1.20`. Include probe metrics.
+* Set default service discovery scrape interval to `30s`.
+* API version of RBAC resources updated to `v1`.
+
 ## 4.1.0
 
 * Upgrade Prometheus to `v2.27.0`.

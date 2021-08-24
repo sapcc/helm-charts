@@ -28,7 +28,8 @@ mariadb:
       - octavia
     verify_tables:
       # DB is locked for checksum verification, so don't use too many tables here
-      - octavia.load_balancer
+      - octavia.tags
+      - octavia.session_persistence
     oauth:
       client_id: octavia
 
@@ -124,25 +125,25 @@ mysql_metrics:
         GROUP BY octavia_host, provisioning_status;
       values:
         - "count_gauge"
-    - help: Load Balancer pending
+    - help: Seconds since last non-pending state of LB
       labels:
-        - "status"
+        - "current_status"
         - "octavia_host"
         - "loadbalancer_id"
         - "loadbalancer_name"
-      name: octavia_loadbalancers_pending
+      name: octavia_seconds_since_last_nonpending_status
       query: |
         (SELECT
-          '1' AS count_gauge,
+          UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(coalesce(updated_at, created_at)) AS elapsed_time,
           name AS loadbalancer_name,
-          provisioning_status AS status,
+          provisioning_status AS current_status,
           id AS loadbalancer_id,
           server_group_id AS octavia_host
         FROM load_balancer
         WHERE provisioning_status LIKE "PENDING_%")
         UNION (select '0', '', '', '', '');
       values:
-        - "count_gauge"
+        - "elapsed_time"
     - help: Worker agent seconds since the last heartbeat
       labels:
         - "octavia_host"

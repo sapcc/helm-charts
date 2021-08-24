@@ -6,10 +6,10 @@ groups:
       vrops_hostsystem_runtime_connectionstate{state="notResponding"}
       and on (hostsystem) vrops_hostsystem_runtime_powerstate{state="Unknown"}
       and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
-      and on (hostsystem) vrops_hostsystem_summary_running_vms_number > 0
+      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state="Powered On"}) by (hostsystem) > 0
     for: 10m
     labels:
-      severity: critical
+      severity: warning
       tier: vmware
       service: compute
       context: "ESXi not responding"
@@ -19,6 +19,7 @@ groups:
     annotations:
       description: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Host {{ $labels.hostsystem }} with running VMs not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
   - alert: HostNotResponding
     expr: |
       vrops_hostsystem_summary_running_vms_number == 0 and
@@ -36,6 +37,7 @@ groups:
     annotations:
       description: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Host {{ $labels.hostsystem }} not responding. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
   - alert: HostInMaintenanceWithoutCustomAttribute
     expr: |
       ((max_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]) == 0)
@@ -51,10 +53,13 @@ groups:
     annotations:
       description: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute. Please provide detailed information in the Custom Attribute HW field."
       summary: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute."
+
   - alert: VMsOnFailoverHost
+    #  Excluding vCLS agent VMs. vCLS ensures that if vCenter Server becomes unavailable, cluster services remain available
+    #  to maintain the resources and health of the workloads that run in the clusters.
     expr: |
       vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost == 1
-      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{state="Powered On"}) by (hostsystem) > 0
+      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state="Powered On"}) by (hostsystem) > 0
     for: 10m
     labels:
       severity: warning
@@ -66,6 +71,7 @@ groups:
     annotations:
       description: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. Free up the host. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Failover Host {{ $labels.hostsystem }} has Virtual Machines on it. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
   - alert: HostDiskSpaceUsageWarning
     expr: vrops_hostsystem_diskspace_usage_gigabytes / vrops_hostsystem_diskspace_capacity_gigabytes > 0.7
     for: 30m
@@ -78,6 +84,7 @@ groups:
     annotations:
       description: "Disk space usage of host {{ $labels.hostsystem }} is above 70%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Disk space usage of host {{ $labels.hostsystem }} is above 70%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
   - alert: HostDiskSpaceUsageCritical
     expr: vrops_hostsystem_diskspace_usage_gigabytes / vrops_hostsystem_diskspace_capacity_gigabytes > 0.9
     for: 15m
@@ -90,3 +97,73 @@ groups:
     annotations:
       description: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
       summary: "Disk space usage of host {{ $labels.hostsystem }} is above 90%. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
+  - alert: HostHasLostConnectivityToDVPort
+    expr: vrops_hostsystem_alert_info{alert_name="The host has lost connectivity to a dvPort"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "ESXi dvPort connection"
+      meta: "Host {{ $labels.hostsystem }} has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#host_has_lost_connectivity_to_a_dv_port
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Host {{ $labels.hostsystem }} has lost connectivity to a dvPort. ({{ $labels.vcenter }})"
+      summary: "Host {{ $labels.hostsystem }} has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
+
+  - alert: HostHasLostConnectionToVCenterServer
+    expr: vrops_hostsystem_alert_info{alert_name="Host has lost connection to vCenter Server"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "ESXi vCenter connection"
+      meta: "Host {{ $labels.hostsystem }} has lost connection to vCenter {{ $labels.vcenter }}."
+      playbook: docs/devops/alert/vcenter/#host_has_lost_connection_to_vcenter_server
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Host {{ $labels.hostsystem }} has lost connection to vCenter {{ $labels.vcenter }}."
+      summary: "Host {{ $labels.hostsystem }} has lost connection to vCenter {{ $labels.vcenter }}."
+
+  - alert: HostHasLostConnectivityToPhysicalNetwork
+    expr: vrops_hostsystem_alert_info{alert_name="The host has lost connectivity to physical network"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "ESXi network connection"
+      meta: "Host {{ $labels.hostsystem }} has lost connectivity to physical network. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#host_has_lost_connectivity_to_physical_network
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Host {{ $labels.hostsystem }} has lost connectivity to physical network. ({{ $labels.vcenter }})"
+      summary: "Host {{ $labels.hostsystem }} has lost connectivity to physical network. ({{ $labels.vcenter }})."
+
+  - alert: HostInMaintenanceModeForAtLeast72h
+    expr: vrops_hostsystem_alert_info{alert_name="Host is in maintenance mode for at least 72 hours"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "ESXi maintenance"
+      meta: "Host {{ $labels.hostsystem }} his in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#host_in_maintenance_mode_for_at_least_72h
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Host {{ $labels.hostsystem }} is in maintenance mode for at least 72 hours. 1. ({{ $labels.vcenter }})"
+      summary: "Host {{ $labels.hostsystem }} is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+
+  - alert: HADetectedAPossibleHostFailure
+    expr: vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "ESXi failure"
+      meta: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#ha_detected_a_possible_host_failure
+      no_alert_on_absence: "true"
+    annotations:
+      description: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
+      summary: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})."

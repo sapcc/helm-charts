@@ -95,7 +95,9 @@ allow_overrides = true
 [filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 delay_auth_decision = true
-include_service_catalog = false
+# TODO this can be set to false after that https://bugs.launchpad.net/keystonemiddleware/+bug/1933356 is fixed
+include_service_catalog = true
+service_type = object-store
 auth_plugin = v3password
 auth_version = 3
 www_authenticate_uri = {{$cluster.keystone_auth_uri}}
@@ -167,6 +169,7 @@ url_base = https:
 [filter:bulk]
 use = egg:swift#bulk
 delete_container_retry_count = {{ $context.bulk_delete_container_retry_count }}
+delete_concurrency = {{ $context.bulk_delete_concurrency }}
 
 [filter:container-quotas]
 use = egg:swift#container_quotas

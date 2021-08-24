@@ -160,6 +160,10 @@ pgmetrics:
     # There is a lot to unpack in this query. Reading from the inside out:
     # 1. We want to be alerted when an asset is at a critical usage level, but
     #    Castellum is not doing anything about it. That's what the WHERE describes.
+    #    (This used to just be something along the lines of `WHERE
+    #    usage_percent > critical_threshold_percent`, but since multi-usage
+    #    resources, Castellum has started evaluating this condition for us and
+    #    reporting into the `critical_usages` column.)
     # 2. To quantify the "not doing anything" part, the metric value is the
     #    time since the last critical upsize was performed on that asset. We
     #    RIGHT OUTER JOIN instead of a simple JOIN since there may not be a
@@ -181,7 +185,7 @@ pgmetrics:
             FROM assets a
             JOIN resources r ON a.resource_id = r.id
            RIGHT OUTER JOIN finished_operations fo ON fo.asset_id = a.id AND fo.reason = 'critical'
-           WHERE a.usage_percent > r.critical_threshold_percent AND (r.max_size IS NULL OR a.size < r.max_size)
+           WHERE a.critical_usages != ''
            GROUP BY a.uuid, r.asset_type
         )
         SELECT * FROM currently_critical_assets WHERE started_at < EXTRACT(epoch FROM (NOW() - interval '6 minute'))

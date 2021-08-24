@@ -47,7 +47,7 @@ quota_zones = 0
 quota_zone_recordsets = 0
 quota_zone_records = 0
 quota_recordset_records = 20
-quota_api_export_size = 1000
+quota_api_export_size = {{ .Values.quota_api_export_size | default 1000 }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}

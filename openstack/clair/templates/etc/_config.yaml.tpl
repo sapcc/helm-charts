@@ -21,6 +21,13 @@ matcher:
   max_conn_pool: 32
   indexer_addr: "" # ignored since we're running in combo mode
   migrations: true
+  period: {{ quote .Values.clair.update_interval }}
+
+  # set update_retention to a non-default value because the default value of 10
+  # does not get applied correctly, causing garbage collection to not run
+  # <https://github.com/quay/clair/issues/1337#issuecomment-898485216>
+  update_retention: 5
+
 
 matchers:
   # do NOT enable the crda matcher; it tries to make API calls that fail with 403 errors left and right

@@ -16,6 +16,19 @@ pid {{ .PID }};
 load_module /etc/nginx/modules/ngx_http_geoip2_module.so;
 {{ end }}
 
+{{ if $cfg.EnableBrotli }}
+load_module /etc/nginx/modules/ngx_http_brotli_filter_module.so;
+load_module /etc/nginx/modules/ngx_http_brotli_static_module.so;
+{{ end }}
+
+{{ if (shouldLoadInfluxDBModule $servers) }}
+load_module /etc/nginx/modules/ngx_http_influxdb_module.so;
+{{ end }}
+
+{{ if (shouldLoadAuthDigestModule $servers) }}
+load_module /etc/nginx/modules/ngx_http_auth_digest_module.so;
+{{ end }}
+
 {{ if (shouldLoadModSecurityModule $cfg $servers) }}
 load_module /etc/nginx/modules/ngx_http_modsecurity_module.so;
 {{ end }}
@@ -71,6 +84,7 @@ http {
           error("require failed: " .. tostring(res))
         else
           configuration = res
+          configuration.prohibited_localhost_port = '{{ .StatusPort }}'
         end
 
         ok, res = pcall(require, "balancer")
@@ -161,6 +175,22 @@ http {
     # https://github.com/leev/ngx_http_geoip2_module#example-usage
 
     {{ range $index, $file := $all.MaxmindEditionFiles }}
+    {{ if eq $file "GeoLite2-Country.mmdb" }}
+    geoip2 /etc/nginx/geoip/GeoLite2-Country.mmdb {
+        $geoip2_country_code source=$remote_addr country iso_code;
+        $geoip2_country_name source=$remote_addr country names en;
+        $geoip2_continent_name source=$remote_addr continent names en;
+    }
+    {{ end }}
+
+    {{ if eq $file "GeoIP2-Country.mmdb" }}
+    geoip2 /etc/nginx/geoip/GeoIP2-Country.mmdb {
+        $geoip2_country_code source=$remote_addr country iso_code;
+        $geoip2_country_name source=$remote_addr country names en;
+        $geoip2_continent_name source=$remote_addr continent names en;
+    }
+    {{ end }}
+
     {{ if eq $file "GeoLite2-City.mmdb" }}
     geoip2 /etc/nginx/geoip/GeoLite2-City.mmdb {
         $geoip2_city_country_code source=$remote_addr country iso_code;
@@ -173,6 +203,8 @@ http {
         $geoip2_time_zone source=$remote_addr location time_zone;
         $geoip2_region_code source=$remote_addr subdivisions 0 iso_code;
         $geoip2_region_name source=$remote_addr subdivisions 0 names en;
+        $geoip2_subregion_code source=$remote_addr subdivisions 1 iso_code;
+        $geoip2_subregion_name source=$remote_addr subdivisions 1 names en;
     }
     {{ end }}
 
@@ -188,6 +220,8 @@ http {
         $geoip2_time_zone source=$remote_addr location time_zone;
         $geoip2_region_code source=$remote_addr subdivisions 0 iso_code;
         $geoip2_region_name source=$remote_addr subdivisions 0 names en;
+        $geoip2_subregion_code source=$remote_addr subdivisions 1 iso_code;
+        $geoip2_subregion_name source=$remote_addr subdivisions 1 names en;
     }
     {{ end }}
 
@@ -325,7 +359,7 @@ http {
         default 1;
     }
 
-    {{ if $cfg.DisableAccessLog }}
+    {{ if or $cfg.DisableAccessLog $cfg.DisableHTTPAccessLog }}
     access_log off;
     {{ else }}
     {{ if $cfg.EnableSyslog }}
@@ -374,14 +408,6 @@ http {
         default          "$http_x_forwarded_for, $realip_remote_addr";
         ''               "$realip_remote_addr";
         {{ end}}
-    }
-
-    {{ end }}
-
-    {{ if $cfg.UseForwardedHeaders }}
-    map $http_x_forwarded_proto $full_x_forwarded_proto {
-        default $http_x_forwarded_proto;
-        "" $scheme;
     }
 
     {{ end }}
@@ -549,12 +575,21 @@ http {
         }
         {{ end }}
 
-        {{ if ne $all.ListenPorts.HTTPS 443 }}
-        {{ $redirect_port := (printf ":%v" $all.ListenPorts.HTTPS) }}
-        return {{ $all.Cfg.HTTPRedirectCode }} $scheme://{{ $redirect.To }}{{ $redirect_port }}$request_uri;
-        {{ else }}
-        return {{ $all.Cfg.HTTPRedirectCode }} $scheme://{{ $redirect.To }}$request_uri;
-        {{ end }}
+        set_by_lua_block $redirect_to {
+            local request_uri = ngx.var.request_uri
+            if string.sub(request_uri, -1) == "/" then
+                request_uri = string.sub(request_uri, 1, -2)
+            end
+
+            {{ if ne $all.ListenPorts.HTTPS 443 }}
+            {{ $redirect_port := (printf ":%v" $all.ListenPorts.HTTPS) }}
+            return string.format("%s://%s%s%s", ngx.var.scheme, "{{ $redirect.To }}", "{{ $redirect_port }}", request_uri)
+            {{ else }}
+            return string.format("%s://%s%s", ngx.var.scheme, "{{ $redirect.To }}", request_uri)
+            {{ end }}
+        }
+
+        return {{ $all.Cfg.HTTPRedirectCode }} $redirect_to;
     }
     ## end server {{ $redirect.From }}
     {{ end }}
@@ -563,7 +598,7 @@ http {
 
     ## start server {{ $server.Hostname }}
     server {
-        server_name {{ $server.Hostname }} {{range $server.Aliases }}{{ . }} {{ end }};
+        server_name {{ buildServerName $server.Hostname }} {{range $server.Aliases }}{{ . }} {{ end }};
 
         {{ if gt (len $cfg.BlockUserAgents) 0 }}
         if ($block_ua) {
@@ -679,6 +714,8 @@ stream {
           error("require failed: " .. tostring(res))
         else
           tcp_udp_configuration = res
+          tcp_udp_configuration.prohibited_localhost_port = '{{ .StatusPort }}'
+
         end
 
         ok, res = pcall(require, "tcp_udp_balancer")
@@ -693,25 +730,23 @@ stream {
         tcp_udp_balancer.init_worker()
     }
 
-    {{/* Enable the real_ip module only if we use Proxy Protocol. */}}
-    {{/* we use the value of the real IP for the geo_ip module */}}
-    {{ if or $cfg.UseProxyProtocol $cfg.EnableRealIp }}
-    {{ range $trusted_ip := $cfg.ProxyRealIPCIDR }}
-    set_real_ip_from    {{ $trusted_ip }};
-    {{ end }}
-    {{ end }}
-
     lua_add_variable $proxy_upstream_name;
 
     log_format log_stream '{{ $cfg.LogFormatStream }}';
 
-    {{ if $cfg.DisableAccessLog }}
+    {{ if or $cfg.DisableAccessLog $cfg.DisableStreamAccessLog }}
     access_log off;
     {{ else }}
     access_log {{ or $cfg.StreamAccessLogPath $cfg.AccessLogPath }} log_stream {{ $cfg.AccessLogParams }};
     {{ end }}
 
-    error_log  {{ $cfg.ErrorLogPath }};
+    error_log  {{ $cfg.ErrorLogPath }} {{ $cfg.ErrorLogLevel }};
+
+    {{ if or $cfg.UseProxyProtocol $cfg.EnableRealIp }}
+    {{ range $trusted_ip := $cfg.ProxyRealIPCIDR }}
+    set_real_ip_from    {{ $trusted_ip }};
+    {{ end }}
+    {{ end }}
 
     upstream upstream_balancer {
         server 0.0.0.1:1234; # placeholder
@@ -751,6 +786,10 @@ stream {
         {{ end }}
         {{ end }}
         proxy_timeout           {{ $cfg.ProxyStreamTimeout }};
+        proxy_next_upstream     {{ if $cfg.ProxyStreamNextUpstream }}on{{ else }}off{{ end }};
+        proxy_next_upstream_timeout {{ $cfg.ProxyStreamNextUpstreamTimeout }};
+        proxy_next_upstream_tries   {{ $cfg.ProxyStreamNextUpstreamTries }};
+
         proxy_pass              upstream_balancer;
         {{ if $tcpServer.Backend.ProxyProtocol.Encode }}
         proxy_protocol          on;
@@ -804,9 +843,70 @@ stream {
         {{ end }}
         proxy_responses         {{ $cfg.ProxyStreamResponses }};
         proxy_timeout           {{ $cfg.ProxyStreamTimeout }};
+        proxy_next_upstream     {{ if $cfg.ProxyStreamNextUpstream }}on{{ else }}off{{ end }};
+        proxy_next_upstream_timeout {{ $cfg.ProxyStreamNextUpstreamTimeout }};
+        proxy_next_upstream_tries   {{ $cfg.ProxyStreamNextUpstreamTries }};
         proxy_pass              upstream_balancer;
     }
     {{ end }}
+}
+
+mail {
+    error_log  {{ $cfg.ErrorLogPath }} {{ $cfg.ErrorLogLevel }};
+
+    auth_http 127.0.0.1:8025;
+    xclient   off;
+    starttls  only;
+
+    {{ if or $cfg.UseProxyProtocol $cfg.EnableRealIp }}
+    {{ range $trusted_ip := $cfg.ProxyRealIPCIDR }}
+    set_real_ip_from    {{ $trusted_ip }};
+    {{ end }}
+    {{ end }}
+
+    ssl_certificate         /etc/ingress-controller/ssl/cronus/tls.crt;
+    ssl_certificate_key     /etc/ingress-controller/ssl/cronus/tls.key;
+
+    ssl_protocols {{ $cfg.SSLProtocols }};
+
+    # allow configuring ssl session tickets
+    ssl_session_tickets {{ if $cfg.SSLSessionTickets }}on{{ else }}off{{ end }};
+
+    {{ if not (empty $cfg.SSLSessionTicketKey ) }}
+    ssl_session_ticket_key /etc/nginx/tickets.key;
+    {{ end }}
+
+    {{ if not (empty $cfg.SSLCiphers) }}
+    # allow configuring custom ssl ciphers
+    ssl_ciphers '{{ $cfg.SSLCiphers }}';
+    ssl_prefer_server_ciphers on;
+    {{ end }}
+
+    {{ if not (empty $cfg.SSLDHParam) }}
+    # allow custom DH file http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_dhparam
+    ssl_dhparam {{ $cfg.SSLDHParam }};
+    {{ end }}
+
+    ssl_ecdh_curve {{ $cfg.SSLECDHCurve }};
+
+    {{ range $tcpServer := .TCPBackends }}
+    server {
+        listen 587 {{ if $tcpServer.Backend.ProxyProtocol.Decode }} proxy_protocol{{ end }};
+        server_name cronus;
+
+        protocol smtp;
+
+        smtp_capabilities PIPELINING 8BITMIME ENHANCEDSTATUSCODES CHUNKING SIZE;
+
+        smtp_auth login;
+        proxy_smtp_auth on;
+        proxy_pass_error_message on;
+
+        {{ if $tcpServer.Backend.ProxyProtocol.Encode }}
+        proxy_protocol          on;
+        {{ end }}
+  }
+  {{ end }}
 }
 
 {{/* definition of templates to avoid repetitions */}}
@@ -852,6 +952,7 @@ stream {
         {{ if $cors.CorsAllowCredentials }} more_set_headers 'Access-Control-Allow-Credentials: {{ $cors.CorsAllowCredentials }}'; {{ end }}
         more_set_headers 'Access-Control-Allow-Methods: {{ $cors.CorsAllowMethods }}';
         more_set_headers 'Access-Control-Allow-Headers: {{ $cors.CorsAllowHeaders }}';
+        {{ if not (empty $cors.CorsExposeHeaders) }} more_set_headers 'Access-Control-Expose-Headers: {{ $cors.CorsExposeHeaders }}'; {{ end }}
         more_set_headers 'Access-Control-Max-Age: {{ $cors.CorsMaxAge }}';
         more_set_headers 'Content-Type: text/plain charset=UTF-8';
         more_set_headers 'Content-Length: 0';
@@ -860,8 +961,7 @@ stream {
 
         more_set_headers 'Access-Control-Allow-Origin: {{ $cors.CorsAllowOrigin }}';
         {{ if $cors.CorsAllowCredentials }} more_set_headers 'Access-Control-Allow-Credentials: {{ $cors.CorsAllowCredentials }}'; {{ end }}
-        more_set_headers 'Access-Control-Allow-Methods: {{ $cors.CorsAllowMethods }}';
-        more_set_headers 'Access-Control-Allow-Headers: {{ $cors.CorsAllowHeaders }}';
+        {{ if not (empty $cors.CorsExposeHeaders) }} more_set_headers 'Access-Control-Expose-Headers: {{ $cors.CorsExposeHeaders }}'; {{ end }}
 
 {{ end }}
 
@@ -927,6 +1027,7 @@ stream {
         {{ end }}
 
         {{ if not (empty $server.ServerSnippet) }}
+        # Custom code snippet configured for host {{ $server.Hostname }}
         {{ $server.ServerSnippet }}
         {{ end }}
 
@@ -958,7 +1059,7 @@ stream {
         location = {{ $authPath }} {
             internal;
 
-            {{ if $all.Cfg.EnableOpentracing }}
+            {{ if (or $all.Cfg.EnableOpentracing $location.Opentracing.Enabled) }}
             opentracing on;
             opentracing_propagate_context;
             {{ end }}
@@ -1062,18 +1163,19 @@ stream {
 
             add_header Set-Cookie $auth_cookie;
 
-            return 302 {{ buildAuthSignURL $externalAuth.SigninURL }};
+            return 302 {{ buildAuthSignURL $externalAuth.SigninURL $externalAuth.SigninURLRedirectParam }};
         }
         {{ end }}
         {{ end }}
 
         location {{ $path }} {
-            {{ $ing := (getIngressInformation $location.Ingress $server.Hostname $location.Path) }}
+            {{ $ing := (getIngressInformation $location.Ingress $server.Hostname $location.IngressPath) }}
             set $namespace      {{ $ing.Namespace | quote}};
             set $ingress_name   {{ $ing.Rule | quote }};
             set $service_name   {{ $ing.Service | quote }};
             set $service_port   {{ $ing.ServicePort | quote }};
-            set $location_path  {{ $location.Path | escapeLiteralDollar | quote }};
+            set $location_path  {{ $ing.Path | escapeLiteralDollar | quote }};
+            set $global_rate_limit_exceeding n;
 
             {{ buildOpentracingForLocation $all.Cfg.EnableOpentracing $location }}
 
@@ -1100,6 +1202,7 @@ stream {
             }
 
             body_filter_by_lua_block {
+                plugins.run()
             }
 
             log_by_lua_block {
@@ -1230,13 +1333,10 @@ stream {
             {{ else }}
             {{ $proxySetHeader }} X-Forwarded-For        $remote_addr;
             {{ end }}
-            {{ if $all.Cfg.UseForwardedHeaders }}
-            {{ $proxySetHeader }} X-Forwarded-Proto      $full_x_forwarded_proto;
-            {{ else }}
-            {{ $proxySetHeader }} X-Forwarded-Proto      $pass_access_scheme;
-            {{ end }}
             {{ $proxySetHeader }} X-Forwarded-Host       $best_http_host;
             {{ $proxySetHeader }} X-Forwarded-Port       $pass_port;
+            {{ $proxySetHeader }} X-Forwarded-Proto      $pass_access_scheme;
+            {{ $proxySetHeader }} X-Forwarded-Scheme     $pass_access_scheme;
             {{ if $all.Cfg.ProxyAddOriginalURIHeader }}
             {{ $proxySetHeader }} X-Original-URI         $request_uri;
             {{ end }}
