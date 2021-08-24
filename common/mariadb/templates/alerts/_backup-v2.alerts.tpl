@@ -26,7 +26,7 @@
 
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseBackupVerificationFailed
     expr: sum(maria_backup_verify_status{service=~"{{  include "alerts.service" . }}.*" }) < 1
-    for: 8h
+    for: 16h
     labels:
       context: "{{ .Release.Name }}"
       service: {{ include "alerts.service" . }}
