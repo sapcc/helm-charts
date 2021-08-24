@@ -67,8 +67,6 @@
       - '{__name__=~"^cablecheck_error_status"}'
       - '{__name__=~"^cablecheck_runs_counter_total"}'
       - '{__name__=~"^nsxt_trim_exception"}'
-      - '{__name__=~"^es_cluster_status"}'
-      - '{__name__=~"^es_fs_path_.+"}'
       - '{__name__=~"^filebeat_.+"}'
       - '{__name__=~"^logstash_node_.+"}'
       - '{__name__=~"vrops_inventory_collection_time_seconds|vrops_inventory_iteration_total"}'
