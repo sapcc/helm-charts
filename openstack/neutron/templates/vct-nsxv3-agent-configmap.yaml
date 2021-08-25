@@ -31,7 +31,6 @@ template: |
       {{- range $k, $v := .Values.drivers.nsxv3.defaults.AGENT }}
       {{ $k }} = {{ $v }}
       {{- end }}
-      enable_runtime_migration_from_dvs_driver = False
       logging_url = redis://neutron-logger-redis:6379/0
 
       [NSXV3]
@@ -41,19 +40,11 @@ template: |
       {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
       nsxv3_login_hostname = {= hostname =}
       nsxv3_login_password = {= username | derive_password(hostname) | quote =}
+
       {%- set tzname = "bb" + ( '%03d' % bb ) + "-vlan" %}
       nsxv3_transport_zone_name = {= tzname =}
       {{- range $k, $v := .Values.drivers.nsxv3.defaults.NSXV3 }}
       {{ $k }} = {{ $v }}
       {{- end }}
-
-      [vsphere]
-      # vcenter connection info for the migration functions
-      # TODO - remove it after migration
-      vsphere_login_username = {= username | quote =}
-      vsphere_login_password = {= password | quote =}
-      vsphere_login_hostname = {= host =}
-
-      vsphere_suppress_ssl_wornings = True
   {% endif %}
 {{ end }}
