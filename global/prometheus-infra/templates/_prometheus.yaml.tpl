@@ -103,6 +103,7 @@
       - '{__name__=~"^aws_ses_cronus_provider_.+"}'
       - '{__name__=~"^cronus_simulator_.+"}'
       - '{__name__=~"^cronus_updater_.+"}'
+      - '{__name__=~"^network_apic_free_port_count"}'
 
   relabel_configs:
     - action: replace
