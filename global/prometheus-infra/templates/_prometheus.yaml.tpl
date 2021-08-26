@@ -95,6 +95,7 @@
       - '{__name__=~"^es_cluster_status"}'
       - '{__name__=~"^es_fs_path_.+"}'
       - '{__name__=~"^es_index_size_mb"}'
+      - '{__name__=~"^es_index_store_size_bytes"}'
       - '{__name__=~"elastiflow_thousandeyes_probes_hits"}'
       - '{__name__=~"^logstash_node_queue_.+"}'
       - '{__name__=~"^logstash_node_pipeline_.+"}'
