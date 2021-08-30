@@ -1,0 +1,39 @@
+groups:
+- name: cc3test-limes.alerts
+  rules:
+  - alert: CCloudLimesApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestLimes_api.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud Limes API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/limes/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CCloud Limes API is down'
+      summary: 'CCloud Kubernikus API is down'
+
+  - alert: CCloudLimesApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestLimes_api.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud Limes API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/limes/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CCloud Limes API is flapping'
+      summary: 'CCloud Limes API is flapping'

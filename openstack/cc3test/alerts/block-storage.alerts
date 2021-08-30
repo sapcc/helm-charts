@@ -1,0 +1,39 @@
+groups:
+- name: cc3test-blockstorage.alerts
+  rules:
+  - alert: OpenstackCinderApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestBlockStorageApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Cinder API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/cinder/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Cinder API is down'
+      summary: 'Openstack Cinder API is down'
+
+  - alert: OpenstackCinderApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestBlockStorageApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Cinder API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/cinder/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Cinder API is flapping'
+      summary: 'Openstack Cinder API is flapping'

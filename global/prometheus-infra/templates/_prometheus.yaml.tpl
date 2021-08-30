@@ -92,9 +92,12 @@
       - '{__name__=~"^ssh_(nx|xe)_ntp_configured"}'
       - '{__name__=~"^ssh_redundancy_state"}'
       - '{__name__=~"^fluentd_.+"}'
-      - '{__name__=~"^elasticsearch_cluster_health_.+"}'
-      - '{__name__=~"^elasticsearch_filesystem_data_.+"}'
-      - '{__name__=~"^elasticsearch_cluster_health_active_primary_shards"}'
+      - '{__name__=~"^es_cluster_status"}'
+      - '{__name__=~"^es_fs_path_.+"}'
+      - '{__name__=~"^es_index_size_mb"}'
+      - '{__name__=~"^es_index_store_size_bytes"}'
+      - '{__name__=~"^es_fs_path_total_bytes"}'
+      - '{__name__=~"^es_fs_path_available_bytes"}'
       - '{__name__=~"elastiflow_thousandeyes_probes_hits"}'
       - '{__name__=~"^logstash_node_queue_.+"}'
       - '{__name__=~"^logstash_node_pipeline_.+"}'
@@ -103,6 +106,7 @@
       - '{__name__=~"^aws_ses_cronus_provider_.+"}'
       - '{__name__=~"^cronus_simulator_.+"}'
       - '{__name__=~"^cronus_updater_.+"}'
+      - '{__name__=~"^network_apic_(free|used|down)_port_count"}'
 
   relabel_configs:
     - action: replace

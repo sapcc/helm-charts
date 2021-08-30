@@ -1,5 +1,13 @@
 {{- if .Values.simulator.enabled -}}
 simulator:
+{{- if .Values.simulator.smtpInfo }}
+  smtpInfo:
+    host: {{ .Values.simulator.smtpInfo.host }}
+    port: {{ .Values.simulator.smtpInfo.port }}
+    smtpUsername: {{ .Values.simulator.smtpInfo.smtpUsername }}
+    smtpPassword: {{ .Values.simulator.smtpInfo.smtpPassword }}
+    insecureSkipVerify: {{ .Values.simulator.smtpInfo.insecureSkipVerify }}
+{{- end }}
   cronuscli: {{ .Values.simulator.cronuscli }}
   recipient: {{ .Values.simulator.recipient }}
   sender: {{ .Values.simulator.sender }}

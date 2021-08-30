@@ -114,4 +114,10 @@ nebula:
 {{- if .Values.nebula.sentryDsn }}
   sentryDsn: {{ .Values.nebula.sentryDsn }}
 {{- end }}
+{{- if .Values.nebula.secAttrsUpdateAfter }}
+  secAttrsUpdateAfter: {{ .Values.nebula.secAttrsUpdateAfter }}
+{{- end }}
+{{- if .Values.nebula.leasedUntilUpdateBefore }}
+  leasedUntilUpdateBefore: {{ .Values.nebula.leasedUntilUpdateBefore }}
+{{- end }}
 {{- end -}}

@@ -50,11 +50,6 @@ periodic_fuzzy_delay = 10
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
 
-{{- if contains ",f5" .Values.ml2_mechanismdrivers }}
-[octavia]
-base_url = http://{{include "octavia_api_endpoint_host_internal" .}}:9876
-{{- end }}
-
 [nova]
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
 # DEPRECATED: auth_plugin
@@ -89,6 +84,7 @@ lock_path = /var/lib/neutron/tmp
 
 {{include "ini_sections.oslo_messaging_rabbit" .}}
 rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
+heartbeat_in_pthread = true
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true

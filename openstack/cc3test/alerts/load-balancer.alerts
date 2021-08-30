@@ -1,0 +1,79 @@
+groups:
+- name: cc3test-loadbalancer.alerts
+  rules:
+  - alert: OpenstackOctaviaApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestLoadBalancerApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Octavia API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/octavia/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Octavia API is down'
+      summary: 'Openstack Octavia API is down'
+
+  - alert: OpenstackOctaviaApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestLoadBalancerApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Octavia API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/octavia/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Octavia API is flapping'
+      summary: 'Openstack Octavia API is flapping'
+
+- name: cc3test-f5.alerts
+  rules:
+  - alert: NetworkF5McpDown
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestF5_(datapath|mcp).+"
+        } == 0
+    for: 10m
+    labels:
+      severity: info
+      tier: net
+      service: f5
+      context: f5
+      meta: 'F5 {{ $labels.name }} not responding or mcp down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/network/f5.html'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'F5 {{ $labels.name }} not responding or mcp down'
+      summary: 'F5 {{ $labels.name }} not responding or mcp down'
+
+  - alert: NetworkF5CertExpires
+    expr: |
+        cc3test_status{type="certificate",
+            name=~"TestF5_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: info
+      tier: net
+      service: f5
+      context: f5
+      meta: 'F5 {{ $labels.name }} cert expires soon'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/network/f5.html'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'F5 {{ $labels.name }} cert expires soon'
+      summary: 'F5 {{ $labels.name }} cert expires soon'

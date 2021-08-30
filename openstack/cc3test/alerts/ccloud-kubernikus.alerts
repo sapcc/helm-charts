@@ -1,0 +1,39 @@
+groups:
+- name: cc3test-kubernikus.alerts
+  rules:
+  - alert: CCloudKubernikusApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestKubernikus_api.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud Kubernikus API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/kubernikus/#kubernikus_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CCloud Kubernikus API is down'
+      summary: 'CCloud Kubernikus API is down'
+
+  - alert: CCloudKubernikusApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestKubernikus_api.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'CCloud Kubernikus API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/kubernikus/#kubernikus_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'CCloud Kubernikus API is flapping'
+      summary: 'CCloud Kubernikus API is flapping'

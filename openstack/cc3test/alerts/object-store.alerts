@@ -1,0 +1,39 @@
+groups:
+- name: cc3test-objectstore.alerts
+  rules:
+  - alert: OpenstackSwiftApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestObjectStorageApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Swift API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/swift/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Swift API is down'
+      summary: 'Openstack Swift API is down'
+
+  - alert: OpenstackSwiftApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestObjectStorageApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Swift API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/swift/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Swift API is flapping'
+      summary: 'Openstack Swift API is flapping'

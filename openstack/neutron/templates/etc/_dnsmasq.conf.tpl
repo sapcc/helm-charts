@@ -3,3 +3,6 @@ log-queries
 log-facility=/var/log/dnsmasq.log
 {{- end }}
 no-negcache
+{{- range .Values.dnsmasq.dhcp_options }}
+dhcp-option={{ . }}
+{{- end }}

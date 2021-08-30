@@ -15,6 +15,7 @@ global:
 pod:
   replicas:
     server: 2
+    rpc_server: 2
   lifecycle:
     upgrades:
       deployments:
@@ -47,6 +48,10 @@ pod:
         cpu: '250m'
         memory: '512Mi'
     server:
+      requests:
+        cpu: "4000m"
+        memory: "8Gi"
+    rpc_server:
       requests:
         cpu: "4000m"
         memory: "8Gi"
@@ -118,6 +123,12 @@ imageVersionLogstash: 7.10.1
 imageVersionNSXTNanny: "1.5"
 imageVersionNetworkAgentDHCPInit: 3.8
 
+api:
+  processes: 10
+  # minimum number of workers to keep at all times
+  cheaper: 5
+  uwsgi: false
+
 service_plugins: asr1k_l3_routing
 default_router_type: ASR1k_router
 router_scheduler_driver: neutron.scheduler.l3_agent_scheduler.LeastRoutersScheduler
@@ -151,7 +162,6 @@ fwaas:
   enabled: false
 
 asr:
-
   config_agents: []
 
 f5:
@@ -230,16 +240,19 @@ logging:
     neutron:
       handlers: stdout, sentry
       level: WARNING
-    neutron_lbaas:
-      handlers: stdout, sentry
-      level: WARNING
     neutron.pecan_wsgi.hooks.policy_enforcement:
       handlers: stdout, sentry
       level: INFO
+    networking_aci.plugins.ml2.drivers.mech_aci.allocations_manager:
+      handlers: stdout, sentry
+      level: WARNING
     suds:
       handlers: "null"
       level: ERROR
     eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    neutron.wsgi:
       handlers: stdout, sentry
       level: INFO
     auditmiddleware:
@@ -472,3 +485,5 @@ logger-redis:
 
 agent:
   controlplane: true
+
+dnsmasq: {}

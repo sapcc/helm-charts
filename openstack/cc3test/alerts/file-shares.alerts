@@ -1,0 +1,58 @@
+groups:
+- name: cc3test-fileshares.alerts
+  rules:
+  - alert: OpenstackManilaApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestFileShareApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Manila API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/manila/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Manila API is down'
+      summary: 'Openstack Manila API is down'
+
+  - alert: OpenstackManilaApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestFileShareApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Manila API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/manila/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Manila API is flapping'
+      summary: 'Openstack Manila API is flapping'
+
+  - alert: FileShareDatapathDown
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestFileShareMount_static.+"
+        } == 0
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Datapath to mounted file share is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/manila/#test_nfs'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Datapath to mounted file share is down'
+      summary: 'Datapath to mounted file share is down'

@@ -19,3 +19,21 @@ spec:
 {{ include (print .Template.BasePath "/alerts/_backup-v2.alerts.tpl") . | indent 2 }}
 {{- end }}
 {{ include (print .Template.BasePath "/alerts/_mysql.alerts.tpl") . | indent 2 }}
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "fullName" . }}-health-alerts
+  labels:
+    app: {{ include "fullName" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    prometheus: "kubernetes"
+
+spec:
+  groups:
+{{ include (print .Template.BasePath "/alerts/_health.alerts.tpl") . | indent 2 }}
