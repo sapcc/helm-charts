@@ -101,6 +101,12 @@ route:
       severity: info|warning|critical
       service: concourse
 
+  - receiver: slack_cc-cp
+    continue: true
+    match_re:
+      severity: info|warning|critical
+      service: cc-cp
+
   - receiver: pagerduty_alertchain_test
     continue: false
     match_re:
@@ -686,6 +692,19 @@ receivers:
   - name: slack_concourse
     slack_configs:
       - channel: '#cc-concourse'
+        api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
+        username: "Pulsar"
+        title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
+        title_link: {{"'{{template \"slack.sapcc.titlelink\" . }}'"}}
+        text: {{"'{{template \"slack.sapcc.text\" . }}'"}}
+        pretext: {{"'{{template \"slack.sapcc.pretext\" . }}'"}}
+        icon_emoji: {{"'{{template \"slack.sapcc.iconemoji\" . }}'"}}
+        color: {{`'{{template "slack.sapcc.color" . }}'`}}
+        send_resolved: true
+
+  - name: slack_cc-cp
+    slack_configs:
+      - channel: '#cc-cp'
         api_url: {{ required ".Values.slack.webhookURL undefined" .Values.slack.webhookURL | quote }}
         username: "Pulsar"
         title: {{"'{{template \"slack.sapcc.title\" . }}'"}}
