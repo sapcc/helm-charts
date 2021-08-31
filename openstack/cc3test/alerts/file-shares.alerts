@@ -56,3 +56,32 @@ groups:
     annotations:
       description: 'Datapath to mounted file share is down'
       summary: 'Datapath to mounted file share is down'
+
+  - alert: FilerCertificateExpires
+    expr: cc3test_cert_expires_in_days(type='filer') < 8
+    # we want a critical alert 7 days before
+    labels:
+      severity: info
+      tier: os
+      service: filer
+      context: filer
+      meta: 'Certificate on {{ $labels.host }} expires in less than 8 days'
+      playbook: 'docs/support/playbook/manila/filer_cert_expired.html'
+      support_component: manila_netapp
+    annotations:
+      description: Certificate on {{ $labels.host }} expires in less than 8 days
+      summary: Certificate expires
+
+  - alert: FilerCertificateExpires
+    expr: cc3test_cert_expires_in_days(type='filer') < 15
+    # we want a warning alert 14 days before
+      severity: info
+      tier: os
+      service: filer
+      context: filer'
+      meta: 'Certificate on {{ $labels.host }} expires in less than 8 days'
+      playbook: 'docs/support/playbook/manila/filer_cert_expired.html'
+      support_component: manila_netapp
+    annotations:
+      description: Certificate on {{ $labels.host }} expires in less than 15 days
+      summary: Certificate expires

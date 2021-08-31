@@ -59,21 +59,27 @@ groups:
       description: 'F5 {{ $labels.name }} not responding or mcp down'
       summary: 'F5 {{ $labels.name }} not responding or mcp down'
 
-  - alert: NetworkF5CertExpires
-    expr: |
-        cc3test_status{type="certificate",
-            name=~"TestF5_.+"
-        } == 0
-    for: 10m
+  - alert: F5CertificateExpires
+    expr: cc3test_cert_expires_in_days(type='f5') < 8
+    # we want a critical alert 7 days before
     labels:
       severity: info
       tier: net
       service: f5
       context: f5
-      meta: 'F5 {{ $labels.name }} cert expires soon'
-      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
-      playbook: 'docs/devops/alert/network/f5.html'
-      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      meta: 'Certificate on {{ $labels.host }} expires in less than 8 days'
     annotations:
-      description: 'F5 {{ $labels.name }} cert expires soon'
-      summary: 'F5 {{ $labels.name }} cert expires soon'
+      description: Certificate on {{ $labels.host }} expires in less than 8 days
+      summary: Certificate expires
+
+  - alert: F5CertificateExpires
+    expr: cc3test_cert_expires_in_days(type='f5') < 15
+    # we want a warning alert 14 days before
+      severity: info
+      tier: net
+      service: f5
+      context: f5
+      meta: 'Certificate on {{ $labels.host }} expires in less than 8 days'
+    annotations:
+      description: Certificate on {{ $labels.host }} expires in less than 15 days
+      summary: Certificate expires
