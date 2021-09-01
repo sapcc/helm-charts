@@ -99,7 +99,11 @@ spec:
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
           resources:
+{{- if .Values.api.uwsgi }}
+{{ toYaml .Values.pod.resources.uwsgi_server | indent 12 }}
+{{- else }}
 {{ toYaml .Values.pod.resources.server | indent 12 }}
+{{- end }}
           ports:
             - name: neutron-api
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}
