@@ -21,3 +21,15 @@ groups:
     annotations:
       description: 'elastic-query-exporter in {{ $labels.region }} had an error.'
       summary: 'elastic-query-exporter in {{ $labels.region }} had an error.'
+
+  - alert: OpenstackGlanceReturn50xCode
+    expr: sum(rate(elasticsearch_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
+    for: 5m
+    labels:
+      context: nodes
+      service: glance
+      severity: info
+      tier: os
+    annotations:
+      description: 'Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}'
+      summary: 'Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}'
