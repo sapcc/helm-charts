@@ -1,3 +1,7 @@
+## 4.2.2
+
+* Enables podMonitorSelector by default. Previously it was toggled by `.Values.serviceDiscoveries.pods.enabled` or `.Values.serviceDiscoveries.kubeDNS.enabled`
+
 ## 4.2.1
 
 * Ensure kubelet and cAdvisor metrics have labels `pod`, `pod_name`, `container`, `container_name` present for compatibility reasons.   

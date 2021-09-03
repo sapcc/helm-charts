@@ -118,10 +118,6 @@ spec:
               subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
-          resources:
-            requests:
-              memory: 1Gi
-              cpu: 300m
         - name: statsd
           {{- if hasKey .Values.global "dockerHubMirror"}}
           image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}
@@ -130,6 +126,15 @@ spec:
           {{- end }}          
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          {{- if .Values.statsd.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.statsd.resources.limits.cpu | quote }}
+              memory: {{ .Values.statsd.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.statsd.resources.requests.cpu | quote }}
+              memory: {{ .Values.statsd.resources.requests.memory | quote }}
+          {{- end }}          
           ports:
             - name: statsd
               containerPort: 9125

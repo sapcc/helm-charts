@@ -153,6 +153,7 @@
     "get_security_group": "rule:context_is_securitygroup_viewer or rule:shared_security_groups",
     "get_security_groups": "rule:context_is_securitygroup_viewer or rule:shared_security_groups",
     "update_security_group": "rule:context_is_securitygroup_admin",
+    "update_security_group:stateful": "rule:context_is_admin",
     "delete_security_group": "rule:context_is_securitygroup_admin",
 
     "create_security_group_rule": "rule:context_is_securitygroup_admin",

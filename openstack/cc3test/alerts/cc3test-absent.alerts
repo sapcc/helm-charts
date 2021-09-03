@@ -1,16 +1,41 @@
 groups:
 - name: cc3test-absent.alerts
   rules:
-  - alert: CCloudTestDown
-    expr: increase(cc3test_finished_seconds{type=~"api|datapath"}[10m]) == 0
-    for: 5m
+  - alert: CCloudApiTestDown
+    expr: increase(cc3test_finished_seconds{type="api"}[10m]) == 0
     labels:
-      severity: info
-      tier: monitor
+      severity: warning
+      tier: moni
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: cc3test-overview
-      meta: 'cc3test {{ $labels.type }} for {{ $labels.service }} is not running for more than 10 minutes'
+      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
     annotations:
-      description: 'cc3test {{ $labels.type }} for {{ $labels.service }} is not running for more than 10 minutes'
-      summary: 'cc3test {{ $labels.type }} for {{ $labels.service }} is down'
+      description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+      summary: 'cc3test {{ $labels.type }}/{{ $labels.name }} is down'
+
+  - alert: CCloudDatapathTestDown
+    expr: increase(cc3test_finished_seconds{type="datapath"}[20m]) == 0
+    labels:
+      severity: warning
+      tier: moni
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: cc3test-overview
+      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+    annotations:
+      description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+      summary: 'cc3test {{ $labels.type }}/{{ $labels.name }} is down'
+
+  - alert: CCloudCanaryTestDown
+    expr: increase(cc3test_finished_seconds{type="canary"}[1h]) == 0
+    labels:
+      severity: warning
+      tier: moni
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: cc3test-overview
+      meta: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+    annotations:
+      description: 'cc3test {{ $labels.type }}/{{ $labels.name }} is not running for more than 10 minutes'
+      summary: 'cc3test {{ $labels.type }}/{{ $labels.name }} is down'

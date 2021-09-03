@@ -101,86 +101,6 @@ groups:
       description: 'Panel: Share Server netapp host distribution'
       summary: Share servers on {{ $labels.short_hostname }} exhausted
 
-  - alert: OpenstackManilaApiDown
-    expr: blackbox_api_status_gauge{check=~"manila"} == 1
-    for: 20m
-    labels:
-      severity: critical
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-blackbox-details
-      meta: '{{ $labels.check }} API is down. See Sentry for details.'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
-    annotations:
-      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
-      summary: '{{ $labels.check }} API down'
-
-  - alert: OpenstackManilaApiFlapping
-    expr: changes(blackbox_api_status_gauge{check=~"manila"}[30m]) > 8
-    labels:
-      severity: critical
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-blackbox-details
-      meta: '{{ $labels.check }} API is flapping'
-      sentry: blackbox/?query=test_{{ $labels.check }}
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: '{{ $labels.check }} API is flapping for 30 minutes.'
-      summary: '{{ $labels.check }} API flapping'
-
-  - alert: OpenstackManilaDatapathDown
-    expr: blackbox_datapath_status_gauge{service=~"manila"} == 1
-    for: 5m
-    labels:
-      severity: critical
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-datapath-details
-      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 5 minutes. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
-      support_component: manila_netapp
-    annotations:
-      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is down for 5 minutes. See Sentry for details'
-      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is down'
-
-  - alert: OpenstackManilaDatapathHalfDown
-    expr: blackbox_datapath_status_gauge{service=~"manila"} == 0.5
-    for: 5m
-    labels:
-      severity: critical
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-datapath-details
-      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 5 minutes. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
-      support_component: manila_netapp
-    annotations:
-      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down for 5 minutes. See Sentry for details'
-      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is half down'
-
-  - alert: OpenstackManilaDatapathFlapping
-    expr: changes(blackbox_datapath_status_gauge{service=~"manila"}[30m]) > 8
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-datapath-details
-      meta: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}/#{{ $labels.check }}'
-    annotations:
-      description: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping for 30 minutes. See Sentry for details'
-      summary: 'Datapath {{ $labels.service }} {{ $labels.check }} is flapping'
-
   - alert: OpenstackManilaCanaryMountShareDown
     expr: blackbox_canary_status_gauge{service=~"manila", check=~"mount_share-.+"} == 1
     for: 1h
@@ -306,23 +226,6 @@ groups:
       support_component: manila_netapp
     annotations:
       description: Certificate {{ $labels.check }} expires in less than 14 days. See Sentry for details
-      summary: Certificates
-
-# alerts for other cert checks are in blackbox chart, this is filer cert only
-  - alert: OpenstackManilaFilerOpenstackCertificateExpiresSoon
-    expr: blackbox_certificates_status_gauge{check=~".*stnpca.*cc"} == 1
-    # starts firing on expiration in 30 days (CERTS_ALERT_PERIOD) -> we want a critical alert 7 days before (30-23)
-    for: 23d
-    labels:
-      context: '{{ $labels.check }}'
-      meta: '{{ $labels.check }}'
-      sentry: blackbox/?query=test_{{ $labels.check }}
-      severity: critical
-      tier: os
-      playbook: 'docs/support/playbook/manila/filer_cert_expired.html'
-      support_component: manila_netapp
-    annotations:
-      description: Certificate {{ $labels.check }} expires in less than 7 days. See Sentry for details
       summary: Certificates
 
 # row locks

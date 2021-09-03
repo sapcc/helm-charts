@@ -50,7 +50,9 @@ groups:
           description: The pod {{ $labels.pod_name }} was oomkilled recently
 
       - alert: OpenstackLimesPodOOMExceedingLimits
-        expr: limes_container_memory_usage_percent{pod_name!~"limes-collect-.+"} > 70 and predict_linear(limes_container_memory_usage_percent{pod_name!~"limes-collect-.+"}[1h], 7*3600) > 100
+        # NOTE: `container_memory_utilization_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
+        # NOTE 2: limes-collect is excluded from this alert: we don't care if it OOMs every now and then as long as it's still doing its job (which is covered by application-specific alerts)
+        expr: container_memory_utilization_ratio{namespace="limes",pod_name!~"limes-collect-.*"} > 0.7 AND predict_linear(container_memory_utilization_ratio{namespace="limes",pod_name!~"limes-collect-.*"}[1h], 7*3600) > 1.0
         for: 30m
         labels:
           tier: os

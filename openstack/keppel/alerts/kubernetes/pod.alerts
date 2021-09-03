@@ -35,7 +35,7 @@ groups:
           description: The pod {{ $labels.pod_name }} failed to be scheduled. Insufficient memory!
 
       - alert: OpenstackKeppelPodOOMKilled
-        expr: sum(rate(klog_pod_oomkill{namespace="keppel"}[30m])) by (pod_name) > 0
+        expr: sum(rate(klog_pod_oomkill{namespace="keppel",pod_name!~"keppel-janitor-.+"}[30m])) by (pod_name) > 0
         for: 5m
         labels:
           tier: os
@@ -50,7 +50,9 @@ groups:
           description: The pod {{ $labels.pod_name }} was oomkilled recently
 
       - alert: OpenstackKeppelPodOOMExceedingLimits
-        expr: keppel_container_memory_usage_percent > 70 and predict_linear(keppel_container_memory_usage_percent[1h], 7*3600) > 100
+        # NOTE: `container_memory_utilization_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
+        # NOTE 2: keppel-janitor is excluded from this alert: we don't care if it OOMs every now and then as long as it's still doing its job (which is covered by application-specific alerts)
+        expr: container_memory_utilization_ratio{namespace="keppel",pod_name!~"(?:keep-image-pulled|keppel-janitor)-.*"} > 0.7 AND predict_linear(container_memory_utilization_ratio{namespace="keppel",pod_name!~"(?:keep-image-pulled|keppel-janitor)-.*"}[1h], 7*3600) > 1.0
         for: 30m
         labels:
           tier: os

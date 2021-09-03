@@ -1,0 +1,15 @@
+groups:
+- name: k8s-vc-mgmt.alerts
+  rules:
+  - alert: VCClusterCPUContentionCritical
+    expr: vrops_cluster_cpu_contention_percentage{vcenter=~"vc-mgmt-.*"} > 5
+    for: 15m
+    labels:
+      severity: info
+      tier: k8s
+      service: cc-cp
+      context: vccluster
+      meta: "The VCCluster {{ $labels.vccluster}} is using {{ $value }} CPU and VM's are fighting for it"
+    annotations:
+      description: "The VCCluster {{ $labels.vccluster}} is using {{ $value }} CPU and VM's are fighting for it"
+      summary: "{{ $labels.vccluster}} cpu contention critical"

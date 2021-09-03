@@ -39,8 +39,10 @@ harakiri-verbose = true
 post-buffering = 4096
 backlog-status = true
 
+{{ if gt (.Values.api.cheaper | int64) 0 -}}
 # Automatic scaling of workers
 cheaper = {{.Values.api.cheaper}}
 cheaper-initial = {{.Values.api.cheaper}}
 workers = {{.Values.api.processes}}
 cheaper-step = 1
+{{- end }}

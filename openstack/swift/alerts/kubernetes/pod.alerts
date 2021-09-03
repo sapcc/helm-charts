@@ -61,7 +61,8 @@ groups:
         description: The pod {{ $labels.pod_name }} was oomkilled recently
 
     - alert: OpenstackSwiftPodOOMExceedingLimits
-      expr: swift_container_memory_usage_percent > 70 and predict_linear(swift_container_memory_usage_percent[1h], 7*3600) > 100
+      # NOTE: `container_memory_utilization_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
+      expr: container_memory_utilization_ratio{namespace="swift",pod_name!~"keep-image-pulled-.*"} > 0.7 AND predict_linear(container_memory_utilization_ratio{namespace="swift",pod_name!~"keep-image-pulled-.*"}[1h], 7*3600) > 1.0
       for: 30m
       labels:
         tier: os
