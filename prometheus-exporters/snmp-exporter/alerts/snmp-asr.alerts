@@ -3,7 +3,7 @@ groups:
     rules:
     
     - alert: NetworkAsrInterfaceOverUtilization
-      expr: ((rate(snmp_asr_ifHCOutOctets{ifAlias=~"NEUTRON-UPLINK.*"}[5m])  * 8 /1000^ 2) /snmp_asr_ifHighSpeed) > 0.85
+      expr: ((rate(snmp_asr_ifHCOutOctets{ifAlias=~"NEUTRON-UPLINK.*|NEUTRON-LOOPBACK.*"}[5m])  * 8 /1000^ 2) /snmp_asr_ifHighSpeed) > 0.85
       for: 15m
       labels:
         severity: critical
@@ -20,7 +20,7 @@ groups:
     - alert: NetworkAsrHighIosdCpuUtilization
       expr: >-
         snmp_asr_cpmProcExtUtil1Min{cpmProcessName=~".*iosd.*"} >= 80
-      for: 10m
+      for: 5m
       labels:
         severity: critical
         tier: net
