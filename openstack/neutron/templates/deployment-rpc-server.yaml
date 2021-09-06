@@ -109,21 +109,6 @@ spec:
               subPath: neutron-fwaas.ini
               readOnly: true
             {{- end}}
-        - name: statsd
-          image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
-          imagePullPolicy: IfNotPresent
-          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
-          ports:
-            - name: statsd
-              containerPort: 9125
-              protocol: UDP
-            - name: metrics
-              containerPort: {{.Values.port_metrics}}
-          volumeMounts:
-            - name: neutron-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
       volumes:
         - name: empty-dir
           emptyDir: {}
