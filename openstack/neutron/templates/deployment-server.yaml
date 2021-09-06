@@ -65,7 +65,7 @@ spec:
           env:
             - name: COMMAND
 {{- if .Values.api.uwsgi }}
-              value: "uwsgi --ini /etc/neutron/uwsgi.ini"
+              value: "gunicorn -c /etc/neutron/gunicorn.conf.py neutron-api"
 {{- else }}
               value: "/container.init/neutron-server-start"
 {{- end }}
@@ -179,12 +179,18 @@ spec:
             - mountPath: /development
               name: development
             {{- end }}
-            {{- if .Values.api.uwsgi }}
             - mountPath: /etc/neutron/uwsgi.ini
               name: neutron-etc-api
               subPath: uwsgi.ini
               readOnly: true
-            {{- end }}
+            - mountPath: /etc/neutron/gunicorn.conf.py
+              name: neutron-etc-api
+              subPath: gunicorn.conf.py
+              readOnly: true
+            - mountPath: /neutron-api.py
+              name: neutron-etc-api
+              subPath: neutron-api.py
+              readOnly: true
 {{- else }}
             - mountPath: /neutron-etc
               name: neutron-etc
