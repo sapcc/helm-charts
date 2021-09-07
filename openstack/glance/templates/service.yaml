@@ -4,18 +4,12 @@ apiVersion: v1
 metadata:
   name: glance
   labels:
-    app: {{ template "name" . }}
+    application: {{ template "name" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: glance
     type: api
-{{- if .Values.metrics.enabled }}
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "{{.Values.metrics.port}}"
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-{{- end }}
 spec:
   selector:
     app: {{ template "name" . }}

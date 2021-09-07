@@ -10,6 +10,10 @@ procname-prefix = glance-api-
 uid = glance
 gid = glance
 http-socket = :{{.Values.global.glance_api_port_internal | default 9292}}
+socket-timeout = 10
+http-auto-chunked = true
+http-chunked-input = true
+http-raw-body = true
 
 # Connection tuning
 vacuum = true
@@ -32,12 +36,6 @@ plugin = dogstatsd
 stats-push = dogstatsd:127.0.0.1:9125
 dogstatsd-all-gauges = true
 memory-report = true
-
-# Limits, Kill requests after 120 seconds
-harakiri = 120
-harakiri-verbose = true
-post-buffering = 4096
-backlog-status = true
 
 {{ if gt (.Values.api.cheaper | int64) 0 -}}
 # Automatic scaling of workers
