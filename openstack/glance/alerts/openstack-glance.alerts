@@ -103,3 +103,33 @@ groups:
     annotations:
       summary: Glance Container was oomkilled
       description: The Glance Container {{ $labels.container_name }} was oomkilled recently
+
+  - alert: OpenstackGlanceApiOverloaded
+    expr: rate(uwsgi_core_overloaded[10m]) > 0
+    for: 5m
+    labels:
+      no_alert_on_absence: "true"
+      severity: info
+      tier: os
+      service: Glance
+      context: 'Glance-server'
+      dashboard: uwsgi
+      meta: 'Glance API is overloaded'
+    annotations:
+      description: 'Glance API is overloaded, increase Glance-server pod replicas'
+      summary: 'Glance API is overloaded'
+
+  - alert: OpenstackGlanceApiOverloaded
+    expr: uwsgi_socket_listen_queue > 1
+    for: 5m
+    labels:
+      no_alert_on_absence: "true"
+      severity: info
+      tier: os
+      service: Glance
+      context: 'Glance-server'
+      dashboard: uwsgi
+      meta: 'Glance API request queue is not clearing up'
+    annotations:
+      description: 'Glance API request queue is not clearing up, increase Glance-server pod replicas'
+      summary: 'Glance API request queue is not clearing up'

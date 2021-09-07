@@ -122,3 +122,6 @@ backend_host = {{ .Release.Name }}-sapcc-rate-limit
 backend_port = 6379
 backend_timeout_seconds = 1
 {{- end }}
+
+[filter:debug]
+paste.filter_factory = oslo_middleware:Debug.factory

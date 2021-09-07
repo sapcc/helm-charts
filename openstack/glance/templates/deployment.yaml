@@ -162,7 +162,12 @@ spec:
           subPath: ratelimit.yaml
           readOnly: true
         {{- end }}
-        
+        {{- if .Values.api.uwsgi }}
+        - mountPath: /etc/glance/uwsgi.ini
+          name: glance-etc
+          subPath: uwsgi.ini
+          readOnly: true
+        {{- end }}
       {{- if .Values.imageVersionGlanceRegistry }}
       - name: registry
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/ubuntu-source-glance-registry:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
