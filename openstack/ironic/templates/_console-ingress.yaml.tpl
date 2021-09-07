@@ -10,10 +10,8 @@ metadata:
     system: openstack
     type: api
     component: ironic
-  {{- if .Values.tls_acme }}
   annotations:
     kubernetes.io/tls-acme: "true"
-  {{- end }}
 spec:
   tls:
      - secretName: tls-{{ include "ironic_console_endpoint_host_public" . | replace "." "-" }}
