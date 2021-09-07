@@ -59,13 +59,13 @@ filter {
 
   # Keystone specific transformations to compensate for scope missing from initiator element
   # When scope is missing from initiator, get it from action-specific parameters
-  if ![initiator][project_id] and ![initiator][domain_id] {
-    if [project] {
-      mutate { add_field => { "%{[initiator][project_id]}" => "%{[project]}" } }
-    } else if [domain] {
-      mutate { add_field => { "%{[initiator][domain_id]}" => "%{[domain]}" } }
-    }
-  }
+  #if ![initiator][project_id] and ![initiator][domain_id] {
+  #  if [project] {
+  #    mutate { add_field => { "%{[initiator][project_id]}" => "%{[project]}" } }
+  #  } else if [domain] {
+  #    mutate { add_field => { "%{[initiator][domain_id]}" => "%{[domain]}" } }
+  #  }
+  #}
 
   # rename initiator user_id into the 'id' field for consistency
   if [initiator][user_id] {
