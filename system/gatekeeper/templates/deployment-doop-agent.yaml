@@ -29,8 +29,8 @@ spec:
           image: {{.Values.global.registry | required ".Values.global.registry not found"}}/doop-agent:{{.Values.doop_agent.image_tag}}
           imagePullPolicy: IfNotPresent
           args: [
-          {{- if .Values.cluster_name | required ".Values.cluster_name not found" | hasPrefix "k-" }}
-            '-container', 'doop-agent-kubernikus', # k-clusters report into a separate dashboard since they usually have a ton of very similar violations that would clutter up the main dashboard
+          {{- if .Values.cluster_name | required ".Values.cluster_name not found" | regexMatch "^[akv]-" }}
+            '-container', 'doop-agent-kubernikus', # the Kubernikus-related clusters report into a separate dashboard since they usually have a ton of very similar violations that would clutter up the main dashboard
           {{- else }}
             '-container', 'doop-agent',
           {{- end }}
