@@ -1,7 +1,7 @@
 replicaCount: 2
 image:
   repository: sapcc/maintenance-controller
-  tag: 0.1
+  tag: 0.3
   pullPolicy: IfNotPresent
 slack:
   webhook:
@@ -12,6 +12,7 @@ rbac:
 # Flatcar Linux specific default configuration
 flatcar-linux-update-agent:
   enabled: true
+enableESX: false
 intervals:
   requeue: 60s
   notify: 6h
@@ -50,6 +51,12 @@ config: |
         name: check_count
         config:
           max: {{ .Values.maxMaintenance }}
+    - stagger:
+        name: check_stagger
+        config:
+          duration: 5m
+          leaseName: maintenance-controller-stagger
+          leaseNamespace: kube-system
     trigger:
     - alterAnnotation:
         name: reboot_ok
@@ -67,7 +74,7 @@ config: |
         check: reboot_needed
         notify: notify_operational
       maintenance-required:
-        check: check_count
+        check: check_count && check_stagger
         trigger: reboot_ok
       in-maintenance:
         check: "!reboot_needed"
