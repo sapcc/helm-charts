@@ -23,7 +23,8 @@ spec:
   tls:
      - secretName: tls-swift-{{$cluster_id}}
        hosts: [{{$cluster.endpoint_host}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
-       {{- range $index, $san := $cluster.sans }}, {{ printf "%s.%s.%s" $san $.Values.global.region $.Values.global.tld | quote }}{{ end }}]
+       {{- range $san := $cluster.sans }}, {{ printf "%s.%s.%s" $san $.Values.global.region $.Values.global.tld | quote }}{{ end }}
+       {{- range $san := $cluster.sans_fqdn }}, {{ quote $san }}{{ end }}]
   # the following is mandatory in an ingress resource, but will be ignored by the vice-president
   rules:
     - host: {{$cluster.endpoint_host}}.{{$.Values.global.region}}.{{$.Values.global.tld}}
