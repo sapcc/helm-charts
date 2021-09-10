@@ -10,23 +10,23 @@ metadata:
   name: {{ $backup.name }}-mariadb-replication
   namespace: datahub
   labels:
-    system: openstack
-    type: database
-    component: datahub
+    app.kubernetes.io/name: {{ $backup.name }}-mariadb-replication
+    helm.sh/chart: {{ include "datahub.chart" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
 spec:
   replicas: 1
-  revisionHistoryLimit: 5
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
-      app: {{ $backup.name }}-replication
+      app.kubernetes.io/name: {{ $backup.name }}-mariadb-replication
+      app.kubernetes.io/instance: {{ $.Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ $backup.name }}-replication
-        name: {{ $backup.name }}-replication
+        app.kubernetes.io/name: {{ $backup.name }}-mariadb-replication
+        app.kubernetes.io/instance: {{ $.Release.Name }}
       annotations:
+        configmap-etc-hash: {{ $backup.name }}-mariadb-replication-etc
 {{- if $backup.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "8082"
@@ -66,13 +66,12 @@ spec:
         - name: CONFIG_FILE
           value: "/etc/config/config.yaml"
         volumeMounts:
-        - name: mariadb-backup-etc
+        - name: mariadb-replication-etc
           mountPath: /etc/config
           readOnly: true
       volumes:
-        - name: mariadb-backup-etc
+        - name: mariadb-replication-etc
           configMap:
-            name:  mariadb-backup-{{$backup.name}}-etc
-
+            name: {{ $backup.name }}-mariadb-replication-etc
 {{- end }}
 {{- end }}

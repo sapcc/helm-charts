@@ -7,13 +7,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name:  mariadb-backup-{{$backup.name}}-etc
+  name: {{ $backup.name }}-mariadb-replication-etc
   namespace: datahub
   labels:
-    app: mariadb
-    release: "{{ $.Release.Name }}"
-    heritage: "{{ $.Release.Service }}"
-    component: database
+    app.kubernetes.io/name: {{ $backup.name }}-mariadb-replication
+    helm.sh/chart: {{ include "datahub.chart" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
 data:
   config.yaml: |
     namespace: {{ $.Release.Namespace }}

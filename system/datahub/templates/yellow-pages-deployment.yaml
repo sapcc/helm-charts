@@ -1,0 +1,66 @@
+{{- if $.Values.yellowPages.enabled }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yellow-pages
+  namespace: datahub
+  labels:
+    app.kubernetes.io/name: yellow-pages
+    helm.sh/chart: {{ include "datahub.chart" $ }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yellow-pages
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  templates:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yellow-pages
+        app.kubernetes.io/instance: {{ .Release.Name }}
+{{- if $.Values.yellowPages.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8082"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "datahubdb-mariadb"
+      containers:
+      - name: yellow-pages
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.yellowPages.image }}:{{ .Values.yellowPages.imageVersion }}"
+        env:
+          - name: API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: yellow-pages-secret
+                key: billingToken
+          - name: DB_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: yellow-pages-secret
+                key: datahubAdminPW
+          - name: DB_RONLY_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: yellow-pages-secret
+                key: datahubRonlyPW
+        volumeMounts:
+          - name: yellow-pages-etc
+            mountPath: /config
+            readOnly: true
+      volumes:
+        - name: yellow-pages-etc
+          configMap:
+            name: yellow-pages-etc
+{{- end }}

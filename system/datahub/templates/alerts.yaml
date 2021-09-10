@@ -7,8 +7,12 @@ kind: PrometheusRule
 
 metadata:
   name: {{ printf "datahubdb-%s" $path | replace "/" "-" }}
+  namespace: datahub
   labels:
-    app: datahub
+    app.kubernetes.io/name: datahub
+    helm.sh/chart: {{ include "datahub.chart" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
     prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
 
 spec:
