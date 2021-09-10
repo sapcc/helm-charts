@@ -65,7 +65,41 @@ yellowPages:
     - "datahub.cc_billing"
   views:
     - name: openstack_ips
-      definition: "create or replace table datahub.openstack_ips2
+      definition: "create or replace table datahub.openstack_ips
+         ( floating_ip_id varchar(36) NOT NULL,
+           primary key ( floating_ip_id ) )
+       as
+           select  f.floating_ip_address AS floating_ip_address,
+                 f.id as floating_ip_id,
+                 port.id AS port,p.name AS project,
+                 p.id AS project_id,
+                 d.name AS domain,
+                 n.name AS network,
+                 n.id AS network_id,
+                 s.name AS subnet,
+                 s.id AS subnet_id,
+                 sn.name AS subnetpool,
+                 sn.id AS subnetpool_id,
+                 r.id AS router_id,
+                 r.name AS router,
+                 fixed_port.device_id as instance_id,
+                 fixed_port.device_owner as owner,
+                 i.display_name as instance_name,
+                 i.host as host,
+                 i.availability_zone as availability_zone
+                 from neutron.floatingips f
+                     left join keystone.project p on f.project_id = p.id
+                     left join keystone.project d on p.domain_id = d.id
+                     left join neutron.ipallocations ip on f.floating_ip_address = ip.ip_address
+                     left join neutron.networks n on f.floating_network_id = n.id
+                     left join neutron.subnets s on ip.subnet_id = s.id
+                     left join neutron.subnetpools sn on s.subnetpool_id = sn.id
+                     left join neutron.ports port on ip.port_id = port.id
+                     left join neutron.ports fixed_port on f.fixed_port_id = fixed_port.id
+                     left join neutron.routers r on r.id = f.router_id
+                     left join datahub.nova_instances i on i.uuid = fixed_port.device_id;"
+    - name: openstack_ips2
+      definition: "create or replace view datahub.openstack_ips2
         ( ip_address varchar(64) NOT NULL,
           subnet_id varchar(36) NOT NULL,
           network_id varchar(36) NOT NULL,
@@ -99,3 +133,23 @@ yellowPages:
               left join neutron.routerports rp on port.id = rp.port_id
               left join neutron.routers r on r.id = rp.router_id
               left join datahub.nova_instances i on i.uuid = port.device_id;"
+    - name: glance_images
+      definition: "create or replace view datahub.glance_images
+                  ( id varchar(36) NOT NULL,
+                    primary key ( id, instance_name, instance_id, created_at ) )
+                    as
+                    select  g.id AS id,
+                          g.name AS name,
+                          g.visibility AS visibility,
+                          n.display_name as instance_name,
+                          n.uuid as instance_id,
+                          p.id as project_id,
+                          p.name as project_name,
+                          d.id as domain_id,
+                          d.name as domain_name,
+                          n.created_at as created_at,
+                          n.image_ref as image_ref
+                          from glance.images g
+                              left join datahub.nova_instances n on n.image_ref = g.id
+                              left join keystone.project p on p.id = n.project_id
+                              left join keystone.project d on d.id = p.domain_id where n.uuid is not null;"
