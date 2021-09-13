@@ -90,16 +90,16 @@ groups:
       summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
 
   - alert: OpenstackGlanceContainerOOMKilled
-    expr: sum(rate(klog_pod_oomkill{namespace="monsoon3", pod_name=~"glance.*"}[30m]))by (container_name) > 0
+    expr: sum(rate(klog_pod_oomkill{namespace="monsoon3", pod_name=~"glance.*"}[30m]))by (container_name, pod_name) > 0
     for: 5m
     labels:
       tier: os
-      service: castellum
+      service: glance
       severity: info
       context: memory
-      dashboard: castellum-overview
+      dashboard: glance
       meta: "Glance Container {{ $labels.container_name }}"
       no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
     annotations:
       summary: Glance Container was oomkilled
-      description: The Glance Container {{ $labels.container_name }} was oomkilled recently
+      description: Glance Container {{ $labels.container_name }} in Pod {{ $labels.pod_name }} was oomkilled recently
