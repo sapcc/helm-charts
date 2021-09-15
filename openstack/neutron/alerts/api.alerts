@@ -33,31 +33,17 @@ groups:
       summary: '{{ $labels.check }} API flapping'
 
   - alert: OpenstackNeutronApiOverloaded
-    expr: rate(uwsgi_core_overloaded[10m]) > 0
+    expr: uwsgi_socket_listen_queue > 10
     for: 5m
     labels:
       no_alert_on_absence: "true"
-      severity: info
+      severity: warning
       tier: os
-      service: Neutron
-      context: 'neutron-server'
+      service: neutron
+      context: '{{ $labels.context }}'
       dashboard: uwsgi
-      meta: 'Neutron API is overloaded'
+      meta: 'Neutron API request queue is not clearing up, increase neutron-server deployment replicas'
+      playbook: docs/support/playbook/neutron/api_overloaded.html
     annotations:
-      description: 'Neutron API is overloaded, increase neutron-server pod replicas'
-      summary: 'Neutron API is overloaded'
-
-  - alert: OpenstackNeutronApiOverloaded
-    expr: uwsgi_socket_listen_queue > 1
-    for: 5m
-    labels:
-      no_alert_on_absence: "true"
-      severity: info
-      tier: os
-      service: Neutron
-      context: 'neutron-server'
-      dashboard: uwsgi
-      meta: 'Neutron API request queue is not clearing up'
-    annotations:
-      description: 'Neutron API request queue is not clearing up, increase neutron-server pod replicas'
-      summary: 'Neutron API request queue is not clearing up'
+      description: 'Neutron API Pod `{{ $labels.kubernetes_pod_name }}` request queue is not clearing up'
+      summary: 'Neutron API request queue is not clearing up, increase neutron-server deployment replicas'
