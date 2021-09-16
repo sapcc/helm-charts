@@ -10,8 +10,6 @@ metadata:
     helm.sh/chart: {{ include "datahub.chart" $ }}
     app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    checksum/config: {{ include ( print $.Template.BasePath "/yellow-pages-etc-configmap.yaml" ) . | sha256sum }}
-    checksum/secret: {{ include ( print $.Template.BasePath "/yellow-pages-secrets.yaml" ) . | sha256sum }}
 spec:
   replicas: 1
   selector:
@@ -23,6 +21,9 @@ spec:
       labels:
         app.kubernetes.io/name: yellow-pages
         app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include ( print $.Template.BasePath "/yellow-pages-etc-configmap.yaml" ) . | sha256sum }}
+        checksum/secret: {{ include ( print $.Template.BasePath "/yellow-pages-secrets.yaml" ) . | sha256sum }}
 {{- if $.Values.yellowPages.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "8082"
