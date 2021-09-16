@@ -600,11 +600,11 @@
     - source_labels: ['__name__','exported_name']
       regex: 'windows_service_state;(.*)'
       replacement: '$1'
-      target_label: 'name'
+      target_label: 'service_name'
     - source_labels: ['__name__','exported_state']
       regex: 'windows_service_state;(.*)'
       replacement: '$1'
-      target_label: 'state'
+      target_label: 'service_state'
 {{- end }}
         
 {{- $values := .Values.vasa_exporter -}}
