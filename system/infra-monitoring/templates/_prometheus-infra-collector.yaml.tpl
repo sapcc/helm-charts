@@ -597,13 +597,13 @@
     - source_labels: [__name__]
       regex: '^go_.+'
       action: drop
-    - source_labels: [__name__, exported_name]
+    - source_labels: ['__name__','exported_name']
       regex: 'windows_service_state;(.*)'
-      replacement: $1
+      replacement: '$1'
       target_label: 'name'
-    - source_labels: [__name__, exported_state]
+    - source_labels: ['__name__','exported_state']
       regex: 'windows_service_state;(.*)'
-      replacement: $1
+      replacement: '$1'
       target_label: 'state'
 {{- end }}
         
