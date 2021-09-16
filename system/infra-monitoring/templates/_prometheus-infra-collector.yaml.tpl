@@ -597,14 +597,14 @@
     - source_labels: [__name__]
       regex: '^go_.+'
       action: drop
-    - source_labels: [__name__, name]
+    - source_labels: [__name__, exported_name]
       regex: 'windows_service_state; (.*)'
       replacement: $1
-      target_label: 'service_name'
-    - source_labels: [__name__, state]
+      target_label: 'name'
+    - source_labels: [__name__, exported_state]
       regex: 'windows_service_state; (.*)'
       replacement: $1
-      target_label: 'service_state'
+      target_label: 'state'
 {{- end }}
         
 {{- $values := .Values.vasa_exporter -}}
