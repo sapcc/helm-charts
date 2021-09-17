@@ -17,60 +17,24 @@
           "type" : "date"
         },
         "@version" : {
-          "type" : "text",
-          "fields" : {
-            "raw" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
+          "type" : "keyword"
         },
         "_unique_id" : {
-          "type" : "text",
-          "fields" : {
-            "raw" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
+          "type" : "keyword"
         },
         "action" : {
-          "type" : "text",
-          "fields" : {
-            "raw" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
+          "type" : "keyword"
         },
         "attachments" : {
           "properties" : {
             "content" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "text"
             },
             "name" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "typeURI" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             }
           }
         },
@@ -78,47 +42,23 @@
           "type" : "date"
         },
         "eventType" : {
-          "type" : "text",
-          "fields" : {
-            "raw" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
+          "type" : "keyword"
         },
         "id" : {
-          "type" : "text",
-          "fields" : {
-            "raw" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
+          "type" : "keyword"
         },
         "initiator" : {
           "properties" : {
             "domain" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "domain_id" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "host" : {
               "properties" : {
                 "address" : {
-                  "type" : "text",
+                  "type" : "keyword",
                   "fields" : {
                     "raw" : {
                       "type" : "keyword",
@@ -127,7 +67,7 @@
                   }
                 },
                 "agent" : {
-                  "type" : "text",
+                  "type" : "keyword",
                   "fields" : {
                     "raw" : {
                       "type" : "keyword",
@@ -138,120 +78,54 @@
               }
             },
             "id" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "name" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "project_id" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "typeURI" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             }
           }
         },
         "observer" : {
           "properties" : {
             "id" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "name" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "typeURI" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             }
           }
         },
         "outcome" : {
-          "type" : "text",
-          "fields" : {
-            "raw" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
+          "type" : "keyword"
         },
         "reason" : {
           "properties" : {
             "reasonCode" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "reasonType" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             }
           }
         },
         "requestPath" : {
-          "type" : "text",
-          "fields" : {
-            "raw" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
+          "type" : "keyword"
         },
         "target" : {
           "properties" : {
             "attachments" : {
               "properties" : {
                 "content" : {
-                  "type" : "text",
+                  "type" : "keyword",
                   "fields" : {
                     "raw" : {
                       "type" : "keyword",
@@ -261,7 +135,7 @@
                   }
                 },
                 "name" : {
-                  "type" : "text",
+                  "type" : "keyword",
                   "fields" : {
                     "raw" : {
                       "type" : "keyword",
@@ -270,7 +144,7 @@
                   }
                 },
                 "typeURI" : {
-                  "type" : "text",
+                  "type" : "keyword",
                   "fields" : {
                     "raw" : {
                       "type" : "keyword",
@@ -281,60 +155,24 @@
               }
             },
             "domain_id" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "id" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "name" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "project_id" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             },
             "typeURI" : {
-              "type" : "text",
-              "fields" : {
-                "raw" : {
-                  "type" : "keyword",
-                  "ignore_above" : 256
-                }
-              }
+              "type" : "keyword"
             }
           }
         },
         "typeURI" : {
-          "type" : "text",
-          "fields" : {
-            "raw" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
+          "type" : "keyword"
         }
       }
     }
