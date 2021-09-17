@@ -1,0 +1,23 @@
+{{- if .Values.yellowPages.metrics.enabled }}
+
+apiVersion: monitoring.coreos.com/v1
+kind:PodMonitor
+metadata:
+  name: yellow-pages
+  namespace: datahub
+    labels: {{ .Values.yellowPages.metrics.prometheus }}
+spec:
+  jobLabel: yellow-pages
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yellow-pages
+  namespaceSelector:
+    matchNames:
+      - datahub
+  podMetricsEndpoints:
+    - interval: 900s
+      scrapeTimeout: 55s
+      port: metrics
+      path: {{ .Values.yellowPages.metrics.path }}
+
+{{- end }}

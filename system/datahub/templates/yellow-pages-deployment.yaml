@@ -24,11 +24,6 @@ spec:
       annotations:
         checksum/config: {{ include ( print $.Template.BasePath "/yellow-pages-etc-configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/yellow-pages-secrets.yaml" ) . | sha256sum }}
-{{- if $.Values.yellowPages.metrics.enabled }}
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8082"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-{{- end }}
     spec:
       affinity:
         podAffinity:
@@ -43,6 +38,10 @@ spec:
       containers:
       - name: yellow-pages
         image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.yellowPages.image }}:{{ .Values.yellowPages.imageVersion }}"
+        ports:
+        - name: metrics
+          containerPort: {{ .Values.yellowPages.metrics.port }}
+          protocol: TCP
         env:
           - name: API_TOKEN
             valueFrom:
