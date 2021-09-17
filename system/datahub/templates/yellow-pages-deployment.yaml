@@ -1,0 +1,69 @@
+{{- if $.Values.yellowPages.enabled }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yellow-pages
+  namespace: datahub
+  labels:
+    app.kubernetes.io/name: yellow-pages
+    helm.sh/chart: {{ include "datahub.chart" $ }}
+    app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yellow-pages
+      app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yellow-pages
+        app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include ( print $.Template.BasePath "/yellow-pages-etc-configmap.yaml" ) . | sha256sum }}
+        checksum/secret: {{ include ( print $.Template.BasePath "/yellow-pages-secrets.yaml" ) . | sha256sum }}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "datahubdb-mariadb"
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: yellow-pages
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.yellowPages.image }}:{{ .Values.yellowPages.imageVersion }}"
+        ports:
+        - name: metrics
+          containerPort: {{ .Values.yellowPages.metrics.port }}
+          protocol: TCP
+        env:
+          - name: API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: yellow-pages-secrets
+                key: billingToken
+          - name: DB_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: yellow-pages-secrets
+                key: datahubAdminPW
+          - name: DB_RONLY_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: yellow-pages-secrets
+                key: datahubRonlyPW
+        volumeMounts:
+          - name: yellow-pages-etc
+            mountPath: /config
+            readOnly: true
+      volumes:
+        - name: yellow-pages-etc
+          configMap:
+            name: yellow-pages-etc
+{{- end }}
