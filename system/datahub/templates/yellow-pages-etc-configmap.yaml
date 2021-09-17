@@ -19,32 +19,35 @@ data:
       host: datahubdb-mariadb.datahub
       port: 3306
       ronly_user: "ronly"
-    view_config:
+      views:
   {{- if or ( .Values.yellowPages.requiredDatabases ) ( .Values.yellowPages.extraRequiredDatabases)}}
-      databases:
+        required_databases:
     {{- if .Values.yellowPages.requiredDatabases }}
-{{ toYaml .Values.yellowPages.requiredDatabases | indent 8}}
+{{ toYaml .Values.yellowPages.requiredDatabases | indent 10 }}
     {{- end }}
     {{- if .Values.yellowPages.extraRequiredDatabases }}
-{{ toYaml .Values.yellowPages.extraRequiredDatabases | indent 8}}
+{{ toYaml .Values.yellowPages.extraRequiredDatabases | indent 10 }}
     {{- end }}
   {{- end }}
   {{- if or ( .Values.yellowPages.requiredTables ) ( .Values.yellowPages.extraRequiredTables )}}
-      tables:
+        required_tables:
     {{- if .Values.yellowPages.requiredTables }}
-{{ toYaml .Values.yellowPages.requiredTables | indent 8}}
+{{ toYaml .Values.yellowPages.requiredTables | indent 10 }}
     {{- end }}
     {{- if .Values.yellowPages.extraRequiredTables }}
-{{ toYaml .Values.yellowPages.extraRequiredTables | indent 8}}
+{{ toYaml .Values.yellowPages.extraRequiredTables | indent 10 }}
     {{- end }}
   {{- end }}
   {{- if or .Values.yellowPages.views .Values.yellowPages.extraViews  }}
-    views:
+        definitions:
     {{- if .Values.yellowPages.views }}
-{{ toYaml $.Values.yellowPages.views | indent 6 }}
+{{ toYaml $.Values.yellowPages.views | indent 10 }}
     {{- end }}
     {{- if .Values.yellowPages.extraViews }}
-{{ toYaml $.Values.yellowPages.extraViews | indent 6 }}
+{{ toYaml $.Values.yellowPages.extraViews | indent 10 }}
     {{- end }}
   {{ end }}
+    metrics:
+      port: {{ .Values.yellowPages.metrics.port }}
+      path: {{ .Values.yellowPages.metrics.path }}
 {{ end }}
