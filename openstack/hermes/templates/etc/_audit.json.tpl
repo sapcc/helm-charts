@@ -57,22 +57,10 @@
           "host" : {
             "properties" : {
               "address" : {
-                "type" : "keyword",
-                "fields" : {
-                  "raw" : {
-                    "type" : "keyword",
-                    "ignore_above" : 256
-                  }
-                }
+                "type" : "keyword"
               },
               "agent" : {
-                "type" : "keyword",
-                "fields" : {
-                  "raw" : {
-                    "type" : "keyword",
-                    "ignore_above" : 256
-                  }
-                }
+                "type" : "keyword"
               }
             }
           },
@@ -124,32 +112,13 @@
           "attachments" : {
             "properties" : {
               "content" : {
-                "type" : "keyword",
-                "fields" : {
-                  "raw" : {
-                    "type" : "keyword",
-                    "ignore_above" : 256,
-                    "doc_values": false
-                  }
-                }
+                "type" : "keyword"
               },
               "name" : {
-                "type" : "keyword",
-                "fields" : {
-                  "raw" : {
-                    "type" : "keyword",
-                    "ignore_above" : 256
-                  }
-                }
+                "type" : "keyword"
               },
               "typeURI" : {
-                "type" : "keyword",
-                "fields" : {
-                  "raw" : {
-                    "type" : "keyword",
-                    "ignore_above" : 256
-                  }
-                }
+                "type" : "keyword"
               }
             }
           },
