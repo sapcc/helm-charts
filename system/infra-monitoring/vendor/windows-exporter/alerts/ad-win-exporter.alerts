@@ -15,17 +15,17 @@ groups:
       summary: "Windows metrics cannot be fetched from node {{ $labels.server_name }}"
 
   - alert: ADServiceDownInfo
-    expr: count(windows_service_state{state!="running"} > 0) by (server_name, exported_name, state) 
+    expr: count(windows_service_state{state!="running"} > 0) by (server_name, name, state) 
     for: 10m
     labels:
       severity: info
       tier: ad
       service: windows-exporter
       context: "{{ $labels.server_name }}"
-      meta: "Service {{ $labels.exported_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+      meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
     annotations:
-      description: "Service {{ $labels.exported_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
-      summary: "Service {{ $labels.exported_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+      description: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
+      summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
 
   - alert: ADDiskFullInfo
     expr: count(100 - (windows_logical_disk_free_bytes{volume!~"HarddiskVolume.*"}*100/windows_logical_disk_size_bytes{volume!~"HarddiskVolume.*"}) > 80) by (server_name, volume) 
