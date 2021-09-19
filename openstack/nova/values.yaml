@@ -248,15 +248,21 @@ scheduler:
   driver: "filter_scheduler"
   scheduler_tracks_instance_changes: false
   scheduler_instance_sync_interval: 120
-  default_filters: "AvailabilityZoneFilter, ShardFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  default_filters: "AvailabilityZoneFilter, ShardFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  vm_size_threshold_vm_size_mb: 32768
+  vm_size_threshold_hv_size_mb: "1536000"
   ram_weight_multiplier: 1.0
   cpu_weight_multiplier: 1.0
   disk_weight_multiplier: 1.0
   io_ops_weight_multiplier: 0.0
   soft_affinity_weight_multiplier: 1.0
-  # the prefer-same-host weigher should be able to overpower a worst-case combination of other weighers
-  # (e.g. least ram available + slightly bad disk weight), so make it >= len(other_weighers)
-  prefer_same_host_resize_weight_multiplier: 5.0
+  # The following weighers are crutches, but we can't express it otherwise
+  # currently. They should overpower the other weighers even in worst-case
+  # (e.g. least ram available + worst disk weight), so we have to make it >=
+  # len(other_weighers). At the same time, we, want a VM to not move on resize,
+  # if it doesn't have to - even if it's in the wrong RAM class currently.
+  prefer_same_host_resize_weight_multiplier: 1000.0
+  hv_ram_class_weight_multiplier: 100.0
 
 compute:
   defaults:

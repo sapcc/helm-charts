@@ -593,17 +593,19 @@
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
       target_label: __address__
+    - regex: 'name|state'
+      action: labeldrop
   metric_relabel_configs:
     - source_labels: [__name__]
       regex: '^go_.+'
       action: drop
-    - source_labels: [__name__, name]
-      regex: 'windows_service_state; (.*)'
-      replacement: $1
+    - source_labels: ['__name__','exported_name']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
       target_label: 'service_name'
-    - source_labels: [__name__, state]
-      regex: 'windows_service_state; (.*)'
-      replacement: $1
+    - source_labels: ['__name__','exported_state']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
       target_label: 'service_state'
 {{- end }}
         
