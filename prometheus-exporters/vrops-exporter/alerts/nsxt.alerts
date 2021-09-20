@@ -236,9 +236,13 @@ groups:
     annotations:
       description: "WARNING: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})"
       summary: "WARNING: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }})."
-      
+
   - alert: NSXTTransportNodeConnectivityNotUP
-    expr: vrops_nsxt_transport_node_alert_info{alert_name="Transport Node Controller/Manager Connectivity is not UP"}
+    expr: |
+        label_replace(vrops_nsxt_transport_node_alert_info{alert_name="Transport Node Controller/Manager Connectivity is not UP"}, "hostsystem", "$1", "nsxt_transport_node", "(.*)")
+        AND on (hostsystem) vrops_hostsystem_runtime_connectionstate{state="notResponding"}
+        AND on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
+        AND on (hostsystem) vrops_hostsystem_runtime_powerstate{state="Powered On"}
     labels:
       severity: info
       tier: vmware
