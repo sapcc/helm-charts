@@ -1,0 +1,17 @@
+groups:
+- name: ecr-creds-helper.alerts
+  rules:
+
+    ### ecr-creds-helper ###
+
+    - alert: EcrCredsHelperJobFailed
+      expr: sum(increase(kube_job_status_succeeded{job_name=~"aws-ecr-creds-helper-.+"}[8h])) == 0
+      for: 15m
+      labels:
+        tier: k8s
+        service: aws-ecr-creds-helper
+        severity: warning
+        context: aws-ecr-creds-helper
+      annotations:
+        description: AWS creds helper failed to fetch ECR Public creds.
+        summary: AWS creds helper failed.
