@@ -27,7 +27,7 @@ die-on-term = true
 hook-master-start = unix_signal:15 gracefully_kill_them_all
 
 # logging and metrics
-log-format = [pid: %(pid)] %(addr) {%(vars) vars in %(pktsize) bytes} [%(ctime)] %(method) %(uri) => generated %(rsize) bytes in %(msecs) msecs (%(proto) %(status)) %(headers) headers in %(hsize) bytes
+log-format = [pid: %(pid)] %(addr) {%(vars) vars in %(pktsize) bytes} [%(ctime)] %(method) %(uri) [%(request_id)] => generated %(rsize) bytes in %(msecs) msecs (%(proto) %(status)) %(headers) headers in %(hsize) bytes
 plugin = dogstatsd
 stats-push = dogstatsd:127.0.0.1:9125
 dogstatsd-all-gauges = true
