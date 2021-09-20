@@ -1,0 +1,17 @@
+groups:
+- name: ecr-creds-helper.alerts
+  rules:
+
+    ### ecr-creds-helper ###
+
+    - alert: EcrCredsHelperJobFailed
+      expr: sum(kube_job_status_failed{job_name=~"aws-ecr-creds-helper-.+"}) by (job_name) > 2
+      for: 15m
+      labels:
+        tier: k8s
+        service: aws-ecr-creds-helper
+        severity: warning
+        context: aws-ecr-creds-helper
+      annotations:
+        description: AWS creds helper failed to fetch ECR Public creds 2 times.
+        summary: AWS creds helper failed.
