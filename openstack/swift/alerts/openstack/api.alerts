@@ -193,12 +193,11 @@ groups:
       description: Check kibana for the causing account and container
       summary: swift rate limit hit in {{ $labels.os_cluster }}
 
-  - alert: OpenstackSwiftUsedSpace
+  - alert: OpenstackSwiftUsedSpaceGrow
     expr: max(predict_linear(global:swift_cluster_storage_used_percent_average[1w], 60 * 60 * 24 * 30)) > 0.8
-    for: 1d
+    for: 2d
     labels:
       context: usedcapacity
-      dashboard: swift-capacity-global?var-region={{ $labels.region }}
       service: swift
       severity: info
       tier: os
@@ -206,6 +205,45 @@ groups:
     annotations:
       description: Swift storage usage will reach 80% in 30 days. Order hardware now!
       summary: Swift storage expected to be full soon
+
+  - alert: OpenstackSwiftUsedSpace66
+    expr: max(global:swift_cluster_storage_used_percent_average) by (region) * 100 > 66
+    for: 1d
+    labels:
+      context: usedcapacity
+      service: swift
+      severity: info
+      tier: os
+      meta: 'Swift storage usage above {{ $value }}%'
+    annotations:
+      description: 'Swift storage usage above {{ $value }}%'
+      summary: 'Swift storage usage above {{ $value }}%'
+
+  - alert: OpenstackSwiftGrantedQuota125
+    expr: sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100 > 125
+    for: 1d
+    labels:
+      context: grantedquota
+      service: swift
+      severity: info
+      tier: os
+      meta: 'Swift storage is overbooked: {{ $value }}%'
+    annotations:
+      description: 'Swift storage is overbooked: {{ $value }}%'
+      summary: 'Swift storage is overbooked: {{ $value }}%'
+
+  - alert: OpenstackSwiftGrantedQuota150
+    expr: sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100 > 150
+    for: 1d
+    labels:
+      context: grantedquota
+      service: swift
+      severity: warning
+      tier: os
+      meta: 'Swift storage is overbooked: {{ $value }}%'
+    annotations:
+      description: 'Swift storage is overbooked: {{ $value }}%'
+      summary: 'Swift storage is overbooked: {{ $value }}%'
 
   - alert: OpenstackSwiftDriveAutopilotConsistencyCheck
     expr: irate(swift_drive_autopilot_events{type="consistency-check"}[5m]) < 0.02
@@ -251,7 +289,7 @@ groups:
         is older than 3 hours. Check the affected node. A restart of the replicator pod might
         be necessary."
       summary: Container replication on {{ $labels.storage_ip }} older than 3 hours
-      
+
   - alert: OpenstackSwiftCanaryDown
     expr: blackbox_canary_status_gauge{service=~"swift"} == 1
     for: 1h
