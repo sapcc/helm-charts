@@ -14,6 +14,19 @@ groups:
         annotations:
           description: "Keystone logs shipping to Octobus not working"
           summary: "KeystoneLogs3Octobus not working"
+      - alert: OctobusKeystoneLogParsing
+        expr: elasticsearch_octobus_keystone_credit_hits - elasticsearch_octobus_keystone_user_hits > 10
+        for: 15m
+        labels:
+          severity: info
+          tier: os
+          service: elk
+          meta: "Octobus no keystone logs grok parsing"
+          playbook: 'docs/support/playbook/elastic_kibana_issues.html#keystone-logs-grok-parsing-in-octobus'
+          dashboard: octobus-logshipping
+        annotations:
+          description: "Octobus: Keystone logs grok parsing not working"
+          summary: "KeystoneLogsGrokParsing not working"
       - alert: OctobusKeystoneLogshipperEndpointDown
         expr: elasticsearch_octobus_keystone_logs_doc_count{logs="keystone-api"} == 0 and on  (region) {target=~"in-https.*"} == 0
         for: 15m
