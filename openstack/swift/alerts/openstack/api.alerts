@@ -207,7 +207,7 @@ groups:
       summary: Swift storage expected to be full soon
 
   - alert: OpenstackSwiftUsedSpace66
-    expr: max(global:swift_cluster_storage_used_percent_average) by (region) * 100 > 66
+    expr: floor(max(global:swift_cluster_storage_used_percent_average) by (region) * 100) > 66
     for: 1d
     labels:
       context: usedcapacity
@@ -220,7 +220,7 @@ groups:
       summary: 'Swift storage usage above {{ $value }}%'
 
   - alert: OpenstackSwiftGrantedQuota125
-    expr: sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100 > 125
+    expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 125
     for: 1d
     labels:
       context: grantedquota
@@ -233,7 +233,7 @@ groups:
       summary: 'Swift storage is overbooked: {{ $value }}%'
 
   - alert: OpenstackSwiftGrantedQuota150
-    expr: sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100 > 150
+    expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 150
     for: 1d
     labels:
       context: grantedquota
