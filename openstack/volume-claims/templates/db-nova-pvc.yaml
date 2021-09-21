@@ -2,15 +2,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  annotations:
-    meta.helm.sh/release-name: volume-claims
-    meta.helm.sh/release-namespace: monsoon3
-  labels:
-    app.kubernetes.io/managed-by: Helm
   name: db-nova-pvc
 spec:
   accessModes:
-    - ReadWriteMany
+  - ReadWriteMany
   resources:
     requests:
       storage: {{ if .Values.global.region | required ".Values.global.region missing" | regexMatch "^(?:ap-au-1|eu-de-[12]|eu-nl-1|na-us-1)$" -}} 100Gi {{- else -}} 50Gi {{- end }}
