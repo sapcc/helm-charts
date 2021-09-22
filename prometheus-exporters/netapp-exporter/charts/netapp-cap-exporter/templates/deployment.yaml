@@ -30,14 +30,13 @@ spec:
       {{- end }}
     spec:
       volumes:
-        - name: etc
-          configMap:
-            name: {{ $configmapName }}
+        - name: netapp-data
+          emptyDir: {}
       containers:
         - name: exporter
           image: "{{ required ".Values.exporter.image.repository" $.Values.exporter.image.repository }}:{{ required ".Values.exporter.image.tag" $.Values.exporter.image.tag }}"
           imagePullPolicy: {{ $.Values.exporter.image.pullPolicy | default "IfNotPresent" }}
-          args: [ --config=/etc/netapp/netapp-filers.yaml ]
+          args: [ --config=/etc/netapp/filers.yaml ]
           env:
           - name: NETAPP_USERNAME
             valueFrom:
@@ -59,16 +58,14 @@ spec:
             {{- toYaml $.Values.exporter.resources | nindent 12 }}
             {{- end }}
           volumeMounts:
-            - name: etc
+            - name: netapp-data
               mountPath: /etc/netapp
 {{/* manila filers are predefined in secrets */}}
         {{- if ne $shortAppName "manila" }}
         - name: netappsd
           args:
-            - -configmap
-            - {{ $configmapName }}
-            - -filename
-            - netapp-filers.yaml
+            - -output-file-path
+            - /netapp/filers.yaml
             - -namespace
             - {{ $.Release.Namespace }}
             - -netbox-host
@@ -83,7 +80,11 @@ spec:
           imagePullPolicy: {{ $.Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
           resources:
             {{- toYaml $.Values.netappsd.resources | nindent 12 }}
+          volumeMounts:
+            - name: netapp-data
+              mountPath: /netapp
         {{- end }}
+{{/***/}}
 
 {{- end }}
 {{- end }}
