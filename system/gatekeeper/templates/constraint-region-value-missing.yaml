@@ -1,0 +1,35 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: gkregionvaluemissing
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkRegionValueMissing
+      validation:
+        openAPIV3Schema:
+          properties: {}
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package gkregionvaluemissing
+
+        violation[{"msg": msg}] {
+          helm_release := input.review.object
+          helm_release.kind == "Secret"
+          helm_release.type == "helm.sh/release.v1"
+          helm_release.metadata.labels.status == "deployed"
+
+          parser_url := "http://helm-manifest-parser.kube-system.svc/v3"
+          parser_resp := http.send({ "url": parser_url, "method": "POST", "raw_body": release.data.helm_release, "timeout": "15s" })
+          parser_resp.status_code == 200
+
+          values := parser_resp.body.values
+          values_global := object.get(values, "global", {})
+          values_region := object.get(values_global, "region", "")
+          values_region == ""
+
+          msg := "missing .Values.global.region value"
+        }
