@@ -18,7 +18,20 @@ groups:
     annotations:
       description: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
       summary: "Shadow VM {{ $labels.virtualmachine }} is inaccessible. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
-
+      
+  - alert: HostOwnsGreyVMsSince15min
+    expr: count by (vcenter, hostsystem) (vrops_virtualmachine_availability == -1) > 0
+    for: 15m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: Shadow VMs
+      meta: "Hostsystem {{ $labels.hostsystem }} owns `{{ $value }}` grey VMs since 15min. ({{ $labels.vcenter }}) Check and reload these VMs."
+    annotations:
+      description: "Hostsystem {{ $labels.hostsystem }} owns `{{ $value }}` grey VMs since 15min. ({{ $labels.vcenter }}) Check and reload these VMs."
+      summary: "Hostsystem {{ $labels.hostsystem }} owns `{{ $value }}` grey VMs since 15min. ({{ $labels.vcenter }}) Check and reload these VMs."
+      
   - alert: VMDiskIOReadLatencyIsHigh
     expr: >
       vrops_virtualmachine_alert_info{alert_name="Virtual machine disk I/O read latency is high", vccluster=~".*management.*"}
