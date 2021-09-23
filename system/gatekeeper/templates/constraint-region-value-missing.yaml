@@ -33,3 +33,32 @@ spec:
 
           msg := "missing .Values.global.region value"
         }
+
+        # need to import some parts from Gatekeeper's pkg/target/regolib/src.rego
+        # to make get_default() work
+
+        has_field(object, field) {
+          object[field]
+        }
+        has_field(object, field) {
+          object[field] == false
+        }
+        has_field(object, field) = false {
+          not object[field]
+          not object[field] == false
+        }
+
+        get_default(object, field, _default) = output {
+          has_field(object, field)
+          output = object[field]
+          output != null
+        }
+        get_default(object, field, _default) = output {
+          has_field(object, field)
+          object[field] == null
+          output = _default
+        }
+        get_default(object, field, _default) = output {
+          has_field(object, field) == false
+          output = _default
+        }
