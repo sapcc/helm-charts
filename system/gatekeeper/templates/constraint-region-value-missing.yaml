@@ -26,9 +26,9 @@ spec:
           parser_resp := http.send({ "url": parser_url, "method": "POST", "raw_body": helm_release.data.release, "timeout": "15s" })
           parser_resp.status_code == 200
 
-          values := object.get(parser_resp.body, "values", {})
-          values_global := object.get(values, "global", {})
-          values_region := object.get(values_global, "region", "")
+          values := parser_resp.body.values
+          values_global := get_default(values, "global", {})
+          values_region := get_default(values_global, "region", "")
           values_region == ""
 
           msg := "missing .Values.global.region value"
