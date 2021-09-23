@@ -27,6 +27,15 @@ cronus:
     proxyProtocol: {{ .Values.cronus.listenProxyProtocol }}
 {{- end }}
     shutdownTimeout: {{ .Values.cronus.terminationGracePeriod | default 60 }}s
+{{- if .Values.cronus.tls }}
+{{- if .Values.cronus.smtps }}
+    startTls: :{{ .Values.cronus.smtps }} # default :587
+{{- end }}
+    tls:
+      namespace: {{ .Values.cronus.tls.namespace | default "cronus" }}
+      name: {{ .Values.cronus.tls.name }}
+      errInterval: {{ .Values.cronus.tls.errInterval | default 60 }}
+{{- end }}
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}

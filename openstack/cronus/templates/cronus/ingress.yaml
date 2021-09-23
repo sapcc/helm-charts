@@ -4,16 +4,9 @@ kind: Ingress
 metadata:
   name: cronus
   annotations:
-    disco: "true"
-    disco/record: {{ index .Values "ingress-nginx" "controller" "service" "annotations" "disco/record" }}
     kubernetes.io/tls-acme: "true"
-    kubernetes.io/ingress.class: {{ index .Values "ingress-nginx" "controller" "ingressClass" }}
     {{- range $key, $value := .Values.cronus.ingressAnnotations }}
     {{ $key }}: {{ $value | quote }}
-    {{- end }}
-    {{- if .Values.cronus.maxEmailBodySize }}
-    # base64 overhead for HTTP AWS SES API val*(4/3) + 10% extra
-    nginx.ingress.kubernetes.io/proxy-body-size: {{ div (mul (div (mul .Values.cronus.maxEmailBodySize 4) 3) 11) 10 | quote }}
     {{- end }}
   labels:
     name: cronus
@@ -26,12 +19,9 @@ spec:
               serviceName: cronus
               servicePort: http
             path: /
-          - backend:
-              serviceName: usage
-              servicePort: http
-            path: /v1/usage
   tls:
     - hosts:
       - cronus.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      # {{ .Values.cronus.tls.name }}
       secretName: tls-secret-cronus
 {{- end -}}

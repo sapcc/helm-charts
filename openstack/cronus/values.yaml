@@ -4,15 +4,22 @@ global:
 cronus:
   enabled: true
   cacheSize: 256
-  http: 5000
-  smtp: 1025
+  http: 443
+  smtp: 465
+  smtps: 587
   listenProxyProtocol: false
+  tls:
+    name: tls-secret-cronus
   debug: true
-  tls: tls-secret
   image:
     name: cronus-repository
     pullPolicy: IfNotPresent
     tag: latest
+  service:
+    type: LoadBalancer
+    annotations:
+      disco: "true"
+      disco/record: my-ingress.region.cloud.com.
   statefulSet:
     enabled: false
     podManagementPolicy: OrderedReady
@@ -44,12 +51,11 @@ cronus:
   # all below can be used only with a deployment style
   maxSurge: 1
   maxUnavailable: 0
-  usage:
-    replicas: 1
-    maxSurge: 1
-    maxUnavailable: 0
   # maximum email body size in bytes
   maxEmailBodySize: 10485760 # 10MiB
+  ingressAnnotations:
+    # don't handle this resource by ingress controllers
+    kubernetes.io/ingress.class: cronus
 
 nebula:
   enabled: true
@@ -74,8 +80,6 @@ nebula:
   # all below can be used only with a deployment style
   maxSurge: 1
   maxUnavailable: 0
-  ingressAnnotations:
-    nginx.ingress.kubernetes.io/proxy-read-timeout: 1800
 
 config:
   ## keystone optional authentication methods, add in @SECRETS the relevant method
@@ -231,98 +235,6 @@ config:
 
 service:
   type: ClusterIP
-
-# nginx values
-ingress-nginx:
-  tcp:
-    465: cronus/cronus:1025
-  controller:
-    image:
-      # custom image built from https://github.com/kayrus/ingress-nginx/tree/mail-module
-      # commands to build:
-      # PLATFORMS=linux/amd64 REGISTRY=keppel.eu-de-1.cloud.sap/ccloud TAG=v1.20.1-helo make push -C images/nginx
-      # ARCH=amd64 PLATFORMS=amd64 REGISTRY=keppel.eu-de-1.cloud.sap/ccloud TAG="$(cat TAG)-helo" BASE_IMAGE=keppel.eu-de-1.cloud.sap/ccloud/nginx:v1.20.1-helo make release
-      registry: keppel.eu-de-1.cloud.sap/ccloud
-      image: controller
-      tag: "v0.49.0-helo"
-      digest: ""
-    config:
-      http-snippet: |
-        # this snippet is used to resolve the cronus service to an address
-        server {
-          listen 127.0.0.1:8025;
-          server_name _;
-          access_log off;
-
-          set $proxy_upstream_name "cronus-cronus-http";
-          location / {
-            content_by_lua_block {
-              local bal = balancer:get_balancer()
-              if not bal then
-                return
-              end
-              local peer = bal:balance()
-              if not peer then
-                return
-              end
-              local strend = string.find(peer, ":")
-              if strend > 1 then
-                ngx.header['Auth-Server'] = string.sub(peer, 0, strend - 1)
-                ngx.header['Auth-Port'] = '1025'
-                ngx.exit(ngx.HTTP_OK)
-              end
-            }
-          }
-        }
-    # pod annotations are needed to recreate nginx pods on template update
-    podAnnotations:
-      recreate: enableRealIP
-    containerPort:
-      http: 80
-      https: 443
-    service:
-      annotations:
-        disco: "true"
-        disco/record: my-ingress.region.cloud.com.
-      ports:
-        http: 80
-        https: 443
-      targetPorts:
-        http: http
-        https: https
-    ingressClass: cronus-nginx
-    admissionWebhooks:
-      enabled: false
-    customTemplate:
-      configMapName: cronus-nginx-template
-      configMapKey: nginx.tmpl
-    extraVolumeMounts:
-    - name: tls-secret-cronus
-      mountPath: "/etc/ingress-controller/ssl/cronus"
-      readOnly: true
-    extraVolumes:
-    - name: tls-secret-cronus
-      secret:
-        secretName: tls-secret-cronus
-    affinity:
-      # don't co-locate ingress controller replicas on the same node
-      podAntiAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-        - topologyKey: kubernetes.io/hostname
-          labelSelector:
-            matchExpressions:
-            - key: app.kubernetes.io/component
-              operator: In
-              values:
-                - controller
-            - key: app.kubernetes.io/instance
-              operator: In
-              values:
-                - cronus
-            - key: app.kubernetes.io/name
-              operator: In
-              values:
-                - ingress-nginx
 
 simulator:
   enabled: true

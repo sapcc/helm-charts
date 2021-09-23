@@ -63,10 +63,18 @@ spec:
             - name: smtp
               containerPort: {{ .Values.cronus.smtp }}
               protocol: TCP
+{{- if and .Values.cronus.smtps .Values.cronus.tls }}
+            - name: smtps
+              containerPort: {{ .Values.cronus.smtps }}
+              protocol: TCP
+{{- end }}
           readinessProbe:
             httpGet:
+{{- if .Values.cronus.tls }}
+              scheme: HTTPS
               path: /healthz
               port: http
+{{- end }}
             initialDelaySeconds: 3
       terminationGracePeriodSeconds: {{ .Values.cronus.terminationGracePeriod | default 60 }}
       volumes:
