@@ -30,8 +30,16 @@ spec:
       {{- end }}
     spec:
       volumes:
+{{/* manila filers are loaded in configmap from secrets */}}
+        {{- if eq $shortAppName "manila" }}
+        - name: netapp-etc
+          configMap:
+            name: {{ $configmapName }}
+        {{- else }}
         - name: netapp-data
           emptyDir: {}
+        {{- end -}}
+{{/***/}}
       containers:
         - name: exporter
           image: "{{ required ".Values.exporter.image.repository" $.Values.exporter.image.repository }}:{{ required ".Values.exporter.image.tag" $.Values.exporter.image.tag }}"
@@ -58,8 +66,13 @@ spec:
             {{- toYaml $.Values.exporter.resources | nindent 12 }}
             {{- end }}
           volumeMounts:
+            {{- if eq $shortAppName "manila" }}
+            - name: netapp-etc
+              mountPath: /etc/netapp
+            {{- else }}
             - name: netapp-data
               mountPath: /etc/netapp
+            {{- end }}
 {{/* manila filers are predefined in secrets */}}
         {{- if ne $shortAppName "manila" }}
         - name: netappsd
