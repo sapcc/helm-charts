@@ -57,6 +57,12 @@ nebula:
     secret: {{ .Values.config.awsSecret }}
     technicalUsername: {{ .Values.config.technicalUsername }}
     policyName: {{ .Values.config.policyName }}
+    roleName: {{ .Values.config.roleName }}
+    iamRolePolicyName: {{ .Values.config.iamRolePolicyName }}
+    iamRolePolicy: |
+{{ .Values.config.iamRolePolicy | indent 6 }}
+    iamRoleTrustPolicy: |
+{{ .Values.config.iamRoleTrustPolicy | indent 6 }}
     iamPolicy: |
 {{ .Values.config.iamPolicy | indent 6 }}
     verifyEmailDomain: {{ .Values.config.verifyEmailDomain }}
