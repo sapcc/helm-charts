@@ -168,15 +168,3 @@ groups:
       description: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
       summary: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})."
       
-  - alert: MultipleGreyVMsOnHostFor15min
-    expr: count by (vcenter, hostsystem) (vrops_virtualmachine_availability == -1) > 0
-    for: 15m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      context: Shadow VMs
-      meta: "Hostsystem {{ $labels.hostsystem }} owns `{{ $value }}` grey VMs for 15min. ({{ $labels.vcenter }}) Check and reload these VMs."
-    annotations:
-      description: "Hostsystem {{ $labels.hostsystem }} owns `{{ $value }}` grey VMs for 15min. ({{ $labels.vcenter }}) Check and reload these VMs."
-      summary: "Hostsystem {{ $labels.hostsystem }} owns `{{ $value }}` grey VMs for 15min. ({{ $labels.vcenter }}) Check and reload these VMs."
