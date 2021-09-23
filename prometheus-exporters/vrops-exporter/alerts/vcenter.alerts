@@ -121,3 +121,16 @@ groups:
     annotations:
       description: "VASA Provider disconnected from {{ $labels.vcenter}}."
       summary: "VASA Provider disconnected from {{ $labels.vcenter}}."
+   
+  - alert: VCenterHasMultipleGreyVMs
+    expr: count by (vcenter) (vrops_virtualmachine_availability == -1) > 0
+    for: 15m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: Shadow VMs
+      meta: "vCenter {{ $labels.vcenter }} has `{{ $value }}` grey VMs for a longer period. Check and reload these VMs."
+    annotations:
+      description: "vCenter {{ $labels.vcenter }} has `{{ $value }}` grey VMs for a longer period. Check and reload these VMs."
+      summary: "vCenter {{ $labels.vcenter }} has `{{ $value }}` grey VMs for a longer period. Check and reload these VMs."
