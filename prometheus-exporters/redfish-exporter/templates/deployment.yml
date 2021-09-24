@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redfish-exporter
-  namespace: infra-monitoring
+  name: {{ include "fullName" . }}
+  namespace: {{ .Values.redfish.namespace }}
   labels:
-    app: redfish-exporter
+    app: {{ include "fullName" . }}
     type: exporter
 spec:
   selector:
     matchLabels:
-      app: redfish-exporter 
+      app: {{ include "fullName" . }}
       type: exporter
   replicas: 1
   strategy:
@@ -20,14 +20,19 @@ spec:
   template:
     metadata:
       labels:
-        app: redfish-exporter 
+        app: {{ include "fullName" . }} 
         type: exporter
     spec:
       containers:
-      - name: redfish-exporter
+      - name: {{ include "fullName" . }}
         image: "{{ .Values.global.registry }}/{{ .Values.redfish.image }}:{{ .Values.redfish.tag }}"
         ports:
         - containerPort: {{ .Values.redfish.listen_port }}
+        command:
+          - /usr/bin/python3
+        args:
+          - -u
+          - ./main.py
         env:
         - name: APP_ENV
           value: "{{ .Values.redfish.app_env }}"
