@@ -1,0 +1,42 @@
+{{- $values := .Values.redfish }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "fullName" . }}
+{{- if $values.namespace }}
+  namespace: {{ $values.namespace }}
+{{- end }}
+  labels:
+    app: {{ include "fullName" . }}
+    type: exporter
+
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "fullName" . }}
+      type: exporter
+  namespaceSelector:
+    matchNames: {{ $values.namespace }}
+
+  jobLabel: 'redfish/bb'
+  podMetricsEndpoints:
+    - interval: {{ .Values.prometheus.operator.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.prometheus.operator.serviceMonitor.scrapeTimeout }}
+      params:
+        job: [redfish/bb]
+      file_sd_configs:
+          - files :
+            - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
+      path: /redfish
+      port: {{ $values.listen_port }}
+      scheme: http
+      relabelings:
+        - sourceLabels: [job]
+          regex: redfish/bb
+          action: keep
+        - sourceLabels: [__address__]
+          targetLabel: __param_target
+        - sourceLabels: [__param_target]
+          targetLabel: instance
+        - targetLabel: __address__
+          replacement: redfish-exporter:{{ $values.listen_port }}
