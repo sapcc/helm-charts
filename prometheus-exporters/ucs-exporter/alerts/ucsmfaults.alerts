@@ -2,7 +2,22 @@ groups:
 - name: ucsmfaults.alerts
   rules:
   - alert: UcsmFaultCritical
-    expr: count(max_over_time(ucsm_faults{severity="critical"}[30m])) by (server, severity, type, description)
+    expr: count(max_over_time(ucsm_faults{severity=~"critical", code!~"F1365|F1000013|F1000035|F1901|F999560|F1000034|F1913"}[30m])) by (server, severity, type, description)
+    for: 20m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      context: "{{ $labels.server }}"
+      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs.html
+    annotations:
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }} for type {{ $labels.type }}: {{ $labels.description }}"
+      summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
+
+  - alert: UcsmFaultWarn
+    expr: count(max_over_time(ucsm_faults{severity="critical", code=~"F1365|F1000013|F1000035|F1901|F999560|F1000034|F1913"}[30m])) by (server, severity, type, description)
     for: 20m
     labels:
       severity: warning
