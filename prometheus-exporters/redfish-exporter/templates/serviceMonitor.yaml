@@ -1,0 +1,20 @@
+{{- if .Values.prometheus.operator.serviceMonitor.namespace }}
+  namespace: {{ .Values.prometheus.operator.serviceMonitor.namespace }}
+{{- end }}
+  labels:
+    app: {{ include "fullName" . }}
+    type: exporter
+{{- if .Values.prometheus.operator.serviceMonitor.selector }}
+{{ toYaml .Values.prometheus.operator.serviceMonitor.selector | indent 4 }}
+{{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "fullName" . }}
+      type: exporter
+  endpoints:
+  - port: metrics
+    interval: {{ .Values.prometheus.operator.serviceMonitor.interval }}
+  namespaceSelector:
+    any: true
+{{ end }}
