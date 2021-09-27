@@ -1,9 +1,10 @@
+{{- $values := .Values.redfish }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "fullName" . }}
-{{- if .Values.redfish.namespace }}
-  namespace: {{ .Values.redfish.namespace }}
+{{- if $values.namespace }}
+  namespace: {{ $values.namespace }}
 {{- end }}
   labels:
     app: {{ include "fullName" . }}
@@ -27,10 +28,10 @@ spec:
     spec:
       containers:
       - name: {{ include "fullName" . }}
-        image: "{{ .Values.global.registry }}/{{ .Values.redfish.image }}:{{ .Values.redfish.tag }}"
+        image: "{{ .Values.global.registry }}/{{ $values.image }}:{{ $values.tag }}"
         ports:
           - name: metrics
-            containerPort: {{ .Values.redfish.listen_port }}
+            containerPort: {{ $values.listen_port }}
         command:
           - /usr/bin/python3
         args:
@@ -38,9 +39,9 @@ spec:
           - ./main.py
         env:
         - name: APP_ENV
-          value: "{{ .Values.redfish.app_env }}"
+          value: "{{ $values.app_env }}"
         - name: LISTEN_PORT
-          value: "{{ .Values.redfish.listen_port }}"
+          value: "{{ $values.listen_port }}"
         - name: TIMEOUT
           value: "5"
         {{- if .Values.global.redfish_bm_username }}
@@ -63,8 +64,8 @@ spec:
         {{- end }}
         resources:
           limits:
-            memory: {{ required ".Values.redfish.limits.memory missing" .Values.redfish.limits.memory }}
-            cpu: {{ required ".Values.redfish.limits.cpu missing" .Values.redfish.limits.cpu }}
+            memory: {{ required "$values.limits.memory missing" $values.limits.memory }}
+            cpu: {{ required "$values.limits.cpu missing" $values.limits.cpu }}
           requests:
-            memory: {{ required ".Values.redfish.resources.memory missing" .Values.redfish.resources.memory }}
-            cpu: {{ required ".Values.redfish.resources.cpu missing" .Values.redfish.resources.cpu }}
+            memory: {{ required "$values.resources.memory missing" $values.resources.memory }}
+            cpu: {{ required "$values.resources.cpu missing" $values.resources.cpu }}
