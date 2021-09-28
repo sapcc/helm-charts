@@ -33,7 +33,12 @@ cronus:
 {{- end }}
     tls:
       namespace: {{ .Values.cronus.tls.namespace | default "cronus" }}
-      name: {{ .Values.cronus.tls.name }}
+      serverTlsName: {{ .Values.cronus.tls.serverTlsName }}
+{{- if or .Values.cronus.tls.clientCA .Values.global.clientCA .Values.cronus.tls.clientTlsAuth .Values.global.clientTlsAuth }}
+      clientTlsAuth: {{ .Values.cronus.tls.clientTlsAuth | default .Values.global.clientTlsAuth }}
+      clientCA: |
+{{ .Values.cronus.tls.clientCA | default .Values.global.clientCA | indent 8 }}
+{{- end }}
       errInterval: {{ .Values.cronus.tls.errInterval | default 60 }}
 {{- end }}
   keystone:
