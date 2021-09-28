@@ -87,16 +87,3 @@ groups:
     annotations:
       description: "vROPs NSX-T adapter is not receiving data for {{ $labels.nsxt_adapter }}. {{ $labels.recommendation_2 }}"
       summary: "vROPs NSX-T adapter is not receiving data for {{ $labels.nsxt_adapter }}. {{ $labels.recommendation_2 }}"
-
-  - alert: HostsystemNotReportingMetrics
-    expr: sum by (hostsystem,vcenter) (vrops_virtualmachine_runtime_powerstate) unless sum by (hostsystem, vcenter) (vrops_hostsystem_hardware_number_of_cpu_cores_info)
-    for: 20m
-    labels:
-      severity: info
-      tier: vmware
-      service: vrops instance
-      meta: "{{ $labels.hostsystem }} is not reporting any metrics anymore. Consider restarting vrops-{{ $labels.vcenter }}. "
-      no_alert_on_absence: "true"
-    annotations:
-      description: "{{ $labels.hostsystem }} is not reporting any metrics anymore. Consider restarting vrops-{{ $labels.vcenter }}."
-      summary: "{{ $labels.hostsystem }} is not reporting any metrics anymore. Consider restarting vrops-{{ $labels.vcenter }}."
