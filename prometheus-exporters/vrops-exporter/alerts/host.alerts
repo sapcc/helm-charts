@@ -40,19 +40,20 @@ groups:
 
   - alert: HostInMaintenanceWithoutCustomAttribute
     expr: |
-      ((max_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]) == 0)
+      count by (vcenter) (((max_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]) == 0)
       AND ON(hostsystem) max_over_time(vrops_hostsystem_custom_attributes_hw_info{custom_attributes_hw=''}[10m]))
       OR ON(hostsystem) ((max_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[10m]) == 0)
-      unless ON(hostsystem) max_over_time(vrops_hostsystem_custom_attributes_hw_info[10m]))
+      unless ON(hostsystem) max_over_time(vrops_hostsystem_custom_attributes_hw_info[10m])))
     for: 20m
     labels:
       severity: info
       tier: vmware
       service: compute
-      meta: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute."
+      meta: "Hosts in {{ $labels.vcenter }} are in maintenance and have no custom attribute HW provided. Click on Grafana to see the list"
+      dashboard: hosts-without-custom-attribute/hosts-without-custom-attribute
     annotations:
-      description: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute. Please provide detailed information in the Custom Attribute HW field."
-      summary: "Host {{ $labels.hostsystem }} is in maintenance without a custom attribute."
+      description: "Hosts in {{ $labels.vcenter }} are in maintenance and have no custom attribute HW provided. Click on Grafana to see the list"
+      summary: "Hosts in {{ $labels.vcenter }} are in maintenance and have no custom attribute HW provided. Click on Grafana to see the list"
 
   - alert: VMsOnFailoverHost
     #  Excluding vCLS agent VMs. vCLS ensures that if vCenter Server becomes unavailable, cluster services remain available
