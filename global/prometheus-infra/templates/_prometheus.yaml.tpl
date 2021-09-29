@@ -12,6 +12,7 @@
       - '{__name__=~"^global:.+"}'
       - '{__name__=~"^probe_(dns|duration|http|success).*"}'
       - '{__name__=~"^elasticsearch_octobus_.+"}'
+      - '{__name__=~"^elastiflow_deny_reason_.+"}'
       - '{__name__=~"^snmp_asa_.+"}'
       - '{__name__=~"^snmp_asr_nat.+"}'
       - '{__name__=~"^snmp_asr_sysDescr"}'
