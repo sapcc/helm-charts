@@ -7,7 +7,10 @@ log_level = INFO
 {{- end }}
 
 [pipeline:main]
-pipeline = catch_errors proxy-logging cache symlink proxy-server
+# TODO: get rid of this config file when swift_standard_container do not need to run
+#       privileged anymore, because the k8s internal svc cannot be resolved for privileged containers
+#pipeline = catch_errors proxy-logging cache symlink proxy-server
+pipeline = catch_errors proxy-logging symlink proxy-server
 
 [app:proxy-server]
 use = egg:swift#proxy
