@@ -1,5 +1,5 @@
 output {
-  if [netflow][fw_event] == '3' {
+  if [netflow][fw_event] == 3 {
     elasticsearch {
       hosts => [ "${ELASTIFLOW_ES_HOST:127.0.0.1:9200}" ]
       ssl => "${ELASTIFLOW_ES_SSL_ENABLE:false}"
