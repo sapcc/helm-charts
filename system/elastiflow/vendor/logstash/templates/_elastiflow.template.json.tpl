@@ -26621,7 +26621,7 @@
         "netflow.cisco_fw_ext_event": {
           "path_match": "netflow.cisco_fw_ext_event",
           "mapping": {
-            "type": "keyword"
+            "type": "long"
           }
         }
       },
