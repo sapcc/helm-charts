@@ -10,11 +10,7 @@ workers = 4
 max_clients = 1024
 backlog = 4096
 
-log_statsd_host = localhost
-log_statsd_port = 9125
-log_statsd_default_sample_rate = 1.0
-log_statsd_sample_rate_factor = 1.0
-log_statsd_metric_prefix = swift
+{{ include "swift_log_statsd" . }}
 {{ if .Values.debug -}}
 log_level = DEBUG
 {{- else -}}
