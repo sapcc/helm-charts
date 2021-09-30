@@ -151,7 +151,8 @@ QueryJson = {
         {
           "range": {
             "@timestamp": {
-              "gte": "now-16m"
+              "lte": "now-14m",
+              "gte": "now-30m"
             }
           }
         }
