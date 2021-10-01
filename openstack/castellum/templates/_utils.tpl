@@ -29,7 +29,7 @@
 - name: CASTELLUM_NFS_PROMETHEUS_URL
   value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
 - name: CASTELLUM_OSLO_POLICY_PATH
-  value: /etc/castellum/policy.json
+  value: /etc/castellum/policy.yaml
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
   value: "{{ .Values.castellum.rabbitmq.queue_name }}"
 - name: CASTELLUM_RABBITMQ_USERNAME
