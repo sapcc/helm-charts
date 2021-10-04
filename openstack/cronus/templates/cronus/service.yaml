@@ -3,8 +3,21 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cronus
+  annotations:
+    {{- range $key, $value := .Values.cronus.service.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.cronus.service.type }}
+{{- if .Values.cronus.service.externalIPs }}
+  externalIPs: {{ toYaml .Values.cronus.service.externalIPs | nindent 4 }}
+{{- end }}
+{{- if .Values.cronus.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.cronus.service.loadBalancerIP }}
+{{- end }}
+{{- if .Values.cronus.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.cronus.service.externalTrafficPolicy }}
+{{- end }}
   ports:
     - name: http
       port: {{ .Values.cronus.http }}
@@ -12,6 +25,11 @@ spec:
     - name: smtp
       port: {{ .Values.cronus.smtp }}
       protocol: TCP
+{{- if .Values.cronus.smtps }}
+    - name: smtps
+      port: {{ .Values.cronus.smtps }}
+      protocol: TCP
+{{- end }}
   selector:
     name: cronus
     instance: cronus
