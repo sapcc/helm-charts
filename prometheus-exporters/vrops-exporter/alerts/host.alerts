@@ -113,18 +113,21 @@ groups:
       summary: "Host {{ $labels.hostsystem }} has lost connectivity to a dvPort. ({{ $labels.vcenter }})."
 
   - alert: HostHasLostConnectionToVCenterServer
-    expr: vrops_hostsystem_alert_info{alert_name="Host has lost connection to vCenter Server"}
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="Host has lost connection to vCenter Server"} AND on (hostsystem) 
+      vrops_hostsystem_runtime_maintenancestate{} == 1 AND on (hostsystem)
+      vrops_hostsystem_runtime_powerstate{} == 0
     labels:
       severity: info
       tier: vmware
       service: compute
       context: "ESXi vCenter connection"
-      meta: "Host {{ $labels.hostsystem }} has lost connection to vCenter {{ $labels.vcenter }}."
+      meta: "{{ $labels.hostsystem }} has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
       playbook: docs/devops/alert/vcenter/#host_has_lost_connection_to_vcenter_server
       no_alert_on_absence: "true"
     annotations:
-      description: "Host {{ $labels.hostsystem }} has lost connection to vCenter {{ $labels.vcenter }}."
-      summary: "Host {{ $labels.hostsystem }} has lost connection to vCenter {{ $labels.vcenter }}."
+      description: "{{ $labels.hostsystem }} has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
+      summary: "{{ $labels.hostsystem }} has been unexpectedly disconnected from vCenter Server {{ $labels.vcenter }}."
 
   - alert: HostHasLostConnectivityToPhysicalNetwork
     expr: vrops_hostsystem_alert_info{alert_name="The host has lost connectivity to physical network"}
