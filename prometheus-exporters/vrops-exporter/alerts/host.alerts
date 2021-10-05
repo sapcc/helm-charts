@@ -115,8 +115,8 @@ groups:
   - alert: HostHasLostConnectionToVCenterServer
     expr: |
       vrops_hostsystem_alert_info{alert_name="Host has lost connection to vCenter Server"} AND on (hostsystem) 
-      vrops_hostsystem_runtime_maintenancestate{} == 1 AND on (hostsystem)
-      vrops_hostsystem_runtime_powerstate{} == 0
+      vrops_hostsystem_runtime_maintenancestate == 1 AND on (hostsystem)
+      vrops_hostsystem_runtime_powerstate == 0
     labels:
       severity: info
       tier: vmware
@@ -158,14 +158,16 @@ groups:
       summary: "Host {{ $labels.hostsystem }} is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
 
   - alert: HADetectedAPossibleHostFailure
-    expr: vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"}
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"} AND on (hostsystem)
+      vrops_hostsystem_runtime_maintenancestate == 1 AND on (hostsystem)
+      vrops_hostsystem_runtime_powerstate == 0
     labels:
       severity: info
       tier: vmware
       service: compute
       context: "ESXi failure"
       meta: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})."
-      playbook: docs/devops/alert/vcenter/#ha_detected_a_possible_host_failure
       no_alert_on_absence: "true"
     annotations:
       description: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
