@@ -19,7 +19,7 @@ simulator:
   shellToUse: {{ .Values.simulator.shellToUse }}
   slackMode: {{ .Values.simulator.slackMode }}
   slack: https://hooks.slack.com/services/{{ .Values.global.cronus_simulator_slack }}
-  timeWaitInterval: {{ .Values.cross.timeWaitInterval }}
+  timeWaitInterval: {{ .Values.simulator.timeWaitInterval }}
   remote: {{ .Values.simulator.remote }}
   remoteRegion: {{ .Values.config.keystone.region }}
   remotePassword: {{ .Values.global.cronus_service_password }}
