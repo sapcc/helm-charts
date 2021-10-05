@@ -27,6 +27,9 @@ cronus:
     proxyProtocol: {{ .Values.cronus.listenProxyProtocol }}
 {{- end }}
     shutdownTimeout: {{ .Values.cronus.terminationGracePeriod | default 60 }}s
+    readTimeout: {{ .Values.cronus.readTimeout | default 30 }}s
+    writeTimeout: {{ .Values.cronus.writeTimeout | default 30 }}s
+    keepAliveTimeout: {{ .Values.cronus.keepAliveTimeout | default 60 }}s
 {{- if .Values.cronus.tls }}
 {{- if .Values.cronus.smtps }}
     startTls: :{{ .Values.cronus.smtps }} # default :587

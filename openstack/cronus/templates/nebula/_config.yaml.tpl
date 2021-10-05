@@ -13,6 +13,9 @@ nebula:
   listenAddr:
     http: :{{ .Values.nebula.http }} # default :1080
     shutdownTimeout: {{ .Values.config.accountStatusTimeout }}s
+    readTimeout: {{ .Values.nebula.readTimeout | default 30 }}s
+    writeTimeout: {{ .Values.nebula.writeTimeout | default 30 }}s
+    keepAliveTimeout: {{ .Values.nebula.keepAliveTimeout | default 60 }}s
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}
