@@ -11,11 +11,11 @@ ratelimit_response:
   status_code: 429
   body: "Rate Limit Exceeded"
 
-# Override default blacklist response.
-blacklist_response:
-  status: 497 Blacklisted
+# Override default blocklist response.
+blocklist_response:
+  status: 497 Blocklisted
   status_code: 497
-  body: "Your account has been blacklisted"
+  body: "Your account has been blocklisted"
 
 # Group multiple CADF actions to one rate limit action.
 groups:
