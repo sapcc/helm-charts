@@ -114,9 +114,10 @@ groups:
 
   - alert: HostHasLostConnectionToVCenterServer
     expr: |
-      vrops_hostsystem_alert_info{alert_name="Host has lost connection to vCenter Server"} AND on (hostsystem) 
+      vrops_hostsystem_runtime_connectionstate == 0 AND on (hostsystem)
       vrops_hostsystem_runtime_maintenancestate == 1 AND on (hostsystem)
-      vrops_hostsystem_runtime_powerstate == 0
+      vrops_hostsystem_runtime_powerstate == 0 AND on (hostsystem)
+      group by (hostsystem) (vrops_hostsystem_summary_running_vms_number offset 1h unless vrops_hostsystem_summary_running_vms_number > 0) 
     labels:
       severity: info
       tier: vmware
@@ -156,22 +157,3 @@ groups:
     annotations:
       description: "Host {{ $labels.hostsystem }} is in maintenance mode for at least 72 hours. 1. ({{ $labels.vcenter }})"
       summary: "Host {{ $labels.hostsystem }} is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
-
-  - alert: HADetectedAPossibleHostFailure
-    expr: |
-      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"} AND on (hostsystem)
-      vrops_hostsystem_runtime_maintenancestate == 1 AND on (hostsystem)
-      vrops_hostsystem_runtime_powerstate == 0 AND on (hostsystem)
-      vrops_hostsystem_runtime_connectionstate == 0 AND on (hostsystem)
-      group by (hostsystem) (vrops_hostsystem_summary_running_vms_number offset 1h unless vrops_hostsystem_summary_running_vms_number > 0) 
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      context: "Host failure"
-      meta: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})."
-      no_alert_on_absence: "true"
-    annotations:
-      description: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
-      summary: "vSphere High Availability (HA) has detected a possible host failure for {{ $labels.hostsystem }}. ({{ $labels.vcenter }})."
-      
