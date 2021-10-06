@@ -12,46 +12,46 @@ groups:
 - name: ucsmfaults.alerts
   rules:
   - alert: UcsmFaultCritical
-    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", code!~"F0315|F0411|F0675|F0676|F1004|F1365|F1707|F1901|F1913", description !~".+/ext-board-.+", type!~"fsm"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, description, context)
+    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", code!~"F0315|F0411|F0675|F0676|F1004|F1365|F1707|F1901|F1913", description !~".+/ext-board-.+", type!~"fsm"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
     for: 10m
     labels:
-      severity: warning
+      severity: critical
       tier: metal
       service: baremetal
       context: "{{ $labels.ucsm }}_{{ $labels.context }}"
-      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} (F-Code {{ $labels.code }})"
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html
     annotations:
-      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
-      summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} (F-Code {{ $labels.code }})"
+      summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }} (F-Code {{ $labels.code }})"
 
   - alert: UcsmFaultWarn
-    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", code=~"F0315|F0411|F0675|F0676|F1004|F1365|F1707|F1901|F1913", description !~".+/ext-board-.+", type!~"fsm"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, description, context)
+    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", code=~"F0315|F0411|F0675|F0676|F1004|F1365|F1707|F1901|F1913", description !~".+/ext-board-.+", type!~"fsm"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
     for: 10m
     labels:
       severity: warning
       tier: metal
       service: baremetal
       context: "{{ $labels.ucsm }}_{{ $labels.context }}"
-      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} (F-Code {{ $labels.code }})"
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html
     annotations:
-      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
-      summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} (F-Code {{ $labels.code }})"
+      summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }} (F-Code {{ $labels.code }})"
 
   - alert: UcsmFaultInfo
-    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", type=~"fsm"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, description, context) or on(ucsm, context) count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"major"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, description, context)
+    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", type=~"fsm"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context) or on(ucsm, context) count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"major"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
     for: 10m
     labels:
       severity: info
       tier: metal
       service: baremetal
       context: "{{ $labels.ucsm }}_{{ $labels.context }}"
-      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
+      meta: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} (F-Code {{ $labels.code }})"
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/baremetal/ucs.html
     annotations:
-      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }}"
-      summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}"
+      description: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} (F-Code {{ $labels.code }})"
+      summary: "UCS Manager {{ $labels.server }} has an error with severity {{ $labels.severity }} (F-Code {{ $labels.code }})"
