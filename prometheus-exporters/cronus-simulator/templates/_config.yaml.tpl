@@ -31,6 +31,7 @@ simulator:
       endpointType: {{ .Values.config.keystone.endpointType }}
       projectDomainName: {{ .Values.simulator.projectDomainName }}
       projectName: {{ .Values.simulator.projectName }}
+      projectID: {{ .Values.simulator.projectID }}
       region: {{ .Values.config.keystone.region }}
       userDomainName: {{ .Values.config.keystone.userDomainName }}
       username: {{ .Values.config.keystone.username }}
