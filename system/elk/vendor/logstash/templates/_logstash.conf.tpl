@@ -103,15 +103,38 @@ elseif [type] == "bigiplogs" {
   }
 }
 elseif [type] == "alert"{
-  elasticsearch {
-    index => "alerts-%{+YYYY}"
-    template => "/elk-etc/alerts.json"
-    template_name => "alerts"
-    template_overwrite => true
-    hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-    user => "{{.Values.global.elk_elasticsearch_data_user}}"
-    password => "{{.Values.global.elk_elasticsearch_data_password}}"
-    ssl => true
+  if [alerts][labels][severity] == "critical"{
+    elasticsearch {
+      index => "alerts-critical-%{+YYYY}"
+      template => "/elk-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+    }
+  } elseif [alerts][labels][severity] == "warning"{
+    elasticsearch {
+      index => "alerts-warning-%{+YYYY}"
+      template => "/elk-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+  } else {
+    elasticsearch {
+      index => "alerts-other-%{+YYYY}"
+      template => "/elk-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+    }
   }
 }
 elseif [type] == "deployment" {
