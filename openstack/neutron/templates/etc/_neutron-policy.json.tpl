@@ -117,6 +117,8 @@
     "update_port:device_owner": "(not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "update_port:mac_address": "rule:context_is_admin",
     "update_port:fixed_ips": "(rule:context_is_editor and not rule:network_device and not rule:share_device) or rule:context_is_admin",
+    "update_port:fixed_ips:ip_address": "(rule:context_is_editor and not rule:network_device and not rule:share_device) or rule:context_is_admin",
+    "update_port:fixed_ips:subnet_id": "(rule:context_is_editor and not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "update_port:port_security_enabled": "rule:context_is_network_editor",
     "update_port:binding:host_id": "rule:context_is_network_admin",
     "update_port:binding:profile": "rule:context_is_network_admin",
