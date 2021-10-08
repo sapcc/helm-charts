@@ -190,3 +190,4 @@ default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.w
 [workarounds]
 # This has to be removed when we also remove the deployment of nova-consoleauth
 enable_consoleauth = True
+enable_live_migration_to_old_hypervisor = True
