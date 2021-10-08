@@ -26,7 +26,7 @@ function start_application {
   /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml
 
   echo "INFO: setting up cron jobs for index creation and purging"
-  cat <(crontab -l) <(echo "0 6 * * * /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  cat <(crontab -l) <(echo "0 6 * * * export LC_ALL=C.UTF-8; export LANG=C.UTF-8; /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
 
   echo "INFO: starting cron in foreground"
   exec cron -f
