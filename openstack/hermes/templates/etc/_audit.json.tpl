@@ -38,7 +38,8 @@
         }
       },
       "eventTime" : {
-        "type" : "date"
+        "type" : "date",
+        "format" : "date_optional_time"
       },
       "eventType" : {
         "type" : "keyword"
