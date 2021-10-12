@@ -1,8 +1,10 @@
 curator:
   enabled: false
   retention: "92"
+  data_fw_retention: "3"
   env:
     DATA_RETENTION: "$(RETENTION)"
+    DATA_FW_RETENTION: "$(DATA_FW_RETENTION)"
     ELASTIC_CREDS: "$(USERNAME):$(PASSWORD)"
   envFromSecrets:
     RETENTION:
@@ -62,6 +64,37 @@ curator:
             timestring: '%Y.%m.%d'
             unit: days
             unit_count: ${DATA_RETENTION}
+            field:
+            stats_result:
+            epoch:
+            exclude: False
+        2:
+          action: delete_indices
+          description: "Clean up ES by deleting old fw drop indices"
+          options:
+            timeout_override:
+            continue_if_exception: False
+            disable_action: False
+            ignore_empty_list: True
+            allow_ilm_indices: True
+          filters:
+          - filtertype: pattern
+            kind: regex
+            value: 'elastiflow-4.0.1-fw-.*'
+          - filtertype: pattern
+            kind: prefix
+            value: .kibana
+            exclude: True
+          - filtertype: pattern
+            kind: prefix
+            value: .task
+            exclude: True
+          - filtertype: age
+            source: name
+            direction: older
+            timestring: '%Y.%m.%d'
+            unit: days
+            unit_count: ${DATA_FW_RETENTION}
             field:
             stats_result:
             epoch:
@@ -280,30 +313,10 @@ filebeat:
   resources:
     requests:
       cpu: "2000m"
-      memory: "16G"
+      memory: "6G"
     limits:
       cpu: "4000m"
       memory: "16G"
-
-global:
-  redis:
-    enabled: false
-    host: "elastiflow-redis"
-    logstash_imageTag: "202110081140"
-    filebeat_imageTag: "202110071400"
-
-redis:
-  enabled: false
-  resources:
-    limits:
-      memory: 8G
-      cpu: 1000m
-    requests:
-      memory: 8G
-      cpu: 500m
-  metrics:
-    enabled: true
-    prometheus: infra-collector
 
 kibana:
   enabled: false
