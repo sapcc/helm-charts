@@ -143,7 +143,7 @@ groups:
     annotations:
       description: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "VMFS Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      
+
   - alert: AverageVmfsDataStoreCapacityWarning
     expr: >
       avg by (type, vcenter) (vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs_p_ssd|vmfs_s_hdd"} / vrops_datastore_diskspace_capacity_gigabytes) > 0.7
@@ -158,7 +158,7 @@ groups:
     annotations:
       description: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
       summary: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
-       
+
   - alert: AverageVmfsDataStoreCapacityCritical
     expr: >
       avg by (type, vcenter) (vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs_p_ssd|vmfs_s_hdd"} / vrops_datastore_diskspace_capacity_gigabytes) > 0.8
@@ -258,13 +258,28 @@ groups:
     expr: >
       vrops_datastore_alert_info{alert_name="Datastore has lost connectivity to a storage device"}
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
-      context: "vrops-exporter {{ $labels.datastore }}"
-      meta: "Datastore {{ $labels.datastore }} has lost connectivity to a storage device. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      context: "{{ $labels.datastore }} connectivity"
+      meta: "Datastore `{{ $labels.datastore }}` has lost connectivity to a storage device. ({{ $labels.vcenter }})"
       playbook: docs/devops/alert/vcenter/#datastore_has_lost_connectivity_to_a_storage_device
       no_alert_on_absence: "true"
     annotations:
-      description: "Datastore {{ $labels.datastore }} has lost connectivity to a storage device. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "Datastore {{ $labels.datastore }} has lost connectivity to a storage device. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "Datastore `{{ $labels.datastore }}` has lost connectivity to a storage device. ({{ $labels.vcenter }})"
+      summary: "Datastore `{{ $labels.datastore }}` has lost connectivity to a storage device. ({{ $labels.vcenter }})"
+
+  - alert: DatastoreHasHostsThatHaveLostRedundantPathsToAStorageDevice
+    expr: >
+      vrops_datastore_alert_info{alert_name="Datastore has one or more hosts that have lost redundant paths to a storage device"}
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      context: "{{ $labels.datastore }} host connectivity"
+      meta: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
+      playbook: docs/devops/alert/vcenter/#datastore_has_lost_connectivity_to_a_storage_device
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
+      summary: "Datastore `{{ $labels.datastore }}` has hosts that have lost all of the redundant paths to a storage device. ({{ $labels.vcenter }})"
