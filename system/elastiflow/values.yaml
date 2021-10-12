@@ -81,14 +81,6 @@ curator:
           - filtertype: pattern
             kind: regex
             value: 'elastiflow-4.0.1-fw-.*'
-          - filtertype: pattern
-            kind: prefix
-            value: .kibana
-            exclude: True
-          - filtertype: pattern
-            kind: prefix
-            value: .task
-            exclude: True
           - filtertype: age
             source: name
             direction: older
@@ -313,10 +305,30 @@ filebeat:
   resources:
     requests:
       cpu: "2000m"
-      memory: "6G"
+      memory: "16G"
     limits:
       cpu: "4000m"
       memory: "16G"
+
+  global:
+    redis:
+      enabled: false
+      host: "elastiflow-redis"
+      logstash_imageTag: "202110081140"
+      filebeat_imageTag: "202110071400"
+
+  redis:
+    enabled: false
+    resources:
+      limits:
+        memory: 8G
+        cpu: 1000m
+      requests:
+        memory: 8G
+        cpu: 500m
+    metrics:
+      enabled: true
+      prometheus: infra-collector
 
 kibana:
   enabled: false
