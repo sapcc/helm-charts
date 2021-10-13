@@ -284,8 +284,11 @@
     "delete_log": "rule:context_is_network_admin",
     "get_logs": "rule:context_is_network_viewer",
     "get_log": "rule:context_is_network_viewer",
-
+{{ if or (.Values.bgp_vpn.import_target_auto_allocation) (.Values.bgp_vpn.export_target_auto_allocation) (.Values.bgp_vpn.route_target_auto_allocation) }}
+    "create_bgpvpn": "rule:context_is_editor or rule:context_is_admin",
+{{- else }}
     "create_bgpvpn": "rule:context_is_admin",
+{{- end }}
     "update_bgpvpn": "rule:context_is_admin",
     "delete_bgpvpn": "rule:context_is_admin",
     "get_bgpvpn": "rule:context_is_viewer or rule:shared_bgpvpns",
