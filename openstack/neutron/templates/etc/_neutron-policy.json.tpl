@@ -290,7 +290,11 @@
     "create_bgpvpn": "rule:context_is_admin",
 {{- end }}
     "update_bgpvpn": "rule:context_is_admin",
+{{- if or (.Values.bgp_vpn.import_target_auto_allocation) (.Values.bgp_vpn.export_target_auto_allocation) (.Values.bgp_vpn.route_target_auto_allocation) }}
+    "delete_bgpvpn": "rule:context_is_editor or rule:context_is_admin",
+{{- else }}
     "delete_bgpvpn": "rule:context_is_admin",
+{{- end }}
     "get_bgpvpn": "rule:context_is_viewer or rule:shared_bgpvpns",
     "get_bgpvpn:tenant_id": "rule:context_is_viewer or rule:shared_bgpvpns",
     "get_bgpvpn:route_targets": "rule:context_is_viewer or rule:shared_bgpvpns",
