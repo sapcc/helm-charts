@@ -11,13 +11,6 @@ inhibit_rules:
       severity: 'warning'
     equal: ['region', 'alertname', 'cluster']
 
-  - source_match:
-      alertname: 'VVolDatastoreNotAccessibleFromHost'
-    target_match_re:
-      job: '.*'
-      severity: 'critical'
-    equal: ['job', 'cluster', 'datacenter']
-
   - source_match_re:
       severity: 'critical|warning'
     target_match:
