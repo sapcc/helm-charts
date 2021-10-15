@@ -33,6 +33,8 @@ prepare_empty_host_for_spawning_interval = 600
 
 dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
 
+largevm_mb = {{ .Values.largevm_mb | default "524288" }}
+
 {{ include "ini_sections.default_transport_url" . }}
 
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
