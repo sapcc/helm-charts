@@ -44,16 +44,16 @@ loopback_internal_interface = 3
 {{ range $i, $hosting_device := $config_agent.hosting_devices}}
 [asr1k_device:{{required "A valid $hosting_device required!" $hosting_device.name}}]
 host = {{required "A valid $hosting_device required!" $hosting_device.ip}}
-user_name = {{required "A valid $hosting_device required!" $hosting_device.user_name}}
-password = {{required "A valid $hosting_device required!" $hosting_device.password}}
+user_name = {{$hosting_device.user_name | default $config_agent.user_name | required "A valid user_name must be supplied under config_agents or hosting_devices!" }}
+password = {{$hosting_device.password | default $config_agent.password | required "A valid password must be supplied under config_agents or hosting_devices!" }}
 nc_timeout = {{$hosting_device.nc_timeout | default 20}}
 use_bdvif = {{$hosting_device.use_bdvif | default "True"}}
 {{end}}
 
 [asr1k-address-scopes]
-{{- $cloud_asn := required "A valid .Values.asr.global_cloud_asn entry required!" .Values.asr.global_cloud_asn }}
-{{ range $i, $address_scope := .Values.address_scopes -}}
-{{required "A valid address-scope required!" $address_scope.name}} = {{$cloud_asn}}:1{{required "A valid address-scope required!" $address_scope.vrf | replace "cc-cloud" "" }}
+{{ $cloud_asn := required "A valid .Values.global_cloud_asn entry required!" .Values.global_cloud_asn }}
+{{ range $i, $address_scope := concat .Values.global_address_scopes .Values.local_address_scopes -}}
+{{required "A valid address-scope required!" $address_scope.name}} = {{required "A valid address-scope required!" (default (print $cloud_asn ":1" ($address_scope.vrf | replace "cc-cloud" "")) $address_scope.rd) }}
 {{end}}
 
 {{- if $config_agent.availability_zone }}

@@ -101,13 +101,14 @@ segment_id = {{ $fixed_binding.segment_id }}
 {{ end }}
 
 #AddressScope
-{{- range $i, $address_scope := .Values.address_scopes }}
+{{ range $i, $address_scope := concat .Values.global_address_scopes .Values.local_address_scopes -}}
 {{ $address_scope.description }}
 [address-scope:{{ $address_scope.name }}]
-l3_outs = {{ $address_scope.l3_outs }}
-contracts = {{ $address_scope.contracts }}
+l3_outs = {{ default (print "common/"  $address_scope.vrf) $address_scope.l3_outs}}
+consumed_contracts = {{ default $address_scope.vrf (join "," $address_scope.consumed_contracts) }}
+provided_contracts = {{ default $address_scope.vrf (join "," $address_scope.provided_contracts) }}
 scope = {{ default "public" $address_scope.scope }}
-vrf={{ $address_scope.vrf }}
+vrf = {{ $address_scope.vrf }}
 {{ end }}
 
 {{- else -}}
