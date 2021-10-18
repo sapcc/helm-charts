@@ -101,7 +101,7 @@ segment_id = {{ $fixed_binding.segment_id }}
 {{ end }}
 
 #AddressScope
-{{- range $i, $address_scope := .Values.aci.address_scopes }}
+{{- range $i, $address_scope := .Values.address_scopes }}
 {{ $address_scope.description }}
 [address-scope:{{ $address_scope.name }}]
 l3_outs = {{ $address_scope.l3_outs }}

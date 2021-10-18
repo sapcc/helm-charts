@@ -51,8 +51,9 @@ use_bdvif = {{$hosting_device.use_bdvif | default "True"}}
 {{end}}
 
 [asr1k-address-scopes]
-{{ range $i, $address_scope := $config_agent.address_scopes}}
-{{required "A valid address-scope required!" $address_scope.name}} = {{required "A valid address-scope required!" $address_scope.rd}}
+{{- $cloud_asn := required "A valid .Values.asr.global_cloud_asn entry required!" .Values.asr.global_cloud_asn }}
+{{ range $i, $address_scope := .Values.address_scopes -}}
+{{required "A valid address-scope required!" $address_scope.name}} = {{$cloud_asn}}:1{{required "A valid address-scope required!" $address_scope.vrf | replace "cc-cloud" "" }}
 {{end}}
 
 {{- if $config_agent.availability_zone }}
