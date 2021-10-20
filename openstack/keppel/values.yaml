@@ -190,3 +190,13 @@ pgmetrics:
         - min_updated_at:
             usage: "GAUGE"
             description: "UNIX timestamp when oldest still-active upload was started (or 0 when no upload is in progress)"
+    keppel_vuln_scan_error:
+      query: >
+        SELECT vuln_scan_error AS message, COUNT(*) AS counts FROM manifests WHERE vuln_scan_error != '' GROUP BY vuln_scan_error
+      metrics:
+        - message:
+            usage: "LABEL"
+            description: "Error message from the Clair indexer"
+        - counts:
+            usage: "GAUGE"
+            description: "Total number of manifests where indexing in Clair failed with a specific error message"
