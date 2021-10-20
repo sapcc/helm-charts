@@ -126,12 +126,11 @@ groups:
       description: "Host `{{ $labels.hostsystem }}` has lost redundant connectivity to a dvPort. ({{ $labels.vcenter }})"
       summary: "Host `{{ $labels.hostsystem }}` has lost redundant connectivity to a dvPort. ({{ $labels.vcenter }})."
 
-  - alert: HostWithRunningVMsHasLostConnectionToVCenterServer
+  - alert: HostHasLostConnectionToVCenterServer
     expr: |
-      vrops_hostsystem_runtime_connectionstate == 0 AND on (hostsystem)
-      vrops_hostsystem_runtime_maintenancestate == 1 AND on (hostsystem)
-      vrops_hostsystem_runtime_powerstate == 0 AND on (hostsystem)
-      group by (hostsystem) (vrops_hostsystem_summary_running_vms_number offset 1h unless vrops_hostsystem_summary_running_vms_number)
+      vrops_hostsystem_runtime_connectionstate{state="disconnected"} AND on (hostsystem)
+      vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} AND on (hostsystem)
+      vrops_hostsystem_runtime_powerstate{state!="Standby"}
     labels:
       severity: warning
       tier: vmware
