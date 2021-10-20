@@ -39,8 +39,15 @@ spec:
         - name: neutron-asr1k
           image: {{$context.Values.global.registry}}/loci-neutron:{{$context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1k or similar"}}
           imagePullPolicy: IfNotPresent
-          command:
-            - /container.init/neutron-asr1k-start
+          command: ['/var/lib/openstack/bin/python']
+          args:
+            - /var/lib/openstack/bin/asr1k-l3-agent
+            - --config-file
+            - /etc/neutron/asr1k.conf
+            - --config-file
+            - /etc/neutron/neutron.conf
+            - --config-file
+            - /etc/neutron/asr1k-global.ini
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf"]
@@ -64,14 +71,32 @@ spec:
           volumeMounts:
             - mountPath: /development
               name: development
-            - mountPath: /neutron-etc
+            - mountPath: /etc/neutron
+              name: empty-dir
+            - mountPath: /etc/neutron/neutron.conf
               name: neutron-etc
-            - mountPath: /neutron-etc-vendor
-              name: neutron-etc-vendor
-            - mountPath: /neutron-etc-asr1k
+              subPath: neutron.conf
+              readOnly: true
+            - mountPath: /etc/neutron/asr1k-global.ini
+              name: neutron-etc
+              subPath: asr1k-global.ini
+              readOnly: true
+            - mountPath: /etc/neutron/asr1k.conf
+              subPath: asr1k.conf
+              readOnly: true
               name: neutron-etc-asr1k
-            - mountPath: /container.init
-              name: container-init
+            - mountPath: /etc/neutron/policy.json
+              name: neutron-etc
+              subPath: neutron-policy.json
+              readOnly: true
+            - mountPath: /etc/neutron/rootwrap.conf
+              name: neutron-etc
+              subPath: rootwrap.conf
+              readOnly: true
+            - mountPath: /etc/neutron/logging.conf
+              name: neutron-etc
+              subPath: logging.conf
+              readOnly: true
           ports:
             - containerPort: {{$context.Values.port_l3_metrics |  default 9103}}
               name: metrics-l3
@@ -82,8 +107,13 @@ spec:
         - name: neutron-asr1k-ml2
           image: {{$context.Values.global.registry}}/loci-neutron:{{$context.Values.imageVersionASR1kML2 | default $context.Values.imageVersionASR1k | default $context.Values.imageVersion | required "Please set neutron.imageVersionASR1kML2 or similar"}}
           imagePullPolicy: IfNotPresent
-          command:
-            - /container.init/neutron-asr1k-ml2-start
+          command: ['/var/lib/openstack/bin/python']
+          args:
+            - /var/lib/openstack/bin/asr1k-l3-agent
+            - --config-file
+            - /etc/neutron/asr1k.conf
+            - --config-file
+            - /etc/neutron/neutron.conf
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf"]
@@ -107,14 +137,28 @@ spec:
           volumeMounts:
             - mountPath: /development
               name: development
-            - mountPath: /neutron-etc
+            - mountPath: /etc/neutron
+              name: empty-dir
+            - mountPath: /etc/neutron/neutron.conf
               name: neutron-etc
-            - mountPath: /neutron-etc-vendor
-              name: neutron-etc-vendor
-            - mountPath: /neutron-etc-asr1k
+              subPath: neutron.conf
+              readOnly: true
+            - mountPath: /etc/neutron/asr1k.conf
+              subPath: asr1k.conf
+              readOnly: true
               name: neutron-etc-asr1k
-            - mountPath: /container.init
-              name: container-init
+            - mountPath: /etc/neutron/policy.json
+              name: neutron-etc
+              subPath: neutron-policy.json
+              readOnly: true
+            - mountPath: /etc/neutron/rootwrap.conf
+              name: neutron-etc
+              subPath: rootwrap.conf
+              readOnly: true
+            - mountPath: /etc/neutron/logging.conf
+              name: neutron-etc
+              subPath: logging.conf
+              readOnly: true
           ports:
             - containerPort: {{$context.Values.port_l2_metrics |  default 9102}}
               name: metrics-l2
@@ -122,16 +166,14 @@ spec:
           resources:
 {{ toYaml $context.Values.pod.resources.asr1k_ml2 | indent 12 }}
       volumes:
+        - name: empty-dir
+          emptyDir: {}
         - name: neutron-etc
           configMap:
             name: neutron-etc
         - name: neutron-etc-vendor
           configMap:
             name: neutron-etc-vendor
-        - name: container-init
-          configMap:
-            name: neutron-bin-vendor
-            defaultMode: 0755
         - name:  neutron-etc-asr1k
           configMap:
             name: neutron-etc-asr1k-{{ $config_agent.name }}
