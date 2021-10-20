@@ -209,10 +209,10 @@ checksum/object.ring: {{ include "swift/templates/object-ring.yaml" . | sha256su
   resources:
     # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
     requests:
-      cpu: "400m"
+      cpu: "200m"
       memory: "1024Mi"
     limits:
-      cpu: "400m"
+      cpu: "200m"
       memory: "1024Mi"
   ports:
     - name: statsd
