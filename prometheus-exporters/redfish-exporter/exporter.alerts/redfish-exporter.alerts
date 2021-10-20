@@ -2,7 +2,7 @@ groups:
 - name: redfish-exporter.alerts
   rules:      
   - alert: RedfishExporterScrapeWarn
-    expr: count (avg(avg_over_time(scrape_duration_seconds{job=~"redfish.+"}[30m])) by (job) > 120) by (job)
+    expr: count(avg_over_time(scrape_duration_seconds{job=~"redfish.+"}[1h]) > 200)
     for: 10m
     labels:
       severity: warning
@@ -10,36 +10,7 @@ groups:
       service: baremetal
       no_alert_on_absence: "true"
       context: "{{ $labels.job }}"
-      meta: "Redfish Exporter has high scrape duration for job {{ $labels.job}}. Add a replica to the redfish-exporter deployment."
+      meta: "Redfish Exporter has high scrape duration. Add a replica to the redfish-exporter deployment."
     annotations:
-      description: "Redfish Exporter has high scrape duration for job {{ $labels.job}}. Add a replica to the redfish-exporter deployment."
-      summary: "Redfish Exporter has high scrape duration for job {{ $labels.job}}"
-
-  - alert: RedfishExporterCPUWarn
-    expr: count(avg_over_time(container_cpu_utilization_ratio{namespace="infra-monitoring",pod_name=~"redfish.*"}[30m])*100 > 99)  by (pod_name)
-    for: 10m
-    labels:
-      severity: warning
-      tier: metal
-      service: baremetal
-      no_alert_on_absence: "true"
-      context: "{{ $labels.pod_name }}"
-      meta: "Redfish Exporter POD {{ $labels.pod_name}} has an avarage CPU usage of {{ $value }}. Add a replica to the redfish-exporter deployment."
-    annotations:
-      description: "Redfish Exporter POD {{ $labels.pod_name}} has an avarage CPU usage of {{ $value }}. Add a replica to the redfish-exporter deployment."
-      summary: "Redfish Exporter POD {{ $labels.pod_name}} has high avarage CPU usage"
-
-
-  - alert: RedfishExporterMemWarn
-    expr: count(avg_over_time(container_memory_working_set_bytes{namespace="infra-monitoring",pod_name=~"redfish.*"}[30m])/1024/1024 > 600) by (pod_name)
-    for: 10m
-    labels:
-      severity: warning
-      tier: metal
-      service: baremetal
-      no_alert_on_absence: "true"
-      context: "{{ $labels.pod_name }}"
-      meta: "Redfish Exporter POD {{ $labels.pod_name}} has an avarage Memory usage of {{ $value }}. Add a replica to the redfish-exporter deployment."
-    annotations:
-      description: "Redfish Exporter POD {{ $labels.pod_name}} an avarage Memory usage of {{ $value }}. Add a replica to the redfish-exporter deployment."
-      summary: "Redfish Exporter POD {{ $labels.pod_name}} has a high avarage Memory usage"
+      description: "Redfish Exporter has high scrape duration. Add a replica to the redfish-exporter deployment."
+      summary: "Redfish Exporter has high scrape duration"
