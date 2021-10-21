@@ -146,14 +146,13 @@ filter {
                   }
         ruby {
                 code => "
-                        hash = event.to_hash
-                        hash.each do |k,v|
-                            if v.kind_of? String
-                                if v == "NULL"
-                                    event.remove(k)
-                                end
+                    event.to_hash.each { |k,v|
+                        if v.kind_of? String
+                            if v == "NULL"
+                                event.remove(k)
                             end
                         end
+                    }
                 "
               }
     }
