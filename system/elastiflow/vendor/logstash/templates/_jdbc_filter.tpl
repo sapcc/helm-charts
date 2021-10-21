@@ -144,15 +144,29 @@ filter {
           mutate {
                   remove_field => [ "destination_data" ]
                   }
-        ruby {
-                code => "
-                    event.to_hash.each { |k,v|
-                        if v.kind_of? String
-                            if v == "NULL"
-                                event.remove(k)
-                            end
-                        end
-                    }
-                "
-              }
+          ruby {
+                  code => '
+                      event.to_hash.each { |k,v|
+                          if v.kind_of? String
+                              if v == "NULL"
+                                  event.remove(k)
+                              end
+                          end
+                      }
+                      event.get("[destination]").to_hash.each { |k,v|
+                          if v.kind_of? String
+                              if v == "NULL"
+                                  event.remove(k)
+                              end
+                          end
+                      }
+                      event.get("[source]").to_hash.each { |k,v|
+                          if v.kind_of? String
+                              if v == "NULL"
+                                  event.remove(k)
+                              end
+                          end
+                      }
+                  '
+                }
     }
