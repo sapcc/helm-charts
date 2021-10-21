@@ -105,7 +105,6 @@ filter {
         }
 
           if [destination_data] and [destination_data][0] {
-              if [destination_data][0][port] and [destination_data][0][port] != "NULL" {
                   mutate {
                       add_field => {  "[destination][cc_port]" => "%{[destination_data][0][port]}"
                                      "cc_port" => "%{[destination_data][0][port]}"
@@ -144,14 +143,17 @@ filter {
           }
           mutate {
                   remove_field => [ "destination_data" ]
-        }
+                  }
         ruby {
                 code => "
                         hash = event.to_hash
                         hash.each do |k,v|
-                                if v == nil
-                                        event.remove(k)
+                            if v.kind_of? String
+                                if v == "NULL"
+                                    event.remove(k)
                                 end
+                            end
                         end
                 "
+              }
     }
