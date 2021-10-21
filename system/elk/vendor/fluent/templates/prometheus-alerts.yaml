@@ -1,20 +1,17 @@
-{{- $values := .Values }}
-{{- if $values.alerts.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- if and .Values.alerts.enabled  }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "fluent-%s" $path | replace "/" "-" }}
+  name: fluent-alerts
   labels:
     app: fluent-prometheus
     tier: infra
     type: alerting-rules
-    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
 
 spec:
-{{ printf "%s" $bytes | indent 2 }}
+{{ include (print .Template.BasePath "/alerts/_fluent-alerts.tpl") . | indent 2 }}
 
-{{- end }}
 {{- end }}
