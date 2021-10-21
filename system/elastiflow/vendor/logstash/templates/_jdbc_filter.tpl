@@ -156,14 +156,14 @@ filter {
                       event.get("[destination]").to_hash.each { |k,v|
                           if v.kind_of? String
                               if v == "NULL"
-                                  event.remove(k)
+                                  event.remove("[destination]" + "[" + k + "]")
                               end
                           end
                       }
                       event.get("[source]").to_hash.each { |k,v|
                           if v.kind_of? String
                               if v == "NULL"
-                                  event.remove(k)
+                                  event.remove("[source]" + "[" + k + "]")
                               end
                           end
                       }
