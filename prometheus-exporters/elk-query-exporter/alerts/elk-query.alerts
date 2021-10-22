@@ -34,3 +34,13 @@ groups:
     annotations:
       description: "Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}"
       summary: 'Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}'
+
+  - alert: EsxRootPasswordWrong
+    expr: elasticsearch_esxi_exporter_login_error_container_name_doc_count > 0
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+    annotations:
+      description: "esxi-exporter can't login with production root password, see <https://logs.{{ $labels.region }}.cloud.sap/app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-5m,to:now))&_a=(columns:!(kubernetes.container_name,log),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes.container_name.keyword,negate:!f,params:(query:esxi-host-exporter),type:phrase),query:(match_phrase:(kubernetes.container_name.keyword:esxi-host-exporter)))),index:'logstash-*',interval:auto,query:(language:kuery,query:'log:%20%22SSH:%20authentication%20error%22'),sort:!())|esxi-exporter logs>"
+      summary: "Login to ESX not possible with production root password"
