@@ -84,6 +84,8 @@ ingress-nginx:
   controller:
     image:
       registry: keppel.eu-de-1.cloud.sap/ccloud-k8sgcr-mirror
+      tag: "v0.49.3"
+      digest: sha256:35fe394c82164efa8f47f3ed0be981b3f23da77175bbb8268a9ae438851c8324
 
     minReadySeconds: 60
 
@@ -138,6 +140,9 @@ ingress-nginx:
       use-forwarded-headers: "false"
       log-format-upstream: >-
         $remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time [$proxy_upstream_name] $upstream_addr $upstream_response_length $upstream_response_time $upstream_status $req_id $global_request_id
+      # Snippet annotations are disabled to prevent unauthorized access to secrets.
+      # See https://github.com/kubernetes/ingress-nginx/issues/7837 .
+      allow-snippet-annotations: "false"
 
     nodeSelector: {}
 
