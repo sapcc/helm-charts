@@ -117,6 +117,8 @@
     "update_port:device_owner": "(not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "update_port:mac_address": "rule:context_is_admin",
     "update_port:fixed_ips": "(rule:context_is_editor and not rule:network_device and not rule:share_device) or rule:context_is_admin",
+    "update_port:fixed_ips:ip_address": "(rule:context_is_editor and not rule:network_device and not rule:share_device) or rule:context_is_admin",
+    "update_port:fixed_ips:subnet_id": "(rule:context_is_editor and not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "update_port:port_security_enabled": "rule:context_is_network_editor",
     "update_port:binding:host_id": "rule:context_is_network_admin",
     "update_port:binding:profile": "rule:context_is_network_admin",
@@ -282,10 +284,17 @@
     "delete_log": "rule:context_is_network_admin",
     "get_logs": "rule:context_is_network_viewer",
     "get_log": "rule:context_is_network_viewer",
-
+{{ if or (.Values.bgp_vpn.import_target_auto_allocation) (.Values.bgp_vpn.export_target_auto_allocation) (.Values.bgp_vpn.route_target_auto_allocation) }}
+    "create_bgpvpn": "rule:context_is_editor or rule:context_is_admin",
+{{- else }}
     "create_bgpvpn": "rule:context_is_admin",
+{{- end }}
     "update_bgpvpn": "rule:context_is_admin",
+{{- if or (.Values.bgp_vpn.import_target_auto_allocation) (.Values.bgp_vpn.export_target_auto_allocation) (.Values.bgp_vpn.route_target_auto_allocation) }}
+    "delete_bgpvpn": "rule:context_is_editor or rule:context_is_admin",
+{{- else }}
     "delete_bgpvpn": "rule:context_is_admin",
+{{- end }}
     "get_bgpvpn": "rule:context_is_viewer or rule:shared_bgpvpns",
     "get_bgpvpn:tenant_id": "rule:context_is_viewer or rule:shared_bgpvpns",
     "get_bgpvpn:route_targets": "rule:context_is_viewer or rule:shared_bgpvpns",
@@ -293,6 +302,14 @@
     "get_bgpvpn:export_targets": "rule:context_is_viewer or rule:shared_bgpvpns",
     "get_bgpvpn:route_distinguishers": "rule:context_is_viewer or rule:shared_bgpvpns",
     "get_bgpvpn:vni": "rule:context_is_viewer or rule:shared_bgpvpns",
+    "create_bgpvpn:tenant_id": "rule:context_is_admin",
+    "create_bgpvpn:route_targets": "rule:context_is_admin",
+    "create_bgpvpn:import_targets": "rule:context_is_admin",
+    "create_bgpvpn:export_targets": "rule:context_is_admin",
+    "create_bgpvpn:route_distinguishers": "rule:context_is_admin",
+    "create_bgpvpn:type": "rule:context_is_admin",
+    "create_bgpvpn:local_pref": "rule:context_is_admin",
+    "create_bgpvpn:vni": "rule:context_is_admin",
     "update_bgpvpn:tenant_id": "rule:context_is_admin",
     "update_bgpvpn:route_targets": "rule:context_is_admin",
     "update_bgpvpn:import_targets": "rule:context_is_admin",

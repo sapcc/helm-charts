@@ -27,6 +27,26 @@ cronus:
     proxyProtocol: {{ .Values.cronus.listenProxyProtocol }}
 {{- end }}
     shutdownTimeout: {{ .Values.cronus.terminationGracePeriod | default 60 }}s
+    readTimeout: {{ .Values.cronus.readTimeout | default 30 }}s
+    writeTimeout: {{ .Values.cronus.writeTimeout | default 30 }}s
+    keepAliveTimeout: {{ .Values.cronus.keepAliveTimeout | default 60 }}s
+{{- if .Values.cronus.tls }}
+{{- if .Values.cronus.smtps }}
+    startTls: :{{ .Values.cronus.smtps }} # default :587
+{{- end }}
+    tls:
+      namespace: {{ .Values.cronus.tls.namespace | default "cronus" }}
+      serverTlsName: {{ .Values.cronus.tls.serverTlsName }}
+{{- if or .Values.cronus.tls.clientCA .Values.global.clientCA .Values.cronus.tls.clientTlsAuth .Values.global.clientTlsAuth }}
+      clientTlsAuth: {{ .Values.cronus.tls.clientTlsAuth | default .Values.global.clientTlsAuth }}
+{{- if or .Values.cronus.tls.clientCertOU .Values.global.clientCertOU }}
+      clientCertOU: {{ .Values.cronus.tls.clientCertOU | default .Values.global.clientCertOU }}
+{{- end }}
+      clientCA: |
+{{ .Values.cronus.tls.clientCA | default .Values.global.clientCA | indent 8 }}
+{{- end }}
+      errInterval: {{ .Values.cronus.tls.errInterval | default 60 }}
+{{- end }}
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}

@@ -76,3 +76,19 @@ groups:
     annotations:
       description: 'VMWare vcenter API is flapping'
       summary: 'VMWare vcenter API is flapping'
+
+  - alert: OpenstackComputeCanaryCreateServerDown
+    expr: cc3test_status{service="nova",name=~"TestComputeServer_create_server.+"} == 0
+    for: 3h
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      meta: 'Canary {{ $labels.service }} {{ $labels.name }} is down for 3 hour. See Sentry for details'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.name }} is down for 3 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.name }} is down'

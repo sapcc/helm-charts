@@ -50,9 +50,9 @@ groups:
           description: The pod {{ $labels.pod_name }} was oomkilled recently
 
       - alert: OpenstackKeppelPodOOMExceedingLimits
-        # NOTE: `container_memory_utilization_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
+        # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
         # NOTE 2: keppel-janitor is excluded from this alert: we don't care if it OOMs every now and then as long as it's still doing its job (which is covered by application-specific alerts)
-        expr: container_memory_utilization_ratio{namespace="keppel",pod_name!~"(?:keep-image-pulled|keppel-janitor)-.*"} > 0.7 AND predict_linear(container_memory_utilization_ratio{namespace="keppel",pod_name!~"(?:keep-image-pulled|keppel-janitor)-.*"}[1h], 7*3600) > 1.0
+        expr: container_memory_saturation_ratio{namespace="keppel",pod_name!~"(?:keep-image-pulled|keppel-janitor)-.*"} > 0.7 AND predict_linear(container_memory_saturation_ratio{namespace="keppel",pod_name!~"(?:keep-image-pulled|keppel-janitor)-.*"}[1h], 7*3600) > 1.0
         for: 30m
         labels:
           tier: os

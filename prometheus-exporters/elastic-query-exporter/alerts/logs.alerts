@@ -16,14 +16,14 @@ groups:
           summary: "KeystoneLogs3Octobus not working"
       - alert: OctobusKeystoneLogParsing
         expr: elasticsearch_octobus_keystone_credit_hits - elasticsearch_octobus_keystone_user_hits > 10
-        for: 15m
+        for: 45m
         labels:
           severity: info
           tier: os
           service: elk
           meta: "Octobus no keystone logs grok parsing"
           playbook: 'docs/support/playbook/elastic_kibana_issues.html#keystone-logs-grok-parsing-in-octobus'
-          dashboard: octobus-logshipping
+          dashboard: octobus-keystone-logs-shipping?orgId=1&var-region={{ $labels.region }}
         annotations:
           description: "Octobus: Keystone logs grok parsing not working"
           summary: "KeystoneLogsGrokParsing not working"
@@ -68,7 +68,7 @@ groups:
           summary: "Octobus Jumpserver  endpoint: `in-beats` is down in region `{{ $labels.region }}`"
       - alert: OctobusESXiHostLogShippingNotWorking
         expr: |
-                vrops_hostsystem_runtime_connectionstate{state="connected"} and
+                vrops_hostsystem_runtime_connectionstate{state="connected", vcenter!~"vc-mgmt.*"} and
                 on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} unless
                 on (hostsystem) elasticsearch_octobus_esx_hostsystem_doc_count
         for: 15m
@@ -82,7 +82,7 @@ groups:
           description: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
           summary: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
       - alert: OctobusVCSALogShippingNotWorking
-        expr: vrops_vcenter_vc_fullname_info unless on(vcenter) elasticsearch_octobus_vcsa_vcenter_doc_count
+        expr: vrops_vcenter_vc_fullname_info{vcenter!~"vc-mgmt.*"} unless on(vcenter) elasticsearch_octobus_vcsa_vcenter_doc_count
         for: 15m
         labels:
           severity: critical
@@ -93,15 +93,3 @@ groups:
         annotations:
           description: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
           summary: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
-      - alert: VMPoweredDownDuringFailedHostMigration
-        expr: elasticsearch_octobus_vmdown_hit
-        labels:
-          severity: critical
-          tier: vmware
-          service: compute
-          no_alert_on_absence: "true"
-          meta: "A VM unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."
-          playbook: docs/devops/alert/vcenter/#VM%20powered%20off%20during%20vMotion
-        annotations:
-          description: "VM {{ $labels.cloud_instance_name }} unexpectedly powered down during a failed host migration on {{ $labels.node_nodename }}"
-          summary: "A VM unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."

@@ -1,17 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redfish-exporter
-  namespace: infra-monitoring
+  name: {{ include "fullName" . }}
+{{- if .Values.redfish.namespace }}
+  namespace: {{ .Values.redfish.namespace }}
+{{- end }}
   labels:
-    app: redfish-exporter
+    app: {{ include "fullName" . }}
     type: exporter
 spec:
   selector:
     matchLabels:
-      app: redfish-exporter 
+      app: {{ include "fullName" . }}
       type: exporter
-  replicas: 1
+  replicas: {{ required ".Values.redfish.replicas missing" .Values.redfish.replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -20,14 +22,20 @@ spec:
   template:
     metadata:
       labels:
-        app: redfish-exporter 
+        app: {{ include "fullName" . }} 
         type: exporter
     spec:
       containers:
-      - name: redfish-exporter
-        image: "{{ .Values.global.registry }}/{{ .Values.redfish.image }}:{{ .Values.redfish.tag }}"
+      - name: {{ include "fullName" . }}
+        image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.redfish.image missing" .Values.redfish.image }}:{{ required ".Values.redfish.tag missing" .Values.redfish.tag  }}
         ports:
-        - containerPort: {{ .Values.redfish.listen_port }}
+          - name: metrics
+            containerPort: {{ .Values.redfish.listen_port }}
+        command:
+          - /usr/bin/python3
+        args:
+          - -u
+          - ./main.py
         env:
         - name: APP_ENV
           value: "{{ .Values.redfish.app_env }}"

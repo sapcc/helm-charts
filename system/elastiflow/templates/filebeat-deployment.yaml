@@ -41,7 +41,11 @@ spec:
                 topologyKey: kubernetes.io/hostname
       containers:
       - name: filebeat
+      {{- if .Values.global.redis.enabled }}
+        image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.filebeat.image variable missing" .Values.filebeat.image }}:{{ required ".Values.global.redis.filebeat_imageTag variable missing" .Values.global.redis.filebeat_imageTag }}
+      {{- else }}
         image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.filebeat.image variable missing" .Values.filebeat.image }}:{{ required ".Values.filebeat.imageTag variable missing" .Values.filebeat.imageTag }}
+      {{- end }}
         ports:
           - containerPort: 2055
             protocol: UDP
@@ -94,6 +98,15 @@ spec:
             value : {{.Values.filebeat.queue.flush_timeout | quote }}
           {{- end }}
           {{- end }}
+          {{- if .Values.global.redis.enabled }}
+          - name: REDIS_HOST
+            value: {{ .Values.global.redis.host | quote }}
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elastiflow-redis
+                key: redis-password
+          {{- end }}
         resources:
 {{ toYaml .Values.filebeat.resources | indent 10 }}
 
@@ -102,4 +115,11 @@ spec:
         ports:
           - name: metrics
             containerPort: 9479
+        resources:
+          limits:
+            memory: 50Mi
+            cpu: 100m
+          requests:
+            memory: 50Mi
+            cpu: 10m
 {{- end }}

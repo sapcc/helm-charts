@@ -9,7 +9,7 @@ groups:
       severity: warning
       tier: vmware
       service: compute
-      context: "vrops-exporter {{ $labels.vcenter }}"
+      context: "vcsa certificate"
       meta: "SSL Certificate of vCSA {{ $labels.vcenter }} expires in less than 30 days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       playbook: docs/devops/alert/vcenter/#vcenter_appliance_certificate_expiry
     annotations:
@@ -23,7 +23,7 @@ groups:
       severity: critical
       tier: vmware
       service: compute
-      context: "vrops-exporter {{ $labels.vcenter }}"
+      context: "vcsa certificate"
       meta: "SSL Certificate of vCSA {{ $labels.vcenter}} expires in less than 15 days. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       playbook: docs/devops/alert/vcenter/#vcenter_appliance_certificate_expiry
     annotations:
@@ -37,7 +37,7 @@ groups:
       severity: info
       tier: vmware
       service: compute
-      context: "vrops-exporter {{ $labels.vcenter }}"
+      context: "vcenter cpu usage"
       meta: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
     annotations:
       description: "CPU usage of vCSA {{ $labels.vcenter}} is above 75%"
@@ -50,7 +50,7 @@ groups:
       severity: info
       tier: vmware
       service: compute
-      context: "vrops-exporter {{ $labels.vcenter }}"
+      context: "vcenter cpu usage"
       meta: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
     annotations:
       description: "CPU usage of vCSA {{ $labels.vcenter}} is above 90%"
@@ -63,7 +63,7 @@ groups:
       severity: info
       tier: vmware
       service: compute
-      context: "vrops-exporter {{ $labels.vcenter }}"
+      context: "vcenter memory usage"
       meta: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
     annotations:
       description: "Memory usage of vCSA {{ $labels.vcenter}} is above 75%"
@@ -76,7 +76,7 @@ groups:
       severity: info
       tier: vmware
       service: compute
-      context: "vrops-exporter {{ $labels.vcenter }}"
+      context: "vcenter memory usage"
       meta: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
     annotations:
       description: "Memory usage of vCSA {{ $labels.vcenter}} is above 90%"
@@ -89,7 +89,7 @@ groups:
       severity: info
       tier: vmware
       service: compute
-      context: "vrops-exporter {{ $labels.vcenter }}"
+      context: "vcenter disk usage"
       meta: "Disk space usage of vCSA {{ $labels.vcenter}} is above 70%"
     annotations:
       description: "Disk space usage of vCSA {{ $labels.vcenter}} is above 70%"
@@ -102,7 +102,7 @@ groups:
       severity: info
       tier: vmware
       service: compute
-      context: "vrops-exporter {{ $labels.vcenter }}"
+      context: "vcenter disk usage"
       meta: "Disk space usage of vCSA {{ $labels.vcenter}} is above 90%"
     annotations:
       description: "Disk space usage of vCSA {{ $labels.vcenter}} is above 90%"
@@ -114,7 +114,7 @@ groups:
       severity: info
       tier: vmware
       service: compute
-      context: "vrops-exporter {{ $labels.vcenter }}"
+      context: "vasa provider"
       meta: "VASA Provider disconnected from {{ $labels.vcenter}}."
       playbook: docs/devops/alert/vcenter/#vasa_provider_down
       no_alert_on_absence: "true"
@@ -123,14 +123,14 @@ groups:
       summary: "VASA Provider disconnected from {{ $labels.vcenter}}."
    
   - alert: VCenterHasMultipleGreyVMs
-    expr: count by (vcenter) (vrops_virtualmachine_availability == -1) > 0
+    expr: count by (vcenter) (vrops_virtualmachine_health == -1) > 0
     for: 15m
     labels:
       severity: info
       tier: vmware
       service: compute
-      context: Shadow VMs
-      meta: "vCenter {{ $labels.vcenter }} has `{{ $value }}` grey VMs for a longer period. Check and reload these VMs."
+      context: "Shadow VMs {{ $labels.vcenter }}"
+      meta: "vCenter {{ $labels.vcenter }} has multiple greyed out VMs for a longer period. Check and reload these VMs."
     annotations:
-      description: "vCenter {{ $labels.vcenter }} has `{{ $value }}` grey VMs for a longer period. Check and reload these VMs."
-      summary: "vCenter {{ $labels.vcenter }} has `{{ $value }}` grey VMs for a longer period. Check and reload these VMs."
+      description: "vCenter {{ $labels.vcenter }} has multiple greyed out VMs for a longer period. Check and reload these VMs."
+      summary: "vCenter {{ $labels.vcenter }} has multiple greyed out VMs for a longer period. Check and reload these VMs."

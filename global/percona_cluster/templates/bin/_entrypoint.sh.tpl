@@ -20,7 +20,6 @@ ipaddr={{ $ip }}
 # define group segment for geographical awareness
 gmcast_segment={{ .Values.gmcast_segment }}
 
-
 # Cluster IPs are all K8s service IPs
 cluster_ips="{{ include "helm-toolkit.utils.joinListWithComma" $cluster_ips }}"
 hostname=$(hostname)
@@ -31,19 +30,31 @@ if [ "${1:0:1}" = '-' ]; then
     CMDARG="$@"
 fi
 
+start_as_primary () {
+    echo "I am the Primary Node"
+    init_mysql
+    write_password_file
+    exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_name=$hostname-$ipaddr \
+    --wsrep_cluster_address="gcomm://" --wsrep_sst_method=xtrabackup-v2 \
+    --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
+    --wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" \
+    --wsrep_provider_options="evs.send_window=128;evs.user_send_window=128;gmcast.segment=$gmcast_segment" \
+    --log-bin=$hostname-bin $CMDARG
+}
+
+
 {{- if eq .Values.service.primary true }}
 
-echo "I am the Primary Node"
-init_mysql
-write_password_file
-exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_name=$hostname-$ipaddr \
---wsrep_cluster_address="gcomm://" --wsrep_sst_method=xtrabackup-v2 \
---wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
---wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" \
---wsrep_provider_options="evs.send_window=128;evs.user_send_window=128;gmcast.segment=$gmcast_segment" \
---log-bin=$hostname-bin $CMDARG
+start_as_primary
 
 {{- else }}
+
+if [ "$PXC_FORCE_BOOTSTRAP" = true ] ; then
+    echo "Cluster bootstrap forced via PXC_FORCE_BOOTSTRAP variable..."
+    sed -i 's/safe_to_bootstrap: 0/safe_to_bootstrap: 1/' /var/lib/mysql/grastate.dat
+
+    start_as_primary
+fi
 
 echo "I am not the Primary Node"
 chown -R mysql:mysql /var/lib/mysql || true # default is root:root 777

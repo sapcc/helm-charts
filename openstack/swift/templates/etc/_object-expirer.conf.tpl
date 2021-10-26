@@ -1,4 +1,5 @@
 [DEFAULT]
+{{ include "swift_log_statsd" . }}
 {{ if .Values.debug -}}
 log_level = DEBUG
 {{- else -}}

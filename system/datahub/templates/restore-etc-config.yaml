@@ -31,7 +31,6 @@ data:
     download_dir: {{ .Values.mariadb.restore.backup_dir }}
     debug: {{ .Values.mariadb.restore.debug.enabled }}
     region: {{ .Values.global.region }}
-{{- end }}
 
   openstack_view.sql: |
     {{ .Values.mariadb.restore.openstack_view }}
@@ -40,4 +39,6 @@ data:
     GRANT SELECT on {{.Values.mariadb.dbName}}.* to '{{.Values.global.datahub.user}}'@'%' IDENTIFIED BY '{{.Values.global.datahub.password}}';
 {{- range $db := .Values.mariadb.restore.read_access }}
     GRANT SELECT on {{$db}}.* to '{{$.Values.global.datahub.user}}'@'%' IDENTIFIED BY '{{$.Values.global.datahub.password}}';
+{{- end }}
+
 {{- end }}

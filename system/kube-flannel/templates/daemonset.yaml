@@ -27,6 +27,10 @@ spec:
 {{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
       priorityClassName: system-node-critical
 {{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
       containers:
       - name: kube-flannel
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
