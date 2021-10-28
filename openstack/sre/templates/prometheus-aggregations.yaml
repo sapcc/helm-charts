@@ -33,6 +33,8 @@ spec:
 {{- range $period := $values.periods }}
     - record: global:api_errors_per_request_sli:ratio_rate{{$period}}
       expr: |2
-          (sum by(region,ingress) (rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}])) OR (0 * count by (region, ingress) (nginx_ingress_controller_requests) )) /  sum by(region, ingress) (rate(nginx_ingress_controller_requests[{{$period}}]))
+          ((sum by(region, ingress) (rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}])) or (0 * count by(region, ingress) (nginx_ingress_controller_requests))) / sum by(region, ingress) (rate(nginx_ingress_controller_requests[{{$period}}])))
+          or
+          ((sum by(region, ingress) (label_replace( ( sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy", code=~"5.."}[{{$period}}])) or (0 * count by(region, proxy) (haproxy_backend_http_responses_total{proxy="swift_proxy"}))) / sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy"}[{{$period}}])) , "ingress", "swift-api", "proxy", "swift_proxy") )))
 
 {{- end }}
