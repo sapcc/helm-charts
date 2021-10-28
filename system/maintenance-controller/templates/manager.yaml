@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: maintenance-controller-config
+  namespace: kube-system
+type: Opaque
+data: 
+  maintenance.yaml: {{ required "A maintenance configuration is required" .Values.config | b64enc }}
+  {{- if .Values.esx.enabled }}
+  esx.yaml: {{ required "A esx maintenance configuration is required" .Values.esx.config | b64enc }}
+  {{- end }}
+  {{- if .Values.kubernikus.enabled }}
+  kubernikus.yaml: {{ required "A kubernikus configuration is required" .Values.kubernikus.config | b64enc }}
+  {{- end }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintenance-controller
+  namespace: kube-system
+  labels:
+    app: maintenance-controller
+spec:
+  selector:
+    matchLabels:
+      app: maintenance-controller
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: maintenance-controller
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - maintenance-controller
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - command:
+        - /manager
+        args:
+        - --enable-leader-election
+        {{- if .Values.esx.enabled }}
+        - --enable-esx-maintenance
+        {{- end }}
+        {{- if .Values.kubernikus.enabled }}
+        - --enable-kubernikus-maintenance
+        {{- end }}
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: manager
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+        {{- if .Values.kubernikus.enabled }}
+        - name: cloudconfig
+          mountPath: "/provider"
+          readOnly: true
+        {{- end }}
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 200m
+            memory: 128Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        ports:
+          - name: metrics
+            containerPort: 8080
+      volumes:
+      - name: config
+        secret:
+          secretName: maintenance-controller-config
+      {{- if .Values.kubernikus.enabled }}
+      - name: cloudconfig
+        secret:
+          secretName: {{ .Values.kubernikus.cloudconfig }}
+      {{- end }}
+      terminationGracePeriodSeconds: 10
+      {{- if .Values.rbac.create }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+      {{- end }}

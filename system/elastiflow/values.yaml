@@ -1,6 +1,7 @@
 curator:
   enabled: false
   retention: "92"
+  data_fw_retention: "3"
   env:
     DATA_RETENTION: "$(RETENTION)"
     ELASTIC_CREDS: "$(USERNAME):$(PASSWORD)"
@@ -62,6 +63,29 @@ curator:
             timestring: '%Y.%m.%d'
             unit: days
             unit_count: ${DATA_RETENTION}
+            field:
+            stats_result:
+            epoch:
+            exclude: False
+        2:
+          action: delete_indices
+          description: "Clean up ES by deleting old fw drop indices"
+          options:
+            timeout_override:
+            continue_if_exception: False
+            disable_action: False
+            ignore_empty_list: True
+            allow_ilm_indices: True
+          filters:
+          - filtertype: pattern
+            kind: regex
+            value: 'elastiflow-4.0.1-fw-.*'
+          - filtertype: age
+            source: name
+            direction: older
+            timestring: '%Y.%m.%d'
+            unit: days
+            unit_count: 3
             field:
             stats_result:
             epoch:
@@ -162,25 +186,11 @@ elasticsearch-data:
     enabled: true
     prometheus: infra-frontend
 
-elasticsearchExporter:
-  name: elastiflow
-  enabled: false
-  image: 
-    repo: justwatch/elasticsearch_exporter
-    tag: 1.1.0
-  es:
-    uri: http://elastiflow-master:9200
-  listen_port: 9102
-  targets: infra-frontend
-  exporter:
-    enabled: false
-    prometheus: infra-frontend
-  
 logstash:
   enabled: false
   image: "elastiflow-logstash"
   imageTag: "DEFINED-IN-PIPELINE"
-  logstashJavaOpts: "-Xmx6G -Xms6G"
+  logstashJavaOpts: "-Xmx8G -Xms8G"
 
   persistence:
     enabled: false
@@ -188,10 +198,10 @@ logstash:
   resources:
     requests:
       cpu: 4000m
-      memory: 6G
-    limits:
-      cpu: 5000m
       memory: 8G
+    limits:
+      cpu: 4000m
+      memory: 10G
 
   elastic:
     shards: 3
@@ -206,6 +216,10 @@ logstash:
     configMap: "jdbc-filter"
     configFile: "20_filter_95_enrich_ips.conf"
     schedule: "30 1 * * *"
+  fw:
+    enabled: true
+    configMap: "fw-output"
+    configFile: "30_output_10_single.logstash.conf"
   service:
     # type: NodePort
     # externalTrafficPolicy: Local
@@ -289,11 +303,31 @@ filebeat:
         protocol: UDP
   resources:
     requests:
-      cpu: "4000m"
-      memory: "6G"
-    limits:
-      cpu: "6000m"
+      cpu: "2000m"
       memory: "16G"
+    limits:
+      cpu: "4000m"
+      memory: "16G"
+
+global:
+  redis:
+    enabled: false
+    host: "elastiflow-redis"
+    logstash_imageTag: "202110081140"
+    filebeat_imageTag: "202110071400"
+
+redis:
+  enabled: false
+  resources:
+    limits:
+      memory: 8G
+      cpu: 1000m
+    requests:
+      memory: 8G
+      cpu: 500m
+  metrics:
+    enabled: true
+    prometheus: infra-collector
 
 kibana:
   enabled: false
@@ -310,25 +344,3 @@ alerts:
   enabled: false
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: infra-frontend
-
-queryExporter:
-  name: elastiflow
-  enabled: false
-  image:
-    repo: braedon/prometheus-es-exporter
-    tag: 0.9.0
-  es:
-    uri: "http://elasticsearch-master:9200"
-  listen_port: 9206
-  targets: infra-frontend
-  config:
-    exporter.cfg: |
-      [DEFAULT]
-      QueryIntervalSecs = 15
-      QueryTimeoutSecs = 10
-      QueryIndices = _all
-      QueryOnError = drop
-      QueryOnMissing = drop
-
-      [query_all]
-      QueryJson = {"size": 0, "query": {"match_all": {}}}

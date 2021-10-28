@@ -369,87 +369,6 @@
       replacement: '$2'
       target_label: device
 
-{{- $values := .Values.bios_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'bios/ironic'
-  params:
-    job: [bios/ironic]
-  scrape_interval: {{$values.ironic_scrapeInterval}}
-  scrape_timeout: {{$values.ironic_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: bios/ironic
-      action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: bios-exporter:{{$values.listen_port}}
-    - source_labels: [manufacturer]
-      target_label:  __param_manufacturer
-    - source_labels: [model]
-      target_label:  __param_model
-    - source_labels: [job]
-      target_label: __param_job
-- job_name: 'bios/vpod'
-  params:
-    job: [bios/vpod]
-  scrape_interval: {{$values.vpod_scrapeInterval}}
-  scrape_timeout: {{$values.vpod_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: bios/vpod
-      action: keep
-    - source_labels: [server_name]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: bios-exporter:{{$values.listen_port}}
-    - source_labels: [manufacturer]
-      target_label:  __param_manufacturer
-    - source_labels: [model]
-      target_label:  __param_model
-    - source_labels: [job]
-      target_label: __param_job
-- job_name: 'bios/cisco_cp'
-  params:
-    job: [bios/cisco_cp]
-  scrape_interval: {{$values.cisco_cp_scrapeInterval}}
-  scrape_timeout: {{$values.cisco_cp_scrapeTimeout}}
-  file_sd_configs:
-      - files :
-        - /etc/prometheus/configmaps/atlas-netbox-sd/netbox.json
-  metrics_path: /
-  relabel_configs:
-    - source_labels: [job]
-      regex: bios/cisco_cp
-      action: keep
-    - source_labels: [__address__]
-      target_label: __param_target
-    - source_labels: [__param_target]
-      target_label: instance
-    - target_label: __address__
-      replacement: bios-exporter:{{$values.listen_port}}
-    - source_labels: [manufacturer]
-      target_label:  __param_manufacturer
-    - source_labels: [model]
-      target_label:  __param_model
-    - source_labels: [server_name]
-      target_label: __param_name
-    - source_labels: [job]
-      target_label: __param_job
-{{- end }}
-
 {{- $values := .Values.ipmi_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'ipmi/ironic'
@@ -532,7 +451,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
+      replacement: redfish-exporter:9220
 
 - job_name: 'redfish/cp'
   params:
@@ -552,7 +471,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
+      replacement: redfish-exporter:9220
     - source_labels: [__meta_serial]
       target_label: server_serial
 
@@ -574,7 +493,7 @@
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: redfish-exporter:{{$values.listen_port}}
+      replacement: redfish-exporter:9220
 {{- end }}
 
 {{- $values := .Values.windows_exporter -}}
@@ -593,10 +512,20 @@
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
       target_label: __address__
+    - regex: 'name|state'
+      action: labeldrop
   metric_relabel_configs:
     - source_labels: [__name__]
       regex: '^go_.+'
       action: drop
+    - source_labels: ['__name__','exported_name']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
+      target_label: 'service_name'
+    - source_labels: ['__name__','exported_state']
+      regex: 'windows_service_state;(.*)'
+      replacement: '$1'
+      target_label: 'service_state'
 {{- end }}
         
 {{- $values := .Values.vasa_exporter -}}
@@ -961,3 +890,21 @@
     - action: labeldrop
       regex: "metrics_label"
 {{ end }}
+
+#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
+{{- $values := .Values.esxi_host_exporter -}}
+{{- if $values.enabled }}
+- job_name: 'esxi-host'
+  scrape_interval: {{$values.scrapeInterval}}
+  scrape_timeout: {{$values.scrapeTimeout}}
+  kubernetes_sd_configs:
+  - role: service
+    namespaces:
+      names:
+      - infra-monitoring
+  metrics_path: /
+  relabel_configs:
+    - source_labels: [__meta_kubernetes_service_name]
+      regex: esxi-host-exporter
+      action: keep
+{{- end }}

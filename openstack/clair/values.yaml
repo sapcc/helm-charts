@@ -4,8 +4,8 @@ global:
   registry: DEFINED_IN_VALUES_FILE
 
 clair:
-  image_tag: DEFINED_BY_PIPELINE
   log_level: info
+  update_interval: 30m
   auth:
     preshared_key: DEFINED_IN_VALUES_FILE # the key that Keppel uses to sign API tokens for itself to access Clair with
 
@@ -16,9 +16,11 @@ postgresql:
 
   persistence:
     enabled: true
-    existingClaim: clair-postgresql-new # see templates/postgres-pvc.yaml
+    existingClaim: clair-postgresql-250gib # see templates/postgres-pvc.yaml
   backup:
     enabled: false
+  alerts:
+    service: keppel
 
   postgresDatabase: clair
 

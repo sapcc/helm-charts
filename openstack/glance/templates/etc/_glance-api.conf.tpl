@@ -7,7 +7,9 @@ image_member_quota = 500
 
 log_config_append = /etc/glance/logging.ini
 
-show_image_direct_url= True
+node_staging_uri = file:///tmp/staging
+
+show_image_direct_url = True
 
 #disable default admin rights for role 'admin'
 admin_role = ''

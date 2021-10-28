@@ -27,7 +27,7 @@ spec:
       # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
       # - no measurable CPU usage once started
       # - RAM max. 1.5 MiB (but it turns out that k8s itself runs into OOM when
-      #   starting a container with less than 16 MiB RAM limit)
+      #   starting a container with less than 16-32 MiB RAM limit)
       containers:
         - name: keppel
           image: {{ include "keppel_image" . }}
@@ -36,10 +36,10 @@ spec:
           resources:
             requests:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
             limits:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
         - name: postgres
           image: "{{.Values.postgresql.image}}:{{.Values.postgresql.imageTag}}"
           imagePullPolicy: IfNotPresent
@@ -47,10 +47,10 @@ spec:
           resources:
             requests:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
             limits:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
         - name: pgbackup # runs inside the postgres pod, so we also need this image to start the postgres pod at all
           image: "{{.Values.postgresql.backup.image}}:{{.Values.postgresql.backup.imageTag}}"
           imagePullPolicy: IfNotPresent
@@ -58,10 +58,10 @@ spec:
           resources:
             requests:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
             limits:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
         - name: redis # NOTE: redis-metrics is a separate pod, so we don't need to care about it
           image: "{{.Values.redis.image.repository}}:{{.Values.redis.image.tag}}"
           imagePullPolicy: IfNotPresent
@@ -69,10 +69,10 @@ spec:
           resources:
             requests:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
             limits:
               cpu: "1m"
-              memory: "20Mi"
+              memory: "32Mi"
       # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL
       terminationGracePeriodSeconds: 1
 

@@ -140,6 +140,15 @@ spec:
             value: {{.Values.backup.os_password | default .Values.global.dbBackupServicePassword | required "Please set Values.global.dbBackupServicePassword or .Values.backup.os_password" | quote}}
           - name: BACKUP_PGSQL_FULL
             value: {{.Values.backup.interval_full | quote}}
+        {{- if .Values.backup.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.backup.resources.limits.cpu | quote }}
+            memory: {{ .Values.backup.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.backup.resources.requests.cpu | quote }}
+            memory: {{ .Values.backup.resources.requests.memory | quote }}
+        {{- end }}
 {{- end }}
 {{- if .Values.metrics.enabled }}
       - name: metrics

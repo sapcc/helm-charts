@@ -44,7 +44,7 @@ template: |
               name: cinder-etc
         containers:
           - name: vcenter-consistency
-            image: {{ .Values.global.registry }}/vcenter-nanny:{{ .Values.vcenter_nanny_consistency.consistency_image_version | replace "string:" "" }}
+            image: {{ .Values.global.registry }}/vcenter-nanny-consistency:{{ .Values.vcenter_nanny_consistency.consistency_image_version | replace "string:" "" }}
             imagePullPolicy: IfNotPresent
             command:
               - dumb-init
@@ -115,5 +115,12 @@ template: |
                 name: nova-etc
               - mountPath: /cinder-etc
                 name: cinder-etc
+            resources:
+              requests:
+                memory: "4000Mi"
+                cpu: "100m"
+              limits:
+                memory: "4000Mi"
+                cpu: "500m"
 {{- end }}
 {{- end }}

@@ -1,0 +1,53 @@
+{{- if .Values.yellowPages.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  yellow-pages-etc
+  namespace: datahub
+  labels:
+    app.kubernetes.io/name: yellow-pages
+    helm.sh/chart: {{ include "datahub.chart" $ }}
+    app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  config.yaml: |
+    billing:
+      sync_cron_schedule: "0 */6 * * *"
+      api_host: {{ required "Missing required global billing API endpoint" .Values.yellowPages.billingApiHost}}
+    db:
+      user: "root"
+      host: datahubdb-mariadb.datahub
+      port: 3306
+      ronly_user: "ronly"
+      views:
+  {{- if or ( .Values.yellowPages.requiredDatabases ) ( .Values.yellowPages.extraRequiredDatabases)}}
+        required_databases:
+    {{- if .Values.yellowPages.requiredDatabases }}
+{{ toYaml .Values.yellowPages.requiredDatabases | indent 10 }}
+    {{- end }}
+    {{- if .Values.yellowPages.extraRequiredDatabases }}
+{{ toYaml .Values.yellowPages.extraRequiredDatabases | indent 10 }}
+    {{- end }}
+  {{- end }}
+  {{- if or ( .Values.yellowPages.requiredTables ) ( .Values.yellowPages.extraRequiredTables )}}
+        required_tables:
+    {{- if .Values.yellowPages.requiredTables }}
+{{ toYaml .Values.yellowPages.requiredTables | indent 10 }}
+    {{- end }}
+    {{- if .Values.yellowPages.extraRequiredTables }}
+{{ toYaml .Values.yellowPages.extraRequiredTables | indent 10 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.yellowPages.views .Values.yellowPages.extraViews  }}
+        definitions:
+    {{- if .Values.yellowPages.views }}
+{{ toYaml $.Values.yellowPages.views | indent 10 }}
+    {{- end }}
+    {{- if .Values.yellowPages.extraViews }}
+{{ toYaml $.Values.yellowPages.extraViews | indent 10 }}
+    {{- end }}
+  {{ end }}
+    metrics:
+      port: {{ .Values.yellowPages.metrics.port }}
+      path: {{ .Values.yellowPages.metrics.path }}
+{{ end }}

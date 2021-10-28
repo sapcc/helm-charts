@@ -31,6 +31,7 @@
     "shared_subnetpools": "field:subnetpools:shared=True",
     "shared_address_scopes": "field:address_scopes:shared=True",
     "shared_security_groups": "field:security_groups:shared=True",
+    "shared_bgpvpns": "field:bgpvpns:shared=True",
     "dhcp_enabled": "field:subnets:enable_dhcp=True",
     "default": "rule:context_is_editor or rule:shared",
     "default_viewer": "rule:context_is_viewer or rule:shared",
@@ -115,7 +116,9 @@
     "update_port:security_groups": "rule:context_is_editor or rule:context_is_securitygroup_admin",
     "update_port:device_owner": "(not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "update_port:mac_address": "rule:context_is_admin",
-    "update_port:fixed_ips": "rule:context_is_editor",
+    "update_port:fixed_ips": "(rule:context_is_editor and not rule:network_device and not rule:share_device) or rule:context_is_admin",
+    "update_port:fixed_ips:ip_address": "(rule:context_is_editor and not rule:network_device and not rule:share_device) or rule:context_is_admin",
+    "update_port:fixed_ips:subnet_id": "(rule:context_is_editor and not rule:network_device and not rule:share_device) or rule:context_is_admin",
     "update_port:port_security_enabled": "rule:context_is_network_editor",
     "update_port:binding:host_id": "rule:context_is_network_admin",
     "update_port:binding:profile": "rule:context_is_network_admin",
@@ -152,6 +155,7 @@
     "get_security_group": "rule:context_is_securitygroup_viewer or rule:shared_security_groups",
     "get_security_groups": "rule:context_is_securitygroup_viewer or rule:shared_security_groups",
     "update_security_group": "rule:context_is_securitygroup_admin",
+    "update_security_group:stateful": "rule:context_is_admin",
     "delete_security_group": "rule:context_is_securitygroup_admin",
 
     "create_security_group_rule": "rule:context_is_securitygroup_admin",
@@ -280,17 +284,32 @@
     "delete_log": "rule:context_is_network_admin",
     "get_logs": "rule:context_is_network_viewer",
     "get_log": "rule:context_is_network_viewer",
-
+{{ if or (.Values.bgp_vpn.import_target_auto_allocation) (.Values.bgp_vpn.export_target_auto_allocation) (.Values.bgp_vpn.route_target_auto_allocation) }}
+    "create_bgpvpn": "rule:context_is_editor or rule:context_is_admin",
+{{- else }}
     "create_bgpvpn": "rule:context_is_admin",
+{{- end }}
     "update_bgpvpn": "rule:context_is_admin",
+{{- if or (.Values.bgp_vpn.import_target_auto_allocation) (.Values.bgp_vpn.export_target_auto_allocation) (.Values.bgp_vpn.route_target_auto_allocation) }}
+    "delete_bgpvpn": "rule:context_is_editor or rule:context_is_admin",
+{{- else }}
     "delete_bgpvpn": "rule:context_is_admin",
-    "get_bgpvpn": "rule:context_is_viewer",
-    "get_bgpvpn:tenant_id": "rule:context_is_viewer",
-    "get_bgpvpn:route_targets": "rule:context_is_viewer",
-    "get_bgpvpn:import_targets": "rule:context_is_viewer",
-    "get_bgpvpn:export_targets": "rule:context_is_viewer",
-    "get_bgpvpn:route_distinguishers": "rule:context_is_viewer",
-    "get_bgpvpn:vni": "rule:context_is_viewer",
+{{- end }}
+    "get_bgpvpn": "rule:context_is_viewer or rule:shared_bgpvpns",
+    "get_bgpvpn:tenant_id": "rule:context_is_viewer or rule:shared_bgpvpns",
+    "get_bgpvpn:route_targets": "rule:context_is_viewer or rule:shared_bgpvpns",
+    "get_bgpvpn:import_targets": "rule:context_is_viewer or rule:shared_bgpvpns",
+    "get_bgpvpn:export_targets": "rule:context_is_viewer or rule:shared_bgpvpns",
+    "get_bgpvpn:route_distinguishers": "rule:context_is_viewer or rule:shared_bgpvpns",
+    "get_bgpvpn:vni": "rule:context_is_viewer or rule:shared_bgpvpns",
+    "create_bgpvpn:tenant_id": "rule:context_is_admin",
+    "create_bgpvpn:route_targets": "rule:context_is_admin",
+    "create_bgpvpn:import_targets": "rule:context_is_admin",
+    "create_bgpvpn:export_targets": "rule:context_is_admin",
+    "create_bgpvpn:route_distinguishers": "rule:context_is_admin",
+    "create_bgpvpn:type": "rule:context_is_admin",
+    "create_bgpvpn:local_pref": "rule:context_is_admin",
+    "create_bgpvpn:vni": "rule:context_is_admin",
     "update_bgpvpn:tenant_id": "rule:context_is_admin",
     "update_bgpvpn:route_targets": "rule:context_is_admin",
     "update_bgpvpn:import_targets": "rule:context_is_admin",
@@ -304,18 +323,17 @@
     "get_bgpvpn_network_association": "rule:context_is_admin",
     "get_bgpvpn_network_association:tenant_id": "rule:context_is_admin",
 
-
     "create_bgpvpn_port_association": "rule:context_is_admin",
     "update_bgpvpn_port_association": "rule:context_is_admin",
     "delete_bgpvpn_port_association": "rule:context_is_admin",
     "get_bgpvpn_port_association": "rule:context_is_admin",
     "get_bgpvpn_port_association:tenant_id": "rule:context_is_admin",
 
-    "create_bgpvpn_router_association": "rule:context_is_editor",
-    "update_bgpvpn_router_association": "rule:context_is_editor",
-    "delete_bgpvpn_router_association": "rule:context_is_editor",
-    "get_bgpvpn_router_association": "rule:context_is_viewer",
-    "get_bgpvpn_router_association:tenant_id": "rule:context_is_viewer"
+    "create_bgpvpn_router_association": "rule:context_is_editor or rule:shared_bgpvpns",
+    "update_bgpvpn_router_association": "rule:context_is_editor or rule:shared_bgpvpns",
+    "delete_bgpvpn_router_association": "rule:context_is_editor or rule:shared_bgpvpns",
+    "get_bgpvpn_router_association": "rule:context_is_viewer or rule:shared_bgpvpns",
+    "get_bgpvpn_router_association:tenant_id": "rule:context_is_viewer or rule:shared_bgpvpns"
 
 
 }

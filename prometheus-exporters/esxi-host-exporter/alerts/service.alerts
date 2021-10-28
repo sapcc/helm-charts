@@ -1,0 +1,16 @@
+groups:
+- name: service.alerts
+  rules:
+  - alert: ESXiCriticalServiceDown
+    expr: max_over_time(esxi_critical_service_status{service='hostd'}[10m]) == 0
+    for: 10m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "esxi-exporter"
+      meta: "Critical service hostd on host {{ $labels.hostsystem }} is down."
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Critical service hostd on host {{ $labels.hostsystem }} is down."
+      summary: "Critical service hostd on host {{ $labels.hostsystem }} is down."

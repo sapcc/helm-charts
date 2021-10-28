@@ -10,11 +10,7 @@ workers = 8
 max_clients = 1024
 backlog = 4096
 
-log_statsd_host = localhost
-log_statsd_port = 9125
-log_statsd_default_sample_rate = 1.0
-log_statsd_sample_rate_factor = 1.0
-log_statsd_metric_prefix = swift
+{{ include "swift_log_statsd" . }}
 {{ if .Values.debug -}}
 log_level = DEBUG
 {{- else -}}
@@ -43,8 +39,13 @@ log_level = DEBUG
 [container-sync]
 interval = 300
 container_time = 60
-internal_client_conf_path = /etc/swift/container-sync-internal-client.conf
+internal_client_conf_path = /etc/swift/internal-client-no-cache.conf
 
+[container-sharder]
+# Warning: auto-sharding is still under development and should not be used in
+# production; do not set this option to true in a production cluster.
+auto_shard = false
+internal_client_conf_path = /etc/swift/internal-client-no-cache.conf
 
 [filter:healthcheck]
 use = egg:swift#healthcheck

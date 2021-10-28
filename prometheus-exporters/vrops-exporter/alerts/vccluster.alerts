@@ -15,6 +15,7 @@ groups:
     annotations:
       description: "Missing failover host for in {{ $labels.vcenter }} cluster {{ $labels.vccluster }}."
       summary: "Missing failover host for in {{ $labels.vcenter }} cluster {{ $labels.vccluster }}."
+
   - alert: VCenterRedundancyLostHAPolicyFaulty
     expr: |
       sum by (vccluster, vcenter) (vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"}) unless
@@ -26,10 +27,11 @@ groups:
       service: compute
       context: "vc cluster config"
       meta: "VC {{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
-      playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
+      playbook: docs/devops/alert/vcenter/#Faulty-ha-policy-in-vcenter
     annotations:
       description: "VC {{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
       summary: "VC {{ $labels.vcenter }} has a faulty AdmissionControlPolicy for cluster {{ $labels.vccluster }}, failover will not work."
+
   - alert: VCenterRedundancyLostHAPolicyNotConfigured
     expr: vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"} == 0
     for: 30m
@@ -43,6 +45,7 @@ groups:
     annotations:
       description: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
       summary: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
+
   - alert: VCenterWrongHALevelConfiguration
     expr: |
       count by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"} == 1) > 2
@@ -57,6 +60,7 @@ groups:
     annotations:
       description: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
       summary: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
+
   - alert: VCenterRedundancyLostHALevelNotSet
     expr: count by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"} == 1) == 0
     for: 30m

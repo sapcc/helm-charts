@@ -59,6 +59,7 @@ physical_domain = {{ default $.Values.aci.aci_hostgroups.physical_domains $aci_h
 physical_network = {{ default $aci_hostgroup.name $aci_hostgroup.physical_network }}
 segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
 segment_range = {{ default $.Values.aci.aci_hostgroups.segment_ranges $aci_hostgroup.segment_ranges | join "," }}
+availability_zones = {{ default "" $aci_hostgroup.availability_zones | join "," }}
 {{- range $i, $subgroup := $aci_hostgroup.subgroups }}
 
 [aci-hostgroup:{{ $subgroup.name }}]

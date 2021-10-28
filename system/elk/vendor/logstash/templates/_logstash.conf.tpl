@@ -30,9 +30,9 @@ input {
 filter {
     if  [type] == "bigiplogs" {
            grok {
-	       tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
-	       tag_on_timeout => ["_groktimeout"]
-	       timeout_millis => [15000]
+         tag_on_failure => ["bigiplogs_grok_parse-failure", "grok"]
+         tag_on_timeout => ["_groktimeout"]
+         timeout_millis => [15000]
                    match => { "message" => "%{SYSLOG5424PRI}%{NONNEGINT:syslog_version} +(?:%{TIMESTAMP_ISO8601:timestamp}|-) +(?:%{HOSTNAME:syslog_host}|-) +(?:%{WORD:syslog_level}|-) +(?:%{WORD:syslog_proc}|-) +(?:%{WORD:syslog_msgid}|-) +(?:%{SYSLOG5424SD:syslog_sd}|-|) +%{GREEDYDATA:syslog_msg}" }
                    overwrite => [ "message" ]
                    }
@@ -66,64 +66,88 @@ filter {
 }
 
 output {
-if  [type] == "netflow" {
-  elasticsearch {
-    index => "netflow-%{+YYYY.MM.dd}"
-    template => "/elk-etc/netflow.json"
-    template_name => "netflow"
-    template_overwrite => true
-    hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-    user => "{{.Values.global.elk_elasticsearch_data_user}}"
-    password => "{{.Values.global.elk_elasticsearch_data_password}}"
-    ssl => true
+  if  [type] == "netflow" {
+    elasticsearch {
+      index => "netflow-%{+YYYY.MM.dd}"
+      template => "/elk-etc/netflow.json"
+      template_name => "netflow"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+    }
   }
-}
-elseif [type] == "syslog" {
-  elasticsearch {
-    index => "syslog-%{+YYYY.MM.dd}"
-    template => "/elk-etc/syslog.json"
-    template_name => "syslog"
-    template_overwrite => true
-    hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-    user => "{{.Values.global.elk_elasticsearch_data_user}}"
-    password => "{{.Values.global.elk_elasticsearch_data_password}}"
-    ssl => true
+  elseif [type] == "syslog" {
+    elasticsearch {
+      index => "syslog-%{+YYYY.MM.dd}"
+      template => "/elk-etc/syslog.json"
+      template_name => "syslog"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+    }
   }
-}
-elseif [type] == "bigiplogs" {
-  elasticsearch {
-    index => "bigiplogs-%{+YYYY.MM.dd}"
-    template => "/elk-etc/bigiplogs.json"
-    template_name => "bigiplogs"
-    template_overwrite => true
-    hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-    user => "{{.Values.global.elk_elasticsearch_data_user}}"
-    password => "{{.Values.global.elk_elasticsearch_data_password}}"
-    ssl => true
+  elseif [type] == "bigiplogs" {
+    elasticsearch {
+      index => "bigiplogs-%{+YYYY.MM.dd}"
+      template => "/elk-etc/bigiplogs.json"
+      template_name => "bigiplogs"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+    }
   }
-}
-elseif [type] == "alert"{
-  elasticsearch {
-    index => "alerts-%{+YYYY}"
-    template => "/elk-etc/alerts.json"
-    template_name => "alerts"
-    template_overwrite => true
-    hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-    user => "{{.Values.global.elk_elasticsearch_data_user}}"
-    password => "{{.Values.global.elk_elasticsearch_data_password}}"
-    ssl => true
+  elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
+    elasticsearch {
+      index => "alerts-critical-%{+YYYY}"
+      template => "/elk-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+    }
   }
-}
-elseif [type] == "deployment" {
-  elasticsearch {
-    index => "deployments-%{+YYYY}"
-    template => "/elk-etc/deployments.json"
-    template_name => "deployments"
-    template_overwrite => true
-    hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-    user => "{{.Values.global.elk_elasticsearch_data_user}}"
-    password => "{{.Values.global.elk_elasticsearch_data_password}}"
-    ssl => true
+  elseif [type] == "alert" and [alerts][labels][severity] == "warning"{
+      elasticsearch {
+        index => "alerts-warning-%{+YYYY}"
+        template => "/elk-etc/alerts.json"
+        template_name => "alerts"
+        template_overwrite => true
+        hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+        user => "{{.Values.global.elk_elasticsearch_data_user}}"
+        password => "{{.Values.global.elk_elasticsearch_data_password}}"
+        ssl => true
+    }
   }
-}
+  elseif [type] == "alert"{
+    elasticsearch {
+      index => "alerts-other-%{+YYYY}"
+      template => "/elk-etc/alerts.json"
+      template_name => "alerts"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+    }
+  }
+  elseif [type] == "deployment" {
+    elasticsearch {
+      index => "deployments-%{+YYYY}"
+      template => "/elk-etc/deployments.json"
+      template_name => "deployments"
+      template_overwrite => true
+      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.elk_cluster_region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
+      user => "{{.Values.global.elk_elasticsearch_data_user}}"
+      password => "{{.Values.global.elk_elasticsearch_data_password}}"
+      ssl => true
+    }
+  }
 }

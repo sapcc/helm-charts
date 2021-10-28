@@ -56,8 +56,12 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+    <grok>
+      pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
+    </grok>
+    <grok>
+      pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
+    </grok>
   </parse>
 </filter>
 
@@ -114,14 +118,13 @@
 </filter>
 
 
-<filter	kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
-    grok_pattern
-%{IPORHOST:remote_addr} - %{USERNAME:remote_user} \[%{HTTPDATE:time_local}\] \"%{DATA:request}\" %{INT:status} %{NUMBER:bytes_sent} \"%{DATA:http_referer}\" \"%{DATA:http_user_agent}\" %{NUMBER:request_length} %{NUMBER:request_time} \[%{DATA:proxy_upstream_name}\] %{IPORHOST:upstream_addr}:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NUMBER:upstream_response_time} %{INT:upstream_status} %{WORD:req_id} ?(?:(?:req-)?%{GREEDYDATA:global_request_id})?
+    grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}] "%{WORD:method} %{IMAGE_METHOD:path}%{GREEDYDATA}1" %{NUMBER:response} %{GREEDYDATA}
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
@@ -149,9 +152,15 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern \[%{NOTSPACE:request}\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:timestamp}
-    grok_pattern \[%{NOTSPACE:request}\] %{WORD} %{NUMBER:response}
-    grok_pattern \[%{NOTSPACE:request}\]
+    <grok>
+      pattern \[%{NOTSPACE:request}\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:timestamp}
+    </grok>
+    <grok>
+      pattern \[%{NOTSPACE:request}\] %{WORD} %{NUMBER:response}
+    </grok>
+    <grok>
+      pattern \[%{NOTSPACE:request}\]
+    </grok>
   </parse>
 </filter>
 
@@ -191,8 +200,12 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel}
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
+    <grok>
+      pattern time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{NOTSPACE:loglevel}
+    </grok>
+    <grok>
+      pattern %{TIMESTAMP_ISO8601:timestamp}.%{NUMBER} \| %{WORD:loglevel} \| %{WORD:process}
+    </grok>
   </parse>
 </filter>
 
@@ -285,7 +298,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{GREEDYDATA:action} %{METHOD:method} %{URIPATH:pri_path} %{LOWER:action} %{NOTSPACE:user} %{WORD:domain} %{GREEDYDATA:action}
+    grok_pattern %{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{JAVACLASS:component} \[%{NOTSPACE:requestid} %{NOTSPACE:global_request_id} usr %{DATA:usr} prj %{DATA:prj} dom %{DATA:dom} usr-dom %{DATA:usr_domain} prj-dom %{DATA}\] %{DATA:action} %{METHOD:method} %{URIPATH:pri_path}, %{LOWER:action} (?:b\')?%{NOTSPACE:user}(?:\') (?:b\')?%{WORD:domain}(?:\') %{GREEDYDATA:action}
     custom_pattern_path /fluent-bin/pattern
     grok_failure_key grok_failure
   </parse>

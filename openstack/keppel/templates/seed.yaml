@@ -47,8 +47,6 @@ spec:
             - project: service
               role:    service
             - project: service
-              role:    role_viewer # to list Keystone roles
-            - project: service
               role:    admin          # for keppel-health-monitor (creating a Keppel account includes creating role assignments)
             - project: service
               role:    registry_admin # for keppel-health-monitor
@@ -71,6 +69,12 @@ spec:
             - domain: ccadmin
               role: registry_admin
       projects:
+        - name: cloud_admin
+          role_assignments:
+            - user: keppel@Default
+              role: service       # to validate users' Keystone tokens
+            - user: keppel@Default
+              role: swiftreseller # to read/write blobs and manifests from/into customer's Swift accounts
         - name: master
           role_assignments:
             - user: keppel@Default
@@ -89,4 +93,11 @@ spec:
           role_assignments:
             - domain: {{.}}
               role: registry_admin
+      {{- if eq . "monsoon3" }}
+      projects:
+        - name: cc-demo
+          role_assignments:
+          - group: MONSOON3_DOMAIN_ADMINS
+            role: registry_admin
+      {{- end }}
     {{- end }}

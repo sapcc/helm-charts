@@ -28,7 +28,16 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
+        configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
+{{- if .Values.api.uwsgi }}
+        configmap-etc-api-hash: {{ include (print $.Template.BasePath "/configmap-etc-api.yaml") . | sha256sum }}
+{{- else }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+{{- end }}
+        prometheus.io/scrape: "true"
+        maia.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.port_metrics missing" .Values.port_metrics | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       containers:
@@ -36,15 +45,18 @@ spec:
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
 {{- if not .Values.pod.debug.server }}
+{{- if not .Values.api.uwsgi }}
           livenessProbe:
             httpGet:
               path: /healthcheck
               port: {{.Values.global.neutron_api_port_internal | default 9696}}
             initialDelaySeconds: 120
             timeoutSeconds: 5
+            periodSeconds: 30
+{{- end }}
           readinessProbe:
             httpGet:
-              path: /
+              path: /healthcheck
               port: {{.Values.global.neutron_api_port_internal | default 9696}}
             initialDelaySeconds: 15
             timeoutSeconds: 5
@@ -52,8 +64,8 @@ spec:
           command: ['dumb-init', 'kubernetes-entrypoint']
           env:
             - name: COMMAND
-{{- if .Values.wsgi }}
-              value: "uwsgi --procname-prefix neutron-api --ini /etc/neutron/uwsgi.ini"
+{{- if .Values.api.uwsgi }}
+              value: "uwsgi --ini /etc/neutron/uwsgi.ini"
 {{- else }}
               value: "/container.init/neutron-server-start"
 {{- end }}
@@ -63,10 +75,14 @@ spec:
             {{- else}}
               value: "false"
             {{- end }}
+{{- if .Values.api.uwsgi }}
+            - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
+              value: "true"
+{{- end }}
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
-              value: "neutron-migration"
+              value: "neutron-migration-{{ .Values.imageVersion }}"
             - name: DEPENDENCY_SERVICE
               value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
             - name: STATSD_HOST
@@ -87,21 +103,21 @@ spec:
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
           resources:
+{{- if .Values.api.uwsgi }}
+{{ toYaml .Values.pod.resources.uwsgi_server | indent 12 }}
+{{- else }}
 {{ toYaml .Values.pod.resources.server | indent 12 }}
+{{- end }}
           ports:
             - name: neutron-api
               containerPort: {{.Values.global.neutron_api_port_internal | default 9696}}
           volumeMounts:
-{{- if .Values.wsgi }}
+{{- if .Values.api.uwsgi }}
             - mountPath: /etc/neutron
               name: empty-dir
             - mountPath: /etc/neutron/neutron.conf
               name: neutron-etc
               subPath: neutron.conf
-              readOnly: true
-            - mountPath: /etc/neutron/uwsgi.ini
-              name: neutron-etc
-              subPath: uwsgi.ini
               readOnly: true
             - mountPath: /etc/neutron/policy.json
               name: neutron-etc
@@ -167,7 +183,12 @@ spec:
             - mountPath: /development
               name: development
             {{- end }}
-
+            {{- if .Values.api.uwsgi }}
+            - mountPath: /etc/neutron/uwsgi.ini
+              name: neutron-etc-api
+              subPath: uwsgi.ini
+              readOnly: true
+            {{- end }}
 {{- else }}
             - mountPath: /neutron-etc
               name: neutron-etc
@@ -214,6 +235,11 @@ spec:
         - name: development
           persistentVolumeClaim:
             claimName: development-pvclaim
+{{- end }}
+{{- if .Values.api.uwsgi }}
+        - name: neutron-etc-api
+          configMap:
+            name: neutron-etc-api
 {{- end }}
         - name: container-init
           configMap:

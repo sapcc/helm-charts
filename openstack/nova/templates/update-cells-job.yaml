@@ -1,7 +1,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nova-update-cells
+  # since this name changes with every release, removal and creation of this
+  # Job happens on every deployment. Check the helm-chart changes to see if
+  # this needs more review.
+  name: nova-update-cells-{{ .Release.Revision }}
   labels:
     system: openstack
     type: configuration
@@ -27,7 +30,7 @@ spec:
         - name: NAMESPACE
           value: {{ .Release.Namespace }}
         - name: DEPENDENCY_JOBS
-          value: "nova-migration"
+          value: nova-migration-{{.Values.imageVersion | required "Please set nova.imageVersion or similar"}}
         - name: DEPENDENCY_SERVICE
           value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-api-mariadb,{{ .Release.Name }}-rabbitmq"
         - name: PGAPPNAME

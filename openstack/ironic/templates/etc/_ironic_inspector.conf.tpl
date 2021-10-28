@@ -29,7 +29,7 @@ manage_firewall = False
 backend_url = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
 [processing]
-store_data = swift
+store_data = none
 always_store_ramdisk_logs = true
 ramdisk_logs_dir = /var/log/ironic-inspector/ramdisk
 add_ports = all

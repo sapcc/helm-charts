@@ -4,6 +4,11 @@ kind: ConfigMap
 metadata:
   name: datahubdb-restore-config
   namespace: datahub
+  labels:
+    app.kubernetes.io/name: datahubdb-restore
+    helm.sh/chart: {{ include "datahub.chart" $ }}
+    app.kubernetes.io/instance: datahubdb-restore-{{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
 data:
   config.yaml: |
     swift:
@@ -26,7 +31,6 @@ data:
     download_dir: {{ .Values.mariadb.restore.backup_dir }}
     debug: {{ .Values.mariadb.restore.debug.enabled }}
     region: {{ .Values.global.region }}
-{{- end }}
 
   openstack_view.sql: |
     {{ .Values.mariadb.restore.openstack_view }}
@@ -35,4 +39,6 @@ data:
     GRANT SELECT on {{.Values.mariadb.dbName}}.* to '{{.Values.global.datahub.user}}'@'%' IDENTIFIED BY '{{.Values.global.datahub.password}}';
 {{- range $db := .Values.mariadb.restore.read_access }}
     GRANT SELECT on {{$db}}.* to '{{$.Values.global.datahub.user}}'@'%' IDENTIFIED BY '{{$.Values.global.datahub.password}}';
+{{- end }}
+
 {{- end }}

@@ -33,8 +33,8 @@ groups:
         token validation or overloaded object servers.
       summary: swift-service-unavailable
 
-  - alert: OpenstackSwiftHAProxyRedispatch
-    expr: sum(increase(haproxy_server_redispatch_warnings_total[10m])) by (os_cluster, server) > 20
+  - alert: OpenstackSwiftHAProxyServer
+    expr: sum by (os_cluster, server) (increase(haproxy_server_redispatch_warnings_total[10m])) > 20
     for: 15m
     labels:
       context: haproxyredispatch
@@ -45,6 +45,20 @@ groups:
     annotations:
       description: HAProxy is redispatching requests for the swift-proxy running on node {{ $labels.server }}. Try to delete the
         swift-proxy-{{ $labels.os_cluster }}-xxxxx on node {{ $labels.server }} to resolve the alert.
+      summary: swift-service-haproxy-redispatch
+
+  - alert: OpenstackSwiftHAProxyRedispatchPod
+    expr: sum by(os_cluster, kubernetes_pod_name) (increase(haproxy_server_redispatch_warnings_total[10m])) > 50
+    for: 10m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: warning
+      tier: os
+      meta: HAProxy pod {{ $labels.kubernetes_pod_name }} redispatches in {{ $labels.os_cluster }}
+    annotations:
+      description: HAProxy pod {{ $labels.kubernetes_pod_name }} is redispatching requests. Check the logs for
+        `Proxy <abc> reached process FD limit (maxsock=<1234>)`. In that case delete this pod.
       summary: swift-service-haproxy-redispatch
 
   - alert: OpenstackSwiftHealthCheck
@@ -193,12 +207,11 @@ groups:
       description: Check kibana for the causing account and container
       summary: swift rate limit hit in {{ $labels.os_cluster }}
 
-  - alert: OpenstackSwiftUsedSpace
+  - alert: OpenstackSwiftUsedSpaceGrow
     expr: max(predict_linear(global:swift_cluster_storage_used_percent_average[1w], 60 * 60 * 24 * 30)) > 0.8
-    for: 1d
+    for: 2d
     labels:
       context: usedcapacity
-      dashboard: swift-capacity-global?var-region={{ $labels.region }}
       service: swift
       severity: info
       tier: os
@@ -206,6 +219,45 @@ groups:
     annotations:
       description: Swift storage usage will reach 80% in 30 days. Order hardware now!
       summary: Swift storage expected to be full soon
+
+  - alert: OpenstackSwiftUsedSpace66
+    expr: floor(max(global:swift_cluster_storage_used_percent_average) by (region) * 100) > 66
+    for: 1d
+    labels:
+      context: usedcapacity
+      service: swift
+      severity: info
+      tier: os
+      meta: 'Swift storage usage above {{ $value }}%'
+    annotations:
+      description: 'Swift storage usage above {{ $value }}%'
+      summary: 'Swift storage usage above {{ $value }}%'
+
+  - alert: OpenstackSwiftGrantedQuota125
+    expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 125
+    for: 1d
+    labels:
+      context: grantedquota
+      service: swift
+      severity: info
+      tier: os
+      meta: 'Swift storage is overbooked: {{ $value }}%'
+    annotations:
+      description: 'Swift storage is overbooked: {{ $value }}%'
+      summary: 'Swift storage is overbooked: {{ $value }}%'
+
+  - alert: OpenstackSwiftGrantedQuota150
+    expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 150
+    for: 1d
+    labels:
+      context: grantedquota
+      service: swift
+      severity: warning
+      tier: os
+      meta: 'Swift storage is overbooked: {{ $value }}%'
+    annotations:
+      description: 'Swift storage is overbooked: {{ $value }}%'
+      summary: 'Swift storage is overbooked: {{ $value }}%'
 
   - alert: OpenstackSwiftDriveAutopilotConsistencyCheck
     expr: irate(swift_drive_autopilot_events{type="consistency-check"}[5m]) < 0.02
@@ -251,37 +303,6 @@ groups:
         is older than 3 hours. Check the affected node. A restart of the replicator pod might
         be necessary."
       summary: Container replication on {{ $labels.storage_ip }} older than 3 hours
-
-  - alert: OpenstackSwiftApiDown
-    expr: blackbox_api_status_gauge{check=~"swift"} == 1
-    for: 20m
-    labels:
-      severity: critical
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-blackbox-details
-      meta: '{{ $labels.check }} API is down. See Sentry for details.'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/swift/#{{ $labels.check }}'
-    annotations:
-      description: '{{ $labels.check }} API is down for 20 min. See Sentry for details.'
-      summary: '{{ $labels.check }} API down'
-
-  - alert: OpenstackSwiftApiFlapping
-    expr: changes(blackbox_api_status_gauge{check=~"swift"}[30m]) > 8
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-blackbox-details
-      meta: '{{ $labels.check }} API is flapping'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/swift/#{{ $labels.check }}'
-    annotations:
-      description: '{{ $labels.check }} API is flapping for 30 minutes.'
-      summary: '{{ $labels.check }} API flapping'
 
   - alert: OpenstackSwiftCanaryDown
     expr: blackbox_canary_status_gauge{service=~"swift"} == 1

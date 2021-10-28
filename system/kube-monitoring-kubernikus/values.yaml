@@ -17,12 +17,27 @@ extraScrapeConfig: ""
 kubernikus-monitoring:
   prometheusName: kubernikus
 
-prometheus-operator:
-  # Just `prometheus`. The operator appends `-operator`.
+kube-prometheus-stack:
   nameOverride: prometheus
   fullnameOverride: prometheus
+  # Never manage CRDs. They are deployed via prometheus-crds Helm chart.
+  manageCrds: false
 
   prometheusOperator:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-operator
+      tag: v0.47.0
+
+    prometheusConfigReloaderImage:
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/prometheus-config-reloader
+      tag: v0.44.0
+
+    # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
+    admissionWebhooks:
+      enabled: false
+    tls:
+      enabled: false
+
     createCustomResource: false
     service:
       annotations:
@@ -31,8 +46,6 @@ prometheus-operator:
         prometheus.io/port: "8080"
     serviceAccount:
       create: false
-    admissionWebhooks:
-      enabled: false
     tlsProxy:
       enabled: false
 
@@ -75,6 +88,12 @@ absent-metrics-operator:
 kube-state-metrics:
   customLabels:
     app: kube-state-metrics
+
+  collectors:
+    # Not useful.
+    configmaps: false
+    secrets: false
+    cronjobs: false
 
   resources:
     requests:
@@ -241,7 +260,12 @@ event-exporter:
         volume: Message[1]
 
 grafana:
-  enabled: false
+  image:
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/grafana/grafana
+
+  testFramework:
+    enabled: false
+  defaultDashboardsEnabled: false
   admin:
     existingSecret: kube-monitoring-kubernikus-grafana-admin
     userKey: adminUser
@@ -249,7 +273,6 @@ grafana:
     # Defined via secrets.
     # username: admin-user
     # password: admin-password
-
   rbac:
     pspEnabled: false
 
@@ -287,6 +310,9 @@ grafana:
 
   # Sidecar for discovering & reloading dashboard, datasource configmaps.
   sidecar:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/kiwigrid/k8s-sidecar
+
     dashboards:
       enabled: true
       # Label that configmaps with dashboards should have to be added.

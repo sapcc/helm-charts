@@ -42,11 +42,11 @@ mysql_metrics:
   db_name: octavia
   db_user: octavia
   customMetrics:
-    - help: Amount of ESD tags used
+    - name: octavia_esd_tags_count_gauge
+      help: Amount of ESD tags used
       labels:
         - "status"
         - "octavia_host"
-      name: octavia_esd_tags_count_gauge
       query: |
         SELECT
           COUNT(*) AS count_gauge
@@ -65,11 +65,11 @@ mysql_metrics:
           OR name='hcm_rmk_restrict_internal';
       values:
         - "count_gauge"
-    - help: Amount of ESD L7policies used
+    - name: octavia_esd_l7policies_count_gauge
+      help: Amount of ESD L7policies used
       labels:
         - "status"
         - "octavia_host"
-      name: octavia_esd_l7policies_count_gauge
       query: |
         SELECT
           COUNT(*) AS count_gauge
@@ -88,11 +88,11 @@ mysql_metrics:
           OR name='hcm_rmk_restrict_internal';
       values:
         - "count_gauge"
-    - help: Amount of non-ESD L7policies used
+    - name: octavia_normal_l7policies_count_gauge
+      help: Amount of non-ESD L7policies used
       labels:
         - "status"
         - "octavia_host"
-      name: octavia_normal_l7policies_count_gauge
       query: |
         SELECT
           COUNT(*) AS count_gauge
@@ -111,11 +111,11 @@ mysql_metrics:
           AND name!='hcm_rmk_restrict_internal';
       values:
         - "count_gauge"
-    - help: Total Load Balancer count
+    - name: octavia_loadbalancers_count_gauge
       labels:
         - "status"
         - "octavia_host"
-      name: octavia_loadbalancers_count_gauge
+      help: Total Load Balancer count
       query: |
         SELECT
           COUNT(*) AS count_gauge,
@@ -125,29 +125,29 @@ mysql_metrics:
         GROUP BY octavia_host, provisioning_status;
       values:
         - "count_gauge"
-    - help: Load Balancer pending
+    - name: octavia_seconds_since_last_nonpending_status
       labels:
-        - "status"
+        - "current_status"
         - "octavia_host"
         - "loadbalancer_id"
         - "loadbalancer_name"
-      name: octavia_loadbalancers_pending
+      help: Seconds since last non-pending state of LB
       query: |
         (SELECT
-          '1' AS count_gauge,
+          UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(coalesce(updated_at, created_at)) AS elapsed_time,
           name AS loadbalancer_name,
-          provisioning_status AS status,
+          provisioning_status AS current_status,
           id AS loadbalancer_id,
           server_group_id AS octavia_host
         FROM load_balancer
         WHERE provisioning_status LIKE "PENDING_%")
         UNION (select '0', '', '', '', '');
       values:
-        - "count_gauge"
-    - help: Worker agent seconds since the last heartbeat
+        - "elapsed_time"
+    - name: octavia_monitor_agents_heartbeat_seconds
+      help: Worker agent seconds since the last heartbeat
       labels:
         - "octavia_host"
-      name: octavia_monitor_agents_heartbeat_seconds
       query: |
         SELECT
           compute_flavor AS octavia_host,

@@ -141,3 +141,28 @@ groups:
     annotations:
       description: Node {{`{{ $labels.node }}`}} has a read-only filesystem.
       summary: Read-only file system on node
+
+  - alert: NodeRebootsTooFast
+    expr: max by (node) (changes(node_boot_time_seconds[1h])) > 2
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      service: node
+      severity: warning
+      context: availability
+      meta: "The node {{`{{ $labels.node }}`}} rebooted at least 3 times in the last hour"
+    annotations:
+      description: "The node {{`{{ $labels.node }}`}} rebooted {{`{{ $value }}`}} times in the past hour. It could be stuck in a reboot/panic loop."
+      summary: Node rebooted multiple times
+
+  - alert: NodeRootFilesystemAboutToRunFull
+    expr: max by (node) (predict_linear(node_filesystem_avail_bytes{mountpoint="/"}[30m], 45*60)) < 0
+    for: 5m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      service: node
+      severity: warning
+      context: node
+      meta: "The root filesystem of node {{`{{ $labels.node }}`}} is filling up quickly"
+    annotations:
+      description: "At the current rate the root filesystem of {{`{{ $labels.node }}`}} have no free space in the next 45 minutes"
+      summary: Node's root filesystem is filling up

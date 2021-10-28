@@ -22,7 +22,9 @@ spec:
         paths:
         {{- if $ussuri }}
         - path: /v2.0/lbaas
+          {{- if ge (.Capabilities.KubeVersion.Minor | atoi) 18 }}
           pathType: Prefix
+          {{- end }}
           backend:
             serviceName: octavia-api
             servicePort: {{.Values.global.octavia_api_port_internal | default 9876}}

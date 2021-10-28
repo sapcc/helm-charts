@@ -19,6 +19,8 @@ global:
   placement_service_user: placement
 
   hypervisors: []
+  enable_kvm: false
+  # this being an empty list means autodetection by KosOperator
   hypervisors_kvm: []
   hypervisors_ironic: []
   osprofiler: {}
@@ -45,10 +47,10 @@ defaults:
       default:
         reserved_host_memory_mb: 512
         disk_allocation_ratio: "1.0"
-        reserved_host_disk_mb: 0
+        reserved_host_disk_mb: "0"
     ironic:
       default:
-        reserved_host_memory_mb: 0
+        reserved_host_memory_mb: "0"
         compute_driver: ironic.IronicDriver
         graceful_shutdown_timeout: 1800
       ironic:
@@ -246,15 +248,21 @@ scheduler:
   driver: "filter_scheduler"
   scheduler_tracks_instance_changes: false
   scheduler_instance_sync_interval: 120
-  default_filters: "AvailabilityZoneFilter, ShardFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  default_filters: "AvailabilityZoneFilter, ShardFilter, AggregateMultiTenancyIsolation, RamFilter, DiskFilter, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  vm_size_threshold_vm_size_mb: "8193"
+  vm_size_threshold_hv_size_mb: "819200"
   ram_weight_multiplier: 1.0
   cpu_weight_multiplier: 1.0
   disk_weight_multiplier: 1.0
   io_ops_weight_multiplier: 0.0
   soft_affinity_weight_multiplier: 1.0
-  # the prefer-same-host weigher should be able to overpower a worst-case combination of other weighers
-  # (e.g. least ram available + slightly bad disk weight), so make it >= len(other_weighers)
-  prefer_same_host_resize_weight_multiplier: 5.0
+  # The following weighers are crutches, but we can't express it otherwise
+  # currently. They should overpower the other weighers even in worst-case
+  # (e.g. least ram available + worst disk weight), so we have to make it >=
+  # len(other_weighers). At the same time, we, want a VM to not move on resize,
+  # if it doesn't have to - even if it's in the wrong RAM class currently.
+  prefer_same_host_resize_weight_multiplier: 1000.0
+  hv_ram_class_weight_multiplier: 100.0
 
 compute:
   defaults:
@@ -263,7 +271,7 @@ compute:
       max_concurrent_builds_per_project: 20
       max_concurrent_builds: 50
       ram_allocation_ratio: 1.0
-      cpu_allocation_ratio: 5.0
+      cpu_allocation_ratio: 4.0
       # this will set a 15 mins timeout for blockdevice mapping
       block_device_allocate_retries: 300
     vmware:
@@ -273,7 +281,7 @@ compute:
       pbm_default_policy: "nova-ephemeral"
       smbios_asset_tag: "SAP CCloud VM"
       bigvm_deployment_free_host_hostgroup_name: "bigvm_free_host_antiaffinity_hostroup"
-      clone_from_snapshot: true
+      clone_from_snapshot: false
       full_clone_snapshots: true
       # maximum of vSphere 6.5
       default_hw_version: vmx-13

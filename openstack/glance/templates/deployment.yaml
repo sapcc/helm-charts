@@ -56,16 +56,20 @@ spec:
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
-            path: /healthcheck
+            path: /
             port: {{.Values.api_port_internal}}
-          initialDelaySeconds: 20
-          timeoutSeconds: 5
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
+          periodSeconds: 60
+          failureThreshold: 15
         readinessProbe:
           httpGet:
             path: /healthcheck
             port: {{.Values.api_port_internal}}
-          initialDelaySeconds: 20
-          timeoutSeconds: 5
+          initialDelaySeconds: 5
+          timeoutSeconds: 4
+          periodSeconds: 5
+          failureThreshold: 2
         command:
         - dumb-init
         - kubernetes-entrypoint

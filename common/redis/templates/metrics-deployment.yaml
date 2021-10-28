@@ -6,7 +6,7 @@ metadata:
   name: {{ template "redis.fullname" . }}-metrics
   labels:
     app: {{ template "redis.fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    chart: "{{ .Chart.Name }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 
@@ -31,7 +31,7 @@ spec:
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
-        promtheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
       containers:

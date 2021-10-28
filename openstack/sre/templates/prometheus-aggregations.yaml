@@ -36,23 +36,3 @@ spec:
           (sum by(region,ingress) (rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}])) OR (0 * count by (region, ingress) (nginx_ingress_controller_requests) )) /  sum by(region, ingress) (rate(nginx_ingress_controller_requests[{{$period}}]))
 
 {{- end }}
-    - record: global:api_errors_per_request_per_date_sli:ratio_rate1d
-      expr: |2
-          sum by(region, ingress, day, month, year) ((rate(nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server",status=~"5.."}[1d]) or (0 * nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server"}))
-            + ignoring(year, month, day) group_right()
-              count_values without() ("year", year(timestamp(
-                count_values without() ("month", month(timestamp(
-                  count_values without() ("day", day_of_month(timestamp(
-                    nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server"}
-                  )))
-                )))
-              ))) * 0) /
-          sum by(region, ingress, day, month, year) (rate(nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server"}[1d])
-            + ignoring(year, month, day) group_right()
-              count_values without() ("year", year(timestamp(
-                count_values without() ("month", month(timestamp(
-                  count_values without() ("day", day_of_month(timestamp(
-                    nginx_ingress_controller_requests{ingress=~".+-api$|keystone|neutron-server"}
-                  )))
-                )))
-              ))) * 0)

@@ -1,0 +1,134 @@
+groups:
+- name: cc3test-identity.alerts
+  rules:
+  - alert: OpenstackKeystoneApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestIdentityApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Keystone API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/keystone/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Keystone API is down'
+      summary: 'Openstack Keystone API is down'
+
+  - alert: OpenstackKeystoneApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestIdentityApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Keystone API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/keystone/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Keystone API is flapping'
+      summary: 'Openstack Keystone API is flapping'
+
+  - alert: ActiveDirectoryNodeDown
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_host_datapath.+"
+        } == 0
+    for: 15m
+    labels:
+      severity: warning
+      tier: os
+      service: 'active_dir'
+      context: 'active_dir'
+      meta: 'An ActiveDirectory node {{ $labels.name }} is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/keystone/#ldap_fail'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'An ActiveDirectory node {{ $labels.name }} is not accepting connections. The remaining node should continue service.'
+      summary: 'An ActiveDirectory node {{ $labels.name }} is down'
+
+  - alert: ActiveDirectoryConnectFailed
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_url_datapath.+"
+        } == 0
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: 'active_dir'
+      context: 'active_dir'
+      meta: 'ldap.global.cloud.sap is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/keystone/#ldap_fail'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'The LDAP-LB endpoint (active directory) is not accepting connections.'
+      summary: 'ldap.global.cloud.sap is down'
+
+  - alert: ActiveDirectorySearchUsersFailed
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_search_user.+"
+        } == 0
+    for: 20m
+    labels:
+      severity: critical
+      tier: os
+      service: 'active_dir'
+      context: 'active_dir'
+      meta: 'LDAP user searches fail'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/keystone/#ldap_fail'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'LDAP (active directory) user searches fail'
+      summary: 'LDAP user searches fail'
+
+  - alert: ActiveDirectorySearchGroupsFailed
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_search_group.+"
+        } == 0
+    for: 20m
+    labels:
+      severity: critical
+      tier: os
+      service: 'active_dir'
+      context: 'active_dir'
+      meta: 'LDAP group searches fail'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/keystone/#ldap_fail'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'LDAP (active directory) group searches fail'
+      summary: 'LDAP group searches fail'
+
+  - alert: ExchangeWebServiceDown
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_ews_datapath.+"
+        } == 0
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: 'active_dir'
+      context: 'active_dir'
+      meta: 'SAP https://autodiscover.sap.com/ews/healthcheck.htm reports down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/keystone/#ldap_fail'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'SAP Exchange webservice is not healthy. Usually due to lacking internet connectivity. Password updates will fail.'
+      summary: 'SAP https://autodiscover.sap.com/ews/healthcheck.htm reports down'

@@ -51,15 +51,19 @@ spec:
         {{- end }}
         {{/* This forces a restart if the configmap has changed */}}
         {{- if .Values.logstashConfig }}
-        configchecksum: {{ include (print .Template.BasePath "/configmap-config.yaml") . | sha256sum | trunc 63 }}
+        checksum/config: {{ include (print .Template.BasePath "/configmap-config.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
         {{/* This forces a restart if the configmap has changed */}}
         {{- if .Values.logstashPipeline }}
-        pipelinechecksum: {{ include (print .Template.BasePath "/configmap-pipeline.yaml") . | sha256sum | trunc 63 }}
+        checksum/pipeline: {{ include (print .Template.BasePath "/configmap-pipeline.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
         {{/* This forces a restart if the configmap has changed */}}
         {{- if .Values.jdbc.enabled }}
-        pipelinechecksum: {{ include (print .Template.BasePath "/configmap-jdbc-filter.yaml") . | sha256sum | trunc 63 }}
+        checksum/jdbc: {{ include (print .Template.BasePath "/configmap-jdbc-filter.yaml") . | sha256sum | trunc 63 }}
+        {{- end }}
+        {{/* This forces a restart if the configmap has changed */}}
+        {{- if .Values.fw.enabled }}
+        checksum/fw: {{ include (print .Template.BasePath "/configmap-fw-output.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
     spec:
       {{- if .Values.schedulerName }}
@@ -95,6 +99,7 @@ spec:
                 operator: In
                 values:
                 - "{{ template "logstash.fullname" .}}"
+                - "elastiflow-filebeat"
             topologyKey: {{ .Values.antiAffinityTopologyKey }}
       {{- else if eq .Values.antiAffinity "soft" }}
         podAntiAffinity:
@@ -138,6 +143,14 @@ spec:
             - key: {{ .Values.jdbc.configFile }}
               path: {{ .Values.jdbc.configFile }}
         {{- end }}
+        {{- if .Values.fw.enabled }}
+        - name: {{ .Values.fw.configMap }}-config
+          configMap:
+            name: {{ .Values.fw.configMap }}
+            items:
+            - key: {{ .Values.fw.configFile }}
+              path: {{ .Values.fw.configFile }}
+        {{- end }}
         - name: elastiflow-template-config
           configMap:
             name: elastiflow-template
@@ -159,12 +172,37 @@ spec:
       - name: "{{ template "logstash.name" . }}"
         securityContext:
 {{ toYaml .Values.securityContext | indent 10 }}
+      {{- if .Values.global.redis.enabled }}
+        image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.image variable missing" .Values.image }}:{{ required ".Values.redis.logstash_imageTag variable missing" .Values.global.redis.logstash_imageTag }}
+      {{- else }}
         image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.image variable missing" .Values.image }}:{{ required ".Values.imageTag variable missing" .Values.imageTag }}
+      {{- end}}
         imagePullPolicy: "{{ .Values.imagePullPolicy }}"
+    {{- if .Values.global.redis.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 300
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 3
+    {{- else }}
         livenessProbe:
 {{ toYaml .Values.livenessProbe | indent 10 }}
         readinessProbe:
 {{ toYaml .Values.readinessProbe | indent 10 }}
+    {{- end }}
         ports:
         - name: http
           containerPort: {{ .Values.httpPort }}
@@ -179,6 +217,15 @@ spec:
 {{- if .Values.extraEnvs }}
 {{ toYaml .Values.extraEnvs | indent 10 }}
 {{- end }}        
+        {{- if .Values.global.redis.enabled }}
+          - name: REDIS_HOST
+            value: "{{ .Values.global.redis.host }}"
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: elastiflow-redis
+                key: redis-password
+        {{- end }}
           - name: ELASTIFLOW_ES_HOST
             value: "{{ .Values.elastic.host }}"
           - name: ELASTIFLOW_ES_SSL_ENABLE
@@ -222,6 +269,11 @@ spec:
             mountPath: /etc/logstash/elastiflow/conf.d/{{ .Values.jdbc.configFile }}
             subPath: {{ .Values.jdbc.configFile }}
           {{- end }}
+          {{- if .Values.fw.enabled }}
+          - name: {{ .Values.fw.configMap }}-config
+            mountPath: /etc/logstash/elastiflow/conf.d/{{ .Values.fw.configFile }}
+            subPath: {{ .Values.fw.configFile }}
+          {{- end }}
           - name: elastiflow-template-config
             mountPath: /etc/logstash/elastiflow/templates/elastiflow.template.json
             subPath: elastiflow.template.json
@@ -237,6 +289,13 @@ spec:
         ports:
           - name: metrics
             containerPort: 9198
+        resources:
+          limits:
+            memory: 45Mi
+            cpu: 100m
+          requests:
+            memory: 45Mi
+            cpu: 10m
       {{- if .Values.extraContainers }}
 {{ tpl .Values.extraContainers . | indent 6 }}
       {{- end }}

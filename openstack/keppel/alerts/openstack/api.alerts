@@ -40,6 +40,26 @@ groups:
         The Keppel anycast health check is failing for some peers. Check the
         logs of the "keppel-anycast-monitor" pod for details.
 
+  # This alert is disabled for QA because the QA anycast looks kind of broken.
+  - alert: OpenstackKeppelAnycastMembership
+    expr: keppel_anycastmonitor_membership{region!~"qa-.*"} != 1
+    for: 10m
+    labels:
+      context: anycast-membership
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      tier: os
+      meta: 'Keppel anycast membership check failing'
+    annotations:
+      summary: 'Keppel anycast membership check failing'
+      description: |
+        When talking to the Keppel anycast endpoint from within the Keppel
+        deployment, we don't reach our own API. If this alert occurs by
+        itself, without any other alerts accompanying it, this Keppel has most
+        likely not been added to the anycast configuration yet. Check the logs
+        of the "keppel-anycast-monitor" pod for details.
+
   - alert: OpenstackKeppelSlowPeering
     expr: time() - keppel_peers_last_peered_at > 1800
     for: 5m

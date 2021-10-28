@@ -21,6 +21,10 @@ spec:
         configmap-ipmasq-hash: {{ include (print $.Template.BasePath "/configmap-ipmasq.yaml") $ | sha256sum }}  
     spec:
       priorityClassName: system-node-critical
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
       containers:
 {{- if .Values.sidecars.externalip }}
       - name: externalip

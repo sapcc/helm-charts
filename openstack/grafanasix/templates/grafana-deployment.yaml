@@ -47,7 +47,7 @@ spec:
           emptyDir: {}
       containers:
         - name: "grafana"
-          image: {{.Values.grafana.image}}:{{.Values.grafana.image_version}}
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/{{.Values.grafana.image}}:{{.Values.grafana.image_version}}
           imagePullPolicy: {{.Values.image.pullPolicy}}
           command:
             - /bin/bash
@@ -72,6 +72,13 @@ spec:
 {{- end }}
             - name: grafana-content
               mountPath: /git
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "250m"
+            limits:
+              memory: "500Mi"
+              cpu: "250m"
           livenessProbe:
             httpGet:
               path: /login
@@ -95,6 +102,13 @@ spec:
           volumeMounts:
             - name: grafana-git
               mountPath: /tmp/git
+          resources:
+            requests:
+              memory: "250Mi"
+              cpu: "50m"
+            limits:
+              memory: "250Mi"
+              cpu: "150m"
         - name: "minitrue"
           image: {{.Values.global.registry}}/grafana-minitrue:{{.Values.grafana.minitrue_version}}
           imagePullPolicy: {{.Values.image.pullPolicy}}
@@ -112,9 +126,16 @@ spec:
               mountPath: /gitsync_in
             - name: grafana-content
               mountPath: /minitrue_out
+          resources:
+            requests:
+              memory: "150Mi"
+              cpu: "50m"
+            limits:
+              memory: "150Mi"
+              cpu: "150m"
 {{- if .Values.nginx.enabled }}
         - name: nginx
-          image: "{{ .Values.nginx.image }}:{{ .Values.nginx.image_version }}"
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/library/{{ .Values.nginx.image }}:{{ .Values.nginx.image_version }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: grafana-etc
@@ -125,4 +146,11 @@ spec:
             - name: http
               containerPort: {{ .Values.nginx.port.public }}
               protocol: TCP
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "150m"
+            limits:
+              memory: "50Mi"
+              cpu: "150m"
 {{- end }}

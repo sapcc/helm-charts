@@ -13,6 +13,9 @@ nebula:
   listenAddr:
     http: :{{ .Values.nebula.http }} # default :1080
     shutdownTimeout: {{ .Values.config.accountStatusTimeout }}s
+    readTimeout: {{ .Values.nebula.readTimeout | default 30 }}s
+    writeTimeout: {{ .Values.nebula.writeTimeout | default 30 }}s
+    keepAliveTimeout: {{ .Values.nebula.keepAliveTimeout | default 60 }}s
   keystone:
 {{- if .Values.config.keystone }}
 {{- range $key, $value := .Values.config.keystone }}
@@ -57,6 +60,12 @@ nebula:
     secret: {{ .Values.config.awsSecret }}
     technicalUsername: {{ .Values.config.technicalUsername }}
     policyName: {{ .Values.config.policyName }}
+    roleName: {{ .Values.config.roleName }}
+    iamRolePolicyName: {{ .Values.config.iamRolePolicyName }}
+    iamRolePolicy: |
+{{ .Values.config.iamRolePolicy | indent 6 }}
+    iamRoleTrustPolicy: |
+{{ .Values.config.iamRoleTrustPolicy | indent 6 }}
     iamPolicy: |
 {{ .Values.config.iamPolicy | indent 6 }}
     verifyEmailDomain: {{ .Values.config.verifyEmailDomain }}
@@ -113,5 +122,11 @@ nebula:
 {{- end }}
 {{- if .Values.nebula.sentryDsn }}
   sentryDsn: {{ .Values.nebula.sentryDsn }}
+{{- end }}
+{{- if .Values.nebula.secAttrsUpdateAfter }}
+  secAttrsUpdateAfter: {{ .Values.nebula.secAttrsUpdateAfter }}
+{{- end }}
+{{- if .Values.nebula.leasedUntilUpdateBefore }}
+  leasedUntilUpdateBefore: {{ .Values.nebula.leasedUntilUpdateBefore }}
 {{- end }}
 {{- end -}}

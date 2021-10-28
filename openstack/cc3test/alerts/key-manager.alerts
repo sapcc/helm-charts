@@ -1,0 +1,39 @@
+groups:
+- name: cc3test-keymanager.alerts
+  rules:
+  - alert: OpenstackBarbicanApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestKeyManagerApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Barbican API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/barbican/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Barbican API is down'
+      summary: 'Openstack Barbican API is down'
+
+  - alert: OpenstackBarbicanApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestKeyManagerApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Barbican API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/barbican/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Barbican API is flapping'
+      summary: 'Openstack Barbican API is flapping'

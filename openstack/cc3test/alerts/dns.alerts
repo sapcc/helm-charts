@@ -1,0 +1,172 @@
+groups:
+- name: cc3test-dns.alerts
+  rules:
+  - alert: OpenstackDesignateApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestDnsApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Designate API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/designate/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Designate API is down'
+      summary: 'Openstack Designate API is down'
+
+  - alert: OpenstackDesignateApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestDnsApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Designate API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/designate/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Designate API is flapping'
+      summary: 'Openstack Designate API is flapping'
+
+  - alert: DnsLookupBindDown
+    expr: |
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+"})
+        /
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+"})) == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'All dns lookups on bind hosts fail'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/designate/#test_bind'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'All dns lookups on bind hosts fail'
+      summary: 'All dns lookups on bind hosts fail'
+
+  - alert: DnsLookupBindFails
+    expr: |
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+"})
+        /
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_bind.+"})) > 0 < 0.2
+    for: 10m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Some dns lookups on bind servers fail'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/devops/alert/designate/#test_bind'
+    annotations:
+      description: 'Some dns lookups on bind hosts fail'
+      summary: 'Some dns lookups on bind hosts fail'
+
+  - alert: DnsLookupUnboundDown
+    expr: |
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+"})
+        /
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_unbound.+"})) == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'All dns lookups on unbound hosts fail'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/designate/#test_unbound'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'All dns lookups on unbound hosts fail'
+      summary: 'All dns lookups on unbound hosts fail'
+
+  - alert: DnsLookupUnboundFails
+    expr: |
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"estDnsLookup_unbound.+"})
+        /
+        count by (type, service) (cc3test_status{type="datapath", name=~"estDnsLookup_unbound.+"})) > 0 < 0.2
+    for: 10m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Some dns lookups on unbound hosts fail'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+      playbook: 'docs/devops/alert/designate/#test_unbound'
+    annotations:
+      description: 'Some dns lookups on unbound hosts fail'
+      summary: 'Some dns lookups on unbound hosts fail'
+
+  - alert: DnsLookupPublicDown
+    expr: |
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})
+        /
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public.+"})) == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'All dns lookups on public hosts fail'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/designate/#test_public'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'All dns lookups on public hosts fail'
+      summary: 'All dns lookups on public hosts fail'
+
+  - alert: DnsLookupPublicFails
+    expr: |
+        (sum by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"})
+        /
+        count by (type, service) (cc3test_status{type="datapath", name=~"TestDnsLookup_public_dns.+"})) >0 < 0.2
+    for: 10m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Some dns lookups on public hosts fail'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/designate/#test_public'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Some dns lookups on public hosts fail'
+      summary: 'Some dns lookups on public hosts fail'
+
+  - alert: DnsZoneTransferAXFRFails
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestDnsZone_transfer.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'AXFR zone transfer {{ $labels.name }} fails'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/designate/#test_dns_axfr'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'AXFR zone transfer {{ $labels.name }} fails'
+      summary: 'AXFR zone transfer {{ $labels.name }} fails'

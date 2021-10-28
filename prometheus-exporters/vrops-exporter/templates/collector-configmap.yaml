@@ -5,7 +5,7 @@ metadata:
 data:
   collector_config.yaml: |
     default_collectors:
-    #    - 'NSXTMmgtClusterStatsCollector'
+    #    - 'NSXTMgmtClusterStatsCollector'
         - 'ClusterStatsCollector'
         - 'ClusterPropertiesCollector'
         - 'DatastoreStatsCollector'
@@ -20,6 +20,23 @@ data:
     #    - 'VMStatsVirtualDiskCollector'
     #    - 'VMStatsMemoryCollector'
     #    - 'VMStatsDefaultCollector'
+    #  INFO - Alerts
+    #    - 'NSXTAdapterAlertCollector'
+    #    - 'NSXTMgmtClusterAlertCollector'
+    #    - 'NSXTMgmtServiceAlertCollector'
+    #    - 'NSXTMgmtNodeAlertCollector'
+    #    - 'ClusterAlertCollector'
+    #    - 'DatastoreAlertCollector'
+    #    - 'HostSystemAlertCollector'
+    #    - 'VCenterAlertCollector'
+    #    - 'VMAlertCollector'
+
+    alerts:
+      alertCriticality:
+        - 'CRITICAL'
+        - 'WARNING'
+        - 'IMMEDIATE'
+      activeOnly: True
 
     ClusterPropertiesCollector:
     # INFO - Prefix: vrops_cluster_
@@ -41,6 +58,8 @@ data:
         key: "configuration|drsConfig|targetBalance"
       - metric_suffix: "custom_attributes_info"
         key: "summary|customTag:INFO|customTagValue"
+      - metric_suffix: "configuration_drsconfiguration_affinity_rules"
+        key: "configuration|drsconfig|affinityRules"
 
     ClusterStatsCollector:
     # INFO - Prefix: vrops_cluster_
@@ -255,6 +274,8 @@ data:
         key: "cpu|usage_average"
       - metric_suffix: "cpu_usage_average_mhz"
         key: "cpu|usagemhz_average"
+      - metric_suffix: "cpu_workload_percentage"
+        key: "cpu|workload"
       - metric_suffix: "cpu_contention_ratio"
         key: "cpu|capacity_contentionPct"
       - metric_suffix: "cpu_ready_ratio"
@@ -302,6 +323,8 @@ data:
 
     VMStatsDefaultCollector:
     # INFO - Prefix: vrops_virtualmachine_
+      - metric_suffix: "health"
+        key: "badge|health"
       - metric_suffix: "disk_usage_average_kilobytes_per_second"
         key: "disk|usage_average"
       - metric_suffix: "diskspace_virtual_machine_used_gigabytes"
@@ -379,7 +402,7 @@ data:
       - metric_suffix: "guestfilesystem_percentage"
         key: "guestfilesystem:/|percentage"
 
-    NSXTMmgtClusterStatsCollector:
+    NSXTMgmtClusterStatsCollector:
     # INFO - Prefix: vrops_nsxt_mgmt_cluster_
       - metric_suffix: "sys_capacity_distributed_firewall_rules_usage_count"
         key: "System Capacity|Distributed Firewall Rules|UsageCount"
@@ -410,27 +433,7 @@ data:
       - metric_suffix: "sys_capacity_groups_based_in_ip_usage_count"
         key: "System Capacity|Groups Based on IP Sets|UsageCount"
 
-     # NSX-T 2.5
-      - metric_suffix: "sys_capacity_logical_switch_ports_usage_count"
-        key: "System Capacity|System Wide Logical Switch Ports|UsageCount"
-      - metric_suffix: "sys_capacity_logical_switch_ports_max_supported_count"
-        key: "System Capacity|System Wide Logical Switch Ports|MaxSupportedCount"
-
-     # NSX-T 2.4
-      - metric_suffix: "sys_capacity_distributed_firewall_rules_usage_count"
-        key: "System Capacity|System Wide Firewall Rules|UsageCount"
-      - metric_suffix: "sys_capacity_distributed_firewall_rules_max_supported_count"
-        key: "System Capacity|System Wide Firewall Rules|MaxSupportedCount"
-      - metric_suffix: "sys_capacity_distributed_firewall_section_max_supported_count"
-        key: "System Capacity|Firewall Sections|MaxSupportedCount"
-      - metric_suffix: "sys_capacity_distributed_firewall_section_usage_count"
-        key: "System Capacity|Firewall Sections|UsageCount"
-      - metric_suffix: "sys_capacity_nsgroups_max_supported_count"
-        key: "System Capacity|Network and Security Groups|MaxSupportedCount"
-      - metric_suffix: "sys_capacity_nsgroups_usage_count"
-        key: "System Capacity|Network and Security Groups|UsageCount"
-
-    NSXTMmgtClusterPropertiesCollector:
+    NSXTMgmtClusterPropertiesCollector:
     # INFO - Prefix: vrops_nsxt_mgmt_cluster_
       - metric_suffix: "product_version"
         key: "NSXTProductVersion"
@@ -441,16 +444,27 @@ data:
         expected: "STABLE"
         key: "ConnectivityStatus|ClusterStatus|ControllerClusterStatusProperty"
 
-    NSXTMmgtNodeStatsCollector:
+    NSXTMgmtNodeStatsCollector:
     # INFO - Prefix: vrops_nsxt_mgmt_node_
       - metric_suffix: "memory_used"
         key: "Memory|Used"
       - metric_suffix: "memory_total"
         key: "Memory|Total"
+      - metric_suffix: "filesystems_var_log_usedpercentage"
+        key: "FileSystems|/var/log|usedPercentage"
+      - metric_suffix: "filesystems_image_usedpercentage"
+        key: "FileSystems|/image|usedPercentage"
 
-    NSXTMmgtNodePropertiesCollector:
+    NSXTMgmtNodePropertiesCollector:
     # INFO - Prefix: vrops_nsxt_mgmt_node_
       - metric_suffix: "version"
         key: "NSXTManagerNodeVersion"
       - metric_suffix: "connectivity_status"
+        expected: "CONNECTED"
         key: "ConnectivityStatus|ManagerConnectivityProperty"
+        
+    NSXTTransportNodePropertiesCollector:
+    # INFO - Prefix: vrops_nsxt_transport_node_
+      - metric_suffix: "connectivity_status"
+        expected: "SUCCESS"
+        key: "ConnectivityStatus|TransportNodeState"

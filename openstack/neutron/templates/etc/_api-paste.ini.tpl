@@ -1,4 +1,3 @@
-{{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
 [composite:neutron]
 use = egg:Paste#urlmap
 /: neutronversions
@@ -16,10 +15,14 @@ use = egg:Paste#urlmap
 {{- if .Values.sentry.enabled }} raven{{- end -}}
 {{- end }}
 
+{{- define "uwsgi_pipe" -}}
+{{ if .Values.api.uwsgi }} uwsgi manhole{{- end -}}
+{{- end }}
+
 [composite:neutronapi_v2_0]
 use = call:neutron.auth:pipeline_factory
-noauth = cors healthcheck http_proxy_to_wsgi request_id  {{- include "watcher_pipe" . }} catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} extensions neutronapiapp_v2_0
-keystone = cors healthcheck http_proxy_to_wsgi request_id catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} extensions neutronapiapp_v2_0
+noauth = cors healthcheck http_proxy_to_wsgi request_id  {{- include "watcher_pipe" . }} catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} {{- include "uwsgi_pipe" . }} extensions neutronapiapp_v2_0
+keystone = cors healthcheck http_proxy_to_wsgi request_id catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "uwsgi_pipe" . }} extensions neutronapiapp_v2_0
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
@@ -49,11 +52,7 @@ paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 paste.filter_factory = neutron.api.extensions:plugin_aware_extension_middleware_factory
 
 [app:neutronversionsapp]
-{{- if $ussuri }}
 paste.app_factory = neutron.pecan_wsgi.app:versions_factory
-{{- else }}
-paste.app_factory = neutron.api.versions:Versions.factory
-{{ end }}
 
 [app:neutronapiapp_v2_0]
 paste.app_factory = neutron.api.v2.router:APIRouter.factory
@@ -64,13 +63,16 @@ pipeline = http_proxy_to_wsgi healthcheck neutronversionsapp
 [filter:osprofiler]
 paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
 
-{{- if .Values.sentry.enabled }}
+[filter:debug]
+paste.filter_factory = oslo_middleware:Debug.factory
+
+{{ if .Values.sentry.enabled -}}
 [filter:raven]
 use = egg:raven#raven
 level = ERROR
 {{- end }}
 
-{{ if .Values.audit.enabled }}
+{{ if .Values.audit.enabled -}}
 [filter:audit]
 paste.filter_factory = auditmiddleware:filter_factory
 audit_map_file = /etc/neutron/neutron_audit_map.yaml
@@ -79,9 +81,17 @@ record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 {{- end }}
 
-{{ if .Values.watcher.enabled }}
+{{ if .Values.watcher.enabled -}}
 [filter:watcher]
 use = egg:watcher-middleware#watcher
 service_type = network
 config_file = /etc/neutron/watcher.yaml
+{{- end }}
+
+{{ if .Values.api.uwsgi -}}
+[filter:manhole]
+paste.filter_factory = manhole_middleware:Manhole.factory
+
+[filter:uwsgi]
+paste.filter_factory = uwsgi_middleware:Uwsgi.factory
 {{- end }}

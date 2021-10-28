@@ -128,6 +128,11 @@ nginx-ingress:
             default "anonymous";
             ~CN=(?<CN>[^/,\"]+) $CN;
         }
+
+        # Ensure there is a global_request_id for logging
+        map '' $global_request_id {
+            default '-';
+        }
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
       proxy-send-timeout: "300"
@@ -253,6 +258,11 @@ nginx-ingress-external:
             default "anonymous";
             ~CN=(?<CN>[^/,\"]+) $CN;
         }
+
+        # Ensure there is a global_request_id for logging
+        map '' $global_request_id {
+            default '-';
+        }
       location-snippet: |
         proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
       proxy-send-timeout: "300"
@@ -318,12 +328,10 @@ nginx-ingress-external:
                   values:
                     - default-backend
 
-pull-secret-injector:
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-
 # For now enabled via regional values.
 vertical-pod-autoscaler:
+  enabled: false
+
+# For now enabled via regional values.
+maintenance-controller:
   enabled: false

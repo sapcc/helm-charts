@@ -15,11 +15,11 @@ data:
         <dt>Where are checks defined? How can I add or modifiy them?</dt>
         <dd>Each check consists of a constraint template in the <a href="https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper/templates"><code>gatekeeper</code> chart</a>, one or more constraint configurations in the <a href="https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper-config/templates"><code>gatekeeper-config</code> chart</a>, and a documentation string in the <a href="https://github.com/sapcc/helm-charts/blob/master/system/doop-central/templates/configmap.yaml">config for this dashboard</a>. For how to write constraint templates and configs, check out <a href="https://open-policy-agent.github.io/gatekeeper/website/docs/howto/">this guide from the Gatekeeper documentation</a>.</dd>
         {{- if .Values.kubernikus }}
-        <dt>This dashboard only covers the k-clusters. Where is everything else?</dt>
+        <dt>This dashboard only covers the Kubernikus-related clusters. Where is everything else?</dt>
         <dd>All other clusters report into the main dashboard at <a href="https://doop.global.{{ $tld }}">doop.global.{{ $tld }}</a>.</dd>
         {{- else }}
-        <dt>Where are the k-clusters?</dt>
-        <dd>The k-clusters report into a separate dashboard at <a href="https://doop-kubernikus.global.{{ $tld }}">doop-kubernikus.global.{{ $tld }}</a>.</dd>
+        <dt>Where are the a/k/v-clusters?</dt>
+        <dd>The Kubernikus-related clusters report into a separate dashboard at <a href="https://doop-kubernikus.global.{{ $tld }}">doop-kubernikus.global.{{ $tld }}</a>, in order to keep this dashboard at a more manageable size.</dd>
         {{- end }}
       </dl>
     GkDeprecatedApiVersions: |
@@ -54,7 +54,7 @@ data:
         <dt>Why is this a problem?</dt>
         <dd>Docker Hub has rather severe rate limits for image pulls. If we need to pull several images at once, e.g. to recover from a region-wide outage, the recovery may be significantly slowed down by the rate limiting.</p>
         <dt>How to fix?</dt>
-        <dd>We have set up a Docker Hub mirror at <code>keppel.$REGION.cloud.sap/ccloud-dockerhub-mirror</code>. The regional mirror is defined in globals.yaml and can be referenced as <code>$.Values.dockerHubMirror</code> in most Helm charts (<a href="https://github.com/sapcc/helm-charts/blob/409aa9940ecb600dafc0f9a20c973566af9eaf1f/openstack/backup-replication/templates/statsd-deployment.yaml#L29">example</a>).<br><br>If a particular image has not been mirrored yet, you need to <code>docker pull</code> it once from eu-de-1 with your logged-in Docker client. Afterwards, the image can be pulled from all regions without login.</dd>
+        <dd>We have set up a Docker Hub mirror at <code>keppel.$REGION.cloud.sap/ccloud-dockerhub-mirror</code>. The regional mirror is defined in globals.yaml and can be referenced as <code>$.Values.global.dockerHubMirror</code> in most Helm charts (<a href="https://github.com/sapcc/helm-charts/blob/409aa9940ecb600dafc0f9a20c973566af9eaf1f/openstack/backup-replication/templates/statsd-deployment.yaml#L29">example</a>).<br><br>If a particular image has not been mirrored yet, you need to <code>docker pull</code> it once from eu-de-1 with your logged-in Docker client. Afterwards, the image can be pulled from all regions without login.</dd>
         <dt>What about circular dependencies?</dt>
         <dd>If your pod pulls an image from Keppel, but Keppel needs that pod up and running to work, that's probably not a good idea. Get in touch with Stefan Majewsky and we'll figure out how to proceed.</dd>
       </dl>
@@ -65,4 +65,26 @@ data:
         <dd>Without the <code>severity</code> and <code>tier</code> label, alerts cannot be routed to the right Slack channels. Without the <code>summary</code> and <code>description</code> annotations, operators will not know how to fix the alert.</dd>
         <dt>How to fix?</dt>
         <dd>Add the missing labels and annotations, as reported. Note that <code>severity</code> only accepts the values <code>critical</code>, <code>warning</code> and <code>info</code>.</dd>
+      </dl>
+    GkRegionValueMissing: |
+      <p>This check finds Helm releases that do not set <code>.Values.global.region</code>.</p>
+      <dl>
+        <dt>Why is this a problem?</dt>
+        <dd>We had some incidents where configuration for one region was accidentally deployed in a different region. We want to introduce a check that forbids such deployments, but for this check to be effective, we must be able to identify which region a Helm release belongs to.</dd>
+        <dt>How to fix?</dt>
+        <dd>Amend your deployment process to include the values file <code>$REGION/values/globals.yaml</code> from the cc/secrets repo in your <code>helm upgrade</code> invocation. If you are using the shared Helm tasks, this is done by adjusting the <code>VALUES</code> parameter to include <code>local:globals</code>.</dd>
+      </dl>
+    GkResourceLimits: |
+      <p>This check finds containers that do not have CPU and memory limits configured.</p>
+      <dl>
+        <dt>Why is this a problem?</dt>
+        <dd>Such containers could use an unbounded amount of resources (for example, because of a memory leak). Those resources would then not be available to other (potentially more important) containers running on the same node. We have already had API outages because of this.</dd>
+        <dt>How to fix?</dt>
+        <dd>Configure requests and limits for &quot;cpu&quot; and &quot;memory&quot; as described in <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">this article</a>. Choose values based on historical usage, by looking at the <code>container_cpu_usage_seconds_total</code> and <code>container_memory_working_set_bytes</code> metrics in prometheus-kubernetes. The Grafana dashboard <a href="https://grafana.eu-de-1.cloud.sap/d/kubernetes-container-resources/kubernetes-container-resources">Container Resources</a> shows these metrics in the &quot;CPU Usage&quot; and &quot;Memory Usage&quot; panels. <strong>Set the memory request equal to the memory limit to avoid unexpected scheduling behavior.</strong> For CPU, request and limit can and should diverge: The request represents the baseline load, the limit encompasses all expected spikes.</dd>
+      </dl>
+    GkVulnerableImages: |
+      <p>This check finds containers whose image contains known vulnerabilities.</p>
+      <dl>
+        <dt>Where to find vulnerability reports?</dt>
+        <dd>Copy-paste the path part of the image (e.g. &quot;keppel.eu-de-1.cloud.sap/ccloud/limes&quot;) into your browser address bar. This opens the image list for that repo in Elektra's Keppel UI. Find the relevant image (look for a vulnerability status other than &quot;Clean&quot;) and open its details view to find the vulnerabilities, down near the image layers where they were introduced.</dd>
       </dl>

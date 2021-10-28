@@ -56,6 +56,10 @@ connection = {{ include "db_url_mysql" . }}
 # Topic (i.e. Queue) Name
 topic = f5_prov
 
+[oslo_middleware]
+# HTTPProxyToWSGI middleware enabled
+enable_proxy_headers_parsing = true
+
 [certificates]
 endpoint_type = internal
 region_name = {{.Values.global.region}}

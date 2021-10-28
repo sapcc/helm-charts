@@ -161,30 +161,13 @@ unique_last_password_count = 5
 disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inactive }}
 {{- end }}
 
-{{- if eq .Values.release "rocky" }}
-[oslo_messaging_rabbit]
-rabbit_userid = {{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}
-rabbit_password = {{ .Values.rabbitmq.users.default.password }}
-{{- if .Values.rabbitmq.host }}
-rabbit_host = {{ .Values.rabbitmq.host }}
-{{ else }}
-rabbit_host = {{ include "rabbitmq_host" . }}
-{{- end }}
-rabbit_port = {{ .Values.rabbitmq.port | default 5672 }}
-rabbit_virtual_host = {{ .Values.rabbitmq.virtual_host | default "/" }}
-rabbit_ha_queues = {{ .Values.rabbitmq.ha_queues | default "false" }}
-{{- end }}
-
 [oslo_messaging_notifications]
-{{- if ne .Values.release "rocky" }}
 {{- if .Values.rabbitmq.host }}
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
 {{ else }}
 transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
 {{- end }}
-{{ else }}
 driver = messaging
-{{- end }}
 
 [oslo_middleware]
 enable_proxy_headers_parsing = true

@@ -1,0 +1,16 @@
+groups:
+- name: redfish-exporter.alerts
+  rules:      
+  - alert: RedfishExporterScrapeWarn
+    expr: count(avg_over_time(scrape_duration_seconds{job=~"redfish.+"}[1h]) > 200)
+    for: 10m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      no_alert_on_absence: "true"
+      context: "{{ $labels.job }}"
+      meta: "Redfish Exporter has high scrape duration. Add a replica to the redfish-exporter deployment."
+    annotations:
+      description: "Redfish Exporter has high scrape duration. Add a replica to the redfish-exporter deployment."
+      summary: "Redfish Exporter has high scrape duration"

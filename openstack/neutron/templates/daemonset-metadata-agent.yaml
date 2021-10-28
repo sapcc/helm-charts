@@ -25,7 +25,6 @@ spec:
         name: neutron-metadata-agent
 {{ tuple . "neutron" "metadata-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
-{{- if $.Values.agent.apod | default false }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -33,7 +32,6 @@ spec:
             - matchExpressions:
               - key: kubernetes.cloud.sap/apod
                 operator: DoesNotExist
-{{- end }}
       nodeSelector:
         multus: bond1
       containers:
@@ -56,7 +54,7 @@ spec:
                   fieldPath: spec.nodeName
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/hostname.conf", "--agent-type", "Metadata agent"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/run/hostname.conf", "--agent-type", "Metadata agent"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10

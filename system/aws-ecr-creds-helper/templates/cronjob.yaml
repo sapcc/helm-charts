@@ -1,0 +1,55 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: aws-ecr-creds-helper
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      name: aws-ecr-creds-helper
+      labels:
+        cronjob: aws-ecr-creds-helper
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          name: aws-ecr-creds-helper
+          labels: 
+            cronjob: aws-ecr-creds-helper
+        spec:
+          serviceAccountName: aws-ecr-creds-helper
+          terminationGracePeriodSeconds: 0
+          restartPolicy: Never
+          containers:
+          - name: creds
+            image: "{{ .Values.global.registry}}/{{ .Values.images.creds.image }}:{{ .Values.images.creds.tag }}"
+            imagePullPolicy: IfNotPresent
+            command:
+              - /script/creds.sh
+            env:
+            - name: TARGET_NAMESPACES
+              value: {{ join " " .Values.credsHelper.namespaces }}
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  key: region
+                  name: aws-ecr-creds-helper
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secret-access-key
+                  name: aws-ecr-creds-helper
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: access-key-id
+                  name: aws-ecr-creds-helper
+            volumeMounts:
+            - name: script
+              mountPath: /script
+          volumes:
+          - name: script
+            configMap:
+              name: aws-ecr-creds-helper
+              defaultMode: 0744
+  schedule: "{{ .Values.job.schedule }}"

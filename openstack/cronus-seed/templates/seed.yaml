@@ -57,11 +57,21 @@ spec:
           role: keymanager_admin # to manage Barbican secrets
         - user: cronus@Default
           role: email_admin # for monitoring and system accounts
+        - user: cronus@Default
+          role: cloud_identity_viewer # for keystone effective role assignment list
         swift:
           enabled: true
           containers:
           # allow a user who has a keymanager_admin role in the project to read and write to a swift container
           - name: cronus_usage_cache
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: email-quarantine
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: email-error
             metadata:
               read: keymanager_admin
               write: keymanager_admin

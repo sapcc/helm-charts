@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-octavia-pvclaim
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      {{- $region := .Values.global.region | required ".Values.global.region missing" }}
+      storage: {{ if $region | regexMatch "^(?:ap-sa-2)$" -}} 50Gi {{- else -}} 10Gi {{- end }}

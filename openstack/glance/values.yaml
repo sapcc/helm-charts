@@ -46,22 +46,26 @@ upgrades:
 statsd:
   resources:
     enabled: true
+    limits:
+      cpu: 250m
+      memory: 128Mi
     requests:
-      cpu: 50m
-      memory: 32Mi
+      cpu: 100m
+      memory: 64Mi
   image:
     repository:  prom/statsd-exporter
     tag: v0.20.1
+
 api:
   debug: false
   resources:
     enabled: true
     limits:
-      memory: 2Gi
-      cpu: 500m
+      memory: 4Gi
+      cpu: 3
     requests:
       memory: 2Gi
-      cpu: 300m
+      cpu: 1
 
 registry:
   debug: false
@@ -116,6 +120,15 @@ mariadb:
   initdb_configmap: glance-initdb
   persistence_claim:
     name: db-glance-pvclaim
+  metrics:
+    resources:
+      enabled: true
+      limits:
+        cpu: 250m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 64Mi
 
 mysql_metrics:
   db_name: glance
@@ -281,3 +294,10 @@ sapcc_rate_limit:
   enabled: true
   persistence:
     enabled: false
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

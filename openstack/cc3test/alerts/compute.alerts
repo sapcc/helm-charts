@@ -1,0 +1,94 @@
+groups:
+- name: cc3test-compute.alerts
+  rules:
+  - alert: OpenstackNovaApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestComputeApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Nova API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/nova/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Nova API is down'
+      summary: 'Openstack Nova API is down'
+
+  - alert: OpenstackNovaApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestComputeApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Nova API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/nova/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Nova API is flapping'
+      summary: 'Openstack Nova API is flapping'
+
+- name: cc3test-vcenter.alerts
+  rules:
+  - alert: VcenterApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestVcenterApi_.+"
+        } == 0
+    for: 20m
+    labels:
+      severity: critical
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'VMWare vcenter API is down: {{ $labels.name }}'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/vcenter/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'VMWare vcenter API is down'
+      summary: 'VMWare vcenter API is down'
+
+  - alert: VcenterApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestVcenterApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: vmware
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'VMWare vcenter API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/vcenter/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'VMWare vcenter API is flapping'
+      summary: 'VMWare vcenter API is flapping'
+
+  - alert: OpenstackComputeCanaryCreateServerDown
+    expr: cc3test_status{service="nova",name=~"TestComputeServer_create_server.+"} == 0
+    for: 3h
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: cc3test-overview?var-service={{ $labels.service }}
+      meta: 'Canary {{ $labels.service }} {{ $labels.name }} is down for 3 hour. See Sentry for details'
+      playbook: 'docs/devops/alert/{{ $labels.service }}/#test_create_server'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.name }} is down for 3 hour. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.name }} is down'

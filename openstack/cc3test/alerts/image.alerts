@@ -1,0 +1,39 @@
+groups:
+- name: cc3test-image.alerts
+  rules:
+  - alert: OpenstackGlanceApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestImageApi_.+"
+        } == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Glance API is down'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/glance/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Glance API is down'
+      summary: 'Openstack Glance API is down'
+
+  - alert: OpenstackGlanceApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestImageApi_.+"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Glance API is flapping'
+      dashboard: 'cc3test-overview?var-service={{ $labels.service }}'
+      playbook: 'docs/devops/alert/glance/#test_api'
+      report: 'cc3test/admin/object-storage/containers/cc3test/list/reports/{{ $labels.type }}'
+    annotations:
+      description: 'Openstack Glance API is flapping'
+      summary: 'Openstack Glance API is flapping'
