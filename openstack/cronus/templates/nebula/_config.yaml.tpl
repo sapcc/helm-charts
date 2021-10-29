@@ -130,11 +130,11 @@ nebula:
   leasedUntilUpdateBefore: {{ .Values.nebula.leasedUntilUpdateBefore }}
 {{- end }}
 {{- end -}}
-{{- if .Values.notifier.enabled }}
+{{- if and .Values.secAttNotifier.enabled .Values.notifier.enabled }}
   notifier:
-    host: cronus.{{ .Values.config.keystone.region }}.cloud.sap:587
-    smtpUsername: {{ .Values.simulator.sesUsername }}
-    smtpPassword: {{ .Values.simulator.smtpPassword }}
+    host: {{ .Values.secAttNotifier.cronusEndpoint | replace "https://" "" }}:587
+    smtpUsername: {{ .Values.secAttNotifier.awsAccess }}
+    smtpPassword: {{ .Values.secAttNotifier.awsSecret }}
     sender: {{ .Values.secAttNotifier.sourceEmail }}
     recipients:
   {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
