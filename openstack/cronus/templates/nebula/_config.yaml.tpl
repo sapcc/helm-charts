@@ -130,12 +130,12 @@ nebula:
   leasedUntilUpdateBefore: {{ .Values.nebula.leasedUntilUpdateBefore }}
 {{- end }}
 {{- end -}}
-{{- if and .Values.secAttNotifier.enabled .Values.notifier.enabled }}
+{{- if .Values.notifier.enabled }}
   notifier:
-    host: {{ .Values.secAttNotifier.cronusEndpoint | replace "https://" "" }}:587
-    smtpUsername: {{ .Values.secAttNotifier.awsAccess }}
-    smtpPassword: {{ .Values.secAttNotifier.awsSecret }}
-    sender: {{ .Values.secAttNotifier.sourceEmail }}
+    host: {{ .Values.notifier.host }}
+    smtpUsername: {{ .Values.notifier.smtpUsername }}
+    smtpPassword: {{ .Values.notifier.smtpPassword }}
+    sender: {{ .Values.notifier.sender }}
     recipients:
   {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
       - {{ $value }}
