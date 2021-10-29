@@ -142,5 +142,5 @@ nebula:
   {{- end }}
     activationTitle: {{ .Values.notifier.activationTitle | default .Values.global.notifier.activationTitle }}
     activationBody: |
-  {{ .Values.notifier.activationBody | default .Values.global.notifier.activationBody | indent 4 }}
+{{ .Values.notifier.activationBody | default .Values.global.notifier.activationBody | indent 6 }}
 {{- end -}}
