@@ -131,12 +131,12 @@ nebula:
 {{- end }}
 {{- end -}}
 {{- if .Values.notifier.enabled }}
-  notifier
+  notifier:
     host: cronus.{{ .Values.config.keystone.region }}.cloud.sap:587
     smtpUsername: {{ .Values.simulator.sesUsername }}
     smtpPassword: {{ .Values.simulator.smtpPassword }}
     sender: {{ .Values.secAttNotifier.sourceEmail }}
-    recipients: 
+    recipients:
   {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
       - {{ $value }}
   {{- end }}
