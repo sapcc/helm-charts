@@ -27,7 +27,7 @@ spec:
             secretName: mosquitto
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{.Values.image.tag }}"
         command: [mosquitto, -c, /mosquitto/mosquitto.conf]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
@@ -42,7 +42,7 @@ spec:
             readOnly: true
 {{- if .Values.metrics.enabled }}
       - name: metrics
-        image: "{{ .Values.metrics.image.repository }}:{{ .Values.metrics.image.tag }}"
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.metrics.image.repository }}:{{.Values.metrics.image.tag }}"
         imagePullPolicy: {{ .Values.metrics.image.pullPolicy }}
         ports:
         - containerPort: {{.Values.metrics.port}}
