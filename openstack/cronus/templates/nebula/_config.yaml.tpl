@@ -130,17 +130,17 @@ nebula:
   leasedUntilUpdateBefore: {{ .Values.nebula.leasedUntilUpdateBefore }}
 {{- end }}
 {{- end -}}
-{{- if or .Values.global.notifier.enabled .Values.notifier.enabled }}
+{{- if .Values.notifier.enabled }}
   notifier:
-    host: {{ .Values.notifier.host | default .Values.global.notifier.host }}
-    smtpUsername: {{ .Values.notifier.smtpUsername | default .Values.global.notifier.smtpUsername }}
-    smtpPassword: {{ .Values.notifier.smtpPassword | default .Values.global.notifier.smtpPassword }}
-    sender: {{ .Values.notifier.sender | default .Values.global.notifier.sender }}
+    host: {{ .Values.notifier.host }}
+    smtpUsername: {{ .Values.notifier.smtpUsername }}
+    smtpPassword: {{ .Values.notifier.smtpPassword }}
+    sender: {{ .Values.notifier.sender }}
     recipients:
   {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
       - {{ $value }}
   {{- end }}
-    activationTitle: {{ .Values.notifier.activationTitle | default .Values.global.notifier.activationTitle }}
+    activationTitle: {{ .Values.notifier.activationTitle }}
     activationBody: |
-{{ .Values.notifier.activationBody | default .Values.global.notifier.activationBody | indent 6 }}
+{{ .Values.notifier.activationBody | indent 6 }}
 {{- end -}}
