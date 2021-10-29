@@ -130,3 +130,17 @@ nebula:
   leasedUntilUpdateBefore: {{ .Values.nebula.leasedUntilUpdateBefore }}
 {{- end }}
 {{- end -}}
+{{- if .Values.notifier.enabled }}
+  notifier
+    host: cronus.{{ .Values.config.keystone.region }}.cloud.sap:587
+    smtpUsername: {{ .Values.simulator.sesUsername }}
+    smtpPassword: {{ .Values.simulator.smtpPassword }}
+    sender: {{ .Values.secAttNotifier.sourceEmail }}
+    recipients: 
+  {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
+      - {{ $value }}
+  {{- end }}
+    activationTitle: {{ .Values.notifier.activationTitle }}
+    activationBody: |
+  {{ .Values.notifier.activationBody | indent 4 }}
+{{- end -}}
