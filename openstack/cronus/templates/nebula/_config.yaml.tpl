@@ -129,7 +129,6 @@ nebula:
 {{- if .Values.nebula.leasedUntilUpdateBefore }}
   leasedUntilUpdateBefore: {{ .Values.nebula.leasedUntilUpdateBefore }}
 {{- end }}
-{{- end -}}
 {{- if .Values.notifier.enabled }}
   notifier:
     host: {{ .Values.notifier.host }}
@@ -143,4 +142,15 @@ nebula:
     activationTitle: {{ .Values.notifier.activationTitle }}
     activationBody: |
 {{ .Values.notifier.activationBody | indent 6 }}
+{{- end }}
+{{- if .Values.pki.enabled }}
+  pki:
+    clientID: {{ .Values.pki.clientID }}
+    accountID: {{ .Values.pki.accountID }}
+    clientSecret: {{ .Values.pki.clientSecret }}
+    authEndpoint: {{ .Values.pki.authEndpoint }}
+    enrollEndpoint: {{ .Values.pki.enrollEndpoint }}
+    subjectPattern: {{ .Values.pki.subjectPattern }}
+    validityDays: {{ .Values.pki.validityDays }}
+{{- end }}
 {{- end -}}
