@@ -239,10 +239,12 @@ config:
     warmup_projects_cache: role:resource_service
   nebulaPolicy:
     project_scope: project_id:%(project_id)s and (role:email_admin or role:cloud_email_admin)
+    project_client_scope: project_id:%(project_id)s and role:email_user
     domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:cloud_email_admin)
     cluster_scope: (project_domain_name:ccadmin and project_name:cloud_admin) or role:cloud_email_admin
     cluster_or_domain_scope: rule:cluster_scope or rule:domain_scope
     nebula:admin: rule:project_scope or rule:cluster_or_domain_scope
+    nebula:client: rule:project_client_scope or rule:project_scope or rule:cluster_or_domain_scope
     nebula:cloud_admin: rule:cluster_or_domain_scope
   cronusAuditSink:
     internalQueueSize: 20
@@ -391,6 +393,16 @@ notifier:
   activationTitle: test
   activationBody: |
     test
+
+pki:
+  enabled: false
+  clientID: test
+  accountID: test
+  clientSecret: test
+  authEndpoint: test
+  enrollEndpoint: test
+  subjectPattern: test
+  validityDays: 7
 
 secAttNotifier:
   sourceEmail: test
