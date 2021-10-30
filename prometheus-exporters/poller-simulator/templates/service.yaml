@@ -1,0 +1,19 @@
+{{- if .Values.simulator.poller.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: poller-simulator
+  labels:
+    app: poller-simulator
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.simulator.poller.prometheusPort | quote}}
+    prometheus.io/targets: {{ .Values.simulator.poller.alerts.prometheus }}
+spec:
+  type: {{ .Values.simulator.poller.service.type }}
+  ports:
+    - name: metrics
+      port: {{ .Values.simulator.poller.prometheusPort }}
+      targetPort: {{ .Values.simulator.poller.prometheusPort }}
+      protocol: TCP
+{{- end -}}
