@@ -1,0 +1,80 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: gkhighcpurequest
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkHighCPURequest
+      validation:
+        openAPIV3Schema:
+          properties: {}
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package highcpurequest
+
+        # We report only one violation for each offending pod, and we report on the
+        # deployment/daemonset level, if possible, to avoid useless duplication of
+        # violations.
+
+        max_cpu := 6
+
+        canonify_cpu(orig) = new {
+          is_number(orig)
+          new := orig
+        }
+        canonify_cpu(orig) = new {
+          not is_number(orig)
+          not endswith(orig, "m")
+          regex.match(`^[0-9]*\.?[0-9]+$`, orig)
+          new := to_number(orig)
+        }
+        canonify_cpu(orig) = new {
+          not is_number(orig)
+          endswith(orig, "m")
+          new := to_number(replace(orig, "m", "")) / 1000
+        }
+
+        high_cpu_request_on_pod[container.name] {
+          container := input.review.object.spec.containers[_]
+          container.resources.requests.cpu
+          cpu := canonify_cpu(container.resources.requests.cpu)
+          cpu > max_cpu
+        }
+
+        high_cpu_request_on_pod_template[container.name] {
+          container := input.review.object.spec.template.spec.containers[_]
+          container.resources.requests.cpu
+          cpu := canonify_cpu(container.resources.requests.cpu)
+          cpu > max_cpu
+        }
+
+        pod_owners["ReplicaSet"]
+        pod_owners["DaemonSet"]
+        pod_owners["StatefulSet"]
+
+        pod_belongs_to[kind] {
+          ref := input.review.object.metadata.ownerReferences[_]
+          kind := ref.kind
+          kind == pod_owners[_]
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.kind == "Pod"
+          count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
+          count(high_cpu_request_on_pod) > 0
+          msg := "high cpu request on some or all containers"
+        }
+
+        violation_owners["Deployment"]
+        violation_owners["DaemonSet"]
+        violation_owners["StatefulSet"]
+
+        violation[{"msg": msg}] {
+          input.review.object.kind == violation_owners[_]
+          count(high_cpu_request_on_pod_template) > 0
+          msg := "high cpu request on some or all containers"
+        }
