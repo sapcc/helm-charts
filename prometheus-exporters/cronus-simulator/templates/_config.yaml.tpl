@@ -1,7 +1,9 @@
 {{- if .Values.simulator.enabled -}}
 simulator:
+  prometheusPort: {{ .Values.simulator.prometheusPort }}
   testsJsonPath: {{ .Values.simulator.testsJsonPath }}
   region: {{ .Values.config.keystone.region }}
+  enableTimer: {{ .Values.simulator.enableTimer }}
   smtpHost: {{ .Values.simulator.smtpHost }}
   smtpPort: {{ .Values.simulator.smtpPort }}
   sesUsername: {{ .Values.simulator.sesUsername }}
@@ -26,6 +28,10 @@ simulator:
   cronus: {{ .Values.simulator.cronus }}
   nebula: {{ .Values.simulator.nebula }}
   delayTimeSeconds: {{ .Values.simulator.delayTimeSeconds }}
+  tests:
+  {{- range $key, $value := .Values.simulator.tests }}
+    - {{ $value }}
+  {{- end }}
   keystone:
       authUrl: {{ .Values.config.keystone.authUrl }}
       endpointType: {{ .Values.config.keystone.endpointType }}

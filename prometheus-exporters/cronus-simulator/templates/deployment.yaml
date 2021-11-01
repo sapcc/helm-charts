@@ -33,6 +33,9 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include "cronus-simulator/templates/_config.yaml.tpl" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.simulator.prometheusPort | quote}}
+        prometheus.io/targets: kubernetes
       labels:
         app.kubernetes.io/name: cronus-simulator
         app.kubernetes.io/instance: cronus-simulator
@@ -48,14 +51,12 @@ spec:
             - name: cronus-simulator-config
               mountPath: "/cronus-simulator/config.yaml"
               subPath: config.yaml
-            - name: cronus-simulator-tests
-              mountPath: "/cronus-simulator/tests.json"
-              subPath: tests.json
+          ports:
+            - name: http
+              containerPort: {{ .Values.simulator.prometheusPort }}
+              protocol: TCP
       volumes:
         - name: cronus-simulator-config
           secret:
             secretName: cronus-simulator-config
-        - name: cronus-simulator-tests
-          configMap:
-            name: cronus-simulator-tests
 {{ end -}}
