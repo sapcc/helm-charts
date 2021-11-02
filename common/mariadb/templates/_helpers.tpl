@@ -34,9 +34,9 @@
 
 {{- define "dockerHubMirror" -}}
 {{- if .Values.use_alternate_registry -}}
-{{- .Values.global.dockerHubMirrorAlternateRegion -}}
+{{- .Values.global.dockerHubMirrorAlternateRegion | required " .Values.global.dockerHubMirrorAlternateRegion is missing" -}}
 {{- else -}}
-{{- .Values.global.dockerHubMirror -}}
+{{- .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" -}}
 {{- end -}}
 {{- end -}}
 
