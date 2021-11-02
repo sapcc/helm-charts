@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: optimization-service
+  labels:
+    app: optimization-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.optimizationService.prometheusClientPort }}"
+spec:
+  type: NodePort
+  ports:
+    - targetPort: 80
+      port: 80
+  selector:
+    app: optimization-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: optimization-service
+  labels:
+    app: optimization-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: optimization-service-deployment
+  labels:
+    app: optimization-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: optimization-service
+  template:
+    metadata:
+      labels:
+        app: optimization-service
+    spec:
+      containers:
+        - name: optimization-service
+          image: {{ .Values.image.registry }}/cerebro/optimization-service:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /api/health/
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 20
+          env:
+            - name: PROMETHEUS_CLIENT_PORT
+              value: "{{ .Values.dcStateService.prometheusClientPort }}"
+
+            # Parameters passed as a list of name/value pairs
+            # Use squote (=single quotes) to quote values:
+            # A value may be an array of strings. Each string in the array must be surrounded by double quotes
+            {{- range $param := $.Values.optimizationService.envVariables }}
+            - name: {{ required "$param.name missing" $param.name }}
+              value: {{ required "$param.value missing" $param.value | squote }}
+            {{- end }}
+
+            # Env variables which use secrets specific to optimization-service
+            {{- range $param := $.Values.optimizationService.envVariablesFromSecrets }}
+            - name: {{ required "$param.envVariableName missing" $param.envVariableName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "$param.valueFrom.secretKeyRef.name missing" $param.valueFrom.secretKeyRef.name }}
+                  key: {{ required "$param.valueFrom.secretKeyRef.key missing" $param.valueFrom.secretKeyRef.key }}
+            {{- end }}
+
+            # Env variables which use secrets for all microservices
+            {{- range $param := $.Values.secrets.envVariables }}
+            - name: {{ required "$param.envVariableName missing" $param.envVariableName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "$param.valueFrom.secretKeyRef.name missing" $param.valueFrom.secretKeyRef.name }}
+                  key: {{ required "$param.valueFrom.secretKeyRef.key missing" $param.valueFrom.secretKeyRef.key }}
+            {{- end }}
+
+          envFrom:
+            - configMapRef:
+                name: optimization-service
