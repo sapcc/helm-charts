@@ -10,6 +10,7 @@ backup:
   incremental_backup_in_minutes: {{ .common.incremental_backup_in_minutes }}
   backup_dir: {{ .common.backup_dir }}
   enable_init_restore: {{ .common.enable_init_restore }}
+  disable_binlog_purge_on_rotate: true
 database:
   type: "mariadb"
   user: root
