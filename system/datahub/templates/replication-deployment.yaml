@@ -28,10 +28,10 @@ spec:
       annotations:
         {{- $data := dict "common" $common "backup" $backup "mariadb" $.Values.mariadb "root" $ }}
         checksum/config: {{ include "replication.configmap" $data | sha256sum }}
-{{- if $backup.metrics.enabled }}
+{{- if $common.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "8082"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $common.alerts.prometheus | quote }}
 {{- end }}
     spec:
       affinity:
