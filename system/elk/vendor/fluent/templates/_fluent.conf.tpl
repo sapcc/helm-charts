@@ -124,7 +124,7 @@
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}] "%{WORD:method} %{IMAGE_METHOD:path}%{GREEDYDATA}1" %{NUMBER:response} %{GREEDYDATA}
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} \"(?<referer>[^\"]{,255}).*?" "%{GREEDYDATA:user_agent}" %{GREEDYDATA} \[%{NOTSPACE:service}\] %{NOTSPACE:target} %{NUMBER} %{NUMBER:response_time} %{NOTSPACE} %{NOTSPACE:requestid}
     custom_pattern_path /fluent-bin/pattern
   </parse>
 </filter>
