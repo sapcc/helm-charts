@@ -64,6 +64,7 @@ yellowPages:
     - "glance"
   requiredTables:
     - "datahub.cc_billing"
+  views_enabled: false
   views:
     - name: openstack_ips
       definition: "create or replace table datahub.openstack_ips
@@ -99,36 +100,6 @@ yellowPages:
                      left join neutron.ports fixed_port on f.fixed_port_id = fixed_port.id
                      left join neutron.routers r on r.id = f.router_id
                      left join datahub.nova_instances i on i.uuid = fixed_port.device_id;"
-    - name: openstack_ips2
-      definition: "create or replace view datahub.openstack_ips2
-          as select  ip.ip_address AS ip_address,
-          port.id AS port,
-          p.name AS project,
-          p.id AS project_id,
-          d.name AS domain,
-          n.name AS network,
-          n.id AS network_id,
-          s.name AS subnet,
-          s.id AS subnet_id,
-          sn.name AS subnetpool,
-          sn.id AS subnetpool_id,
-          r.id AS router_id,
-          r.name AS router,
-          port.device_id as instance_id,
-          port.device_owner as owner,
-          i.display_name as instance_name,
-          i.host as host,
-          i.availability_zone as availability_zone
-          from neutron.ipallocations ip
-              left join neutron.ports port on ip.port_id = port.id
-              left join keystone.project p on port.project_id = p.id
-              left join keystone.project d on p.domain_id = d.id
-              left join neutron.networks n on ip.network_id = n.id
-              left join neutron.subnets s on ip.subnet_id = s.id
-              left join neutron.subnetpools sn on s.subnetpool_id = sn.id
-              left join neutron.routerports rp on port.id = rp.port_id
-              left join neutron.routers r on r.id = rp.router_id
-              left join datahub.nova_instances i on i.uuid = port.device_id;"
     - name: glance_images
       definition: "create or replace table datahub.glance_images
                   ( id varchar(36) NOT NULL,
