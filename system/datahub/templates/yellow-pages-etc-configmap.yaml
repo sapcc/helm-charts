@@ -14,11 +14,13 @@ data:
     billing:
       sync_cron_schedule: "0 */6 * * *"
       api_host: {{ required "Missing required global billing API endpoint" .Values.yellowPages.billingApiHost}}
+      region: {{ .Values.global.region }}
     db:
       user: "root"
       host: datahubdb-mariadb.datahub
       port: 3306
       ronly_user: "ronly"
+{{- if .Values.views_enabled -}}
       views:
   {{- if or ( .Values.yellowPages.requiredDatabases ) ( .Values.yellowPages.extraRequiredDatabases)}}
         required_databases:
@@ -47,6 +49,7 @@ data:
 {{ toYaml $.Values.yellowPages.extraViews | indent 10 }}
     {{- end }}
   {{ end }}
+{{- end }}
     metrics:
       port: {{ .Values.yellowPages.metrics.port }}
       path: {{ .Values.yellowPages.metrics.path }}
