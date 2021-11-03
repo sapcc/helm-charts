@@ -1,3 +1,4 @@
+{{- $values := .Values }}
 {{- if .Values.simulator.poller.enabled }}
 apiVersion: apps/v1
 {{- if .Values.simulator.poller.statefulSet.enabled }}
@@ -36,7 +37,7 @@ spec:
         checksum/config: {{ include "poller-simulator/templates/_config.yaml.tpl" . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ .Values.simulator.poller.prometheusPort | quote}}
-        prometheus.io/targets: kubernetes
+        prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" $values.global.alerts.prometheus | quote }}
       labels:
         name: poller-simulator
         instance: poller-simulator
