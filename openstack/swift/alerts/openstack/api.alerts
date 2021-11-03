@@ -33,8 +33,8 @@ groups:
         token validation or overloaded object servers.
       summary: swift-service-unavailable
 
-  - alert: OpenstackSwiftHAProxyRedispatch
-    expr: sum(increase(haproxy_server_redispatch_warnings_total[10m])) by (os_cluster, server) > 20
+  - alert: OpenstackSwiftHAProxyServer
+    expr: sum by (os_cluster, server) (increase(haproxy_server_redispatch_warnings_total[10m])) > 20
     for: 15m
     labels:
       context: haproxyredispatch
@@ -45,6 +45,20 @@ groups:
     annotations:
       description: HAProxy is redispatching requests for the swift-proxy running on node {{ $labels.server }}. Try to delete the
         swift-proxy-{{ $labels.os_cluster }}-xxxxx on node {{ $labels.server }} to resolve the alert.
+      summary: swift-service-haproxy-redispatch
+
+  - alert: OpenstackSwiftHAProxyRedispatchPod
+    expr: sum by(os_cluster, kubernetes_pod_name) (increase(haproxy_server_redispatch_warnings_total[10m])) > 50
+    for: 10m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: warning
+      tier: os
+      meta: HAProxy pod {{ $labels.kubernetes_pod_name }} redispatches in {{ $labels.os_cluster }}
+    annotations:
+      description: HAProxy pod {{ $labels.kubernetes_pod_name }} is redispatching requests. Check the logs for
+        `Proxy <abc> reached process FD limit (maxsock=<1234>)`. In that case delete this pod.
       summary: swift-service-haproxy-redispatch
 
   - alert: OpenstackSwiftHealthCheck

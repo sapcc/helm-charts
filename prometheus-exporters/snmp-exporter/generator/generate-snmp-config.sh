@@ -8,10 +8,10 @@ fi
 
 if [ $1 = "all" ]; then
 
-   export modules=`ls  ../_snmp-exporter-*|awk -F- '{ print $3}'|awk -F. '{ print $1}'`
+   export modules=`ls  ./*-generator.yaml*|awk -F- '{ print $1}'|awk -F\/ '{ print $2}'`
 
 else
-   export modules=`ls  ../_snmp-exporter-*|awk -F- '{ print $3}'|awk -F. '{ print $1}'`
+   export modules=`ls  ./*-generator.yaml*|awk -F- '{ print $1}'|awk -F\/ '{ print $2}'`
    echo $modules |grep -qw $1
 
    if [ $? -eq 0 ] ; then

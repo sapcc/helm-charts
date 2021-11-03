@@ -1,0 +1,39 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: gkingressannotations
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkIngressAnnotations
+      validation:
+        openAPIV3Schema:
+          properties: {}
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package ingressannotations
+
+        annotation_prefix := "ingress.kubernetes.io/"
+
+        disabled_annotations["auth-snippet"]
+        disabled_annotations["configuration-snippet"]
+        disabled_annotations["server-snippet"]
+        disabled_annotations["modsecurity-snippet"]
+
+        violation[{"msg": msg}] {
+          obj := input.review.object
+          obj.kind == "Ingress"
+
+          ingress_annotations := {key |
+            obj.metadata.annotations[k]
+            startswith(k, annotation_prefix)
+            key := trim_prefix(k, annotation_prefix)
+          }
+
+          found := {k | disabled_annotations[k]; ingress_annotations[k]}
+          count(found) > 0
+          msg := sprintf("has disabled annotations: %s", [sort(found)])
+        }

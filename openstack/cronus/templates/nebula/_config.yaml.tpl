@@ -129,4 +129,28 @@ nebula:
 {{- if .Values.nebula.leasedUntilUpdateBefore }}
   leasedUntilUpdateBefore: {{ .Values.nebula.leasedUntilUpdateBefore }}
 {{- end }}
+{{- if .Values.notifier.enabled }}
+  notifier:
+    host: {{ .Values.notifier.host }}
+    smtpUsername: {{ .Values.notifier.smtpUsername }}
+    smtpPassword: {{ .Values.notifier.smtpPassword }}
+    sender: {{ .Values.notifier.sender }}
+    recipients:
+  {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
+      - {{ $value }}
+  {{- end }}
+    activationTitle: {{ .Values.notifier.activationTitle }}
+    activationBody: |
+{{ .Values.notifier.activationBody | indent 6 }}
+{{- end }}
+{{- if .Values.pki.enabled }}
+  pki:
+    clientID: {{ .Values.pki.clientID }}
+    accountID: {{ .Values.pki.accountID }}
+    clientSecret: {{ .Values.pki.clientSecret }}
+    authEndpoint: {{ .Values.pki.authEndpoint }}
+    enrollEndpoint: {{ .Values.pki.enrollEndpoint }}
+    subjectPattern: {{ .Values.pki.subjectPattern }}
+    validityDays: {{ .Values.pki.validityDays }}
+{{- end }}
 {{- end -}}

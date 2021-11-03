@@ -54,7 +54,8 @@ auth = {
     user-template = "%s@{{.Values.global.ldap.userdomain}}"
     group-search {
       user-attr = "sAMAccountName"
-      group = "{{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
+      user-attr-template = "%s"
+      group = "memberOf={{.Values.global.ldap.user_group}},{{.Values.global.ldap.suffix}}"
     }
   }
 }

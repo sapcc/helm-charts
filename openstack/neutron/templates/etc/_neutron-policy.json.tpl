@@ -302,7 +302,6 @@
     "get_bgpvpn:export_targets": "rule:context_is_viewer or rule:shared_bgpvpns",
     "get_bgpvpn:route_distinguishers": "rule:context_is_viewer or rule:shared_bgpvpns",
     "get_bgpvpn:vni": "rule:context_is_viewer or rule:shared_bgpvpns",
-    "create_bgpvpn:tenant_id": "rule:context_is_admin",
     "create_bgpvpn:route_targets": "rule:context_is_admin",
     "create_bgpvpn:import_targets": "rule:context_is_admin",
     "create_bgpvpn:export_targets": "rule:context_is_admin",

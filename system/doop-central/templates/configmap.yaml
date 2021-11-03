@@ -62,7 +62,11 @@ data:
       <p>This check finds alert rules that do not have all required labels and annotations.</p>
       <dl>
         <dt>Why is this a problem?</dt>
-        <dd>Without the <code>severity</code> and <code>tier</code> label, alerts cannot be routed to the right Slack channels. Without the <code>summary</code> and <code>description</code> annotations, operators will not know how to fix the alert.</dd>
+        <dd>
+          Without the <code>severity</code> and <code>tier</code> label, alerts cannot be routed to the right Slack channels.<br>
+          Without the <code>playbook</code> label, operators will not know how to fix the alert.<br>
+          Without the <code>summary</code> and <code>description</code> annotations, operators will not know what the alert is about.<br>
+        </dd>
         <dt>How to fix?</dt>
         <dd>Add the missing labels and annotations, as reported. Note that <code>severity</code> only accepts the values <code>critical</code>, <code>warning</code> and <code>info</code>.</dd>
       </dl>
@@ -87,4 +91,12 @@ data:
       <dl>
         <dt>Where to find vulnerability reports?</dt>
         <dd>Copy-paste the path part of the image (e.g. &quot;keppel.eu-de-1.cloud.sap/ccloud/limes&quot;) into your browser address bar. This opens the image list for that repo in Elektra's Keppel UI. Find the relevant image (look for a vulnerability status other than &quot;Clean&quot;) and open its details view to find the vulnerabilities, down near the image layers where they were introduced.</dd>
+      </dl>
+    GkHighCPURequests: |
+      <p>This check finds containers that request more than 6 CPU.</p>
+      <dl>
+        <dt>Why is this a problem?</dt>
+        <dd>aPod VM(s) all have 10 CPU in total. Resources that request more than 6 CPU will have difficulties getting scheduled due to the number of DaemonSet (logging, monitoring, etc.) already running on all nodes.</dd>
+        <dt>How to fix?</dt>
+        <dd>Consider scaling by number of Pods (don't use a single Pod). You can also consider deploying to other clusters (i.e Scaleout) instead of Baremetal control plane.</dd>
       </dl>
