@@ -33,6 +33,14 @@ spec:
 
         violation[{"msg": msg}] {
           alert := alert_rule[_]
+          # warn if we don't have a labels.playbook when labels.severity == "critical"
+          object.get(alert.rule.labels, "severity", "") == "critical"
+          object.get(alert.rule.labels, "playbook", "") == ""
+          msg := sprintf("rule %s in group %s does not have a valid value for labels.playbook", [alert.rule.alert, alert.group_name])
+        }
+
+        violation[{"msg": msg}] {
+          alert := alert_rule[_]
           # warn if we don't have something in labels.tier
           not regex.match("\\S", object.get(alert.rule.labels, "tier", ""))
           msg := sprintf("rule %s in group %s does not have labels.tier", [alert.rule.alert, alert.group_name])
