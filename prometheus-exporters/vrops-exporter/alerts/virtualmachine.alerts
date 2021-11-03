@@ -114,3 +114,16 @@ groups:
     annotations:
       description: "Virtual machine `{{ $labels.virtualmachine }}` in a DRS cluster is demanding more CPU than its entitlement. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }}) {{ $labels.recommendation_1 }}"
       summary: "Virtual machine `{{ $labels.virtualmachine }}` in a DRS cluster is demanding more CPU than its entitlement. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+
+  - alert: VMHasSnapshotOlderThanOneWeek
+    expr: vrops_virtualmachine_disk_space_snapshot_age_days{vccluster=~".*management.*"} > 7
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      context: "vrops-exporter {{ $labels.virtualmachine }}"
+      meta: "Virtual machine `{{ $labels.virtualmachine }}` has a snapshot which is olden than one week. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Virtual machine `{{ $labels.virtualmachine }}` has a snapshot which is olden than one week. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
+      summary: "Virtual machine `{{ $labels.virtualmachine }}` has a snapshot which is olden than one week. ({{ $labels.vcenter }}, {{ $labels.vccluster }}, {{ $labels.hostsystem }})"
