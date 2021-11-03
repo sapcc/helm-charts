@@ -60,6 +60,14 @@ physical_network = {{ default $aci_hostgroup.name $aci_hostgroup.physical_networ
 segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
 segment_range = {{ default $.Values.aci.aci_hostgroups.segment_ranges $aci_hostgroup.segment_ranges | join "," }}
 availability_zones = {{ default "" $aci_hostgroup.availability_zones | join "," }}
+{{- if not (empty $aci_hostgroup.host_azs) }}
+host_azs = {{ range $az, $hosts := $aci_hostgroup.host_azs -}}
+        {{- range $n, $host := $hosts -}}
+            {{ $host }}:{{ $az }}
+            {{- if lt $n (sub (len $hosts) 1) -}},{{- end -}}
+        {{- end -}}
+    {{- end -}}
+{{ end -}}
 {{- range $i, $subgroup := $aci_hostgroup.subgroups }}
 
 [aci-hostgroup:{{ $subgroup.name }}]
