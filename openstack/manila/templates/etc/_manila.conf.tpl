@@ -29,6 +29,8 @@ periodic_interval = {{ .Values.periodic_interval | default 300 }}
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
+netapp_volume_snapshot_reserve_percent = {{ .Values.netapp_volume_snapshot_reserve_percent | default 50 }}
+
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
 delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_share | default false }}
