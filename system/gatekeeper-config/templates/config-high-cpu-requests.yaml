@@ -1,3 +1,6 @@
+{{/* we only need this policy in baremetal. Services in other clusters can scale freely */}}
+{{- if eq .Values.cluster_type "baremetal" -}}
+
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkHighCPURequests
 metadata:
@@ -13,3 +16,5 @@ spec:
         kinds: ["Pod", "DaemonSet"]
       - apiGroups: ["apps"]
         kinds: ["Deployment", "StatefulSet"]
+
+{{- end -}}
