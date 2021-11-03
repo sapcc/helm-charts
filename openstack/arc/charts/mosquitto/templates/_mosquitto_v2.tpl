@@ -18,5 +18,8 @@ use_username_as_clientid true
 cafile /mosquitto/ca.crt
 certfile /mosquitto/server.crt
 keyfile /mosquitto/server.key
+{{- if .Values.tls.crl }}
+crlfile /mosquitto/ca.crl
+{{- end }}
 {{- end }}
 {{- end }}
