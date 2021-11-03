@@ -12,3 +12,16 @@
     annotations:
       description: {{ include "fullName" . }} database is not ready for 5 minutes.
       summary: {{ include "fullName" . }} is not ready for 5 minutes.
+  {{- if .Values.persistence_claim.enabled }}
+  - alert: {{ include "alerts.service" . | title }}MariaDBVolumeNearlyFull
+      expr: (pvc_usage{mountedby=~"{{ include "fullName" . }}.*", mountedby!~"{{ include "fullName" . }}-backup.*" } > 0.85)
+      for: 15m
+      labels:
+        context: volumefull
+        service: {{ include "alerts.service" . }}
+        severity: info
+        tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      annotations:
+        description: {{ include "fullName" . }} database volume is above 85% usage.
+        summary: {{ include "fullName" . }}'s volume is nearly full.
+  {{- end }}
