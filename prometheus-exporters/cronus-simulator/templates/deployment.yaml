@@ -1,3 +1,4 @@
+{{- $values := .Values }}
 {{- if .Values.simulator.enabled }}
 apiVersion: apps/v1
 {{- if .Values.simulator.statefulSet.enabled }}
@@ -35,7 +36,7 @@ spec:
         checksum/config: {{ include "cronus-simulator/templates/_config.yaml.tpl" . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ .Values.simulator.prometheusPort | quote}}
-        prometheus.io/targets: kubernetes
+        prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" $values.global.alerts.prometheus | quote }}
       labels:
         app.kubernetes.io/name: cronus-simulator
         app.kubernetes.io/instance: cronus-simulator
