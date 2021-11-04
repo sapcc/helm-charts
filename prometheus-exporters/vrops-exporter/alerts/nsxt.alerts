@@ -176,7 +176,7 @@ groups:
     expr: vrops_nsxt_mgmt_cluster_controller_cluster_connectivity_status{state="DEGRADED"}
     for: 10m
     labels:
-      severity: warning
+      severity: critical
       tier: vmware
       service: compute
       meta: "NSX-T management cluster {{ $labels.nsxt_adapter }} has connectivity status `{{ $labels.state }}`"
@@ -202,7 +202,7 @@ groups:
     expr: vrops_nsxt_mgmt_node_memory_used / vrops_nsxt_mgmt_node_memory_total > 0.95
     for: 5m
     labels:
-      severity: info
+      severity: critical
       tier: vmware
       service: compute
       meta: "NSX-T Node {{ $labels.nsxt_mgmt_node }} of cluster {{ $labels.nsxt_adapter }} has memory usage of over 95%"
@@ -252,3 +252,16 @@ groups:
     annotations:
       description: "Transport node {{ $labels.nsxt_transport_node }} Controller/Manager Connectivity status is not UP. {{ $labels.recommendation_1 }}."
       summary: "Transport node {{ $labels.nsxt_transport_node }} Controller/Manager Connectivity status is not UP. {{ $labels.recommendation_1 }}."
+
+  - alert: VROpsNSXTAdapterNotReceivingData
+    expr: vrops_nsxt_adapter_alert_info{alert_name="Adapter instance is not receiving data"}
+    labels:
+      severity: critical
+      tier: vmware
+      service: nsxt adapter
+      playbook: docs/devops/alert/nsxt/##vrops-nsx-t-adapter-is-not-receiving-data-vropsnsxtadapternotreceivingdata
+      meta: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. {{ $labels.recommendation_2 }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. {{ $labels.recommendation_2 }}"
+      summary: "vROPs NSX-T adapter is not receiving data for `{{ $labels.nsxt_adapter }}`. {{ $labels.recommendation_2 }}"

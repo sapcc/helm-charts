@@ -28,58 +28,6 @@ groups:
       description: 'NSX-T Management Node offline: {{ $labels.nsxv3_manager_hostname }}'
       summary: 'NSX-T Management Node offline'
 
-  - alert: NSXTClusterControlStatusNoControllers
-    expr: nsxv3_cluster_control_status == 0
-    for: 5m
-    labels:
-      severity: warning
-      tier: vmware
-      meta: 'NSX-T Cluster has no Controllers: {{ $labels.name }}'
-      dashboard: nsx-t?var-cluster={{ $labels.name }}
-      playbook: docs/devops/alert/nsxt/#cluster_control_status_no_controllers
-    annotations:
-      description: 'NSX-T Cluster has no Controllers: {{ $labels.name }}'
-      summary: 'NSX-T Cluster has no Controllers'
-
-  - alert: NSXTClusterControlStatusUnstable
-    expr: nsxv3_cluster_control_status == -1
-    for: 5m
-    labels:
-      severity: warning
-      tier: vmware
-      meta: 'NSX-T Cluster Control Status is unstable: {{ $labels.nsxv3_manager_hostname }}'
-      dashboard: nsx-t?var-cluster={{ $labels.name }}
-      playbook: docs/devops/alert/nsxt/#cluster_control_status_unstable
-    annotations:
-      description: 'NSX-T Cluster Control Status is unstable: {{ $labels.nsxv3_manager_hostname }}'
-      summary: 'NSX-T Cluster Control Status is unstable'
-
-  - alert: NSXTClusterControlStatusDegraded
-    expr: nsxv3_cluster_control_status == -2
-    for: 5m
-    labels:
-      severity: critical
-      tier: vmware
-      meta: 'NSX-T Cluster Control Status degraded: {{ $labels.nsxv3_manager_hostname }}'
-      dashboard: nsx-t?var-cluster={{ $labels.name }}
-      playbook: docs/devops/alert/nsxt/#cluster_control_status_degraded
-    annotations:
-      description:  'NSX-T Cluster Control Status degraded: {{ $labels.nsxv3_manager_hostname }}'
-      summary:  'NSX-T Cluster Control Status degraded'
-
-  - alert: NSXTClusterControlStatusUnkown
-    expr: nsxv3_cluster_control_status < -2
-    for: 5m
-    labels:
-      severity: warning
-      tier: vmware
-      meta: 'NSX-T Cluster Control Status unkown: {{ $labels.nsxv3_manager_hostname }}'
-      dashboard: nsx-t?var-cluster={{ $labels.name }}
-      playbook: docs/devops/alert/nsxt/#cluster_control_status_unkown
-    annotations:
-      description:  'NSX-T Cluster Control Status unkown: {{ $labels.nsxv3_manager_hostname }}'
-      summary:  'NSX-T Cluster Control Status unkown'
-
   - alert: NSXTExporterScrapeOlderOneHour
     expr: nsxv3_cluster_management_last_successful_data_fetch{name=~"neutron-nsxv3-agent-bb.*"} < (time()-3600)
     labels:
@@ -103,19 +51,6 @@ groups:
     annotations:
       description:  'NSX-T Exporter has no data'
       summary:  'NSX-T Exporter has no data'
-
-  - alert: NSXTExporterNoMetrics
-    expr: label_replace(kube_pod_info{created_by_name=~'neutron-nsxv3-agent-bb.*'}, 'nsxv3_agent', '$1', 'created_by_name', '^(neutron-nsxv3-agent-bb[^-]+)-.*') unless on (nsxv3_agent) label_replace(nsxv3_cluster_management_last_successful_data_fetch{name=~"neutron-nsxv3-agent-bb.*"}, 'nsxv3_agent', '$1', 'name', '(.*)')
-    for: 60m
-    labels:
-      severity: critical
-      tier: vmware
-      meta: 'NSX-T Exporter has no metrics'
-      dashboard: nsx-t
-      playbook: docs/devops/alert/nsxt/#NSXT_ExporterScrapeOlder_OneHour
-    annotations:
-      description:  'NSX-T pod {{ $labels.nsxv3_agent }} is running, but we do not have metrics for it in prometheus.'
-      summary:  'NSX-T Exporter has no metrics'
 
   - alert: NSXTPodNotReady
     expr: kube_pod_status_phase_normalized{phase="Running", pod=~"neutron-nsxv3-agent-.+"}
@@ -144,20 +79,8 @@ groups:
       description: "NSX-T Agent {{ $labels.pod }} is restarting constantly"
       summary: "Pod is in a restart loop"
 
-  - alert: NSXTMemoryUsageOver95
-    expr: avg by (nsxv3_manager_hostname, nsxv3_node_ip) (nsxv3_management_node_memory_use/nsxv3_management_node_memory_total * 100 > 95)
-    for: 30m
-    labels:
-      severity: critical
-      tier: vmware
-      meta: 'NSX-T Node {{ $labels.nsxv3_node_ip }} of cluster {{ $labels.nsxv3_manager_hostname }} has memory usage of over 95%'
-      playbook: docs/devops/alert/nsxt/#NSXT_Memory_Usage_Over95
-    annotations:
-      description: "NSX-T Node {{ $labels.nsxv3_node_ip }} of cluster {{ $labels.nsxv3_manager_hostname }} has memory usage of over 95%"
-      summary: "NSX-T Node memory critical"
-
   - alert: NSXTFirewallSectionCountDiffersBetweenNodes
-    expr: sum by (name, nsxv3_manager_hostname) (abs(avg without (nsxv3_node_ip)(nsxv3_management_node_firewall_section_count) - ignoring(nsxv3_node_ip) group_right nsxv3_management_node_firewall_section_count)) > 0 
+    expr: sum by (name, nsxv3_manager_hostname) (abs(avg without (nsxv3_node_ip)(nsxv3_management_node_firewall_section_count) - ignoring(nsxv3_node_ip) group_right nsxv3_management_node_firewall_section_count)) > 0
     for: 60m
     labels:
       severity: info
@@ -166,5 +89,3 @@ groups:
     annotations:
       description: "NSX-T Nodes of cluster {{ $labels.nsxv3_manager_hostname }} have divergent section count"
       summary: "NSX-T section count differs between nodes"
-
-
