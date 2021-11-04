@@ -33,7 +33,12 @@ filter {
                       ["owner", "varchar(255)"],
                       ["instance_name", "varchar(255)"],
                       ["host", "varchar(255)"],
-                      ["availability_zone", "varchar(255)"]
+                      ["availability_zone", "varchar(255)"],
+                      ["cost_object", "varchar(64)"],
+                      ["cost_object_type", "varchar(64)"],
+                      ["primary_contact", "varchar(64)"],
+                      ["primary_contact_email", "varchar(255)"],
+                      ["business_criticality", "varchar(64)"]
                   ]
                   }
               ]
@@ -41,13 +46,13 @@ filter {
               local_lookups => [
                   {
                   id => "lookup_source"
-                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone from fips where floating_ip_address = ?"
+                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from fips where floating_ip_address = ?"
                   prepared_parameters => ["[source][domain]"]
                   target => "source_data"
                   },
                   {
                   id => "lookup_destination"
-                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone from fips where floating_ip_address = ?"
+                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from fips where floating_ip_address = ?"
                   prepared_parameters => ["[destination][domain]"]
                   target => "destination_data"
                   }
@@ -97,6 +102,16 @@ filter {
                                      "cc_host" => "%{[source_data][0][host]}"
                                      "[source][cc_availability_zone]" => "%{[source_data][0][availability_zone]}"
                                      "cc_availability_zone" => "%{[source_data][0][availability_zone]}"
+                                     "[source][cc_cost_object]" => "%{[source_data][0][cost_object]}"
+                                     "cc_cost_object" => "%{[source_data][0][cost_object]}"
+                                     "[source][cc_cost_object_type]" => "%{[source_data][0][cost_object_type]}"
+                                     "cc_cost_object_type" => "%{[source_data][0][cost_object_type]}"
+                                     "[source][cc_primary_contact]" => "%{[source_data][0][primary_contact]}"
+                                     "cc_primary_contact" => "%{[source_data][0][primary_contact]}"
+                                     "[source][cc_primary_contact_email]" => "%{[source_data][0][primary_contact_email]}"
+                                     "cc_primary_contact_email" => "%{[source_data][0][primary_contact_email]}"
+                                     "[source][cc_business_criticality]" => "%{[source_data][0][business_criticality]}"
+                                     "cc_business_criticality" => "%{[source_data][0][business_criticality]}"
                   }
               }
           }
@@ -138,6 +153,16 @@ filter {
                                      "cc_host" => "%{[destination_data][0][host]}"
                                      "[destination][cc_availability_zone]" => "%{[destination_data][0][availability_zone]}"
                                      "cc_availability_zone" => "%{[destination_data][0][availability_zone]}"
+                                     "[destination][cc_cost_object]" => "%{[destination_data][0][cost_object]}"
+                                     "cc_cost_object" => "%{[destination_data][0][cost_object]}"
+                                     "[destination][cc_cost_object_type]" => "%{[destination_data][0][cost_object_type]}"
+                                     "cc_cost_object_type" => "%{[destination_data][0][cost_object_type]}"
+                                     "[destination][cc_primary_contact]" => "%{[destination_data][0][primary_contact]}"
+                                     "cc_primary_contact" => "%{[destination_data][0][primary_contact]}"
+                                     "[destination][cc_primary_contact_email]" => "%{[destination_data][0][primary_contact_email]}"
+                                     "cc_primary_contact_email" => "%{[destination_data][0][primary_contact_email]}"
+                                     "[destination][cc_business_criticality]" => "%{[destination_data][0][business_criticality]}"
+                                     "cc_business_criticality" => "%{[destination_data][0][business_criticality]}"
                   }
               }
           }
