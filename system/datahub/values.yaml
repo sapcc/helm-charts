@@ -60,6 +60,7 @@ yellowPages:
   requiredDatabases:
     - "keystone"
     - "nova"
+    - "nova_cell0"
     - "neutron"
     - "glance"
   requiredTables:
@@ -88,7 +89,13 @@ yellowPages:
                  fixed_port.device_owner as owner,
                  i.display_name as instance_name,
                  i.host as host,
-                 i.availability_zone as availability_zone
+                 i.availability_zone as availability_zone, 
+                 b.cost_object_name as cost_object,
+                 b.cost_object_type as cost_object_type,
+                 b.primary_contact_user_id as primary_contact,
+                 b.primary_contact_email as primary_contact_email,
+                 b.business_criticality as business_criticality,
+                 b.number_of_endusers as number_of_endusers
                  from neutron.floatingips f
                      left join keystone.project p on f.project_id = p.id
                      left join keystone.project d on p.domain_id = d.id
@@ -99,7 +106,8 @@ yellowPages:
                      left join neutron.ports port on ip.port_id = port.id
                      left join neutron.ports fixed_port on f.fixed_port_id = fixed_port.id
                      left join neutron.routers r on r.id = f.router_id
-                     left join datahub.nova_instances i on i.uuid = fixed_port.device_id;"
+                     left join datahub.nova_instances i on i.uuid = fixed_port.device_id
+                     left join datahub.cc_billing b on b.project_id = f.project_id;"
     - name: glance_images
       definition: "create or replace table datahub.glance_images
                   ( id varchar(36) NOT NULL,
