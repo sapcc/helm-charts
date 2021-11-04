@@ -260,7 +260,8 @@ groups:
 
   - alert: DatastoreHasLostConnectivityToAStorageDevice
     expr: >
-      vrops_datastore_alert_info{alert_name="Datastore has lost connectivity to a storage device"}
+      label_replace(vrops_datastore_alert_info{alert_name="Datastore has lost connectivity to a storage device"}, "hostsystem", "$1", "datastore", "(node.*)(-.*)") 
+      unless on (hostsystem) label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     labels:
       severity: warning
       tier: vmware
@@ -275,7 +276,8 @@ groups:
 
   - alert: DatastoreHasHostsThatHaveLostRedundantPathsToAStorageDevice
     expr: >
-      vrops_datastore_alert_info{alert_name="Datastore has one or more hosts that have lost redundant paths to a storage device"}
+      label_replace(vrops_datastore_alert_info{alert_name="Datastore has one or more hosts that have lost redundant paths to a storage device"}, "hostsystem", "$1", "datastore", "(node.*)(-.*)") 
+      unless on (hostsystem) label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     labels:
       severity: warning
       tier: vmware
