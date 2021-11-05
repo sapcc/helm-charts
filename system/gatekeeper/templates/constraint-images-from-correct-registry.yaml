@@ -35,7 +35,7 @@ spec:
           alternate_region = extract_keppel_region(input.parameters.registryAlternateRegion)
         }
 
-        violation[{"msg": msg, "details": {"container": container_name, "image": image}}] {
+        violation[{"msg": msg}] {
           input.review.object.kind == "Pod"
           container := input.review.object.spec.containers[_]
           container_name := container.name
@@ -43,7 +43,7 @@ spec:
 
           current_region = extract_keppel_region(image) # this will also check if image is using Keppel or not
           current_region != "global" # global registry is also an acceptable source
-          found := {r | current_region == correct_regions[_]; r = current_region}
+          found := {r | current_region == correct_regions[r]}
           count(found) == 0
 
           correct_regions_list := {r | correct_regions[r]}
