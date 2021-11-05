@@ -1,3 +1,6 @@
+{{/* we only need this policy in baremetal. Services in other clusters can scale freely */}}
+{{- if eq .Values.cluster_type "baremetal" -}}
+
 apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
@@ -46,3 +49,5 @@ spec:
           count(high_cpu_requests_on_pod) > 0
           msg := "high cpu request on some or all containers"
         }
+
+{{- end -}}
