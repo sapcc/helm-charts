@@ -126,3 +126,74 @@ yellowPages:
                               left join datahub.nova_instances n on n.image_ref = g.id
                               left join keystone.project p on p.id = n.project_id
                               left join keystone.project d on d.id = p.domain_id where n.uuid is not null;"
+    - name: openstack_ips2
+      definition: "create or replace view datahub.openstack_ips2
+                    as select
+                          ni.ip_address as ip_address,
+                          nf.id as floating_ip_id,
+                          kp.id as project_id,
+                          kp.name as project_name,
+                          kd.id as domain_id,
+                          kd.name as domain_name,
+                          nn.name AS network,
+                          nn.id AS network_id,
+                          ns.name AS subnet,
+                          ns.id AS subnet_id,
+                          nsp.name AS subnetpool,
+                          nsp.id AS subnetpool_id,
+                          nr.id as router_id,
+                          nr.name as router_name,
+                          np.id as port_id, 
+                          np.name as port_name,
+                          nfp.device_id as instance_id,
+                          nfp.device_owner as owner,
+                          ni.display_name as instance_name,
+                          ni.host as host,
+                          ni.availability_zone as availability_zone,
+                          np.device_owner as device_owner
+                          from neutron.ipallocations as ni
+                          inner join neutron.ports np on np.id = ni.port_id and np.device_owner = 'network:floatingip'
+                          left join neutron.floatingips nf on nf.id = np.device_id
+                          inner join neutron.routers nr on nr.id = nf.router_id
+                          inner join keystone.project kp on kp.id = nf.project_id
+                          inner join keystone.project kd on kd.id = kp.domain_id
+                          left join neutron.networks nn on nn.id = nf.floating_network_id
+                          left join neutron.subnets ns on ns.id = ni.subnet_id
+                          left join neutron.subnetpools nsp on nsp.id = ns.subnetpool_id
+                          left join neutron.ports nfp on nfp.id = nf.fixed_port_id
+                          left join datahub.nova_instances ni on ni.uuid = nfp.device_id
+                    union
+                    select
+                          ni.ip_address as ip_address,
+                          nf.id as floating_ip_id,
+                          kp.id as project_id,
+                          kp.name as project_name,
+                          kd.id as domain_id,
+                          kd.name as domain_name,
+                          nn.name AS network,
+                          nn.id AS network_id,
+                          ns.name AS subnet,
+                          ns.id AS subnet_id,
+                          nsp.name AS subnetpool,
+                          nsp.id AS subnetpool_id,
+                          nr.id as router_id,
+                          nr.name as router_name,
+                          np.id as port_id, 
+                          np.name as port_name,
+                          nfp.device_id as instance_id,
+                          nfp.device_owner as owner,
+                          ni.display_name as instance_name,
+                          ni.host as host,
+                          ni.availability_zone as availability_zone,
+                          np.device_owner as device_owner
+                          from neutron.ipallocations as ni
+                          inner join neutron.ports as np on np.id = ni.port_id and np.device_owner = 'network:router_gateway'
+                          left join neutron.floatingips nf on nf.id = ni.ip_address
+                          inner join neutron.routers nr on nr.id = np.device_id
+                          inner join keystone.project kp on kp.id = nr.project_id
+                          inner join keystone.project kd on kd.id = kp.domain_id
+                          left join neutron.networks nn on nn.id = ni.network_id
+                          left join neutron.subnets ns on ns.id = ni.subnet_id
+                          left join neutron.subnetpools nsp on nsp.id = ns.subnetpool_id
+                          left join neutron.ports nfp on nfp.id = nf.fixed_port_id
+                          left join datahub.nova_instances ni on ni.uuid = nfp.device_id;"

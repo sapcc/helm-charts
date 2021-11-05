@@ -5,7 +5,7 @@ filter {
               loaders =>[
                   {
                   id => "datahubdb"
-                  query => "select * from openstack_ips"
+                  query => "select * from openstack_ips2"
                   local_table => "fips"
                   }
               ]
@@ -13,9 +13,9 @@ filter {
               local_db_objects => [
                   {
                   name => "fips"
-                  index_columns => ["floating_ip_address"]
+                  index_columns => ["ip_address"]
                   columns => [
-                      ["floating_ip_address", "varchar(64)"],
+                      ["ip_address", "varchar(64)"],
                       ["floating_ip_id", "varchar(36)"],                    
                       ["port", "varchar(36)" ],
                       ["project", "varchar(64)" ],
