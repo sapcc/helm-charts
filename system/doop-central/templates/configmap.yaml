@@ -102,3 +102,16 @@ data:
         <dt>How to fix?</dt>
         <dd>Consider scaling by number of Pods (don't use a single Pod). You can also consider deploying to other clusters (i.e Scaleout) instead of Baremetal control plane.</dd>
       </dl>
+    GkImagesFromCorrectRegistry: |
+      <p>This check finds containers that do not pull their images from Keppel in the correct region.</p>
+      <dl>
+        <dt>Why is this a problem?</dt>
+        <dd>By pulling your images from the same region as your Pod deployment, you benefit from higher download bandwidth and lower latencies compared to pulling from a different region. This is especially true for big images.</dd>
+        <dt>How to fix?</dt>
+        <dd>
+          Replace your current region with one of the recommended regions in the violation message.<br><br>
+          <b>NOTE:</b> Instead of manually specifying the regional registry, it is recommended to use the regional registry values defined in <code>$REGION/values/globals.yaml</code> file from cc/secrets repo. You can amend your deployment process to include the <code>globals.yaml</code>
+          file in your <code>helm upgrade</code> invocation, then you can reference the registries as <code>.Values.global.registry</code> or <code>.Values.global.registryAlternateRegion</code> in your Helm chart
+          (<a href="https://github.com/sapcc/helm-charts/blob/f1e70530f2f7e7784ac9c15886dfe57914b5ca2d/system/doop-central/templates/deployment.yaml#L36">example</a>).
+        </dd>
+      </dl>
