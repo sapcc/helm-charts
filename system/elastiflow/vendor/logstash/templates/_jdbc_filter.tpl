@@ -6,13 +6,13 @@ filter {
                   {
                   id => "datahubdb"
                   query => "select * from openstack_ips2"
-                  local_table => "fips"
+                  local_table => "ips"
                   }
               ]
 
               local_db_objects => [
                   {
-                  name => "fips"
+                  name => "ips"
                   index_columns => ["ip_address"]
                   columns => [
                       ["ip_address", "varchar(64)"],
@@ -46,13 +46,13 @@ filter {
               local_lookups => [
                   {
                   id => "lookup_source"
-                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from fips where floating_ip_address = ?"
+                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
                   prepared_parameters => ["[source][domain]"]
                   target => "source_data"
                   },
                   {
                   id => "lookup_destination"
-                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from fips where floating_ip_address = ?"
+                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
                   prepared_parameters => ["[destination][domain]"]
                   target => "destination_data"
                   }

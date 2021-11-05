@@ -150,7 +150,12 @@ yellowPages:
                           ni.display_name as instance_name,
                           ni.host as host,
                           ni.availability_zone as availability_zone,
-                          np.device_owner as device_owner
+                          b.cost_object_name as cost_object,
+                          b.cost_object_type as cost_object_type,
+                          b.primary_contact_user_id as primary_contact,
+                          b.primary_contact_email as primary_contact_email,
+                          b.business_criticality as business_criticality,
+                          b.number_of_endusers as number_of_endusers
                           from neutron.ipallocations as ni
                           inner join neutron.ports np on np.id = ni.port_id and np.device_owner = 'network:floatingip'
                           left join neutron.floatingips nf on nf.id = np.device_id
@@ -162,6 +167,7 @@ yellowPages:
                           left join neutron.subnetpools nsp on nsp.id = ns.subnetpool_id
                           left join neutron.ports nfp on nfp.id = nf.fixed_port_id
                           left join datahub.nova_instances ni on ni.uuid = nfp.device_id
+                          left join datahub.cc_billing b on b.project_id = nf.project_id
                     union
                     select
                           ni.ip_address as ip_address,
@@ -185,7 +191,12 @@ yellowPages:
                           ni.display_name as instance_name,
                           ni.host as host,
                           ni.availability_zone as availability_zone,
-                          np.device_owner as device_owner
+                          b.cost_object_name as cost_object,
+                          b.cost_object_type as cost_object_type,
+                          b.primary_contact_user_id as primary_contact,
+                          b.primary_contact_email as primary_contact_email,
+                          b.business_criticality as business_criticality,
+                          b.number_of_endusers as number_of_endusers
                           from neutron.ipallocations as ni
                           inner join neutron.ports as np on np.id = ni.port_id and np.device_owner = 'network:router_gateway'
                           left join neutron.floatingips nf on nf.id = ni.ip_address
@@ -196,4 +207,5 @@ yellowPages:
                           left join neutron.subnets ns on ns.id = ni.subnet_id
                           left join neutron.subnetpools nsp on nsp.id = ns.subnetpool_id
                           left join neutron.ports nfp on nfp.id = nf.fixed_port_id
-                          left join datahub.nova_instances ni on ni.uuid = nfp.device_id;"
+                          left join datahub.nova_instances ni on ni.uuid = nfp.device_id
+                          left join datahub.cc_billing b on b.project_id = nr.project_id;"
