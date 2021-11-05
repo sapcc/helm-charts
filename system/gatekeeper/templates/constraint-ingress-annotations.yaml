@@ -16,8 +16,6 @@ spec:
       rego: |
         package ingressannotations
 
-        annotation_prefix := "ingress.kubernetes.io/"
-
         disabled_annotations["auth-snippet"]
         disabled_annotations["configuration-snippet"]
         disabled_annotations["server-snippet"]
@@ -27,13 +25,15 @@ spec:
           obj := input.review.object
           obj.kind == "Ingress"
 
-          ingress_annotations := {key |
+          ingress_annotations := {a |
             obj.metadata.annotations[k]
-            startswith(k, annotation_prefix)
-            key := trim_prefix(k, annotation_prefix)
+            contains(k, "ingress.kubernetes.io")
+            sL := split(k, "/")
+            count(sL) == 2
+            a := sL[1]
           }
 
-          found := {k | disabled_annotations[k]; ingress_annotations[k]}
+          found := {k | ingress_annotations[k] == disabled_annotations[k]}
           count(found) > 0
           msg := sprintf("has disabled annotations: %s", [sort(found)])
         }
