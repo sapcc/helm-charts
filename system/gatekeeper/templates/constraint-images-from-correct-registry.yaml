@@ -27,6 +27,17 @@ spec:
           region = matchList[0][1]
         }
 
+        extract_image_name_with_tag(image) = image_tag {
+          not contains(image, "/")
+          image_tag = image
+        }
+        extract_image_name_with_tag(image) = image_tag {
+          contains(image, "/")
+          sL := split(image, "/")
+          count(sL) > 0
+          image_tag = sL[minus(count(sL), 1)]
+        }
+
         correct_regions[region] {
           region = extract_keppel_region(input.parameters.registry)
         }
@@ -46,9 +57,6 @@ spec:
           found := {r | current_region == correct_regions[r]}
           count(found) == 0
 
-          correct_regions_list := {r | correct_regions[r]}
-          msg := sprintf(
-            "container %q uses incorrect registry for image: %s, replace %q with one of the following regions: %s",
-            [container_name, image, current_region, sort(correct_regions_list)],
-          )
+          image_name := extract_image_name_with_tag(image)
+          msg := sprintf("container %q uses incorrect regional registry for image: %s", [container_name, image_name])
         }
