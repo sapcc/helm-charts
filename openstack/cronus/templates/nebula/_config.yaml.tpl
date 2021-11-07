@@ -136,7 +136,6 @@ nebula:
     smtpPassword: {{ .Values.notifier.smtpPassword }}
     sender: {{ .Values.notifier.sender }}
     recipients:
-      - niran.baruch@sap.com
   {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
       - {{ $value }}
   {{- end }}
