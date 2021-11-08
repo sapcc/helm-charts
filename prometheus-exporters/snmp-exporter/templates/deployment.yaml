@@ -7,15 +7,6 @@ metadata:
     app: snmp-exporter
     type: exporter
 spec:
-  affinity:
-    nodeAffinity: 
-      requiredDuringSchedulingIgnoredDuringExecution: 
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: cloud.sap/maintenance-profile
-            operator: NotIn 
-            values:
-            - flatcar--esx
   selector:
     matchLabels:
       app: snmp-exporter
@@ -38,6 +29,15 @@ spec:
         prometheus.io/targets: infra-collector
         prometheus.io/port: "9116"
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.sap/maintenance-profile
+                operator: NotIn
+                values:
+                - flatcar--esx
       nodeSelector:
         zone: farm
       volumes:
