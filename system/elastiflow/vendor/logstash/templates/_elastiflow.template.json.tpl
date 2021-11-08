@@ -29,6 +29,29 @@
     "numeric_detection": true,
     "dynamic_templates": [
       {
+        "cc_cost_object": {
+          "path_match": "cc_cost_object",
+          "mapping": {
+            "type": "string"
+          }
+        }
+      },
+      {
+        "source.cc_cost_object": {
+          "path_match": "source.cc_cost_object",
+          "mapping": {
+            "type": "string"
+          }
+        }
+      },{
+        "destination.cc_cost_object": {
+          "path_match": "destination.cc_cost_object",
+          "mapping": {
+            "type": "string"
+          }
+        }
+      },
+      {
         "ipfix.octetDeltaCount": {
           "path_match": "ipfix.octetDeltaCount",
           "mapping": {

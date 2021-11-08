@@ -5,7 +5,9 @@ filter {
               loaders =>[
                   {
                   id => "datahubdb"
-                  query => "select * from openstack_ips2"
+                  query => "select ip_address, floating_ip_id, port_id, project_name, project_id, domain_name, network, network_id, subnet, subnet_id,
+                  subnetpool, subnetpool_id, router_id, router_name, instance_id, owner, instance_name, host, availability_zone, cost_object, cost_object_type, 
+                  primary_contact, primary_contact_email, business_criticality from openstack_ips2"
                   local_table => "ips"
                   }
               ]
