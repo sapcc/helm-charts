@@ -1,0 +1,20 @@
+{{/* This policy is currently in testing phase */}}
+{{- if .Values.global.region | contains "qa-" -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkPodLabels
+metadata:
+  name: podlabels
+  labels:
+    on-prod-ui: 'false'  # TODO: enable after testing
+spec:
+  enforcementAction: dryrun
+  parameters: {}
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod", "DaemonSet"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet"]
+
+{{- end -}}

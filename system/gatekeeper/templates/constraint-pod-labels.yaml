@@ -1,0 +1,61 @@
+{{/* This policy is currently in testing phase */}}
+{{- if .Values.global.region | contains "qa-" -}}
+
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: gkpodlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkPodLabels
+      validation:
+        openAPIV3Schema:
+          properties: {}
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package podlabels
+
+        # Since we are going to have a lot of violations initially therefore we report on the
+        # Deployment/DaemonSet level, where possible, to avoid useless duplication of violations.
+
+        required_labels["service"]
+        required_labels["tier"]
+
+        missing_labels[l] {
+          obj := input.review.object
+          required_labels[l]
+          not obj.metadata.labels[l]
+        }
+
+        pod_owners["ReplicaSet"]
+        pod_owners["DaemonSet"]
+        pod_owners["StatefulSet"]
+
+        pod_belongs_to[kind] {
+          ref := input.review.object.metadata.ownerReferences[_]
+          kind := ref.kind
+          kind == pod_owners[_]
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.kind == "Pod"
+          count(pod_belongs_to) == 0 # otherwise the violation will be reported on the DaemonSet or Deployment instead
+          count(missing_labels) > 0
+          msg := sprintf("does not have required labels: %s", [missing_labels])
+        }
+
+        violation_owners["Deployment"]
+        violation_owners["DaemonSet"]
+        violation_owners["StatefulSet"]
+
+        violation[{"msg": msg}] {
+          input.review.object.kind == violation_owners[_]
+          count(missing_labels) > 0
+          msg := sprintf("does not have required labels: %s", [missing_labels])
+        }
+
+{{- end -}}
