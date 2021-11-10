@@ -7,6 +7,8 @@ clean_up_period = 60
 timeout = 3600
 debug = true
 standalone = {{ .Values.inspector.standalone }}
+executor_thread_pool_size = 128
+rpc_response_timeout = 60
 
 [ironic]
 region_name = {{.Values.global.region}}
