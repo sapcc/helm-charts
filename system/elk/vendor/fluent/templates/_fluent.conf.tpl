@@ -142,7 +142,7 @@
   sql_key floating_ip_address
   record_key remote_addr
   columns project_id, project, port, domain, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, owner, instance_name, host, availability_zone
-  record_mapping project_id:cc_project_id,port:cc_port,domain:cc_domain,network:cc_network,network_id:cc_network_id,subnetpool:cc_subnetpool,subnetpool_id:cc_subnetpool_id,router:cc_router,router_id:cc_router_id,instance_id:cc_instance_id,owner:cc_owner,instance_name:cc_instance_name,host:cc_host,availability_zone:cc_availability_zone
+  record_mapping project_id:cc_project_id,project:cc_project,port:cc_port,domain:cc_domain,network:cc_network,network_id:cc_network_id,subnet:cc_subnet,subnet_id:cc_subnet_id,subnetpool:cc_subnetpool,subnetpool_id:cc_subnetpool_id,router:cc_router,router_id:cc_router_id,instance_id:cc_instance_id,owner:cc_owner,instance_name:cc_instance_name,host:cc_host,availability_zone:cc_availability_zone
   refresh_interval 60
 </filter>
 {{- end }}
