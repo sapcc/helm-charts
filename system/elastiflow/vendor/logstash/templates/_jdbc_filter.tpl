@@ -5,9 +5,9 @@ filter {
               loaders =>[
                   {
                   id => "datahubdb"
-                  query => "select ip_address, floating_ip_id, port_id, project_name, project_id, domain_name, network, network_id, subnet, subnet_id,
+                  query => "select floating_ip_address, floating_ip_id, port_id, project_name, project_id, domain_name, network, network_id, subnet, subnet_id,
                   subnetpool, subnetpool_id, router_id, router_name, instance_id, owner, instance_name, host, availability_zone, cost_object, cost_object_type, 
-                  primary_contact, primary_contact_email, business_criticality from openstack_ips2"
+                  primary_contact, primary_contact_email, business_criticality from openstack_ips"
                   local_table => "ips"
                   }
               ]
@@ -17,7 +17,7 @@ filter {
                   name => "ips"
                   index_columns => ["ip_address"]
                   columns => [
-                      ["ip_address", "varchar(64)"],
+                      ["floating_ip_address", "varchar(64)"],
                       ["floating_ip_id", "varchar(36)"],                    
                       ["port", "varchar(36)" ],
                       ["project", "varchar(64)" ],
@@ -48,13 +48,13 @@ filter {
               local_lookups => [
                   {
                   id => "lookup_source"
-                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
+                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where floating_ip_address = ?"
                   prepared_parameters => ["[source][domain]"]
                   target => "source_data"
                   },
                   {
                   id => "lookup_destination"
-                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where ip_address = ?"
+                  query => "select domain, project, project_id, port, network, network_id, subnet, subnet_id, subnetpool, subnetpool_id, router, router_id, instance_id, instance_name, host, availability_zone, cost_object, cost_object_type, primary_contact, primary_contact_email, business_criticality from ips where floating_ip_address = ?"
                   prepared_parameters => ["[destination][domain]"]
                   target => "destination_data"
                   }
