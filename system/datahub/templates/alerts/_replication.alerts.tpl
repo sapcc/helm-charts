@@ -6,7 +6,7 @@
     for: 15m
     labels: 
       context: replicationerrors
-      service: "datahubdb"
+      service: "metis"
       severity: info
       tier: {{ required "$.Values.backup_v2.alerts.tier missing" $.Values.backup_v2.alerts.tier }}
     annotations:

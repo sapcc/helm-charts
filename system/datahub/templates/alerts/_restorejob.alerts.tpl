@@ -5,8 +5,8 @@
     for: 5m
     labels:
       severity: info
-      tier: infra
-      service: datahubdb
+      tier: os
+      service: metis
     annotations:
       description: "Restore of Openstack DB backups into datahubdb failed. Check job logs."
       summary: Restore of Openstack DB backups into datahubdb failed. Check job logs."
