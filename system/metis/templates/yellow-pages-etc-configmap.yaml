@@ -3,10 +3,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name:  yellow-pages-etc
-  namespace: datahub
+  namespace: {{ .Values.namespace }}
   labels:
     app.kubernetes.io/name: yellow-pages
-    helm.sh/chart: {{ include "datahub.chart" $ }}
+    helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
@@ -17,7 +17,7 @@ data:
       region: {{ .Values.global.region }}
     db:
       user: "root"
-      host: datahubdb-mariadb.datahub
+      host: metisdb-mariadb.metis
       port: 3306
       ronly_user: "ronly"
 {{- if .Values.yellowPages.views_enabled }}

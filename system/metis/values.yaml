@@ -1,8 +1,10 @@
+namespace: metis
+
 mariadb:
-  name: datahubdb
+  name: metisdb
   enabled: true
-  dbName: datahub
-  initdb_configmap: datahub-initdb
+  dbName: metis
+  initdb_configmap: metis-initdb
   ronly_user: ronly
   ronly_password: DEFINED-IN-REGION
   livenessProbe:
@@ -13,12 +15,12 @@ mariadb:
     enabled: true
   priority_class: ""
   persistence_claim:
-    name: datahubdb-pvclaim
+    name: metis-pvclaim
     enabled: true
     autoprovision:
       enabled: true
   extraConfigFiles:
-      datahubdb.cnf: |+
+      metisdb.cnf: |+
         [mysqld]
         relay_log = mysql-relay-bin
   restore:
@@ -66,11 +68,11 @@ yellowPages:
     - "neutron"
     - "glance"
   requiredTables:
-    - "datahub.cc_billing"
+    - "metis.cc_billing"
   views_enabled: false
   views:
     - name: openstack_ips
-      definition: "create or replace table datahub.openstack_ips
+      definition: "create or replace table metis.openstack_ips
          ( floating_ip_id varchar(36) NOT NULL,
            primary key ( floating_ip_id ) )
        as
@@ -108,10 +110,10 @@ yellowPages:
                      left join neutron.ports port on ip.port_id = port.id
                      left join neutron.ports fixed_port on f.fixed_port_id = fixed_port.id
                      left join neutron.routers r on r.id = f.router_id
-                     left join datahub.nova_instances i on i.uuid = fixed_port.device_id
-                     left join datahub.cc_billing b on b.project_id = f.project_id;"
+                     left join metis.nova_instances i on i.uuid = fixed_port.device_id
+                     left join metis.cc_billing b on b.project_id = f.project_id;"
     - name: glance_images
-      definition: "create or replace table datahub.glance_images
+      definition: "create or replace table metis.glance_images
                   ( id varchar(36) NOT NULL,
                     primary key ( id, instance_name, instance_id, created_at ) )
                     as
@@ -127,6 +129,6 @@ yellowPages:
                           n.created_at as created_at,
                           n.image_ref as image_ref
                           from glance.images g
-                              left join datahub.nova_instances n on n.image_ref = g.id
+                              left join metis.nova_instances n on n.image_ref = g.id
                               left join keystone.project p on p.id = n.project_id
                               left join keystone.project d on d.id = p.domain_id where n.uuid is not null;"

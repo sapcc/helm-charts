@@ -4,10 +4,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: yellow-pages
-  namespace: datahub
+  namespace: {{ .Values.namespace }}
   labels:
     app.kubernetes.io/name: yellow-pages
-    helm.sh/chart: {{ include "datahub.chart" $ }}
+    helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
@@ -33,7 +33,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - "datahubdb-mariadb"
+                  - "metisdb-mariadb"
             topologyKey: kubernetes.io/hostname
       containers:
       - name: yellow-pages
@@ -52,12 +52,12 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: yellow-pages-secrets
-                key: datahubAdminPW
+                key: metisAdminPW
           - name: DB_RONLY_PASSWD
             valueFrom:
               secretKeyRef:
                 name: yellow-pages-secrets
-                key: datahubRonlyPW
+                key: metisRonlyPW
         volumeMounts:
           - name: yellow-pages-etc
             mountPath: /config
