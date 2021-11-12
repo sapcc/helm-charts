@@ -16,21 +16,21 @@ spec:
       rego: |
         package ingressannotations
 
-        ingress_annotations[a] {
-          obj := input.review.object
-          obj.kind == "Ingress"
-          obj.metadata.annotations[k]
+        ingress_annotations = {k |
+          input.review.object.metadata.annotations[k]
           contains(k, "ingress.kubernetes.io")
-          a = k
         }
 
         # These annotations have been disabled due to CVE-2021-25742
-        disabled_annotations["auth-snippet"]
-        disabled_annotations["configuration-snippet"]
-        disabled_annotations["server-snippet"]
-        disabled_annotations["modsecurity-snippet"]
+        disabled_annotations = {
+          "auth-snippet",
+          "configuration-snippet",
+          "server-snippet",
+          "modsecurity-snippet",
+        }
 
         violation[{"msg": msg}] {
+          input.review.object.kind == "Ingress"
           count(ingress_annotations) > 0
           found := {a |
             ingress_annotations[k]
@@ -39,6 +39,7 @@ spec:
             sL[1] == disabled_annotations[_]
             a = sL[1]
           }
+
           count(found) > 0
           msg := sprintf("has disabled annotations: %s", [sort(found)])
         }
@@ -55,8 +56,9 @@ spec:
         rewrite_target = "rewrite-target"
 
         violation[{"msg": msg}] {
-          count(ingress_annotations) > 0
           obj := input.review.object
+          obj.kind == "Ingress"
+          count(ingress_annotations) > 0
 
           # Check that rewrite annotation exists and get its value.
           ingress_annotations[k]
