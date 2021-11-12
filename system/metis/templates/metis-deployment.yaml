@@ -1,29 +1,29 @@
-{{- if $.Values.yellowPages.enabled }}
+{{- if $.Values.metis.enabled }}
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: yellow-pages
+  name: metis
   namespace: {{ .Values.namespace }}
   labels:
-    app.kubernetes.io/name: yellow-pages
+    app.kubernetes.io/name: metis
     helm.sh/chart: {{ include "metis.chart" $ }}
-    app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
+    app.kubernetes.io/instance: metis-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: yellow-pages
-      app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
+      app.kubernetes.io/name: metis
+      app.kubernetes.io/instance: metis-{{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: yellow-pages
-        app.kubernetes.io/instance: yellow-pages-{{ .Release.Name }}
+        app.kubernetes.io/name: metis
+        app.kubernetes.io/instance: metis-{{ .Release.Name }}
       annotations:
-        checksum/config: {{ include ( print $.Template.BasePath "/yellow-pages-etc-configmap.yaml" ) . | sha256sum }}
-        checksum/secret: {{ include ( print $.Template.BasePath "/yellow-pages-secrets.yaml" ) . | sha256sum }}
+        checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
+        checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
     spec:
       affinity:
         podAffinity:
@@ -36,34 +36,34 @@ spec:
                   - "metisdb-mariadb"
             topologyKey: kubernetes.io/hostname
       containers:
-      - name: yellow-pages
-        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.yellowPages.image }}:{{ .Values.yellowPages.imageVersion }}"
+      - name: metis
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.metis.image }}:{{ .Values.metis.imageVersion }}"
         ports:
         - name: metrics
-          containerPort: {{ .Values.yellowPages.metrics.port }}
+          containerPort: {{ .Values.metis.metrics.port }}
           protocol: TCP
         env:
           - name: API_TOKEN
             valueFrom:
               secretKeyRef:
-                name: yellow-pages-secrets
+                name: metis-secrets
                 key: billingToken
           - name: DB_PASSWD
             valueFrom:
               secretKeyRef:
-                name: yellow-pages-secrets
+                name: metis-secrets
                 key: metisAdminPW
           - name: DB_RONLY_PASSWD
             valueFrom:
               secretKeyRef:
-                name: yellow-pages-secrets
+                name: metis-secrets
                 key: metisRonlyPW
         volumeMounts:
-          - name: yellow-pages-etc
+          - name: metis-etc
             mountPath: /config
             readOnly: true
       volumes:
-        - name: yellow-pages-etc
+        - name: metis-etc
           configMap:
-            name: yellow-pages-etc
+            name: metis-etc
 {{- end }}
